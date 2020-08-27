@@ -1,10 +1,10 @@
-# Requirements list for wisdem
+# Requirements list for WEIS
 
 # simulation
 matplotlib
 numpy
 scipy
-openmdao>=2.0
+openmdao>=3.2
 simpy
 marmot-agents
 
