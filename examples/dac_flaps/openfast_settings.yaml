@@ -24,3 +24,7 @@
 [ElastoDyn, FlapDOF1]  : True
 [ElastoDyn, FlapDOF2]  : True
 [ElastoDyn, EdgeDOF]   : True
+
+# Flags
+[ElastoDyn, SumPrint]   : False
+[AeroDyn15, SumPrint]   : False
