@@ -1,1 +1,1 @@
-from wisdem.schema.validation import *
+from weis.schema.validation import *
