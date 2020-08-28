@@ -344,8 +344,8 @@ properties:
                                     minItems: 3
                                     maxItems: 3
                                     uniqueItems: false
-                                    minimum: -30
-                                    maximum: 30
+                                    minimum: -20
+                                    maximum: 20
                     drivetrain:
                         type: object
                         description: Inputs to WISDEM specific drivetrain sizing tool DriveSE https://www.nrel.gov/docs/fy15osti/63008.pdf
@@ -1008,13 +1008,12 @@ properties:
                 type: string
                 default: Upwind
                 description: Orientation of the horizontal-axis rotor. The options are "Upwind" and "Downwind"
-                enum: [Upwind, Downwind]
             number_of_blades:
                 type: integer
                 default: 3
                 description: Number of blades of the rotor
                 unit: none
-                minimum: 1
+                minimum: 0
                 maximum: 10
     control:
         type: object
