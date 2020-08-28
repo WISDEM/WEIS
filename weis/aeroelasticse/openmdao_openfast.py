@@ -5,7 +5,7 @@ from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
 from wisdem.commonse.vertical_cylinder      import NFREQ
 from wisdem.towerse.tower                   import get_nfull
-
+from wisdem.servose.servose                 import eval_unsteady
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
@@ -18,166 +18,6 @@ import fatpack
 if MPI:
     from mpi4py   import MPI
     from petsc4py import PETSc
-
-def eval_unsteady(alpha, cl, cd, cm):
-    # calculate unsteady coefficients from polars for OpenFAST's Aerodyn
-
-    unsteady = {}
-
-    alpha_rad = np.radians(alpha)
-    cn = cl*np.cos(alpha_rad) + cd*np.sin(alpha_rad)
-
-    # alpha0, Cd0, Cm0
-    aoa_l = [-30.]
-    aoa_h = [30.]
-    idx_low  = np.argmin(abs(alpha-aoa_l))
-    idx_high = np.argmin(abs(alpha-aoa_h))
-
-    if max(np.abs(np.gradient(cl)))>0.:
-        unsteady['alpha0'] = np.interp(0., cl[idx_low:idx_high], alpha[idx_low:idx_high])
-        unsteady['Cd0'] = np.interp(0., cl[idx_low:idx_high], cd[idx_low:idx_high])
-        unsteady['Cm0'] = np.interp(0., cl[idx_low:idx_high], cm[idx_low:idx_high])
-    else:
-        unsteady['alpha0'] = 0.
-        unsteady['Cd0'] = cd[np.argmin(abs(alpha-0.))]
-        unsteady['Cm0'] = 0.
-
-
-    unsteady['eta_e']= 1
-    unsteady['T_f0'] = "Default"
-    unsteady['T_V0'] = "Default"
-    unsteady['T_p']  = "Default"
-    unsteady['T_VL'] = "Default"
-    unsteady['b1']   = "Default"
-    unsteady['b2']   = "Default"
-    unsteady['b5']   = "Default"
-    unsteady['A1']   = "Default"
-    unsteady['A2']   = "Default"
-    unsteady['A5']   = "Default"
-    unsteady['S1']   = 0
-    unsteady['S2']   = 0
-    unsteady['S3']   = 0
-    unsteady['S4']   = 0
-
-    def find_breakpoint(x, y, idx_low, idx_high, multi=1.):
-        lin_fit = np.interp(x[idx_low:idx_high], [x[idx_low],x[idx_high]], [y[idx_low],y[idx_high]])
-        idx_break = 0
-        lin_diff = 0
-        for i, (fit, yi) in enumerate(zip(lin_fit, y[idx_low:idx_high])):
-            if multi==0:
-                diff_i = np.abs(yi-fit)
-            else:
-                diff_i = multi*(yi-fit)
-            if diff_i>lin_diff:
-                lin_diff = diff_i
-                idx_break = i
-        idx_break += idx_low
-        return idx_break
-
-    # Cn1
-    idx_alpha0  = np.argmin(abs(alpha-unsteady['alpha0']))
-    
-    if max(np.abs(np.gradient(cm)))>1.e-10:
-        aoa_h = alpha[idx_alpha0]+35.
-        idx_high = np.argmin(abs(alpha-aoa_h))
-
-        cm_temp = cm[idx_low:idx_high]
-        idx_cm_min = [i for i,local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]) if local_min] + idx_low
-        idx_high = idx_cm_min[-1]
-        
-        
-        idx_Cn1 = find_breakpoint(alpha, cm, idx_alpha0, idx_high)
-        unsteady['Cn1'] = cn[idx_Cn1]
-    else:
-        idx_Cn1 = np.argmin(abs(alpha-0.))
-        unsteady['Cn1'] = 0.
-    
-
-    
-    # Cn2
-    if max(np.abs(np.gradient(cm)))>1.e-10:
-        aoa_l = np.mean([alpha[idx_alpha0], alpha[idx_Cn1]])-30.
-        idx_low  = np.argmin(abs(alpha-aoa_l))
-
-        cm_temp = cm[idx_low:idx_high]
-        idx_cm_min = [i for i,local_min in enumerate(np.r_[True, cm_temp[1:] < cm_temp[:-1]] & np.r_[cm_temp[:-1] < cm_temp[1:], True]) if local_min] + idx_low
-        idx_high = idx_cm_min[-1]
-        
-        idx_Cn2 = find_breakpoint(alpha, cm, idx_low, idx_alpha0, multi=0.)
-        unsteady['Cn2'] = cn[idx_Cn2]
-    else:
-        idx_Cn2 = np.argmin(abs(alpha-0.))
-        unsteady['Cn2'] = 0.
-
-    # C_nalpha
-    if max(np.abs(np.gradient(cm)))>1.e-10:
-        # unsteady['C_nalpha'] = np.gradient(cn, alpha_rad)[idx_alpha0]
-        unsteady['C_nalpha'] = max(np.gradient(cn[idx_alpha0:idx_Cn1], alpha_rad[idx_alpha0:idx_Cn1]))
-
-    else:
-        unsteady['C_nalpha'] = 0.
-
-    # alpha1, alpha2
-    # finding the break point in drag as a proxy for Trailing Edge separation, f=0.7
-    # 3d stall corrections cause erroneous f calculations 
-    if max(np.abs(np.gradient(cm)))>1.0e-10:
-        aoa_l = [0.]
-        idx_low  = np.argmin(abs(alpha-aoa_l))
-        idx_alpha1 = find_breakpoint(alpha, cd, idx_low, idx_Cn1, multi=-1.)
-        unsteady['alpha1'] = alpha[idx_alpha1]
-    else:
-        idx_alpha1 = np.argmin(abs(alpha-0.))
-        unsteady['alpha1'] = 0.
-    unsteady['alpha2'] = -1.*unsteady['alpha1']
-
-
-    unsteady['St_sh']   = "Default"
-    unsteady['k0']      = 0
-    unsteady['k1']      = 0
-    unsteady['k2']      = 0
-    unsteady['k3']      = 0
-    unsteady['k1_hat']  = 0
-    unsteady['x_cp_bar']   = "Default"
-    unsteady['UACutout']   = "Default"
-    unsteady['filtCutOff'] = "Default"
-
-    unsteady['Alpha']    = alpha
-    unsteady['Cl']    = cl
-    unsteady['Cd']    = cd
-    unsteady['Cm']    = cm
-
-    return unsteady
-
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(6., 8.), sharex=True)
-    # ax[0].plot(alpha, cn)
-    # ax[0].plot(alpha, cl, '--')
-    # ax[0].plot(unsteady['alpha0'], 0.,'o')
-    # ax[0].annotate('alpha0', (unsteady['alpha0'], 0.))
-    # ax[0].plot(alpha[idx_alpha0], cn[idx_alpha0],'o')
-    # ax[0].annotate('C_nalpha', (alpha[idx_alpha0], cn[idx_alpha0]))
-    # ax[0].plot(alpha[idx_Cn1], cn[idx_Cn1],'o')
-    # ax[0].annotate('Cn1', (alpha[idx_Cn1], cn[idx_Cn1]))
-    # ax[0].plot(alpha[idx_Cn2], cn[idx_Cn2],'o')
-    # ax[0].annotate('Cn2', (alpha[idx_Cn2], cn[idx_Cn2]))
-    # ax[0].set_ylabel('C_L')
-    # ax[0].grid(True, linestyle=':')
-
-    # ax[1].plot(alpha, cd)
-    # ax[1].set_ylabel('C_D')
-    # ax[1].grid(True, linestyle=':')
-
-    # ax[2].plot(alpha, cm)
-    # ax[2].plot(alpha[idx_Cn1], cm[idx_Cn1], 'o')
-    # ax[2].annotate('Cn1', (alpha[idx_Cn1], cm[idx_Cn1]))
-    # ax[2].plot(alpha[idx_Cn2], cm[idx_Cn2], 'o')
-    # ax[2].annotate('Cn2', (alpha[idx_Cn2], cm[idx_Cn2]))
-
-    # ax[2].set_ylabel('C_M')
-    # ax[2].set_xlabel('Angle of Attack, deg')
-    # ax[2].grid(True, linestyle=':')
-
-    # plt.show()
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
@@ -210,8 +50,11 @@ class FASTLoadCases(ExplicitComponent):
         self.spar_cap_ss_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
         self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
+        monopile     = self.options['modeling_options']['flags']['monopile']
         n_height_tow = self.options['modeling_options']['tower']['n_height']
-        nFull        = get_nfull(self.options['modeling_options']['tower']['n_height'])
+        n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
+        n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+        nFull        = get_nfull(n_height)
         N_beam       = (nFull-1)*2
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(self.options['modeling_options']['blade']['n_freq']/2)
@@ -246,8 +89,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('mass_den',         val=np.zeros(N_beam),         units='kg/m',   desc='sectional mass per unit length')
         self.add_input('foreaft_stff',     val=np.zeros(N_beam),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('sideside_stff',    val=np.zeros(N_beam),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
-        self.add_input('tower_section_height', val=np.zeros(n_height_tow-1), units='m',      desc='parameterized section heights along cylinder')
-        self.add_input('tower_outer_diameter', val=np.zeros(n_height_tow),   units='m',      desc='cylinder diameter at corresponding locations')
+        self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
+        self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
 
         # DriveSE quantities
         self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
@@ -342,9 +185,18 @@ class FASTLoadCases(ExplicitComponent):
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
         self.debug_level         = FASTpref['analysis_settings']['debug_level']
         self.FAST_ver            = FASTpref['file_management']['FAST_ver']
-        self.FAST_exe            = os.path.abspath(FASTpref['file_management']['FAST_exe'])
-        self.FAST_directory      = os.path.abspath(FASTpref['file_management']['FAST_directory'])
-        self.Turbsim_exe         = os.path.abspath(FASTpref['file_management']['Turbsim_exe'])
+        if os.path.isabs(FASTpref['file_management']['FAST_exe']):
+            self.FAST_exe = FASTpref['file_management']['FAST_exe']
+        else:
+            self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_exe'])
+        if os.path.isabs(FASTpref['file_management']['FAST_directory']):
+            self.FAST_directory = FASTpref['file_management']['FAST_directory']
+        else:
+            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_directory'])
+        if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
+            self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
+        else:
+            self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['Turbsim_exe'])
         self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
@@ -660,8 +512,8 @@ class FASTLoadCases(ExplicitComponent):
         # TODO: what else is needed here?
         channels_out  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxc3", "TipDyc3", "TipDzc3"]
         channels_out += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxc3", "RootMyc3", "RootMzc3"]
-        # channels_out  = ["TipDxb1", "TipDyb1", "TipDzb1", "TipDxb2", "TipDyb2", "TipDzb2", "TipDxb3", "TipDyb3", "TipDzb3"]
-        # channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2", "RootMxb3", "RootMyb3", "RootMzb3"]
+        channels_out += ["TipDxb1", "TipDyb1", "TipDzb1", "TipDxb2", "TipDyb2", "TipDzb2", "TipDxb3", "TipDyb3", "TipDzb3"]
+        channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2", "RootMxb3", "RootMyb3", "RootMzb3"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2", "RootFxc3", "RootFyc3", "RootFzc3"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2", "RootFxb3", "RootFyb3", "RootFzb3"]
         channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3", "Azimuth"]
@@ -670,8 +522,8 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
         channels_out += ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx", "B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
         channels_out += ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx", "B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
-        channels_out += ["RootMxb1", "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
-        channels_out += ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
+        channels_out += ["Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
+        channels_out += ["Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
         channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
         channels_out += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
         # Add additional options
