@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from wisdem.glue_code.runWISDEM import run_wisdem
+from weis.glue_code.runWEIS import run_weis
 import os
 
 
@@ -33,7 +34,7 @@ class Test(unittest.TestCase):
         fname_wt_output = folder_output + "/temp.yaml"
 
         # Run OpenFAST
-        wt_opt_openfast, analysis_options_openfast, opt_options_openfast = run_wisdem(
+        wt_opt_openfast, analysis_options_openfast, opt_options_openfast = run_weis(
             fname_wt_input,
             fname_analysis_options_openfast,
             fname_opt_options,
