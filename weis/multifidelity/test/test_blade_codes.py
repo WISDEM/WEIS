@@ -6,12 +6,11 @@ import os
 
 class Test(unittest.TestCase):
 
-    def test(self):
+    def test_ccblade(self):
         ## File management
         run_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
         fname_wt_input = run_dir + "../models/IEA-15-240-RWT_WISDEMieaontology4all.yaml"
         fname_analysis_options_ccblade = run_dir + "../models/modeling_options_ccblade.yaml"
-        fname_analysis_options_openfast = run_dir + "../models/modeling_options_openfast.yaml"
         fname_opt_options = run_dir + "../models/analysis_options.yaml"
         folder_output = run_dir + "it_0/"
         fname_wt_output = folder_output + "/temp.yaml"
@@ -23,6 +22,15 @@ class Test(unittest.TestCase):
             fname_opt_options,
         )
         np.testing.assert_allclose(wt_opt_ccblade["ccblade.CP"], 0.472391)
+        
+    def test_openfast(self):
+        ## File management
+        run_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
+        fname_wt_input = run_dir + "../models/IEA-15-240-RWT_WISDEMieaontology4all.yaml"
+        fname_analysis_options_openfast = run_dir + "../models/modeling_options_openfast.yaml"
+        fname_opt_options = run_dir + "../models/analysis_options.yaml"
+        folder_output = run_dir + "it_0/"
+        fname_wt_output = folder_output + "/temp.yaml"
 
         # Run OpenFAST
         wt_opt_openfast, analysis_options_openfast, opt_options_openfast = run_wisdem(
