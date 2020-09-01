@@ -372,8 +372,8 @@ properties:
                     GenStart:
                         type: string
                         description: Method of starting generator (speed = above some min speed, generator starts, time = start generator at t = 0 sec.)
-                        enum: ['speed','time']
-                        default: 'time'   # DZ: I may have a different opinion than aeroelasticse
+                        enum: [speed,time]
+                        default: time   # DZ: I may have a different opinion than aeroelasticse
                     HSSBrMode:
                         type: integer
                         description: HSS brake model {0 = none, 1 = simple, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL (not in ROSCO, yet)} 
