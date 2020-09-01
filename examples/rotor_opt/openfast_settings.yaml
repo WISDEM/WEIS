@@ -1,6 +1,6 @@
 # Variables are case sensitive.
 [Fst, TStart]          :  0.
-[Fst, TMax]            : 60.
+[Fst, TMax]            : 1.
 # [Fst, TStart]          : 0.
 # [Fst, TMax]            : 40.
 [Fst, OutFileFmt]      : 2
