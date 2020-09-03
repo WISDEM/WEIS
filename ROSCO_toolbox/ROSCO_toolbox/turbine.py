@@ -160,7 +160,7 @@ class Turbine():
             txt_filename: str, optional
                           filename for *.txt, only used if rot_source='txt'
         """
-        from wisdem.aeroelasticse.FAST_reader import InputReader_OpenFAST
+        from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 
         print('Loading FAST model: %s ' % FAST_InputFile)
         self.TurbineName = FAST_InputFile.strip('.fst')
