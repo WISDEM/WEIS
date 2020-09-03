@@ -136,6 +136,34 @@ class Controller():
             else:
                 self.flp_maxpit = 0.0
 
+        # power controller params
+        if 'PwC_Mode' in controller_params:
+            self.PwC_Mode = controller_params['PwC_Mode']
+            if 'PwC_const_R' in controller_params:
+                self.PwC_const_R    = controller_params['PwC_const_R']
+            else:
+                self.PwC_const_R    = 1.0
+
+            if 'PwC_ol_R_filename' in controller_params:
+                self.PwC_ol_R_filename = controller_params['PwC_ol_R_filename']
+            else:
+                self.PwC_ol_R_filename = ""
+                
+        else:
+            self.PwC_Mode       = 0
+            self.PwC_const_R        = 1.0
+            self.PwC_ol_R_filename  = ""
+
+        # soft start (open loop power control)
+        if 'soft_start' in controller_params:
+            self.SoftStart = SoftStart(self,controller_params['soft_start'])
+            self.PwC_ol_R_filename  = self.SoftStart.filename
+
+        # soft cut-out (open loop power vs. wind speed)
+        if 'soft_cut_out' in controller_params:
+            self.SoftCutOut = SoftCutOut(self,controller_params['soft_cut_out'])
+            self.PwC_ol_R_filename  = self.SoftCutOut.filename
+
     def tune_controller(self, turbine):
         """
         Given a turbine model, tune a controller based on the NREL generic controller tuning process
@@ -330,6 +358,9 @@ class Controller():
             self.Ki_flap = np.array([0.0])
             self.Kp_flap = np.array([0.0])
 
+        # Active power control
+        self.PwC_R, self.PwC_B = self.power_control(turbine.Cp)
+
     def tune_flap_controller(self,turbine):
         '''
         Tune controller for distributed aerodynamic control
@@ -416,6 +447,96 @@ class Controller():
 
         self.Kp_flap = (2*self.zeta_flp*self.omega_flp - 2*zetaf*omegaf)/(kappa*omegaf**2)
         self.Ki_flap = (self.omega_flp**2 - omegaf**2)/(kappa*omegaf**2)
+
+    def power_control(self, Cp, nR = 12):
+
+        Cp_TSRopt = Cp.interp_surface(Cp.pitch_initial_rad, Cp.TSR_opt)
+        Cp_opt      = max(Cp_TSRopt)
+
+        Cp_inv      = interpolate.interp1d(Cp_TSRopt,Cp.pitch_initial_rad)
+        
+        # want to dedicate more to values close to 1 because that's where the controller will operate mostly
+        # l parameter scales this
+        l           = 2.5
+        R           = 1/l * np.log10(np.linspace(0,10**l - 1,num=nR,endpoint=True)+1)
+        beta_PC     = Cp_inv(R*Cp_opt)
+
+        # append R > 1
+        beta_PC     = np.append(beta_PC,beta_PC[-1])
+        R           = np.append(R,2.0)
+
+        return R, beta_PC
+
+class SoftStart():
+    '''
+        Open loop soft start timeseries
+        attributes:     tt - time indices of timeseries
+                        R_ss - power rating at time indices
+                        filename - open loop filename
+
+        TODO: Eventually, make general open loop power class that this will inherit
+    '''
+
+    def __init__(self,controller,soft_start_params):
+        
+        # set default parameters
+        if 'R_start' in soft_start_params:
+            R_start = soft_start_params['R_start']
+        else:
+            R_start = 0.75  # default
+
+        if 'T_fullP' in soft_start_params:
+            T_fullP = soft_start_params['T_fullP']
+        else:
+            T_fullP = 60  # default
+
+        if 'filename' in soft_start_params:
+            filename = soft_start_params['filename']
+        else:
+            filename = 'soft_start.dat'  # default
+
+        if hasattr(controller,'PwC_const_R'):
+            full_power = controller.PwC_const_R
+        else:
+            full_power = 1.0
+
+
+        # make timeseries
+        self.tt         = np.linspace(0,T_fullP)
+        self.R_ss       = sigma(self.tt,0,T_fullP,y0=R_start,y1=full_power)
+        self.filename   = filename
+
+class SoftCutOut():
+    '''
+    Open loop control for soft cut-out: power rating vs. slow LPF wind speed estimate
+
+            attributes:     uu - wind speed breakpoints
+                            R_scu - power rating at wind speed breakpoints 
+                        filename - open loop filename
+
+        note: could be generalized to any power rating vs. wind speed if desired in future
+    '''
+    def __init__(self,controller,soft_cut_params):
+        
+        # set default parameters
+        if 'wind_speeds' in soft_cut_params:
+            u_bp = soft_cut_params['wind_speeds']
+        else:
+            u_bp = [0.,50.]
+            print('WARNING: Soft cut-out wind_speeds not set')
+
+        if 'power_reference' in soft_cut_params:
+            R_bp = soft_cut_params['power_reference']
+        else:
+            R_bp = [1.,1.]
+            print('WARNING: Soft cut-out power_reference not set')
+
+        filename = 'soft_cut_out.dat'
+
+        # interpolate
+        self.uu         = np.linspace(min(u_bp),max(u_bp),num=100)
+        self.R_scu      = interpolate.pchip_interpolate(u_bp,R_bp,self.uu)
+        self.filename   = filename
         
 class ControllerBlocks():
     '''
@@ -556,3 +677,34 @@ class ControllerTypes():
         # Calculate gain schedule
         self.Kp = 1/B * (2*zeta*om_n + A)
         self.Ki = om_n**2/B           
+
+
+# helper functions
+
+def sigma(tt,t0,t1,y0=0,y1=1):
+    ''' 
+    generates timeseries for a smooth transition from y0 to y1 from x0 to x1
+
+    inputs: tt - time indices
+            t0 - start time
+            t1 - end time
+            y0 - start output
+            y1 - end output
+
+    outputs: yy - output timeseries corresponding to tt
+    '''
+
+    a3 = 2/(t0-t1)**3
+    a2 = -3*(t0+t1)/(t0-t1)**3
+    a1 = 6*t1*t0/(t0-t1)**3
+    a0 = (t0-3*t1)*t0**2/(t0-t1)**3
+
+    a = np.array([a3,a2,a1,a0])  
+
+    T = np.vander(tt,N=4)       # vandermonde matrix
+
+    ss = T @ a.T                # base sigma
+
+    yy = (y1-y0) * ss + y0      # scale and offset
+
+    return yy

@@ -96,6 +96,11 @@ class Turbine():
         else:
             self.bld_flapwise_freq = 0.0
 
+        if turbine_params['pitch_act_bw']:
+            self.pitch_act_bw = turbine_params['pitch_act_bw']
+        else:
+            self.pitch_act_bw = 0.0
+
 
     # Allow print out of class
     def __str__(self): 

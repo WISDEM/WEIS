@@ -24,7 +24,8 @@ turbine_params:
   TSR_operational:    # None                # Desired below-rated operational tip speed ratio (Cp-maximizing TSR is used if not defined)
   # - should be defined if Fl_Mode = 1
   twr_freq:           0.4499                # Tower natural frequency [rad/s]
-  ptfm_freq:          0.2325                # Platform natural frequency [rad/s]              
+  ptfm_freq:          0.2325                # Platform natural frequency [rad/s]    
+  pitch_act_bw:       6.2832                   # Pitch Actuator bandwidth [rad], {default = 6.2832 rad/s}          
 #------------------------------- CONTROLLER PARAMETERS ----------------------------------
 controller_params:
   # Controller flags 
