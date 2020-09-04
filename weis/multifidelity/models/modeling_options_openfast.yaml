@@ -8,7 +8,7 @@ Analysis_Flags:
     DriveSE:  True
     TowerSE:  True
     ServoSE:  True
-    BOS:      True
+    BOS:      False
     OpenFAST: True   # Flag to run aeroelasticse, the wrapper of OpenFAST
 
 yaml:
