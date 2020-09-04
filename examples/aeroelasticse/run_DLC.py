@@ -1,3 +1,9 @@
+"""
+
+Example script to run the DLCs in OpenFAST
+
+"""
+
 from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
@@ -41,7 +47,7 @@ iec.init_cond[("HydroDyn","PtfmHeave")]        = {'U':[3., 25.]}
 iec.init_cond[("HydroDyn","PtfmHeave")]['val'] = [0.5,0.5]
 
 # DLC inputs
-wind_speeds = range(int(cut_in), int(cut_out), int(n_ws))
+wind_speeds = np.linspace(int(cut_in), int(cut_out), int(n_ws))
 iec.dlc_inputs = {}
 iec.dlc_inputs['DLC']   = [1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
 iec.dlc_inputs['U']     = [wind_speeds, wind_speeds,[Vrated - 2., Vrated, Vrated + 2.],wind_speeds, [Vrated - 2., Vrated, Vrated + 2., cut_out], [], []]
