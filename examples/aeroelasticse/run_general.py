@@ -13,7 +13,6 @@ import os, platform
 # Paths calling the standard modules of WEIS
 fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
 run_dir1                    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-fastBatch.FAST_exe          = os.path.join(run_dir1, 'local/bin/openfast')   # Path to executable
 run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
 fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
 fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)

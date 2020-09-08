@@ -17,7 +17,7 @@ yaml:
 
 xfoil:
     path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
-    run_parallel: True
+    run_parallel: False
 
 rotorse:
     n_aoa: 200        # Number of angles of attack used to define polars
@@ -32,12 +32,8 @@ openfast:
         generate_af_coords: False
         debug_level:        1           # Flag to set the debug level, do not change
     file_management:
-        FAST_ver:          OpenFAST          # Version of OpenFAST, do not change
-        FAST_exe:          ../../local/bin/openfast    # Path to OpenFAST executable
         FAST_directory:    ../OpenFAST_models/BAR_00  # Path to folder with the OpenFAST input files
         FAST_InputFile:    OpenFAST_BAR_00.fst             # Name of the main OpenFAST input file (.fst)
-        path2dll:          ../../local/lib/libdiscon.dylib     # Path to the the compiled ROSCO controller
-        Turbsim_exe:       ../../local/bin/turbsim   # Path to TurbSim executable
         FAST_namingOut:    DAC         # Name of the OpenFAST output files
         FAST_runDirectory: temp/DAC             # Path to folder with the OpenFAST output files
         Simulation_Settings_File: openfast_settings.yaml

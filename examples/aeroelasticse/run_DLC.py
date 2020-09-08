@@ -98,8 +98,6 @@ if MPI:
 # Naming, file management, etc
 iec.wind_dir        = 'outputs/wind'
 iec.case_name_base  = 'iea15mw'
-run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-iec.Turbsim_exe     = os.path.join(run_dir1, 'local/bin/turbsim')
 if MPI:
     iec.cores = available_cores
 else:
@@ -143,6 +141,7 @@ case_inputs[("ElastoDyn","PtfmPDOF")]    = {'vals':["False"], 'group':0}
 case_inputs[("ElastoDyn","PtfmYDOF")]    = {'vals':["False"], 'group':0}
 case_inputs[("ServoDyn","PCMode")]       = {'vals':[5], 'group':0}
 case_inputs[("ServoDyn","VSContrl")]     = {'vals':[5], 'group':0}
+run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
 if platform.system() == 'Windows':
     path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dll')
 elif platform.system() == 'Darwin':
@@ -175,7 +174,6 @@ if rank == 0:
 
     # Run FAST cases
     fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
-    fastBatch.FAST_exe          = os.path.join(run_dir1, 'local/bin/openfast')   # Path to executable
     
     # Monopile
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)

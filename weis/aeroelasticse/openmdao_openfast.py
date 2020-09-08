@@ -192,19 +192,22 @@ class FASTLoadCases(ExplicitComponent):
         self.FASTpref            = FASTpref 
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
         self.debug_level         = FASTpref['analysis_settings']['debug_level']
-        self.FAST_ver            = FASTpref['file_management']['FAST_ver']
-        if os.path.isabs(FASTpref['file_management']['FAST_exe']):
-            self.FAST_exe = FASTpref['file_management']['FAST_exe']
-        else:
-            self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_exe'])
+        self.FAST_ver            = 'OpenFAST'
+        if FASTpref['file_management']['FAST_exe'] != 'none':
+            if os.path.isabs(FASTpref['file_management']['FAST_exe']):
+                self.FAST_exe = FASTpref['file_management']['FAST_exe']
+            else:
+                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_exe'])
         if os.path.isabs(FASTpref['file_management']['FAST_directory']):
             self.FAST_directory = FASTpref['file_management']['FAST_directory']
         else:
             self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_directory'])
-        if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
-            self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
-        else:
-            self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['Turbsim_exe'])
+        
+        if FASTpref['file_management']['Turbsim_exe'] != 'none':
+            if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
+                self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
+            else:
+                self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['Turbsim_exe'])
         self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
@@ -551,7 +554,8 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
         fastBatch.channels = channels
 
-        fastBatch.FAST_exe          = self.FAST_exe
+        if self.FASTpref['file_management']['FAST_exe'] != 'none':
+            fastBatch.FAST_exe          = self.FAST_exe
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
@@ -669,7 +673,8 @@ class FASTLoadCases(ExplicitComponent):
 
         # path management
         iec.wind_dir        = self.FAST_runDirectory
-        iec.Turbsim_exe     = self.Turbsim_exe
+        if self.FASTpref['file_management']['Turbsim_exe'] != 'none':
+            iec.Turbsim_exe     = self.Turbsim_exe
         iec.debug_level     = self.debug_level
         iec.overwrite       = False # TODO: elevate these options to analysis input file
         iec.run_dir         = self.FAST_runDirectory
