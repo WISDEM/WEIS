@@ -33,12 +33,8 @@ openfast:
         generate_af_coords: True
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
-        FAST_ver:          OpenFAST          # Version of OpenFAST, do not change
-        FAST_exe: ../../../local/bin/openfast    # Path to OpenFAST executable
         FAST_directory: ../../../examples/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile  # Path to folder with the OpenFAST input files
         FAST_InputFile:    IEA-15-240-RWT-Monopile.fst             # Name of the main OpenFAST input file (.fst)
-        path2dll:          ../../../local/lib/libdiscon.dylib     # Path to the the compiled ROSCO controller
-        Turbsim_exe: ../../../local/bin/turbsim   # Path to TurbSim executable
         FAST_namingOut: iea_15_240_rwt         # Name of the OpenFAST output files
         FAST_runDirectory: run_OF_multifidelity             # Path to folder with the OpenFAST output files
         Simulation_Settings_File: openfast_settings.yaml

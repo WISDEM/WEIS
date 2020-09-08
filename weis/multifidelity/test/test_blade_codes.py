@@ -19,6 +19,7 @@ class Test(unittest.TestCase):
             fname_opt_options,
         )
         np.testing.assert_allclose(wt_opt_ccblade["ccblade.CP"], 0.472391)
+        np.testing.assert_allclose(wt_opt_ccblade["ccblade.GenPwr"], 8932938.69112286)
         
     def test_openfast(self):
         run_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
@@ -33,6 +34,7 @@ class Test(unittest.TestCase):
             fname_opt_options,
         )
         np.testing.assert_allclose(wt_opt_openfast["aeroelastic.Cp_out"][0], 0.48262791201466426)
+        np.testing.assert_allclose(wt_opt_openfast["aeroelastic.P_out"][0], -5.099489756136294)
 
 if __name__ == '__main__':
     unittest.main()

@@ -378,13 +378,13 @@ properties:
                     Power_Curve:
                         type: object
                         default: {}
-                        if:
-                            properties:
-                                turbulent_power_curve:
-                                    const: True
-                        then:
-                            required:
-                                - Seeds
+                        # if:
+                        #     properties:
+                        #         turbulent_power_curve:
+                        #             const: True
+                        # then:
+                        #     required:
+                        #         - Seeds
                         properties:
                             turbulent_power_curve:
                                 type: boolean

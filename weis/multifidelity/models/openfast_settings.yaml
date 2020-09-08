@@ -9,7 +9,7 @@
 # [InflowWind, HWindSpeed] : 9.
 
 [Fst, CompSub]         : 0
-[Fst, CompServo]         : 0
+[Fst, CompServo]         : 1
 [Fst, CompHydro]         : 0
 
 [ElastoDyn, PtfmSgDOF] : False
