@@ -904,7 +904,7 @@ class FASTLoadCases(ExplicitComponent):
                 pp.turbine_class = discrete_inputs['turbine_class']
                 pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
                 AEP, perf_data   = pp.AEP(stats_pwrcrv, U, pwr_curve_vars=pwr_curve_vars)
-                outputs['P_out']       = perf_data['GenPwr']['mean']
+                outputs['P_out']       = perf_data['GenPwr']['mean'] * 1.e3
                 outputs['Cp_out']      = perf_data['RtAeroCp']['mean']
                 outputs['Omega_out']   = perf_data['RotSpeed']['mean']
                 outputs['pitch_out']   = perf_data['BldPitch1']['mean']
@@ -915,7 +915,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
                 outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
-                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean']
+                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
                 print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
 
             
