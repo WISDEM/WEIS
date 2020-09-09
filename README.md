@@ -62,7 +62,6 @@ The installation instructions below use the environment name, "weis-env," but an
 
 This repo contains copies of other codes created by using the `git subtree` commands.
 Below are some details about how to add external codes and update them.
-Changes to those codes should be added to their original repos, *not* to this WEIS repo.
 
 To add an external code, using OpenFAST as an example, type:
 
@@ -72,13 +71,16 @@ $ git fetch OpenFAST
 $ git subtree add -P OpenFAST OpenFAST/dev --squash
 ```
 
-The --squash is important so WEIS doesn't get filled up with commits from the subtree repos.
+The `--squash` is important so WEIS doesn't get filled up with commits from the subtree repos.
 
 Once a subtree code exists in this repo, we can update it like this:
 
 ```
 $ git subtree pull --prefix OpenFAST https://github.com/OpenFAST/openfast dev --squash
 ```
+
+Changes to these subtree codes should be made to their original repos, *not* to this WEIS repo.
+Once those individual repos have been updated, use the previous `git subtree pull` command to pull in those updates to the WEIS repo.
 
 ## Run Unit Tests
 
