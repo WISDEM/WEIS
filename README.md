@@ -79,7 +79,7 @@ Once a subtree code exists in this repo, we can update it like this:
 $ git subtree pull --prefix OpenFAST https://github.com/OpenFAST/openfast dev --squash
 ```
 
-Changes to these subtree codes should be made to their original repos, *not* to this WEIS repo.
+Changes to these subtree codes **should only be made to their original repos**, *not* to this WEIS repo.
 Once those individual repos have been updated, use the previous `git subtree pull` command to pull in those updates to the WEIS repo.
 
 ## Run Unit Tests
