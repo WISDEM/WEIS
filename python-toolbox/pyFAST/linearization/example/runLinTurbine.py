@@ -160,7 +160,7 @@ if __name__ == '__main__':
         
 
     # Try some post processing using pCrunch
-    chan_info = ('TwrBsMyt',4)
+    chan_info = [('TwrBsMyt',4)]
 
     la = Loads_Analysis()
     fDEL = la.get_DEL(fast_data_lin,chan_info)
