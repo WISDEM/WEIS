@@ -127,6 +127,8 @@ class WT_RNTA(om.Group):
         self.connect('env.rho_air',                     'ccblade.rho')
         self.connect('env.mu_air',                      'ccblade.mu')
         self.connect('env.shear_exp',                   'ccblade.shearExp') 
+        self.connect('nacelle.gearbox_efficiency',      'ccblade.gearbox_efficiency')
+        self.connect('nacelle.generator_efficiency',    'ccblade.generator_efficiency')
 
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')

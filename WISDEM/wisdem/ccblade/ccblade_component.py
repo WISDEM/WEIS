@@ -364,10 +364,14 @@ class CCBladeTwist(ExplicitComponent):
         self.add_discrete_input('hubloss',   val=True,                              desc='include Prandtl hub loss model')
         self.add_discrete_input('wakerotation',val=True,                            desc='include effect of wake rotation (i.e., tangential induction factor is nonzero)')
         self.add_discrete_input('usecd',     val=True,                              desc='use drag coefficient in computing induction factors')
-        
+        self.add_input('gearbox_efficiency',     val=0.0,                           desc='Gearbox efficiency')
+        self.add_input('generator_efficiency',   val=0.0,                           desc='Generator efficiency')
+
+
         # Outputs   
         self.add_output('theta', val=np.zeros(n_span), units='rad',   desc='Twist angle at each section (positive decreases angle of attack)')
         self.add_output('CP',    val=0.0,                             desc='Rotor power coefficient')
+        self.add_output('GenPwr',val=0.0,              units='W',     desc='Generator electrical power')
         self.add_output('CM',    val=0.0,                             desc='Blade flapwise moment coefficient')
         self.add_output('a',     val=np.zeros(n_span),                desc='Axial induction  along blade span')
         self.add_output('ap',    val=np.zeros(n_span),                desc='Tangential induction along blade span')
@@ -495,7 +499,7 @@ class CCBladeTwist(ExplicitComponent):
         
 
         myout, derivs = get_cp_cm.evaluate([inputs['Uhub']], [Omega], [inputs['pitch']], coefficients=True)
-        _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
+        P, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
                 
         # if self.options['opt_options']['optimization_variables']['blade']['aero_shape']['twist']['flag']:
         get_cp_cm.induction        = False
@@ -508,6 +512,7 @@ class CCBladeTwist(ExplicitComponent):
         outputs['theta']   = twist
         outputs['CP']      = CP[0]
         outputs['CM']      = CM[0]
+        outputs['GenPwr']  = P*inputs['gearbox_efficiency']*inputs['generator_efficiency']
         outputs['a']       = loads['a']
         outputs['ap']      = loads['ap']
         outputs['alpha']   = loads['alpha']

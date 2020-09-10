@@ -8,7 +8,7 @@ Analysis_Flags:
     DriveSE:  True
     TowerSE:  True
     ServoSE:  True
-    BOS:      True
+    BOS:      False
     OpenFAST: True   # Flag to run aeroelasticse, the wrapper of OpenFAST
 
 yaml:
@@ -33,15 +33,11 @@ openfast:
         generate_af_coords: True
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
-        FAST_ver:          OpenFAST          # Version of OpenFAST, do not change
-        FAST_exe: /mnt/c/Users/jjasa/git/OpenFAST/build/glue-codes/openfast/openfast    # Path to OpenFAST executable
-        FAST_directory: "/mnt/c/Users/jjasa/git/multifidelity_studies/multifidelity_studies/models/openfast_15MW/"  # Path to folder with the OpenFAST input files
+        FAST_directory: ../../../examples/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile  # Path to folder with the OpenFAST input files
         FAST_InputFile:    IEA-15-240-RWT-Monopile.fst             # Name of the main OpenFAST input file (.fst)
-        path2dll:          /mnt/c/Users/jjasa/git/ROSCO/build/libdiscon.so     # Path to the the compiled ROSCO controller
-        Turbsim_exe: "/Users/pbortolo/work/2_openfast/TurbSim/bin/TurbSim_glin64"   # Path to TurbSim executable
         FAST_namingOut: iea_15_240_rwt         # Name of the OpenFAST output files
         FAST_runDirectory: run_OF_multifidelity             # Path to folder with the OpenFAST output files
-        Simulation_Settings_File: /mnt/c/Users/jjasa/git/multifidelity_studies/multifidelity_studies/models/openfast_settings.yaml
+        Simulation_Settings_File: openfast_settings.yaml
     dlc_settings:
         run_power_curve: True
         run_IEC:         False

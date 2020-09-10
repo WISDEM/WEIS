@@ -67,11 +67,11 @@ openfast:
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
         FAST_ver: OpenFAST
-        FAST_exe: /home/user/openfast/bin/openfast
+        FAST_exe: ''
         FAST_directory: /home/user/models/
         FAST_InputFile: myturbine.fst
-        path2dll: /home/user/ROSCO/build/libdiscon_dw.so
-        Turbsim_exe: /home/user/TurbSim/bin/TurbSim_glin64
+        path2dll: ''
+        Turbsim_exe: ''
         FAST_namingOut: myturbine
         FAST_runDirectory: /home/user/models/output
         Simulation_Settings_File: ../../examples/reference_turbines_lcoe/openfast_settings.yaml
