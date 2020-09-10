@@ -220,7 +220,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
                 wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
             elif opt_options['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
-                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e5)
+                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e4)
+            elif opt_options['merit_figure'] == 'DEL_TwrBsMyt':   # for pitch controller optimization
+                wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e5)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
                 wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
             else:
@@ -289,6 +291,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                                                                 upper=control_opt_options['servo']['torque_control']['omega_max'])
                 wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
                                                                upper=control_opt_options['servo']['torque_control']['zeta_max'])
+            if control_opt_options['servo']['ipc_control']['flag']:
+                wt_opt.model.add_design_var('control.IPC_Ki1p', lower=control_opt_options['servo']['ipc_control']['Ki_min'],
+                                                                upper=control_opt_options['servo']['ipc_control']['Ki_max'],
+                                                                ref=1.e-7)
             if 'flap_control' in control_opt_options['servo']:
                 if control_opt_options['servo']['flap_control']['flag']:
                     wt_opt.model.add_design_var('control.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 

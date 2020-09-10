@@ -233,6 +233,7 @@ class FASTLoadCases(ExplicitComponent):
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
+        self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
@@ -780,6 +781,7 @@ class FASTLoadCases(ExplicitComponent):
                 loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
             else:
                 loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+            loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
         else:
             print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
@@ -932,18 +934,37 @@ class FASTLoadCases(ExplicitComponent):
 
 
 
-        ## Is Nikhar actively using this?
-        # DELs
-        # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
-        # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
-        
-        # Output
+        # Get DELS from OpenFAST data
         if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+            if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
+                if not pp:
+                    pp               = Analysis.Power_Production()
+                    pp.windspeeds    = U
+                    pp.turbine_class = discrete_inputs['turbine_class']
+                else:
+                    # get pdf of windspeeds
+                    ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                    # maximum sum of weighted DELS
+                    if self.n_blades == 2:
+                        outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                        np.sum(ws_prob*sum_stats['RootMyb2']['DEL'])])
+                    else:
+                        outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                        np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
+                                                        np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
+            if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
+                if not pp:
+                    pp               = Analysis.Power_Production()
+                    pp.windspeeds    = U
+                    pp.turbine_class = discrete_inputs['turbine_class']
+                else:
+                    # get pdf of windspeeds
+                    ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                    # maximum sum of weighted DELS
+                    outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['DEL_TwrBsMyt']['DEL'])
             if self.n_blades == 2:
-                outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL'])])
                 outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
             else:
-                outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
                 outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
     def write_FAST(self, fst_vt, discrete_outputs):
