@@ -25,7 +25,6 @@ turbine_params:
   # - should be defined if Fl_Mode = 1
   twr_freq:           # None                # Tower natural frequency [rad/s]
   ptfm_freq:          # None                # Platform natural frequency [rad/s]   
-  pitch_act_bw:       1.5708                  # Pitch Actuator bandwidth [rad], {default = 6.2832 rad/s}
 #------------------------------- CONTROLLER PARAMETERS ----------------------------------
 controller_params:
   # Controller flags 

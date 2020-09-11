@@ -382,22 +382,22 @@ class FAST_IO():
 
     def load_binary_output(self, filename, use_buffer=True):
         """
-        
+                
         Info about ReadFASTbinary.m:
         
         Original Author: Bonnie Jonkman, National Renewable Energy Laboratory
         (c) 2012, National Renewable Energy Laboratory
         Edited for FAST v7.02.00b-bjj  22-Oct-2012
-
         03/09/15: Ported from ReadFASTbinary.m by Mads M Pedersen, DTU Wind
         10/24/18: Low memory/buffered version by E. Branlard, NREL
+        18/01/19: New file format for exctended channels, by E. Branlard, NREL
         11/4/19: Implemented in ROSCO toolbox by N. Abbas, NREL
+        8/6/20: Synced between rosco toolbox and weio by P Bortolotti, NREL
 
-        Paramters
+        Parameters
         ----------
         filename : str
             filename
-
         Returns
         -------
         data : ndarray
@@ -448,19 +448,28 @@ class FAST_IO():
             return data
 
 
-        FileFmtID_WithTime = 1  #% File identifiers used in FAST
-        FileFmtID_WithoutTime = 2
-        LenName = 10  #;  % number of characters per channel name
-        LenUnit = 10  #;  % number of characters per unit name
+        FileFmtID_WithTime              = 1 # File identifiers used in FAST
+        FileFmtID_WithoutTime           = 2
+        FileFmtID_NoCompressWithoutTime = 3
+        FileFmtID_ChanLen_In            = 4
 
         with open(filename, 'rb') as fid:
+            #----------------------------        
+            # get the header information
+            #----------------------------
+
             FileID = fread(fid, 1, 'int16')[0]  #;             % FAST output file format, INT(2)
-            if FileID not in [FileFmtID_WithTime, FileFmtID_WithoutTime]:
+
+            if FileID not in [FileFmtID_WithTime, FileFmtID_WithoutTime, FileFmtID_NoCompressWithoutTime, FileFmtID_ChanLen_In]:
                 raise Exception('FileID not supported {}. Is it a FAST binary file?'.format(FileID))
+
+            if FileID == FileFmtID_ChanLen_In: 
+                LenName = fread(fid, 1, 'int16')[0] # Number of characters in channel names and units
+            else:
+                LenName = 10                    # Default number of characters per channel name
 
             NumOutChans = fread(fid, 1, 'int32')[0]  #;             % The number of output channels, INT(4)
             NT = fread(fid, 1, 'int32')[0]  #;             % The number of time steps, INT(4)
-
 
             if FileID == FileFmtID_WithTime:
                 TimeScl = fread(fid, 1, 'float64')  #;           % The time slopes for scaling, REAL(8)
@@ -469,38 +478,32 @@ class FAST_IO():
                 TimeOut1 = fread(fid, 1, 'float64')  #;           % The first time in the time series, REAL(8)
                 TimeIncr = fread(fid, 1, 'float64')  #;           % The time increment, REAL(8)
 
+            if FileID == FileFmtID_NoCompressWithoutTime:
+                ColScl = np.ones ((NumOutChans, 1)) # The channel slopes for scaling, REAL(4)
+                ColOff = np.zeros((NumOutChans, 1)) # The channel offsets for scaling, REAL(4)
+            else:
+                ColScl = fread(fid, NumOutChans, 'float32')  # The channel slopes for scaling, REAL(4)
+                ColOff = fread(fid, NumOutChans, 'float32')  # The channel offsets for scaling, REAL(4)
 
-
-
-            ColScl = fread(fid, NumOutChans, 'float32')  #; % The channel slopes for scaling, REAL(4)
-            ColOff = fread(fid, NumOutChans, 'float32')  #; % The channel offsets for scaling, REAL(4)
-
-            LenDesc = fread(fid, 1, 'int32')[0]  #;  % The number of characters in the description string, INT(4)
+            LenDesc      = fread(fid, 1, 'int32')[0]  #;  % The number of characters in the description string, INT(4)
             DescStrASCII = fread(fid, LenDesc, 'uint8')  #;  % DescStr converted to ASCII
-            DescStr = "".join(map(chr, DescStrASCII)).strip()
-
-
+            DescStr      = "".join(map(chr, DescStrASCII)).strip()
 
             ChanName = []  # initialize the ChanName cell array
             for iChan in range(NumOutChans + 1):
                 ChanNameASCII = fread(fid, LenName, 'uint8')  #; % ChanName converted to numeric ASCII
                 ChanName.append("".join(map(chr, ChanNameASCII)).strip())
 
-
             ChanUnit = []  # initialize the ChanUnit cell array
             for iChan in range(NumOutChans + 1):
-                ChanUnitASCII = fread(fid, LenUnit, 'uint8')  #; % ChanUnit converted to numeric ASCII
+                ChanUnitASCII = fread(fid, LenName, 'uint8')  #; % ChanUnit converted to numeric ASCII
                 ChanUnit.append("".join(map(chr, ChanUnitASCII)).strip()[1:-1])
 
-
-            #    %-------------------------
-            #    % get the channel time series
-            #    %-------------------------
+            # -------------------------
+            #  get the channel time series
+            # -------------------------
 
             nPts = NT * NumOutChans  #;           % number of data points in the file
-            #print('NT',NT)
-            #print('NumOutChans',NumOutChans)
-
 
             if FileID == FileFmtID_WithTime:
                 PackedTime = fread(fid, NT, 'int32')  #; % read the time data
@@ -510,10 +513,17 @@ class FAST_IO():
 
             if use_buffer:
                 # Reading data using buffers, and allowing an offset for time column (nOff=1)
-                data = freadRowOrderTableBuffered(fid, nPts, 'int16', NumOutChans, nOff=1, type_out='float64')
+                if FileID == FileFmtID_NoCompressWithoutTime:
+                    data = freadRowOrderTableBuffered(fid, nPts, 'float64', NumOutChans, nOff=1, type_out='float64')
+                else:
+                    data = freadRowOrderTableBuffered(fid, nPts, 'int16', NumOutChans, nOff=1, type_out='float64')
             else:
                 # NOTE: unpacking huge data not possible on 32bit machines
-                PackedData = fread(fid, nPts, 'int16')  #; % read the channel data
+                if FileID == FileFmtID_NoCompressWithoutTime:
+                    PackedData = fread(fid, nPts, 'float64')  #; % read the channel data
+                else:
+                    PackedData = fread(fid, nPts, 'int16')  #; % read the channel data
+
                 cnt = len(PackedData)
                 if cnt < nPts:
                     raise Exception('Could not read entire %s file: read %d of %d values' % (filename, cnt, nPts))
@@ -525,12 +535,9 @@ class FAST_IO():
         else:
             time = TimeOut1 + TimeIncr * np.arange(NT)
 
-        #import pdb
-        #pdb.set_trace()
-
-        #    %-------------------------
-        #    % Scale the packed binary to real data
-        #    %-------------------------
+        # -------------------------
+        #  Scale the packed binary to real data
+        # -------------------------
         if use_buffer:
             # Scaling Data
             for iCol in range(NumOutChans):
@@ -551,11 +558,9 @@ class FAST_IO():
                 'attribute_units': ChanUnit}
         return data, info
 
-
     def trim_output(self, fast_data, tmin=None, tmax=None, verbose=False):
         '''
         Trim loaded fast output data 
-
         Parameters
         ----------
         fast_data : list
@@ -574,7 +579,7 @@ class FAST_IO():
             fast_data = [fast_data]
 
 
-                
+
         # initial time array and associated index
         for fd in fast_data:
             if verbose:
@@ -597,7 +602,7 @@ class FAST_IO():
                 Tfind = np.searchsorted(fd['Time'], tmax) + 1
             else: 
                 Tfind = len(fd['Time'])
-            
+
             if T0ind+1 > len(fd['Time']):
                 raise ValueError('The initial time to trim {} to is after the end of the simulation.'.format(fd['meta']['name']))
 
@@ -611,6 +616,7 @@ class FAST_IO():
 
 
         return fast_data
+
 
 class FileProcessing():
     """
@@ -665,7 +671,6 @@ class FileProcessing():
         file.write('{0:<12d}        ! SD_Mode           - Shutdown mode {{0: no shutdown procedure, 1: pitch to max pitch at shutdown}}\n'.format(int(controller.SD_Mode)))
         file.write('{0:<12d}        ! Fl_Mode           - Floating specific feedback mode {{0: no nacelle velocity feedback, 1: nacelle velocity feedback}}\n'.format(int(controller.Fl_Mode)))
         file.write('{0:<12d}        ! Flp_Mode          - Flap control mode {{0: no flap control, 1: steady state flap angle, 2: Proportional flap control}}\n'.format(int(controller.Flp_Mode)))
-        file.write('{0:<12d}        ! PwC_Mode          - Power control mode {{0: no power control, 1: constant power, 2: open loop power from PwC_OpenLoop_Inp, 3: open loop power vs. wind speed from PwC_OpenLoop_Inp}}\n'.format(int(controller.PwC_Mode)))
         file.write('\n')
         file.write('!------- FILTERS ----------------------------------------------------------\n') 
         file.write('{:<13.5f}       ! F_LPFCornerFreq	- Corner frequency (-3dB point) in the low-pass filters, [rad/s]\n'.format(turbine.bld_edgewise_freq * 1/4)) 
@@ -691,7 +696,6 @@ class FileProcessing():
         file.write('{:<014.5f}      ! PC_RefSpd			- Desired (reference) HSS speed for pitch controller, [rad/s].\n'.format(turbine.rated_rotor_speed*turbine.Ng))
         file.write('{:<014.5f}      ! PC_FinePit		- Record 5: Below-rated pitch angle set-point, [rad]\n'.format(controller.min_pitch))
         file.write('{:<014.5f}      ! PC_Switch			- Angle above lowest minimum pitch angle for switch, [rad]\n'.format(1 * deg2rad))
-        file.write('{:<014.5f}      ! PC_ActBw			- Pitch actuator bandwidth [rad/s]\n'.format(turbine.pitch_act_bw))
         file.write('\n')
         file.write('!------- INDIVIDUAL PITCH CONTROL -----------------------------------------\n')
         file.write('{:<13.1f}       ! IPC_IntSat		- Integrator saturation (maximum signal amplitude contribution to pitch from IPC), [rad]\n'.format(0.0))
@@ -755,13 +759,6 @@ class FileProcessing():
         file.write('{:<11d}         ! PS_BldPitchMin_N  - Number of values in minimum blade pitch lookup table (should equal number of values in PS_WindSpeeds and PS_BldPitchMin)\n'.format(len(controller.ps_min_bld_pitch)))
         file.write('{}              ! PS_WindSpeeds     - Wind speeds corresponding to minimum blade pitch angles [m/s]\n'.format(''.join('{:<4.2f} '.format(controller.v[i]) for i in range(len(controller.v)))))
         file.write('{}              ! PS_BldPitchMin    - Minimum blade pitch angles [rad]\n'.format(''.join('{:<10.8f} '.format(controller.ps_min_bld_pitch[i]) for i in range(len(controller.ps_min_bld_pitch)))))
-        file.write('\n')
-        file.write('!------- POWER CONTROL -------------------------------------------\n')
-        file.write('{:<11d}         ! PwC_LUT_N          - Number of values in minimum blade pitch lookup table (should equal number of values in PwC_PwrRating and PwC_BldPitchMin)\n'.format(len(controller.PwC_R)))
-        file.write('{}              ! PwC_PwrRating      - Wind speeds corresponding to minimum blade pitch angles [m/s]\n'.format(''.join('{:<4.8f} '.format(controller.PwC_R[i]) for i in range(len(controller.PwC_R)))))
-        file.write('{}              ! PwC_BldPitchMin    - Minimum blade pitch angles [rad]\n'.format(''.join('{:<10.8f} '.format(controller.PwC_B[i]) for i in range(len(controller.PwC_R)))))
-        file.write('{:<014.5f}      ! PwC_ConstPwr         - Constant power rating [used if PwC_Mode = 1]\n'.format(controller.PwC_const_R))
-        file.write(      '"{}"      ! PwC_OpenLoop_Inp  - Filename of open-loop power input\n'.format(controller.PwC_ol_R_filename))
         file.write('\n')
         file.write('!------- SHUTDOWN -----------------------------------------------------------\n')
         file.write('{:<014.5f}      ! SD_MaxPit         - Maximum blade pitch angle to initiate shutdown, [rad]\n'.format(controller.sd_maxpit))
@@ -927,40 +924,6 @@ class FileProcessing():
             # self.Ct_table = Ct 
             # self.Cq_table = Cq
             return pitch_initial_rad, TSR_initial, Cp, Ct, Cq
-
-    def write_ol_power(self,controller,*args):
-        # optional arg is ol_filename
-
-        if not args:
-            ol_filename = controller.SoftStart.filename
-        else:
-            ol_filename = args[0]
-
-        with open(ol_filename,'w') as file:
-            print('Writing new open loop power input file: %s.' % ol_filename)
-            file.write('!\tTime\t\tRating\n')
-            file.write('!\t(sec)\t\t(-)\n')
-
-            for time, rating in zip(controller.SoftStart.tt,controller.SoftStart.R_ss):
-                file.write('{:<08.5f}\t\t{:<08.5f}\n'.format(time,rating))
-
-    def write_soft_cut_out(self,controller,*args):
-        # optional arg is ol_filename
-
-        if not args:
-            ol_filename = controller.SoftCutOut.filename
-        else:
-            ol_filename = args[0]
-
-        with open(ol_filename,'w') as file:
-            print('Writing new open loop power input file: %s.' % ol_filename)
-            file.write('!\tWind Speed\t\tRating\n')
-            file.write('!\t(m/s)\t\t\t(-)\n')
-
-            for ws, rating in zip(controller.SoftCutOut.uu,controller.SoftCutOut.R_scu):
-                file.write('\t{:<08.5f}\t\t{:<08.5f}\n'.format(ws,rating))
-
-
 
 class DataProcessing():
     """
