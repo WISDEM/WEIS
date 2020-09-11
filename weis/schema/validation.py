@@ -134,13 +134,6 @@ def write_analysis_yaml(instance, foutput):
     write_yaml(instance, foutput+sfx_str)
 
 if __name__ == '__main__':
-    yaml_schema = load_yaml(fschema_opt)
-    myobj = load_yaml(fdefaults_opt)
-    DefaultValidatingDraft7Validator(yaml_schema).validate(myobj)
-    #validator.validate( myobj )
-    print([k for k in myobj.keys()])
-    print(myobj['general'])
-    
     obj = {}
     schema = {'properties': {'foo': {'default': 'bar'}}}
     # Note jsonschem.validate(obj, schema, cls=DefaultValidatingDraft7Validator)
