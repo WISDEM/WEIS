@@ -22,29 +22,81 @@ properties:
         type: object
         default: {}
         properties:
-            RotorSE:
-                type: boolean
-                default: False
-                description: Whether or not to run RotorSE
-            ServoSE:
-                type: boolean
-                default: False
-                description: Whether or not to run ServoSE
-            DriveSE:
-                type: boolean
-                description: Whether or not to run DriveSE
-            TowerSE:
-                type: boolean
-                default: False
-                description: Whether or not to run TowerSE
-            BOS:
-                type: boolean
-                default: False
-                description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
+            Fidelity:
+                type: object
+                default: {}
+                properties:
+                    Level1:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run WEIS fidelity level 1: frequency domain
+                    Level2:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run WEIS fidelity level 2: linearized time domain
+                    Level3:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run WEIS fidelity level 3: non-linear time domain
+            WISDEM:
+                type: object
+                default: {}
+                properties:
+                    RotorSE:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run RotorSE
+                    ServoSE:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run ServoSE
+                    DriveSE:
+                        type: boolean
+                        description: Whether or not to run DriveSE
+                    TowerSE:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run TowerSE
+                    FloatingSE: # TODO: Not sure what to call MHall code
+                        type: boolean
+                        default: False
+                        description: Whether or not to run FloatingSE
+                    BOS:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
             OpenFAST:
                 type: boolean
-                default: False
-                description: Whether or not to run OpenFAST
+                default: {}
+                properties:
+                    InflowWind:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run InflowWind
+                    AeroDyn:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run AeroDyn
+                    ElastoDyn:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run ElastoDyn
+                    BeamDyn:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run BeamDyn
+                    SubDyn:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run SubDyn
+                    HydroDyn:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run HydroDyn
+                    MoorDyn:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run MoorDyn
     xfoil:
         type: object
         default: {}
@@ -287,6 +339,113 @@ properties:
                         enum: [0, 1, 2]
                         default: 2
                         description: Words # GB TODO
+            simulation: # TODO: Should this also move to analysis settings?
+                type: object
+                default: {}
+                properties:
+                    TMax:
+                        type: number
+                        default: 600.0
+                        minimum: 0.0
+                        maximum: 100000.0
+                        unit: s
+                        description: Total run time (s)
+                    DT:
+                        type: number
+                        default: 0.025
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: s
+                        description: Integration time step (s)
+                    InterpOrder:
+                        type: string
+                        enum: [1,2, linear, Linear, LINEAR, quadratic, Quadratic, QUADRATIC]
+                        default: 2
+                        description: Interpolation order for input/output time history (-) {1=linear, 2=quadratic}
+                    NumCrctn:
+                        type: integer
+                        default: 0
+                        minimum: 0
+                        maximum: 10
+                        description: Number of correction iterations (-) {0=explicit calculation, i.e., no corrections}
+                    DT_UJac:
+                        type: number
+                        default: 99999.0
+                        minimum: 0.0
+                        maximum: 100000.0
+                        unit: s
+                        description: Time between calls to get Jacobians (s)
+                    UJacSclFact:
+                        type: number
+                        default: 1e6
+                        minimum: 0.0
+                        maximum: 1e9
+                        description: Scaling factor used in Jacobians (-)
+            linearization:
+                type: object
+                default: {}
+                properties:
+                    Linearize:
+                        type: boolean
+                        default: False
+                        description: Linearization analysis (flag)
+                    CalcSteady:
+                        type: boolean
+                        default: False
+                        description: Calculate a steady-state periodic operating point before linearization? [unused if Linearize=False] (flag)
+                    TrimCase:
+                        type: string
+                        enum: [1,2,3, yaw, Yaw, YAW, torque, Torque, TORQUE, pitch, Pitch, PITCH]
+                        default: 3
+                        description: Controller parameter to be trimmed {1:yaw; 2:torque; 3:pitch} [used only if CalcSteady=True] (-)
+                    TrimTol:
+                        type: number
+                        default: 0.001
+                        minimum: 0.0
+                        maximum: 1.0
+                        unit: none
+                        description: Tolerance for the rotational speed convergence [used only if CalcSteady=True] (-)
+                    TrimGain:
+                        type: number
+                        default: 0.01
+                        minimum: 0.0
+                        maximum: 1.0
+                        unit: kg*m^2/rad/s
+                        description: Proportional gain for the rotational speed error (>0) [used only if CalcSteady=True] (rad/(rad/s) for yaw or pitch; Nm/(rad/s) for torque)
+                    Twr_Kdmp:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: kg/s
+                        description: Damping factor for the tower [used only if CalcSteady=True] (N/(m/s))
+                    Bld_Kdmp:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: kg/s
+                        description: Damping factor for the blades [used only if CalcSteady=True] (N/(m/s))
+                    NLinTimes:
+                        type: integer
+                        default: 2
+                        minimum: 0
+                        maximum: 10
+                        description: Number of times to linearize (-) [>=1] [unused if Linearize=False]
+                    LinTimes:
+                        type: array
+                        description: List of times at which to linearize (s) [1 to NLinTimes] [used only when Linearize=True and CalcSteady=False]
+                        default: [30.0, 60.0]
+                        items:
+                            type: number
+                            uniqueItems: True
+                            minimum: 0.0
+                            maximum: 1e4
+                    LinInputs:
+                        type: string
+                        enum: [0,1,2, none, None, NONE, standard, Standard, STANDARD, all, All, ALL]
+                        default: 1
+                        description: Inputs included in linearization (switch) {0=none; 1=standard; 2=all module inputs (debug)} [unused if Linearize=False]
             file_management:
                 type: object
                 default: {}
@@ -328,7 +487,7 @@ properties:
                         type: string
                         default: none
                         description: Path to yaml-based OpenFAST settings file
-            dlc_settings:
+            dlc_settings: # TODO: Should this be in Analysis yaml?
                 type: object
                 default: {}
                 properties:

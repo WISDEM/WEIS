@@ -1,6 +1,6 @@
 import numpy as np
 import os, platform
-import weis.schema as sch
+import weis.yaml as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 
