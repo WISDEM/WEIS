@@ -2,7 +2,14 @@ general:
     verbosity: False
 
 Analysis_Flags:
-    OpenFAST: False
+    OpenFAST:
+        InflowWind: True
+        AeroDyn: True
+        ElastoDyn: True
+        BeamDyn: False
+        SubDyn: False
+        HydroDyn: True
+        MoorDyn: True
     ServoSE: True
     DriveSE: True
     RotorSE: True
