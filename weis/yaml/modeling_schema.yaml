@@ -29,15 +29,15 @@ properties:
                     Level1:
                         type: boolean
                         default: False
-                        description: Whether or not to run WEIS fidelity level 1: frequency domain
+                        description: Whether or not to run WEIS fidelity level 1 = frequency domain
                     Level2:
                         type: boolean
                         default: False
-                        description: Whether or not to run WEIS fidelity level 2: linearized time domain
+                        description: Whether or not to run WEIS fidelity level 2 = linearized time domain
                     Level3:
                         type: boolean
                         default: False
-                        description: Whether or not to run WEIS fidelity level 3: non-linear time domain
+                        description: Whether or not to run WEIS fidelity level 3 = non-linear time domain
             WISDEM:
                 type: object
                 default: {}
@@ -66,7 +66,7 @@ properties:
                         default: False
                         description: Whether or not to run balance of station cost models (LandBOSSE or ORBIT)
             OpenFAST:
-                type: boolean
+                type: object
                 default: {}
                 properties:
                     InflowWind:
@@ -697,11 +697,11 @@ properties:
                     WaveMod:
                         type: string
                         enum: [0, 1, 2, 3, none, None, NONE, plane, Plane, PLANE, JONSWAP, jonswap, Jonswap, user, User, USER]
-                        description: Incident wave kinematics model {0: none=still water, 1: plane progressive (regular), 2: JONSWAP/Pierson-Moskowitz spectrum (irregular), 3: user-defind spectrum from routine UserWaveSpctrm (irregular)} (switch)
+                        description: Incident wave kinematics model {0 = none=still water, 1 = plane progressive (regular), 2 = JONSWAP/Pierson-Moskowitz spectrum (irregular), 3 = user-defind spectrum from routine UserWaveSpctrm (irregular)} (switch)
                     WaveStMod:
                         type: string
                         enum: [0, 1, 2, 3, none, None, NONE, vertical, Vertical, VERTICAL, extrapolation, Extrapolation, EXTRAPOLATION, Wheeler, WHEELER, wheeler]
-                        description: Model for stretching incident wave kinematics to instantaneous free surface {0: none=no stretching, 1: vertical stretching, 2: extrapolation stretching, 3: Wheeler stretching} (switch) [unused when WaveMod=0 or when PotMod/=0]
+                        description: Model for stretching incident wave kinematics to instantaneous free surface {0 = none=no stretching, 1 = vertical stretching, 2 = extrapolation stretching, 3 = Wheeler stretching} (switch) [unused when WaveMod=0 or when PotMod/=0]
                     WaveTMax:
                         type: number
                         default: 850.0
@@ -748,7 +748,7 @@ properties:
                         type: string
                         enum: [0, 1, none, None, NONE, COS2S, cos2s, Cos2s]
                         default: none
-                        description: Directional spreading function {0: none, 1: COS2S} [only used when WaveMod=2,3, or 4]
+                        description: Directional spreading function {0 = none, 1 = COS2S} [only used when WaveMod=2,3, or 4]
                     WaveDirSpread:
                         type: number
                         default: 1.0
@@ -767,7 +767,7 @@ properties:
                         default: 1.5707963267948966
                         minimum: 0.0
                         maximum: 6.283185307179586
-                        description: Range of wave directions (full range: WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]
+                        description: Range of wave directions (full range = WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]
                     WaveSeed1:
                         type: integer
                         minimum: -2147483648
@@ -828,7 +828,7 @@ properties:
                         type: string
                         enum: [0, 1, 2, none, None, NONE, standard, Standard, STANDARD, user, User, USER]
                         default: 0
-                        description: Current profile model {0: none=no current, 1: standard, 2: user-defined from routine UserCurrent} (switch)
+                        description: Current profile model {0 = none=no current, 1 = standard, 2 = user-defined from routine UserCurrent} (switch)
                     CurrSSV0:
                         type: number
                         minimum: 0.0
@@ -882,7 +882,7 @@ properties:
                         type: string
                         enum: [0, 1, 2, none, None, NONE, frequency-to-time, Frequency-to-Time, FIT]
                         default: 1
-                        description: Potential-flow model {0: none=no potential flow, 1: frequency-to-time-domain transforms based on Capytaine/NEMOH/WAMIT output, 2: fluid-impulse theory (FIT)} (switch)
+                        description: Potential-flow model {0 = none=no potential flow, 1 = frequency-to-time-domain transforms based on Capytaine/NEMOH/WAMIT output, 2 = fluid-impulse theory (FIT)} (switch)
                     PotFile:
                         type: string
                         default: none
@@ -898,12 +898,12 @@ properties:
                         type: string
                         enum: [0, 1, 2, none, None, NONE, DFT, dft, state-space, State-Space, STATE-SPACE]
                         default: 0
-                        description: Wave Excitation model {0: None, 1: DFT, 2: state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ssexctn INPUT FILE]
+                        description: Wave Excitation model {0 = None, 1 = DFT, 2 = state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ssexctn INPUT FILE]
                     RdtnMod:
                         type: string
                         enum: [0, 1, 2, none, None, NONE, convolution, Convolution, CONVOLUTION, state-space, State-Space, STATE-SPACE]
                         default: 0
-                        description: Radiation memory-effect model {0: no memory-effect calculation, 1: convolution, 2: state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ss INPUT FILE]
+                        description: Radiation memory-effect model {0 = no memory-effect calculation, 1 = convolution, 2 = state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ss INPUT FILE]
                     RdtnTMax:
                         type: number
                         minimum: 0.0
@@ -922,22 +922,22 @@ properties:
                         type: string
                         enum: [0, none, None, NONE, 7,8,9,10,11,12]
                         default: 0
-                        description: Mean-drift 2nd-order forces computed {0: None; [7, 8, 9, 10, 11, or 12]: WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
+                        description: Mean-drift 2nd-order forces computed {0 = None; [7, 8, 9, 10, 11, or 12] = WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
                     NewmanApp:
                         type: string
                         enum: [0, none, None, NONE, 7,8,9,10,11,12]
                         default: 0
-                        description: Mean- and slow-drift 2nd-order forces computed with Newman's approximation {0: None; [7, 8, 9, 10, 11, or 12]: WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero. Used only when WaveDirMod=0]
+                        description: Mean- and slow-drift 2nd-order forces computed with Newman's approximation {0 = None; [7, 8, 9, 10, 11, or 12] = WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero. Used only when WaveDirMod=0]
                     DiffQTF:
                         type: string
                         enum: [0, none, None, NONE, 10,11,12]
                         default: 12
-                        description: Full difference-frequency 2nd-order forces computed with full QTF {0: None; [10, 11, or 12]: WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
+                        description: Full difference-frequency 2nd-order forces computed with full QTF {0 = None; [10, 11, or 12] = WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
                     SumQTF:
                         type: string
                         enum: [0, none, None, NONE, 10,11,12]
                         default: 12
-                        description: Full summation -frequency 2nd-order forces computed with full QTF {0: None; [10, 11, or 12]: WAMIT file to use}
+                        description: Full summation -frequency 2nd-order forces computed with full QTF {0 = None; [10, 11, or 12] = WAMIT file to use}
                     PtfmSgF:
                         type: boolean
                         default: True
@@ -985,7 +985,7 @@ properties:
                         type: string
                         enum: [1, 2, 3, 4]
                         default: 3
-                        description: FEM switch: element model in the FEM. [1= Euler-Bernoulli(E-B);  2=Tapered E-B (unavailable);  3= 2-node Timoshenko;  4= 2-node tapered Timoshenko (unavailable)]
+                        description: FEM switch = element model in the FEM. [1= Euler-Bernoulli(E-B);  2=Tapered E-B (unavailable);  3= 2-node Timoshenko;  4= 2-node tapered Timoshenko (unavailable)]
                     NDiv:
                         type: integer
                         default: 1
@@ -1062,3 +1062,139 @@ properties:
                         minimum: 0.0
                         maximum: 1.0
                         description: Threshold for IC convergence (-)
+            ServoDyn:
+                type: object
+                default: {}
+                description: ServoDyn modelling options in OpenFAST
+                required:       # should we have required options, set defaults?
+                    - PCMode
+                    - VSContrl
+                properties:
+                    PCMode:
+                        type: integer
+                        description: Pitch control mode {0 = none, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL}
+                        default: 5
+                        enum: [0,4,5]
+                    # Shutdown maneuvers are handled in aeroelasticse when DLCs defined, and shutdown control in geometry...leave out of here?
+                    VSContrl:
+                        type: integer
+                        description: Variable-speed control mode {0 = none, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL}
+                        default: 5
+                        enum: [0,4,5]
+                    GenModel:
+                        type: integer
+                        description: Generator model {1 = simple, 2 = Thevenin, 3 = user-defined from routine UserGen}
+                        default: 1
+                        enum: [1,2]
+                    GenStart:
+                        type: string
+                        description: Method of starting generator (speed = above some min speed, generator starts, time = start generator at t = 0 sec.)
+                        enum: [speed,Speed,SPEED,time,Time,TIME]
+                        default: time   # DZ: I may have a different opinion than aeroelasticse
+                    HSSBrMode:
+                        type: integer
+                        description: HSS brake model {0 = none, 1 = simple, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL (not in ROSCO, yet)} 
+                        enum: [0,1,4]
+                        default: 1
+                    NacTMD:
+                        type: object
+                        description: Nacelle tuned mass damper
+                        required:
+                            - CompNTMD
+                            - NTMDfile
+                        properties:
+                            CompNTMD:
+                                type: boolean
+                                description: Compute nacelle tuned mass damper {true/false}
+                                default: False
+                            NTMDfile:
+                                type: string
+                                description: Name of the file for nacelle tuned mass damper (quoted string) [unused when CompNTMD is false]
+                                default: "unused"
+                    TwrTMD:
+                        type: object
+                        description: Tower tuned mass damper
+                        required:
+                            - CompTTMD
+                            - TTMDfile
+                        properties:
+                            CompTTMD:
+                                type: boolean
+                                description: Compute tower tuned mass damper {true/false}
+                                default: False
+                            TTMDfile:
+                                type: string
+                                description: Name of the file for tower tuned mass damper (quoted string) [unused when CompTTMD is false]
+                                default: "unused"
+            ROSCO:
+                LoggingLevel:
+                    type: integer
+                    enum: [0, 1, 2]
+                    default: 1
+                    description: {0, write no debug files, 1, write standard output .dbg-file, 2, write standard output .dbg-file and complete avrSWAP-array .dbg2-file}
+                F_LPFType: 
+                    type: integer
+                    enum: [1, 2]
+                    default: 1
+                    description: Low pass filter type, {1, first-order low-pass filter, 2, second-order low-pass filter}
+                F_NotchType:
+                    type: integer
+                    enum: [0, 1, 2, 3]
+                    default: 0
+                    description:  Notch filter on generator speed and/or tower fore-aft motion (for floating) {0, disable, 1, generator speed, 2, tower-top fore-aft motion, 3, generator speed and tower-top fore-aft motion}
+                IPC_ControlMode: 
+                    type: integer
+                    enum: [0, 1, 2]
+                    default: 0
+                    description: Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0, off, 1, 1P reductions, 2, 1P+2P reductions}
+                VS_ControlMode: 
+                    type: integer
+                    enum: [0, 1, 2]
+                    default: 2
+                    description: Generator torque control mode in above rated conditions {0, constant torque, 1, constant power, 2, TSR tracking PI control}
+                PC_ControlMode: 
+                    type: integer
+                    enum: [0, 1]
+                    default: 1
+                    description: Blade pitch control mode {0, No pitch, fix to fine pitch, 1, active PI blade pitch control}
+                Y_ControlMode: 
+                    type: integer
+                    enum: [0, 1, 2]
+                    default: 0
+                    description: Yaw control mode {0, no yaw control, 1, yaw rate control, 2, yaw-by-IPC}
+                SS_Mode:
+                    type: integer
+                    enum: [0, 1]
+                    default: 1
+                    description: Setpoint Smoother mode {0, no setpoint smoothing, 1, use setpoint smoothing}
+                WE_Mode: 
+                    type: integer
+                    enum: [0, 2]
+                    default: 2
+                    description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 2 = Extended Kalman Filter}
+                PS_Mode: 
+                    type: integer
+                    enum: [0, 1]
+                    default: 1
+                    description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving}
+                SD_Mode: 
+                    type: integer
+                    enum: [0, 1]
+                    default: 1
+                    description: Shutdown mode {0, no shutdown procedure, 1, pitch to max pitch at shutdown}
+                Fl_Mode: 
+                    type: integer
+                    enum: [0, 1]
+                    default: 0
+                    description: Floating specific feedback mode {0, no nacelle velocity feedback, 1, nacelle velocity feedback}
+                Flp_Mode: 
+                    type: integer
+                    enum: [0, 1, 2]
+                    default: 0
+                    description: Flap control mode {0, no flap control, 1, steady state flap angle, 2, Proportional flap control}
+                PwC_Mode: 
+                    type: integer
+                    enum: [0, 1, 2]
+                    default: 0
+                    description: Power control mode {0 = no power control, 1 = constant power, 2 = open loop power from PwC_OpenLoop_Inp, 3 = open loop power vs. wind speed from PwC_OpenLoop_Inp}
+
