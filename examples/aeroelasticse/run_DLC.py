@@ -1,3 +1,9 @@
+"""
+
+Example script to run the DLCs in OpenFAST
+
+"""
+
 from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
@@ -41,7 +47,7 @@ iec.init_cond[("HydroDyn","PtfmHeave")]        = {'U':[3., 25.]}
 iec.init_cond[("HydroDyn","PtfmHeave")]['val'] = [0.5,0.5]
 
 # DLC inputs
-wind_speeds = range(int(cut_in), int(cut_out), int(n_ws))
+wind_speeds = np.linspace(int(cut_in), int(cut_out), int(n_ws))
 iec.dlc_inputs = {}
 iec.dlc_inputs['DLC']   = [1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
 iec.dlc_inputs['U']     = [wind_speeds, wind_speeds,[Vrated - 2., Vrated, Vrated + 2.],wind_speeds, [Vrated - 2., Vrated, Vrated + 2., cut_out], [], []]
@@ -92,8 +98,6 @@ if MPI:
 # Naming, file management, etc
 iec.wind_dir        = 'outputs/wind'
 iec.case_name_base  = 'iea15mw'
-run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-iec.Turbsim_exe     = os.path.join(run_dir1, 'local/bin/turbsim')
 if MPI:
     iec.cores = available_cores
 else:
@@ -137,6 +141,7 @@ case_inputs[("ElastoDyn","PtfmPDOF")]    = {'vals':["False"], 'group':0}
 case_inputs[("ElastoDyn","PtfmYDOF")]    = {'vals':["False"], 'group':0}
 case_inputs[("ServoDyn","PCMode")]       = {'vals':[5], 'group':0}
 case_inputs[("ServoDyn","VSContrl")]     = {'vals':[5], 'group':0}
+run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
 if platform.system() == 'Windows':
     path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dll')
 elif platform.system() == 'Darwin':
@@ -169,12 +174,11 @@ if rank == 0:
 
     # Run FAST cases
     fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
-    fastBatch.FAST_exe          = os.path.join(run_dir1, 'local/bin/openfast')   # Path to executable
     
     # Monopile
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
     run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
     fastBatch.channels          = channels
     fastBatch.FAST_runDirectory = iec.run_dir
     fastBatch.case_list         = case_list
@@ -189,7 +193,7 @@ if rank == 0:
     # U-Maine semi-sub
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
 
     if MPI:
         fastBatch.run_mpi(comm_map_down)

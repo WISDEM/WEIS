@@ -40,8 +40,11 @@ class CMakeBuildExt(build_ext):
             localdir = os.path.join(this_directory, 'local')
 
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
+                          '-DCMAKE_Fortran_FLAGS_RELEASE="-O2"',
+                          '-DCMAKE_C_FLAGS_RELEASE="-O2"',
+                          '-DCMAKE_CXX_FLAGS_RELEASE="-O2"',
                           '-DCMAKE_INSTALL_PREFIX=' + localdir]
-            
+
             if platform.system() == 'Windows':
                 cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
                 
@@ -55,7 +58,7 @@ class CMakeBuildExt(build_ext):
             # Need fresh build directory for CMake
             os.makedirs(self.build_temp, exist_ok=True)
 
-            self.spawn(['cmake', '-S', ext.sourcedir, '-B', self.build_temp] + cmake_args)
+            self.spawn(['cmake','-S', ext.sourcedir, '-B', self.build_temp] + cmake_args)
             self.spawn(['cmake', '--build', self.build_temp, '-j', str(ncpus), '--target', 'install', '--config', 'Release'])
 
         else:
@@ -87,9 +90,14 @@ weis_pkgs       = find_packages()
 
 # Install the python sub-packages
 print(sys.argv)
-for pkg in ['WISDEM','ROSCO_toolbox','pCrunch']:
+for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
     os.chdir(pkg)
-    run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
+    if pkg == 'pyoptsparse':
+        # Build pyOptSparse specially
+        # run_setup('setup.py', script_args=['build_ext', '--inplace'])
+        run_setup('setup.py', script_args=['install'])
+    else:
+        run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
     # subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])  # This option runs `pip install -e .` on each package
     os.chdir('..')
 
@@ -105,6 +113,7 @@ metadata = dict(
     install_requires              = ['openmdao>=3.2','numpy','scipy','nlopt','dill','smt'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     packages                      = weis_pkgs,
+    package_data                  =  {'':['*.yaml','*.xlsx']},
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
     ext_modules                   = [roscoExt, fastExt],

@@ -130,6 +130,9 @@ True                   SumPrint    - Generate a summary file listing input optio
 "RtAeroMzh"
 "RtVAvgxh"
 "RtAeroCp"
+"RtAeroCt"
+"RtArea"
+"RtSpeed"
 "RtTSR"
 END of input file (the word "END" must appear in the first 3 columns of this last OutList line)
 ---------------------------------------------------------------------------------------

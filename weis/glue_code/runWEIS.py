@@ -6,8 +6,6 @@ from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.glue_code         import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
-from weis.schema                      import load_yaml
-from wisdem.glue_code.runWISDEM       import read_master_file, wisdem_cmd
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
 if MPI:
