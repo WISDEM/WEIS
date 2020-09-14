@@ -6,3 +6,6 @@ build
 local
 .DS_Store
 __pycache__
+
+# Output files
+outputs/
