@@ -16,9 +16,24 @@ Functions for running linear and nonlinear control parameter optimizations
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
+from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
+
+# pCrunch Modules and instantiation
+import matplotlib.pyplot as plt 
+from ROSCO_toolbox import utilities as ROSCO_utilites
+fast_io = ROSCO_utilites.FAST_IO()
+fast_pl = ROSCO_utilites.FAST_Plots()
+
+# WISDEM modules
+from weis.aeroelasticse.Util import FileTools
+
+# Batch Analysis
+from pCrunch import pdTools
+from pCrunch import Processing, Analysis
+
 
 import numpy as np
-import sys, os, platform
+import sys, os, platform, glob
 
 class LinearFAST(runFAST_pywrapper_batch):
     ''' 
@@ -85,6 +100,12 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 
+        channels = {}
+        for var in ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", "BldPitch1", "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza","LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr"]:
+            channels[var] = True
+
+        self.channels = channels
+
         # # Initial Conditions: less important, trying to find them here
         # case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[7.55], 'group':0}
         # case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[3.823], 'group':0}
@@ -96,10 +117,13 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.case_list = case_list
         self.case_name_list = case_name_list
 
-        if self.parallel:
-            self.run_multi()
-        else:
-            self.run_serial()
+        outfiles = glob.glob(os.path.join(self.FAST_steadyDirectory,'steady*.outb'))
+
+        if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
+            if self.parallel:
+                self.run_multi()
+            else:
+                self.run_serial()
 
         
     def postFAST_steady(self):
@@ -129,82 +153,83 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Set some processing parameters
         fp.OpenFAST_outfile_list        = outfiles
         fp.t0                           = self.TMax - 400            # make sure this is less than simulation time
-        fp.parallel_analysis            = False
+        fp.parallel_analysis            = True
         fp.results_dir                  = os.path.join(output_dir, 'stats')
         fp.verbose                      = True
         fp.save_LoadRanking             = True
         fp.save_SummaryStats            = True
 
         # Load and save statistics and load rankings
-        stats =fp.batch_processing()
+        if self.overwrite or not os.path.exists(os.path.join(output_dir,'ss_ops.yaml')):
+            stats =fp.batch_processing()
 
 
-        windSortInd = np.argsort(stats[0]['Wind1VelX']['mean'])
+            windSortInd = np.argsort(stats[0]['Wind1VelX']['mean'])
 
-        #            FAST output name,  FAST IC name
-        ssChannels = [['Wind1VelX',     'Wind1VelX'],  
-                    ['OoPDefl1',        'OoPDefl'],
-                    ['IPDefl1',         'IPDefl'],
-                    ['BldPitch1',       'BlPitch1'],
-                    ['RotSpeed',        'RotSpeed'],
-                    ['TTDspFA',         'TTDspFA'],
-                    ['TTDspSS',         'TTDspSS'],
-                    ['PtfmSurge',       'PtfmSurge'],
-                    ['PtfmSway',        'PtfmSway'],
-                    ['PtfmHeave',       'PtfmHeave'],
-                    ['PtfmRoll',        'PtfmRoll'],
-                    ['PtfmYaw',         'PtfmYaw'],
-                    ['PtfmPitch',       'PtfmPitch'],
-                    ]
+            #            FAST output name,  FAST IC name
+            ssChannels = [['Wind1VelX',     'Wind1VelX'],  
+                        ['OoPDefl1',        'OoPDefl'],
+                        ['IPDefl1',         'IPDefl'],
+                        ['BldPitch1',       'BlPitch1'],
+                        ['RotSpeed',        'RotSpeed'],
+                        ['TTDspFA',         'TTDspFA'],
+                        ['TTDspSS',         'TTDspSS'],
+                        ['PtfmSurge',       'PtfmSurge'],
+                        ['PtfmSway',        'PtfmSway'],
+                        ['PtfmHeave',       'PtfmHeave'],
+                        ['PtfmRoll',        'PtfmRoll'],
+                        ['PtfmYaw',         'PtfmYaw'],
+                        ['PtfmPitch',       'PtfmPitch'],
+                        ]
 
-        ssChanData = {}
-        for iChan in ssChannels:
-            try:
-                ssChanData[iChan[1]] = np.array(stats[0][iChan[0]]['mean'])[windSortInd].tolist()
-            except:
-                print('Warning: ' + iChan + ' is is not in OutList')
-
-
-        if PLOT:
-            fig1 = plt.figure()
-            ax1 = fig1.add_subplot(211)
-            ax2 = fig1.add_subplot(212)
-
-            ax1.plot(ssChanData['Wind1VelX'],ssChanData['BlPitch1'])
-            ax2.plot(ssChanData['Wind1VelX'],ssChanData['RotSpeed'])
+            ssChanData = {}
+            for iChan in ssChannels:
+                try:
+                    ssChanData[iChan[1]] = np.array(stats[0][iChan[0]]['mean'])[windSortInd].tolist()
+                except:
+                    print('Warning: ' + iChan + ' is is not in OutList')
 
 
-            fig2 = plt.figure()
-            ax1 = fig2.add_subplot(411)
-            ax2 = fig2.add_subplot(412)
-            ax3 = fig2.add_subplot(413)
-            ax4 = fig2.add_subplot(414)
+            if PLOT:
+                fig1 = plt.figure()
+                ax1 = fig1.add_subplot(211)
+                ax2 = fig1.add_subplot(212)
 
-            ax1.plot(ssChanData['Wind1VelX'],ssChanData['OoPDefl'])
-            ax2.plot(ssChanData['Wind1VelX'],ssChanData['IPDefl'])
-            ax3.plot(ssChanData['Wind1VelX'],ssChanData['TTDspFA'])
-            ax4.plot(ssChanData['Wind1VelX'],ssChanData['TTDspSS'])
-
-            fig3 = plt.figure()
-            ax1 = fig3.add_subplot(611)
-            ax2 = fig3.add_subplot(612)
-            ax3 = fig3.add_subplot(613)
-            ax4 = fig3.add_subplot(614)
-            ax5 = fig3.add_subplot(615)
-            ax6 = fig3.add_subplot(616)
-
-            ax1.plot(ssChanData['Wind1VelX'],ssChanData['PtfmSurge'])
-            ax2.plot(ssChanData['Wind1VelX'],ssChanData['PtfmSway'])
-            ax3.plot(ssChanData['Wind1VelX'],ssChanData['PtfmHeave'])
-            ax4.plot(ssChanData['Wind1VelX'],ssChanData['PtfmRoll'])
-            ax5.plot(ssChanData['Wind1VelX'],ssChanData['PtfmPitch'])
-            ax6.plot(ssChanData['Wind1VelX'],ssChanData['PtfmYaw'])
-
-            plt.show()
+                ax1.plot(ssChanData['Wind1VelX'],ssChanData['BlPitch1'])
+                ax2.plot(ssChanData['Wind1VelX'],ssChanData['RotSpeed'])
 
 
-        # output steady states to yaml
-        save_yaml(output_dir,'ss_ops.yaml',ssChanData)
+                fig2 = plt.figure()
+                ax1 = fig2.add_subplot(411)
+                ax2 = fig2.add_subplot(412)
+                ax3 = fig2.add_subplot(413)
+                ax4 = fig2.add_subplot(414)
+
+                ax1.plot(ssChanData['Wind1VelX'],ssChanData['OoPDefl'])
+                ax2.plot(ssChanData['Wind1VelX'],ssChanData['IPDefl'])
+                ax3.plot(ssChanData['Wind1VelX'],ssChanData['TTDspFA'])
+                ax4.plot(ssChanData['Wind1VelX'],ssChanData['TTDspSS'])
+
+                fig3 = plt.figure()
+                ax1 = fig3.add_subplot(611)
+                ax2 = fig3.add_subplot(612)
+                ax3 = fig3.add_subplot(613)
+                ax4 = fig3.add_subplot(614)
+                ax5 = fig3.add_subplot(615)
+                ax6 = fig3.add_subplot(616)
+
+                ax1.plot(ssChanData['Wind1VelX'],ssChanData['PtfmSurge'])
+                ax2.plot(ssChanData['Wind1VelX'],ssChanData['PtfmSway'])
+                ax3.plot(ssChanData['Wind1VelX'],ssChanData['PtfmHeave'])
+                ax4.plot(ssChanData['Wind1VelX'],ssChanData['PtfmRoll'])
+                ax5.plot(ssChanData['Wind1VelX'],ssChanData['PtfmPitch'])
+                ax6.plot(ssChanData['Wind1VelX'],ssChanData['PtfmYaw'])
+
+                plt.show()
+
+
+            # output steady states to yaml
+            save_yaml(output_dir,'ss_ops.yaml',ssChanData)
 
 
 
@@ -223,6 +248,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TMax")] = {'vals':[self.TMax], 'group':0}
         case_inputs[("Fst","Linearize")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}
+        case_inputs[("Fst","TrimGain")] = {'vals':[4e-5], 'group':0}
 
         case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
         case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}
@@ -242,6 +268,13 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Servodyn Inputs
         case_inputs[("ServoDyn","PCMode")] = {'vals':[0], 'group':0}
         case_inputs[("ServoDyn","VSContrl")] = {'vals':[1], 'group':0}
+
+        # Torque Control: these are turbine specific, update later
+        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[7.56], 'group':0}
+        case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[19.62e6], 'group':0}
+        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[3.7e5], 'group':0}
+        case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
+
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
         case_inputs[("HydroDyn","ExctnMod")] = {'vals':[2], 'group':0}
@@ -288,6 +321,11 @@ class LinearFAST(runFAST_pywrapper_batch):
         RefGenSpeed = 0.95 * np.array(case_inputs[('ElastoDyn','RotSpeed')]['vals']) * self.GBRatio
         case_inputs[('ServoDyn','VS_RtGnSp')] = {'vals': RefGenSpeed.tolist(), 'group': 1}
 
+        channels = {}
+        for var in ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", "BldPitch1", "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza","LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr"]:
+            channels[var] = True
+
+        self.channels = channels
 
         # Lin Times
         # rotPer = 60. / np.array(case_inputs['ElastoDyn','RotSpeed']['vals'])
@@ -313,7 +351,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         
 
         # Generate Cases
-        from CaseGen_General import CaseGen_General
         case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_linearDirectory, namebase='lin')
 
         self.case_list = case_list
@@ -370,6 +407,9 @@ def gen_linear_model():
 
     # simulation setup
     linear.parallel         = True
+
+    # overwrite steady & linearizations
+    linear.overwrite        = False
 
 
     # run steady state sims
