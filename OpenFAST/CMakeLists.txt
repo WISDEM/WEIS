@@ -30,7 +30,7 @@ endif (NOT CMAKE_BUILD_TYPE)
 
 option(GENERATE_TYPES "Use the openfast-regsitry to autogenerate types modules" off)
 option(BUILD_SHARED_LIBS "Enable building shared libraries" off)
-option(DOUBLE_PRECISION "Treat REAL as double precision" on)
+option(DOUBLE_PRECISION "Treat REAL as double precision" off)
 option(USE_DLL_INTERFACE "Enable runtime loading of dynamic libraries" on)
 option(FPE_TRAP_ENABLED "Enable FPE trap in compiler options" off)
 option(ORCA_DLL_LOAD "Enable OrcaFlex Library Load" on)
