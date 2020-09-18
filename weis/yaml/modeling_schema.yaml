@@ -1300,12 +1300,12 @@ properties:
     Level3:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 2 = linearized time domain (Linearize OpenFAST)
+        description: Options for WEIS fidelity level 3 = nonlinear time domain
         properties:
             flag:
                 type: boolean
                 default: False
-                description: Whether or not to run WEIS fidelity level 2 = linearized time domain (Linearize OpenFAST)
+                description: Whether or not to run WEIS fidelity level 3 = nonlinear time domain (Linearize OpenFAST)
             simulation: # TODO: Should this also move to analysis settings?
                 type: object
                 default: {}
@@ -2407,6 +2407,7 @@ properties:
                                     unit: none
                                     minItems: 2
                                     uniqueItems: true
+
     xfoil:
         type: object
         default: {}
