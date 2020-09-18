@@ -773,6 +773,117 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run BeamDyn
+                    QuasiStaticInit:
+                        type: boolean
+                        default: True
+                        description: Use quasistatic pre-conditioning with centripetal accelerations in initialization (flag) [dynamic solve only]
+                    rhoinf:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e10
+                        unit: none
+                        description: Numerical damping parameter for generalized-alpha integrator
+                    quadrature:
+                        type: string
+                        enum: [1, 2, gaussian, Gaussian, GAUSSIAN, trapezoidal, Trapezoidal, TRAPEZOIDAL]
+                        default: 2
+                        description: Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)
+                    refine:
+                        type: integer
+                        minimum: 1
+                        maximum: 10
+                        default: 1
+                        description: Refinement factor for trapezoidal quadrature (-). DEFAULT = 1 [used only when quadrature=2]
+                    n_fact:
+                        type: integer
+                        minimum: 1
+                        maximum: 50
+                        default: 5
+                        description:  Factorization frequency (-). DEFAULT = 5
+                    DTBeam:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: s
+                        description: Time step size (s). Use 0.0 for Default
+                    load_retries:
+                        type: integer
+                        minimum: 1
+                        maximum: 50
+                        default: 0
+                        description: Number of factored load retries before quitting the simulation. Use 0 for Default
+                    NRMax:
+                        type: integer
+                        minimum: 1
+                        maximum: 100
+                        default: 10
+                        description: Max number of iterations in Newton-Ralphson algorithm (-). DEFAULT = 10
+                    stop_tol:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e16
+                        unit: none
+                        description: Tolerance for stopping criterion (-)
+                    tngt_stf_fd:
+                        type: boolean
+                        default: False
+                        description: Flag to use finite differenced tangent stiffness matrix (-)
+                    tngt_stf_comp:
+                        type: boolean
+                        default: False
+                        description: Flag to compare analytical finite differenced tangent stiffness matrix  (-)
+                    tngt_stf_pert:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e1
+                        default: 0.0
+                        unit: none
+                        description: perturbation size for finite differencing (-).  Use 0.0 for DEFAULT
+                    tngt_stf_difftol:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e2
+                        default: 0.0
+                        unit: none
+                        description: Maximum allowable relative difference between analytical and fd tangent stiffness (-)
+                    RotStates:
+                        type: boolean
+                        default: True
+                        description: Orient states in the rotating frame during linearization? (flag) [used only when linearizing]
+                    order_elem:
+                        type: integer
+                        minimum: 0
+                        maximum: 50
+                        default: 5
+                        description: Order of interpolation (basis) function (-)
+                    UsePitchAct:
+                        type: boolean
+                        default: False
+                        description: Whether a pitch actuator should be used (flag)
+                    PitchJ:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e12
+                        default: 200.0
+                        unit: kg*m^2
+                        description: Pitch actuator inertia (kg-m^2) [used only when UsePitchAct is true]
+                    PitchK:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e12
+                        default: 2e7
+                        unit: kg*m^2/s^2
+                        description: Pitch actuator stiffness (kg-m^2/s^2) [used only when UsePitchAct is true]
+                    PitchC:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e12
+                        default: 5e5
+                        unit: kg*m^2/s
+                        description: Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]
             HydroDyn:
                 type: object
                 default: {}
@@ -1756,6 +1867,117 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run BeamDyn
+                    QuasiStaticInit:
+                        type: boolean
+                        default: True
+                        description: Use quasistatic pre-conditioning with centripetal accelerations in initialization (flag) [dynamic solve only]
+                    rhoinf:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e10
+                        unit: none
+                        description: Numerical damping parameter for generalized-alpha integrator
+                    quadrature:
+                        type: string
+                        enum: [1, 2, gaussian, Gaussian, GAUSSIAN, trapezoidal, Trapezoidal, TRAPEZOIDAL]
+                        default: 2
+                        description: Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)
+                    refine:
+                        type: integer
+                        minimum: 1
+                        maximum: 10
+                        default: 1
+                        description: Refinement factor for trapezoidal quadrature (-). DEFAULT = 1 [used only when quadrature=2]
+                    n_fact:
+                        type: integer
+                        minimum: 1
+                        maximum: 50
+                        default: 5
+                        description:  Factorization frequency (-). DEFAULT = 5
+                    DTBeam:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: s
+                        description: Time step size (s). Use 0.0 for Default
+                    load_retries:
+                        type: integer
+                        minimum: 1
+                        maximum: 50
+                        default: 0
+                        description: Number of factored load retries before quitting the simulation. Use 0 for Default
+                    NRMax:
+                        type: integer
+                        minimum: 1
+                        maximum: 100
+                        default: 10
+                        description: Max number of iterations in Newton-Ralphson algorithm (-). DEFAULT = 10
+                    stop_tol:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e16
+                        unit: none
+                        description: Tolerance for stopping criterion (-)
+                    tngt_stf_fd:
+                        type: boolean
+                        default: False
+                        description: Flag to use finite differenced tangent stiffness matrix (-)
+                    tngt_stf_comp:
+                        type: boolean
+                        default: False
+                        description: Flag to compare analytical finite differenced tangent stiffness matrix  (-)
+                    tngt_stf_pert:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e1
+                        default: 0.0
+                        unit: none
+                        description: perturbation size for finite differencing (-).  Use 0.0 for DEFAULT
+                    tngt_stf_difftol:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e2
+                        default: 0.0
+                        unit: none
+                        description: Maximum allowable relative difference between analytical and fd tangent stiffness (-)
+                    RotStates:
+                        type: boolean
+                        default: True
+                        description: Orient states in the rotating frame during linearization? (flag) [used only when linearizing]
+                    order_elem:
+                        type: integer
+                        minimum: 0
+                        maximum: 50
+                        default: 5
+                        description: Order of interpolation (basis) function (-)
+                    UsePitchAct:
+                        type: boolean
+                        default: False
+                        description: Whether a pitch actuator should be used (flag)
+                    PitchJ:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e12
+                        default: 200.0
+                        unit: kg*m^2
+                        description: Pitch actuator inertia (kg-m^2) [used only when UsePitchAct is true]
+                    PitchK:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e12
+                        default: 2e7
+                        unit: kg*m^2/s^2
+                        description: Pitch actuator stiffness (kg-m^2/s^2) [used only when UsePitchAct is true]
+                    PitchC:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e12
+                        default: 5e5
+                        unit: kg*m^2/s
+                        description: Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]
             HydroDyn:
                 type: object
                 default: {}
