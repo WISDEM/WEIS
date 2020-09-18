@@ -1153,6 +1153,7 @@ properties:
             - air_dyn_viscosity
             - air_speed_sound
             - shear_exp
+            - gravity
         optional:
             - weib_shape_parameter
             - water_density
@@ -1163,6 +1164,13 @@ properties:
             - air_pressure
             - air_vapor_pressure
         properties:
+            gravity:
+                type: number
+                description: Gravitational acceleration
+                unit: m/s/s
+                minimum: 0
+                maximum: 100.0
+                default: 9.80665
             air_density:
                 type: number
                 description: Density of air.

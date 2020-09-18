@@ -21,7 +21,7 @@ components:
             reference_axis:
                 x: &id001
                     grid: [0.0, 0.2, 0.7, 1.0]
-                    values: [0.0, 0.0, -1.0, -2.5]     
+                    values: [0.0, 0.0, -1.0, -2.5]
                 y: &id002
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
@@ -199,7 +199,7 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_tower [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.] 
+                    grid: &grid_tower [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
                     values: [0.0, 10.80, 21.61, 32.41, 43.22, 54.02, 64.82, 75.63, 86.43, 97.23, 108.00]
             outer_diameter:
                 grid: *grid_tower
@@ -233,7 +233,7 @@ components:
                     grid: [0.0, 1.0]
                     values: [0.0, 0.0]
                 z:
-                    grid: &grid_mono [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.] 
+                    grid: &grid_mono [0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.]
                     values: [0.0, 10.80, 21.61, 32.41, 43.22, 54.02, 64.82, 75.63, 86.43, 97.23, 108.00]
             outer_diameter:
                 grid: *grid_mono
@@ -323,16 +323,16 @@ control:
     maxTS: 80.
     max_pitch_rate: 0.1221
     max_torque_rate: 1.5e+6
-    PC_zeta: 1.0    
-    PC_omega: 0.2   
-    VS_zeta: 1.0    
-    VS_omega: 0.2   
-    max_pitch: 1.57 
-    min_pitch: 0    
-    vs_minspd: 0    
-    ss_vsgain: 1    
-    ss_pcgain: .001 
-    ps_percent: 0.8 
+    PC_zeta: 1.0
+    PC_omega: 0.2
+    VS_zeta: 1.0
+    VS_omega: 0.2
+    max_pitch: 1.57
+    min_pitch: 0
+    vs_minspd: 0
+    ss_vsgain: 1
+    ss_pcgain: .001
+    ps_percent: 0.8
 # Environment
 environment:
     air_density: 1.225
