@@ -73,9 +73,13 @@ $ git subtree add -P OpenFAST OpenFAST/dev --squash
 
 The `--squash` is important so WEIS doesn't get filled up with commits from the subtree repos.
 
-Once a subtree code exists in this repo, we can update it like this:
+Once a subtree code exists in this repo, we can update it like this.
+This first two lines are needed only if you don't have the remote for the particular subtree yet.
+If you already have the remote, only the last line is needed.
 
 ```
+$ git remote add OpenFAST https://github.com/OpenFAST/openfast
+$ git fetch OpenFAST
 $ git subtree pull --prefix OpenFAST https://github.com/OpenFAST/openfast dev --squash
 ```
 
