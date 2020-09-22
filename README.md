@@ -86,6 +86,10 @@ $ git subtree pull --prefix OpenFAST https://github.com/OpenFAST/openfast dev --
 Changes to these subtree codes **should only be made to their original repos**, *not* to this WEIS repo.
 Once those individual repos have been updated, use the previous `git subtree pull` command to pull in those updates to the WEIS repo.
 
+If you run into trouble using `git subtree`, specifically if you see `git: 'subtree' is not a git command.`, try using your system git instead of any conda-installed git.
+Specifically, try using `/usr/bin/git subtree` for any subtree commands.
+If that doesn't work for you, please open an issue on this repo so we can track it.
+
 ## Run Unit Tests
 
 Each package and sub-module of WEIS has its own set of unit tests, some of which are more comprehensive than others.
