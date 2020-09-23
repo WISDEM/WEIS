@@ -56,12 +56,12 @@ class FAST_Processing(object):
                                 'max',
                                     ] # should be same length as ranking_vars
         
-        self.DEL_info = None  # [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+        self.DEL_info = [('RootMyb1', 10), ('TwrBsMyt', 4)]
 
         # Save settings
         self.results_dir       = 'temp_results'
         self.save_LoadRanking  = False  # NJA - does not exist yet
-        self.save_SummaryStats = False
+        self.save_SummaryStats = True
 
         # Load kwargs
         for k, w in kwargs.items():
