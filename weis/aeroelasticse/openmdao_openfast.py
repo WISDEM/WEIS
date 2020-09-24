@@ -938,13 +938,14 @@ class FASTLoadCases(ExplicitComponent):
         # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
         
         # Output
-        if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
-            if self.n_blades == 2:
-                outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL'])])
-                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
-            else:
-                outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
-                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+        if self.FASTpref['dlc_settings']['run_IEC']:
+            if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+                if self.n_blades == 2:
+                    outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL'])])
+                    outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
+                else:
+                    outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
+                    outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
