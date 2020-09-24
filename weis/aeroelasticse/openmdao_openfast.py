@@ -775,13 +775,14 @@ class FASTLoadCases(ExplicitComponent):
                                                       'BldPitch3', "RootMxc3", "RootMyc3", "RootMzc3"]
 
         # DEL info
-        if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
-            if self.n_blades == 2:
-                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
+        if self.FASTpref['dlc_settings']['run_IEC']:
+            if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+                if self.n_blades == 2:
+                    loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
+                else:
+                    loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
             else:
-                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
-        else:
-            print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
+                print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
