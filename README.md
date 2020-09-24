@@ -89,6 +89,7 @@ Once those individual repos have been updated, use the previous `git subtree pul
 If you run into trouble using `git subtree`, specifically if you see `git: 'subtree' is not a git command.`, try using your system git instead of any conda-installed git.
 Specifically, try using `/usr/bin/git subtree` for any subtree commands.
 If that doesn't work for you, please open an issue on this repo so we can track it.
+This should only be relevant for developers contributing to WEIS, not to users.
 
 ## Run Unit Tests
 

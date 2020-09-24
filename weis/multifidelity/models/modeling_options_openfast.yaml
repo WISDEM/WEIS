@@ -93,10 +93,10 @@ tower:             # Options of TowerSE module
 servose:
     n_pc: 20                        # Number of wind speeds to compute the power curve
     n_pc_spline: 200                # Number of wind speeds to spline the power curve 
-    n_pitch_perf_surfaces: 50       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
+    n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
     min_pitch_perf_surfaces: -5.    # Min pitch angle of the Cp-Ct-Cq-surfaces
     max_pitch_perf_surfaces: 30.    # Max pitch angle of the Cp-Ct-Cq-surfaces
-    n_tsr_perf_surfaces: 50         # Number of tsr values to determine the Cp-Ct-Cq-surfaces
+    n_tsr_perf_surfaces: 20         # Number of tsr values to determine the Cp-Ct-Cq-surfaces
     min_tsr_perf_surfaces: 2.       # Min TSR of the Cp-Ct-Cq-surfaces
     max_tsr_perf_surfaces: 12.      # Max TSR of the Cp-Ct-Cq-surfaces
     n_U_perf_surfaces: 1            # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
