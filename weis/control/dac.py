@@ -45,6 +45,8 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
         LoadFlnmAF = 'airfoil_p{}.txt'.format(pid)
         saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
         xfoilFlnm  = 'xfoil_input_p{}.txt'.format(pid)
+        NUL_fname = 'NUL_{}'.format(pid)
+
     # if MPI_run:
     #     rank = MPI.COMM_WORLD.Get_rank()
     #     LoadFlnmAF = 'airfoil_r{}.txt'.format(rank) # This is a temporary file that will be deleted after it is no longer needed
@@ -54,6 +56,7 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
         LoadFlnmAF = 'airfoil.txt' # This is a temporary file that will be deleted after it is no longer needed
         saveFlnmPolar = 'Polar.txt' # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
         xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
+        NUL_fname = 'NUL'
 
     while numNodes < 480 and runFlag > 0:
         # Cleaning up old files to prevent replacement issues
@@ -63,7 +66,9 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
             os.remove(xfoilFlnm)
         if os.path.exists(LoadFlnmAF):
             os.remove(LoadFlnmAF)
-
+        if os.path.exists(NUL_fname):
+            os.remove(NUL_fname)
+            
         # Writing temporary airfoil coordinate file for use in xfoil
         dat=np.array([x,y])
         np.savetxt(LoadFlnmAF, dat.T, fmt=['%f','%f'])
@@ -125,7 +130,8 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
         fid.close()
 
         # Run the XFoil calling command
-        os.system(xfoil_path + " < " + xfoilFlnm + " > NUL") # <<< runs XFoil !
+        os.system(xfoil_path + " < " + xfoilFlnm + " > " + NUL_fname) # <<< runs XFoil !
+
         try:
             flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
         except:
@@ -167,6 +173,8 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
         os.remove(saveFlnmPolar)
     if os.path.exists(LoadFlnmAF):
         os.remove(LoadFlnmAF)
+    if os.path.exists(NUL_fname):
+        os.remove(NUL_fname)
 
 
     return flap_polar
