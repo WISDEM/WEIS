@@ -60,8 +60,8 @@ class CaseGen_IEC():
         self.mpi_run                     = False
         self.comm_map_down               = []
 
-        run_dir          = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-        self.Turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
+        self.run_dir          = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+        self.Turbsim_exe = os.path.join(self.run_dir, 'local/bin/turbsim')
 
 
     def execute(self, case_inputs={}):
