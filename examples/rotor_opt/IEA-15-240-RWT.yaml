@@ -344,7 +344,7 @@ components:
           center_mass: [3.945, 0.0, 3.352]
         drivetrain:
           number_bearings: 2
-          gear_ratio: 100
+          gear_ratio: 1
           shaft_ratio: 0.1
           planet_numbers: [3, 3, 1]
           shrink_disc_mass: 1600
@@ -355,7 +355,7 @@ components:
           distance_hub2mb: 1.912
           yaw_motors_number: 1
           gearbox_efficiency: 1.0
-          generator_efficiency: 0.9655
+          generator_efficiency: 0.93
         # mass:
         #   generator: 371.95
         #   turret: 13.362
