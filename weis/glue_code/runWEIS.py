@@ -282,24 +282,24 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=control_opt_options['tsr']['min_gain'], 
                                                                     upper=control_opt_options['tsr']['max_gain'])
             if control_opt_options['servo']['pitch_control']['flag']:
-                wt_opt.model.add_design_var('control.PC_omega', lower=control_opt_options['servo']['pitch_control']['omega_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=control_opt_options['servo']['pitch_control']['omega_min'], 
                                                                 upper=control_opt_options['servo']['pitch_control']['omega_max'])
-                wt_opt.model.add_design_var('control.PC_zeta', lower=control_opt_options['servo']['pitch_control']['zeta_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt_options['servo']['pitch_control']['zeta_min'], 
                                                                upper=control_opt_options['servo']['pitch_control']['zeta_max'])
             if control_opt_options['servo']['torque_control']['flag']:
-                wt_opt.model.add_design_var('control.VS_omega', lower=control_opt_options['servo']['torque_control']['omega_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.VS_omega', lower=control_opt_options['servo']['torque_control']['omega_min'], 
                                                                 upper=control_opt_options['servo']['torque_control']['omega_max'])
-                wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
                                                                upper=control_opt_options['servo']['torque_control']['zeta_max'])
             if control_opt_options['servo']['ipc_control']['flag']:
-                wt_opt.model.add_design_var('control.IPC_Ki1p', lower=control_opt_options['servo']['ipc_control']['Ki_min'],
+                wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt_options['servo']['ipc_control']['Ki_min'],
                                                                 upper=control_opt_options['servo']['ipc_control']['Ki_max'],
                                                                 ref=1.e-7)
             if 'flap_control' in control_opt_options['servo']:
                 if control_opt_options['servo']['flap_control']['flag']:
-                    wt_opt.model.add_design_var('control.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 
+                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 
                                                                      upper=control_opt_options['servo']['flap_control']['omega_max'])
-                    wt_opt.model.add_design_var('control.Flp_zeta', lower=control_opt_options['servo']['flap_control']['zeta_min'], 
+                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', lower=control_opt_options['servo']['flap_control']['zeta_min'], 
                                                                     upper=control_opt_options['servo']['flap_control']['zeta_max'])
 
             # Set non-linear constraints
