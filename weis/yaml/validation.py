@@ -11,13 +11,11 @@ except:
 import os
 fdefaults_geom  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_defaults.yaml')
 fschema_geom    = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_schema.yaml')
-fdefaults_model = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'modeling_defaults.yaml')
 fschema_model   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'modeling_schema.yaml')
-fdefaults_opt   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'analysis_defaults.yaml')
 fschema_opt     = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'analysis_schema.yaml')
-    
-                
-    
+
+
+
 #---------------------
 def load_yaml(fname_input):
     with open(fname_input, 'r') as f:
@@ -32,7 +30,7 @@ def write_yaml(instance, foutput):
     yaml.indent(mapping=4, sequence=6, offset=3)
     with open(foutput, 'w') as f:
         yaml.dump(instance, f)
-    
+
 #---------------------
 # This is for when the defaults are in another file
 def nested_get(indict, keylist):
@@ -93,7 +91,7 @@ def validate_without_defaults(finput, fschema):
     myobj = load_yaml(finput) if type(finput) == type('') else finput
     json.Draft7Validator(yaml_schema).validate(myobj)
     return myobj
-    
+
 def validate_with_defaults(finput, fschema):
     yaml_schema = load_yaml(fschema) if type(fschema) == type('') else fschema
     myobj = load_yaml(finput) if type(finput) == type('') else finput
@@ -112,7 +110,7 @@ def write_geometry_yaml(instance, foutput):
     if foutput[-5:] == sfx_str:
         sfx_str = ''
     write_yaml(instance, foutput+sfx_str)
-    
+
 def load_modeling_yaml(finput):
     return validate_with_defaults(finput, fschema_model)
 
@@ -122,7 +120,7 @@ def write_modeling_yaml(instance, foutput):
     if foutput[-5:] == sfx_str:
         sfx_str = ''
     write_yaml(instance, foutput+sfx_str)
-    
+
 def load_analysis_yaml(finput):
     return validate_with_defaults(finput, fschema_opt)
 
@@ -140,13 +138,10 @@ if __name__ == '__main__':
     #validator.validate( myobj )
     print([k for k in myobj.keys()])
     print(myobj['general'])
-    
+
     obj = {}
     schema = {'properties': {'foo': {'default': 'bar'}}}
     # Note jsonschem.validate(obj, schema, cls=DefaultValidatingDraft7Validator)
     # will not work because the metaschema contains `default` directives.
     DefaultValidatingDraft7Validator(schema).validate(obj)
     print(obj)
-    
-
-    

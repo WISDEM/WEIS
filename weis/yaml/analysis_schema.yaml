@@ -16,7 +16,7 @@ properties:
                 type: string
                 default: output
                 description: File prefix for output files
-    optimization_variables:
+    design_variables:
         type: object
         default: {}
         properties:
@@ -81,6 +81,58 @@ properties:
                                         type: integer
                                         default: 4
                                         description: Index of airfoil where the optimization can start shifting airfoil position
+                            length:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 50.0
+                                        unit: m
+                                        description: Lower bound for design variable during optimization
+                                    upper_bound:
+                                        type: number
+                                        default: 200.0
+                                        unit: m
+                                        description: Upper bound for design variable during optimization
+                            prebend:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    n_opt: *n_opt
+                                    lower_bound:
+                                        type: array
+                                        default: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0]
+                                        items:
+                                            type: number
+                                            unit: m
+                                    upper_bound:
+                                        type: array
+                                        default: [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+                                        items:
+                                            type: number
+                                            unit: m
+                            sweep:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    n_opt: *n_opt
+                                    lower_bound:
+                                        type: array
+                                        default: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0]
+                                        items:
+                                            type: number
+                                            unit: m
+                                    upper_bound:
+                                        type: array
+                                        default: [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+                                        items:
+                                            type: number
+                                            unit: m
+
                     structure:
                         type: object
                         default: {}
@@ -135,6 +187,20 @@ properties:
                             flag: *flag
                             min_gain: *mingain
                             max_gain: *maxgain
+                    ps_percent:
+                        type: object
+                        default: {}
+                        description: Percent peak shaving as a design variable
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                default: 0.0
+                                unit: none
+                            upper_bound:
+                                type: number
+                                default: 50.0
+                                unit: none
                     servo:
                         type: object
                         default: {}
@@ -343,7 +409,7 @@ properties:
                                 maximum: 10.0
                                 default: 1e-2
                                 unit: m
-                            upper_bound: *hbound                            
+                            upper_bound: *hbound
                     stress: *flagonly
                     global_buckling: *flagonly
                     shell_buckling: *flagonly
@@ -436,4 +502,3 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
-
