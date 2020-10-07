@@ -430,7 +430,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             if control_constraints['rotor_overspeed']['flag']:
                 if modeling_options['Analysis_Flags']['OpenFAST'] != True:
                     exit('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
-                wt_opt.model.add_constraint('aeroleastic.rotor_overspeed',
+                wt_opt.model.add_constraint('aeroelastic.rotor_overspeed',
                     lower = control_constraints['rotor_overspeed']['min'],
                     upper = control_constraints['rotor_overspeed']['max'])
 
