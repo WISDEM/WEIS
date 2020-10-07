@@ -941,9 +941,14 @@ class FASTLoadCases(ExplicitComponent):
         # Get DELS from OpenFAST data
         if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
-                if not pp:
+                try:
+                    isinstance(pp,object)
+                except(NameError):
                     pp               = Analysis.Power_Production()
-                    pp.windspeeds    = U
+                    if not self.FASTpref['dlc_settings']['run_power_curve']:
+                        pp.windspeeds    = self.FASTpref['dlc_settings']['IEC'][0]['U']
+                    else:
+                        pp.windspeeds    = U
                     pp.turbine_class = discrete_inputs['turbine_class']
                 else:
                     # get pdf of windspeeds
@@ -957,9 +962,14 @@ class FASTLoadCases(ExplicitComponent):
                                                         np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
                                                         np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
             if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
-                if not pp:
+                try:
+                    isinstance(pp,object)
+                except(NameError):
                     pp               = Analysis.Power_Production()
-                    pp.windspeeds    = U
+                    if not self.FASTpref['dlc_settings']['run_power_curve']:
+                        pp.windspeeds    = self.FASTpref['dlc_settings']['IEC'][0]['U']
+                    else:
+                        pp.windspeeds    = U
                     pp.turbine_class = discrete_inputs['turbine_class']
                 else:
                     # get pdf of windspeeds
