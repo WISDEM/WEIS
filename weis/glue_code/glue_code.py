@@ -820,3 +820,4 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.Flp_omega',       'outputs_2_screen.Flp_omega')
             self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen.Flp_zeta')
             self.connect('tune_rosco_ivc.IPC_Ki1p',        'outputs_2_screen.IPC_Ki1p')
+            self.connect('dac_ivc.te_flap_end',            'outputs_2_screen.te_flap_end')

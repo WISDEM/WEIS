@@ -23,6 +23,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('Flp_zeta',      val=0.0)
         self.add_input('IPC_Ki1p',      val=0.0, units='rad/(N*m)')
         self.add_input('tip_deflection',val=0.0, units='m')
+        self.add_input('te_flap_end'   ,val=0.0)
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -32,17 +33,19 @@ class Outputs_2_Screen(om.ExplicitComponent):
         print('LCOE:        {:<8.10f} USD/MWh'.format(inputs['lcoe'][0]))
         print('Tip Defl.:   {:<8.10f} m'.format(inputs['tip_deflection'][0]))
         # OpenFAST simulation summary
-        if self.options['modeling_options']['Analysis_Flags']['OpenFAST'] == True: 
-            if self.options['opt_options']['optimization_variables']['control']['servo']['pitch_control']['flag'] == True:
+        if self.options['modeling_options']['Analysis_Flags']['OpenFAST']: 
+            if self.options['opt_options']['optimization_variables']['control']['servo']['pitch_control']['flag']:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
                 print('DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))
-            if self.options['opt_options']['optimization_variables']['control']['servo']['torque_control']['flag'] == True:
+            if self.options['opt_options']['optimization_variables']['control']['servo']['torque_control']['flag']:
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
-            if self.options['opt_options']['optimization_variables']['control']['servo']['flap_control']['flag'] == True:
+            if self.options['opt_options']['optimization_variables']['control']['servo']['flap_control']['flag']:
                 print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
                 print('Max DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
-            if self.options['opt_options']['optimization_variables']['control']['servo']['ipc_control']['flag'] == True:
+            if self.options['opt_options']['optimization_variables']['control']['servo']['ipc_control']['flag']:
                 print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
-                print('DEL(RootMyb):  {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
+                print('Max DEL(RootMyb):  {:8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
+            if self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_end']['flag']:
+                print('Trailing-edge flap end = {:2.3f}%'.format(inputs['te_flap_end'][0]*100.))
         
         print('########################################')
