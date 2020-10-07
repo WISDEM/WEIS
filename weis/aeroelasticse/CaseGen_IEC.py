@@ -160,7 +160,7 @@ class CaseGen_IEC():
                 case_inputs_i[("ServoDyn","BlPitchF1")]  = {'vals':[0.], 'group':0}
                 case_inputs_i[("ServoDyn","BlPitchF2")]  = {'vals':[0.], 'group':0}
                 case_inputs_i[("ServoDyn","BlPitchF3")]  = {'vals':[0.], 'group':0}
-                case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["False"], 'group':0}
+                case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["True"], 'group':0}
                 case_inputs_i[("ServoDyn","TimGenOf")]   = {'vals':[9999.9], 'group':0}
 
             if dlc == 6.1:
