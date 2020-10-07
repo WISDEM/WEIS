@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 import numpy as np
-from wisdem.glue_code.runWISDEM import run_wisdem
+from weis.glue_code.runWEIS import run_weis
 from wisdem.commonse.mpi_tools import MPI
 from weis.multifidelity.models.base_model import BaseModel
 from scipy.interpolate import PchipInterpolator
@@ -28,7 +28,7 @@ class FullCCBlade(BaseModel):
     """
 
     def compute(self, desvars):
-        wt_opt_ccblade, analysis_options_ccblade, opt_options_ccblade = run_wisdem(
+        wt_opt_ccblade, analysis_options_ccblade, opt_options_ccblade = run_weis(
             fname_wt_input,
             fname_analysis_options_ccblade,
             fname_opt_options,
@@ -37,6 +37,7 @@ class FullCCBlade(BaseModel):
 
         outputs = {}
         outputs["CP"] = wt_opt_ccblade["ccblade.CP"][0]
+        outputs["power"] = wt_opt_ccblade["ccblade.GenPwr"][0]
 
         return outputs
 
@@ -52,17 +53,16 @@ class OpenFAST(BaseModel):
     """
 
     def compute(self, desvars):
-        wt_opt_openfast, analysis_options_openfast, opt_options_openfast = run_wisdem(
+        wt_opt_openfast, analysis_options_openfast, opt_options_openfast = run_weis(
             fname_wt_input,
             fname_analysis_options_openfast,
             fname_opt_options,
-            fname_wt_output,
-            folder_output,
             desvars,
         )
 
         outputs = {}
-        outputs["CP"] = wt_opt_openfast["aeroelastic.Cp"][0]
+        outputs["CP"] = wt_opt_openfast["aeroelastic.Cp_out"][0]
+        outputs["power"] = wt_opt_openfast["aeroelastic.P_out"][0]
 
         return outputs
 

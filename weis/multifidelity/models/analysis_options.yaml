@@ -5,14 +5,14 @@ optimization_variables:
   blade:
     aero_shape:
       twist:
-        flag: False  # Flag to optimize the twist
+        flag: True  # Flag to optimize the twist
         inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
-        n_opt: 8     # Number of control points along blade span
-        lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]          # Lower bounds for the twist in [rad] at the n_opt locations
-        upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
+        n_opt: 4     # Number of control points along blade span
+        lower_bound: [0., 0., 0., 0.]          # Lower bounds for the twist in [rad] at the n_opt locations
+        upper_bound: [0.5, 0.5, 0.5, 0.5] # Upper bounds for the twist in [rad] at the n_opt locations
       chord:
-        flag: False     # Flag to optimize the chord
-        n_opt: 8        # Number of control points along blade span
+        flag: True     # Flag to optimize the chord
+        n_opt: 4        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
       af_positions:
@@ -155,7 +155,7 @@ constraints:
       max: 0.1
 
 driver:
-    run_optimization: False
+    opt_flag: False
     tol: 1.e-2            # Optimality tolerance
     max_iter: 10
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
