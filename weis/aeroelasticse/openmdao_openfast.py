@@ -946,41 +946,44 @@ class FASTLoadCases(ExplicitComponent):
                     isinstance(pp,object)
                 except(NameError):
                     pp               = Analysis.Power_Production()
-                    if not self.FASTpref['dlc_settings']['run_power_curve']:
-                        pp.windspeeds    = self.FASTpref['dlc_settings']['IEC'][0]['U']
-                    else:
-                        pp.windspeeds    = U
                     pp.turbine_class = discrete_inputs['turbine_class']
+                
+                if not self.FASTpref['dlc_settings']['run_power_curve']:
+                    pp.windspeeds    = U = self.FASTpref['dlc_settings']['IEC'][0]['U']
                 else:
-                    # get pdf of windspeeds
-                    ws_prob = pp.prob_WindDist(U, disttype='pdf')
-                    # maximum sum of weighted DELS
-                    if self.n_blades == 2:
-                        outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
-                                                        np.sum(ws_prob*sum_stats['RootMyb2']['DEL'])])
-                    else:
-                        outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
-                                                        np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
-                                                        np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
+                    pp.windspeeds    = U
+                
+                # get pdf of windspeeds
+                ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                # maximum sum of weighted DELS
+                if self.n_blades == 2:
+                    outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL'])])
+                else:
+                    outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
+                                                    np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
+                if self.n_blades == 2:
+                    outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
+                else:
+                    outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+
             if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
                 try:
                     isinstance(pp,object)
                 except(NameError):
                     pp               = Analysis.Power_Production()
-                    if not self.FASTpref['dlc_settings']['run_power_curve']:
-                        pp.windspeeds    = self.FASTpref['dlc_settings']['IEC'][0]['U']
-                    else:
-                        pp.windspeeds    = U
                     pp.turbine_class = discrete_inputs['turbine_class']
+                
+                if not self.FASTpref['dlc_settings']['run_power_curve']:
+                    pp.windspeeds    = U = self.FASTpref['dlc_settings']['IEC'][0]['U']
                 else:
-                    # get pdf of windspeeds
-                    ws_prob = pp.prob_WindDist(U, disttype='pdf')
-                    # maximum sum of weighted DELS
-                    outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['DEL_TwrBsMyt']['DEL'])
-            if self.n_blades == 2:
-                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
-            else:
-                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+                    pp.windspeeds    = U
+                
+                # get pdf of windspeeds
+                ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                # maximum sum of weighted DELS
+                outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
 
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
