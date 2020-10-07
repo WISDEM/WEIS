@@ -267,9 +267,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                                 
             if 'dac' in blade_opt_options:
                 if blade_opt_options['dac']['te_flap_end']['flag']:
-                    wt_opt.model.add_design_var('blade.opt_var.te_flap_end', lower=blade_opt_options['dac']['te_flap_end']['min_end'], upper=blade_opt_options['dac']['te_flap_end']['max_end'])
+                    wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=blade_opt_options['dac']['te_flap_end']['min_end'], upper=blade_opt_options['dac']['te_flap_end']['max_end'])
                 if blade_opt_options['dac']['te_flap_ext']['flag']:
-                    wt_opt.model.add_design_var('blade.opt_var.te_flap_ext', lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
+                    wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
                     
             if tower_opt_options['outer_diameter']['flag']:
                 wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'], ref=5.)
