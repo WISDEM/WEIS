@@ -949,7 +949,13 @@ class FASTLoadCases(ExplicitComponent):
                     pp.turbine_class = discrete_inputs['turbine_class']
                 
                 if not self.FASTpref['dlc_settings']['run_power_curve']:
-                    pp.windspeeds    = U = self.FASTpref['dlc_settings']['IEC'][0]['U']
+                    U = []
+                    for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list)]:
+                        fname = os.path.split(fname)[-1]
+                        ntm      = fname.split('NTM')[-1].split('_')
+                        ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                        ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                        U.append(ntm_U)
                 else:
                     pp.windspeeds    = U
                 
@@ -976,7 +982,13 @@ class FASTLoadCases(ExplicitComponent):
                     pp.turbine_class = discrete_inputs['turbine_class']
                 
                 if not self.FASTpref['dlc_settings']['run_power_curve']:
-                    pp.windspeeds    = U = self.FASTpref['dlc_settings']['IEC'][0]['U']
+                    U = []
+                    for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list)]:
+                        fname = os.path.split(fname)[-1]
+                        ntm      = fname.split('NTM')[-1].split('_')
+                        ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                        ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                        U.append(ntm_U)
                 else:
                     pp.windspeeds    = U
                 
