@@ -1,6 +1,7 @@
 import os
 import matplotlib.pyplot as plt
 import openmdao.api as om
+import numpy as np
 from wisdem.commonse.mpi_tools import MPI
 
 class Outputs_2_Screen(om.ExplicitComponent):
@@ -10,6 +11,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
+        modeling_options = self.options['modeling_options']
+        n_te_flaps = modeling_options['blade']['n_te_flaps']
+
         self.add_input('aep',           val=0.0, units = 'GW * h')
         self.add_input('blade_mass',    val=0.0, units = 'kg')
         self.add_input('lcoe',          val=0.0, units = 'USD/MW/h')
@@ -23,7 +27,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('Flp_zeta',      val=0.0)
         self.add_input('IPC_Ki1p',      val=0.0, units='rad/(N*m)')
         self.add_input('tip_deflection',val=0.0, units='m')
-        self.add_input('te_flap_end'   ,val=0.0)
+        self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
 
     def compute(self, inputs, outputs):
         print('########################################')
