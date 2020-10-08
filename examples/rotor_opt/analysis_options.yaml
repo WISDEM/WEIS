@@ -77,7 +77,10 @@ optimization_variables:
         omega_max: 3.5
         zeta_min: 0.7
         zeta_max: 1.3
-
+      ipc_control:
+        flag: False
+        Ki_min: 0.0
+        Ki_max: 1e-8
   tower:
     outer_diameter:
       flag: False
