@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.6)
-project(ROSCO VERSION 2.0.3 LANGUAGES Fortran)
+project(ROSCO VERSION 2.1.1 LANGUAGES Fortran)
 
 set(CMAKE_Fortran_MODULE_DIRECTORY "${CMAKE_BINARY_DIR}/ftnmods")
 
@@ -18,7 +18,7 @@ if(APPLE OR UNIX)
   endif()
 elseif(WIN32 AND MINGW)
   # Ensure static linking to avoid requiring Fortran runtime dependencies
-  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-0 -static-libgcc -static-libgfortran -static")
+  set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -ffree-line-length-0 -static-libgcc -static-libgfortran -static  -fdefault-real-8 -fdefault-double-8")
 endif()
 
 set(SOURCES
