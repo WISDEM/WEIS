@@ -35,7 +35,7 @@ class ROSCO_testing():
 
 
         # Setup simulation parameters
-        self.runDir = 'testruns'    # directory to run simulations in
+        self.runDir = os.path.join(os.path.dirname( os.path.realpath(__file__) ), 'testing' )   # directory to run simulations in
         self.windDir = None
         self.namebase = 'ROtest'    # root name for output simulations
         self.FAST_exe = 'openfast_single'       # name of openfast executable (may need full path)
@@ -49,7 +49,7 @@ class ROSCO_testing():
         self.dev_branch = True      # openfast dev branch?
         self.debug_level = 2        # debug level. 0 - no outputs, 1 - minimal outputs, 2 - all outputs
         self.overwrite = False      # overwrite existing files? 
-        self.cores = 0              # number of cores to use
+        self.cores = 4              # number of cores to use
         self.mpi_run = False
         self.mpi_comm_map_down = []
         self.outfile_fmt = 2 # 1 = .txt, 2 = binary, 3 = both
@@ -63,7 +63,7 @@ class ROSCO_testing():
 
         # Desired output channesl
         self.var_out = [
-                        'BldPitch1', 'BldPitch2', 'BldPitch3', 'GenTq', 'GenPwr', 'RotSpeed',
+                        'BldPitch1', 'BldPitch2', 'BldPitch3', 'GenTq', 'GenPwr', 'RotSpeed', 'GenSpeed',
                         'TipDxc1', 'TipDyc1', 'TipDzc1', 'TipDxc2',
                         'TipDyc2', 'TipDzc2', 'TipDxc3', 'TipDyc3', 'TipDzc3',
                         'RootMxc1', 'RootMyc1', 'RootMzc1',
@@ -89,7 +89,7 @@ class ROSCO_testing():
 
         super(ROSCO_testing, self).__init__()
 
-    def ROSCO_Test_lite(self, more_case_inputs=None, U=[]):
+    def ROSCO_Test_lite(self, more_case_inputs={}, U=[]):
         '''
         DLC 1.1 - 5 wind speeds, 60s
 
@@ -105,7 +105,7 @@ class ROSCO_testing():
         if ('Fst','TMax') in more_case_inputs.keys():
             TMax = np.max(more_case_inputs[('Fst','TMax')]['vals'])
         else:
-            TMax = 360
+            TMax = 330
         
         if len(U) > 0:
             WindSpeeds = U
@@ -153,7 +153,7 @@ class ROSCO_testing():
         iec.Turbsim_exe = self.Turbsim_exe
         iec.debug_level = self.debug_level
         iec.cores = self.cores
-        iec.run_dir = os.path.join(self.runDir,'wind')
+        iec.run_dir = self.runDir
         iec.overwrite = self.overwrite
         # iec.overwrite       = False
         if self.cores > 1:
@@ -170,9 +170,10 @@ class ROSCO_testing():
         case_inputs[("Fst", "TMax")] = {'vals': [TMax], 'group': 0}
         case_inputs[("Fst", "OutFileFmt")] = {'vals': [self.outfile_fmt], 'group': 0}
 
-        case_inputs[('ServoDyn', 'GenTiStr')] = {'vals': ['False'], 'group': 0}
+        case_inputs[('ServoDyn', 'GenTiStr')] = {'vals': ['True'], 'group': 0}
         case_inputs[('ServoDyn', 'GenTiStp')] = {'vals': ['True'], 'group': 0}
         case_inputs[('ServoDyn', 'SpdGenOn')] = {'vals': [0.], 'group': 0}
+        case_inputs[('ServoDyn', 'TimGenOn')] = {'vals': [0.], 'group': 0}
         case_inputs[('ServoDyn', 'DLL_FileName')] = {'vals': [self.rosco_path], 'group': 0}
         case_inputs[('ServoDyn', 'DLL_DT')] = {'vals': ['"default"'], 'group': 0}
 
@@ -240,7 +241,7 @@ class ROSCO_testing():
                 fastBatch.run_serial()
 
 
-    def ROSCO_Test_heavy(self, more_case_inputs=None):
+    def ROSCO_Test_heavy(self, more_case_inputs={}, U=[]):
         '''
         Run extensive DLCs for ROSCO
             - DLC 1.3 - Cutin-Cutout, 2 seeds
@@ -248,9 +249,22 @@ class ROSCO_testing():
 
         more_case_inputs: dict
             Additional case inputs
+        U: list-like
+            List like with two lists of wind speeds, first entry for DLC 1.3 and second entry for DLC 1.4
         '''
 
-        TMax = 10
+        # Check for time and wind inputs
+        if ('Fst','TMax') in more_case_inputs.keys():
+            TMax = np.max(more_case_inputs[('Fst','TMax')]['vals'])
+        else:
+            TMax = 630
+        
+        if len(U) > 0:
+            WindSpeeds = U
+            if len(U) != 2:
+                ValueError('For a user defined input, U, two sets of wind speeds must be defined.')
+        else:
+            WindSpeeds = [[4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24], [8.88, 12.88]]
 
         fastRead = InputReader_OpenFAST(
             FAST_ver=self.FAST_ver, dev_branch=self.dev_branch)
@@ -270,6 +284,14 @@ class ROSCO_testing():
         iec.init_cond[("ElastoDyn", "BlPitch1")]['val'] = np.ones([2]) * 0
         iec.init_cond[("ElastoDyn", "BlPitch2")] = iec.init_cond[("ElastoDyn", "BlPitch1")]
         iec.init_cond[("ElastoDyn", "BlPitch3")] = iec.init_cond[("ElastoDyn", "BlPitch1")]
+
+        # waves
+        if self.FAST_InputFile == 'IEA-15-240-RWT-UMaineSemi.fst':
+            iec.init_cond[('HydroDyn','WaveHs')] = {'U': [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]}
+            iec.init_cond[('HydroDyn','WaveHs')]['val'] = [1.102,1.179,1.316,1.537,1.836,2.188,2.598,3.061,3.617,4.027,4.516]
+            iec.init_cond[('HydroDyn','WaveTp')] = {'U': [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]}
+            iec.init_cond[('HydroDyn','WaveTp')]['val'] = [8.515,8.310,8.006,7.651,7.441,7.461,7.643,8.047,8.521,8.987,9.452]
+
         iec.Turbine_Class = self.Turbine_Class
         iec.Turbulence_Class = self.Turbulence_Class
         iec.D = fastRead.fst_vt['ElastoDyn']['TipRad']*2.
@@ -278,11 +300,13 @@ class ROSCO_testing():
 
         iec.dlc_inputs = {}
         iec.dlc_inputs['DLC'] = [1.3, 1.4] 
-        iec.dlc_inputs['U'] = [[4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24], [8.88, 12.88]]
+        iec.dlc_inputs['U'] = WindSpeeds
         iec.dlc_inputs['Seeds'] = [[991235, 5123], []]
         iec.dlc_inputs['Yaw'] = [[], []]
         iec.transient_dir_change = '-'  # '+','-','both': sign for transient events in EDC, EWS
         iec.transient_shear_orientation = 'v'  # 'v','h','both': vertical or horizontal shear for EWS
+        iec.uniqueSeeds = True
+        iec.uniqueWaveSeeds = True
 
         if self.windDir:
             iec.wind_dir = self.windDir
@@ -292,7 +316,7 @@ class ROSCO_testing():
         iec.Turbsim_exe = self.Turbsim_exe
         iec.debug_level = self.debug_level
         iec.cores = self.cores
-        iec.run_dir = os.path.join(self.runDir, 'wind')
+        iec.run_dir = os.path.join(self.runDir)
         iec.overwrite = self.overwrite
         # iec.overwrite       = False
         if self.cores > 1:
@@ -329,11 +353,14 @@ class ROSCO_testing():
         case_inputs[("AeroDyn15", "MaxIter")] = {'vals': [5000], 'group': 0}
         case_inputs[("AeroDyn15", "UseBlCm")] = {'vals': ['True'], 'group': 0}
 
+        if self.FAST_InputFile == 'IEA-15-240-RWT-UMaineSemi.fst':
+            case_inputs[("HydroDyn", "WaveMod")] = {'vals': [2], 'group': 0}
+
         if more_case_inputs:
             case_inputs.update(more_case_inputs)
 
-        case_list, case_name_list = iec.execute(case_inputs=case_inputs)
-
+        case_list, case_name_list, _ = iec.execute(case_inputs=case_inputs)
+        
         # Ensure proper output channels
         var_out = self.var_out
 
@@ -376,7 +403,7 @@ class ROSCO_testing():
             else:
                 fastBatch.run_serial()
 
-    def ROSCO_Controller_Comp(self, controller_paths, testtype='light', more_case_inputs=[], U=[]):
+    def ROSCO_Controller_Comp(self, controller_paths, testtype='light', more_case_inputs={}, U=[]):
         '''
         Heavy or light testing for n controllers, n = len(controller_paths)
 
@@ -443,3 +470,53 @@ class ROSCO_testing():
         # reset self
         self.runDir = run_dir_init
         self.windDir = wind_dir_init
+
+if __name__=='__main__':
+    rt = ROSCO_testing()
+
+
+    ## =================== INITIALIZATION ===================
+    # Setup simulation parameters
+    rt.runDir = '/Users/nabbas/Documents/Projects/ROSCO_dev/WSE_updates/WSE_Testing'              # directory for FAST simulations
+    rt.namebase = 'IEA-15MW'     # Base name for FAST files 
+    rt.FAST_exe = '/Users/nabbas/Documents/WindEnergyToolbox/WEIS/local/bin/openfast'     # OpenFAST executable path
+    rt.Turbsim_exe = '/Users/nabbas/openfast/install/bin/turbsim_single'   # Turbsim executable path
+    rt.FAST_ver = 'OpenFAST'            # FAST version
+    rt.rosco_path = ['/Users/nabbas/Documents/WindEnergyToolbox/ROSCO/build-master/libdiscon.dylib',
+                    '/Users/nabbas/Documents/WindEnergyToolbox/ROSCO/build-wse/libdiscon.dylib',
+                    ]                   # path to compiled ROSCO controller
+    rt.dev_branch = True                # dev branch of Openfast?
+    rt.debug_level = 2                  # debug level. 0 - no outputs, 1 - minimal outputs, 2 - all outputs
+    rt.overwrite = True                 # overwite fast sims?
+    rt.cores = 4                        # number of cores if multiprocessings
+    rt.mpi_run = False                  # run using mpi
+    rt.mpi_comm_map_down = []           # core mapping for MPI
+    rt.outfile_fmt = 2                  # 1 = .txt, 2 = binary, 3 = both
+    rt.dev_branch= 'True'
+    # Post Processing Parameters
+    reCrunch = True                     # re-run pCrunch?
+
+    # Setup turbine
+    rt.Turbine_Class = 'I'
+    rt.Turbulence_Class = 'B'
+    rt.FAST_directory = '/Users/nabbas/Documents/WindEnergyToolbox/WEIS/examples/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile'
+    rt.FAST_InputFile = 'IEA-15-240-RWT-Monopile.fst'
+
+    # Additional inputs 
+    # ---- DT for this test! ----
+    case_inputs={}
+    case_inputs[('Fst', 'TMax')] = {'vals': [330], 'group': 0}
+    case_inputs[('Fst', 'DT')] = {'vals': [0.01], 'group': 0}
+    case_inputs[('Fst', 'CompElast')] = {'vals': [1], 'group': 0}
+
+    case_inputs[('DISCON_in', 'PC_ControlMode')] = {'vals': [1], 'group': 0}
+    case_inputs[('DISCON_in', 'PS_Mode')] = {'vals': [0], 'group': 0}
+    case_inputs[('DISCON_in', 'VS_ControlMode')] = {'vals': [2], 'group': 0}
+    case_inputs[('DISCON_in', 'WE_Mode')] = {'vals': [2], 'group': 0}
+
+    # Wind Speeds
+    U = [5, 9, 12, 15]
+
+    # Run test
+    rt.ROSCO_Controller_Comp(rt.rosco_path, testtype='light', more_case_inputs=case_inputs, U=U)
+
