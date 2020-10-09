@@ -1122,12 +1122,6 @@ properties:
                 unit: rad
                 minimum: -0.5
                 maximum: 1.
-            vs_minspd:
-                type: number
-                description: Minimum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                unit: rad/s
-                minimum: 0
-                maximum: 5
             ss_vsgain:
                 type: number
                 description: Torque controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
