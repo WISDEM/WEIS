@@ -222,7 +222,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             elif opt_options['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
                 wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e4)
             elif opt_options['merit_figure'] == 'DEL_TwrBsMyt':   # for pitch controller optimization
-                wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e5)
+                wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
                 wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
             else:
