@@ -51,9 +51,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
             if self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_end']['flag']:
                 print('Trailing-edge flap end = {:2.3f}%'.format(inputs['te_flap_end'][0]*100.))
             # Print merit figure
-            if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt'
+            if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
                 print('DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))
-            if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb'
+            if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
                 print('Max DEL(RootMyb): {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
         
         print('########################################')
