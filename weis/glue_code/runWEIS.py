@@ -567,7 +567,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
         # close signal to subprocessors
         if rank == 0:
-            subprocessor_stop(comm_map_down)
+        subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
         
