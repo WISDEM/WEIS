@@ -547,7 +547,9 @@ class FASTLoadCases(ExplicitComponent):
         # Add additional options
         if ('channels_out',) in self.options['modeling_options']['openfast']['fst_settings']:
             channels_out += self.options['modeling_options']['openfast']['fst_settings'][('channels_out',)]
-
+        if self.n_tab > 1:
+            channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+            
         channels = {}
         for var in channels_out:
             channels[var] = True
