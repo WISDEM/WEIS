@@ -215,7 +215,7 @@ class BaseMethod:
                 )
 
             list_of_constraints.append(scipy_constraint)
-
+            
         self.list_of_constraints = list_of_constraints
 
     def construct_approximations(self, interp_method="smt"):

@@ -33,8 +33,8 @@ class Test(unittest.TestCase):
             fname_analysis_options_openfast,
             fname_opt_options,
         )
-        np.testing.assert_allclose(wt_opt_openfast["aeroelastic.Cp_out"][0], 0.48120313)
-        np.testing.assert_allclose(wt_opt_openfast["aeroelastic.P_out"][0], 8947237.07354016)
+        np.testing.assert_allclose(wt_opt_openfast["aeroelastic.Cp_out"][0], 0.48120313, rtol=1e-4)
+        np.testing.assert_allclose(wt_opt_openfast["aeroelastic.P_out"][0], 8947237.07354016, rtol=1e-3)
 
 if __name__ == '__main__':
     unittest.main()
