@@ -950,16 +950,26 @@ class FASTLoadCases(ExplicitComponent):
                     pp               = Analysis.Power_Production()
                     pp.turbine_class = discrete_inputs['turbine_class']
                 
-                if not self.FASTpref['dlc_settings']['run_power_curve']:
-                    U = []
-                    for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list)]:
-                        fname = os.path.split(fname)[-1]
-                        ntm      = fname.split('NTM')[-1].split('_')
-                        ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
-                        ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
-                        U.append(ntm_U)
-                else:
-                    pp.windspeeds    = U
+                try:
+                    pp.windspeeds = U
+                except(NameError):
+                    if self.FASTpref['dlc_settings']['run_IEC']:
+                        U = []
+                        for dlc in self.FASTpref['dlc_settings']['IEC']:
+                            U_set = dlc['U']
+                            num_seeds = len(dlc['Seeds'])
+                            U_all = [U_set]*num_seeds
+                            U_dlc = [u for uset in U_all for u in uset]
+                        U.extend(U_dlc)
+                    elif self.FASTpref['dlc_settings']['run_power_curve']:
+                        U_set = self.FASTpref['dlc_settings']['Power_Curve']['U']
+                        num_seeds = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
+                        U_all = [U_set]*num_seeds
+                        U = [u for uset in U_all for u in uset]
+                        U = U.sort()
+                    else:
+                        exit('DLC settings do not support DEL_RootMyb optimization')
+                    pp.windspeeds = U.sort()
                 
                 # get pdf of windspeeds
                 ws_prob = pp.prob_WindDist(U, disttype='pdf')
@@ -983,16 +993,26 @@ class FASTLoadCases(ExplicitComponent):
                     pp               = Analysis.Power_Production()
                     pp.turbine_class = discrete_inputs['turbine_class']
                 
-                if not self.FASTpref['dlc_settings']['run_power_curve']:
-                    U = []
-                    for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list)]:
-                        fname = os.path.split(fname)[-1]
-                        ntm      = fname.split('NTM')[-1].split('_')
-                        ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
-                        ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
-                        U.append(ntm_U)
-                else:
-                    pp.windspeeds    = U
+                try: 
+                    pp.windspeeds = U
+                except(NameError):
+                    if self.FASTpref['dlc_settings']['run_IEC']:
+                        U = []
+                        for dlc in self.FASTpref['dlc_settings']['IEC']:
+                            U_set       = dlc['U']
+                            num_seeds   = len(dlc['Seeds'])
+                            U_all       = [U_set]*num_seeds
+                            U_dlc = [u for uset in U_all for u in uset]
+                        U.extend(U_dlc)
+                    elif self.FASTpref['dlc_settings']['run_power_curve']:
+                        U_set       = self.FASTpref['dlc_settings']['Power_Curve']['U']
+                        num_seeds   = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
+                        U_all       = [U_set]*num_seeds
+                        U = [u for uset in U_all for u in uset]
+                        U = U.sort()
+                    else:
+                        exit('DLC settings do not support DEL_TwrBsMyt optimization')
+                    pp.windspeeds = U.sort()
                 
                 # get pdf of windspeeds
                 ws_prob = pp.prob_WindDist(U, disttype='pdf')
