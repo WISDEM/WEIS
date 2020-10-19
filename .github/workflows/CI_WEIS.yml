@@ -1,0 +1,89 @@
+# This is a workflow to test the installation of WEIS and the examples that come with it
+
+name: CI_WEIS
+
+# We run CI on push commits and pull requests on master and develop branches
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single build
+  build:
+    name: Compile and run examples
+    # We run the script on a matrix of operating systems and python versions
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Fail-fast set to false lets the jobs across platforms continue even if one fails
+      fail-fast: false
+      matrix:
+        # Operating systems
+        os: [ubuntu-latest, macOS-latest]
+        # Python versions
+        python-version: [3.8]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
+      - uses: actions/checkout@v2
+      # GitHub Actions sintax to setup a conda environment (do not change)
+      - name: Setup conda
+        uses: s-weigand/setup-conda@v1
+        with:
+          update-conda: true
+          python-version: ${{ matrix.python-version }}
+          conda-channels: anaconda, conda-forge
+      - run: conda --version
+      - run: which python
+      
+      # Install dependencies of WEIS common across platforms
+      - name: Install dependencies
+        run: |
+          conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd
+          pip install simpy marmot-agents
+      
+      # Install dependencies of WEIS specific to macOS
+      - name: Add dependendencies macOS specific
+        if: contains( matrix.os, 'macOS')
+        run: |
+          conda install -y petsc4py mpi4py compilers
+      
+      # Install dependencies of WEIS specific to ubuntu
+      - name: Add dependendencies ubuntu specific
+        if: contains( matrix.os, 'ubuntu')
+        run: |
+          conda install -y petsc4py mpi4py compilers
+      
+      # Install dependencies of WEIS specific to windows
+      - name: Add dependendencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
+      
+      # Install WEIS
+      - name: Install WEIS
+        run: |
+          python setup.py develop
+      
+      # Run scripts within aeroelasticse folder
+      - name: Run examples aeroelasticse
+        run: |
+          cd examples/aeroelasticse
+          python run_DLC.py
+          python run_general.py
+      
+      # Run scripts within rotor_opt folder, with and without MPI
+      - name: Run examples rotor optimization
+        run: |
+          cd examples/rotor_opt
+          python weis_driver.py
+          mpirun -np 4 python weis_driver.py
+      
+      # Run scripts within dac folder
+      # - name: Run examples distributed aerodynamic control
+      #  run: |
+      #    cd examples/dac_flaps
+      #    python dac_driver.py

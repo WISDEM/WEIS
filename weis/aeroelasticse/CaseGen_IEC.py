@@ -51,6 +51,8 @@ class CaseGen_IEC():
         self.PC_MaxRat                   = 5.      # (deg), maximum blade pitch rate, used for emergency stop, DLC 5.1
         self.TMax                        = 0.
         self.TStart                      = 30.
+        self.uniqueSeeds                 = False
+        self.uniqueWaveSeeds             = False
 
         self.debug_level                 = 2
         self.parallel_windfile_gen       = False
@@ -215,6 +217,11 @@ class CaseGen_IEC():
                         row_out[g] = change_vals[g][val]
                 matrix_out.append(row_out)
             matrix_out = np.asarray(matrix_out)
+
+            # change seed manually to not mess up indexing above, 600
+            if self.uniqueSeeds and dlc in [1.1, 1.2, 5.1, 1.3, 6.1, 6.3]:
+                for idx, row in enumerate(matrix_out):
+                    matrix_out[idx][1] = idx + 600
             
             if self.parallel_windfile_gen and not self.mpi_run:
                 # Parallel wind file generation (threaded with multiprocessing)
@@ -288,6 +295,14 @@ class CaseGen_IEC():
                         inital_cond_i = [np.interp(U, self.init_cond[var]['U'], self.init_cond[var]['val']) for U in U_out]
                         case_inputs_i[var] = {'vals':inital_cond_i, 'group':1}
             
+            # make unique wave seeds
+            if self.uniqueWaveSeeds:
+                seed_base   = int(float(dlc) * 10000)   # set wave seed based on dlc so no repeats
+                num_in_dlc  = len(case_inputs_i[("InflowWind","Filename")]['vals'])  # sims in each DLC
+                wave_seeds  = (seed_base + np.arange(0,num_in_dlc)).tolist()
+
+                case_inputs_i[("HydroDyn","WaveSeed1")] = {'vals':wave_seeds, 'group':1}
+
             # Append current DLC to full list of cases
             case_list, case_name = CaseGen_General(case_inputs_i, self.run_dir, self.case_name_base, save_matrix=False)
             case_list_all = self.join_case_dicts(case_list_all, case_list)

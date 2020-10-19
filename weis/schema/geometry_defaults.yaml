@@ -329,7 +329,6 @@ control:
     VS_omega: 0.2   
     max_pitch: 1.57 
     min_pitch: 0    
-    vs_minspd: 0    
     ss_vsgain: 1    
     ss_pcgain: .001 
     ps_percent: 0.8 
