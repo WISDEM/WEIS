@@ -468,6 +468,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # needing to modify the yaml files.
         if overridden_values is not None:
             for key in overridden_values:
+                num_values = np.array(overridden_values[key]).size
                 wt_opt[key][:] = overridden_values[key]
 
         # Place the last design variables from a previous run into the problem.
