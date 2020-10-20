@@ -25,8 +25,9 @@ rotorse:
     n_span: 30        # Number of spanwise stations used to define the blade properties
     
 drivetrainse:
-    hub_gamma: 2.0
-    spinner_gamma: 1.5
+    hub:
+        hub_gamma: 2.0
+        spinner_gamma: 1.5
     gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
     gamma_m: 1.3     # Safety factor for material properties in TowerSE
     gamma_n: 1.0     # Safety factor for ...

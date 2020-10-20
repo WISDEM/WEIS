@@ -85,9 +85,7 @@ class WT_RNTA(om.Group):
         self.add_subsystem('rlds',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         
         if modeling_options['Analysis_Flags']['DriveSE']:
-            self.add_subsystem('drivese',   DriveSE(debug=False,
-                                                number_of_main_bearings=1,
-                                                topLevelFlag=False))
+            self.add_subsystem('drivese',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1, topLevelFlag=False))
                                                 
         if modeling_options['Analysis_Flags']['TowerSE']:
             self.add_subsystem('towerse',   TowerSE(modeling_options=modeling_options))
