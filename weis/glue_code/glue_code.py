@@ -3,16 +3,16 @@ import openmdao.api as om
 from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
 from wisdem.ccblade.ccblade_component import CCBladeTwist
 from wisdem.commonse.turbine_class import TurbineClass
-from wisdem.drivetrainse.drivese_omdao import DriveSE
+from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.towerse.tower import TowerSE
-from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 from wisdem.orbit.api.wisdem.fixed import Orbit
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from weis.aeroelasticse.openmdao_openfast import FASTLoadCases, ModesElastoDyn
 from weis.control.dac import RunXFOIL
-from wisdem.servose.servose import ServoSE, NoStallConstraint
+from wisdem.rotorse.servose import ServoSE, NoStallConstraint
 from weis.control.tune_rosco import ServoSE_ROSCO
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from weis.aeroelasticse.rotor_loads_defl_strainsWEIS import RotorLoadsDeflStrainsWEIS
