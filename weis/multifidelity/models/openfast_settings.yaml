@@ -1,6 +1,6 @@
 # Variables are case sensitive.
-[Fst, TStart]          : 0.
-[Fst, TMax]            : 30.
+[Fst, TStart]          : 40.
+[Fst, TMax]            : 60.
 [Fst, OutFileFmt]      : 2
 [Fst, DT]              : 0.01
 [ServoDyn, DLL_DT]     : 0.01

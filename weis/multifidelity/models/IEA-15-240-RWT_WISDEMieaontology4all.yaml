@@ -344,7 +344,7 @@ components:
           center_mass: [3.945, 0.0, 3.352]
         drivetrain:
           number_bearings: 2
-          gear_ratio: 100
+          gear_ratio: 1
           shaft_ratio: 0.1
           planet_numbers: [3, 3, 1]
           shrink_disc_mass: 1600
