@@ -10,7 +10,7 @@ def assign_ROSCO_values(wt_opt, modeling_options, control):
     # # other optional parameters
     wt_opt['tune_rosco_ivc.max_pitch']     = control['max_pitch']
     wt_opt['tune_rosco_ivc.min_pitch']     = control['min_pitch']
-    wt_opt['tune_rosco_ivc.vs_minspd']     = control['vs_minspd']
+    wt_opt['tune_rosco_ivc.vs_minspd']     = control['minOmega']
     wt_opt['tune_rosco_ivc.ss_vsgain']     = control['ss_vsgain']
     wt_opt['tune_rosco_ivc.ss_pcgain']     = control['ss_pcgain']
     wt_opt['tune_rosco_ivc.ps_percent']    = control['ps_percent']
