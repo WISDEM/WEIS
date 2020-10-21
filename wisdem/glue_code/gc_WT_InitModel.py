@@ -5,7 +5,7 @@ from wisdem.commonse.csystem import DirectionVector
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
-    
+
     # These are the required components
     assembly        = wt_init['assembly']
     wt_opt = assign_configuration_values(wt_opt, assembly)
@@ -31,30 +31,33 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
         wt_opt = assign_airfoil_values(wt_opt, modeling_options, airfoils)
     else:
         airfoils = {}
-        
+
     if modeling_options['flags']['control']:
         control         = wt_init['control']
         wt_opt = assign_control_values(wt_opt, modeling_options, control)
     else:
         control = {}
-        
+
     if modeling_options['flags']['hub']:
         hub    = wt_init['components']['hub']
         wt_opt = assign_hub_values(wt_opt, hub)
     else:
         hub = {}
-        
+
     if modeling_options['flags']['nacelle']:
         nacelle         = wt_init['components']['nacelle']
-        wt_opt = assign_nacelle_values(wt_opt, assembly, nacelle)
+        wt_opt = assign_nacelle_values(wt_opt, modeling_options, nacelle)
+
+        if modeling_options['flags']['generator']:
+            wt_opt = assign_generator_values(wt_opt, modeling_options, nacelle)
     else:
         nacelle = {}
-        
+
     if modeling_options['flags']['RNA']:
         RNA = wt_init['components']['RNA']
     else:
         RNA = {}
-        
+
     if modeling_options['flags']['tower']:
         tower           = wt_init['components']['tower']
         wt_opt = assign_tower_values(wt_opt, modeling_options, tower)
@@ -66,13 +69,13 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
         wt_opt   = assign_monopile_values(wt_opt, modeling_options, monopile)
     else:
         monopile = {}
-        
+
     if modeling_options['flags']['floating']:
         floating = wt_init['components']['floating']
         wt_opt   = assign_floating_values(wt_opt, modeling_options, floating)
     else:
         floating = {}
-        
+
     if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']
         wt_opt = assign_foundation_values(wt_opt, foundation)
@@ -90,33 +93,33 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
         wt_opt = assign_costs_values(wt_opt, costs)
     else:
         costs = {}
-        
+
     if 'elastic_properties_mb' in blade.keys() and modeling_options['Analysis_Flags']['DriveSE']:
         wt_opt = assign_RNA_values(wt_opt, modeling_options, blade, RNA)
 
     return wt_opt
-    
+
 def assign_blade_values(wt_opt, modeling_options, blade):
     # Function to assign values to the openmdao group Blade
     wt_opt = assign_outer_shape_bem_values(wt_opt, modeling_options, blade['outer_shape_bem'])
     wt_opt = assign_internal_structure_2d_fem_values(wt_opt, modeling_options, blade['internal_structure_2d_fem'])
     wt_opt = assign_te_flaps_values(wt_opt, modeling_options, blade)
-    
+
     return wt_opt
-    
+
 def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # Function to assign values to the openmdao component Blade_Outer_Shape_BEM
-    
+
     nd_span     = modeling_options['blade']['nd_span']
-    
+
     wt_opt['blade.outer_shape_bem.af_position'] = outer_shape_bem['airfoil_position']['grid']
     wt_opt['blade.opt_var.af_position']         = outer_shape_bem['airfoil_position']['grid']
-    
+
     wt_opt['blade.outer_shape_bem.s_default']        = nd_span
     wt_opt['blade.outer_shape_bem.chord_yaml']       = np.interp(nd_span, outer_shape_bem['chord']['grid'], outer_shape_bem['chord']['values'])
     wt_opt['blade.outer_shape_bem.twist_yaml']       = np.interp(nd_span, outer_shape_bem['twist']['grid'], outer_shape_bem['twist']['values'])
     wt_opt['blade.outer_shape_bem.pitch_axis_yaml']  = np.interp(nd_span, outer_shape_bem['pitch_axis']['grid'], outer_shape_bem['pitch_axis']['values'])
-    
+
     wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,0]  = np.interp(nd_span, outer_shape_bem['reference_axis']['x']['grid'], outer_shape_bem['reference_axis']['x']['values'])
     wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,1]  = np.interp(nd_span, outer_shape_bem['reference_axis']['y']['grid'], outer_shape_bem['reference_axis']['y']['values'])
     wt_opt['blade.outer_shape_bem.ref_axis_yaml'][:,2]  = np.interp(nd_span, outer_shape_bem['reference_axis']['z']['grid'], outer_shape_bem['reference_axis']['z']['values'])
@@ -129,7 +132,7 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # chord_int1      = f_interp1(s_interp_c)
     # f_interp2       = PchipInterpolator(s_interp_c,chord_int1)
     # chord_int2      = f_interp2(nd_span)
-    
+
     # import matplotlib.pyplot as plt
     # fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
     # axc.plot(nd_span, chord_init, c='k', label='Initial')
@@ -141,13 +144,13 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # # Planform
     # le_init = wt_opt['blade.outer_shape_bem.pitch_axis']*wt_opt['blade.outer_shape_bem.chord']
     # te_init = (1. - wt_opt['blade.outer_shape_bem.pitch_axis'])*wt_opt['blade.outer_shape_bem.chord']
-    
+
     # s_interp_le     = np.array([0.0, 0.5, 0.8, 1.0])
     # f_interp1       = interp1d(wt_opt['blade.outer_shape_bem.s_default'],le_init)
     # le_int1         = f_interp1(s_interp_le)
     # f_interp2       = PchipInterpolator(s_interp_le,le_int1)
     # le_int2         = f_interp2(wt_opt['blade.outer_shape_bem.s_default'])
-    
+
     # fpl, axpl  = plt.subplots(1,1,figsize=(5.3, 4))
     # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_init, c='k', label='LE init')
     # axpl.plot(wt_opt['blade.outer_shape_bem.s_default'], -le_int2, c='b', label='LE smooth old pa')
@@ -166,7 +169,7 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # theta_int1      = f_interp1(s_interp)
     # f_interp2       = PchipInterpolator(s_interp,theta_int1)
     # theta_int2      = f_interp2(nd_span)
-    
+
     # import matplotlib.pyplot as plt
     # fc, axc  = plt.subplots(1,1,figsize=(5.3, 4))
     # axc.plot(nd_span, theta_init, c='k', label='Initial')
@@ -176,22 +179,22 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # axc.legend()
     # plt.show()
     # exit()
-    
+
     return wt_opt
-    
+
 def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_structure_2d_fem):
     # Function to assign values to the openmdao component Blade_Internal_Structure_2D_FEM
-    
+
     n_span          = modeling_options['blade']['n_span']
     n_webs          = modeling_options['blade']['n_webs']
-    
+
     web_rotation    = np.zeros((n_webs, n_span))
     web_offset_y_pa = np.zeros((n_webs, n_span))
     web_start_nd    = np.zeros((n_webs, n_span))
     web_end_nd      = np.zeros((n_webs, n_span))
     definition_web  = np.zeros(n_webs)
     nd_span         = wt_opt['blade.outer_shape_bem.s_default']
-    
+
     # Loop through the webs and interpolate spanwise the values
     for i in range(n_webs):
         if 'rotation' in internal_structure_2d_fem['webs'][i] and 'offset_y_pa' in internal_structure_2d_fem['webs'][i]:
@@ -210,7 +213,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             web_end_nd[i,:]   = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['webs'][i]['end_nd_arc']['values'], left=0., right=0.)
         else:
             exit('Webs definition not supported. Please check the yaml input.')
-    
+
     n_layers        = modeling_options['blade']['n_layers']
     layer_name      = n_layers * ['']
     layer_mat       = n_layers * ['']
@@ -228,7 +231,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     index_layer_start= np.zeros(n_layers)
     index_layer_end = np.zeros(n_layers)
 
-    
+
     # Loop through the layers, interpolate along blade span, assign the inputs, and the definition flag
     for i in range(n_layers):
         layer_name[i]  = modeling_options['blade']['layer_name'][i]
@@ -236,7 +239,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
         thickness[i]   = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['thickness']['grid'], internal_structure_2d_fem['layers'][i]['thickness']['values'], left=0., right=0.)
         if 'rotation' not in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' not in internal_structure_2d_fem['layers'][i] and 'width' not in internal_structure_2d_fem['layers'][i] and 'start_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'end_nd_arc' not in internal_structure_2d_fem['layers'][i] and 'web' not in internal_structure_2d_fem['layers'][i]:
             definition_layer[i] = 1
-            
+
         if 'rotation' in internal_structure_2d_fem['layers'][i] and 'offset_y_pa' in internal_structure_2d_fem['layers'][i] and 'width' in internal_structure_2d_fem['layers'][i] and 'side' in internal_structure_2d_fem['layers'][i]:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['rotation'].keys():
                 if internal_structure_2d_fem['layers'][i]['rotation']['fixed'] == 'twist':
@@ -298,7 +301,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 7
                 layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
-            
+
         if 'end_nd_arc' in internal_structure_2d_fem['layers'][i] and definition_layer[i] == 0:
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
@@ -331,8 +334,8 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                     break
             layer_web[i] = k
             definition_layer[i] = 10
-    
-    
+
+
     # Assign the openmdao values
     wt_opt['blade.internal_structure_2d_fem.layer_side']            = layer_side
     wt_opt['blade.internal_structure_2d_fem.layer_thickness']       = thickness
@@ -352,12 +355,12 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
     wt_opt['blade.internal_structure_2d_fem.layer_start_nd_yaml']   = layer_start_nd
     wt_opt['blade.internal_structure_2d_fem.layer_end_nd_yaml']     = layer_end_nd
     wt_opt['blade.internal_structure_2d_fem.layer_rotation_yaml']   = layer_rotation
-    
+
     return wt_opt
 
 def assign_te_flaps_values(wt_opt, modeling_options, blade):
     # Function to assign the trailing edge flaps data to the openmdao data structure
-    if modeling_options['blade']['n_te_flaps'] > 0:   
+    if modeling_options['blade']['n_te_flaps'] > 0:
         n_te_flaps = modeling_options['blade']['n_te_flaps']
         for i in range(n_te_flaps):
             wt_opt['dac_ivc.te_flap_start'][i]   = blade['aerodynamic_control']['te_flaps'][i]['span_start']
@@ -400,69 +403,205 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
 def assign_hub_values(wt_opt, hub):
 
-    wt_opt['hub.diameter']    = hub['outer_shape_bem']['diameter']
-    wt_opt['hub.cone']        = hub['outer_shape_bem']['cone_angle']
-    wt_opt['hub.drag_coeff']  = hub['outer_shape_bem']['drag_coefficient']
-
-    wt_opt['hub.system_mass'] = hub['elastic_properties_mb']['system_mass']
-    wt_opt['hub.system_I']    = hub['elastic_properties_mb']['system_inertia']
-    wt_opt['hub.system_cm']   = hub['elastic_properties_mb']['system_center_mass']
+    wt_opt['hub.diameter']                    = hub['diameter']
+    wt_opt['hub.cone']                        = hub['cone_angle']
+    wt_opt['hub.drag_coeff']                  = hub['drag_coefficient']
+    wt_opt['hub.flange_t2shell_t']            = hub['flange_t2shell_t']
+    wt_opt['hub.flange_OD2hub_D']             = hub['flange_OD2hub_D']
+    wt_opt['hub.flange_ID2flange_OD']         = hub['flange_ID2OD']
+    wt_opt['hub.hub_in2out_circ']             = hub['hub_blade_spacing_margin']
+    wt_opt['hub.hub_stress_concentration']    = hub['hub_stress_concentration']
+    wt_opt['hub.n_front_brackets']            = hub['n_front_brackets']
+    wt_opt['hub.n_rear_brackets']             = hub['n_rear_brackets']
+    wt_opt['hub.clearance_hub_spinner']       = hub['clearance_hub_spinner']
+    wt_opt['hub.spin_hole_incr']              = hub['spin_hole_incr']
+    wt_opt['hub.pitch_system_scaling_factor'] = hub['pitch_system_scaling_factor']
+    wt_opt['hub.spinner_gust_ws']             = hub['spinner_gust_ws']
+    wt_opt['hub.hub_material']                = hub['hub_material']
+    wt_opt['hub.spinner_material']            = hub['spinner_material']
 
     return wt_opt
 
-def assign_nacelle_values(wt_opt, assembly, nacelle):
 
-    wt_opt['nacelle.uptilt']            = nacelle['outer_shape_bem']['uptilt_angle']
-    wt_opt['nacelle.distance_tt_hub']   = nacelle['outer_shape_bem']['distance_tt_hub']
-    wt_opt['nacelle.overhang']          = nacelle['outer_shape_bem']['overhang']
+def assign_nacelle_values(wt_opt, modeling_options, nacelle):
+    # Common direct and geared
+    wt_opt['nacelle.uptilt']                    = nacelle['drivetrain']['uptilt_angle']
+    wt_opt['nacelle.distance_tt_hub']           = nacelle['drivetrain']['distance_tt_hub']
+    wt_opt['nacelle.overhang']                  = nacelle['drivetrain']['overhang']
+    wt_opt['nacelle.distance_hub2mb']           = nacelle['drivetrain']['distance_hub_mb']
+    wt_opt['nacelle.distance_mb2mb']            = nacelle['drivetrain']['distance_mb_mb']
+    wt_opt['nacelle.L_generator']               = nacelle['drivetrain']['generator_length']
+    wt_opt['nacelle.gear_ratio']                = nacelle['drivetrain']['gear_ratio']
+    wt_opt['nacelle.gearbox_efficiency']        = nacelle['drivetrain']['gearbox_efficiency']
+    wt_opt['nacelle.mb1Type']                   = nacelle['drivetrain']['mb1Type']
+    wt_opt['nacelle.mb2Type']                   = nacelle['drivetrain']['mb2Type']
+    wt_opt['nacelle.uptower']                   = nacelle['drivetrain']['uptower']
+    wt_opt['nacelle.lss_material']              = nacelle['drivetrain']['lss_material']
+    wt_opt['nacelle.bedplate_material']         = nacelle['drivetrain']['bedplate_material']
+    wt_opt['nacelle.brake_mass_user']           = nacelle['drivetrain']['brake_mass_user']
+    wt_opt['nacelle.hvac_mass_coeff']           = nacelle['drivetrain']['hvac_mass_coefficient']
+    wt_opt['nacelle.converter_mass_user']       = nacelle['drivetrain']['converter_mass_user']
+    wt_opt['nacelle.transformer_mass_user']     = nacelle['drivetrain']['transformer_mass_user']
 
+    s_lss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.lss_wall_thickness']))
+    s_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['grid']
+    v_lss_diameter_in = nacelle['drivetrain']['lss_diameter']['values']
+    s_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['grid']
+    v_lss_thick_in    = nacelle['drivetrain']['lss_wall_thickness']['values']
+    wt_opt['nacelle.lss_wall_thickness']       = np.interp(s_lss, s_lss_thick_in,    v_lss_thick_in)
+    wt_opt['nacelle.lss_diameter']             = np.interp(s_lss, s_lss_diameter_in, v_lss_diameter_in)
 
-    wt_opt['nacelle.above_yaw_mass']    = nacelle['elastic_properties_mb']['above_yaw_mass']
-    wt_opt['nacelle.yaw_mass']          = nacelle['elastic_properties_mb']['yaw_mass']
-    wt_opt['nacelle.nacelle_cm']        = nacelle['elastic_properties_mb']['center_mass']
-    wt_opt['nacelle.nacelle_I']         = nacelle['elastic_properties_mb']['inertia']
-    
-    wt_opt['nacelle.gear_ratio']        = nacelle['drivetrain']['gear_ratio']
-    wt_opt['nacelle.gearbox_efficiency']    = nacelle['drivetrain']['gearbox_efficiency']
-    wt_opt['nacelle.generator_efficiency']  = nacelle['drivetrain']['generator_efficiency']
-    if assembly['drivetrain'].upper() != 'DIRECT DRIVE':
-        wt_opt['nacelle.shaft_ratio']       = nacelle['drivetrain']['shaft_ratio']
-        wt_opt['nacelle.planet_numbers']    = nacelle['drivetrain']['planet_numbers']
-        wt_opt['nacelle.shrink_disc_mass']  = nacelle['drivetrain']['shrink_disc_mass']
-        wt_opt['nacelle.carrier_mass']      = nacelle['drivetrain']['carrier_mass']
-        wt_opt['nacelle.flange_length']     = nacelle['drivetrain']['flange_length']
-        wt_opt['nacelle.gearbox_input_xcm'] = nacelle['drivetrain']['gearbox_input_xcm']
-        wt_opt['nacelle.hss_input_length']  = nacelle['drivetrain']['hss_input_length']
-        wt_opt['nacelle.distance_hub2mb']   = nacelle['drivetrain']['distance_hub2mb']
-        wt_opt['nacelle.yaw_motors_number'] = nacelle['drivetrain']['yaw_motors_number']
+    if modeling_options['drivetrainse']['direct']:
+        # Direct only
+        wt_opt['nacelle.access_diameter']           = nacelle['drivetrain']['access_diameter']
+
+        s_nose = np.linspace(0.0, 1.0, len(wt_opt['nacelle.nose_wall_thickness']))
+        s_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['grid']
+        v_nose_diameter_in = nacelle['drivetrain']['nose_diameter']['values']
+        s_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['grid']
+        v_nose_thick_in    = nacelle['drivetrain']['nose_wall_thickness']['values']
+        wt_opt['nacelle.nose_wall_thickness']       = np.interp(s_nose, s_nose_thick_in,    v_nose_thick_in)
+        wt_opt['nacelle.nose_diameter']             = np.interp(s_nose, s_nose_diameter_in, v_nose_diameter_in)
+
+        s_bedplate = np.linspace(0.0, 1.0, len(wt_opt['nacelle.bedplate_wall_thickness']))
+        s_bed_thick_in    = nacelle['drivetrain']['bedplate_wall_thickness']['grid']
+        v_bed_thick_in    = nacelle['drivetrain']['bedplate_wall_thickness']['values']
+        wt_opt['nacelle.bedplate_wall_thickness']   = np.interp(s_bedplate, s_bed_thick_in, v_bed_thick_in)
     else:
-        print('DriveSE not yet supports direct drive configurations!!! Please do not trust the nacelle design and the lcoe analysis!')
-        wt_opt['nacelle.shaft_ratio']       = 0.1
-        wt_opt['nacelle.planet_numbers']    = [3, 3, 1]
-        wt_opt['nacelle.shrink_disc_mass']  = 1600
-        wt_opt['nacelle.carrier_mass']      = 8000
-        wt_opt['nacelle.flange_length']     = 0.5
-        wt_opt['nacelle.gearbox_input_xcm'] = 0.1
-        wt_opt['nacelle.hss_input_length']  = 1.5
-        wt_opt['nacelle.distance_hub2mb']   = 1.912
-        wt_opt['nacelle.yaw_motors_number'] = 1.
+        # Geared only
+        s_hss = np.linspace(0.0, 1.0, len(wt_opt['nacelle.hss_wall_thickness']))
+        s_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['grid']
+        v_hss_diameter_in = nacelle['drivetrain']['hss_diameter']['values']
+        s_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['grid']
+        v_hss_thick_in    = nacelle['drivetrain']['hss_wall_thickness']['values']
+        wt_opt['nacelle.hss_wall_thickness']       = np.interp(s_hss, s_hss_thick_in,    v_hss_thick_in)
+        wt_opt['nacelle.hss_diameter']             = np.interp(s_hss, s_hss_diameter_in, v_hss_diameter_in)
 
+        wt_opt['nacelle.hss_length']                = nacelle['drivetrain']['hss_length']
+        wt_opt['nacelle.bedplate_flange_width']     = nacelle['drivetrain']['bedplate_flange_width']
+        wt_opt['nacelle.bedplate_flange_thickness'] = nacelle['drivetrain']['bedplate_flange_thickness']
+        wt_opt['nacelle.bedplate_web_thickness']    = nacelle['drivetrain']['bedplate_web_thickness']
+        wt_opt['nacelle.gear_configuration']        = nacelle['drivetrain']['gear_configuration'].lower()
+        wt_opt['nacelle.planet_numbers']            = nacelle['drivetrain']['planet_numbers']
+        wt_opt['nacelle.hss_material']              = nacelle['drivetrain']['hss_material']
+
+    if not modeling_options['flags']['generator']:
+        wt_opt['generator.generator_mass_user']     = nacelle['drivetrain']['generator_mass_user']
+
+        eff_user = np.c_[nacelle['drivetrain']['generator_rpm_efficiency_user']['grid'],
+                         nacelle['drivetrain']['generator_rpm_efficiency_user']['values']]
+        n_pc     = modeling_options['servose']['n_pc']
+        if np.any(eff_user):
+            newrpm   = np.linspace(eff_user[:,0].min(), eff_user[:,0].max(), n_pc)
+            neweff   = np.interp(newrpm, eff_user[:,0], eff_user[:,1])
+            myeff    = np.c_[newrpm, neweff]
+        else:
+            myeff = np.zeros( (n_pc,2) )
+        wt_opt['generator.generator_efficiency_user'] = myeff
 
     return wt_opt
+
+def assign_generator_values(wt_opt, modeling_options, nacelle):
+
+    wt_opt['generator.B_r']           = nacelle['generator']['B_r']
+    wt_opt['generator.P_Fe0e']        = nacelle['generator']['P_Fe0e']
+    wt_opt['generator.P_Fe0h']        = nacelle['generator']['P_Fe0h']
+    wt_opt['generator.S_N']           = nacelle['generator']['S_N']
+    wt_opt['generator.alpha_p']       = nacelle['generator']['alpha_p']
+    wt_opt['generator.b_r_tau_r']     = nacelle['generator']['b_r_tau_r']
+    wt_opt['generator.b_ro']          = nacelle['generator']['b_ro']
+    wt_opt['generator.b_s_tau_s']     = nacelle['generator']['b_s_tau_s']
+    wt_opt['generator.b_so']          = nacelle['generator']['b_so']
+    wt_opt['generator.cofi']          = nacelle['generator']['cofi']
+    wt_opt['generator.freq']          = nacelle['generator']['freq']
+    wt_opt['generator.h_i']           = nacelle['generator']['h_i']
+    wt_opt['generator.h_sy0']         = nacelle['generator']['h_sy0']
+    wt_opt['generator.h_w']           = nacelle['generator']['h_w']
+    wt_opt['generator.k_fes']         = nacelle['generator']['k_fes']
+    wt_opt['generator.k_fillr']       = nacelle['generator']['k_fillr']
+    wt_opt['generator.k_fills']       = nacelle['generator']['k_fills']
+    wt_opt['generator.k_s']           = nacelle['generator']['k_s']
+    wt_opt['generator.m']             = nacelle['generator']['m']
+    wt_opt['generator.mu_0']          = nacelle['generator']['mu_0']
+    wt_opt['generator.mu_r']          = nacelle['generator']['mu_r']
+    wt_opt['generator.p']             = nacelle['generator']['p']
+    wt_opt['generator.phi']           = nacelle['generator']['phi']
+    wt_opt['generator.q1']            = nacelle['generator']['q1']
+    wt_opt['generator.q2']            = nacelle['generator']['q2']
+    wt_opt['generator.ratio_mw2pp']   = nacelle['generator']['ratio_mw2pp']
+    wt_opt['generator.resist_Cu']     = nacelle['generator']['resist_Cu']
+    wt_opt['generator.sigma']         = nacelle['generator']['sigma']
+    wt_opt['generator.y_tau_p']       = nacelle['generator']['y_tau_p']
+    wt_opt['generator.y_tau_pr']      = nacelle['generator']['y_tau_pr']
+
+    wt_opt['generator.I_0']           = nacelle['generator']['I_0']
+    wt_opt['generator.d_r']           = nacelle['generator']['d_r']
+    wt_opt['generator.h_m']           = nacelle['generator']['h_m']
+    wt_opt['generator.h_0']           = nacelle['generator']['h_0']
+    wt_opt['generator.h_s']           = nacelle['generator']['h_s']
+    wt_opt['generator.len_s']         = nacelle['generator']['len_s']
+    wt_opt['generator.n_r']           = nacelle['generator']['n_r']
+    wt_opt['generator.rad_ag']        = nacelle['generator']['rad_ag']
+    wt_opt['generator.t_wr']          = nacelle['generator']['t_wr']
+
+    wt_opt['generator.n_s']           = nacelle['generator']['n_s']
+    wt_opt['generator.b_st']          = nacelle['generator']['b_st']
+    wt_opt['generator.d_s']           = nacelle['generator']['d_s']
+    wt_opt['generator.t_ws']          = nacelle['generator']['t_ws']
+
+    wt_opt['generator.rho_Copper']    = nacelle['generator']['rho_Copper']
+    wt_opt['generator.rho_Fe']        = nacelle['generator']['rho_Fe']
+    wt_opt['generator.rho_Fes']       = nacelle['generator']['rho_Fes']
+    wt_opt['generator.rho_PM']        = nacelle['generator']['rho_PM']
+
+    wt_opt['generator.C_Cu']          = nacelle['generator']['C_Cu']
+    wt_opt['generator.C_Fe']          = nacelle['generator']['C_Fe']
+    wt_opt['generator.C_Fes']         = nacelle['generator']['C_Fes']
+    wt_opt['generator.C_PM']          = nacelle['generator']['C_PM']
+
+    if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
+        wt_opt['generator.N_c']           = nacelle['generator']['N_c']
+        wt_opt['generator.b']             = nacelle['generator']['b']
+        wt_opt['generator.c']             = nacelle['generator']['c']
+        wt_opt['generator.E_p']           = nacelle['generator']['E_p']
+        wt_opt['generator.h_yr']          = nacelle['generator']['h_yr']
+        wt_opt['generator.h_ys']          = nacelle['generator']['h_ys']
+        wt_opt['generator.h_sr']          = nacelle['generator']['h_sr']
+        wt_opt['generator.h_ss']          = nacelle['generator']['h_ss']
+        wt_opt['generator.t_r']           = nacelle['generator']['t_r']
+        wt_opt['generator.t_s']           = nacelle['generator']['t_s']
+
+        wt_opt['generator.u_allow_pcent'] = nacelle['generator']['u_allow_pcent']
+        wt_opt['generator.y_allow_pcent'] = nacelle['generator']['y_allow_pcent']
+        wt_opt['generator.z_allow_deg']   = nacelle['generator']['z_allow_deg']
+        wt_opt['generator.B_tmax']        = nacelle['generator']['B_tmax']
+
+    if modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+        wt_opt['generator.tau_p']         = nacelle['generator']['tau_p']
+        wt_opt['generator.h_ys']          = nacelle['generator']['h_ys']
+        wt_opt['generator.h_yr']          = nacelle['generator']['h_yr']
+        wt_opt['generator.b_arm']         = nacelle['generator']['b_arm']
+
+    elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
+        wt_opt['generator.B_symax']       = nacelle['generator']['B_symax']
+        wt_opt['generator.S_Nmax']        = nacelle['generator']['S_Nmax']
+
+    return wt_opt
+
 
 def assign_tower_values(wt_opt, modeling_options, tower):
     # Function to assign values to the openmdao component Tower
     n_height        = modeling_options['tower']['n_height'] # Number of points along tower height
     n_layers        = modeling_options['tower']['n_layers']
-    
+
     svec = np.unique( np.r_[tower['outer_shape_bem']['outer_diameter']['grid'],
                             tower['outer_shape_bem']['reference_axis']['x']['grid'],
                             tower['outer_shape_bem']['reference_axis']['y']['grid'],
                             tower['outer_shape_bem']['reference_axis']['z']['grid']] )
-    
+
     wt_opt['tower.s'] = svec
     wt_opt['tower.diameter']   = np.interp(svec, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
-    
+
     wt_opt['tower.ref_axis'][:,0]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['tower.ref_axis'][:,1]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['tower.ref_axis'][:,2]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['z']['grid'], tower['outer_shape_bem']['reference_axis']['z']['values'])
@@ -478,24 +617,24 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt['tower.layer_name']        = layer_name
     wt_opt['tower.layer_mat']         = layer_mat
     wt_opt['tower.layer_thickness']   = 0.5*(thickness[:,:-1]+thickness[:,1:])
-    
-    wt_opt['tower.outfitting_factor'] = tower['internal_structure_2d_fem']['outfitting_factor']    
-    
+
+    wt_opt['tower.outfitting_factor'] = tower['internal_structure_2d_fem']['outfitting_factor']
+
     return wt_opt
 
 def assign_monopile_values(wt_opt, modeling_options, monopile):
     # Function to assign values to the openmdao component Monopile
     n_height        = modeling_options['monopile']['n_height'] # Number of points along monopile height
     n_layers        = modeling_options['monopile']['n_layers']
-    
+
     svec = np.unique( np.r_[monopile['outer_shape_bem']['outer_diameter']['grid'],
                             monopile['outer_shape_bem']['reference_axis']['x']['grid'],
                             monopile['outer_shape_bem']['reference_axis']['y']['grid'],
                             monopile['outer_shape_bem']['reference_axis']['z']['grid']] )
-    
+
     wt_opt['monopile.s'] = svec
     wt_opt['monopile.diameter']   = np.interp(svec, monopile['outer_shape_bem']['outer_diameter']['grid'], monopile['outer_shape_bem']['outer_diameter']['values'])
-    
+
     wt_opt['monopile.ref_axis'][:,0]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['x']['grid'], monopile['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['monopile.ref_axis'][:,1]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['y']['grid'], monopile['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['monopile.ref_axis'][:,2]  = np.interp(svec, monopile['outer_shape_bem']['reference_axis']['z']['grid'], monopile['outer_shape_bem']['reference_axis']['z']['values'])
@@ -512,14 +651,14 @@ def assign_monopile_values(wt_opt, modeling_options, monopile):
     wt_opt['monopile.layer_mat']         = layer_mat
     wt_opt['monopile.layer_thickness']   = 0.5*(thickness[:,:-1]+thickness[:,1:])
 
-    wt_opt['monopile.outfitting_factor']          = monopile['internal_structure_2d_fem']['outfitting_factor']    
+    wt_opt['monopile.outfitting_factor']          = monopile['internal_structure_2d_fem']['outfitting_factor']
     wt_opt['monopile.transition_piece_height']    = monopile['transition_piece_height']
     wt_opt['monopile.transition_piece_mass']      = monopile['transition_piece_mass']
     wt_opt['monopile.transition_piece_cost']      = monopile['transition_piece_cost']
     wt_opt['monopile.gravity_foundation_mass']    = monopile['gravity_foundation_mass']
     wt_opt['monopile.suctionpile_depth']          = monopile['suctionpile_depth']
     wt_opt['monopile.suctionpile_depth_diam_ratio']          = monopile['suctionpile_depth_diam_ratio']
-    
+
     return wt_opt
 
 def assign_foundation_values(wt_opt, foundation):
@@ -535,7 +674,7 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     dy = (floating['column']['main']['reference_axis']['y']['values'].mean() -
           floating['column']['offset']['reference_axis']['y']['values'].mean() )
     wt_opt['floating.radius_to_offset_column'] = np.sqrt(dx**2 + dy**2)
-        
+
     wt_opt['floating.number_of_offset_columns'] = len(floating['column']['repeat'])
     for k in range(len(floating['mooring']['nodes'])):
         if floating['mooring']['nodes'][k]['node_type'] == 'vessel':
@@ -544,22 +683,22 @@ def assign_floating_values(wt_opt, modeling_options, floating):
             break
 
     wt_opt['floating.outfitting_cost_rate'] = 20.0 # Lookup material here?
-    wt_opt['floating.loading'] = 'hydrostatic' #if modeling_options['floating']['loading']['hydrostatic'] else 
+    wt_opt['floating.loading'] = 'hydrostatic' #if modeling_options['floating']['loading']['hydrostatic'] else
 
     # Main column
     svec = np.unique( np.r_[floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'],
                             floating['column']['main']['outer_shape_bem']['reference_axis']['x']['grid'],
                             floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'],
                             floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid']] )
-    
+
     wt_opt['floating.main.s'] = svec
     wt_opt['floating.main.diameter']   = np.interp(svec, floating['column']['main']['outer_shape_bem']['outer_diameter']['grid'], floating['column']['main']['outer_shape_bem']['outer_diameter']['values'])
-    
+
     wt_opt['floating.main.ref_axis'][:,0]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['x']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['floating.main.ref_axis'][:,1]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['floating.main.ref_axis'][:,2]  = np.interp(svec, floating['column']['main']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['main']['outer_shape_bem']['reference_axis']['z']['values'])
 
-    wt_opt['floating.main.outfitting_factor']          = floating['columns']['main']['internal_structure']['outfitting_factor']    
+    wt_opt['floating.main.outfitting_factor']          = floating['columns']['main']['internal_structure']['outfitting_factor']
     wt_opt['floating.main.stiffener_web_height']       = floating['columns']['main']['internal_structure']['stiffener_web_height']
     wt_opt['floating.main.stiffener_web_thickness']    = floating['columns']['main']['internal_structure']['stiffener_web_thickness']
     wt_opt['floating.main.stiffener_flange_thickness'] = floating['columns']['main']['internal_structure']['stiffener_flange_thickness']
@@ -588,15 +727,15 @@ def assign_floating_values(wt_opt, modeling_options, floating):
                             floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['grid'],
                             floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'],
                             floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid']] )
-    
+
     wt_opt['floating.offset.s'] = svec
     wt_opt['floating.offset.diameter']   = np.interp(svec, floating['column']['offset']['outer_shape_bem']['outer_diameter']['grid'], floating['column']['offset']['outer_shape_bem']['outer_diameter']['values'])
-    
+
     wt_opt['floating.offset.ref_axis'][:,0]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['floating.offset.ref_axis'][:,1]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['y']['values'])
     wt_opt['floating.offset.ref_axis'][:,2]  = np.interp(svec, floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['grid'], floating['column']['offset']['outer_shape_bem']['reference_axis']['z']['values'])
 
-    wt_opt['floating.offset.outfitting_factor']          = floating['columns']['offset']['internal_structure']['outfitting_factor']    
+    wt_opt['floating.offset.outfitting_factor']          = floating['columns']['offset']['internal_structure']['outfitting_factor']
     wt_opt['floating.offset.stiffener_web_height']       = floating['columns']['offset']['internal_structure']['stiffener_web_height']
     wt_opt['floating.offset.stiffener_web_thickness']    = floating['columns']['offset']['internal_structure']['stiffener_web_thickness']
     wt_opt['floating.offset.stiffener_flange_thickness'] = floating['columns']['offset']['internal_structure']['stiffener_flange_thickness']
@@ -618,21 +757,21 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     wt_opt['floating.offset.layer_name']     = layer_name
     wt_opt['floating.offset.layer_mat']      = layer_mat
     wt_opt['floating.offsetlayer_thickness'] = thickness
-    
+
     for k in range(len(floating['heave_plate'])):
         if floating['heave_plate'][k]['member_name'].lower().find('main') >= 0:
             # TODO: Might need grid/values on OD
             wt_opt['floating.main.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
             wt_opt['floating.main.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
             wt_opt['floating.main.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
-            
+
         elif floating['heave_plate'][k]['member_name'].lower().find('off') >= 0:
             # TODO: Might need grid/values on OD
             wt_opt['floating.offset.buoyancy_tank_diameter'] = floating['heave_plate'][k]['outer_diameter']
             wt_opt['floating.offset.buoyancy_tank_height']   = floating['heave_plate'][k]['wall_thickness']
             wt_opt['floating.offset.buoyancy_tank_location'] = floating['heave_plate'][k]['grid_value']
-            
-    
+
+
     wt_opt['floating.transition_piece_height'] = wt_opt['floating.main.freeboard'] = floating['column']['main']['reference_axis']['z']['values'].max()
     wt_opt['floating.transition_piece_mass']   = floating['transition_piece_mass']
 
@@ -665,7 +804,7 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     for k in range(len(floating['mooring']['line_type'])):
         if floating['mooring']['line_type'][k]['name'] == line_type:
             wt_opt['floating.mooring.mooring_diameter'] = floating['mooring']['line_type'][k]['diameter']
-            
+
     wt_opt['floating.mooring.mooring_type'] = 'CHAIN'
     wt_opt['floating.mooring.anchor_type'] = 'SUCTIONPILE'
 
@@ -674,7 +813,7 @@ def assign_floating_values(wt_opt, modeling_options, floating):
     wt_opt['floating.mooring.max_offset']          = 50.0
     wt_opt['floating.mooring.operational_heel']    = 6.0
     wt_opt['floating.mooring.max_survival_heel']   = 10.0
-        
+
     return wt_opt
 
 def assign_control_values(wt_opt, modeling_options, control):
@@ -689,7 +828,7 @@ def assign_control_values(wt_opt, modeling_options, control):
     wt_opt['control.max_TS']        = control['maxTS']
     wt_opt['control.max_pitch_rate']= control['max_pitch_rate']
     wt_opt['control.max_torque_rate']= control['max_torque_rate']
-            
+
     return wt_opt
 
 def assign_configuration_values(wt_opt, assembly):
@@ -698,6 +837,7 @@ def assign_configuration_values(wt_opt, assembly):
     wt_opt['configuration.turb_class']        = assembly['turbulence_class']
     wt_opt['configuration.gearbox_type']      = assembly['drivetrain']
     wt_opt['configuration.rotor_orientation'] = assembly['rotor_orientation'].lower()
+    wt_opt['configuration.upwind']            = wt_opt['configuration.rotor_orientation'] == 'upwind'
     wt_opt['configuration.n_blades']          = int(assembly['number_of_blades'])
 
     # Checks for errors
@@ -749,26 +889,50 @@ def assign_bos_values(wt_opt, bos, offshore):
 
 def assign_costs_values(wt_opt, costs):
 
-    wt_opt['costs.turbine_number']      = costs['turbine_number']
-    wt_opt['costs.opex_per_kW']         = costs['opex_per_kW']
-    wt_opt['costs.bos_per_kW']          = costs['bos_per_kW']
-    wt_opt['costs.wake_loss_factor']    = costs['wake_loss_factor']
-    wt_opt['costs.fixed_charge_rate']   = costs['fixed_charge_rate']
+    wt_opt['costs.turbine_number']    = costs['turbine_number']
+    wt_opt['costs.opex_per_kW']       = costs['opex_per_kW']
+    wt_opt['costs.bos_per_kW']        = costs['bos_per_kW']
+    wt_opt['costs.wake_loss_factor']  = costs['wake_loss_factor']
+    wt_opt['costs.fixed_charge_rate'] = costs['fixed_charge_rate']
+    wt_opt['costs.labor_rate']        = costs['labor_rate']
+    wt_opt['costs.painting_rate']     = costs['painting_rate']
+
+    wt_opt['costs.blade_mass_cost_coeff']                 = costs['blade_mass_cost_coeff']
+    wt_opt['costs.hub_mass_cost_coeff']                   = costs['hub_mass_cost_coeff']
+    wt_opt['costs.pitch_system_mass_cost_coeff']          = costs['pitch_system_mass_cost_coeff']
+    wt_opt['costs.spinner_mass_cost_coeff']               = costs['spinner_mass_cost_coeff']
+    wt_opt['costs.lss_mass_cost_coeff']                   = costs['lss_mass_cost_coeff']
+    wt_opt['costs.bearing_mass_cost_coeff']               = costs['bearing_mass_cost_coeff']
+    wt_opt['costs.gearbox_mass_cost_coeff']               = costs['gearbox_mass_cost_coeff']
+    wt_opt['costs.hss_mass_cost_coeff']                   = costs['hss_mass_cost_coeff']
+    wt_opt['costs.generator_mass_cost_coeff']             = costs['generator_mass_cost_coeff']
+    wt_opt['costs.bedplate_mass_cost_coeff']              = costs['bedplate_mass_cost_coeff']
+    wt_opt['costs.yaw_mass_cost_coeff']                   = costs['yaw_mass_cost_coeff']
+    wt_opt['costs.converter_mass_cost_coeff']             = costs['converter_mass_cost_coeff']
+    wt_opt['costs.transformer_mass_cost_coeff']           = costs['transformer_mass_cost_coeff']
+    wt_opt['costs.hvac_mass_cost_coeff']                  = costs['hvac_mass_cost_coeff']
+    wt_opt['costs.cover_mass_cost_coeff']                 = costs['cover_mass_cost_coeff']
+    wt_opt['costs.elec_connec_machine_rating_cost_coeff'] = costs['elec_connec_machine_rating_cost_coeff']
+    wt_opt['costs.platforms_mass_cost_coeff']             = costs['platforms_mass_cost_coeff']
+    wt_opt['costs.tower_mass_cost_coeff']                 = costs['tower_mass_cost_coeff']
+    wt_opt['costs.controls_machine_rating_cost_coeff']    = costs['controls_machine_rating_cost_coeff']
+    wt_opt['costs.crane_cost']                            = costs['crane_cost']
+
     if 'offset_tcc_per_kW' in costs:
         wt_opt['costs.offset_tcc_per_kW']   = costs['offset_tcc_per_kW']
 
-    return wt_opt 
+    return wt_opt
 
 def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     # Function to assign values to the openmdao component Airfoils
-    
+
     n_af  = modeling_options['airfoils']['n_af']
     n_aoa = modeling_options['airfoils']['n_aoa']
     aoa   = modeling_options['airfoils']['aoa']
     n_Re  = modeling_options['airfoils']['n_Re']
     n_tab = modeling_options['airfoils']['n_tab']
     n_xy  = modeling_options['airfoils']['n_xy']
-    
+
     name    = n_af * ['']
     ac      = np.zeros(n_af)
     r_thick = np.zeros(n_af)
@@ -780,13 +944,13 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
         for j in range(len(airfoils[i]['polars'])):
             Re_all.append(airfoils[i]['polars'][j]['re'])
     Re = np.array(sorted(np.unique(Re_all)))
-    
+
     cl = np.zeros((n_af, n_aoa, n_Re, n_tab))
     cd = np.zeros((n_af, n_aoa, n_Re, n_tab))
     cm = np.zeros((n_af, n_aoa, n_Re, n_tab))
-    
+
     coord_xy = np.zeros((n_af, n_xy, 2))
-    
+
     # Interp cl-cd-cm along predefined grid of angle of attack
     for i in range(n_af):
         n_Re_i = len(airfoils[i]['polars'])
@@ -798,7 +962,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
             cl[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_l']['grid'], airfoils[i]['polars'][j]['c_l']['values'])
             cd[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_d']['grid'], airfoils[i]['polars'][j]['c_d']['values'])
             cm[i,:,j_Re[j],0] = np.interp(aoa, airfoils[i]['polars'][j]['c_m']['grid'], airfoils[i]['polars'][j]['c_m']['values'])
-    
+
             if abs(cl[i,0,j,0] - cl[i,-1,j,0]) > 1.e-5:
                 cl[i,0,j,0] = cl[i,-1,j,0]
                 print("WARNING: Airfoil " + name[i] + ' has the lift coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
@@ -808,7 +972,7 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
             if abs(cm[i,0,j,0] - cm[i,-1,j,0]) > 1.e-5:
                 cm[i,0,j,0] = cm[i,-1,j,0]
                 print("WARNING: Airfoil " + name[i] + ' has the moment coefficient at Re ' + str(Re_j) + ' different between + and - pi rad. This is fixed automatically, but please check the input data.')
-        
+
         # Re-interpolate cl-cd-cm along the Re dimension if less than n_Re were provided in the input yaml (common condition)
         for k in range(n_aoa):
             cl[i,k,:,0] = np.interp(Re, Re_j, cl[i,k,j_Re,0])
@@ -821,28 +985,28 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
         idx_le = np.argmin(points[:,0])
         if np.mean(points[:idx_le,1]) > 0.:
             points = np.flip(points, axis=0)
-        
+
         # Remap points using class AirfoilShape
         af = AirfoilShape(points=points)
         af.redistribute(n_xy, even=False, dLE=True)
         s = af.s
         af_points = af.points
-        
+
         # Add trailing edge point if not defined
         if [1,0] not in af_points.tolist():
             af_points[:,0] -= af_points[np.argmin(af_points[:,0]), 0]
         c = max(af_points[:,0])-min(af_points[:,0])
         af_points[:,:] /= c
-        
+
         coord_xy[i,:,:] = af_points
-        
+
         # Plotting
         # import matplotlib.pyplot as plt
         # plt.plot(af_points[:,0], af_points[:,1], '.')
         # plt.plot(af_points[:,0], af_points[:,1])
         # plt.show()
-        
-    # Assign to openmdao structure    
+
+    # Assign to openmdao structure
     wt_opt['airfoils.aoa']       = aoa
     wt_opt['airfoils.name']      = name
     wt_opt['airfoils.ac']        = ac
@@ -851,16 +1015,16 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
     wt_opt['airfoils.cl']        = cl
     wt_opt['airfoils.cd']        = cd
     wt_opt['airfoils.cm']        = cm
-    
+
     wt_opt['airfoils.coord_xy']  = coord_xy
-     
+
     return wt_opt
-    
+
 def assign_material_values(wt_opt, modeling_options, materials):
     # Function to assign values to the openmdao component Materials
-    
+
     n_mat = modeling_options['materials']['n_mat']
-    
+
     name        = n_mat * ['']
     orth        = np.zeros(n_mat)
     component_id= -np.ones(n_mat)
@@ -879,7 +1043,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
     roll_mass   = np.zeros(n_mat)
     unit_cost   = np.zeros(n_mat)
     waste       = np.zeros(n_mat)
-    
+
     for i in range(n_mat):
         name[i]    =  materials[i]['name']
         orth[i]    =  materials[i]['orth']
@@ -929,7 +1093,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
         if 'Xy' in materials[i]:
             sigma_y[i] =  materials[i]['Xy']
 
-            
+
     wt_opt['materials.name']     = name
     wt_opt['materials.orth']     = orth
     wt_opt['materials.rho']      = rho
@@ -954,12 +1118,12 @@ def assign_material_values(wt_opt, modeling_options, materials):
 def assign_RNA_values(wt_opt, modeling_options, blade, RNA):
 
     def _assembleI(I):
-        Ixx, Iyy, Izz, Ixy, Ixz, Iyz = I[0], I[1], I[2], I[3], I[4], I[5] 
+        Ixx, Iyy, Izz, Ixy, Ixz, Iyz = I[0], I[1], I[2], I[3], I[4], I[5]
         return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
 
     def _unassembleI(I):
         return np.array([I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]])
-    
+
     nd_span     = modeling_options['blade']['nd_span']
     n_span      = len(nd_span)
     ref_axis    = np.zeros((n_span,3))
@@ -968,7 +1132,7 @@ def assign_RNA_values(wt_opt, modeling_options, blade, RNA):
     ref_axis[:,2]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['z']['grid'], blade['outer_shape_bem']['reference_axis']['z']['values'])
 
     blade_length = arc_length(ref_axis)[-1]
-    
+
     rhoA = np.zeros(n_span)
     rhoA2interp = np.zeros(len(blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid']))
     for i in range(len(rhoA2interp)):
@@ -977,7 +1141,7 @@ def assign_RNA_values(wt_opt, modeling_options, blade, RNA):
 
     rb   = nd_span * blade_length
     blade_mass = np.trapz(rhoA, rb)
-    rR   = rb + wt_opt['hub.diameter'] * 0.5  
+    rR   = rb + wt_opt['hub.diameter'] * 0.5
     blade_moment_of_inertia = np.trapz(rhoA * rR**2., rR)
     tilt = wt_opt['nacelle.uptilt'] * 180. / np.pi
     n_blades = wt_opt['configuration.n_blades']

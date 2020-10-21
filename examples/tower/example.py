@@ -4,6 +4,7 @@
 import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
+from wisdem.commonse.fileIO import save_data
 
 
 # Set analysis and optimization options and define geometry
@@ -176,14 +177,16 @@ prob['max_taper'] = 0.2
 
 # run the analysis or optimization
 prob.model.approx_totals()
-prob.run_driver()
-prob.run_model()
+if opt_flag:
+    prob.run_driver()
+else:
+    prob.run_model()
+save_data('tower_example',prob)
 # ---
-
 
 # print results from the analysis or optimization
 z = 0.5 * (prob['z_full'][:-1] + prob['z_full'][1:])
-print('zs =', z)
+print('zs =', prob['z_full'])
 print('ds =', prob['d_full'])
 print('ts =', prob['t_full'])
 print('mass (kg) =', prob['tower_mass'])
