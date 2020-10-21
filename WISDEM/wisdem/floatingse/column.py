@@ -123,18 +123,15 @@ class DiscretizationYAML(om.ExplicitComponent):
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         # Unpack dimensions
         n_height = self.options['n_height']
-        n_layers = self.options['n_layers']
 
         # Unpack values
         h_col  = inputs['height']
-        lthick = inputs['layer_thickness']
-        lmat   = copy.copy( discrete_inputs['layer_materials'] )
         
         outputs['section_height'] = np.diff( h_col * inputs['s'] )
         outputs['wall_thickness'] = np.sum(inputs['layer_thickness'], axis=0)
         outputs['outer_diameter'] = inputs['outer_diameter_in']
         twall     = inputs['layer_thickness']
-        layer_mat = discrete_inputs['layer_materials']
+        layer_mat = copy.copy( discrete_inputs['layer_materials'] )
 
         # Check to make sure we have good values
         if np.any(outputs['section_height'] <= 0.0):
@@ -1574,7 +1571,7 @@ class Column(om.Group):
 
         self.add_subsystem('col', ColumnProperties(n_height=n_height), promotes=['*'])
 
-        self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=[('Uref', 'wind_reference_speed'), ('zref', 'wind_reference_height'), 'shearExp', ('z0', 'wind_z0')])
+        self.add_subsystem('wind', PowerWind(nPoints=n_full), promotes=['Uref', 'zref', 'shearExp', ('z0', 'wind_z0')])
         self.add_subsystem('wave', LinearWaves(nPoints=n_full), promotes=['Uc','hsig_wave','Tsig_wave','rho_water', ('z_floor', 'water_depth'), ('z_surface', 'wave_z0')])
         self.add_subsystem('windLoads', CylinderWindDrag(nPoints=n_full), promotes=['cd_usr','beta_wind','rho_air','mu_air'])
         self.add_subsystem('waveLoads', CylinderWaveDrag(nPoints=n_full), promotes=['cm','cd_usr','beta_wave','rho_water','mu_water'])
