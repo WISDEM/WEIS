@@ -5,19 +5,18 @@ Module documentation
 
 .. only:: html
 
-    Individual documentation for each of the modules contained within WISDEM.
+    This page contains the documentation for each of the modules contained within WISDEM. The models composing WISDEM are all integrated (glued) into a single workflow. The order of the models in the workflow follows the load path, therefore going from the rotor, to the nacelle, to the tower. Lastly, the cost models are called.
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   wisdem/aeroelasticse/index
    wisdem/airfoilprep/index
    wisdem/ccblade/index
    wisdem/commonse/index
-   wisdem/drivetrainse/drivese/index
-   wisdem/drivetrainse/generator/index
+   wisdem/drivetrainse/index
    wisdem/floatingse/index
+   wisdem/glue_code/index
    wisdem/landbosse/index
    wisdem/nrelcsm/index
    wisdem/orbit/index
@@ -26,5 +25,3 @@ Module documentation
    wisdem/pymap/index
    wisdem/rotorse/index
    wisdem/towerse/index
-   wisdem/turbine_costsse/index
-   wisdem/jacketse/index
