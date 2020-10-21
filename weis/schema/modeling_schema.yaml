@@ -10,18 +10,18 @@ title: WISDEM wind turbine modeling options schema
 description: Scehma that describes the modeling options for WISDEM
 type: object
 properties:
-    general: 
+    general:
         type: object
         default: {}
-        properties: 
-            verbosity: 
+        properties:
+            verbosity:
                 type: boolean
                 default: False
-                description: Prints additional outputs to screen (and to a file log in the future)            
+                description: Prints additional outputs to screen (and to a file log in the future)
     Analysis_Flags:
         type: object
         default: {}
-        properties: 
+        properties:
             RotorSE:
                 type: boolean
                 default: False
@@ -45,7 +45,7 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run OpenFAST
-    xfoil:            
+    xfoil:
         type: object
         default: {}
         properties:
@@ -57,7 +57,7 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run xfoil in parallel (requires mpi setup)
-    rotorse:            
+    rotorse:
         type: object
         default: {}
         properties:
@@ -73,6 +73,53 @@ properties:
                 type: number
                 default: 30
                 description: Number of spanwise stations in a common grid used to define blade properties
+    drivetrainse:
+        type: object
+        default: {}
+        properties:
+            model_generator:
+                type: boolean
+                default: False
+                description: Whether or not to do detailed generator modeling using tools formerly in GeneratorSE
+            gamma_f:
+                type: number
+                description: Partial safety factor for failure
+                minimum: 1.0
+                maximum: 5.0
+                default: 1.35
+                unit: none
+            gamma_m:
+                type: number
+                description: Partial safety factor for failure
+                minimum: 1.0
+                maximum: 5.0
+                default: 1.3
+                unit: none
+            gamma_n:
+                type: number
+                description: Partial safety factor for failure
+                minimum: 1.0
+                maximum: 5.0
+                default: 1.0
+                unit: none
+            hub:
+                type: object
+                default: {}
+                properties:
+                    hub_gamma:
+                        type: number
+                        description: Partial safety factor for hub sizing
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 2.0
+                        unit: none
+                    spinner_gamma:
+                        type: number
+                        description: Partial safety factor for spinner sizing
+                        minimum: 1.0
+                        maximum: 5.0
+                        default: 1.5
+                        unit: none
     towerse:            
         type: object
         default: {}
@@ -128,7 +175,7 @@ properties:
                 type: object
                 description: Set of Frame3DD options used for tower analysis
                 default: {}
-                properties:                              
+                properties:
                     shear:
                         type: boolean
                         default: True
@@ -160,7 +207,7 @@ properties:
                 type: number
                 default: 200
                 description: Number of wind speeds to spline the power curve
-            n_pitch_perf_surfaces: 
+            n_pitch_perf_surfaces:
                 type: integer
                 default: 50
                 description: Number of pitch angles to determine the Cp-Ct-Cq-surfaces
@@ -168,27 +215,27 @@ properties:
                 type: number
                 default: -5.
                 description: Min pitch angle of the Cp-Ct-Cq-surfaces
-            max_pitch_perf_surfaces: 
+            max_pitch_perf_surfaces:
                 type: number
                 default: 40.
                 description: Max pitch angle of the Cp-Ct-Cq-surfaces
-            n_tsr_perf_surfaces: 
+            n_tsr_perf_surfaces:
                 type: integer
                 default: 50
                 description: Number of tsr values to determine the Cp-Ct-Cq-surfaces
-            min_tsr_perf_surfaces: 
+            min_tsr_perf_surfaces:
                 type: number
                 default: 1.
                 description: Min TSR of the Cp-Ct-Cq-surfaces
-            max_tsr_perf_surfaces: 
+            max_tsr_perf_surfaces:
                 type: number
                 default: 13.
                 description: Max TSR of the Cp-Ct-Cq-surfaces
-            n_U_perf_surfaces: 
+            n_U_perf_surfaces:
                 type: integer
                 default: 1
                 description: Number of wind speeds to determine the Cp-Ct-Cq-surfaces
-            regulation_reg_III: 
+            regulation_reg_III:
                 type: boolean
                 default: True
                 description: Flag to derive the regulation trajectory in region III in terms of pitch and TSR
@@ -197,7 +244,7 @@ properties:
                 enum: [0, 1, 2]
                 default: 1
                 description: {0, write no debug files, 1, write standard output .dbg-file, 2, write standard output .dbg-file and complete avrSWAP-array .dbg2-file}
-            F_LPFType: 
+            F_LPFType:
                 type: integer
                 enum: [1, 2]
                 default: 1
@@ -207,22 +254,22 @@ properties:
                 enum: [0, 1, 2, 3]
                 default: 0
                 description:  Notch filter on generator speed and/or tower fore-aft motion (for floating) {0, disable, 1, generator speed, 2, tower-top fore-aft motion, 3, generator speed and tower-top fore-aft motion}
-            IPC_ControlMode: 
+            IPC_ControlMode:
                 type: integer
                 enum: [0, 1, 2]
                 default: 0
                 description: Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0, off, 1, 1P reductions, 2, 1P+2P reductions}
-            VS_ControlMode: 
+            VS_ControlMode:
                 type: integer
                 enum: [0, 1, 2]
                 default: 2
                 description: Generator torque control mode in above rated conditions {0, constant torque, 1, constant power, 2, TSR tracking PI control}
-            PC_ControlMode: 
+            PC_ControlMode:
                 type: integer
                 enum: [0, 1]
                 default: 1
                 description: Blade pitch control mode {0, No pitch, fix to fine pitch, 1, active PI blade pitch control}
-            Y_ControlMode: 
+            Y_ControlMode:
                type: integer
                enum: [0, 1, 2]
                default: 0
@@ -232,27 +279,27 @@ properties:
                 enum: [0, 1]
                 default: 1
                 description: Setpoint Smoother mode {0, no setpoint smoothing, 1, introduce setpoint smoothing}
-            WE_Mode: 
+            WE_Mode:
                 type: integer
                 enum: [0, 1, 2]
                 default: 2
                 description: Wind speed estimator mode {0, One-second low pass filtered hub height wind speed, 1, Immersion and Invariance Estimator (Ortega et al.)}
-            PS_Mode: 
+            PS_Mode:
                 type: integer
                 enum: [0, 1, 2, 3]
                 default: 1
                 description:  Pitch saturation mode {0, no pitch saturation, 1, peak shaving, 2, Cp-maximizing pitch saturation, 3, peak shaving and Cp-maximizing pitch}
-            SD_Mode: 
+            SD_Mode:
                 type: integer
                 enum: [0, 1]
                 default: 1
                 description: Shutdown mode {0, no shutdown procedure, 1, pitch to max pitch at shutdown}
-            Fl_Mode: 
+            Fl_Mode:
                 type: integer
                 enum: [0, 1]
                 default: 0
                 description: Floating specific feedback mode {0, no nacelle velocity feedback, 1, nacelle velocity feedback}
-            Flp_Mode: 
+            Flp_Mode:
                 type: integer
                 enum: [0, 1, 2]
                 default: 0

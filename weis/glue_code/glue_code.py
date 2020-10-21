@@ -5,14 +5,14 @@ from wisdem.ccblade.ccblade_component import CCBladeTwist
 from wisdem.commonse.turbine_class import TurbineClass
 from wisdem.drivetrainse.drivetrain import DrivetrainSE
 from wisdem.towerse.tower import TowerSE
-from wisdem.turbine_costsse.turbine_costsse_2015 import Turbine_CostsSE_2015
+from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 from wisdem.orbit.api.wisdem.fixed import Orbit
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from weis.aeroelasticse.openmdao_openfast import FASTLoadCases, ModesElastoDyn
 from weis.control.dac import RunXFOIL
-from wisdem.servose.servose import ServoSE, NoStallConstraint
+from wisdem.rotorse.servose import ServoSE, NoStallConstraint
 from weis.control.tune_rosco import ServoSE_ROSCO
 from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from weis.aeroelasticse.rotor_loads_defl_strainsWEIS import RotorLoadsDeflStrainsWEIS
@@ -125,8 +125,6 @@ class WT_RNTA(om.Group):
         self.connect('env.rho_air',                     'ccblade.rho')
         self.connect('env.mu_air',                      'ccblade.mu')
         self.connect('env.shear_exp',                   'ccblade.shearExp') 
-        self.connect('nacelle.gearbox_efficiency',      'ccblade.gearbox_efficiency')
-        self.connect('nacelle.generator_efficiency',    'ccblade.generator_efficiency')
 
         # Connections to wind turbine class
         self.connect('configuration.ws_class' , 'wt_class.turbine_class')
@@ -382,7 +380,7 @@ class WT_RNTA(om.Group):
             self.connect('elastic.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('freq_rotor.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
             self.connect('freq_rotor.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
-            self.connect('nacelle.generator_efficiency',    'sse_tune.tune_rosco.generator_efficiency')
+            self.connect('drivese.generator_efficiency',    'sse_tune.tune_rosco.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
             self.connect('tune_rosco_ivc.max_pitch',        'sse_tune.tune_rosco.max_pitch') 
             self.connect('tune_rosco_ivc.min_pitch',        'sse_tune.tune_rosco.min_pitch')
@@ -507,8 +505,12 @@ class WT_RNTA(om.Group):
             self.connect('control.rated_power',        'drivese.machine_rating')    
             self.connect('tower.diameter',             'drivese.D_top', src_indices=[-1])
             
-            self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
-            self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
+            if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
+                self.connect('aeroelastic.Fxyz', 'drivese.F_hub')
+                self.connect('aeroelastic.Mxyz', 'drivese.M_hub')
+            else:
+                self.connect('rlds.aero_hub_loads.Fxyz_hub_aero', 'drivese.F_hub')
+                self.connect('rlds.aero_hub_loads.Mxyz_hub_aero', 'drivese.M_hub')
             self.connect('rlds.frame.root_M',                 'drivese.pitch_system.BRFM', src_indices=[1])
                 
             self.connect('blade.pa.chord_param',              'drivese.blade_root_diameter', src_indices=[0])
@@ -733,16 +735,18 @@ class WT_RNTA(om.Group):
             self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
             self.connect('hub.radius',                      'aeroelastic.Rhub')
             self.connect('hub.cone',                        'aeroelastic.cone')
-            self.connect('hub.system_mass',                 'aeroelastic.hub_system_mass')
-            self.connect('hub.system_I',                    'aeroelastic.hub_system_I')
-            # self.connect('hub.system_cm',                    'aeroelastic.hub_system_cm')
-            self.connect('nacelle.above_yaw_mass',          'aeroelastic.above_yaw_mass')
-            self.connect('nacelle.yaw_mass',                'aeroelastic.yaw_mass')
-            self.connect('nacelle.nacelle_I',               'aeroelastic.nacelle_I')
-            self.connect('nacelle.nacelle_cm',              'aeroelastic.nacelle_cm')
+            self.connect('drivese.hub_system_mass',                 'aeroelastic.hub_system_mass')
+            self.connect('drivese.hub_system_I',                    'aeroelastic.hub_system_I')
+            # TODO: Create these outputs in DriveSE: hub_system_cm needs 3-dim, not s-coord.  Need adder for rna-yaw_mass?
+            #self.connect('drivese.hub_system_cm',                    'aeroelastic.hub_system_cm')
+            #self.connect('nacelle.above_yaw_mass',          'aeroelastic.above_yaw_mass')
+            self.connect('drivese.rna_mass',          'aeroelastic.above_yaw_mass')
+            self.connect('drivese.yaw_mass',                'aeroelastic.yaw_mass')
+            self.connect('drivese.nacelle_I',               'aeroelastic.nacelle_I')
+            self.connect('drivese.nacelle_cm',              'aeroelastic.nacelle_cm')
             self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio')
+            self.connect('drivese.generator_efficiency',    'aeroelastic.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
-            self.connect('nacelle.generator_efficiency',    'aeroelastic.generator_efficiency')
 
             #if modeling_options['Analysis_Flags']['TowerSE']:
             self.connect('freq_tower.post.mass_den',           'aeroelastic.mass_den')
