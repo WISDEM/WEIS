@@ -343,21 +343,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1.0
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 100.0
-                                            uniqueItems: False
-                                            unit: rpm
+                                        $ref: "#/definitions/distributed_data/length"
                             access_diameter:
                                 type: number
                                 description: Minimum diameter for hollow shafts for maintenance access
@@ -388,21 +376,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.3, 0.3]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 10.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             lss_wall_thickness:
                                 type: object
                                 description: Thickness of the low speed shaft wall in radial direction
@@ -412,21 +388,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.1, 0.1]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 5.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             lss_material:
                                 type: string
                                 description: Material name identifier
@@ -447,21 +411,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.3, 0.3]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 5.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             hss_wall_thickness:
                                 type: object
                                 description: Thickness of the high speed shaft wall in radial direction
@@ -471,21 +423,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.1, 0.1]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 5.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             hss_material:
                                 type: string
                                 description: Material name identifier
@@ -499,21 +439,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.3, 0.3]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 5.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             nose_wall_thickness:
                                 type: object
                                 description: Thickness of the nose (also called turret or spindle)
@@ -523,21 +451,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.05, 0.05]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 5.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             bedplate_wall_thickness:
                                 type: object
                                 description: Thickness of the hollow elliptical bedplate used in direct drive configurations
@@ -547,21 +463,9 @@ properties:
                                     - values
                                 properties:
                                     grid:
-                                        type: array
-                                        default: [0.0, 1.0]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1
-                                            uniqueItems: True
-                                            unit: none
+                                        $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        type: array
-                                        default: [0.05, 0.05]
-                                        items:
-                                            minimum: 0.0
-                                            maximum: 1.0
-                                            uniqueItems: False
-                                            unit: meter
+                                        $ref: "#/definitions/distributed_data/length"
                             bedplate_flange_width:
                                 type: number
                                 description: Bedplate I-beam flange width used in geared configurations
