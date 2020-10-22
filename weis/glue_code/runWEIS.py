@@ -469,7 +469,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if overridden_values is not None:
             for key in overridden_values:
                 num_values = np.array(overridden_values[key]).size
-                wt_opt[key][:] = overridden_values[key]
+                key_size = wt_opt[key].size
+                idx_start = key_size - num_values
+                wt_opt[key][idx_start:] = overridden_values[key]
+                print(num_values, key_size, idx_start)
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
