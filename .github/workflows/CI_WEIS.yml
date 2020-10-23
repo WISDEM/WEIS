@@ -87,3 +87,12 @@ jobs:
       #  run: |
       #    cd examples/dac_flaps
       #    python dac_driver.py
+
+      # Run scripts within multifidelity folder
+      - name: Run multifidelity tests
+        run: |
+          cd weis/multifidelity/test
+          python test_base_method.py
+          python test_base_model.py
+          python test_simple_models.py
+          python test_trust_region.py
