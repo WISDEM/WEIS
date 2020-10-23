@@ -1299,14 +1299,16 @@ properties:
                                                         - circular
                                                         - polygonal
                                                 outer_diameter:
-                                                    description: Two values describing diameter at joint1 and joint2
-                                                    type: array
-                                                    items:
-                                                        type: number
-                                                        minItems: 2
-                                                        maxItems: 2
-                                                        unit: m
-                                                        minimum: 0
+                                                    description: Gridded values describing diameter at non-dimensional axis from joint1 to joint2
+                                                    type: object
+                                                    required:
+                                                        - grid
+                                                        - values
+                                                    properties:
+                                                        grid:
+                                                            $ref: "#/definitions/distributed_data/grid_nd"
+                                                        values:
+                                                            $ref: "#/definitions/distributed_data/length"
                                                 side_lengths1: &sl
                                                     description: Polygon side lengths at joint1
                                                     type: array
@@ -1362,14 +1364,16 @@ properties:
                                                                 type: string
                                                                 description: material identifier
                                                             thickness:
-                                                                type: array
-                                                                description: thickness of the laminate at joint1 and joint2
-                                                                items:
-                                                                    type: number
-                                                                    minItems: 2
-                                                                    maxItems: 2
-                                                                    unit: m
-                                                                    minimum: 0
+                                                                description: Gridded values describing thickness along non-dimensional axis from joint1 to joint2
+                                                                type: object
+                                                                required:
+                                                                    - grid
+                                                                    - values
+                                                                properties:
+                                                                    grid:
+                                                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                                                    values:
+                                                                        $ref: "#/definitions/distributed_data/length"
                                                 ring_stiffeners: &stiffener
                                                     type: array
                                                     items:
@@ -1399,7 +1403,7 @@ properties:
                                                                 type: number
                                                                 unit: m
                                                                 minimum: 0
-                                                            locations: #PB: grid is confusing, I suggest switching to locations # GB: Sounds good
+                                                            locations:
                                                                 description: Non-dimensional grid from 0..1 (joint1-joint2) the specifies the stiffener locations
                                                                 $ref: "#/definitions/distributed_data/grid_nd"
                                                 longitudinal_stiffeners: *stiffener # "Grid" here will have to mean something different
@@ -1450,10 +1454,28 @@ properties:
                                                                 description: Total volume of ballast (permanent ballast only)
                                                                 unit: m^3
                                                                 minimum: 0
+                                        axial_joints:
+                                            description: Define joints along non-dimensional axis of this member
+                                            type: array
+                                            items:
+                                                type: object
+                                                required:
+                                                    - grid
+                                                    - name
+                                                properties:
+                                                    name:
+                                                        type: string
+                                                        description: Unique name of joint
+                                                    grid:
+                                                        type: number
+                                                        minimum: 0.0
+                                                        maximum: 1.0
+                                                        description: Non-dimensional value along member axis
                                         hydrodynamic_approach: &hydro
                                             # TODO: Move these to the modeling file?
                                             description: How should this member be modeled?
                                             type: string
+                                            default: strip
                                             enum:
                                                 - strip
                                                 - potential
@@ -1462,14 +1484,17 @@ properties:
                                             # TODO: Move these to the modeling file?
                                             description: Added mass coefficient
                                             type: number
+                                            default: 0.0
                                         Cp: &cp
                                             # TODO: Move these to the modeling file?
                                             description: Pressure coefficient
                                             type: number
+                                            default: 0.0
                                         Cd: &cd
                                             # TODO: Move these to the modeling file?
                                             description: Drag coefficient
                                             type: number
+                                            default: 0.0
                             rigid_bodies:
                                 type: array
                                 descriptions: Additional point masses at joints with user-customized properties

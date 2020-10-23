@@ -302,32 +302,28 @@ components:
                 - name: spar_keel
                 location: [0.0, 0.0, -120.0]
 
-                - name: spar_taper_bottom
-                location: [0.0, 0.0, -12.0]
-
-                - name: spar_taper_top
-                location: [0.0, 0.0, -4.0]
-
                 - name: spar_freeboard
                 location: [0.0, 0.0, 10.0]
                 transition: True
             members:
-                - name: spar_bottom
+                - name: spar
                 joint1: spar_keel
-                joint2: spar_taper_bottom
+                joint2: spar_freeboard
                 outer_shape:
                     shape: circular
-                    outer_diameter: [9.4, 9.4]
+                    outer_diameter:
+                        grid: [0.0, 0.8308, 0.8923, 1.0]
+                        values: [9.4, 9.4, 6.5, 6.5]
                 internal_structure:
                     layers:
-                        - name: spar_bottom_twall
+                        - name: spar_twall
                         material: steel
                         thickness: [0.05, 0.05]
                     bulkhead:
                         material: steel
                         thickness:
-                            grid: [0.0, 0.1, 0.5]
-                            values: [0.1, 0.05, 0.05]
+                            grid: [0.0, 0.1, 0.5, 0.8308, 1.0]
+                            values: [0.1, 0.05, 0.05, 0.05, 0.05]
                     ballast:
                         - variable_flag: False
                         material: slurry
@@ -336,34 +332,6 @@ components:
                         - variable_flag: True
                         grid: [0.1, 0.5]
 
-                - name: spar_taper
-                joint1: spar_taper_bottom
-                joint2: spar_taper_top
-                outer_shape:
-                    shape: circular
-                    outer_diameter: [9.4, 6.5]
-                internal_structure:
-                    layers:
-                        - name: spar_mid_twall
-                        material: steel
-                        thickness: [0.05, 0.05]
-
-                - name: spar_top
-                joint1: spar_taper_top
-                joint2: spar_freeboard
-                outer_shape:
-                    shape: circular
-                    outer_diameter: [6.5, 6.5]
-                internal_structure:
-                    layers:
-                        - name: spar_top_twall
-                        material: steel
-                        thickness: [0.05, 0.05]
-                    bulkhead:
-                        material: steel
-                        thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.05, 0.1]
     mooring:
         name: 3chain_catenary
         nodes:
