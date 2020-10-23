@@ -7,7 +7,7 @@
 #############################################################
 #!/usr/bin/env python
 
-import pyFAST.linearization.mbc.getMats as gm
+import weis.control.mbc.getMats as gm
 import numpy as np
 import scipy.linalg as scp
 import mmap

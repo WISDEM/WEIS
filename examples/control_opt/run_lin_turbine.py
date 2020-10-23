@@ -1,3 +1,12 @@
+''' This example runs a linear turbine simulation
+0. Run gen_linear_model() in WEIS/wies/aeroelasticse/LinearFAST.py  (separately)
+1. Set up linear turbine model by running mbc transformation
+2. Load controller from ROSCO_toolbox and set up linear control model
+3. Use wind disturbance to determine operating point for turbine, pitch controller
+4. Run linear simulation
+
+'''
+
 import numpy as np
 import pandas as pd
 import os
@@ -13,32 +22,39 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
 
-    # Load system from .mat file
-    if False:
+    weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
+    
+    # 0. Load linear models from gen_linear_model() in WEIS/wies/aeroelasticse/LinearFAST.py
+    # 1. Set up linear turbine model by running mbc transformation
+    if True:  
+        # Load system from OpenFAST .lin files
+        lin_file_dir = os.path.join(weis_dir,'outputs/iea_semi_lin')
+        linTurb = lin_mod.LinearTurbineModel(lin_file_dir,reduceStates=False)
+    
+    else:  
+        # Load system from .mat file
         linTurb = lin_mod.LinearTurbineModel('/Users/dzalkind/Tools/matlab-toolbox/Simulations/SaveData/LinearModels/PitTwr.mat', \
             fromMat=True)
+
+
+    # 1.5 Set up wind disturbance
+    if True:   
+        # step wind input
+        tt = np.arange(0,200,1/80)
+        u_h = 16 * np.ones((tt.shape))
+        u_h[tt > 100] = 17
+
     else:
-        lin_file_dir = '/Users/dzalkind/Tools/SaveData/TrimTest/LinearTwrPit_Tol1en5'
-        linTurb = lin_mod.LinearTurbineModel(lin_file_dir,reduceStates=False)
-
-
-    # load wind disturbance from output file
-    fast_io     = ROSCO_utilities.FAST_IO()
-    fast_out    = fast_io.load_FAST_out('/Users/dzalkind/Tools/matlab-toolbox/Simulations/SaveData/072720_183300.out')
-    u_h         = fast_out[0]['RtVAvgxh']
-    tt          = fast_out[0]['Time']
+        # load wind disturbance from output file
+        fast_io     = ROSCO_utilities.FAST_IO()
+        fast_out    = fast_io.load_FAST_out('/Users/dzalkind/Tools/matlab-toolbox/Simulations/SaveData/072720_183300.out')
+        u_h         = fast_out[0]['RtVAvgxh']
+        tt          = fast_out[0]['Time']
 
     
-
-    if False:
-        # Load Controller from DISCON.IN
-        fp = ROSCO_utilities.FileProcessing()
-        f = fp.read_DISCON('/Users/dzalkind/Tools/SaveData/Float_Test/UM_DLC0_100_DISCON.IN')
-
-        linCont = lin_mod.LinearControlModel([],fromDISCON_IN=True,DISCON_file=f)
-    else:
+    # 2. Load controller from ROSCO_toolbox and set up linear control model
+    if True:
         # Load controller from yaml file 
-        weis_dir            = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
         inps = yaml.safe_load(open(parameter_filename))
         path_params         = inps['path_params']
@@ -60,35 +76,33 @@ if __name__ == '__main__':
         controller.turbine = turbine
 
         linCont = lin_mod.LinearControlModel(controller)
+        
+    else:
+        # Load Controller from DISCON.IN
+        fp = ROSCO_utilities.FileProcessing()
+        f = fp.read_DISCON('/Users/dzalkind/Tools/SaveData/Float_Test/UM_DLC0_100_DISCON.IN')
+
+        linCont = lin_mod.LinearControlModel([],fromDISCON_IN=True,DISCON_file=f)
 
 
+    # 3. Use wind disturbance to determine operating point for turbine, pitch controller
+    # 4. Run linear simulation
     Lin_OutList, Lin_OutData, P_cl = linTurb.solve(tt,u_h,Plot=False,open_loop=False,controller=linCont)
-
-    Non_OutList = fast_out[0].keys()
-    Non_OutData = fast_out[0]
-
-
-
-    # comparison plot
+    # linear plot
     if True:
-        comp_channels = ['RtVAvgxh','GenSpeed','TwrBsMyt','PtfmPitch']
-        ax = [None] * len(comp_channels)
+        channels = ['RtVAvgxh','GenSpeed','BldPitch','TwrBsMyt','PtfmPitch']
+        ax = [None] * len(channels)
         plt.figure(2)
 
-        for iPlot in range(0,len(comp_channels)):
-            ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
+        for iPlot in range(0,len(channels)):
+            ax[iPlot] = plt.subplot(len(channels),1,iPlot+1)
             try:
-                ax[iPlot].plot(tt,Non_OutData[comp_channels[iPlot]])
+                ax[iPlot].plot(tt,Lin_OutData[channels[iPlot]])
             except:
-                print(comp_channels[iPlot] + ' is not in OpenFAST OutList')
-
-            try:
-                ax[iPlot].plot(tt,Lin_OutData[comp_channels[iPlot]])
-            except:
-                print(comp_channels[iPlot] + ' is not in Linearization OutList')
-            ax[iPlot].set_ylabel(comp_channels[iPlot])
+                print(channels[iPlot] + ' is not in Linearization OutList')
+            ax[iPlot].set_ylabel(channels[iPlot])
             ax[iPlot].grid(True)
-            if not iPlot == (len(comp_channels) - 1):
+            if not iPlot == (len(channels) - 1):
                 ax[iPlot].set_xticklabels([])
 
         plt.show()
@@ -98,7 +112,7 @@ if __name__ == '__main__':
     fast_data_lin = []
 
     if True:
-        ww = np.linspace(.05,.45,6)
+        ww = np.linspace(.05,.45,4)
 
         for om in ww:
             # Tune controller 
@@ -120,14 +134,12 @@ if __name__ == '__main__':
             fd_lin['meta']['name'] = 'omega: ' + str(om)
             fast_data_lin.append(fd_lin)
 
-
-
             comp_channels = ['RtVAvgxh','GenSpeed','TwrBsMyt','PtfmPitch']
             ax = [None] * len(comp_channels)
             plt.figure(3)
 
             for iPlot in range(0,len(comp_channels)):
-                ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
+                ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1,label=comp_channels[iPlot])
 
                 try:
                     ax[iPlot].plot(tt,Lin_OutData[comp_channels[iPlot]])
@@ -138,9 +150,6 @@ if __name__ == '__main__':
                 if not iPlot == (len(comp_channels) - 1):
                     ax[iPlot].set_xticklabels([])
 
-
-            
-
         plt.show()
         
 
@@ -149,13 +158,6 @@ if __name__ == '__main__':
 
     la = Loads_Analysis()
     fDEL = la.get_DEL(fast_data_lin,chan_info)
-
-    fd_non  = {}
-    fd_non['TwrBsMyt'] = Non_OutData['TwrBsMyt']
-    fd_non['meta']    = {}
-    fd_non['meta']['name'] = 'nonlinear'
-
-    fDEL_nl = la.get_DEL([fd_non],chan_info)
     print('here')
 
 

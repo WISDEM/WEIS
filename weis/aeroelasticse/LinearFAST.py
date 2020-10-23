@@ -1,16 +1,11 @@
 '''
-Functions for running linear and nonlinear control parameter optimizations
+Class and function for generating linear models from OpenFAST
 
-- Run full set of DLCs
-- Process and find Worst Case
-- Nonlinear
-    - Tune ROSCO, update
-    - Run single, worst case DLC
-- Linear
-    - Generate linear model from nonlinear simulation
-    - Tune linear ROSCO
-    - Run linear simulation
-- Process DEL, other measures for cost function
+1. Run steady state simulations
+2. Process sims to find operating point (TODO: determine how important this is and enable recieving this info from elsewhere)
+3. Run OpenFAST in linear mode
+
+examples/control_opt/run_lin_turbine.py will run outputs from gen_linear_model()
 
 '''
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
@@ -67,6 +62,25 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         self.post               = None
 
+        # Linear specific default attributes
+        # linearization setup
+        self.v_rated            = 11         # needed as input from RotorSE or something, to determine TrimCase for linearization
+        self.GBRatio            = 1
+        self.WindSpeeds         = [15]
+        self.DOFs               = ['GenDOF','TwFADOF1','PtfmPDOF']
+        self.TMax               = 2000.
+        self.NLinTimes          = 12
+
+        #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
+        self.HydroStates        = True  
+
+        # simulation setup
+        self.parallel           = False
+        self.cores              = 4
+
+        # overwrite steady & linearizations
+        self.overwrite          = False
+
         # Optional population of class attributes from key word arguments
         for (k, w) in kwargs.items():
             try:
@@ -79,6 +93,7 @@ class LinearFAST(runFAST_pywrapper_batch):
     def runFAST_steady(self):
         """ 
         Run batch of steady state cases for initial conditions, in serial or in parallel
+        TODO: determine whether we can skip this step
         """
 
         self.FAST_runDirectory = self.FAST_steadyDirectory
@@ -121,7 +136,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
             if self.parallel:
-                self.run_multi()
+                self.run_multi(self.cores)
             else:
                 self.run_serial()
 
@@ -153,7 +168,8 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Set some processing parameters
         fp.OpenFAST_outfile_list        = outfiles
         fp.t0                           = self.TMax - 400            # make sure this is less than simulation time
-        fp.parallel_analysis            = True
+        fp.parallel_analysis            = self.parallel
+        fp.parallel_cores               = self.cores
         fp.results_dir                  = os.path.join(output_dir, 'stats')
         fp.verbose                      = True
         fp.save_LoadRanking             = True
@@ -164,7 +180,7 @@ class LinearFAST(runFAST_pywrapper_batch):
             stats =fp.batch_processing()
 
 
-            windSortInd = np.argsort(stats[0]['Wind1VelX']['mean'])
+            windSortInd = np.argsort(stats[0][0]['Wind1VelX']['mean'])
 
             #            FAST output name,  FAST IC name
             ssChannels = [['Wind1VelX',     'Wind1VelX'],  
@@ -185,9 +201,9 @@ class LinearFAST(runFAST_pywrapper_batch):
             ssChanData = {}
             for iChan in ssChannels:
                 try:
-                    ssChanData[iChan[1]] = np.array(stats[0][iChan[0]]['mean'])[windSortInd].tolist()
+                    ssChanData[iChan[1]] = np.array(stats[0][0][iChan[0]]['mean'])[windSortInd].tolist()
                 except:
-                    print('Warning: ' + iChan + ' is is not in OutList')
+                    print('Warning: ' + iChan[0] + ' is is not in OutList')
 
 
             if PLOT:
@@ -322,7 +338,15 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[('ServoDyn','VS_RtGnSp')] = {'vals': RefGenSpeed.tolist(), 'group': 1}
 
         channels = {}
-        for var in ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", "BldPitch1", "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza","LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr"]:
+        for var in ["BldPitch1","BldPitch2","BldPitch3","IPDefl1","IPDefl2","IPDefl3","OoPDefl1","OoPDefl2","OoPDefl3", \
+            "NcIMURAxs","TipDxc1", "TipDyc1", "Spn2MLxb1", "Spn2MLxb2","Spn2MLxb3","Spn2MLyb1", "Spn2MLyb2","Spn2MLyb3" \
+                "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", \
+                  "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", \
+                      "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", \
+                          "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", \
+                              "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza", \
+                                  "LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr" \
+                                      "TwstDefl1","TwstDefl2","TwstDefl3"]:
             channels[var] = True
 
         self.channels = channels
@@ -356,10 +380,13 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.case_list = case_list
         self.case_name_list = case_name_list
 
-        if self.parallel:
-            self.run_multi()
-        else:
-            self.run_serial()
+        outfiles = glob.glob(os.path.join(self.FAST_linearDirectory,'lin*.outb'))
+
+        if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
+            if self.parallel:
+                self.run_multi(self.cores)
+            else:
+                self.run_serial()
         
 
 
@@ -369,18 +396,16 @@ def gen_linear_model():
 
     Only needs to be performed once for each model
 
-    TODO: check for the models so we can skip this step if already run
     """
 
 
     linear = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
 
     # fast info
-    run_dir                         = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
-    linear.weis_dir                 = os.path.dirname ( os.path.dirname( run_dir ) ) + os.sep
+    linear.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
     
     linear.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    linear.FAST_directory           = os.path.join(run_dir, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
     linear.FAST_steadyDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_steady')
     linear.FAST_linearDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_lin')
     linear.debug_level              = 2
@@ -407,16 +432,17 @@ def gen_linear_model():
 
     # simulation setup
     linear.parallel         = True
+    linear.cores            = 8
 
     # overwrite steady & linearizations
-    linear.overwrite        = False
+    linear.overwrite        = True
 
 
     # run steady state sims
-    linear.runFAST_steady()
+    # linear.runFAST_steady()
 
     # process results 
-    linear.postFAST_steady()
+    # linear.postFAST_steady()
 
     # run linearizations
     linear.runFAST_linear()

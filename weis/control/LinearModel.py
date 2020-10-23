@@ -8,8 +8,7 @@ u_op, y_op, and x_op
 import numpy as np
 import scipy as sp
 import control as co
-import pyFAST.linearization.linearization as lin
-import pyFAST.linearization.mbc.mbc3 as mbc
+import weis.control.mbc.mbc3 as mbc
 import matplotlib.pyplot as plt
 import re
 from itertools import chain
@@ -256,7 +255,7 @@ class LinearTurbineModel(object):
         P_op                = co.StateSpace(A,B,C,D)
         if reduce_states:
             P_op            = co.minreal(P_op,tol=1e-7,verbose=False)
-        P_op.InputName      = ['RtVAvgxh','BP_In']
+        P_op.InputName      = ['RtVAvgxh','BldPitch']
         P_op.OutputName     = ['GenSpeed','TwrBsMyt','PtfmPitch','NcIMUTAzs']
 
         # operating points dict
@@ -286,7 +285,7 @@ class LinearTurbineModel(object):
 
         lin_control_model.connect_elements()
 
-        P_cl = connect_ml([self.P_op,lin_control_model.C_all],['RtVAvgxh'],['GenSpeed','TwrBsMyt','PtfmPitch','NcIMUTAzs'])
+        P_cl = connect_ml([self.P_op,lin_control_model.C_all],['RtVAvgxh'],['GenSpeed','TwrBsMyt','PtfmPitch','NcIMUTAzs','BldPitch'])
 
         return P_cl
 
@@ -324,7 +323,9 @@ class LinearTurbineModel(object):
 
 
         # Add back in operating points
-        y_op = self.ops['y']
+        # Note that bld pitch was an input operating point that we are moving to the output operating point
+        # TODO: designate CONTROL inputs that become outputs in closed-loop simulations
+        y_op = np.concatenate((self.ops['y'],self.ops['u'][-1:]))   #TODO: make blade pitch operationg point in radians
         u_op = self.ops['u']
 
         y   = y_op.reshape(-1,1) + y_lin
@@ -452,7 +453,7 @@ class LinearControlModel(object):
         pitch_act               = self.low_pass_filter(self.PC_ActBw,.707)
         self.pitch_act          = co.ss(pitch_act)
         self.pitch_act.InputName   = 'PitchCmd'
-        self.pitch_act.OutputName  = 'BP_In'
+        self.pitch_act.OutputName  = 'BldPitch'
 
         # generator filter model
         self.F_Gen          = self.low_pass_filter(F_Gen_Freq,F_Gen_Damp)
@@ -491,7 +492,7 @@ class LinearControlModel(object):
         # Have to connect everything...
 
         # simplify for meow
-        # self.C_PC.OutputName = 'BP_In'
+        # self.C_PC.OutputName = 'BldPitch'
 
         # control modules 
         # mods = [self.C_PC,self.C_Fl,S,self.F_Gen,self.pitch_act] 
@@ -501,7 +502,7 @@ class LinearControlModel(object):
 
 
         inVNames = ['GenSpeed','NcIMUTAzs']
-        outVNames = ['BP_In']
+        outVNames = ['BldPitch']
 
         self.C_all  = connect_ml(mods,inVNames,outVNames)
 
