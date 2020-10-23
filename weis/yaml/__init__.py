@@ -1,1 +1,1 @@
-from weis.schema.validation import *
+from weis.yaml.validation import *

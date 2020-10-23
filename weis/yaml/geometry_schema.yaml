@@ -1098,13 +1098,15 @@ properties:
                     internal_structure_2d_fem:
                         type: object
                         required:
-                            - outfitting_factor
                             - reference_axis
                             - layers
+                        optional:
+                            - outfitting_factor
                         properties:
                             outfitting_factor:
                                 type: number
                                 description: Scaling factor for the tower mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, etc
+                                default: 1.0
                                 unit: none
                                 minimum: 1
                                 maximum: 2
@@ -1187,8 +1189,8 @@ properties:
                                             items:
                                                 type: number
                                                 minItems: 3
+                                                maxItems: 3
                                                 unit: m
-                                                minimum: 0
                                         transition:
                                             description: Whether the transition piece and turbine tower attach at this node
                                             type: boolean
@@ -1280,18 +1282,19 @@ properties:
                                             then:
                                                 required:
                                                     - outer_diameter
-                                            if:
-                                                # If shape == polygonal, then we need to specify the side lengths
-                                                properties:
-                                                    shape:
-                                                        const: polygonal
-                                            then:
-                                                required:
-                                                    - side_lengths1
-                                                    - side_lengths2
-                                                optional:
-                                                    - rotation
-                                                    - angles
+                                            else:
+                                                if:
+                                                    # If shape == polygonal, then we need to specify the side lengths
+                                                    properties:
+                                                        shape:
+                                                            const: polygonal
+                                                then:
+                                                    required:
+                                                        - side_lengths1
+                                                        - side_lengths2
+                                                    optional:
+                                                        - rotation
+                                                        - angles
                                             properties:
                                                 shape:
                                                     type: string
@@ -1334,9 +1337,9 @@ properties:
                                         internal_structure:
                                             type: object
                                             required:
-                                                - outfitting_factor
                                                 - layers
                                             optional:
+                                                - outfitting_factor
                                                 - ring_stiffeners
                                                 - longitudinal_stiffeners
                                                 - bulkhead
@@ -1347,6 +1350,7 @@ properties:
                                                     description: Scaling factor for the member mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, fasteners, etc
                                                     unit: none
                                                     minimum: 1.0
+                                                    default: 1.0
                                                 layers:
                                                     type: array
                                                     description: Material layer properties
@@ -1564,7 +1568,7 @@ properties:
                         items:
                             type: object
                             required:
-                                - node_id
+                                - name
                                 - node_type
                                 - location
                             optional:
@@ -1582,14 +1586,15 @@ properties:
                             then:
                                 required:
                                     - anchor_type
-                            if:
-                                # If node_type == vessel, then we need to specify the fairlead_type
-                                properties:
-                                    node_type:
-                                        const: vessel
-                            then:
-                                required:
-                                    - fairlead_type
+                            else:
+                                if:
+                                    # If node_type == vessel, then we need to specify the fairlead_type
+                                    properties:
+                                        node_type:
+                                            const: vessel
+                                then:
+                                    required:
+                                        - fairlead_type
                             properties:
                                 name:
                                     type: string
@@ -1603,13 +1608,11 @@ properties:
                                 location:
                                     type: array # I don't think we need to define x, y, and z explicitely
                                     description: – Coordinates x, y, and z of the connection (relative to inertial reference frame if Fixed or Connect, relative to platform reference frame if Vessel). In the case of Connect nodes, it is simply an initial guess for position before MoorDyn calculates the equilibrium initial position.
-                                    type: array
                                     items:
                                         type: number
                                         unit: meter
                                         minItems: 3
                                         maxItems: 3
-                                        minimum: 0.0
                                 anchor_type:
                                     type: string
                                     description: Name of anchor type from anchor_type list
@@ -2190,6 +2193,23 @@ properties:
                         unit: m/s
                         minimum: 60
                         maximum: 120
+                    rated_power:
+                        type: number
+                        description: Rated power (nameplate capacity)
+                        unit: W
+                        minimum: 0.0
+                    minOmega:
+                        type: number
+                        description: Minimum rotor speed of the wind turbine.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 2
+                    maxOmega:
+                        type: number
+                        description: Maximum rotor speed of the wind turbine.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 10
 
             pitch:
                 type: object
@@ -2222,6 +2242,29 @@ properties:
                         unit: none
                         minimum: 0
                         maximum: 1
+
+                    max_pitch:
+                        type: number
+                        description: Maximum pitch angle, where the default is 90 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad
+                        default: 1.57
+                        minimum: 0
+                        maximum: 2.
+
+                    min_pitch:
+                        type: number
+                        description: Minimum pitch angle, where the default is 0 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad
+                        default: 0.0
+                        minimum: -0.5
+                        maximum: 1.
+
+                    max_pitch_rate:
+                        type: number
+                        description: Maximum pitch rate of the rotor blades.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 0.2
 
                     fl_feedback:
                         type: object
@@ -2302,10 +2345,12 @@ properties:
                     - tsr
                     - VS_zeta
                     - VS_omega      # DZ: I'm not sure how "required" these are or where the line is around "strongly encouraged"
+                    - max_torque_rate
                 properties:
                     control_type:
                         type: string
                         description:  Type of torque control used.
+                        default: tsr_tracking
                         enum:
                             - tsr_tracking
                             - legacy
@@ -2328,6 +2373,12 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 5
+                    max_torque_rate:
+                        type: number
+                        description: Maximum torque rate of the wind turbine generator.
+                        unit: Nm/s
+                        minimum: 1000
+                        maximum: 10000000
 
             setpoint_smooth:
                 type: object
@@ -2351,6 +2402,7 @@ properties:
             shutdown:
                 type: object
                 description: Turbine shutdown control, when a certain limit is reached
+                default: {}
                 required:
                     - limit_type
                     - limit_value
@@ -2362,6 +2414,7 @@ properties:
                     limit_type:
                         type: string
                         description: What value is used to trigger shutdown procedure
+                        default: gen_speed
                         enum:
                             - time
                             - pitch
@@ -2464,6 +2517,7 @@ properties:
                     method:
                         type: string
                         description: Method used to control power output, generator speed only for now.
+                        default: gen_speed
                         enum:
                             - gen_speed
                     OL_R:
@@ -2681,8 +2735,8 @@ properties:
             - air_dyn_viscosity
             - air_speed_sound
             - shear_exp
-            - gravity
         optional:
+            - gravity
             - weib_shape_parameter
             - water_density
             - water_dyn_viscosity
