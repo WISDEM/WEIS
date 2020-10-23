@@ -1,4 +1,4 @@
-name: 5MW
+name: 5MW with OC3 semisubmersible
 comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realisitic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG
 
 components:
@@ -369,17 +369,17 @@ components:
         nodes:
             - name: line1_anchor
             node_type: fixed
-            location: [853.87, 0.0, -120.0]
+            location: [853.87, 0.0, -320.0]
             anchor_type: drag_embedment
 
             - name: line2_anchor
             node_type: fixed
-            location: [-426.94, 739.47, -120.0]
+            location: [-426.94, 739.47, -320.0]
             anchor_type: drag_embedment
 
             - name: line3_anchor
             node_type: fixed
-            location: [-426.94, -739.47, -120.0]
+            location: [-426.94, -739.47, -320.0]
             anchor_type: drag_embedment
 
             - name: line1_vessel
