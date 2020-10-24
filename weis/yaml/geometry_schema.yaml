@@ -1154,156 +1154,242 @@ properties:
                 description: Ontology definition for floating platforms (substructures) suitable for use with the WEIS co-design analysis tool
                 type: object
                 required:
-                    - name
-                    - components
+                    - joints
+                    - members
+                optional:
+                    - rigid_bodies
                 properties:
-                    name:
-                        description: Name of the floating platform
-                        type: string
-                    components:
-                        type: object
-                        required:
-                            - joints
-                            - members
-                        optional:
-                            - rigid_bodies
-                        properties:
-                            joints:
-                                type: array
-                                items:
+                    joints:
+                        type: array
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - location
+                            optional:
+                                - reactions
+                                - transition
+                            properties:
+                                name:
+                                    description: Unique name of the joint (node)
+                                    type: string
+                                location:
+                                    description: x, y, and z coordinates of this node in the global coordinate system.
+                                    type: array
+                                    items:
+                                        type: number
+                                        minItems: 3
+                                        maxItems: 3
+                                        unit: m
+                                transition:
+                                    description: Whether the transition piece and turbine tower attach at this node
+                                    type: boolean
+                                    default: False
+                                reactions:
+                                    # TODO: How to do carabiner type joints that only support tension and not compression?
                                     type: object
+                                    description: If this joint is compliant is certain DOFs, then specify which are compliant (True) in the member/element coordinate system).  If not specified, default is all entries are False (completely rigid).  For instance, a ball joint would be Rx=Ry=Rz=False, Rxx=Ryy=Rzz=True
                                     required:
-                                        - name
-                                        - location
+                                        - Rx
+                                        - Ry
+                                        - Rz
+                                        - Rxx
+                                        - Ryy
+                                        - Rzz
                                     optional:
-                                        - reactions_global
-                                        - reactions_local
-                                        - transition
+                                        - Euler
                                     properties:
-                                        name:
-                                            description: Unique name of the joint (node)
-                                            type: string
-                                        location:
-                                            description: x, y, and z coordinates of this node in the global coordinate system.
+                                        Rx: &rxn_loc
+                                            type: boolean
+                                            default: False
+                                        Ry: *rxn_loc
+                                        Rz: *rxn_loc
+                                        Rxx: *rxn_loc
+                                        Ryy: *rxn_loc
+                                        Rzz: *rxn_loc
+                                        Euler:
+                                            description: Euler angles [alpha, beta, gamma] that describe the rotation of the Reaction coordinate system relative to the global coordinate system α is a rotation around the z axis, β is a rotation around the x' axis, γ is a rotation around the z" axis.
                                             type: array
                                             items:
                                                 type: number
                                                 minItems: 3
                                                 maxItems: 3
-                                                unit: m
-                                        transition:
-                                            description: Whether the transition piece and turbine tower attach at this node
-                                            type: boolean
-                                            default: False
-                                        reactions_global:
-                                            type: object
-                                            description: If this joint/node is a boundary condition in the global coordinate system, then specify which DOFs are free (True) or fixed (False).  If not specified, default is all entries are True
-                                            required:
-                                                - Rx
-                                                - Ry
-                                                - Rz
-                                                - Rxx
-                                                - Ryy
-                                                - Rzz
-                                            optional:
-                                                - Euler
-                                            properties:
-                                                Rx: &rxn_glob
-                                                    type: boolean
-                                                    default: True
-                                                Ry: *rxn_glob
-                                                Rz: *rxn_glob
-                                                Rxx: *rxn_glob
-                                                Ryy: *rxn_glob
-                                                Rzz: *rxn_glob
-                                                Euler: &euler
-                                                    description: Euler angles [alpha, beta, gamma] that describe the rotation of the Reaction coordinate system relative to the global coordinate system α is a rotation around the z axis, β is a rotation around the x' axis, γ is a rotation around the z" axis.
-                                                    type: array
-                                                    items:
-                                                        type: number
-                                                        minItems: 3
-                                                        maxItems: 3
-                                        reactions_local:
-                                            # TODO: How to do carabiner type joints that only support tension and not compression?
-                                            type: object
-                                            description: If this joint is compliant is certain DOFs, then specify which are compliant (True) in the member/element coordinate system).  If not specified, default is all entries are False (completely rigid).  For instance, a ball joint would be Rx=Ry=Rz=False, Rxx=Ryy=Rzz=True
-                                            required:
-                                                - Rx
-                                                - Ry
-                                                - Rz
-                                                - Rxx
-                                                - Ryy
-                                                - Rzz
-                                            optional:
-                                                - Euler
-                                            properties:
-                                                Rx: &rxn_loc
-                                                    type: boolean
-                                                    default: False
-                                                Ry: *rxn_loc
-                                                Rz: *rxn_loc
-                                                Rxx: *rxn_loc
-                                                Ryy: *rxn_loc
-                                                Rzz: *rxn_loc
-                                                Euler: *euler
-                            members:
-                                type: array
-                                items:
+                    members:
+                        type: array
+                        items:
+                            type: object
+                            required:
+                                - name
+                                - joint1
+                                - joint2
+                                - outer_shape
+                                - internal_structure
+                            optional:
+                                # TODO: Move these to the modeling file?
+                                - hydrodynamic_approach
+                                - Ca
+                                - Cp
+                                - Cd
+                            properties:
+                                name:
+                                    description: Name of the member
+                                    type: string
+                                joint1: &jointid
+                                    type: string
+                                    description: Name of joint/node connection
+                                joint2: *jointid
+                                outer_shape:
                                     type: object
                                     required:
-                                        - name
-                                        - joint1
-                                        - joint2
-                                        - outer_shape
-                                        - internal_structure
-                                    optional:
-                                        # TODO: Move these to the modeling file?
-                                        - hydrodynamic_approach
-                                        - Ca
-                                        - Cp
-                                        - Cd
-                                    properties:
-                                        name:
-                                            description: Name of the member
-                                            type: string
-                                        joint1: &jointid
-                                            type: string
-                                            description: Name of joint/node connection
-                                        joint2: *jointid
-                                        outer_shape:
-                                            type: object
-                                            required:
-                                                - shape
-                                            if:
-                                                # If shape == circular, then we need to specify the outer diameter
-                                                properties:
-                                                    shape:
-                                                        const: circular
-                                            then:
-                                                required:
-                                                    - outer_diameter
-                                            else:
-                                                if:
-                                                    # If shape == polygonal, then we need to specify the side lengths
-                                                    properties:
-                                                        shape:
-                                                            const: polygonal
-                                                then:
-                                                    required:
-                                                        - side_lengths1
-                                                        - side_lengths2
-                                                    optional:
-                                                        - rotation
-                                                        - angles
+                                        - shape
+                                    if:
+                                        # If shape == circular, then we need to specify the outer diameter
+                                        properties:
+                                            shape:
+                                                const: circular
+                                    then:
+                                        required:
+                                            - outer_diameter
+                                    else:
+                                        if:
+                                            # If shape == polygonal, then we need to specify the side lengths
                                             properties:
                                                 shape:
-                                                    type: string
-                                                    enum:
-                                                        - circular
-                                                        - polygonal
-                                                outer_diameter:
-                                                    description: Gridded values describing diameter at non-dimensional axis from joint1 to joint2
+                                                    const: polygonal
+                                        then:
+                                            required:
+                                                - side_lengths1
+                                                - side_lengths2
+                                            optional:
+                                                - rotation
+                                                - angles
+                                    properties:
+                                        shape:
+                                            type: string
+                                            description: Specifies cross-sectional shape of the member.  If circular, then the outer_diameter field is required.  If polygonal, then the side_lengths, angles, and rotation fields are required
+                                            enum:
+                                                - circular
+                                                - polygonal
+                                        outer_diameter:
+                                            description: Gridded values describing diameter at non-dimensional axis from joint1 to joint2
+                                            type: object
+                                            required:
+                                                - grid
+                                                - values
+                                            properties:
+                                                grid:
+                                                    $ref: "#/definitions/distributed_data/grid_nd"
+                                                values:
+                                                    $ref: "#/definitions/distributed_data/length"
+                                        side_lengths1: &sl
+                                            description: Polygon side lengths at joint1
+                                            type: array
+                                            items:
+                                                type: number
+                                                minItems: 3
+                                                unit: m
+                                                minimum: 0
+                                        side_lengths2: *sl
+                                            # description: Polygon side lengths at joint2
+                                        angles:
+                                            description: Polygon angles with the ordering such that angle[i] is between side_length[i] and side_length[i+1]
+                                            type: array
+                                            items:
+                                                type: number
+                                                minItems: 3
+                                                unit: rad
+                                                minimum: 0
+                                        rotation:
+                                            type: number
+                                            description: Angle between principle axes of the cross-section and the member coordinate system.  Essentially the rotation of the member if both joints were placed on the global x-y axis with the first side length along the z-axis
+                                            unit: rad
+                                internal_structure:
+                                    type: object
+                                    required:
+                                        - layers
+                                    optional:
+                                        - outfitting_factor
+                                        - ring_stiffeners
+                                        - longitudinal_stiffeners
+                                        - bulkhead
+                                        - ballast
+                                    properties:
+                                        outfitting_factor:
+                                            type: number
+                                            description: Scaling factor for the member mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, fasteners, etc
+                                            unit: none
+                                            minimum: 1.0
+                                            default: 1.0
+                                        layers:
+                                            type: array
+                                            description: Material layer properties
+                                            items:
+                                                type: object
+                                                required:
+                                                    - name
+                                                    - material
+                                                    - thickness
+                                                properties:
+                                                    name:
+                                                        type: string
+                                                        description: structural component identifier
+                                                    material: &material
+                                                        type: string
+                                                        description: material identifier
+                                                    thickness:
+                                                        description: Gridded values describing thickness along non-dimensional axis from joint1 to joint2
+                                                        type: object
+                                                        required:
+                                                            - grid
+                                                            - values
+                                                        properties:
+                                                            grid:
+                                                                $ref: "#/definitions/distributed_data/grid_nd"
+                                                            values:
+                                                                $ref: "#/definitions/distributed_data/length"
+                                        ring_stiffeners: &stiffener
+                                            type: array
+                                            items:
+                                                type: object
+                                                required:
+                                                    - material
+                                                    - flange_height
+                                                    - flange_width
+                                                    - web_height
+                                                    - web_thickness
+                                                    - locations
+                                                properties:
+                                                    material: *material
+                                                    flange_height:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    flange_width:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    web_height:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    web_thickness:
+                                                        type: number
+                                                        unit: m
+                                                        minimum: 0
+                                                    locations:
+                                                        description: Non-dimensional grid from 0..1 (joint1-joint2) the specifies the stiffener locations
+                                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                        longitudinal_stiffeners: *stiffener # "Grid" here will have to mean something different
+                                        bulkhead:
+                                            type: object
+                                            required:
+                                                - material
+                                                - thickness
+                                            properties:
+                                                material: *material
+                                                thickness:
                                                     type: object
+                                                    description: thickness of the bulkhead at non-dimensional locations of the member [0..1]
                                                     required:
                                                         - grid
                                                         - values
@@ -1312,256 +1398,135 @@ properties:
                                                             $ref: "#/definitions/distributed_data/grid_nd"
                                                         values:
                                                             $ref: "#/definitions/distributed_data/length"
-                                                side_lengths1: &sl
-                                                    description: Polygon side lengths at joint1
-                                                    type: array
-                                                    items:
-                                                        type: number
-                                                        minItems: 3
-                                                        unit: m
-                                                        minimum: 0
-                                                side_lengths2: *sl
-                                                    # description: Polygon side lengths at joint2
-                                                angles:
-                                                    description: Polygon angles with the ordering such that angle[i] is between side_length[i] and side_length[i+1]
-                                                    type: array
-                                                    items:
-                                                        type: number
-                                                        minItems: 3
-                                                        unit: rad
-                                                        minimum: 0
-                                                rotation:
-                                                    type: number
-                                                    description: Angle between principle axes of the cross-section and the member coordinate system.  Essentially the rotation of the member if both joints were placed on the global x-y axis with the first side length along the z-axis
-                                                    unit: rad
-                                        internal_structure:
-                                            type: object
-                                            required:
-                                                - layers
-                                            optional:
-                                                - outfitting_factor
-                                                - ring_stiffeners
-                                                - longitudinal_stiffeners
-                                                - bulkhead
-                                                - ballast
-                                            properties:
-                                                outfitting_factor:
-                                                    type: number
-                                                    description: Scaling factor for the member mass to account for auxiliary structures, such as elevator, ladders, cables, platforms, fasteners, etc
-                                                    unit: none
-                                                    minimum: 1.0
-                                                    default: 1.0
-                                                layers:
-                                                    type: array
-                                                    description: Material layer properties
-                                                    items:
-                                                        type: object
-                                                        required:
-                                                            - name
-                                                            - material
-                                                            - thickness
-                                                        properties:
-                                                            name:
-                                                                type: string
-                                                                description: structural component identifier
-                                                            material: &material
-                                                                type: string
-                                                                description: material identifier
-                                                            thickness:
-                                                                description: Gridded values describing thickness along non-dimensional axis from joint1 to joint2
-                                                                type: object
-                                                                required:
-                                                                    - grid
-                                                                    - values
-                                                                properties:
-                                                                    grid:
-                                                                        $ref: "#/definitions/distributed_data/grid_nd"
-                                                                    values:
-                                                                        $ref: "#/definitions/distributed_data/length"
-                                                ring_stiffeners: &stiffener
-                                                    type: array
-                                                    items:
-                                                        type: object
-                                                        required:
-                                                            - material
-                                                            - flange_height
-                                                            - flange_width
-                                                            - web_height
-                                                            - web_thickness
-                                                            - locations
-                                                        properties:
-                                                            material: *material
-                                                            flange_height:
-                                                                type: number
-                                                                unit: m
-                                                                minimum: 0
-                                                            flange_width:
-                                                                type: number
-                                                                unit: m
-                                                                minimum: 0
-                                                            web_height:
-                                                                type: number
-                                                                unit: m
-                                                                minimum: 0
-                                                            web_thickness:
-                                                                type: number
-                                                                unit: m
-                                                                minimum: 0
-                                                            locations:
-                                                                description: Non-dimensional grid from 0..1 (joint1-joint2) the specifies the stiffener locations
-                                                                $ref: "#/definitions/distributed_data/grid_nd"
-                                                longitudinal_stiffeners: *stiffener # "Grid" here will have to mean something different
-                                                bulkhead:
-                                                    type: object
-                                                    required:
-                                                        - material
-                                                        - thickness
-                                                    properties:
-                                                        material: *material
-                                                        thickness:
-                                                            type: object
-                                                            description: thickness of the bulkhead at non-dimensional locations of the member [0..1]
-                                                            required:
-                                                                - grid
-                                                                - values
-                                                            properties:
-                                                                grid:
-                                                                    $ref: "#/definitions/distributed_data/grid_nd"
-                                                                values:
-                                                                    $ref: "#/definitions/distributed_data/length"
-                                                ballast:
-                                                    type: array
-                                                    description: Different types of permanent and/or variable ballast
-                                                    items:
-                                                        type: object
-                                                        required:
-                                                            - variable_flag
-                                                            - grid
-                                                        if:
-                                                            # If permanent ballast, then need to specify total volume
-                                                            properties:
-                                                                variable_flag:
-                                                                    const: False
-                                                        then:
-                                                            required:
-                                                                - material
-                                                                - volume
-                                                        properties:
-                                                            variable_flag:
-                                                                type: boolean
-                                                                description: If true, then this ballast is variable and adjusted by control system.  If false, then considered permanent
-                                                            material: *material
-                                                            grid:
-                                                                $ref: "#/definitions/distributed_data/grid_nd"
-                                                            volume:
-                                                                type: number
-                                                                description: Total volume of ballast (permanent ballast only)
-                                                                unit: m^3
-                                                                minimum: 0
-                                        axial_joints:
-                                            description: Define joints along non-dimensional axis of this member
+                                        ballast:
                                             type: array
+                                            description: Different types of permanent and/or variable ballast
                                             items:
                                                 type: object
                                                 required:
+                                                    - variable_flag
                                                     - grid
-                                                    - name
+                                                if:
+                                                    # If permanent ballast, then need to specify total volume
+                                                    properties:
+                                                        variable_flag:
+                                                            const: False
+                                                then:
+                                                    required:
+                                                        - material
+                                                        - volume
                                                 properties:
-                                                    name:
-                                                        type: string
-                                                        description: Unique name of joint
+                                                    variable_flag:
+                                                        type: boolean
+                                                        description: If true, then this ballast is variable and adjusted by control system.  If false, then considered permanent
+                                                    material: *material
                                                     grid:
+                                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                                    volume:
                                                         type: number
-                                                        minimum: 0.0
-                                                        maximum: 1.0
-                                                        description: Non-dimensional value along member axis
-                                        hydrodynamic_approach: &hydro
-                                            # TODO: Move these to the modeling file?
-                                            description: How should this member be modeled?
-                                            type: string
-                                            default: strip
-                                            enum:
-                                                - strip
-                                                - potential
-                                                - both
-                                        Ca: &ca
-                                            # TODO: Move these to the modeling file?
-                                            description: Added mass coefficient
-                                            type: number
-                                            default: 0.0
-                                        Cp: &cp
-                                            # TODO: Move these to the modeling file?
-                                            description: Pressure coefficient
-                                            type: number
-                                            default: 0.0
-                                        Cd: &cd
-                                            # TODO: Move these to the modeling file?
-                                            description: Drag coefficient
-                                            type: number
-                                            default: 0.0
-                            rigid_bodies:
-                                type: array
-                                descriptions: Additional point masses at joints with user-customized properties
-                                items:
-                                    type: object
-                                    required:
-                                        - joint1
-                                        - mass
-                                        - cost
-                                        - cm_offset
-                                        - moments_of_inertia
-                                    optional:
-                                        - hydrodynamic_approach
-                                        - Ca
-                                        - Cp
-                                        - Cd
-                                    properties:
-                                        joint1: *jointid
-                                        mass:
-                                            description: Mass of this rigid body
-                                            unit: kg
-                                            type: number
-                                            minimum: 0
-                                        cost:
-                                            description: Cost of this rigid body
-                                            unit: USD
-                                            type: number
-                                            minimum: 0
-                                        cm_offset:
-                                            description: Offset from joint location to center of mass (CM) of body in dx, dy, dz
-                                            type: array
-                                            items:
+                                                        description: Total volume of ballast (permanent ballast only)
+                                                        unit: m^3
+                                                        minimum: 0
+                                axial_joints:
+                                    description: Define joints along non-dimensional axis of this member
+                                    type: array
+                                    items:
+                                        type: object
+                                        required:
+                                            - grid
+                                            - name
+                                        properties:
+                                            name:
+                                                type: string
+                                                description: Unique name of joint
+                                            grid:
                                                 type: number
-                                                unit: m
-                                                maxItems: 3
-                                                minItems: 3
-                                        moments_of_inertia:
-                                            description: Moments of inertia around body CM in Ixx, Iyy, Izz
-                                            type: array
-                                            items:
-                                                type: number
-                                                unit: kg*m^2
-                                                maxItems: 3
-                                                minItems: 3
-                                                minimum: 0
-                                        hydrodynamic_approach: *hydro
-                                        Ca: *ca
-                                        Cp: *cp
-                                        Cd: *cd
+                                                minimum: 0.0
+                                                maximum: 1.0
+                                                description: Non-dimensional value along member axis
+                                hydrodynamic_approach: &hydro
+                                    # TODO: Move these to the modeling file?
+                                    description: How should this member be modeled?
+                                    type: string
+                                    default: strip
+                                    enum:
+                                        - strip
+                                        - potential
+                                        - both
+                                Ca: &ca
+                                    # TODO: Move these to the modeling file?
+                                    description: Added mass coefficient
+                                    type: number
+                                    default: 0.0
+                                Cp: &cp
+                                    # TODO: Move these to the modeling file?
+                                    description: Pressure coefficient
+                                    type: number
+                                    default: 0.0
+                                Cd: &cd
+                                    # TODO: Move these to the modeling file?
+                                    description: Drag coefficient
+                                    type: number
+                                    default: 0.0
+                    rigid_bodies:
+                        type: array
+                        descriptions: Additional point masses at joints with user-customized properties
+                        items:
+                            type: object
+                            required:
+                                - joint1
+                                - mass
+                                - cost
+                                - cm_offset
+                                - moments_of_inertia
+                            optional:
+                                - hydrodynamic_approach
+                                - Ca
+                                - Cp
+                                - Cd
+                            properties:
+                                joint1: *jointid
+                                mass:
+                                    description: Mass of this rigid body
+                                    unit: kg
+                                    type: number
+                                    minimum: 0
+                                cost:
+                                    description: Cost of this rigid body
+                                    unit: USD
+                                    type: number
+                                    minimum: 0
+                                cm_offset:
+                                    description: Offset from joint location to center of mass (CM) of body in dx, dy, dz
+                                    type: array
+                                    items:
+                                        type: number
+                                        unit: m
+                                        maxItems: 3
+                                        minItems: 3
+                                moments_of_inertia:
+                                    description: Moments of inertia around body CM in Ixx, Iyy, Izz
+                                    type: array
+                                    items:
+                                        type: number
+                                        unit: kg*m^2
+                                        maxItems: 3
+                                        minItems: 3
+                                        minimum: 0
+                                hydrodynamic_approach: *hydro
+                                Ca: *ca
+                                Cp: *cp
+                                Cd: *cd
             mooring:
                 # Will insert mooring schema that we agreed to here or will keep as separate file
                 description: Ontology definition for mooring systems suitable for use with the WEIS co-design analysis tool
                 type: object
                 required:
-                    - name
                     - nodes
                     - lines
                     - line_types
                     - anchor_types
                 properties:
-                    name:
-                        description: Name of the mooring system
-                        type: string
                     nodes:
                         type: array
                         description: List of nodes in the mooring system
@@ -2150,6 +2115,128 @@ properties:
                 unit: none
                 minimum: 0
                 maximum: 10
+    actuators:
+        type: object
+        required:
+            - pitch
+            - generator
+        optional:
+            # in avrSWAP, but not used as much
+            - yaw   # rate
+            # not currently in OpenFAST/avrSWAP
+            - tower_TMD
+            - hull_TMD
+            - active_tension
+            - passive_weather_vane  # not sure what this is, project?
+            - passive_buoy_can
+            - hss_brake
+        properties:
+            pitch:
+                type: object
+                required:
+                    - pitch_act_bw
+                    - max_pitch_rate
+                    - fine_pitch         # maybe take out and put in control part
+                    - max_pitch         # DZ to Pietro: what if some things we can easily set to defaults, like this
+                    - min_pitch         # not sure this is required, seems extra
+                properties:
+                    fine_pitch:         # DZ: changed from pitch, might want to go in pitch control
+                        type: number
+                        description: Optimal pitch angle of the wind turbine. As default, it is maintained constant in region II.
+                        unit: rad
+                        minimum: -10
+                        maximum: 10
+                    max_pitch_rate:
+                        type: number
+                        description: Maximum pitch rate of the rotor blades.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 0.2
+                    pitch_act_bw:
+                        type: number
+                        description: Bandwidth of 2nd order LPF representing pitch actuators
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 100
+                    max_pitch:
+                        type: number
+                        description: Maximum pitch angle, where the default is 90 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad
+                        minimum: 0
+                        maximum: 2.
+                    min_pitch:
+                        type: number
+                        description: Minimum pitch angle, where the default is 0 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad
+                        minimum: -0.5
+                        maximum: 1.
+            generator:
+                type: object
+                required:
+                    - rated_power
+                    - max_torque_rate
+                    - max_gen_speed
+                properties:
+                    rated_power:
+                        type: number
+                        description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
+                        unit: W
+                        minimum: 0
+                    max_gen_speed:
+                        type: number
+                        description: Maximum generator speed of the wind turbine.
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 10
+                    max_torque_rate:
+                        type: number
+                        description: Maximum torque rate of the wind turbine generator.
+                        unit: Nm/s
+                        minimum: 1000
+                        maximum: 100000000
+
+            tower_TMD:
+                type: object
+                # required:
+                # properties:
+            hull_TMD:
+                type: object
+                # required:
+                # properties:
+            active_tension:
+                type: object
+                # required:
+                # properties:
+            passive_weather_vane:
+                type: object
+                # required:
+                # properties:
+            passive_buoy_can:
+                type: object
+                # required:
+                # properties:
+            hss_brake:
+                type: object
+                required:
+                    - start_time
+                    - duration
+                    - torque
+                properties:
+                    start_time:
+                        type: number
+                        minimum: 0
+                        unit: seconds
+                        description: Time in simulation that brake is activated, THSSBrDp in OpenFAST
+                    duration:
+                        type: number
+                        minimum: 0
+                        unit: seconds
+                        description: Time for HSS-brake to reach full deployment once initiated (sec), HSSBrDT in OpenFAST
+                    torque:
+                        type: number
+                        minimum: 0
+                        unit: N-m
+                        description: Fully deployed HSS-brake torque, HSSBrTqF in OpenFAST
     control:
         type: object
         required:
@@ -2167,6 +2254,21 @@ properties:
             - user_defined_OL
             - user_dylib
             - user_simulink
+            - user_defined_SS_1
+            - user_defined_SS_2
+            - user_defined_SS_3
+            - user_defined_SS_4
+            - user_defined_SS_5
+            - user_defined_TF_1
+            - user_defined_TF_2
+            - user_defined_TF_3
+            - user_defined_TF_4
+            - user_defined_TF_5
+            - user_defined_OL_1
+            - user_defined_OL_2
+            - user_defined_OL_3
+            - user_defined_OL_4
+            - user_defined_OL_5
         properties:
             supervisory:
                 type: object
@@ -2193,23 +2295,6 @@ properties:
                         unit: m/s
                         minimum: 60
                         maximum: 120
-                    rated_power:
-                        type: number
-                        description: Rated power (nameplate capacity)
-                        unit: W
-                        minimum: 0.0
-                    minOmega:
-                        type: number
-                        description: Minimum rotor speed of the wind turbine.
-                        unit: rad/s
-                        minimum: 0
-                        maximum: 2
-                    maxOmega:
-                        type: number
-                        description: Maximum rotor speed of the wind turbine.
-                        unit: rad/s
-                        minimum: 0
-                        maximum: 10
 
             pitch:
                 type: object
@@ -2242,29 +2327,6 @@ properties:
                         unit: none
                         minimum: 0
                         maximum: 1
-
-                    max_pitch:
-                        type: number
-                        description: Maximum pitch angle, where the default is 90 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                        unit: rad
-                        default: 1.57
-                        minimum: 0
-                        maximum: 2.
-
-                    min_pitch:
-                        type: number
-                        description: Minimum pitch angle, where the default is 0 degrees. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                        unit: rad
-                        default: 0.0
-                        minimum: -0.5
-                        maximum: 1.
-
-                    max_pitch_rate:
-                        type: number
-                        description: Maximum pitch rate of the rotor blades.
-                        unit: rad/s
-                        minimum: 0
-                        maximum: 0.2
 
                     fl_feedback:
                         type: object
@@ -2345,12 +2407,11 @@ properties:
                     - tsr
                     - VS_zeta
                     - VS_omega      # DZ: I'm not sure how "required" these are or where the line is around "strongly encouraged"
-                    - max_torque_rate
+                    - VS_minspd
                 properties:
                     control_type:
                         type: string
                         description:  Type of torque control used.
-                        default: tsr_tracking
                         enum:
                             - tsr_tracking
                             - legacy
@@ -2373,12 +2434,12 @@ properties:
                         unit: rad/s
                         minimum: 0
                         maximum: 5
-                    max_torque_rate:
+                    VS_minspd:
                         type: number
-                        description: Maximum torque rate of the wind turbine generator.
-                        unit: Nm/s
-                        minimum: 1000
-                        maximum: 10000000
+                        description: Minimum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO) # DZ: how is this different from minOmega?
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 5
 
             setpoint_smooth:
                 type: object
@@ -2402,7 +2463,6 @@ properties:
             shutdown:
                 type: object
                 description: Turbine shutdown control, when a certain limit is reached
-                default: {}
                 required:
                     - limit_type
                     - limit_value
@@ -2414,7 +2474,6 @@ properties:
                     limit_type:
                         type: string
                         description: What value is used to trigger shutdown procedure
-                        default: gen_speed
                         enum:
                             - time
                             - pitch
@@ -2517,7 +2576,6 @@ properties:
                     method:
                         type: string
                         description: Method used to control power output, generator speed only for now.
-                        default: gen_speed
                         enum:
                             - gen_speed
                     OL_R:
@@ -2839,6 +2897,7 @@ properties:
                 default: 0.4
     bos:
         type: object
+        default: {}
         required:
             - plant_turbine_spacing
             - plant_row_spacing
@@ -3170,6 +3229,10 @@ properties:
                 maximum: 1e6
                 default: 12e3
 definitions:
+
+
+
+
     distributed_data:
         grid_nd:
             type: array
@@ -3829,3 +3892,199 @@ definitions:
                                 minItems: 21
                                 maxItems: 21
                                 uniqueItems: false
+
+    actuator:
+        type: string
+        description: Actuator used as control output
+        enum:
+            - pitch
+            - torque   #called generator above, keep consistent?
+            - tower_TMD
+            - hull_TMD
+            - active_tension
+            - passive_weather_vane
+            - passive_buoy_can
+    sensor:
+        type: string
+        description: Sensor used as control input, could be any OpenFAST output (in Simluink), enumerating avrSWAP now  # DZ: within ROSCO, probably not...needs to be in avrSWAP
+        enum:
+            - gen_speed
+            - nac_IMU
+            - wind_speed_estimate
+            - gust_measure
+            - RootMyc1
+            - RootMyc2
+            - RootMyc3
+            - RootMyT   # MBC of above
+            - RootMyY   # MBC of above
+            - azimuth
+            - YawBrTAxp
+            - YawBrTAyp
+            - RootMxc1
+            - RootMxc2
+            - RootMxc3
+            - LSSTipMya
+            - LSSTipMza
+            - LSSTipMxa
+            - LSSTipMys
+            - LSSTipMzs
+            - YawBrMyn
+            - YawBrMzn
+            - NcIMURAxs  # avrSWAP names don't always match OpenFAST output names
+            - NcIMURAzs
+            # No platform info from avrSWAP, will they be added?
+    filter:
+        type: object
+        description: Linear filter, could be a LPF, HPF, NF, INF, or user_defined
+        required:
+            - filt_type
+            - filt_def
+        filt_type:
+            type: string
+            description: Type of filter used, could be a LPF, HPF, NF, INF, or user_defined
+            enum:
+                - LPF
+                - HPF
+                - NF
+                - INF
+                - user_defined
+        filt_def:
+            LPF:
+                type: object
+                description: Low pass filter
+                required:
+                    - omega
+                    - order
+                optional:
+                    - damping
+            HPF:
+            NF:
+            INF:
+            user_defined:
+                type: object
+                description: User defined filter
+                required:
+                    - num
+                    - den
+                optional:
+                    - dt
+                num:
+                    type: array
+                    description: Numerator coefficients of linear filter
+                    items:
+                        type: number
+                        unit: none
+                        minItems: 0
+                        uniqueItems: false
+                den:
+                    type: array
+                    description: Numerator coefficients of linear filter
+                    items:
+                        type: number
+                        unit: none
+                        minItems: 1
+                        uniqueItems: false
+                dt:
+                    type: number
+                    description: Sampling rate of filter, -1 for continuous   # DZ: will probably convert all to dt of simulation... not sure how to handle this
+                    minimum: -1
+
+    state_space:
+        type: object
+        description: Linear state space model
+        required:
+            - ss_A
+            - ss_B
+            - ss_C
+            - ss_D
+        ss_A:
+            type: array
+            description: A matrix of linear state space model, flattened with n_states^2 elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        ss_B:
+            type: array
+            description: B matrix of linear state space model, flattened with n_states x n_inputs elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        ss_C:
+            type: array
+            description: C matrix of linear state space model, flattened with n_outputs x n_states elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        ss_D:
+            type: array
+            description: D matrix of linear state space model, flattened with n_outputs x n_inputs elements
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+        # DZ: might be a good idea to check the number of states
+        ss_dt:
+            type: number
+            description: Sampling rate of filter, -1 for continuous   # DZ: will probably convert all to dt of simulation... not sure how to handle this
+            minimum: -1
+
+    timeseries:
+        type: object
+        description: Array of time, value pairs  # DZ: can we check that the number of elements are equal?
+        required:
+            - time
+            - value
+        optional:
+            - filename
+        time:
+            type: array
+            description: Time in timeseries
+            items:
+                type: number
+                unit: seconds
+                minItems: 1
+                uniqueItems: true   # probably?
+        value:
+            type: array
+            description: Value in timeseries
+            items:
+                type: number
+                unit: none  #any
+                minItems: 1
+                uniqueItems: false
+                # can we check that number of elements are equal?
+        filename:
+            type: string
+            description: Name of file with timeseries data
+
+    activator:
+        type: object
+        description: Gain used to enable/disable control elements, can be used partially
+        required:
+            - wind_speeds
+            - act_gain
+        wind_speeds:
+            type: array
+            description: Array of wind speed breakpoints for activators
+            items:
+                type: number
+                unit: m/s
+                minItems: 1
+                uniqueItems: true
+        act_gain:
+            type: array
+            description: Array of gains from 0 to 1, enabling/disabling control element
+            items:
+                type: number
+                unit: none
+                minItems: 1
+                uniqueItems: false
+                minimum: 0
+                maximum: 1

@@ -296,46 +296,43 @@ components:
                     grid: *grid_tower
                     values: [0.027 , 0.0262, 0.0254, 0.0246, 0.0238, 0.023 , 0.0222, 0.0214, 0.0206, 0.0198, 0.019]
     floating_platform:
-        name: OC3_Spar
-        components:
-            joints:
-                - name: spar_keel
-                  location: [0.0, 0.0, -120.0]
+        joints:
+            - name: spar_keel
+              location: [0.0, 0.0, -120.0]
 
-                - name: spar_freeboard
-                  location: [0.0, 0.0, 10.0]
-                  transition: True
-            members:
-                - name: spar
-                  joint1: spar_keel
-                  joint2: spar_freeboard
-                  outer_shape:
-                    shape: circular
-                    outer_diameter:
-                        grid: [0.0, 0.8308, 0.8923, 1.0]
-                        values: [9.4, 9.4, 6.5, 6.5]
-                  internal_structure:
-                    layers:
-                        - name: spar_twall
-                          material: steel
-                          thickness:
-                            grid: [0.0, 0.1]
-                            values: [0.05, 0.05]
-                    bulkhead:
-                        material: steel
-                        thickness:
-                            grid: [0.0, 0.1, 0.5, 0.8308, 1.0]
-                            values: [0.1, 0.05, 0.05, 0.05, 0.05]
-                    ballast:
-                        - variable_flag: False
-                          material: slurry
-                          volume: 1e3
-                          grid: [0.0, 0.1]
-                        - variable_flag: True
-                          grid: [0.1, 0.5]
+            - name: spar_freeboard
+              location: [0.0, 0.0, 10.0]
+              transition: True
+        members:
+            - name: spar
+              joint1: spar_keel
+              joint2: spar_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.8308, 0.8923, 1.0]
+                    values: [9.4, 9.4, 6.5, 6.5]
+              internal_structure:
+                layers:
+                    - name: spar_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.1, 0.5, 0.8308, 1.0]
+                        values: [0.1, 0.05, 0.05, 0.05, 0.05]
+                ballast:
+                    - variable_flag: False
+                      material: slurry
+                      volume: 1e3
+                      grid: [0.0, 0.1]
+                    - variable_flag: True
+                      grid: [0.1, 0.5]
 
     mooring:
-        name: 3chain_catenary
         nodes:
             - name: line1_anchor
               node_type: fixed
@@ -644,7 +641,6 @@ control:
         rated_power: 5.e+6
         minOmega: 0.72256
         maxOmega: 1.26711
-        vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
@@ -658,6 +654,7 @@ control:
         VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
         VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
+        VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
         ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
         ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}

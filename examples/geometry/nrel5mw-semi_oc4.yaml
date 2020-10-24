@@ -296,282 +296,276 @@ components:
                     grid: *grid_tower
                     values: [0.027 , 0.0262, 0.0254, 0.0246, 0.0238, 0.023 , 0.0222, 0.0214, 0.0206, 0.0198, 0.019]
     floating_platform:
-        name: OC4_Semi
-        components:
-            joints:
-                - name: main_keel
-                  location: [0.0, 0.0, -20.0]
+        joints:
+            - name: main_keel
+              location: [0.0, 0.0, -20.0]
 
-                - name: main_freeboard
-                  location: [0.0, 0.0, 10.0]
-                  transition: True
+            - name: main_freeboard
+              location: [0.0, 0.0, 10.0]
+              transition: True
 
-                - name: col1_keel
-                  location: [-28.86751, 0.0, -20.0]
+            - name: col1_keel
+              location: [-28.86751, 0.0, -20.0]
 
-                - name: col1_freeboard
-                  location: [-28.86751, 0.0, 12.0]
+            - name: col1_freeboard
+              location: [-28.86751, 0.0, 12.0]
 
-                - name: col2_keel
-                  location: [14.43376, 25.0, -20.0]
+            - name: col2_keel
+              location: [14.43376, 25.0, -20.0]
 
-                - name: col2_freeboard
-                  location: [14.43376, 25.0, 12.0]
+            - name: col2_freeboard
+              location: [14.43376, 25.0, 12.0]
 
-                - name: col3_keel
-                  location: [14.43376, -25.0, -20.0]
+            - name: col3_keel
+              location: [14.43376, -25.0, -20.0]
 
-                - name: col3_freeboard
-                  location: [14.43376, -25.0, 12.0]
-
-            members:
-                - name: main_column
-                  joint1: main_keel
-                  joint2: main_freeboard
-                  outer_shape:
-                    shape: circular
-                    outer_diameter:
+            - name: col3_freeboard
+              location: [14.43376, -25.0, 12.0]
+        members:
+            - name: main_column
+              joint1: main_keel
+              joint2: main_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 1.0]
+                    values: [6.5, 6.5]
+              internal_structure:
+                layers:
+                    - name: main_twall
+                      material: steel
+                      thickness:
                         grid: [0.0, 1.0]
-                        values: [6.5, 6.5]
-                  internal_structure:
-                    layers:
-                        - name: main_twall
-                          material: steel
-                          thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.03, 0.03]
-                    bulkhead:
-                        material: steel
-                        thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.06, 0.06]
-                  axial_joints:
-                    - name: main_upper_pontoon
-                      grid: 1.0
+                        values: [0.03, 0.03]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.06, 0.06]
+              axial_joints:
+                - name: main_upper_pontoon
+                  grid: 1.0
 
-                    - name: main_lower_pontoon
-                      grid: 0.1
+                - name: main_lower_pontoon
+                  grid: 0.1
 
-                    - name: main_cross_pontoon
-                      grid: 0.1267
+                - name: main_cross_pontoon
+                  grid: 0.1267
 
-                - name: column1
-                  joint1: col1_keel
-                  joint2: col1_freeboard
-                  outer_shape:
-                    shape: circular
-                    outer_diameter:
-                        grid: [0.0, 0.1875, 0.1876, 1.0]
-                        values: [24.0, 24.0, 12.0, 12.0]
-                  internal_structure:
-                    layers:
-                        - name: col1_twall
-                          material: steel
-                          thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.06, 0.06]
-                    bulkhead:
-                        material: steel
-                        thickness:
-                            grid: [0.0, 0.1875, 1.0]
-                            values: [0.06, 0.06, 0.06]
-                    ballast:
-                        - variable_flag: True
-                          grid: [0.0, 0.1875]
-                        - variable_flag: True
-                          grid: [0.1876, 1.0]
-                  axial_joints:
-                    - name: col1_upper_pontoon
-                      grid: 0.9375
+            - name: column1
+              joint1: col1_keel
+              joint2: col1_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.1875, 0.1876, 1.0]
+                    values: [24.0, 24.0, 12.0, 12.0]
+              internal_structure:
+                layers:
+                    - name: col1_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.06, 0.06]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.1875, 1.0]
+                        values: [0.06, 0.06, 0.06]
+                ballast:
+                    - variable_flag: True
+                      grid: [0.0, 0.1875]
+                    - variable_flag: True
+                      grid: [0.1876, 1.0]
+              axial_joints:
+                - name: col1_upper_pontoon
+                  grid: 0.9375
 
-                    - name: col1_lower_pontoon
-                      grid: 0.09375
+                - name: col1_lower_pontoon
+                  grid: 0.09375
 
-                    - name: col1_cross_pontoon
-                      grid: 0.9103125
+                - name: col1_cross_pontoon
+                  grid: 0.9103125
 
-                - name: column2
-                  joint1: col2_keel
-                  joint2: col2_freeboard
-                  outer_shape:
-                    shape: circular
-                    outer_diameter:
-                        grid: [0.0, 0.1875, 0.1876, 1.0]
-                        values: [24.0, 24.0, 12.0, 12.0]
-                  internal_structure:
-                    layers:
-                        - name: col2_twall
-                          material: steel
-                          thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.06, 0.06]
-                    bulkhead:
-                        material: steel
-                        thickness:
-                            grid: [0.0, 0.1875, 1.0]
-                            values: [0.06, 0.06, 0.06]
-                    ballast:
-                        - variable_flag: True
-                          grid: [0.0, 0.1875]
-                        - variable_flag: True
-                          grid: [0.1876, 1.0]
-                  axial_joints:
-                    - name: col2_upper_pontoon
-                      grid: 0.9375
+            - name: column2
+              joint1: col2_keel
+              joint2: col2_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.1875, 0.1876, 1.0]
+                    values: [24.0, 24.0, 12.0, 12.0]
+              internal_structure:
+                layers:
+                    - name: col2_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.06, 0.06]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.1875, 1.0]
+                        values: [0.06, 0.06, 0.06]
+                ballast:
+                    - variable_flag: True
+                      grid: [0.0, 0.1875]
+                    - variable_flag: True
+                      grid: [0.1876, 1.0]
+              axial_joints:
+                - name: col2_upper_pontoon
+                  grid: 0.9375
 
-                    - name: col2_lower_pontoon
-                      grid: 0.09375
+                - name: col2_lower_pontoon
+                  grid: 0.09375
 
-                    - name: col2_cross_pontoon
-                      grid: 0.9103125
+                - name: col2_cross_pontoon
+                  grid: 0.9103125
 
-                - name: column3
-                  joint1: col3_keel
-                  joint2: col3_freeboard
-                  outer_shape:
-                    shape: circular
-                    outer_diameter:
-                        grid: [0.0, 0.1875, 0.1876, 1.0]
-                        values: [24.0, 24.0, 12.0, 12.0]
-                  internal_structure:
-                    layers:
-                        - name: col3_twall
-                          material: steel
-                          thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.06, 0.06]
-                    bulkhead:
-                        material: steel
-                        thickness:
-                            grid: [0.0, 0.1875, 1.0]
-                            values: [0.06, 0.06, 0.06]
-                    ballast:
-                        - variable_flag: True
-                          grid: [0.0, 0.1875]
-                        - variable_flag: True
-                          grid: [0.1876, 1.0]
-                  axial_joints:
-                    - name: col3_upper_pontoon
-                      grid: 0.9375
+            - name: column3
+              joint1: col3_keel
+              joint2: col3_freeboard
+              outer_shape:
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.1875, 0.1876, 1.0]
+                    values: [24.0, 24.0, 12.0, 12.0]
+              internal_structure:
+                layers:
+                    - name: col3_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.06, 0.06]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 0.1875, 1.0]
+                        values: [0.06, 0.06, 0.06]
+                ballast:
+                    - variable_flag: True
+                      grid: [0.0, 0.1875]
+                    - variable_flag: True
+                      grid: [0.1876, 1.0]
+              axial_joints:
+                - name: col3_upper_pontoon
+                  grid: 0.9375
 
-                    - name: col3_lower_pontoon
-                      grid: 0.09375
+                - name: col3_lower_pontoon
+                  grid: 0.09375
 
-                    - name: col3_cross_pontoon
-                      grid: 0.9103125
+                - name: col3_cross_pontoon
+                  grid: 0.9103125
 
-                - name: delta_pontoon_lower12
-                  joint1: col1_lower_pontoon
-                  joint2: col2_lower_pontoon
-                  outer_shape: &pont_out
-                    shape: circular
-                    outer_diameter:
-                        grid: [0.0, 0.1]
-                        values: [1.6, 1.6]
-                  internal_structure: &pont_int
-                    layers:
-                        - name: delta_low_twall
-                          material: steel
-                          thickness:
-                            grid: [0.0, 1.0]
-                            values: [0.0175, 0.0175]
+            - name: delta_pontoon_lower12
+              joint1: col1_lower_pontoon
+              joint2: col2_lower_pontoon
+              outer_shape: &pont_out
+                shape: circular
+                outer_diameter:
+                    grid: [0.0, 0.1]
+                    values: [1.6, 1.6]
+              internal_structure: &pont_int
+                layers:
+                    - name: delta_low_twall
+                      material: steel
+                      thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.0175, 0.0175]
 
-                - name: delta_pontoon_lower23
-                  joint1: col2_lower_pontoon
-                  joint2: col3_lower_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: delta_pontoon_lower23
+              joint1: col2_lower_pontoon
+              joint2: col3_lower_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: delta_pontoon_lower31
-                  joint1: col3_lower_pontoon
-                  joint2: col1_lower_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: delta_pontoon_lower31
+              joint1: col3_lower_pontoon
+              joint2: col1_lower_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: delta_pontoon_upper12
-                  joint1: col1_upper_pontoon
-                  joint2: col2_upper_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: delta_pontoon_upper12
+              joint1: col1_upper_pontoon
+              joint2: col2_upper_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: delta_pontoon_upper23
-                  joint1: col2_upper_pontoon
-                  joint2: col3_upper_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: delta_pontoon_upper23
+              joint1: col2_upper_pontoon
+              joint2: col3_upper_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: delta_pontoon_upper31
-                  joint1: col3_upper_pontoon
-                  joint2: col1_upper_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: delta_pontoon_upper31
+              joint1: col3_upper_pontoon
+              joint2: col1_upper_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: Y_pontoon_upper1
-                  joint1: main_upper_pontoon
-                  joint2: col1_upper_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: Y_pontoon_upper1
+              joint1: main_upper_pontoon
+              joint2: col1_upper_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: Y_pontoon_upper2
-                  joint1: main_upper_pontoon
-                  joint2: col2_upper_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: Y_pontoon_upper2
+              joint1: main_upper_pontoon
+              joint2: col2_upper_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: Y_pontoon_upper3
-                  joint1: main_upper_pontoon
-                  joint2: col3_upper_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: Y_pontoon_upper3
+              joint1: main_upper_pontoon
+              joint2: col3_upper_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: Y_pontoon_lower1
-                  joint1: main_lower_pontoon
-                  joint2: col1_lower_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: Y_pontoon_lower1
+              joint1: main_lower_pontoon
+              joint2: col1_lower_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: Y_pontoon_lower2
-                  joint1: main_lower_pontoon
-                  joint2: col2_lower_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: Y_pontoon_lower2
+              joint1: main_lower_pontoon
+              joint2: col2_lower_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: Y_pontoon_lower3
-                  joint1: main_lower_pontoon
-                  joint2: col3_lower_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: Y_pontoon_lower3
+              joint1: main_lower_pontoon
+              joint2: col3_lower_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: cross_pontoon1
-                  joint1: main_cross_pontoon
-                  joint2: col1_cross_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: cross_pontoon1
+              joint1: main_cross_pontoon
+              joint2: col1_cross_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: cross_pontoon2
-                  joint1: main_cross_pontoon
-                  joint2: col2_cross_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: cross_pontoon2
+              joint1: main_cross_pontoon
+              joint2: col2_cross_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
 
-                - name: cross_pontoon3
-                  joint1: main_cross_pontoon
-                  joint2: col3_cross_pontoon
-                  outer_shape: *pont_out
-                  internal_structure: *pont_int
+            - name: cross_pontoon3
+              joint1: main_cross_pontoon
+              joint2: col3_cross_pontoon
+              outer_shape: *pont_out
+              internal_structure: *pont_int
     mooring:
-        name: 3chain_catenary
         nodes:
             - name: line1_anchor
               node_type: fixed
               location: [837.6, 0.0, -200.0]
               anchor_type: drag_embedment
-
             - name: line2_anchor
               node_type: fixed
               location: [418.8, 725.383, -200.0]
               anchor_type: drag_embedment
-
             - name: line3_anchor
               node_type: fixed
               location: [418.8, -725.383, -200.0]
@@ -581,12 +575,10 @@ components:
               node_type: vessel
               location: [-40.868, 0.0, -14.0]
               fairlead_type: rigid
-
             - name: line2_vessel
               node_type: vessel
               location: [20.434, 35.393, -14.0]
               fairlead_type: rigid
-
             - name: line3_vessel
               node_type: vessel
               location: [20.434, -35.393, -14.0]
@@ -598,13 +590,11 @@ components:
               node2: line1_vessel
               line_type: main
               unstretched_length: 835.35
-
             - name: line2
               node1: line2_anchor
               node2: line2_vessel
               line_type: main
               unstretched_length: 835.35
-
             - name: line3
               node1: line3_anchor
               node2: line3_vessel
@@ -869,7 +859,6 @@ control:
         rated_power: 5.e+6
         minOmega: 0.72256
         maxOmega: 1.26711
-        vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
         PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
@@ -883,6 +872,7 @@ control:
         VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
         VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
+        VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
         ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
         ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
