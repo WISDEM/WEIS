@@ -60,10 +60,6 @@ if save_results:
 # Load and save statistics and load rankings
 stats, load_rankings = fp.batch_processing()
 
-
-# DELs
-print('here')
-
 # # Get wind speeds for processed runs
 # windspeeds, seed, IECtype, cm_wind = Processing.get_windspeeds(cm, return_df=True)
 # stats_df = pdTools.dict2df(stats)

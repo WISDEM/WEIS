@@ -52,7 +52,7 @@ class Loads_Analysis(object):
                               'max',
                               ]  # should be same length as ranking_vars
 
-        self.DEL_info = [('RootMyb1', 10), ('TwrBsMyt', 4)]
+        self.DEL_info = None #[('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
         # verbose?
         self.verbose=False
 
