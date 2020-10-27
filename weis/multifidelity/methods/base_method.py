@@ -292,3 +292,20 @@ class BaseMethod:
             approximation_functions[output_name] = approximation_function
 
         self.approximation_functions = approximation_functions
+
+    def process_results(self):
+        results = {}
+        results["optimal_design"] = self.design_vectors[-1, :]
+        results["high_fidelity_func_value"] = self.model_high.run(
+            self.design_vectors[-1, :]
+        )[self.objective]
+        results["number_high_fidelity_calls"] = len(self.design_vectors[:, 0])
+        results["design_vectors"] = self.design_vectors
+        outputs = self.model_high.run_vec(np.atleast_2d(self.design_vectors[-1, :]))
+        results["outputs"] = outputs        
+
+        if self.disp:
+            print()
+            print(results)
+
+        return results

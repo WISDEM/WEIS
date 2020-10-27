@@ -217,19 +217,7 @@ class SimpleTrustRegion(BaseMethod):
             if self.trust_radius <= 1e-6:
                 break
 
-        results = {}
-        results["optimal_design"] = self.design_vectors[-1, :]
-        results["high_fidelity_func_value"] = self.model_high.run(
-            self.design_vectors[-1, :]
-        )[self.objective]
-        results["number_high_fidelity_calls"] = len(self.design_vectors[:, 0])
-        results["design_vectors"] = self.design_vectors
-        outputs = self.model_high.run_vec(np.atleast_2d(self.design_vectors[-1, :]))
-        results["outputs"] = outputs        
-
-        if self.disp:
-            print()
-            print(results)
+        results = self.process_results()
 
         return results
 
@@ -240,9 +228,11 @@ class SimpleTrustRegion(BaseMethod):
         Saves figures to .png files.
 
         """
+        
+        print('Plotting!')
 
         if self.n_dims == 2:
-            n_plot = 9
+            n_plot = 5
             x_plot = np.linspace(self.bounds[0, 0], self.bounds[0, 1], n_plot)
             y_plot = np.linspace(self.bounds[1, 0], self.bounds[1, 1], n_plot)
             X, Y = np.meshgrid(x_plot, y_plot)
@@ -309,6 +299,8 @@ class SimpleTrustRegion(BaseMethod):
                 self.counter_plot += 1
                 
             plt.close()
+            if self.disp:
+                print('Saved figure')
 
         else:
             import niceplots
