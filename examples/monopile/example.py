@@ -49,15 +49,9 @@ modeling_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
 modeling_options['tower']['frame3dd'] = {}
-modeling_options['tower']['frame3dd']['DC'] = 80.0
 modeling_options['tower']['frame3dd']['shear'] = True
 modeling_options['tower']['frame3dd']['geom'] = True
-modeling_options['tower']['frame3dd']['dx'] = 5.0
-modeling_options['tower']['frame3dd']['Mmethod'] = 1
-modeling_options['tower']['frame3dd']['lump'] = 0
 modeling_options['tower']['frame3dd']['tol'] = 1e-9
-modeling_options['tower']['frame3dd']['shift'] = 0.0
-modeling_options['tower']['frame3dd']['add_gravity'] = True
 
 modeling_options['tower']['n_height'] = n_control_points
 modeling_options['tower']['n_layers'] = 1
@@ -179,7 +173,7 @@ if modeling_options['tower']['wind'] == 'PowerWind':
 prob['wind1.Uref'] = 11.73732
 Fx1 = 1284744.19620519
 Fy1 = 0.0
-Fz1 = -2914124.84400512 + float(prob['rna_mass']) * 9.81
+Fz1 = -2914124.84400512
 Mxx1 = 3963732.76208099
 Myy1 = -2275104.79420872
 Mzz1 = -346781.68192839
@@ -191,7 +185,7 @@ prob['pre1.rna_M'] = np.array([Mxx1, Myy1, Mzz1])
 prob['wind2.Uref'] = 70.0
 Fx2 = 930198.60063279
 Fy2 = 0.0
-Fz2 = -2883106.12368949 + float(prob['rna_mass']) * 9.81
+Fz2 = -2883106.12368949
 Mxx2 = -1683669.22411597
 Myy2 = -2522475.34625363
 Mzz2 = 147301.97023764
