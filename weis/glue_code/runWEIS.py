@@ -466,10 +466,17 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # whatever values have been set by the yaml files.
         # This is useful for performing black-box wrapped optimization without
         # needing to modify the yaml files.
+        # Some logic is used here if the user gives a smalller size for the
+        # design variable than expected to input the values into the end
+        # of the array.
+        # This is useful when optimizing twist, where the first few indices
+        # do not need to be optimized as they correspond to a circular cross-section.
         if overridden_values is not None:
             for key in overridden_values:
                 num_values = np.array(overridden_values[key]).size
-                wt_opt[key][:] = overridden_values[key]
+                key_size = wt_opt[key].size
+                idx_start = key_size - num_values
+                wt_opt[key][idx_start:] = overridden_values[key]
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
