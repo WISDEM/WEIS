@@ -191,8 +191,6 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.GenEff       = inputs['generator_efficiency'][-1] * 100.
         # Generator efficiency should already be drivetrain efficiency and include the gearbox
         WISDEM_turbine.GBoxEff      = 100.0 #inputs['gearbox_efficiency'][0] * 100.
-        print('Eff!',WISDEM_turbine.GenEff, WISDEM_turbine.GBoxEff)
-        breakpoint()
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
         WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0]

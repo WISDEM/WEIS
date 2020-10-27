@@ -31,6 +31,11 @@ class WT_RNTA(om.Group):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
         
+        #self.linear_solver = lbgs = om.LinearBlockGS()
+        #self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+        #nlbgs.options['maxiter'] = 2
+        #nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
+
         dac_ivc = om.IndepVarComp()
         n_te_flaps = modeling_options['blade']['n_te_flaps']
         dac_ivc.add_output('te_flap_ext',   val = np.ones(n_te_flaps))
@@ -745,7 +750,7 @@ class WT_RNTA(om.Group):
             self.connect('drivese.nacelle_I',               'aeroelastic.nacelle_I')
             self.connect('drivese.nacelle_cm',              'aeroelastic.nacelle_cm')
             self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio')
-            self.connect('drivese.generator_efficiency',    'aeroelastic.generator_efficiency')
+            self.connect('sse.powercurve.rated_efficiency', 'aeroelastic.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
 
             #if modeling_options['Analysis_Flags']['TowerSE']:
