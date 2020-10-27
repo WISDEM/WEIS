@@ -380,7 +380,7 @@ class WT_RNTA(om.Group):
             self.connect('elastic.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('freq_rotor.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
             self.connect('freq_rotor.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
-            self.connect('drivese.generator_efficiency',    'sse_tune.tune_rosco.generator_efficiency')
+            self.connect('sse.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
             self.connect('tune_rosco_ivc.max_pitch',        'sse_tune.tune_rosco.max_pitch') 
             self.connect('tune_rosco_ivc.min_pitch',        'sse_tune.tune_rosco.min_pitch')
