@@ -29,9 +29,10 @@ jobs:
     steps:
       # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
       - uses: actions/checkout@v2
-      # GitHub Actions sintax to setup a conda environment (do not change) #s-weigand/setup-conda@v1
+      # GitHub Actions sintax to setup a conda environment (do not change) #
       - name: Setup conda
-        uses: conda-incubator/setup-miniconda@v1 
+        #uses: conda-incubator/setup-miniconda@v1 
+        uses: s-weigand/setup-conda@v1
         with:
           auto-update-conda: true
           python-version: ${{ matrix.python-version }}
@@ -40,7 +41,7 @@ jobs:
       - run: which python
       
       # Install dependencies of WEIS common across platforms
-      - name: Install dependencies
+      - name: Setup conda parameters
         run: |
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
