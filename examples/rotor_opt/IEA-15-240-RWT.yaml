@@ -752,19 +752,6 @@ materials:
       fiber_density: 1800.
       area_density_dry: 1.000
       component_id: 4
-#    -  name: Carbon_SNL
-#       E: [149.4e+09, 9.1e+09, 9.1e+09]
-#       G: [3.0e+09, 3.0e+09, 2.6e+09]
-#       rho: 1600.0
-#       orth: 1
-#       nu: [0.323, 0.323, None]
-#       Xt: [1357.e+06, 0.0, 0.0]
-#       Xc: [1183.e+06, 0.0, 0.0]
-#       ply_t: 0.004
-#       unit_cost: 8.38
-#       waste: 0.05
-#       fiber_density: 1800.
-#       component_id: 4
    -  name: glass_biax
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
       source: MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34
@@ -811,20 +798,6 @@ materials:
       area_density_dry: 1.4454324430914534
       component_id: 2
       roll_mass: 181.4368
-#   -  name: balsa
-#      description: 1-2-3 are radial, tangential, axial, G12 calculated from assumed isotropy
-#      source: M.Ashby 2011 Materials Selection in Mech Design (4th Ed) and K.E.Easterling 1982 On the mechanics of balsa and other woods
-#      rho: 110.0
-#      E: [0.05e+009, 0.05e+009, 2.73e+009]
-#      G: [0.01667e+009, 0.15e+009, 0.15e+009]
-#      nu: [0.5, 0.013, 0.013]
-#      Xt: [0.0, 0.0, 0.0]
-#      Xc: [0.0, 0.0, 0.0]
-#      orth: 1
-#      ply_t: 0.005
-#      component_id: 1
-#      waste: 0.2
-#      unit_cost: 13
    -  name: medium_density_foam
       description: Airex C70.130 PVC Foam, source 'https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf'
       orth: 0.0
@@ -864,28 +837,34 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
 control:
-    rated_power: 15.e+6
-    Vin: 3.0
-    Vout: 25.0
-    minOmega: 0.52
-    maxOmega: 0.8
-    tsr: 9.0
-    pitch: 0.
-    maxTS: 95.
-    IPC: false
-    max_pitch_rate: 0.03490658503988659 # 2 deg/s
-    max_torque_rate: 1500000.
-    # Controller parameters
-    PC_zeta: 1.0                      # Pitch controller desired damping ratio [-]
-    PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
-    VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
-    VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
-    max_pitch: 1.57                   # Maximum pitch angle [rad], {default = 90 degrees}
-    min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
-    vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
-    ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
-    ss_pcgain: .001                   # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
-    ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+    supervisory:
+        Vin: 3.0
+        Vout: 25.0
+        maxTS: 95.
+        rated_power: 15.e+6
+        #minOmega: 0.52
+        #maxOmega: 0.8
+    pitch:
+        PC_zeta: 1.0                      # Pitch controller desired damping ratio [-]
+        PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
+        max_pitch_rate: 0.03490658503988659 # 2 deg/s
+        min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
+    torque:
+        control_type: tsr_tracking
+        tsr: 9.0
+        VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
+        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
+        max_torque_rate: 1500000.
+        VS_minspd: 0.52                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 0.8                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+    setpoint_smooth:
+        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
+        ss_pcgain: .001                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
+    shutdown:
+        limit_type: gen_speed
+        limit_value: 2.0
 
 environment:
     air_density: 1.225
