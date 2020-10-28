@@ -2441,7 +2441,7 @@ properties:
                         maximum: 5
                     VS_minspd:
                         type: number
-                        description: Minimum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO) # DZ: how is this different from minOmega?
+                        description: Minimum rotor speed. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
                         unit: rad/s
                         minimum: 0
                         maximum: 5
