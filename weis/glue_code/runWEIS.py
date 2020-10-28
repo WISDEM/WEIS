@@ -14,16 +14,11 @@ if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None, setup=True, run=True, wt_opt=None, modeling_options=None, opt_options=None, wt_init=None, wt_initial=None):
-    s = time.time()
-    
     if setup:
         # Load all yaml inputs and validate (also fills in defaults)
         wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
         wt_init, modeling_options, opt_options = wt_initial.get_input_data()
         
-        print('loading yaml', time.time() - s)
-        s = time.time()
-
         # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
         # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
         blade_opt_options = opt_options['optimization_variables']['blade']
@@ -440,8 +435,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                     wt_opt.driver.recording_options['record_desvars'] = True 
                     wt_opt.driver.recording_options['record_objectives'] = True
             
-            print('pre-setup', time.time() - s)
-            s = time.time()
             # Setup openmdao problem
             if opt_options['opt_flag']:
                 wt_opt.setup()
@@ -449,8 +442,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 # If we're not performing optimization, we don't need to allocate
                 # memory for the derivative arrays.
                 wt_opt.setup(derivatives=False)
-            print('setup itself', time.time() - s)
-            s = time.time()
                 
     if run:
         blade_opt_options = opt_options['optimization_variables']['blade']
@@ -588,9 +579,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 subprocessor_stop(comm_map_down)
             sys.stdout.flush()
             
-        print('run itself', time.time() - s)
-        s = time.time()
-
     if rank == 0:
         if setup and not run:
             return wt_opt, modeling_options, opt_options, wt_init, wt_initial
