@@ -101,7 +101,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    n_opt: *n_opt
+                                    n_opt: *nopt
                                     lower_bound:
                                         type: array
                                         default: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0]
@@ -119,7 +119,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    n_opt: *n_opt
+                                    n_opt: *nopt
                                     lower_bound:
                                         type: array
                                         default: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0]
