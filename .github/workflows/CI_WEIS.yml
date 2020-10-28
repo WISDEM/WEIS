@@ -62,7 +62,11 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
-      
+
+      # Debugging session
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        
       # Install WEIS
       - name: Install WEIS
         run: |
