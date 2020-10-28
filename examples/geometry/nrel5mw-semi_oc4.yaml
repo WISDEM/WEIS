@@ -469,7 +469,7 @@ components:
               outer_shape: &pont_out
                 shape: circular
                 outer_diameter:
-                    grid: [0.0, 0.1]
+                    grid: [0.0, 1.0]
                     values: [1.6, 1.6]
               internal_structure: &pont_int
                 layers:
