@@ -142,6 +142,8 @@ class TuneROSCO(ExplicitComponent):
         # Outputs for constraints and optimizations
         self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
         self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
+        self.add_output('PC_Kp',           val=0.0,            units='rad',        desc='Pitch control proportional gain')
+        self.add_output('PC_Ki',           val=0.0,            units='rad',        desc='Pitch control integral gain')
 
         # self.add_output('PC_GS_angles', val=np.zeros(n_pitch+1), units='rad', desc='Gain-schedule table: pitch angles')
         # self.add_output('PC_GS_KP',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller kp gains')
@@ -336,6 +338,8 @@ class TuneROSCO(ExplicitComponent):
         # Outputs 
         outputs['Flp_Kp']   = controller.Kp_flap[-1]
         outputs['Flp_Ki']   = controller.Ki_flap[-1]
+        outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
+        outputs['PC_Ki']   = controller.pc_gain_schedule.Kp[0]
 
 
         # outputs['PC_GS_angles'] = controller.pitch_op_pc

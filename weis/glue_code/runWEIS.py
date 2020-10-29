@@ -433,6 +433,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 wt_opt.model.add_constraint('aeroelastic.rotor_overspeed',
                     lower = control_constraints['rotor_overspeed']['min'],
                     upper = control_constraints['rotor_overspeed']['max'])
+            if control_constraints['rotor_overspeed']['flag'] or opt_options['merit_figure'] == 'rotor_overspeed':
+                wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
+                    upper = 0.0)
+                wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki', 
+                    upper = 0.0)    
 
             # Set recorder on the OpenMDAO driver level using the `optimization_log`
             # filename supplied in the optimization yaml
