@@ -1,5 +1,5 @@
 import numpy as np
-import os, copy, warnings, shutil, sys
+import os, shutil, sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
@@ -7,7 +7,7 @@ from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
 from wisdem.commonse.vertical_cylinder      import NFREQ
 from wisdem.towerse.tower                   import get_nfull
-from wisdem.servose.servose                 import eval_unsteady
+from wisdem.rotorse.servose                 import eval_unsteady
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
@@ -69,6 +69,7 @@ class FASTLoadCases(ExplicitComponent):
         N_beam       = (nFull-1)*2
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(self.options['modeling_options']['blade']['n_freq']/2)
+        n_pc         = int(self.options['modeling_options']['servose']['n_pc'])
 
         FASTpref = self.options['modeling_options']['openfast']
         # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
@@ -87,11 +88,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('y_tc',                  val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
         self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_input('gearbox_efficiency',    val=0.0,               desc='Gearbox efficiency')
-        self.add_input('gearbox_ratio',         val=0.0,               desc='Gearbox ratio')
+        self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
+        self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
 
         # ServoDyn Inputs
-        self.add_input('generator_efficiency',   val=0.0,              desc='Generator efficiency')
+        self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -323,11 +324,12 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
-        fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
+        # Generator efficiency should have gearbox efficiency included already
+        fst_vt['ElastoDyn']['GBoxEff']    = 100.0 #inputs['gearbox_efficiency'][0] * 100.
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']      = inputs['generator_efficiency'][0] * 100.
+        fst_vt['ServoDyn']['GenEff']      = inputs['generator_efficiency'][-1] * 100.
 
         # Masses from DriveSE
         if self.options['modeling_options']['openfast']['analysis_settings']['update_hub_nacelle']:

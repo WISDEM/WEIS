@@ -4,6 +4,7 @@
 import numpy as np
 import openmdao.api as om
 from wisdem.towerse.tower import TowerSE
+from wisdem.commonse.fileIO import save_data
 
 
 # Set analysis and optimization options and define geometry
@@ -38,15 +39,9 @@ modeling_options['tower']['gamma_fatigue'] = 1.35 * 1.3 * 1.0
 
 # Frame3DD options
 modeling_options['tower']['frame3dd'] = {}
-modeling_options['tower']['frame3dd']['DC'] = 80.0
 modeling_options['tower']['frame3dd']['shear'] = True
 modeling_options['tower']['frame3dd']['geom'] = True
-modeling_options['tower']['frame3dd']['dx'] = 5.0
-modeling_options['tower']['frame3dd']['Mmethod'] = 1
-modeling_options['tower']['frame3dd']['lump'] = 0
 modeling_options['tower']['frame3dd']['tol'] = 1e-9
-modeling_options['tower']['frame3dd']['shift'] = 0.0
-modeling_options['tower']['frame3dd']['add_gravity'] = True
 
 modeling_options['tower']['n_height'] = n_control_points
 modeling_options['tower']['n_layers'] = 1
@@ -149,7 +144,7 @@ if modeling_options['tower']['wind'] == 'PowerWind':
 prob['wind1.Uref'] = 11.73732
 Fx1 = 1284744.19620519
 Fy1 = 0.0
-Fz1 = -2914124.84400512 + float(prob['rna_mass']) * 9.81
+Fz1 = -2914124.84400512
 Mxx1 = 3963732.76208099
 Myy1 = -2275104.79420872
 Mzz1 = -346781.68192839
@@ -161,7 +156,7 @@ prob['pre1.rna_M'] = np.array([Mxx1, Myy1, Mzz1])
 prob['wind2.Uref'] = 70.0
 Fx2 = 930198.60063279
 Fy2 = 0.0
-Fz2 = -2883106.12368949 + float(prob['rna_mass']) * 9.81
+Fz2 = -2883106.12368949
 Mxx2 = -1683669.22411597
 Myy2 = -2522475.34625363
 Mzz2 = 147301.97023764
@@ -176,14 +171,16 @@ prob['max_taper'] = 0.2
 
 # run the analysis or optimization
 prob.model.approx_totals()
-prob.run_driver()
-prob.run_model()
+if opt_flag:
+    prob.run_driver()
+else:
+    prob.run_model()
+save_data('tower_example',prob)
 # ---
-
 
 # print results from the analysis or optimization
 z = 0.5 * (prob['z_full'][:-1] + prob['z_full'][1:])
-print('zs =', z)
+print('zs =', prob['z_full'])
 print('ds =', prob['d_full'])
 print('ts =', prob['t_full'])
 print('mass (kg) =', prob['tower_mass'])

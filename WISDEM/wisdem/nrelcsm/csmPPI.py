@@ -5,9 +5,7 @@ Created by George Scott on 2012-08-01.
 Modified by Katherine Dykes 2012.
 Copyright (c) NREL. All rights reserved.
 """
-import wisdem.nrelcsm as nrelcsm
 import os
-import sys
 import re
  
 class Escalator:
@@ -115,7 +113,7 @@ class PPI:
         
         #self.escData = [None] * 37
         self.escData = {}  # try a dictionary
-        self.tblfile = os.path.join('static','PPI_Tables.txt')   #TODO: temporary solution - should update so it can locate it from dictionary etc
+        self.tblfile = 'PPI_Tables.txt'   #TODO: temporary solution - should update so it can locate it from dictionary etc
         self.ppitbls = {} # dictionary of PPITbl objects 
         self.yrs_gdp = []
         self.ppi_gdp = []
@@ -127,14 +125,7 @@ class PPI:
         self.debug = debug
 
         fullfile = os.path.join(os.path.dirname(os.path.abspath(__file__)), self.tblfile)
-        try:
-            infile = open(fullfile, 'r') #infile = open(self.tblfile)
-        except:
-            sys.stdout.write ("Error opening or reading %s\n" % fullfile)
-            quit()
-        else:
-            if (self.debug > 0):
-                sys.stdout.write ("Opened %s\n" % self.tblfile)
+        infile = open(fullfile, 'r') #infile = open(self.tblfile)
             
         itable = -1
         found_tables = False
