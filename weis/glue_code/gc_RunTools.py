@@ -28,6 +28,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('IPC_Ki1p',      val=0.0, units='rad/(N*m)')
         self.add_input('tip_deflection',val=0.0, units='m')
         self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
+        self.add_input('rotor_overspeed',val=0.0)
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -55,5 +56,10 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
                 print('Max DEL(RootMyb): {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
+            if self.options['opt_options']['merit_figure'] == 'rotor_overspeed':
+                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
+            # Print constraints
+            if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
+                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
         
         print('########################################')

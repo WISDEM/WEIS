@@ -813,6 +813,7 @@ class WindPark(om.Group):
         if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
             self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen.DEL_RootMyb')
             self.connect('aeroelastic.DEL_TwrBsMyt',       'outputs_2_screen.DEL_TwrBsMyt')
+            self.connect('aeroelastic.rotor_overspeed',    'outputs_2_screen.rotor_overspeed')
             self.connect('tune_rosco_ivc.PC_omega',        'outputs_2_screen.PC_omega')
             self.connect('tune_rosco_ivc.PC_zeta',         'outputs_2_screen.PC_zeta')
             self.connect('tune_rosco_ivc.VS_omega',        'outputs_2_screen.VS_omega')
