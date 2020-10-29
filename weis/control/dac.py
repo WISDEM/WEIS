@@ -198,7 +198,6 @@ class RunXFOIL(ExplicitComponent):
         self.xfoil_path    = af_init_options['xfoil_path']
 
         # Use openfast cores for parallelization of xfoil 
-        # nja - Probably want to change this so XFOIL parallelization is a flag?
         FASTpref = self.options['modeling_options']['openfast']
         xfoilpref = self.options['modeling_options']['xfoil']
 
