@@ -59,11 +59,11 @@ jobs:
         run: |
           conda install -y petsc4py mpi4py compilers
       
-      # Install dependencies of WEIS specific to ubuntu
+      # Install dependencies of WEIS specific to ubuntu (not with compilers)
       - name: Add dependendencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
         run: |
-          conda install -y petsc4py mpi4py compilers
+          conda install -y petsc4py mpi4py 
       
       # Install dependencies of WEIS specific to windows
       - name: Add dependendencies windows specific
@@ -72,8 +72,8 @@ jobs:
           conda install -y m2w64-toolchain libpython
 
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
         
       # Install WEIS
       - name: Install WEIS
