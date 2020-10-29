@@ -220,11 +220,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
                 wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
             elif opt_options['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
-                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e4)
+                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
             elif opt_options['merit_figure'] == 'DEL_TwrBsMyt':   # for pitch controller optimization
                 wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
                 wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
+            elif opt_options['merit_figure'] == 'rotor_overspeed':
+                wt_opt.model.add_objective('aeroelastic.rotor_overspeed')
             else:
                 exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
 
@@ -267,9 +269,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                                 
             if 'dac' in blade_opt_options:
                 if blade_opt_options['dac']['te_flap_end']['flag']:
-                    wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=blade_opt_options['dac']['te_flap_end']['min_end'], upper=blade_opt_options['dac']['te_flap_end']['max_end'])
+                    wt_opt.model.add_design_var('dac_ivc.te_flap_end', 
+                    lower=blade_opt_options['dac']['te_flap_end']['min_end'], 
+                    upper=blade_opt_options['dac']['te_flap_end']['max_end'], 
+                    ref=1e2)
                 if blade_opt_options['dac']['te_flap_ext']['flag']:
-                    wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
+                    wt_opt.model.add_design_var('dac_ivc.te_flap_ext', 
+                                        lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], 
+                                        upper=blade_opt_options['dac']['te_flap_ext']['max_ext'],
+                                        ref=1e2)
                     
             if tower_opt_options['outer_diameter']['flag']:
                 wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'], ref=5.)
@@ -297,10 +305,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                                                                 ref=1.e-7)
             if 'flap_control' in control_opt_options['servo']:
                 if control_opt_options['servo']['flap_control']['flag']:
-                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 
-                                                                     upper=control_opt_options['servo']['flap_control']['omega_max'])
-                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', lower=control_opt_options['servo']['flap_control']['zeta_min'], 
-                                                                    upper=control_opt_options['servo']['flap_control']['zeta_max'])
+                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', 
+                                        lower=control_opt_options['servo']['flap_control']['omega_min'], 
+                                        upper=control_opt_options['servo']['flap_control']['omega_max'])
+                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', 
+                                        lower=control_opt_options['servo']['flap_control']['zeta_min'], 
+                                        upper=control_opt_options['servo']['flap_control']['zeta_max'])
 
             # Set non-linear constraints
             blade_constraints = opt_options['constraints']['blade']
@@ -324,7 +334,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
             if blade_constraints['tip_deflection']['flag']:
                 if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
-                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 0.8)
                 else:
                     print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
