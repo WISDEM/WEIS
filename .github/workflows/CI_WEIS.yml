@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools swig xlrd pyside2
-          pip install marmot-agents
+          pip install simpy marmot-agents
       
       # Install dependencies of WEIS specific to macOS
       - name: Add dependendencies macOS specific
