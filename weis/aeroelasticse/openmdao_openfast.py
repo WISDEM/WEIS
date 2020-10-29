@@ -1,5 +1,7 @@
 import numpy as np
 import os, copy, warnings, shutil, sys
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
@@ -12,7 +14,8 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywr
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
-from pCrunch import Analysis, pdTools
+from pCrunch import Analysis, pdTools, Processing
+from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
 if MPI:
@@ -268,6 +271,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')
         self.add_discrete_output('fst_vt_out', val={})
 
+        # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
+        self.of_inumber = -1
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
@@ -583,7 +588,7 @@ class FASTLoadCases(ExplicitComponent):
                 FAST_Output = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
-
+        self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
         return FAST_Output, case_list, dlc_list
 
@@ -795,7 +800,58 @@ class FASTLoadCases(ExplicitComponent):
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
 
-        
+        # Setup paths for saving of output info
+        of_output_folder    =  os.path.join(self.options['opt_options']['general']['folder_output'],'of_outputs')
+        stats_output_folder =  os.path.join(of_output_folder, 'stats')
+        if not os.path.exists(stats_output_folder):
+            os.makedirs(of_output_folder)
+            os.makedirs(stats_output_folder)
+        # self.of_inumber = len(os.listdir(stats_output_folder))
+
+        # save summary stats
+        stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
+        Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
+
+        # Save output plots
+        fast_pl = rosco_utilities.FAST_Plots()
+
+        figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
+        with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
+            for fast_out in FAST_Output:
+                plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
+                             'Blade': ['TipDxc1', 'RootMyb1']}
+                if self.n_tab > 1:
+                    plots2make['Baseline'].append('BLFLAP1')
+
+                numplots    = len(plots2make)
+                maxchannels = np.max([len(plots2make[key]) for key in plots2make.keys()])
+                fig = plt.figure(figsize=(8,6), constrained_layout=True)
+                gs_all = fig.add_gridspec(1, numplots)
+                for pnum, (gs, pname) in enumerate(zip(gs_all, plots2make.keys())):
+                    gs0 = gs.subgridspec(len(plots2make[pname]),1)
+                    for cid, channel in enumerate(plots2make[pname]):
+                        subplt = fig.add_subplot(gs0[cid])
+                        try:
+                            subplt.plot(fast_out['Time'], fast_out[channel])
+                            unit_idx = fast_out['meta']['channels'].index(channel)
+                            subplt.set_ylabel('{:^} \n ({:^})'.format(
+                                                channel,
+                                                fast_out['meta']['attribute_units'][unit_idx]))
+                            subplt.grid(True)
+                            subplt.set_xlabel('Time (s)')
+                        except:
+                            print('Cannot plot {}'.format(channel))
+                        if cid == 0:
+                            subplt.set_title(pname)
+                        if cid != len(plots2make[pname])-1:
+                            subplt.axes.get_xaxis().set_visible(False)
+
+                    plt.suptitle(fast_out['meta']['name'])
+                pdf.savefig(fig)
+
+
+            
+
         ## Post process loads
         if self.FASTpref['dlc_settings']['run_IEC']:
             # TODO: support for BeamDyn
