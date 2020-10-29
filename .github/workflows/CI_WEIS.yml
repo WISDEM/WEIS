@@ -94,6 +94,14 @@ jobs:
           python weis_driver.py
           mpirun -np 2 python weis_driver.py
       
+      - name: Run multifidelity tests
+        run: |
+          cd weis/multifidelity/test
+          python test_base_method.py
+          python test_base_model.py
+          python test_simple_models.py
+          python test_trust_region.py
+      
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
       #  run: |

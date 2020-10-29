@@ -124,7 +124,6 @@ class BaseModel:
                 continue
 
             if same_inputs:
-                print('Using saved results')
                 return self.saved_outputs[i]
 
         # Else, return None, so the function needs to be evaluated at this point
