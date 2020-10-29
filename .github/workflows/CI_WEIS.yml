@@ -50,8 +50,8 @@ jobs:
       # Install dependencies of WEIS common across platforms
       - name: Install dependencies
         run: |
-          conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd pyside2
-          pip install simpy marmot-agents
+          conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools swig xlrd pyside2
+          pip install marmot-agents
       
       # Install dependencies of WEIS specific to macOS
       - name: Add dependendencies macOS specific
@@ -72,8 +72,8 @@ jobs:
           conda install -y m2w64-toolchain libpython
 
       # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
         
       # Install WEIS
       - name: Install WEIS
