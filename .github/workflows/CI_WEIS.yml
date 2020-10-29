@@ -92,7 +92,7 @@ jobs:
         run: |
           cd examples/rotor_opt
           python weis_driver.py
-          mpirun -np 4 python weis_driver.py
+          mpirun -np 2 python weis_driver.py
       
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
