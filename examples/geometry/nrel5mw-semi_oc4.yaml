@@ -378,7 +378,7 @@ components:
                     thickness:
                         grid: [0.0, 0.1875, 1.0]
                         values: [0.06, 0.06, 0.06]
-                ballast:
+                ballasts:
                     - variable_flag: True
                       grid: [0.0, 0.1875]
                     - variable_flag: True
@@ -413,7 +413,7 @@ components:
                     thickness:
                         grid: [0.0, 0.1875, 1.0]
                         values: [0.06, 0.06, 0.06]
-                ballast:
+                ballasts:
                     - variable_flag: True
                       grid: [0.0, 0.1875]
                     - variable_flag: True
@@ -448,7 +448,7 @@ components:
                     thickness:
                         grid: [0.0, 0.1875, 1.0]
                         values: [0.06, 0.06, 0.06]
-                ballast:
+                ballasts:
                     - variable_flag: True
                       grid: [0.0, 0.1875]
                     - variable_flag: True
