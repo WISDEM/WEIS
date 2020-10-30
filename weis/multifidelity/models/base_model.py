@@ -1,5 +1,6 @@
 import os
 import dill
+import copy
 from collections import OrderedDict
 import numpy as np
 
@@ -86,8 +87,8 @@ class BaseModel:
         outputs : dict of outputs
             Keys and values for output values from `compute()` to save.
         """
-        self.saved_desvars.append(self.flatten_desvars(desvars))
-        self.saved_outputs.append(outputs)
+        self.saved_desvars.append(copy.deepcopy(self.flatten_desvars(desvars)))
+        self.saved_outputs.append(copy.deepcopy(outputs))  # unclear why this is needed for output arrays
 
         # Only save to the pickle file if warmstart_file was provided
         if self.warmstart_file is not None:

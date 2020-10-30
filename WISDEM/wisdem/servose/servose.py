@@ -516,7 +516,7 @@ class NoStallConstraint(ExplicitComponent):
             if verbosity == True:
                 if outputs['no_stall_constraint'][i] > 1:
                     print('Blade is stalling at span location %.2f %%' % (inputs['s'][i]*100.))
-
+                    
 class AEP(ExplicitComponent):
     def initialize(self):
 

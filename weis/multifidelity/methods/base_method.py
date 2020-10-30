@@ -272,21 +272,23 @@ class BaseMethod:
                     return self.model_low.run(x)[output_name] + e(*x)
 
             elif interp_method == "smt":
-                # sm = smt.RMTB(
-                #     xlimits=self.bounds,
-                #     order=3,
-                #     num_ctrl_pts=5,
-                #     print_global=False,
-                # )
-                sm = smt.RBF(print_global=False,)
+                # If there's no difference between the high- and low-fidelity values,
+                # we don't need to construct a surrogate. This is useful for
+                # outputs that don't vary between fidelities, like geometric properties.
+                if np.all(differences == 0.):
+                    def approximation_function(x, output_name=output_name):
+                        return self.model_low.run(x)[output_name]
+                        
+                else:
+                    sm = smt.RBF(print_global=False,)
 
-                sm.set_training_values(self.design_vectors, differences)
-                sm.train()
+                    sm.set_training_values(self.design_vectors, differences)
+                    sm.train()
 
-                def approximation_function(x, output_name=output_name, sm=sm):
-                    return self.model_low.run(x)[output_name] + sm.predict_values(
-                        np.atleast_2d(x)
-                    )
+                    def approximation_function(x, output_name=output_name, sm=sm):
+                        return self.model_low.run(x)[output_name] + sm.predict_values(
+                            np.atleast_2d(x)
+                        )
 
             # Create m_k = lofi + RBF
             approximation_functions[output_name] = approximation_function

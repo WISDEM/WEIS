@@ -87,12 +87,12 @@ jobs:
           python run_DLC.py
           python run_general.py
       
-      # Run scripts within rotor_opt folder, with and without MPI
-      - name: Run examples rotor optimization
-        run: |
-          cd examples/rotor_opt
-          python weis_driver.py
-          mpirun -np 2 python weis_driver.py
+      # # Run scripts within rotor_opt folder, with and without MPI
+      # - name: Run examples rotor optimization
+      #   run: |
+      #     cd examples/rotor_opt
+      #     python weis_driver.py
+      #     mpirun -np 2 python weis_driver.py
       
       - name: Run multifidelity tests
         run: |
