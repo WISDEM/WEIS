@@ -38,6 +38,7 @@ class TuneROSCO(ExplicitComponent):
     def setup(self):
         self.modeling_options = self.options['modeling_options']
         servose_init_options = self.modeling_options['servose']
+        n_pc     = self.options['modeling_options']['servose']['n_pc']
 
         # Input parameters
         self.controller_params = {}
@@ -74,8 +75,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
-        self.add_input('gearbox_efficiency',val=0.0,                                desc='Gearbox efficiency')
-        self.add_input('generator_efficiency', val=0.0,                             desc='Generator efficiency')
+        self.add_input('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
+        self.add_input('generator_efficiency', val=1.0,                  desc='Generator efficiency')
         # 
         self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
@@ -187,8 +188,9 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rho          = inputs['rho'][0]
         WISDEM_turbine.rotor_radius = inputs['R'][0]
         WISDEM_turbine.Ng           = inputs['gear_ratio'][0]
-        WISDEM_turbine.GenEff       = inputs['generator_efficiency'][0] * 100.
-        WISDEM_turbine.GBoxEff      = inputs['gearbox_efficiency'][0] * 100.
+        WISDEM_turbine.GenEff       = inputs['generator_efficiency'][-1] * 100.
+        # Generator efficiency should already be drivetrain efficiency and include the gearbox
+        WISDEM_turbine.GBoxEff      = 100.0 #inputs['gearbox_efficiency'][0] * 100.
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
         WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0]
