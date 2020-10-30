@@ -34,7 +34,8 @@ properties:
             - tower
             - monopile
             - foundation
-            - floating
+            - floating_platform
+            - mooring
             - RNA
         properties:
             blade:

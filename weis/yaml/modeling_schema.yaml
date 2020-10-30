@@ -457,3 +457,9 @@ properties:
                                     unit: none
                                     minItems: 2
                                     uniqueItems: true
+
+    floating:
+        entry1:
+            type: integer
+            default: 0
+            description: Placeholder

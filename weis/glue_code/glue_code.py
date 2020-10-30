@@ -311,12 +311,12 @@ class WT_RNTA(om.Group):
             self.connect('drivese.rna_mass',                'freq_tower.rna_mass')
             self.connect('sse.gust.V_gust',                 'freq_tower.wind.Uref')
             self.connect('assembly.hub_height',             'freq_tower.wind_reference_height')  # TODO- environment
-            self.connect('foundation.height',               'freq_tower.wind_z0') # TODO- environment
             self.connect('env.rho_air',                     'freq_tower.rho_air')
             self.connect('env.mu_air',                      'freq_tower.mu_air')                    
             self.connect('env.shear_exp',                   'freq_tower.shearExp')                    
             self.connect('assembly.hub_height',             'freq_tower.hub_height')
-            self.connect('foundation.height',               'freq_tower.foundation_height')
+            if modeling_options['flags']['foundation']:
+                self.connect('foundation.height',               ['freq_tower.wind_z0', 'freq_tower.foundation_height']) # TODO- environment
             self.connect('tower.diameter',                  'freq_tower.tower_outer_diameter_in')
             self.connect('tower.height',                    'freq_tower.tower_height')
             self.connect('tower.s',                         'freq_tower.tower_s')
@@ -683,12 +683,12 @@ class WT_RNTA(om.Group):
                 self.connect('sse.gust.V_gust',               'towerse.wind.Uref')
                 
             self.connect('assembly.hub_height',           'towerse.wind_reference_height')  # TODO- environment
-            self.connect('foundation.height',             'towerse.wind_z0') # TODO- environment
             self.connect('env.rho_air',                   'towerse.rho_air')
             self.connect('env.mu_air',                    'towerse.mu_air')                    
             self.connect('env.shear_exp',                 'towerse.shearExp')                    
             self.connect('assembly.hub_height',           'towerse.hub_height')
-            self.connect('foundation.height',             'towerse.foundation_height')
+            if modeling_options['flags']['foundation']:
+                self.connect('foundation.height',             ['towerse.wind_z0','towerse.foundation_height']) # TODO- environment
             self.connect('tower.diameter',                'towerse.tower_outer_diameter_in')
             self.connect('tower.height',                  'towerse.tower_height')
             self.connect('tower.s',                       'towerse.tower_s')
@@ -767,7 +767,8 @@ class WT_RNTA(om.Group):
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
             self.connect('tower.height',                    'aeroelastic.tower_height')
-            self.connect('foundation.height',               'aeroelastic.tower_base_height')
+            if modeling_options['flags']['foundation']:
+                self.connect('foundation.height',               'aeroelastic.tower_base_height')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
             self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')
@@ -886,8 +887,8 @@ class WindPark(om.Group):
 
         self.add_subsystem('wt',        WT_RNTA(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         
-        if modeling_options['Analysis_Flags']['BOS']:
-            if modeling_options['offshore']:
+        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
+            if modeling_options['flags']['monopile'] == True:
                 self.add_subsystem('orbit',     Orbit())
             else:
                 self.add_subsystem('landbosse', LandBOSSE())
@@ -900,9 +901,9 @@ class WindPark(om.Group):
             self.add_subsystem('conv_plots',    Convergence_Trends_Opt(opt_options = opt_options))
 
         # BOS inputs
-        if modeling_options['Analysis_Flags']['BOS']:
-            if modeling_options['offshore']:
-                # Inputs into ORBIT
+        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
+            if modeling_options['flags']['monopile'] == True:
+                # Inputs into ORBIT - Fixed-bottom offshore
                 self.connect('control.rated_power',                   'orbit.turbine_rating')
                 self.connect('env.water_depth',                       'orbit.site_depth')
                 self.connect('costs.turbine_number',                  'orbit.number_of_turbines')
@@ -935,7 +936,7 @@ class WindPark(om.Group):
                 self.connect('bos.boem_review_cost',                  'orbit.boem_review_cost')
                 self.connect('bos.design_install_plan_cost',          'orbit.design_install_plan_cost')
             else:
-                # Inputs into LandBOSSE
+                # Inputs into LandBOSSE - Landbased
                 self.connect('assembly.hub_height',             'landbosse.hub_height_meters')
                 self.connect('costs.turbine_number',            'landbosse.num_turbines')
                 self.connect('control.rated_power',             'landbosse.turbine_rating_MW')
@@ -968,8 +969,8 @@ class WindPark(om.Group):
             self.connect('sse.AEP',             'financese.turbine_aep')
 
         self.connect('tcc.turbine_cost_kW',     'financese.tcc_per_kW')
-        if modeling_options['Analysis_Flags']['BOS']:
-            if 'offshore' in modeling_options and modeling_options['offshore']:
+        if modeling_options['Analysis_Flags']['BOS'] and modeling_options['flags']['floating_platform'] == False:
+            if modeling_options['flags']['monopile'] == True:
                 self.connect('orbit.total_capex_kW',    'financese.bos_per_kW')
             else:
                 self.connect('landbosse.bos_capex_kW',  'financese.bos_per_kW')
