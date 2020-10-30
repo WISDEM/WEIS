@@ -5,6 +5,11 @@ from wisdem.commonse.csystem import DirectionVector
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
+    
+    if modeling_options['flags']['monopile'] or modeling_options['flags']['floating_platform']:
+        offshore = True
+    else:
+        offshore = False
 
     # These are the required components
     assembly        = wt_init['assembly']
@@ -16,7 +21,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Now all of the optional components
     if modeling_options['flags']['environment']:
         environment     = wt_init['environment']
-        wt_opt = assign_environment_values(wt_opt, environment, modeling_options['offshore'])
+        wt_opt = assign_environment_values(wt_opt, environment, offshore)
     else:
         environment = {}
 
@@ -70,9 +75,9 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     else:
         monopile = {}
 
-    if modeling_options['flags']['floating']:
-        floating = wt_init['components']['floating']
-        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating)
+    if modeling_options['flags']['floating_platform']:
+        floating_platform = wt_init['components']['floating_platform']
+        wt_opt   = assign_floating_values(wt_opt, modeling_options, floating_platform)
     else:
         floating = {}
 
@@ -84,7 +89,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
 
     if modeling_options['flags']['bos']:
         bos           = wt_init['bos']
-        wt_opt = assign_bos_values(wt_opt, bos, modeling_options['offshore'])
+        wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
         costs = {}
 
