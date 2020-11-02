@@ -94,6 +94,13 @@ jobs:
           python weis_driver.py
           mpirun -np 2 python weis_driver.py
       
+      # Run scripts within control_opt folder, with and without MPI
+      - name: Run examples control optimization
+        run: |
+          cd examples/control_opt
+          python runOptimization.py
+          mpirun -np 2 python runOptimization.py
+
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
       #  run: |
