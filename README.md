@@ -58,41 +58,9 @@ The installation instructions below use the environment name, "weis-env," but an
 
 **NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env`
 
-## Git sub-tree
+## Developer guide
 
-This repo contains copies of other codes created by using the `git subtree` commands.
-Below are some details about how to add external codes and update them.
-
-To add an external code, using OpenFAST as an example, type:
-
-```
-$ git remote add OpenFAST https://github.com/OpenFAST/openfast
-$ git fetch OpenFAST
-$ git subtree add -P OpenFAST OpenFAST/dev --squash
-```
-
-The `--squash` is important so WEIS doesn't get filled up with commits from the subtree repos.
-
-Once a subtree code exists in this repo, we can update it like this.
-This first two lines are needed only if you don't have the remote for the particular subtree yet.
-If you already have the remote, only the last line is needed.
-
-```
-$ git remote add OpenFAST https://github.com/OpenFAST/openfast
-$ git fetch OpenFAST
-$ git subtree pull --prefix OpenFAST https://github.com/OpenFAST/openfast dev --squash
-```
-
-Changes to these subtree codes **should only be made to their original repos**, *not* to this WEIS repo.
-Once those individual repos have been updated, use the previous `git subtree pull` command to pull in those updates to the WEIS repo.
-
-If you run into trouble using `git subtree`, specifically if you see `git: 'subtree' is not a git command.`, try using your system git instead of any conda-installed git.
-Specifically, try using `/usr/bin/git subtree` for any subtree commands.
-If that doesn't work for you, please open an issue on this repo so we can track it.
-
-## Run Unit Tests
-
-Each package and sub-module of WEIS has its own set of unit tests, some of which are more comprehensive than others.
+If you plan to contribute code to WEIS, please first consult the [developer guide](https://weis.readthedocs.io/en/latest/how_to_contribute_code.html).
 
 ## Feedback
 
