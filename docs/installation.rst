@@ -21,6 +21,7 @@ The installation instructions below use the environment name, "weis-env," but an
 Note that older versions of anaconda on MacOS and Linux may instead require `source activate weis-env`
 
 .. _install:
+
 Install WEIS
 ^^^^^^^^^^^^
 
