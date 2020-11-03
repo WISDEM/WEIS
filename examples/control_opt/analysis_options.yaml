@@ -1,6 +1,6 @@
 general:
     folder_output: pitch_opt
-    fname_output: BAR_00
+    fname_output: iea15mw
 optimization_variables:
   blade:
     aero_shape:
