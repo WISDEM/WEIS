@@ -1782,6 +1782,14 @@ properties:
                 unit: none
                 minimum: 0
                 maximum: 1
+            IPC_Ki1p:
+                type: number
+                description: Integral gain for the IPC controller (1P)
+                unit: none
+                minimum: 0
+                maximum: 1.
+                default: 0.
+
     environment:
         type: object
         required:
