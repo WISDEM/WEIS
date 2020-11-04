@@ -92,3 +92,4 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.wt_init['control']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
             self.wt_init['control']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
             self.wt_init['control']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])
+            self.wt_init['control']['IPC_Ki1p'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])

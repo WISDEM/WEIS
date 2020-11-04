@@ -6,3 +6,18 @@ build
 local
 .DS_Store
 __pycache__
+
+
+# Openfast
+*.outb
+*.out
+*.sum
+*.ech
+*.dbg
+
+# vs code
+.vscode
+
+# Temp
+*Temp*
+*temp*

@@ -53,6 +53,7 @@ class WT_RNTA(om.Group):
         tune_rosco_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
         tune_rosco_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
         tune_rosco_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
+        tune_rosco_ivc.add_output('IPC_Ki1p',         val=0.0, units='rad/(N*m)', desc='Individual pitch controller 1p gain')
         # optional inputs - not connected right now!!
         tune_rosco_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
         tune_rosco_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
@@ -399,6 +400,7 @@ class WT_RNTA(om.Group):
             self.connect('tune_rosco_ivc.PC_zeta',          'sse_tune.tune_rosco.PC_zeta')
             self.connect('tune_rosco_ivc.VS_omega',         'sse_tune.tune_rosco.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',          'sse_tune.tune_rosco.VS_zeta')
+            self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['servose']['Flp_Mode'] > 0:
                 self.connect('tune_rosco_ivc.Flp_omega',    'sse_tune.tune_rosco.Flp_omega')
@@ -995,11 +997,14 @@ class WindPark(om.Group):
         self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
         
         if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-            self.connect('aeroelastic.My_std',      'outputs_2_screen.My_std')
-            self.connect('aeroelastic.flp1_std',    'outputs_2_screen.flp1_std')
+            self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen.DEL_RootMyb')
+            self.connect('aeroelastic.DEL_TwrBsMyt',       'outputs_2_screen.DEL_TwrBsMyt')
+            self.connect('aeroelastic.rotor_overspeed',    'outputs_2_screen.rotor_overspeed')
             self.connect('tune_rosco_ivc.PC_omega',        'outputs_2_screen.PC_omega')
             self.connect('tune_rosco_ivc.PC_zeta',         'outputs_2_screen.PC_zeta')
             self.connect('tune_rosco_ivc.VS_omega',        'outputs_2_screen.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',         'outputs_2_screen.VS_zeta')
             self.connect('tune_rosco_ivc.Flp_omega',       'outputs_2_screen.Flp_omega')
             self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen.Flp_zeta')
+            self.connect('tune_rosco_ivc.IPC_Ki1p',        'outputs_2_screen.IPC_Ki1p')
+            self.connect('dac_ivc.te_flap_end',            'outputs_2_screen.te_flap_end')
