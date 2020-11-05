@@ -107,7 +107,7 @@ metadata = dict(
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.2','numpy','scipy','nlopt','dill','smt'],
+    install_requires              = ['openmdao>=3.2','numpy','scipy','nlopt','dill','smt','control'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     packages                      = weis_pkgs,
     python_requires               = '>=3.6',
