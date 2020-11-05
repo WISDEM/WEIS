@@ -221,8 +221,9 @@ def run_PC_sweep(omega,zeta=1.0):
     else:
         fastBatch.run_serial()
 
-if __name__ == '__main__':
-    run_PC_sweep([.1,.15,.2,.25,.3,.35,.4,.45])      
+
+# Actually run example
+run_PC_sweep([.1,.15,.2,.25,.3,.35,.4,.45])      
     
     
     

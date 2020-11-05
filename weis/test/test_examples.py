@@ -17,7 +17,7 @@ class TestExamples(unittest.TestCase):
             try:
                 if 'run_lin_turbine.py' not in str(f) and 'dac_driver.py' not in str(f):
                     # Go to location due to relative path use for airfoil files
-                    print(f)
+                    print("Running example:", f)
                     basepath = os.path.dirname(os.path.realpath(f))
                     os.chdir(basepath)
 

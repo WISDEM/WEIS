@@ -210,9 +210,6 @@ def run_mass_sweep():
     else:
         fastBatch.run_serial()
 
-if __name__ == '__main__':
-    run_mass_sweep()      
-    
-    
-    
-    
+
+# Actually run example
+run_mass_sweep()      
