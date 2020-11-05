@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import os
 import weis.control.LinearModel as lin_mod
+import weis.aeroelasticse.LinearFAST as lin_fast
 from ROSCO_toolbox import utilities as ROSCO_utilities
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
@@ -18,6 +19,7 @@ from pCrunch.Analysis import Loads_Analysis
 import yaml
 import matplotlib.pyplot as plt
 
+PLOT = False
 
 
 if __name__ == '__main__':
@@ -25,6 +27,9 @@ if __name__ == '__main__':
     weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
     
     # 0. Load linear models from gen_linear_model() in WEIS/wies/aeroelasticse/LinearFAST.py
+    lin_fast.gen_linear_model([16])
+
+
     # 1. Set up linear turbine model by running mbc transformation
     if True:  
         # Load system from OpenFAST .lin files
@@ -105,7 +110,8 @@ if __name__ == '__main__':
             if not iPlot == (len(channels) - 1):
                 ax[iPlot].set_xticklabels([])
 
-        plt.show()
+        if PLOT:
+            plt.show()
 
 
     # sweep controller.pc_omega and run linearization
@@ -150,7 +156,8 @@ if __name__ == '__main__':
                 if not iPlot == (len(comp_channels) - 1):
                     ax[iPlot].set_xticklabels([])
 
-        plt.show()
+        if PLOT:
+            plt.show()
         
 
     # Try some post processing using pCrunch
@@ -158,7 +165,7 @@ if __name__ == '__main__':
 
     la = Loads_Analysis()
     fDEL = la.get_DEL(fast_data_lin,chan_info)
-    print('here')
+    # print('here')
 
 
 
