@@ -33,6 +33,10 @@ class LinearTurbineModel(object):
 
             n_lin_cases     = len(out_files)
 
+            if not n_lin_cases:
+                print('No linear outputs found in '+ lin_file)
+                quit()
+
             if n_lin_cases <= 10:
                 num_string = '%01d'
             else:
@@ -232,24 +236,38 @@ class LinearTurbineModel(object):
 
         uh_op = np.mean(u_h)
 
-        f_A     = sp.interpolate.interp1d(self.u_h,self.A_ops)
-        f_B     = sp.interpolate.interp1d(self.u_h,self.B_ops)
-        f_C     = sp.interpolate.interp1d(self.u_h,self.C_ops)
-        f_D     = sp.interpolate.interp1d(self.u_h,self.D_ops)
+        if len(self.u_h) > 1:
+            f_A     = sp.interpolate.interp1d(self.u_h,self.A_ops)
+            f_B     = sp.interpolate.interp1d(self.u_h,self.B_ops)
+            f_C     = sp.interpolate.interp1d(self.u_h,self.C_ops)
+            f_D     = sp.interpolate.interp1d(self.u_h,self.D_ops)
 
-        f_u     = sp.interpolate.interp1d(self.u_h,self.u_ops)
-        f_y     = sp.interpolate.interp1d(self.u_h,self.y_ops)
-        f_x     = sp.interpolate.interp1d(self.u_h,self.x_ops)
+            f_u     = sp.interpolate.interp1d(self.u_h,self.u_ops)
+            f_y     = sp.interpolate.interp1d(self.u_h,self.y_ops)
+            f_x     = sp.interpolate.interp1d(self.u_h,self.x_ops)
 
-        A       = f_A(uh_op)
-        B       = f_B(uh_op)
-        C       = f_C(uh_op)
-        D       = f_D(uh_op)
+            A       = f_A(uh_op)
+            B       = f_B(uh_op)
+            C       = f_C(uh_op)
+            D       = f_D(uh_op)
 
-        u_op    = f_u(uh_op)
-        x_op    = f_x(uh_op)
-        y_op    = f_y(uh_op)
+            u_op    = f_u(uh_op)
+            x_op    = f_x(uh_op)
+            y_op    = f_y(uh_op)
+        else:
+            print('WARNING: Only one linearization, at '+ str(self.u_h[0]) + ' m/s')
+            print('Simulation operating point is ' + str(uh_op) + 'm/s')
+            print('Results may not be as expected')
 
+            # Set linear system to only linearization
+            A       = self.A_ops[:,:,0]
+            B       = self.B_ops[:,:,0]
+            C       = self.C_ops[:,:,0]
+            D       = self.D_ops[:,:,0]
+
+            u_op    = self.u_ops[:,0]
+            y_op    = self.y_ops[:,0]
+            x_op    = self.x_ops[:,0]            
 
         # form state space model  TODO: generalize using linear description strings
         P_op                = co.StateSpace(A,B,C,D)
