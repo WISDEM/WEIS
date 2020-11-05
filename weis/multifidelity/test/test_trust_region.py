@@ -24,7 +24,7 @@ class Test(unittest.TestCase):
         results = trust_region.optimize()
     
         np.testing.assert_allclose(results["optimal_design"], [0.0, 0.333], atol=1e-3)
-    
+        
     def test_constrained_optimization(self):
         np.random.seed(13)
     
@@ -62,10 +62,10 @@ class Test(unittest.TestCase):
     
         np.testing.assert_allclose(results["optimal_design"], 0.707105, atol=1e-3)
         np.testing.assert_allclose(results["outputs"]["con"], 0.25, atol=1e-5)
-        
+    
     def test_1d_constrained_optimization_lower(self):
         np.random.seed(13)
-
+    
         bounds = {"x": np.array([[0.0, 1.0]])}
         desvars = {"x": np.array([0.25])}
         model_low = simple_1D_low_model(desvars)
@@ -73,18 +73,18 @@ class Test(unittest.TestCase):
         trust_region = SimpleTrustRegion(
             model_low, model_high, bounds, num_initial_points=10, disp=False
         )
-
+    
         trust_region.add_objective("y")
         trust_region.add_constraint("con", lower=0.25)
-
+    
         results = trust_region.optimize(plot=False, num_iterations=10)
-
+    
         np.testing.assert_allclose(results["optimal_design"], 0.741426, atol=1e-3)
         np.testing.assert_allclose(results["outputs"]["con"], 0.302183, atol=1e-5)
-        
+    
     def test_1d_constrained_optimization_upper(self):
         np.random.seed(13)
-
+    
         bounds = {"x": np.array([[0.0, 1.0]])}
         desvars = {"x": np.array([0.25])}
         model_low = simple_1D_low_model(desvars)
@@ -92,12 +92,12 @@ class Test(unittest.TestCase):
         trust_region = SimpleTrustRegion(
             model_low, model_high, bounds, num_initial_points=10, disp=False
         )
-
+    
         trust_region.add_objective("y")
         trust_region.add_constraint("con", upper=0.25)
-
+    
         results = trust_region.optimize(plot=False, num_iterations=10)
-
+    
         np.testing.assert_allclose(results["optimal_design"], 0.707105, atol=1e-3)
         np.testing.assert_allclose(results["outputs"]["con"], 0.25, atol=1e-5)
 

@@ -10,8 +10,8 @@ bounds = {'x' : np.array([[-5.0, 5.0], [-5.0, 5.0]])}
 desvars = {'x' : np.array([0., 0.])}
 model_low = eggcrate_low_model(desvars)
 model_high = eggcrate_high_model(desvars)
-trust_region = SimpleTrustRegion(model_low, model_high, bounds, trust_radius=3)
+trust_region = SimpleTrustRegion(model_low, model_high, bounds, trust_radius=3, disp=2)
 
 trust_region.add_objective('y')
 
-trust_region.optimize(plot=False)
+trust_region.optimize(plot=True)

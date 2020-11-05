@@ -10,11 +10,11 @@ bounds = {'x' : np.array([[0.0, 80.0], [0.0, 80.0]])}
 desvars = {'x' : np.array([40., 40.])}
 model_low = barnes_low_model(desvars)
 model_high = barnes_high_model(desvars)
-trust_region = SimpleTrustRegion(model_low, model_high, bounds, trust_radius=10)
+trust_region = SimpleTrustRegion(model_low, model_high, bounds, disp=2, trust_radius=50, contraction_ratio=0.5, num_initial_points=10)
 
 trust_region.add_objective('y')
 # trust_region.add_constraint('c1', upper=0.)
 # trust_region.add_constraint('c2', upper=0.)
 # trust_region.add_constraint('c3', upper=0.)
 
-trust_region.optimize(plot=False)
+trust_region.optimize(plot=True)

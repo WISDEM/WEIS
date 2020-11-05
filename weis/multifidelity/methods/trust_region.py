@@ -1,7 +1,7 @@
 # base method class
 import numpy as np
 from scipy.interpolate import Rbf
-from scipy.optimize import minimize
+from scipy.optimize import minimize, basinhopping
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import smt.surrogate_models as smt
@@ -27,10 +27,8 @@ class SimpleTrustRegion(BaseMethod):
         Value to compare the ratio of actual reduction to predicted reduction
         of the objective value. A ratio higher than eta expands the trust region
         whereas a value lower than eta contracts the trust region.
-    gtol : float
-        Tolerance of the gradient for convergence criteria. If the norm
-        of the gradient at the current design point is less than gtol,
-        terminate the trust region method. Currently not implemented.
+    radius_tol : float
+        Lower limit for the trust region radius for convergence criteria.
     trust_radius : float
         The current value of the trust region radius in dimensioned units.
     """
@@ -44,8 +42,10 @@ class SimpleTrustRegion(BaseMethod):
         num_initial_points=5,
         max_trust_radius=1000.0,
         eta=0.25,
-        gtol=1e-4,
+        radius_tol=1e-4,
         trust_radius=0.2,
+        expansion_ratio=2.,
+        contraction_ratio=0.25,
     ):
         """
         Initialize the trust region method and store the user-defined options.
@@ -59,12 +59,16 @@ class SimpleTrustRegion(BaseMethod):
             Value to compare the ratio of actual reduction to predicted reduction
             of the objective value. A ratio higher than eta expands the trust region
             whereas a value lower than eta contracts the trust region.
-        gtol : float
+        radius_tol : float
             Tolerance of the gradient for convergence criteria. If the norm
-            of the gradient at the current design point is less than gtol,
+            of the gradient at the current design point is less than radius_tol,
             terminate the trust region method. Currently not implemented.
         trust_radius : float
             The current value of the trust region radius in dimensioned units.
+        expansion_ratio : float
+            The scalar value multiplied to the trust region size if expanding.
+        contraction_ratio : float
+            The scalar value multiplied to the trust region size if contracting.
 
 
         """
@@ -72,8 +76,10 @@ class SimpleTrustRegion(BaseMethod):
 
         self.max_trust_radius = max_trust_radius
         self.eta = eta
-        self.gtol = gtol
+        self.radius_tol = radius_tol
         self.trust_radius = trust_radius
+        self.expansion_ratio = expansion_ratio
+        self.contraction_ratio = contraction_ratio
 
     def find_next_point(self):
         """
@@ -104,15 +110,27 @@ class SimpleTrustRegion(BaseMethod):
         scaled_function = lambda x: self.objective_scaler * np.squeeze(
             self.approximation_functions[self.objective](x)
         )
-        res = minimize(
-            scaled_function,
-            x0,
-            method="SLSQP",
-            tol=1e-10,
-            bounds=bounds,
-            constraints=self.list_of_constraints,
-            options={"disp": self.disp, "maxiter" : 20},
-        )
+        
+        hop = True
+        if hop:
+            minimizer_kwargs = {
+                "method"  : "SLSQP",
+                "tol"  : 1e-10,
+                "bounds"  : bounds,
+                "constraints"  : self.list_of_constraints,
+                "options"  : {"disp": False, "maxiter" : 20},
+            }
+            res = basinhopping(scaled_function, x0, stepsize=np.mean(upper_bounds - lower_bounds) * 0.8, niter=3, disp=self.disp==2, minimizer_kwargs=minimizer_kwargs)
+        else:
+            res = minimize(
+                scaled_function,
+                x0,
+                method="SLSQP",
+                tol=1e-10,
+                bounds=bounds,
+                constraints=self.list_of_constraints,
+                options={"disp": self.disp==2, "maxiter" : 20},
+            )
         x_new = res.x
 
         tol = 1e-6
@@ -150,37 +168,41 @@ class SimpleTrustRegion(BaseMethod):
         new_point_high = (
             self.objective_scaler * self.model_high.run(x_new)[self.objective]
         )
+        prev_point_approx = self.objective_scaler * self.approximation_functions[
+            self.objective
+        ](self.design_vectors[-1])
         new_point_approx = self.objective_scaler * self.approximation_functions[
             self.objective
         ](x_new)
 
         actual_reduction = prev_point_high - new_point_high
-        predicted_reduction = prev_point_high - new_point_approx
-
-        # 4. Accept or reject the trial point according to that ratio
-        # Unclear if this logic is needed; it's better to update the surrogate model with a bad point, even
-        if predicted_reduction <= 0:
-            self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
-            if self.disp:
-                print("not enough reduction! rejecting point")
-        else:
-            self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
-
+        predicted_reduction = prev_point_approx - new_point_approx
+        
         if predicted_reduction == 0.0:
             rho = 0.0
         else:
             rho = actual_reduction / predicted_reduction
 
+        # 4. Accept or reject the trial point according to that ratio
+        # Unclear if this logic is needed; it's better to update the surrogate model with a bad point, even
+        if rho <= 0:
+            # self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
+            if self.disp:
+                print("not enough reduction! rejecting point")
+        else:
+            self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
+
         # 5. Update trust region according to rho_k
-        if rho >= self.eta and hits_boundary:
-            self.trust_radius = min(2 * self.trust_radius, self.max_trust_radius)
+        if rho >= self.eta:  # and hits_boundary:  # unclear if we need this hits_boundary logic
+            self.trust_radius = min(self.expansion_ratio * self.trust_radius, self.max_trust_radius)
         elif rho < self.eta:  # Unclear if this is the best check
-            self.trust_radius *= 0.25
+            self.trust_radius *= self.contraction_ratio
 
         if self.disp:
             print()
-            print("Predicted reduction:", predicted_reduction[0][0])
+            print("Predicted reduction:", np.squeeze(predicted_reduction))
             print("Actual reduction:", actual_reduction)
+            print('Rho', np.squeeze(rho))
             print("Trust radius:", self.trust_radius)
 
     def optimize(self, plot=False, num_iterations=30):
@@ -214,7 +236,7 @@ class SimpleTrustRegion(BaseMethod):
 
             x_test = self.design_vectors[-1, :]
             
-            if self.trust_radius <= 1e-6:
+            if self.trust_radius <= self.radius_tol:
                 break
 
         results = self.process_results()
@@ -232,7 +254,7 @@ class SimpleTrustRegion(BaseMethod):
         print('Plotting!')
 
         if self.n_dims == 2:
-            n_plot = 5
+            n_plot = 21
             x_plot = np.linspace(self.bounds[0, 0], self.bounds[0, 1], n_plot)
             y_plot = np.linspace(self.bounds[1, 0], self.bounds[1, 1], n_plot)
             X, Y = np.meshgrid(x_plot, y_plot)
@@ -242,11 +264,11 @@ class SimpleTrustRegion(BaseMethod):
                 n_plot, n_plot
             )
 
-            # surrogate = []
-            # for x_value in x_values:
-            #     surrogate.append(np.squeeze(self.approximation_functions['con'](x_value)))
-            # surrogate = np.array(surrogate)
-            # y_plot_high = surrogate.reshape(n_plot, n_plot)
+            surrogate = []
+            for x_value in x_values:
+                surrogate.append(np.squeeze(self.approximation_functions[self.objective](x_value)))
+            surrogate = np.array(surrogate)
+            y_plot_high = surrogate.reshape(n_plot, n_plot)
 
             fig = plt.figure(figsize=(7.05, 5))
             contour = plt.contourf(X, Y, y_plot_high, levels=201)
@@ -257,10 +279,10 @@ class SimpleTrustRegion(BaseMethod):
             ax.set_aspect("equal", "box")
 
             cbar = fig.colorbar(contour)
-            cbar.ax.set_ylabel("CP")
-            ticks = np.round(np.linspace(0.305, 0.48286, 6), 3)
-            cbar.set_ticks(ticks)
-            cbar.set_ticklabels(ticks)
+            cbar.ax.set_ylabel("Value")
+            # ticks = np.round(np.linspace(0.305, 0.48286, 6), 3)
+            # cbar.set_ticks(ticks)
+            # cbar.set_ticklabels(ticks)
 
             x = self.design_vectors[-1, 0]
             y = self.design_vectors[-1, 1]
@@ -278,25 +300,27 @@ class SimpleTrustRegion(BaseMethod):
             plt.xlim(self.bounds[0])
             plt.ylim(self.bounds[1])
 
-            plt.xlabel("Chord DV #1")
-            plt.ylabel("Chord DV #2")
+            plt.xlabel("DV #1")
+            plt.ylabel("DV #2")
 
             plt.tight_layout()
 
             num_iter = self.design_vectors.shape[0]
             num_offset = 10
+            
+            plt.show()
 
-            if num_iter <= 5:
-                for i in range(num_offset):
-                    plt.savefig(
-                        f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
-                    )
-                    self.counter_plot += 1
-            else:
-                plt.savefig(
-                    f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
-                )
-                self.counter_plot += 1
+            # if num_iter <= 5:
+            #     for i in range(num_offset):
+            #         plt.savefig(
+            #             f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
+            #         )
+            #         self.counter_plot += 1
+            # else:
+            #     plt.savefig(
+            #         f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
+            #     )
+            #     self.counter_plot += 1
                 
             plt.close()
             if self.disp:

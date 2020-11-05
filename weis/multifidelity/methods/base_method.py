@@ -281,6 +281,7 @@ class BaseMethod:
                         
                 else:
                     sm = smt.RBF(print_global=False,)
+                    # sm = smt.KRG(theta0=[1e-2], print_global=False)
 
                     sm.set_training_values(self.design_vectors, differences)
                     sm.train()
