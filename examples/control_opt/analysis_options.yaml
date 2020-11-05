@@ -159,7 +159,7 @@ constraints:
       max: 0.1
     rotor_overspeed:
       flag: True
-      min: -0.05
+      min: 0.0
       max: 0.2
 
 driver:
