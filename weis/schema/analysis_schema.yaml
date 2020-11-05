@@ -384,6 +384,18 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.0
                             max: *flapminmax
+                    rotor_overspeed:
+                        type: object
+                        description: Words TODO
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &rotor_overspeed
+                                type: number
+                                default: 0.05
+                                minimum: 0.0
+                                maximum: 1.0
+                            max: *rotor_overspeed
 
     merit_figure:
         type: string

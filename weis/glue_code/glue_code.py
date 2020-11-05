@@ -953,7 +953,7 @@ class WindPark(om.Group):
                 self.connect('towerse.tower_mass',              'landbosse.tower_mass')
                 self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
                 self.connect('elastic.precomp.blade_mass',      'landbosse.blade_mass')
-                self.connect('hub.system_mass',                 'landbosse.hub_mass')
+                self.connect('drivese.hub_system_mass',         'landbosse.hub_mass')
                 self.connect('foundation.height',               'landbosse.foundation_height')
                 self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
                 self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')

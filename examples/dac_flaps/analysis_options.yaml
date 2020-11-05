@@ -88,8 +88,8 @@ optimization_variables:
       upper_bound: 10.0
     layer_thickness:
       flag: False
-      lower_bound: 4e-3
-      upper_bound: 2e-1
+      lower_bound: 4.e-3
+      upper_bound: 2.e-1
 
 merit_figure: LCOE  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
@@ -157,6 +157,10 @@ constraints:
       flag: False
       min: 0.0
       max: 0.1
+    rotor_overspeed:
+      flag: False
+      min: 0.0
+      max: 0.2
 
 driver:
     tol: 1.e-3            # Optimality tolerance
