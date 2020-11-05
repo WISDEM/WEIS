@@ -177,10 +177,12 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         # Load and save statistics and load rankings
         if self.overwrite or not os.path.exists(os.path.join(output_dir,'ss_ops.yaml')):
-            stats =fp.batch_processing()
+            stats, _ =fp.batch_processing()
 
+            if hasattr(stats,'__len__'):
+                stats = stats[0]
 
-            windSortInd = np.argsort(stats[0][0]['Wind1VelX']['mean'])
+            windSortInd = np.argsort(stats['Wind1VelX']['mean'])
 
             #            FAST output name,  FAST IC name
             ssChannels = [['Wind1VelX',     'Wind1VelX'],  
@@ -201,7 +203,7 @@ class LinearFAST(runFAST_pywrapper_batch):
             ssChanData = {}
             for iChan in ssChannels:
                 try:
-                    ssChanData[iChan[1]] = np.array(stats[0][0][iChan[0]]['mean'])[windSortInd].tolist()
+                    ssChanData[iChan[1]] = np.array(stats[iChan[0]]['mean'])[windSortInd].tolist()
                 except:
                     print('Warning: ' + iChan[0] + ' is is not in OutList')
 
@@ -390,7 +392,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         
 
 
-def gen_linear_model():
+def gen_linear_model(wind_speeds):
     """ 
     Generate OpenFAST linearizations across wind speeds
 
@@ -422,27 +424,27 @@ def gen_linear_model():
     # linearization setup
     linear.v_rated          = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
     linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
-    linear.WindSpeeds       = np.arange(5,25,1,dtype=float).tolist()   #[8.,10.,12.,14.,24.]
-    linear.DOFs             = ['GenDOF','TwFADOF1','PtfmPDOF']
-    linear.TMax             = 2000.
+    linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
+    linear.DOFs             = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
+    linear.TMax             = 600.   # should be 1000-2000 sec or more with hydrodynamic states
     linear.NLinTimes        = 12
 
     #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
-    linear.HydroStates      = True  
+    linear.HydroStates      = False   # taking out to speed up for test
 
     # simulation setup
     linear.parallel         = True
     linear.cores            = 8
 
     # overwrite steady & linearizations
-    linear.overwrite        = True
+    linear.overwrite        = False
 
 
     # run steady state sims
-    # linear.runFAST_steady()
+    linear.runFAST_steady()
 
     # process results 
-    # linear.postFAST_steady()
+    linear.postFAST_steady()
 
     # run linearizations
     linear.runFAST_linear()
@@ -450,4 +452,4 @@ def gen_linear_model():
 
 
 if __name__ == '__main__':
-    gen_linear_model()
+    gen_linear_model(np.arange(5,25,1,dtype=float).tolist())
