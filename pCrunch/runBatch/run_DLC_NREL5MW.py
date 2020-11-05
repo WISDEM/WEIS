@@ -4,9 +4,9 @@ Run DLC test suites
 Kind of like run DMC, but less hip-hop, so less fun. 
 '''
 import os
-from wisdem.aeroelasticse.CaseGen_IEC import CaseGen_IEC
-from wisdem.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
-from wisdem.aeroelasticse.Util import FileTools
+from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
+from weis.aeroelasticse.Util import FileTools
 # FLAGS
 eagle = True
 multi = True

@@ -89,7 +89,7 @@ class Loads_Analysis(object):
         '''
         # Load openfast data
         fast_io = FAST_IO()
-        fast_data = fast_io.load_FAST_out(filenames, tmin=self.t0, tmax=self.tf, verbose=self.verbose)
+        fast_data = fast_io.load_fast_out(filenames, tmin=self.t0, tmax=self.tf, verbose=self.verbose)
 
         # Get summary statistics
         sum_stats = self.summary_stats(fast_data)
