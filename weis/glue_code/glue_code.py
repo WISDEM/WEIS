@@ -68,10 +68,6 @@ class WT_RNTA(om.Group):
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
         self.add_subsystem('tune_rosco_ivc',tune_rosco_ivc)
         
-        # Set input defaults for the auto-ivc variables
-        self.set_input_defaults('ccblade.generator_efficiency', 1.)  # in some places, these are per and other places percents
-        self.set_input_defaults('ccblade.gearbox_efficiency', 1.)  # in some places, these are per and other places percents
-        
         # Analysis components
         self.add_subsystem('wt_init',   WindTurbineOntologyOpenMDAO(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         self.add_subsystem('ccblade',   CCBladeTwist(modeling_options = modeling_options, opt_options = opt_options)) # Run standalone CCBlade and possibly determine optimal twist from user-defined margin to stall
