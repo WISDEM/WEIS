@@ -17,7 +17,7 @@ class Test(unittest.TestCase):
         desvars = {"x": np.array([0.0, 0.25])}
         model_low = simple_2D_low_model(desvars)
         model_high = simple_2D_high_model(desvars)
-        trust_region = SimpleTrustRegion(model_low, model_high, bounds, disp=False)
+        trust_region = SimpleTrustRegion(model_low, model_high, bounds, disp=False, num_initial_points=6)
     
         trust_region.add_objective("y")
     
@@ -80,7 +80,7 @@ class Test(unittest.TestCase):
         results = trust_region.optimize(plot=False, num_iterations=10)
     
         np.testing.assert_allclose(results["optimal_design"], 0.741426, atol=1e-3)
-        np.testing.assert_allclose(results["outputs"]["con"], 0.302183, atol=1e-5)
+        np.testing.assert_allclose(results["outputs"]["con"], 0.302209, atol=1e-5)
     
     def test_1d_constrained_optimization_upper(self):
         np.random.seed(13)

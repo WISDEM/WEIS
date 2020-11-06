@@ -42,7 +42,7 @@ class SimpleTrustRegion(BaseMethod):
         num_initial_points=5,
         max_trust_radius=1000.0,
         eta=0.25,
-        radius_tol=1e-4,
+        radius_tol=1e-6,
         trust_radius=0.2,
         expansion_ratio=2.,
         contraction_ratio=0.25,
@@ -111,7 +111,7 @@ class SimpleTrustRegion(BaseMethod):
             self.approximation_functions[self.objective](x)
         )
         
-        hop = True
+        hop = False
         if hop:
             minimizer_kwargs = {
                 "method"  : "SLSQP",
@@ -205,7 +205,7 @@ class SimpleTrustRegion(BaseMethod):
             print('Rho', np.squeeze(rho))
             print("Trust radius:", self.trust_radius)
 
-    def optimize(self, plot=False, num_iterations=30):
+    def optimize(self, plot=False, num_iterations=100):
         """
         Actually perform the trust-region optimization.
 
