@@ -220,9 +220,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             elif opt_options['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
                 wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
             elif opt_options['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
-                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e5)
+                wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
+            elif opt_options['merit_figure'] == 'DEL_TwrBsMyt':   # for pitch controller optimization
+                wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             elif opt_options['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
                 wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
+            elif opt_options['merit_figure'] == 'rotor_overspeed':
+                wt_opt.model.add_objective('aeroelastic.rotor_overspeed')
             else:
                 exit('The merit figure ' + opt_options['merit_figure'] + ' is not supported.')
 
@@ -265,9 +269,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                                 
             if 'dac' in blade_opt_options:
                 if blade_opt_options['dac']['te_flap_end']['flag']:
-                    wt_opt.model.add_design_var('blade.opt_var.te_flap_end', lower=blade_opt_options['dac']['te_flap_end']['min_end'], upper=blade_opt_options['dac']['te_flap_end']['max_end'])
+                    wt_opt.model.add_design_var('dac_ivc.te_flap_end', 
+                    lower=blade_opt_options['dac']['te_flap_end']['min_end'], 
+                    upper=blade_opt_options['dac']['te_flap_end']['max_end'], 
+                    ref=1e2)
                 if blade_opt_options['dac']['te_flap_ext']['flag']:
-                    wt_opt.model.add_design_var('blade.opt_var.te_flap_ext', lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
+                    wt_opt.model.add_design_var('dac_ivc.te_flap_ext', 
+                                        lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], 
+                                        upper=blade_opt_options['dac']['te_flap_ext']['max_ext'],
+                                        ref=1e2)
                     
             if tower_opt_options['outer_diameter']['flag']:
                 wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'], ref=5.)
@@ -280,21 +290,27 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=control_opt_options['tsr']['min_gain'], 
                                                                     upper=control_opt_options['tsr']['max_gain'])
             if control_opt_options['servo']['pitch_control']['flag']:
-                wt_opt.model.add_design_var('control.PC_omega', lower=control_opt_options['servo']['pitch_control']['omega_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=control_opt_options['servo']['pitch_control']['omega_min'], 
                                                                 upper=control_opt_options['servo']['pitch_control']['omega_max'])
-                wt_opt.model.add_design_var('control.PC_zeta', lower=control_opt_options['servo']['pitch_control']['zeta_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt_options['servo']['pitch_control']['zeta_min'], 
                                                                upper=control_opt_options['servo']['pitch_control']['zeta_max'])
             if control_opt_options['servo']['torque_control']['flag']:
-                wt_opt.model.add_design_var('control.VS_omega', lower=control_opt_options['servo']['torque_control']['omega_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.VS_omega', lower=control_opt_options['servo']['torque_control']['omega_min'], 
                                                                 upper=control_opt_options['servo']['torque_control']['omega_max'])
-                wt_opt.model.add_design_var('control.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
+                wt_opt.model.add_design_var('tune_rosco_ivc.VS_zeta', lower=control_opt_options['servo']['torque_control']['zeta_min'], 
                                                                upper=control_opt_options['servo']['torque_control']['zeta_max'])
+            if control_opt_options['servo']['ipc_control']['flag']:
+                wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt_options['servo']['ipc_control']['Ki_min'],
+                                                                upper=control_opt_options['servo']['ipc_control']['Ki_max'],
+                                                                ref=1.e-7)
             if 'flap_control' in control_opt_options['servo']:
                 if control_opt_options['servo']['flap_control']['flag']:
-                    wt_opt.model.add_design_var('control.Flp_omega', lower=control_opt_options['servo']['flap_control']['omega_min'], 
-                                                                     upper=control_opt_options['servo']['flap_control']['omega_max'])
-                    wt_opt.model.add_design_var('control.Flp_zeta', lower=control_opt_options['servo']['flap_control']['zeta_min'], 
-                                                                    upper=control_opt_options['servo']['flap_control']['zeta_max'])
+                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', 
+                                        lower=control_opt_options['servo']['flap_control']['omega_min'], 
+                                        upper=control_opt_options['servo']['flap_control']['omega_max'])
+                    wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', 
+                                        lower=control_opt_options['servo']['flap_control']['zeta_min'], 
+                                        upper=control_opt_options['servo']['flap_control']['zeta_max'])
 
             # Set non-linear constraints
             blade_constraints = opt_options['constraints']['blade']
@@ -318,7 +334,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
             if blade_constraints['tip_deflection']['flag']:
                 if blade_opt_options['structure']['spar_cap_ss']['flag'] or blade_opt_options['structure']['spar_cap_ps']['flag']:
-                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper= 1.0)
+                    wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=blade_constraints['tip_deflection']['ratio'])
                 else:
                     print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
                 
@@ -421,7 +437,18 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Ki', 
                     lower = control_constraints['flap_control']['min'],
                     upper = control_constraints['flap_control']['max'])    
-            
+            if control_constraints['rotor_overspeed']['flag']:
+                if modeling_options['Analysis_Flags']['OpenFAST'] != True:
+                    exit('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
+                wt_opt.model.add_constraint('aeroelastic.rotor_overspeed',
+                    lower = control_constraints['rotor_overspeed']['min'],
+                    upper = control_constraints['rotor_overspeed']['max'])
+            if control_constraints['rotor_overspeed']['flag'] or opt_options['merit_figure'] == 'rotor_overspeed':
+                wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
+                    upper = 0.0)
+                wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki', 
+                    upper = 0.0)    
+
             # Set recorder on the OpenMDAO driver level using the `optimization_log`
             # filename supplied in the optimization yaml
             if opt_options['recorder']['flag']:
@@ -562,8 +589,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         sys.stdout.flush()
 
         # close signal to subprocessors
-        if rank == 0:
-            subprocessor_stop(comm_map_down)
+        subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
         

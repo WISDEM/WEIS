@@ -1,5 +1,7 @@
 import numpy as np
 import os, shutil, sys
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
@@ -12,7 +14,8 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywr
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
-from pCrunch import Analysis, pdTools
+from pCrunch import Analysis, pdTools, Processing
+from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
 if MPI:
@@ -85,11 +88,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('y_tc',                  val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
         self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_input('gearbox_efficiency',    val=0.0,               desc='Gearbox efficiency')
-        self.add_input('gearbox_ratio',         val=0.0,               desc='Gearbox ratio')
+        self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
+        self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
 
         # ServoDyn Inputs
-        self.add_input('generator_efficiency',   val=np.zeros(n_pc),              desc='Generator efficiency')
+        self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -234,6 +237,7 @@ class FASTLoadCases(ExplicitComponent):
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
+        self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
@@ -265,8 +269,11 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_output('C_miners_TE_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, suction side")
         # self.add_output('C_miners_TE_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, pressure side")
 
+        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')
         self.add_discrete_output('fst_vt_out', val={})
 
+        # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
+        self.of_inumber = -1
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
@@ -317,7 +324,8 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
-        fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
+        # Generator efficiency should have gearbox efficiency included already
+        fst_vt['ElastoDyn']['GBoxEff']    = 100.0 #inputs['gearbox_efficiency'][0] * 100.
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
@@ -546,7 +554,9 @@ class FASTLoadCases(ExplicitComponent):
         # Add additional options
         if ('channels_out',) in self.options['modeling_options']['openfast']['fst_settings']:
             channels_out += self.options['modeling_options']['openfast']['fst_settings'][('channels_out',)]
-
+        if self.n_tab > 1:
+            channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+            
         channels = {}
         for var in channels_out:
             channels[var] = True
@@ -580,7 +590,7 @@ class FASTLoadCases(ExplicitComponent):
                 FAST_Output = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
-
+        self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
         return FAST_Output, case_list, dlc_list
 
@@ -784,11 +794,66 @@ class FASTLoadCases(ExplicitComponent):
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
             else:
                 print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
+                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+            loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
+        else:
+            print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
 
-        
+        # Setup paths for saving of output info
+        of_output_folder    =  os.path.join(self.options['opt_options']['general']['folder_output'],'of_outputs')
+        stats_output_folder =  os.path.join(of_output_folder, 'stats')
+        if not os.path.exists(stats_output_folder):
+            os.makedirs(of_output_folder)
+            os.makedirs(stats_output_folder)
+        # self.of_inumber = len(os.listdir(stats_output_folder))
+
+        # save summary stats
+        stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
+        Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
+
+        # Save output plots
+        fast_pl = rosco_utilities.FAST_Plots()
+
+        figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
+        with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
+            for fast_out in FAST_Output:
+                plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
+                             'Blade': ['TipDxc1', 'RootMyb1']}
+                if self.n_tab > 1:
+                    plots2make['Baseline'].append('BLFLAP1')
+
+                numplots    = len(plots2make)
+                maxchannels = np.max([len(plots2make[key]) for key in plots2make.keys()])
+                fig = plt.figure(figsize=(8,6), constrained_layout=True)
+                gs_all = fig.add_gridspec(1, numplots)
+                for pnum, (gs, pname) in enumerate(zip(gs_all, plots2make.keys())):
+                    gs0 = gs.subgridspec(len(plots2make[pname]),1)
+                    for cid, channel in enumerate(plots2make[pname]):
+                        subplt = fig.add_subplot(gs0[cid])
+                        try:
+                            subplt.plot(fast_out['Time'], fast_out[channel])
+                            unit_idx = fast_out['meta']['channels'].index(channel)
+                            subplt.set_ylabel('{:^} \n ({:^})'.format(
+                                                channel,
+                                                fast_out['meta']['attribute_units'][unit_idx]))
+                            subplt.grid(True)
+                            subplt.set_xlabel('Time (s)')
+                        except:
+                            print('Cannot plot {}'.format(channel))
+                        if cid == 0:
+                            subplt.set_title(pname)
+                        if cid != len(plots2make[pname])-1:
+                            subplt.axes.get_xaxis().set_visible(False)
+
+                    plt.suptitle(fast_out['meta']['name'])
+                pdf.savefig(fig)
+
+
+            
+
         ## Post process loads
         if self.FASTpref['dlc_settings']['run_IEC']:
             # TODO: support for BeamDyn
@@ -934,20 +999,86 @@ class FASTLoadCases(ExplicitComponent):
 
 
 
-        ## Is Nikhar actively using this?
-        # DELs
-        # del_channels = [('RootMyb1',10), ('RootMyb2',10), ('RootMyb3',10)]
-        # dels = loads_analysis.get_DEL(FAST_Output, del_channels, binNum=100, t=FAST_Output[0]['Time'][-1])
-        
-        # Output
-        if self.FASTpref['dlc_settings']['run_IEC']:
-            if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+        # Get DELS from OpenFAST data
+        if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+            if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
+                try:
+                    isinstance(pp,object)
+                except(NameError):
+                    pp               = Analysis.Power_Production()
+                    pp.turbine_class = discrete_inputs['turbine_class']
+                
+                try:
+                    pp.windspeeds = U
+                except(NameError):
+                    if self.FASTpref['dlc_settings']['run_IEC']:
+                        U = []
+                        for dlc in self.FASTpref['dlc_settings']['IEC']:
+                            U_set = dlc['U']
+                            num_seeds = len(dlc['Seeds'])
+                            U_all = [U_set]*num_seeds
+                            U_dlc = [u for uset in U_all for u in uset]
+                        U.extend(U_dlc)
+                    elif self.FASTpref['dlc_settings']['run_power_curve']:
+                        U_set = self.FASTpref['dlc_settings']['Power_Curve']['U']
+                        num_seeds = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
+                        U_all = [U_set]*num_seeds
+                        U = [u for uset in U_all for u in uset]
+                        U = U.sort()
+                    else:
+                        exit('DLC settings do not support DEL_RootMyb optimization')
+                    pp.windspeeds = U.sort()
+                
+                # get pdf of windspeeds
+                ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                # maximum sum of weighted DELS
                 if self.n_blades == 2:
-                    outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL'])])
+                    outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL'])])
+                else:
+                    outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
+                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
+                                                    np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
+                if self.n_blades == 2:
                     outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
                 else:
-                    outputs['DEL_RootMyb']  = np.max([np.max(sum_stats['RootMyb1']['DEL']), np.max(sum_stats['RootMyb2']['DEL']), np.max(sum_stats['RootMyb3']['DEL'])])
                     outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+
+            if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
+                try:
+                    isinstance(pp,object)
+                except(NameError):
+                    pp               = Analysis.Power_Production()
+                    pp.turbine_class = discrete_inputs['turbine_class']
+                
+                try: 
+                    pp.windspeeds = U
+                except(NameError):
+                    if self.FASTpref['dlc_settings']['run_IEC']:
+                        U = []
+                        for dlc in self.FASTpref['dlc_settings']['IEC']:
+                            U_set       = dlc['U']
+                            num_seeds   = len(dlc['Seeds'])
+                            U_all       = [U_set]*num_seeds
+                            U_dlc = [u for uset in U_all for u in uset]
+                        U.extend(U_dlc)
+                    elif self.FASTpref['dlc_settings']['run_power_curve']:
+                        U_set       = self.FASTpref['dlc_settings']['Power_Curve']['U']
+                        num_seeds   = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
+                        U_all       = [U_set]*num_seeds
+                        U = [u for uset in U_all for u in uset]
+                        U = U.sort()
+                    else:
+                        exit('DLC settings do not support DEL_TwrBsMyt optimization')
+                    pp.windspeeds = U.sort()
+                
+                # get pdf of windspeeds
+                ws_prob = pp.prob_WindDist(U, disttype='pdf')
+                # maximum sum of weighted DELS
+                outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
+
+            if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
+                outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)

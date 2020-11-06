@@ -257,6 +257,12 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
+                            ratio: &ratio
+                                type: number
+                                default: 0.8
+                                minimum: 0.0
+                                maximum: 1.0
+                                unit: none
                     rail_transport:
                         type: object
                         default: {}
@@ -378,12 +384,24 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.0
                             max: *flapminmax
+                    rotor_overspeed:
+                        type: object
+                        description: Words TODO
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &rotor_overspeed
+                                type: number
+                                default: 0.05
+                                minimum: 0.0
+                                maximum: 1.0
+                            max: *rotor_overspeed
 
     merit_figure:
         type: string
         description: Objective function / merit figure for optimization
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, blade_tip_deflection, My_std, flp1_std]
+        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, blade_tip_deflection, DEL_RootMyb, DEL_TwrBsMyt, 'rotor_overspeed']
 
     driver:
         type: object

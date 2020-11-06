@@ -31,6 +31,11 @@ class WT_RNTA(om.Group):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
         
+        #self.linear_solver = lbgs = om.LinearBlockGS()
+        #self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
+        #nlbgs.options['maxiter'] = 2
+        #nlbgs.options['atol'] = nlbgs.options['atol'] = 1e-2
+
         dac_ivc = om.IndepVarComp()
         n_te_flaps = modeling_options['blade']['n_te_flaps']
         dac_ivc.add_output('te_flap_ext',   val = np.ones(n_te_flaps))
@@ -48,6 +53,7 @@ class WT_RNTA(om.Group):
         tune_rosco_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
         tune_rosco_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
         tune_rosco_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
+        tune_rosco_ivc.add_output('IPC_Ki1p',         val=0.0, units='rad/(N*m)', desc='Individual pitch controller 1p gain')
         # optional inputs - not connected right now!!
         tune_rosco_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
         tune_rosco_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
@@ -384,7 +390,7 @@ class WT_RNTA(om.Group):
             self.connect('elastic.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
             self.connect('freq_rotor.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
             self.connect('freq_rotor.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
-            self.connect('drivese.generator_efficiency',    'sse_tune.tune_rosco.generator_efficiency')
+            self.connect('sse.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
             self.connect('tune_rosco_ivc.max_pitch',        'sse_tune.tune_rosco.max_pitch') 
             self.connect('tune_rosco_ivc.min_pitch',        'sse_tune.tune_rosco.min_pitch')
@@ -398,6 +404,7 @@ class WT_RNTA(om.Group):
             self.connect('tune_rosco_ivc.PC_zeta',          'sse_tune.tune_rosco.PC_zeta')
             self.connect('tune_rosco_ivc.VS_omega',         'sse_tune.tune_rosco.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',          'sse_tune.tune_rosco.VS_zeta')
+            self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['servose']['Flp_Mode'] > 0:
                 self.connect('tune_rosco_ivc.Flp_omega',    'sse_tune.tune_rosco.Flp_omega')
@@ -749,7 +756,7 @@ class WT_RNTA(om.Group):
             self.connect('drivese.nacelle_I',               'aeroelastic.nacelle_I')
             self.connect('drivese.nacelle_cm',              'aeroelastic.nacelle_cm')
             self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio')
-            self.connect('drivese.generator_efficiency',    'aeroelastic.generator_efficiency')
+            self.connect('sse.powercurve.rated_efficiency', 'aeroelastic.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
 
             #if modeling_options['Analysis_Flags']['TowerSE']:
@@ -950,7 +957,7 @@ class WindPark(om.Group):
                 self.connect('towerse.tower_mass',              'landbosse.tower_mass')
                 self.connect('drivese.nacelle_mass',            'landbosse.nacelle_mass')
                 self.connect('elastic.precomp.blade_mass',      'landbosse.blade_mass')
-                self.connect('hub.system_mass',                 'landbosse.hub_mass')
+                self.connect('drivese.hub_system_mass',         'landbosse.hub_mass')
                 self.connect('foundation.height',               'landbosse.foundation_height')
                 self.connect('bos.plant_turbine_spacing',       'landbosse.turbine_spacing_rotor_diameters')
                 self.connect('bos.plant_row_spacing',           'landbosse.row_spacing_rotor_diameters')
@@ -994,11 +1001,14 @@ class WindPark(om.Group):
         self.connect('rlds.tip_pos.tip_deflection', 'outputs_2_screen.tip_deflection')
         
         if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-            self.connect('aeroelastic.My_std',      'outputs_2_screen.My_std')
-            self.connect('aeroelastic.flp1_std',    'outputs_2_screen.flp1_std')
+            self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen.DEL_RootMyb')
+            self.connect('aeroelastic.DEL_TwrBsMyt',       'outputs_2_screen.DEL_TwrBsMyt')
+            self.connect('aeroelastic.rotor_overspeed',    'outputs_2_screen.rotor_overspeed')
             self.connect('tune_rosco_ivc.PC_omega',        'outputs_2_screen.PC_omega')
             self.connect('tune_rosco_ivc.PC_zeta',         'outputs_2_screen.PC_zeta')
             self.connect('tune_rosco_ivc.VS_omega',        'outputs_2_screen.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',         'outputs_2_screen.VS_zeta')
             self.connect('tune_rosco_ivc.Flp_omega',       'outputs_2_screen.Flp_omega')
             self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen.Flp_zeta')
+            self.connect('tune_rosco_ivc.IPC_Ki1p',        'outputs_2_screen.IPC_Ki1p')
+            self.connect('dac_ivc.te_flap_end',            'outputs_2_screen.te_flap_end')

@@ -332,6 +332,7 @@ control:
     ss_vsgain: 1    
     ss_pcgain: .001 
     ps_percent: 0.8 
+    IPC_Ki1p: 0.                      # Minimum pitch angle [rad], {default = 0 degrees}
 # Environment
 environment:
     air_density: 1.225

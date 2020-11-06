@@ -90,6 +90,7 @@ constraints:
       max:  4000.e-6
     tip_deflection:
       flag: False
+      ratio: 0.8
     rail_transport:
       flag: True
       8_axle: True
@@ -143,6 +144,10 @@ constraints:
       flag: True
       min: 0.0
       max: 0.1
+    rotor_overspeed:
+      flag: False
+      min: 0.0
+      max: 0.2
 
 driver:
     tol: 1.e-4

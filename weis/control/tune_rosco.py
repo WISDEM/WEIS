@@ -75,8 +75,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
-        self.add_input('gearbox_efficiency',val=0.0,                                desc='Gearbox efficiency')
-        self.add_input('generator_efficiency', val=np.zeros(n_pc),                  desc='Generator efficiency')
+        self.add_input('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
+        self.add_input('generator_efficiency', val=1.0,                  desc='Generator efficiency')
         # 
         self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
@@ -139,10 +139,12 @@ class TuneROSCO(ExplicitComponent):
         if self.modeling_options['servose']['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
-
+        self.add_input('IPC_Ki1p',          val=0.0,            units='rad/(N*m)',  desc='Individual pitch controller 1p gain')
         # Outputs for constraints and optimizations
         self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
         self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
+        self.add_output('PC_Kp',           val=0.0,            units='rad',        desc='Pitch control proportional gain')
+        self.add_output('PC_Ki',           val=0.0,            units='rad',        desc='Pitch control integral gain')
 
         # self.add_output('PC_GS_angles', val=np.zeros(n_pitch+1), units='rad', desc='Gain-schedule table: pitch angles')
         # self.add_output('PC_GS_KP',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller kp gains')
@@ -189,7 +191,8 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rotor_radius = inputs['R'][0]
         WISDEM_turbine.Ng           = inputs['gear_ratio'][0]
         WISDEM_turbine.GenEff       = inputs['generator_efficiency'][-1] * 100.
-        WISDEM_turbine.GBoxEff      = inputs['gearbox_efficiency'][0] * 100.
+        # Generator efficiency should already be drivetrain efficiency and include the gearbox
+        WISDEM_turbine.GBoxEff      = 100.0 #inputs['gearbox_efficiency'][0] * 100.
         WISDEM_turbine.rated_rotor_speed   = inputs['rated_rotor_speed'][0]
         WISDEM_turbine.rated_power  = inputs['rated_power'][0]
         WISDEM_turbine.rated_torque = inputs['rated_torque'][0] / WISDEM_turbine.Ng * inputs['gearbox_efficiency'][0]
@@ -286,6 +289,7 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_GS_KI'] = controller.pc_gain_schedule.Ki
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_MaxPit'] = controller.max_pitch
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_MinPit'] = controller.min_pitch
+        self.modeling_options['openfast']['fst_vt']['DISCON_in']['IPC_Ki'] = inputs['IPC_Ki1p'][0]
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_MinOMSpd'] = controller.vs_minspd
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_Rgn2K'] = controller.vs_rgn2K
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_RefSpd'] = controller.vs_refspd
@@ -336,6 +340,8 @@ class TuneROSCO(ExplicitComponent):
         # Outputs 
         outputs['Flp_Kp']   = controller.Kp_flap[-1]
         outputs['Flp_Ki']   = controller.Ki_flap[-1]
+        outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
+        outputs['PC_Ki']   = controller.pc_gain_schedule.Kp[0]
 
 
         # outputs['PC_GS_angles'] = controller.pitch_op_pc

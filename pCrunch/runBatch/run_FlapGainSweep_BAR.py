@@ -5,9 +5,9 @@ A python script to run a parameter sweep
 import numpy as np
 import yaml
 import os
-# WISDEM tools
-from wisdem.aeroelasticse import runFAST_pywrapper, CaseGen_General
-from wisdem.aeroelasticse.Util import FileTools
+# WEIS tools
+from weis.aeroelasticse import runFAST_pywrapper, CaseGen_General
+from weis.aeroelasticse.Util import FileTools
 # ROSCO tools
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine

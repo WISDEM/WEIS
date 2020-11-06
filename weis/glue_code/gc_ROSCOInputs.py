@@ -7,6 +7,7 @@ def assign_ROSCO_values(wt_opt, modeling_options, control):
     if modeling_options['servose']['Flp_Mode'] > 0:
         wt_opt['tune_rosco_ivc.Flp_omega']      = control['Flp_omega']
         wt_opt['tune_rosco_ivc.Flp_zeta']       = control['Flp_zeta']
+    wt_opt['tune_rosco_ivc.IPC_Ki1p']      = control['IPC_Ki1p']
     # # other optional parameters
     wt_opt['tune_rosco_ivc.max_pitch']     = control['max_pitch']
     wt_opt['tune_rosco_ivc.min_pitch']     = control['min_pitch']
