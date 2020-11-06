@@ -332,6 +332,10 @@ components:
                     - variable_flag: True
                       grid: [0.1, 0.5]
 
+              axial_joints:
+                - name: fairlead
+                  grid: 0.38462 # Should be -70m
+
     mooring:
         nodes:
             - name: line1_anchor
@@ -351,17 +355,17 @@ components:
 
             - name: line1_vessel
               node_type: vessel
-              location: [5.2, 0.0, -70.0]
+              joint: fairlead
               fairlead_type: rigid
 
             - name: line2_vessel
               node_type: vessel
-              location: [-2.6, 4.5, -70.0]
+              joint: fairlead
               fairlead_type: rigid
 
             - name: line3_vessel
               node_type: vessel
-              location: [-2.6, -4.5, -70.0]
+              joint: fairlead
               fairlead_type: rigid
 
         lines:

@@ -393,6 +393,9 @@ components:
                 - name: col1_cross_pontoon
                   grid: 0.9103125
 
+                - name: col1_fairlead
+                  grid: 0.1875
+
             - name: column2
               joint1: col2_keel
               joint2: col2_freeboard
@@ -428,6 +431,9 @@ components:
                 - name: col2_cross_pontoon
                   grid: 0.9103125
 
+                - name: col2_fairlead
+                  grid: 0.1875
+
             - name: column3
               joint1: col3_keel
               joint2: col3_freeboard
@@ -462,6 +468,9 @@ components:
 
                 - name: col3_cross_pontoon
                   grid: 0.9103125
+
+                - name: col3_fairlead
+                  grid: 0.1875
 
             - name: delta_pontoon_lower12
               joint1: col1_lower_pontoon
@@ -579,15 +588,15 @@ components:
 
             - name: line1_vessel
               node_type: vessel
-              location: [-40.868, 0.0, -14.0]
+              joint: col1_fairlead
               fairlead_type: rigid
             - name: line2_vessel
               node_type: vessel
-              location: [20.434, 35.393, -14.0]
+              joint: col4_fairlead
               fairlead_type: rigid
             - name: line3_vessel
+              joint: col3_fairlead
               node_type: vessel
-              location: [20.434, -35.393, -14.0]
               fairlead_type: rigid
 
         lines:

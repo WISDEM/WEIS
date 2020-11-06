@@ -330,20 +330,34 @@ properties:
                                                     items:
                                                         type: string
                                                 flag: *flag
-                                                lower_bound:
+                                                lower_bound: &lb_s
                                                     type: number
                                                     unit: none
                                                     description: Lower bound on design variable
                                                     default: 0.0
                                                     minimum: 0.0
                                                     maximum: 1.0
-                                                upper_bound:
+                                                upper_bound: &ub_s
                                                     type: number
                                                     unit: none
                                                     description: Upper bound on design variable
                                                     default: 1.0
                                                     minimum: 0.0
                                                     maximum: 1.0
+                                    independent:
+                                        description: Joints that are listed here will have independent and separate coordinates.
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            names:
+                                                type: array
+                                                default: []
+                                                description: Names of the joints that are linked
+                                                items:
+                                                    type: string
+                                            flag: *flag
+                                            lower_bound: *lb_s
+                                            upper_bound: *ub_s
                             stiffeners:
                                 type: object
                                 default: {}
