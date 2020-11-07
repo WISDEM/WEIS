@@ -81,7 +81,7 @@ class SimpleTrustRegion(BaseMethod):
         self.expansion_ratio = expansion_ratio
         self.contraction_ratio = contraction_ratio
 
-    def find_next_point(self):
+    def find_next_point(self, num_basinhop_iterations):
         """
         Find the design point corresponding to the minimum value of the
         corrected low-fidelity model within the trust region.
@@ -111,8 +111,7 @@ class SimpleTrustRegion(BaseMethod):
             self.approximation_functions[self.objective](x)
         )
 
-        hop = False
-        if hop:
+        if num_basinhop_iterations:
             minimizer_kwargs = {
                 "method": "SLSQP",
                 "tol": 1e-10,
@@ -124,7 +123,7 @@ class SimpleTrustRegion(BaseMethod):
                 scaled_function,
                 x0,
                 stepsize=np.mean(upper_bounds - lower_bounds) * 0.8,
-                niter=3,
+                niter=num_basinhop_iterations,
                 disp=self.disp == 2,
                 minimizer_kwargs=minimizer_kwargs,
             )
@@ -216,7 +215,7 @@ class SimpleTrustRegion(BaseMethod):
             print("Rho", np.squeeze(rho))
             print("Trust radius:", self.trust_radius)
 
-    def optimize(self, plot=False, num_iterations=100):
+    def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False):
         """
         Actually perform the trust-region optimization.
 
@@ -236,7 +235,7 @@ class SimpleTrustRegion(BaseMethod):
 
         for i in range(num_iterations):
             self.process_constraints()
-            x_new, hits_boundary = self.find_next_point()
+            x_new, hits_boundary = self.find_next_point(num_basinhop_iterations)
 
             self.update_trust_region(x_new, hits_boundary)
 
