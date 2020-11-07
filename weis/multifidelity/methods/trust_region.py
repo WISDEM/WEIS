@@ -44,7 +44,7 @@ class SimpleTrustRegion(BaseMethod):
         eta=0.25,
         radius_tol=1e-6,
         trust_radius=0.2,
-        expansion_ratio=2.,
+        expansion_ratio=2.0,
         contraction_ratio=0.25,
     ):
         """
@@ -110,17 +110,24 @@ class SimpleTrustRegion(BaseMethod):
         scaled_function = lambda x: self.objective_scaler * np.squeeze(
             self.approximation_functions[self.objective](x)
         )
-        
+
         hop = False
         if hop:
             minimizer_kwargs = {
-                "method"  : "SLSQP",
-                "tol"  : 1e-10,
-                "bounds"  : bounds,
-                "constraints"  : self.list_of_constraints,
-                "options"  : {"disp": False, "maxiter" : 20},
+                "method": "SLSQP",
+                "tol": 1e-10,
+                "bounds": bounds,
+                "constraints": self.list_of_constraints,
+                "options": {"disp": False, "maxiter": 20},
             }
-            res = basinhopping(scaled_function, x0, stepsize=np.mean(upper_bounds - lower_bounds) * 0.8, niter=3, disp=self.disp==2, minimizer_kwargs=minimizer_kwargs)
+            res = basinhopping(
+                scaled_function,
+                x0,
+                stepsize=np.mean(upper_bounds - lower_bounds) * 0.8,
+                niter=3,
+                disp=self.disp == 2,
+                minimizer_kwargs=minimizer_kwargs,
+            )
         else:
             res = minimize(
                 scaled_function,
@@ -129,7 +136,7 @@ class SimpleTrustRegion(BaseMethod):
                 tol=1e-10,
                 bounds=bounds,
                 constraints=self.list_of_constraints,
-                options={"disp": self.disp==2, "maxiter" : 20},
+                options={"disp": self.disp == 2, "maxiter": 20},
             )
         x_new = res.x
 
@@ -177,7 +184,7 @@ class SimpleTrustRegion(BaseMethod):
 
         actual_reduction = prev_point_high - new_point_high
         predicted_reduction = prev_point_approx - new_point_approx
-        
+
         if predicted_reduction == 0.0:
             rho = 0.0
         else:
@@ -193,8 +200,12 @@ class SimpleTrustRegion(BaseMethod):
             self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
 
         # 5. Update trust region according to rho_k
-        if rho >= self.eta:  # and hits_boundary:  # unclear if we need this hits_boundary logic
-            self.trust_radius = min(self.expansion_ratio * self.trust_radius, self.max_trust_radius)
+        if (
+            rho >= self.eta
+        ):  # and hits_boundary:  # unclear if we need this hits_boundary logic
+            self.trust_radius = min(
+                self.expansion_ratio * self.trust_radius, self.max_trust_radius
+            )
         elif rho < self.eta:  # Unclear if this is the best check
             self.trust_radius *= self.contraction_ratio
 
@@ -202,7 +213,7 @@ class SimpleTrustRegion(BaseMethod):
             print()
             print("Predicted reduction:", np.squeeze(predicted_reduction))
             print("Actual reduction:", actual_reduction)
-            print('Rho', np.squeeze(rho))
+            print("Rho", np.squeeze(rho))
             print("Trust radius:", self.trust_radius)
 
     def optimize(self, plot=False, num_iterations=100):
@@ -235,7 +246,7 @@ class SimpleTrustRegion(BaseMethod):
                 self.plot_functions()
 
             x_test = self.design_vectors[-1, :]
-            
+
             if self.trust_radius <= self.radius_tol:
                 break
 
@@ -250,8 +261,8 @@ class SimpleTrustRegion(BaseMethod):
         Saves figures to .png files.
 
         """
-        
-        print('Plotting!')
+
+        print("Plotting!")
 
         if self.n_dims == 2:
             n_plot = 21
@@ -266,7 +277,9 @@ class SimpleTrustRegion(BaseMethod):
 
             surrogate = []
             for x_value in x_values:
-                surrogate.append(np.squeeze(self.approximation_functions[self.objective](x_value)))
+                surrogate.append(
+                    np.squeeze(self.approximation_functions[self.objective](x_value))
+                )
             surrogate = np.array(surrogate)
             y_plot_high = surrogate.reshape(n_plot, n_plot)
 
@@ -307,7 +320,7 @@ class SimpleTrustRegion(BaseMethod):
 
             num_iter = self.design_vectors.shape[0]
             num_offset = 10
-            
+
             plt.show()
 
             # if num_iter <= 5:
@@ -321,10 +334,10 @@ class SimpleTrustRegion(BaseMethod):
             #         f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
             #     )
             #     self.counter_plot += 1
-                
+
             plt.close()
             if self.disp:
-                print('Saved figure')
+                print("Saved figure")
 
         else:
             import niceplots
