@@ -256,8 +256,10 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('loads_pitch',  val=0.0, units='deg', desc='pitch angle')
         self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
         
-        self.add_output('Fxyz',        val=np.zeros(3),    units='N')
-        self.add_output('Mxyz',        val=np.zeros(3),    units='N*m')
+        self.add_output('Fxyz',        val=np.zeros(3),    units='kN',   desc = 'Maximum hub forces in the non rotating frame')
+        self.add_output('Mxyz',        val=np.zeros(3),    units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
+        self.add_output('max_RootMyb', val=0.0,            units='kN*m', desc = 'Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root flapwise moment')
+        self.add_output('max_RootMyc', val=0.0,            units='kN*m', desc = 'Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root out of plane moment')
 
         self.add_output('C_miners_SC_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, suction side")
         self.add_output('C_miners_SC_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, pressure side")
@@ -832,14 +834,15 @@ class FASTLoadCases(ExplicitComponent):
             outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']['val']
             outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']['val']
 
-            # # Determine blade with the maximum root moment
-            # defl_mag = [max(sum_stats['RootMc1']['max']), max(sum_stats['RootMc2']['max']), max(sum_stats['RootMc3']['max'])]
-            # if np.argmax(defl_mag) == 0:
-            #     outputs['Mxyz'] = np.array(["RootMxc1", "RootMyc1", "RootMzc1"])*1.e3
-            # if np.argmax(defl_mag) == 1:
-            #     outputs['Mxyz'] = np.array(["RootMxc2", "RootMyc2", "RootMzc2"])*1.e3
-            # if np.argmax(defl_mag) == 2:
-            #     outputs['Mxyz'] = np.array(["RootMxc3", "RootMyc3", "RootMzc3"])*1.e3
+            # Determine maximum root moment
+            if self.n_blades == 2:
+                blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max'])])
+                blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max'])])
+            else:
+                blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max']), max(sum_stats['RootMyb3']['max'])])
+                blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max']), max(sum_stats['RootMyc3']['max'])])
+            outputs['max_RootMyb'] = blade_root_flap_moment
+            outputs['max_RootMyc'] = blade_root_oop_moment
 
             ## Get hub momements and forces in the non-rotating frame
             outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust']['val'],
