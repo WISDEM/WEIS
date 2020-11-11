@@ -324,12 +324,11 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
-        # Generator efficiency should have gearbox efficiency included already
-        fst_vt['ElastoDyn']['GBoxEff']    = 100.0 #inputs['gearbox_efficiency'][0] * 100.
+        fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']      = inputs['generator_efficiency'][-1] * 100.
+        fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
 
         # Masses from DriveSE
         if self.options['modeling_options']['openfast']['analysis_settings']['update_hub_nacelle']:
