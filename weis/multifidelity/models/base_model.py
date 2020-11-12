@@ -129,7 +129,26 @@ class BaseModel:
 
         # Else, return None, so the function needs to be evaluated at this point
         return None
+        
+    def print_past_results(self):
+        """
+        Print out all desvars and outputs from past results. Useful for
+        post-processing and visualization.
+        """
 
+        print()
+        for (desvars, outputs) in zip(self.saved_desvars, self.saved_outputs):
+            print('Desvars:')
+            desvars = self.unflatten_desvars(desvars)
+            for key in desvars:
+                print(f"{key} : {desvars[key]}")
+            print()
+            print('Outputs:')
+            for key in outputs:
+                print(f"{key} : {outputs[key]}")
+            print()
+            print()
+            
     def compute(self, desvars):
         """
         Method to actually compute function outputs given desvars, needs to be

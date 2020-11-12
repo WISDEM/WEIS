@@ -297,6 +297,10 @@ class BaseMethod:
         self.approximation_functions = approximation_functions
 
     def process_results(self):
+        """
+        Store results from the optimization into a dictionary and return those results.
+        """
+        
         results = {}
         results["optimal_design"] = self.design_vectors[-1, :]
         results["high_fidelity_func_value"] = self.model_high.run(
