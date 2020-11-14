@@ -1,10 +1,8 @@
 # base method class
 import numpy as np
-from scipy.interpolate import Rbf
 from scipy.optimize import minimize, basinhopping
 import matplotlib.pyplot as plt
 from collections import OrderedDict
-import smt.surrogate_models as smt
 from weis.multifidelity.models.testbed_components import (
     simple_2D_high_model,
     simple_2D_low_model,
@@ -110,14 +108,14 @@ class SimpleTrustRegion(BaseMethod):
         scaled_function = lambda x: self.objective_scaler * np.squeeze(
             self.approximation_functions[self.objective](x)
         )
-
+        
         if num_basinhop_iterations:
             minimizer_kwargs = {
                 "method": "SLSQP",
                 "tol": 1e-10,
                 "bounds": bounds,
                 "constraints": self.list_of_constraints,
-                "options": {"disp": False, "maxiter": 20},
+                "options": {"disp": self.disp == 2, "maxiter": 20},
             }
             res = basinhopping(
                 scaled_function,
@@ -138,7 +136,7 @@ class SimpleTrustRegion(BaseMethod):
                 options={"disp": self.disp == 2, "maxiter": 20},
             )
         x_new = res.x
-
+        
         tol = 1e-6
         if np.any(np.abs(trust_region_lower_bounds - x_new) < tol) or np.any(
             np.abs(trust_region_upper_bounds - x_new) < tol
@@ -190,13 +188,9 @@ class SimpleTrustRegion(BaseMethod):
             rho = actual_reduction / predicted_reduction
 
         # 4. Accept or reject the trial point according to that ratio
-        # Unclear if this logic is needed; it's better to update the surrogate model with a bad point, even
-        if rho <= 0:
-            # self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
-            if self.disp:
-                print("not enough reduction! rejecting point")
-        else:
-            self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
+        # Unclear if this logic is needed; it's better to update the surrogate model with a bad point, even.
+        # Removed this logic for now, see git blame for this line to retrive it.
+        self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
 
         # 5. Update trust region according to rho_k
         if (
