@@ -434,82 +434,421 @@ properties:
                                 properties:
                                     linked: *joint_link
                                     independent: *joint_indep
+            actuators:
+                type: object
+                default: {}
+                properties:
+                    pitch:
+                        type: object
+                        default: {}
+                        properties:
+                            pitch_act_bw:
+                                type: object
+                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound: &omega_min
+                                        type: number
+                                        default: 0.0
+                                        unit: rad/s
+                                    upper_bound: &omega_max
+                                        type: number
+                                        default: 100.0
+                                        unit: rad/s
+                    generator:
+                        type: object
+                        default: {}
+                        properties:
+                            rated_power:
+                                type: object
+                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 0.0
+                                        unit: MW
+                                    upper_bound:
+                                        type: number
+                                        default: 100.0
+                                        unit: MW
+                            rated_gen_speed:
+                                type: object
+                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound: 
+                                        type: number
+                                        default: 0.0
+                                        unit: rad/s
+                                    upper_bound:
+                                        type: number
+                                        default: 100000000.0
+                                        unit: rad/s
+                            rated_gen_torque:
+                                type: object
+                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound: 
+                                        type: number
+                                        default: 0.0
+                                        unit: kNm
+                                    upper_bound:
+                                        type: number
+                                        default: 1000000000000.0
+                                        unit: kNm
             control:
                 type: object
                 default: {}
                 properties:
-                    tsr:
+                    pitch:
+                        type: object
+                        default: {}
+                        properties:
+                            PC_omega: 
+                                type: object
+                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound: &omega_min
+                                        type: number
+                                        default: 0.0
+                                        unit: rad/s
+                                    upper_bound: &omega_max
+                                        type: number
+                                        default: 100.0
+                                        unit: rad/s
+                            PC_zeta:
+                                type: object
+                                description: Pitch controller desired damping ratio. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    lower_bound: &zeta_min
+                                        type: number
+                                        default: 0.0
+                                        unit: none
+                                    upper_bound: &zeta_max
+                                        type: number
+                                        default: 100.0
+                                        unit: none
+                            ps_percent:
+                                type: object
+                                default: {}
+                                description: Percent peak shaving as a design variable
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 0.0
+                                        unit: none
+                                    upper_bound:
+                                        type: number
+                                        default: 1.0
+                                        unit: none
+                            fl_feedback:
+                                type: object
+                                description: Platform velocity feedback using nacelle IMU
+                                default: {}
+                                properties:
+                                    gain:
+                                        type: object
+                                        default: {}
+                                        description: Gain of floating feedback using nacelle IMU
+                                        properties:
+                                            flag: *flag
+                                            lower_bound:
+                                                type: number
+                                                default: 0.0
+                                                unit: seconds
+                                            upper_bound:
+                                                type: number
+                                                default: 10000
+                                                unit: seconds
+                                    filter:
+                                        type: object
+                                        default: {}
+                                        description: Filter from in platform pitch feedback
+                                        properties:
+                                            flag: *flag
+                            IPC:
+                                type: object
+                                description: Individual pitch control (IPC) using the mulitblade coordinate (MBC) transform
+                                default: {}
+                                properties:
+                                    IPC_gain_1P:
+                                        type: object
+                                        default: {}
+                                        description: Integral gain of 1P feedback
+                                        properties:
+                                            flag: *flag
+                                            lower_bound:
+                                                type: number
+                                                default: 0.0
+                                                unit: rad/Nm
+                                            upper_bound:
+                                                type: number
+                                                default: 10000
+                                                unit: rad/Nm
+                                    IPC_gain_2P:
+                                        type: object
+                                        default: {}
+                                        description: Integral gain of 2P feedback
+                                        properties:
+                                            flag: *flag
+                                            lower_bound:
+                                                type: number
+                                                default: 0.0
+                                                unit: rad/Nm
+                                            upper_bound:
+                                                type: number
+                                                default: 10000
+                                                unit: rad/Nm
+                                    IPC_phase_1P:
+                                        type: object
+                                        default: {}
+                                        description: Phase lag of 1P IPC feedback
+                                        properties:
+                                            flag: *flag
+                                            lower_bound:
+                                                type: number
+                                                default: -3.14
+                                                unit: rad
+                                            upper_bound:
+                                                type: number
+                                                default: 3.14
+                                                unit: rad
+                                    IPC_phase_2P:
+                                        type: object
+                                        default: {}
+                                        description: Phase lag of 2P IPC feedback
+                                        properties:
+                                            flag: *flag
+                                            lower_bound:
+                                                type: number
+                                                default: -3.14
+                                                unit: rad
+                                            upper_bound:
+                                                type: number
+                                                default: 3.14
+                                                unit: rad
+                                    IPC_filt_1P:
+                                        type: object
+                                        default: {}
+                                        description: Filter between tilt/yaw load and tilt/yaw pitch, usually a notch to reduce 3P, 6P frequency.
+                                        properties:
+                                            flag: *flag
+                                    IPC_filt_2P:
+                                        type: object
+                                        default: {}
+                                        description: Filter between tilt/yaw load and tilt/yaw pitch, usually a notch to reduce 3P, 6P frequency.
+                                        properties:
+                                            flag: *flag
+                    torque:
+                        type: object
+                        default: {}
+                        properties:
+                            VS_zeta:
+                                type: object
+                                default: {}
+                                description: Integral gain of 2P feedback
+                                properties:
+                                    flag: *flag
+                                    lower_bound: *zeta_min
+                                    upper_bound: *zeta_max
+                            VS_omega:
+                                type: object
+                                default: {}
+                                description: Integral gain of 2P feedback
+                                properties:
+                                    flag: *flag
+                                    lower_bound: *omega_min
+                                    upper_bound: *omega_max
+                    flap_control:
                         type: object
                         default: {}
                         properties:
                             flag: *flag
-                            min_gain: *mingain
-                            max_gain: *maxgain
-                    ps_percent:
+                            omega_min: *omega_min
+                            omega_max: *omega_max
+                            zeta_min: *zeta_min
+                            zeta_max: *zeta_max
+                    setpoint_smooth:
                         type: object
                         default: {}
-                        description: Percent peak shaving as a design variable
+                        properties:
+                            ss_vsgain:
+                                type: object
+                                default: {}
+                                description: Torque controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 0.0
+                                        unit: none
+                                    upper_bound:
+                                        type: number
+                                        default: 10000
+                                        unit: none
+                            ss_pcgain:
+                                type: object
+                                default: {}
+                                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 0.0
+                                        unit: none
+                                    upper_bound:
+                                        type: number
+                                        default: 10000
+                                        unit: none
+                    shutdown:
+                        type: object
+                        default: {}
+                        properties:
+                            limit_value:
+                                type: object
+                                default: {}
+                                description: Turbine shutdown control, when a certain limit (shutdown/limit_type in geometry) is reached
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 0.0
+                                        unit: none
+                                    upper_bound:
+                                        type: number
+                                        default: 10000
+                                        unit: none
+                            pitch_rate:
+                                type: object
+                                default: {}
+                                description: Rate of pitch manuever to max_pitch. Default is 2 deg./s ?
+                                properties:
+                                    flag: *flag
+                                    lower_bound:
+                                        type: number
+                                        default: 0.0
+                                        unit: rad/s
+                                    upper_bound:
+                                        type: number
+                                        default: 10
+                                        unit: rad/s
+                            open_loop_pitch:
+                                type: object
+                                default: {}
+                                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                properties:
+                                    flag: *flag
+                            open_loop_pwr:
+                                type: object
+                                default: {}
+                                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                properties:
+                                    flag: *flag
+                    freq_avoidance:
+                        type: object
+                        default: {}
+                        description: Changes generator speed setpoint to avoid turbine natural frequencies. Only single frequency here for now.
+                        properties:
+                            freq:
+                                type: object
+                                default: {}
+                                description: Frequency to avoid
+                                properties:
+                                    flag: *flag
+                                    nopt: *nopt
+                                    lower_bound:
+                                        type: array
+                                        default: [0.0]
+                                        unit: rad/s
+                                    upper_bound:
+                                        type: array
+                                        default: [10000]
+                                        unit: rad/s
+                            avoidance_Param:
+                                type: object
+                                default: {}
+                                description: Buffer speed around frequency to avoid
+                                properties:
+                                    flag: *flag
+                                    nopt: *nopt
+                                    lower_bound:
+                                        type: array
+                                        default: [0.0]
+                                        unit: rad/s
+                                    upper_bound:
+                                        type: array
+                                        default: [0.0]
+                                        unit: rad/s
+                    soft_cut_out:
+                        type: object
+                        default: {}
+                        description: Upper limit of power reference at high wind speeds (lookup table)
+                        properties:
+                            wind_speeds:
+                                type: object
+                                description: List of wind speeds
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    nopt: *nopt
+                                    lower_bound:
+                                        type: array
+                                        default: [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 50.0]
+                                        unit: m/s
+                                    upper_bound:
+                                        type: array
+                                        default: [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 50.0]
+                                        unit: m/s
+                            power_reference:
+                                type: object
+                                default: {}
+                                description: List of power reference at wind_speeds, number of elements should be same
+                                properties:
+                                    flag: *flag
+                                    nopt: *nopt
+                                    lower_bound:
+                                        type: array
+                                        default: [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5]
+                                        unit: none
+                                    upper_bound:
+                                        type: array
+                                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                                        unit: none
+                    user_defined_SS_1:
+                        type: object
+                        default: {}
+                        description: User defined state-space linear controllers within ROSCO
                         properties:
                             flag: *flag
-                            lower_bound:
-                                type: number
-                                default: 0.0
-                                unit: none
-                            upper_bound:
-                                type: number
-                                default: 50.0
-                                unit: none
-                    servo:
+                            n_order: &n_order
+                                type: integer
+                                default: 2
+                                description: Order of SS and TF filter or control
+                    user_defined_TF_1:
                         type: object
                         default: {}
                         properties:
-                            pitch_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    omega_min: &omega_min
-                                        type: number
-                                        default: 0.1
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                                    omega_max: &omega_max
-                                        type: number
-                                        default: 0.7
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                                    zeta_min: &zeta_min
-                                        type: number
-                                        default: 0.4
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                                    zeta_max: &zeta_max
-                                        type: number
-                                        default: 1.5
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                            torque_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    omega_min: *omega_min
-                                    omega_max: *omega_max
-                                    zeta_min: *zeta_min
-                                    zeta_max: *zeta_max
-                            flap_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    omega_min: *omega_min
-                                    omega_max: *omega_max
-                                    zeta_min: *zeta_min
-                                    zeta_max: *zeta_max
+                            flag: *flag
+                            n_order: &n_order
+                                type: integer
+                                default: 2
+                                description: Order of SS and TF filter or control
+                    user_defined_OL_1:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
 
     constraints:
         # GB: These all need gammas or safety factors
@@ -662,6 +1001,32 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.0
                             max: *flapminmax
+                    max_tip_speed:
+                        type: object
+                        description: Words TODO
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &tip_minmax
+                                type: number
+                                untis: m/s
+                                default: 100
+                                minimum: 0.0
+                                maximum: 200
+                            max: *tip_minmax
+                    max_gen_speed:
+                        type: object
+                        description: Maximum allowable generator speed
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &gen_minmax
+                                type: number
+                                units: rad/s
+                                default: 1.0
+                                minimum: 0.0
+                                maximum: 100000.0
+                            max: *gen_minmax
 
     merit_figure:
         type: string
