@@ -2209,12 +2209,24 @@ properties:
                 type: object
                 required:
                     - rated_power
+                    - rated_torque
+                    - rated_speed
                     - max_torque_rate
                     - max_gen_speed
                 properties:
                     rated_power:
                         type: number
                         description: Nameplate power of the turbine, i.e. the rated electrical output of the generator.
+                        unit: W
+                        minimum: 0
+                    rated_torque:
+                        type: number
+                        description: Rated generator load torque
+                        unit: W
+                        minimum: 0
+                    rated_speed:
+                        type: number
+                        description: Rated generator speed
                         unit: W
                         minimum: 0
                     max_gen_speed:
@@ -2285,8 +2297,6 @@ properties:
             - power_control
             - freq_avoidance
             - soft_cut_out
-            - user_defined_mods
-            - user_defined_OL
             - user_dylib
             - user_simulink
             - user_defined_SS_1
@@ -2534,6 +2544,7 @@ properties:
                         maximum: 0.2  # Technically, actuators/pitch/max_pitch_rate
                     open_loop_pitch:
                         type: object
+                        description: Pitch trajectory when limit is exceeded
                         required:
                             - time
                             - pitch
@@ -2543,6 +2554,8 @@ properties:
                             pitch:
                                 $ref: "#/definitions/timeseries/value"
                     open_loop_pwr:
+                        type: object
+                        description: Power trajectory when limit is exceeed
                         required:
                             - time
                             - power
@@ -2721,9 +2734,9 @@ properties:
                             minItems: 1
                             uniqueItems: false
 
-            user_defined_SS_1: &uss
+            user_defined_SS_1: &u_ss
                 type: object
-                description: User defined state-space linear controllers within ROSCO, only 1 for now
+                description: User defined state-space linear controllers within ROSCO
                 required:
                     - sensors
                     - actuators
@@ -2749,10 +2762,10 @@ properties:
                         $ref: "#/definitions/state_space"
                     activator:
                         $ref: "#/definitions/activator"
-            user_defined_SS_2: *uss
-            user_defined_SS_3: *uss
-            user_defined_SS_4: *uss
-            user_defined_SS_5: *uss
+            user_defined_SS_2: *u_ss
+            user_defined_SS_3: *u_ss
+            user_defined_SS_4: *u_ss
+            user_defined_SS_5: *u_ss
             user_defined_TF_1: &u_tf
                 type: object
                 description: User defined transfer function linear controllers within ROSCO, only 1 for now
