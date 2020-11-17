@@ -444,7 +444,7 @@ properties:
                         properties:
                             pitch_act_bw:
                                 type: object
-                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                description: Pitch actutator bandwidth (https://github.com/NREL/ROSCO)
                                 default: {}
                                 properties:
                                     flag: *flag
@@ -462,7 +462,7 @@ properties:
                         properties:
                             rated_power:
                                 type: object
-                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                description: Generator rated power
                                 default: {}
                                 properties:
                                     flag: *flag
@@ -476,7 +476,7 @@ properties:
                                         unit: MW
                             rated_gen_speed:
                                 type: object
-                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                description: Rated generator speed
                                 default: {}
                                 properties:
                                     flag: *flag
@@ -490,7 +490,7 @@ properties:
                                         unit: rad/s
                             rated_gen_torque:
                                 type: object
-                                description: Pitch controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                description: Rated generator torque
                                 default: {}
                                 properties:
                                     flag: *flag
@@ -617,7 +617,7 @@ properties:
                             VS_zeta:
                                 type: object
                                 default: {}
-                                description: Integral gain of 2P feedback
+                                description: Damping ratio of torque control regulator mode
                                 properties:
                                     flag: *flag
                                     lower_bound: *zeta_min
@@ -625,7 +625,7 @@ properties:
                             VS_omega:
                                 type: object
                                 default: {}
-                                description: Integral gain of 2P feedback
+                                description: Natural frequency of torque control regulator mode
                                 properties:
                                     flag: *flag
                                     lower_bound: *omega_min
@@ -639,97 +639,6 @@ properties:
                             omega_max: *omega_max
                             zeta_min: *zeta_min
                             zeta_max: *zeta_max
-                    setpoint_smooth:
-                        type: object
-                        default: {}
-                        properties:
-                            ss_vsgain:
-                                type: object
-                                default: {}
-                                description: Torque controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                properties:
-                                    flag: *flag
-                                    lower_bound:
-                                        type: number
-                                        default: 0.0
-                                        unit: none
-                                    upper_bound:
-                                        type: number
-                                        default: 10000
-                                        unit: none
-                            ss_pcgain:
-                                type: object
-                                default: {}
-                                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                properties:
-                                    flag: *flag
-                                    lower_bound:
-                                        type: number
-                                        default: 0.0
-                                        unit: none
-                                    upper_bound:
-                                        type: number
-                                        default: 10000
-                                        unit: none
-                    soft_cut_out:
-                        type: object
-                        default: {}
-                        description: Upper limit of power reference at high wind speeds (lookup table)
-                        properties:
-                            wind_speeds:
-                                type: object
-                                description: List of wind speeds
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    nopt: *nopt
-                                    lower_bound:
-                                        type: array
-                                        default: [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 50.0]
-                                        unit: m/s
-                                    upper_bound:
-                                        type: array
-                                        default: [0.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 50.0]
-                                        unit: m/s
-                            power_reference:
-                                type: object
-                                default: {}
-                                description: List of power reference at wind_speeds, number of elements should be same
-                                properties:
-                                    flag: *flag
-                                    nopt: *nopt
-                                    lower_bound:
-                                        type: array
-                                        default: [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5]
-                                        unit: none
-                                    upper_bound:
-                                        type: array
-                                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-                                        unit: none
-                    user_defined_SS_1:
-                        type: object
-                        default: {}
-                        description: User defined state-space linear controllers within ROSCO
-                        properties:
-                            flag: *flag
-                            n_order: &n_order
-                                type: integer
-                                default: 2
-                                description: Order of SS and TF filter or control
-                    user_defined_TF_1:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
-                            n_order: &n_order
-                                type: integer
-                                default: 2
-                                description: Order of SS and TF filter or control
-                    user_defined_OL_1:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
 
     constraints:
         # GB: These all need gammas or safety factors
@@ -872,7 +781,7 @@ properties:
                 properties:
                     flap_control:
                         type: object
-                        description: Words TODO
+                        description: Words TODO  # DZ: I'm not sure what this represents
                         default: {}
                         properties:
                             flag: *flag
@@ -884,7 +793,7 @@ properties:
                             max: *flapminmax
                     max_tip_speed:
                         type: object
-                        description: Words TODO
+                        description: Maximum allowable tip speed
                         default: {}
                         properties:
                             flag: *flag
