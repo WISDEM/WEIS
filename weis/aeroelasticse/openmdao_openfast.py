@@ -849,9 +849,7 @@ class FASTLoadCases(ExplicitComponent):
 
                     plt.suptitle(fast_out['meta']['name'])
                 pdf.savefig(fig)
-
-
-            
+                plt.close()
 
         ## Post process loads
         if self.FASTpref['dlc_settings']['run_IEC']:
