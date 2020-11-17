@@ -596,20 +596,6 @@ properties:
                                                 type: number
                                                 default: 10000
                                                 unit: rad/Nm
-                                    IPC_gain_2P:
-                                        type: object
-                                        default: {}
-                                        description: Integral gain of 2P feedback
-                                        properties:
-                                            flag: *flag
-                                            lower_bound:
-                                                type: number
-                                                default: 0.0
-                                                unit: rad/Nm
-                                            upper_bound:
-                                                type: number
-                                                default: 10000
-                                                unit: rad/Nm
                                     IPC_phase_1P:
                                         type: object
                                         default: {}
@@ -624,32 +610,6 @@ properties:
                                                 type: number
                                                 default: 3.14
                                                 unit: rad
-                                    IPC_phase_2P:
-                                        type: object
-                                        default: {}
-                                        description: Phase lag of 2P IPC feedback
-                                        properties:
-                                            flag: *flag
-                                            lower_bound:
-                                                type: number
-                                                default: -3.14
-                                                unit: rad
-                                            upper_bound:
-                                                type: number
-                                                default: 3.14
-                                                unit: rad
-                                    IPC_filt_1P:
-                                        type: object
-                                        default: {}
-                                        description: Filter between tilt/yaw load and tilt/yaw pitch, usually a notch to reduce 3P, 6P frequency.
-                                        properties:
-                                            flag: *flag
-                                    IPC_filt_2P:
-                                        type: object
-                                        default: {}
-                                        description: Filter between tilt/yaw load and tilt/yaw pitch, usually a notch to reduce 3P, 6P frequency.
-                                        properties:
-                                            flag: *flag
                     torque:
                         type: object
                         default: {}
@@ -711,85 +671,6 @@ properties:
                                         type: number
                                         default: 10000
                                         unit: none
-                    shutdown:
-                        type: object
-                        default: {}
-                        properties:
-                            limit_value:
-                                type: object
-                                default: {}
-                                description: Turbine shutdown control, when a certain limit (shutdown/limit_type in geometry) is reached
-                                properties:
-                                    flag: *flag
-                                    lower_bound:
-                                        type: number
-                                        default: 0.0
-                                        unit: none
-                                    upper_bound:
-                                        type: number
-                                        default: 10000
-                                        unit: none
-                            pitch_rate:
-                                type: object
-                                default: {}
-                                description: Rate of pitch manuever to max_pitch. Default is 2 deg./s ?
-                                properties:
-                                    flag: *flag
-                                    lower_bound:
-                                        type: number
-                                        default: 0.0
-                                        unit: rad/s
-                                    upper_bound:
-                                        type: number
-                                        default: 10
-                                        unit: rad/s
-                            open_loop_pitch:
-                                type: object
-                                default: {}
-                                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                properties:
-                                    flag: *flag
-                            open_loop_pwr:
-                                type: object
-                                default: {}
-                                description: Pitch controller setpoint smoother gain bias percentage. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                properties:
-                                    flag: *flag
-                    freq_avoidance:
-                        type: object
-                        default: {}
-                        description: Changes generator speed setpoint to avoid turbine natural frequencies. Only single frequency here for now.
-                        properties:
-                            freq:
-                                type: object
-                                default: {}
-                                description: Frequency to avoid
-                                properties:
-                                    flag: *flag
-                                    nopt: *nopt
-                                    lower_bound:
-                                        type: array
-                                        default: [0.0]
-                                        unit: rad/s
-                                    upper_bound:
-                                        type: array
-                                        default: [10000]
-                                        unit: rad/s
-                            avoidance_Param:
-                                type: object
-                                default: {}
-                                description: Buffer speed around frequency to avoid
-                                properties:
-                                    flag: *flag
-                                    nopt: *nopt
-                                    lower_bound:
-                                        type: array
-                                        default: [0.0]
-                                        unit: rad/s
-                                    upper_bound:
-                                        type: array
-                                        default: [0.0]
-                                        unit: rad/s
                     soft_cut_out:
                         type: object
                         default: {}
