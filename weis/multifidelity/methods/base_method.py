@@ -280,17 +280,19 @@ class BaseMethod:
                         return self.model_low.run(x)[output_name]
                         
                 else:
-                    # sm = smt.RBF(print_global=False,)
+                    # sm = smt.RBF(print_global=False, d0=5)
+                    # sm = smt.IDW(print_global=False, p=2)
                     # sm = smt.KRG(theta0=[1e-2], print_global=False)
-                    sm = smt.RMTB(
-                        num_ctrl_pts=12,
-                        xlimits=self.bounds,
-                        nonlinear_maxiter=20,
-                        solver_tolerance=1e-16,
-                        energy_weight=1e-6,
-                        regularization_weight=0.0,
-                        print_global=False
-                    )
+                    # sm = smt.RMTB(
+                    #     num_ctrl_pts=12,
+                    #     xlimits=self.bounds,
+                    #     nonlinear_maxiter=20,
+                    #     solver_tolerance=1e-16,
+                    #     energy_weight=1e-6,
+                    #     regularization_weight=0.0,
+                    #     print_global=False
+                    # )
+                    sm = smt.KPLS(print_global=False, theta0=[1e-1])
 
                     sm.set_training_values(self.design_vectors, differences)
                     sm.train()

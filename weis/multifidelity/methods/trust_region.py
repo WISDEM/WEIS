@@ -108,7 +108,7 @@ class SimpleTrustRegion(BaseMethod):
         scaled_function = lambda x: self.objective_scaler * np.squeeze(
             self.approximation_functions[self.objective](x)
         )
-        
+
         if num_basinhop_iterations:
             minimizer_kwargs = {
                 "method": "SLSQP",
@@ -120,7 +120,7 @@ class SimpleTrustRegion(BaseMethod):
             res = basinhopping(
                 scaled_function,
                 x0,
-                stepsize=np.mean(upper_bounds - lower_bounds) * 0.8,
+                stepsize=np.mean(upper_bounds - lower_bounds) * 0.5,
                 niter=num_basinhop_iterations,
                 disp=self.disp == 2,
                 minimizer_kwargs=minimizer_kwargs,
@@ -136,7 +136,7 @@ class SimpleTrustRegion(BaseMethod):
                 options={"disp": self.disp == 2, "maxiter": 20},
             )
         x_new = res.x
-        
+
         tol = 1e-6
         if np.any(np.abs(trust_region_lower_bounds - x_new) < tol) or np.any(
             np.abs(trust_region_upper_bounds - x_new) < tol
@@ -194,8 +194,8 @@ class SimpleTrustRegion(BaseMethod):
 
         # 5. Update trust region according to rho_k
         if (
-            rho >= self.eta
-        ):  # and hits_boundary:  # unclear if we need this hits_boundary logic
+            rho >= self.eta and hits_boundary
+        ):  # unclear if we need this hits_boundary logic
             self.trust_radius = min(
                 self.expansion_ratio * self.trust_radius, self.max_trust_radius
             )
@@ -208,6 +208,7 @@ class SimpleTrustRegion(BaseMethod):
             print("Actual reduction:", actual_reduction)
             print("Rho", np.squeeze(rho))
             print("Trust radius:", self.trust_radius)
+            print("Best func value:", new_point_high)
 
     def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False):
         """
@@ -358,7 +359,7 @@ class SimpleTrustRegion(BaseMethod):
             plt.scatter(self.design_vectors, y_high, c="tab:orange")
 
             plt.plot(squeezed_x, np.squeeze(y_full), label="surrogate", c="tab:blue")
-
+            
             x = self.design_vectors[-1, 0]
             y_plot = y_high[-1]
             y_diff = 0.5

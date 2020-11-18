@@ -69,7 +69,7 @@ class Test(unittest.TestCase):
         func = method_instance.approximation_functions["y"]
 
         flattened_desvars = model_low.flatten_desvars(desvars)
-        np.testing.assert_allclose(func(flattened_desvars), -5.33064616)
+        np.testing.assert_allclose(func(flattened_desvars), -9.346763)
 
     def test_set_initial_point(self):
         np.random.seed(13)
