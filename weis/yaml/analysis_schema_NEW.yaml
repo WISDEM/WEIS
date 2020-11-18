@@ -438,24 +438,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    pitch:
-                        type: object
-                        default: {}
-                        properties:
-                            pitch_act_bw:
-                                type: object
-                                description: Pitch actutator bandwidth (https://github.com/NREL/ROSCO)
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    lower_bound: &omega_min
-                                        type: number
-                                        default: 0.0
-                                        unit: rad/s
-                                    upper_bound: &omega_max
-                                        type: number
-                                        default: 100.0
-                                        unit: rad/s
                     generator:
                         type: object
                         default: {}
