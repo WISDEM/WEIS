@@ -9,11 +9,12 @@ except:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 import os
-fdefaults_geom  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_defaults.yaml')
-fschema_geom    = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'geometry_schema.yaml')
-fschema_model   = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'modeling_schema.yaml')
-fschema_opt     = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'analysis_schema.yaml')
-
+froot           = os.path.dirname(os.path.realpath(__file__))
+fdefaults_geom  = os.path.join(froot, 'geometry_defaults.yaml')
+fschema_geom    = os.path.join(froot, 'geometry_schema.yaml')
+fschema_model   = os.path.join(froot, 'modeling_schema.yaml')
+fschema_opt     = os.path.join(froot, 'analysis_schema.yaml')
+fschema_model_wisdem = os.path.join(froot, '..','..','WISDEM','wisdem','yaml', 'modeling_schema.yaml')
 
 
 #---------------------
@@ -112,7 +113,10 @@ def write_geometry_yaml(instance, foutput):
     write_yaml(instance, foutput+sfx_str)
 
 def load_modeling_yaml(finput):
-    return validate_with_defaults(finput, fschema_model)
+    weis_schema   = load_yaml(fschema_model)
+    wisdem_schema = load_yaml(fschema_model_wisdem)
+    weis_schema['properties']['WISDEM'] = wisdem_schema
+    return validate_with_defaults(finput, weis_schema)
 
 def write_modeling_yaml(instance, foutput):
     validate_without_defaults(instance, fschema_model)
