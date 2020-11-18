@@ -60,6 +60,6 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
             # Print constraints
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
+                print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]))
         
         print('########################################')
