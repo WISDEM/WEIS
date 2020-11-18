@@ -1076,8 +1076,8 @@ class FASTLoadCases(ExplicitComponent):
                 # maximum sum of weighted DELS
                 outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
 
-            if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
+            if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag'] or self.options['opt_options']['merit_figure'] == 'rotor_overspeed': 
+                outputs['rotor_overspeed'] = ( np.max(sum_stats['RotSpeed']['max'])*np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
