@@ -507,7 +507,8 @@ class FASTLoadCases(ExplicitComponent):
         nBldNodes     = fst_vt['ElastoDyn']['BldNodes']
         bld_fract     = np.arange(1./nBldNodes/2., 1, 1./nBldNodes)
         idx_out       = [np.argmin(abs(bld_fract-ri)) for ri in r_out_target]
-        self.R_out_ED = [bld_fract[i] for i in idx_out]
+        r_nodes       = bld_fract*(fst_vt['ElastoDyn']['TipRad']-fst_vt['ElastoDyn']['HubRad'])
+        self.R_out_ED = [r_nodes[i] for i in idx_out]
         if len(self.R_out_ED) != len(np.unique(self.R_out_ED)):
             raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
         fst_vt['ElastoDyn']['BldGagNd'] = [idx+1 for idx in idx_out]
