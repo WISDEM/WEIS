@@ -1,5 +1,7 @@
 import numpy as np
 import os, shutil, sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
@@ -810,14 +812,19 @@ class FASTLoadCases(ExplicitComponent):
             os.makedirs(stats_output_folder)
         # self.of_inumber = len(os.listdir(stats_output_folder))
 
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+        else:
+            rank    = 0
+
         # save summary stats
-        stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
+        stats_fname = 'stats_i{:02.0f}r{:02.0f}.yaml'.format(self.of_inumber, rank)
         Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
 
         # Save output plots
         fast_pl = rosco_utilities.FAST_Plots()
 
-        figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
+        figs_fname = 'figures_i{:02.0f}r{:02.0f}.pdf'.format(self.of_inumber, rank)        
         with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
             for fast_out in FAST_Output:
                 plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
