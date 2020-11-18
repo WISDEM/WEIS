@@ -1199,7 +1199,7 @@ class FASTLoadCases(ExplicitComponent):
         U       = list(rainflow.keys())
         Seeds   = list(rainflow[U[0]].keys())
         chans   = list(rainflow[U[0]][Seeds[0]].keys())
-        r_gage  = np.r_[0., self.R_outED]
+        r_gage  = np.r_[0., self.R_out_ED]
         r_gage /= r_gage[-1]
         simtime = self.simtime
         n_seeds = float(len(Seeds))
