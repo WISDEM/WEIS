@@ -632,7 +632,7 @@ class FASTLoadCases(ExplicitComponent):
             iec.dlc_inputs['U'].append(self.FASTpref['dlc_settings']['Power_Curve']['U'])
             iec.dlc_inputs['Seeds'].append(self.FASTpref['dlc_settings']['Power_Curve']['Seeds'])
             iec.dlc_inputs['Yaw'].append([])
-
+            iec.uniqueSeeds = True
         else:
 
             for dlc in self.FASTpref['dlc_settings']['IEC']:
@@ -658,6 +658,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 if 'Seeds' in dlc.keys():
                     iec.dlc_inputs['Seeds'].append(dlc['Seeds'])
+                    iec.uniqueSeeds = True
                 else:
                     iec.dlc_inputs['Seeds'].append([])
 
