@@ -81,6 +81,7 @@ class WT_RNTA(om.Group):
             self.add_subsystem('freq_tower',        TowerSE(modeling_options=modeling_options))
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # Aero analysis
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
+            self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
 
         self.add_subsystem('rlds',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         
@@ -255,15 +256,17 @@ class WT_RNTA(om.Group):
             self.connect('configuration.turb_class',        'sse.gust.turbulence_class')
 
         # Connections to the stall check
-        self.connect('blade.outer_shape_bem.s',        'stall_check.s')
-        self.connect('airfoils.aoa',                   'stall_check.airfoils_aoa')
-        self.connect('xf.cl_interp_flaps',             'stall_check.airfoils_cl')
-        self.connect('xf.cd_interp_flaps',             'stall_check.airfoils_cd')
-        self.connect('xf.cm_interp_flaps',             'stall_check.airfoils_cm')
+        self.connect('blade.outer_shape_bem.s',        ['stall_check.s', 'stall_check_of.s'])
+        self.connect('airfoils.aoa',                   ['stall_check.airfoils_aoa', 'stall_check_of.airfoils_aoa'])
+        self.connect('xf.cl_interp_flaps',             ['stall_check.airfoils_cl', 'stall_check_of.airfoils_cl'])
+        self.connect('xf.cd_interp_flaps',             ['stall_check.airfoils_cd', 'stall_check_of.airfoils_cd'])
+        self.connect('xf.cm_interp_flaps',             ['stall_check.airfoils_cm', 'stall_check_of.airfoils_cm'])
         if modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.aoa_regII',   'stall_check.aoa_along_span')
         else:
             self.connect('ccblade.alpha',  'stall_check.aoa_along_span')
+        if modeling_options['Analysis_Flags']['OpenFAST']:
+            self.connect('aeroelastic.max_aoa',  'stall_check_of.aoa_along_span')
 
         if modeling_options['Analysis_Flags']['OpenFAST'] and modeling_options['Analysis_Flags']['ServoSE']:
             self.connect('sse.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
