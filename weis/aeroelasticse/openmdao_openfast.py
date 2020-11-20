@@ -494,16 +494,23 @@ class FASTLoadCases(ExplicitComponent):
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]
-        r_out_target = [0.1, 0.20, 0.30, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-        idx_out      = [np.argmin(abs(r-ri)) for ri in r_out_target]
-        self.R_out   = [fst_vt['AeroDynBlade']['BlSpn'][i] for i in idx_out]
+        r_out_target  = [0.1, 0.20, 0.30, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        idx_out       = [np.argmin(abs(r-ri)) for ri in r_out_target]
+        self.R_out_AD = [fst_vt['AeroDynBlade']['BlSpn'][i] for i in idx_out]
 
-        if len(self.R_out) != len(np.unique(self.R_out)):
-            exit('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
+        if len(self.R_out_AD) != len(np.unique(self.R_out_AD)):
+            raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
         
         fst_vt['AeroDyn15']['BlOutNd']  = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts']  = len(idx_out)
 
+        nBldNodes     = fst_vt['ElastoDyn']['BldNodes']
+        bld_fract     = np.arange(1./nBldNodes/2., 1, 1./nBldNodes)
+        idx_out       = [np.argmin(abs(bld_fract-ri)) for ri in r_out_target]
+        r_nodes       = bld_fract*(fst_vt['ElastoDyn']['TipRad']-fst_vt['ElastoDyn']['HubRad'])
+        self.R_out_ED = [r_nodes[i] for i in idx_out]
+        if len(self.R_out_ED) != len(np.unique(self.R_out_ED)):
+            raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
         fst_vt['ElastoDyn']['BldGagNd'] = [idx+1 for idx in idx_out]
         fst_vt['ElastoDyn']['NBlGages'] = len(idx_out)
 
@@ -879,8 +886,8 @@ class FASTLoadCases(ExplicitComponent):
             # Return spanwise forces at instance of largest deflection
             Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fx]
             Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fy]
-            spline_Fx = PchipInterpolator(self.R_out, Fx)
-            spline_Fy = PchipInterpolator(self.R_out, Fy)
+            spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
+            spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
 
             r = inputs['r']-inputs['Rhub']
             Fx_out = spline_Fx(r).flatten()
@@ -1191,7 +1198,7 @@ class FASTLoadCases(ExplicitComponent):
         U       = list(rainflow.keys())
         Seeds   = list(rainflow[U[0]].keys())
         chans   = list(rainflow[U[0]][Seeds[0]].keys())
-        r_gage  = np.r_[0., self.R_out]
+        r_gage  = np.r_[0., self.R_out_ED]
         r_gage /= r_gage[-1]
         simtime = self.simtime
         n_seeds = float(len(Seeds))
