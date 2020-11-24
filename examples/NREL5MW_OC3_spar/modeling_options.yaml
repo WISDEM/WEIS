@@ -17,6 +17,7 @@ Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
         gamma_b: 1.1            # Safety factor for ...
         gamma_fatigue: 1.9305   # Safety factor for fatigue loads in TowerSE
         buckling_length: 30     # Buckling parameter in TowerSE
+        nLC: 1
         frame3dd:
             shear: True
             geom: True
@@ -36,6 +37,12 @@ Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
         regulation_reg_III: False       # Flag to derive the regulation trajectory in region III in terms of pitch and TSR
     DriveSE:
         flag: True
+        hub:
+            hub_gamma: 2.0
+            spinner_gamma: 1.5
+            gamma_f: 1.35    # Safety factor for fatigue loads in TowerSE
+            gamma_m: 1.3     # Safety factor for material properties in TowerSE
+            gamma_n: 1.0     # Safety factor for ...
     FloatingSE:
         flag: True
     BOS:
@@ -92,7 +99,20 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         flag: False
     ROSCO:
         flag: False
-
+        Flp_Mode: 0
+        LoggingLevel: 1
+        F_LPFType: 1
+        F_NotchType: 0
+        IPC_ControlMode: 0
+        VS_ControlMode: 2
+        PC_ControlMode: 1
+        Y_ControlMode: 0
+        SS_Mode: 1
+        WE_Mode: 2
+        PS_Mode: 1
+        SD_Mode: 1
+        Fl_Mode: 0
+        Flp_Mode: 0
     
 openfast:
     analysis_settings:

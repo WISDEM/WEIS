@@ -37,25 +37,26 @@ class TuneROSCO(ExplicitComponent):
 
     def setup(self):
         self.modeling_options = self.options['modeling_options']
-        servose_init_options = self.modeling_options['servose']
-        n_pc     = self.options['modeling_options']['servose']['n_pc']
+        rosco_init_options = self.modeling_options['Level3']['ROSCO']
+        servose_init_options = self.modeling_options['Level1']['ServoSE']
+        n_pc     = servose_init_options['n_pc']
 
         # Input parameters
         self.controller_params = {}
         # Controller Flags
-        self.controller_params['LoggingLevel'] = self.modeling_options['servose']['LoggingLevel']
-        self.controller_params['F_LPFType'] = self.modeling_options['servose']['F_LPFType']
-        self.controller_params['F_NotchType'] = self.modeling_options['servose']['F_NotchType']
-        self.controller_params['IPC_ControlMode'] = self.modeling_options['servose']['IPC_ControlMode']
-        self.controller_params['VS_ControlMode'] = self.modeling_options['servose']['VS_ControlMode']
-        self.controller_params['PC_ControlMode'] = self.modeling_options['servose']['PC_ControlMode']
-        self.controller_params['Y_ControlMode'] = self.modeling_options['servose']['Y_ControlMode']
-        self.controller_params['SS_Mode'] = self.modeling_options['servose']['SS_Mode']
-        self.controller_params['WE_Mode'] = self.modeling_options['servose']['WE_Mode']
-        self.controller_params['PS_Mode'] = self.modeling_options['servose']['PS_Mode']
-        self.controller_params['SD_Mode'] = self.modeling_options['servose']['SD_Mode']
-        self.controller_params['Fl_Mode'] = self.modeling_options['servose']['Fl_Mode']
-        self.controller_params['Flp_Mode'] = self.modeling_options['servose']['Flp_Mode']
+        self.controller_params['LoggingLevel'] = rosco_init_options['LoggingLevel']
+        self.controller_params['F_LPFType'] = rosco_init_options['F_LPFType']
+        self.controller_params['F_NotchType'] = rosco_init_options['F_NotchType']
+        self.controller_params['IPC_ControlMode'] = rosco_init_options['IPC_ControlMode']
+        self.controller_params['VS_ControlMode'] = rosco_init_options['VS_ControlMode']
+        self.controller_params['PC_ControlMode'] = rosco_init_options['PC_ControlMode']
+        self.controller_params['Y_ControlMode'] = rosco_init_options['Y_ControlMode']
+        self.controller_params['SS_Mode'] = rosco_init_options['SS_Mode']
+        self.controller_params['WE_Mode'] = rosco_init_options['WE_Mode']
+        self.controller_params['PS_Mode'] = rosco_init_options['PS_Mode']
+        self.controller_params['SD_Mode'] = rosco_init_options['SD_Mode']
+        self.controller_params['Fl_Mode'] = rosco_init_options['Fl_Mode']
+        self.controller_params['Flp_Mode'] = rosco_init_options['Flp_Mode']
 
         # Necessary parameters
         # Turbine parameters
@@ -136,7 +137,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
-        if self.modeling_options['servose']['Flp_Mode'] > 0:
+        if rosco_init_options['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
 
@@ -153,33 +154,34 @@ class TuneROSCO(ExplicitComponent):
         '''
         Call ROSCO toolbox to define controller
         '''
-
+        servose_init_options = self.modeling_options['Level1']['ServoSE']
+        rosco_init_options   = self.modeling_options['Level3']['ROSCO']
         # Add control tuning parameters to dictionary
-        self.modeling_options['servose']['omega_pc']    = inputs['PC_omega']
-        self.modeling_options['servose']['zeta_pc']     = inputs['PC_zeta']
-        self.modeling_options['servose']['omega_vs']    = inputs['VS_omega']
-        self.modeling_options['servose']['zeta_vs']     = inputs['VS_zeta']
-        if self.modeling_options['servose']['Flp_Mode'] > 0:
-            self.modeling_options['servose']['omega_flp'] = inputs['Flp_omega']
-            self.modeling_options['servose']['zeta_flp']  = inputs['Flp_zeta']
+        servose_init_options['omega_pc']    = inputs['PC_omega']
+        servose_init_options['zeta_pc']     = inputs['PC_zeta']
+        servose_init_options['omega_vs']    = inputs['VS_omega']
+        servose_init_options['zeta_vs']     = inputs['VS_zeta']
+        if rosco_init_options['Flp_Mode'] > 0:
+            servose_init_options['omega_flp'] = inputs['Flp_omega']
+            servose_init_options['zeta_flp']  = inputs['Flp_zeta']
         else:
-            self.modeling_options['servose']['omega_flp'] = 0.0
-            self.modeling_options['servose']['zeta_flp']  = 0.0
+            servose_init_options['omega_flp'] = 0.0
+            servose_init_options['zeta_flp']  = 0.0
         #
-        self.modeling_options['servose']['max_pitch']   = inputs['max_pitch'][0]
-        self.modeling_options['servose']['min_pitch']   = inputs['min_pitch'][0]
-        self.modeling_options['servose']['vs_minspd']   = inputs['vs_minspd'][0]
-        self.modeling_options['servose']['ss_vsgain']   = inputs['ss_vsgain'][0]
-        self.modeling_options['servose']['ss_pcgain']   = inputs['ss_pcgain'][0]
-        self.modeling_options['servose']['ps_percent']  = inputs['ps_percent'][0]
-        if self.modeling_options['servose']['Flp_Mode'] > 0:
-            self.modeling_options['servose']['flp_maxpit']  = inputs['delta_max_pos'][0]
+        servose_init_options['max_pitch']   = inputs['max_pitch'][0]
+        servose_init_options['min_pitch']   = inputs['min_pitch'][0]
+        servose_init_options['vs_minspd']   = inputs['vs_minspd'][0]
+        servose_init_options['ss_vsgain']   = inputs['ss_vsgain'][0]
+        servose_init_options['ss_pcgain']   = inputs['ss_pcgain'][0]
+        servose_init_options['ps_percent']  = inputs['ps_percent'][0]
+        if rosco_init_options['Flp_Mode'] > 0:
+            servose_init_options['flp_maxpit']  = inputs['delta_max_pos'][0]
         else:
-            self.modeling_options['servose']['flp_maxpit']  = None
+            servose_init_options['flp_maxpit']  = None
         #
-        self.modeling_options['servose']['ss_cornerfreq']   = None
-        self.modeling_options['servose']['sd_maxpit']       = None
-        self.modeling_options['servose']['sd_cornerfreq']   = None
+        servose_init_options['ss_cornerfreq']   = None
+        servose_init_options['sd_maxpit']       = None
+        servose_init_options['sd_cornerfreq']   = None
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
@@ -217,7 +219,7 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.Cq   = RotorPerformance(self.Cq_table,self.pitch_vector,self.tsr_vector)
 
         # Load blade info to pass to flap controller tuning process
-        if self.modeling_options['servose']['Flp_Mode'] >= 1:
+        if rosco_init_options['Flp_Mode'] >= 1:
             # Create airfoils
             af = [None]*self.n_span
             for i in range(self.n_span):
@@ -259,7 +261,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.bld_flapwise_damp = self.modeling_options['openfast']['fst_vt']['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
 
         # Tune Controller!
-        controller = ROSCO_controller.Controller(self.modeling_options['servose'])
+        controller = ROSCO_controller.Controller(servose_init_options)
         controller.tune_controller(WISDEM_turbine)
 
         # DISCON Parameters

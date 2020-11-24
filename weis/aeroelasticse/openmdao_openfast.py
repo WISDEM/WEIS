@@ -59,7 +59,7 @@ class FASTLoadCases(ExplicitComponent):
         self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
         monopile     = self.options['modeling_options']['flags']['monopile']
-        n_height_tow = self.options['modeling_options']['tower']['n_height']
+        n_height_tow = self.options['modeling_options']['towerse']['n_height']
         n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)

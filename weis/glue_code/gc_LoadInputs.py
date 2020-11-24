@@ -23,7 +23,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     
     def set_openfast_data(self):
         # Openfast
-        if self.modeling_options['Analysis_Flags']['OpenFAST'] == True:
+        if self.modeling_options['Level2']['flag'] == True or self.modeling_options['Level3']['flag'] == True:
             # Load Input OpenFAST model variable values
             fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
             fast.FAST_InputFile = self.modeling_options['openfast']['file_management']['FAST_InputFile']
