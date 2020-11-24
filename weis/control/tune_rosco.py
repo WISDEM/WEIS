@@ -154,34 +154,33 @@ class TuneROSCO(ExplicitComponent):
         '''
         Call ROSCO toolbox to define controller
         '''
-        servose_init_options = self.modeling_options['Level1']['ServoSE']
         rosco_init_options   = self.modeling_options['Level3']['ROSCO']
         # Add control tuning parameters to dictionary
-        servose_init_options['omega_pc']    = inputs['PC_omega']
-        servose_init_options['zeta_pc']     = inputs['PC_zeta']
-        servose_init_options['omega_vs']    = inputs['VS_omega']
-        servose_init_options['zeta_vs']     = inputs['VS_zeta']
+        rosco_init_options['omega_pc']    = inputs['PC_omega']
+        rosco_init_options['zeta_pc']     = inputs['PC_zeta']
+        rosco_init_options['omega_vs']    = inputs['VS_omega']
+        rosco_init_options['zeta_vs']     = inputs['VS_zeta']
         if rosco_init_options['Flp_Mode'] > 0:
-            servose_init_options['omega_flp'] = inputs['Flp_omega']
-            servose_init_options['zeta_flp']  = inputs['Flp_zeta']
+            rosco_init_options['omega_flp'] = inputs['Flp_omega']
+            rosco_init_options['zeta_flp']  = inputs['Flp_zeta']
         else:
-            servose_init_options['omega_flp'] = 0.0
-            servose_init_options['zeta_flp']  = 0.0
+            rosco_init_options['omega_flp'] = 0.0
+            rosco_init_options['zeta_flp']  = 0.0
         #
-        servose_init_options['max_pitch']   = inputs['max_pitch'][0]
-        servose_init_options['min_pitch']   = inputs['min_pitch'][0]
-        servose_init_options['vs_minspd']   = inputs['vs_minspd'][0]
-        servose_init_options['ss_vsgain']   = inputs['ss_vsgain'][0]
-        servose_init_options['ss_pcgain']   = inputs['ss_pcgain'][0]
-        servose_init_options['ps_percent']  = inputs['ps_percent'][0]
+        rosco_init_options['max_pitch']   = inputs['max_pitch'][0]
+        rosco_init_options['min_pitch']   = inputs['min_pitch'][0]
+        rosco_init_options['vs_minspd']   = inputs['vs_minspd'][0]
+        rosco_init_options['ss_vsgain']   = inputs['ss_vsgain'][0]
+        rosco_init_options['ss_pcgain']   = inputs['ss_pcgain'][0]
+        rosco_init_options['ps_percent']  = inputs['ps_percent'][0]
         if rosco_init_options['Flp_Mode'] > 0:
-            servose_init_options['flp_maxpit']  = inputs['delta_max_pos'][0]
+            rosco_init_options['flp_maxpit']  = inputs['delta_max_pos'][0]
         else:
-            servose_init_options['flp_maxpit']  = None
+            rosco_init_options['flp_maxpit']  = None
         #
-        servose_init_options['ss_cornerfreq']   = None
-        servose_init_options['sd_maxpit']       = None
-        servose_init_options['sd_cornerfreq']   = None
+        rosco_init_options['ss_cornerfreq']   = None
+        rosco_init_options['sd_maxpit']       = None
+        rosco_init_options['sd_cornerfreq']   = None
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
@@ -261,14 +260,13 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.bld_flapwise_damp = self.modeling_options['openfast']['fst_vt']['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
 
         # Tune Controller!
-        controller = ROSCO_controller.Controller(servose_init_options)
+        controller = ROSCO_controller.Controller(rosco_init_options)
         controller.tune_controller(WISDEM_turbine)
 
         # DISCON Parameters
         #   - controller
-        
-        if 'DISCON_in' not in self.modeling_options['openfast']['fst_vt'].keys():
-            self.modeling_options['openfast']['fst_vt']['DISCON_in']  = {}
+        self.modeling_options['openfast']['fst_vt'] = {}
+        self.modeling_options['openfast']['fst_vt']['DISCON_in']  = {}
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['LoggingLevel'] = controller.LoggingLevel
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_LPFType'] = controller.F_LPFType
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_NotchType'] = controller.F_NotchType

@@ -49,17 +49,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 fast.path2dll = path2dll
 
             fast.execute()
-            self.modeling_options['openfast']['fst_vt']   = fast.fst_vt
-
-            if os.path.isabs(self.modeling_options['openfast']['file_management']['Simulation_Settings_File']):
-                path2settings = self.modeling_options['openfast']['file_management']['Simulation_Settings_File']
-            else:
-                path2settings = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), self.modeling_options['openfast']['file_management']['Simulation_Settings_File'])
-            if os.path.exists(path2settings):
-                self.modeling_options['openfast']['fst_settings'] = dict(sch.load_yaml(path2settings))
-            else:
-                print('WARNING: OpenFAST is called, but no file with settings is found.')
-                self.modeling_options['openfast']['fst_settings'] = {}
 
             if os.path.isabs(self.modeling_options['xfoil']['path']):
                 self.modeling_options['airfoils']['xfoil_path']   = self.modeling_options['xfoil']['path']
@@ -68,7 +57,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             if self.modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2 and self.modeling_options['openfast']['dlc_settings']['run_power_curve'] == False and self.modeling_options['openfast']['dlc_settings']['run_IEC'] == False:
                 raise ValueError('WEIS is set to run OpenFAST, but both flags for power curve and IEC cases are set to False among the modeling options. Set at least one of the two to True to proceed.')
         else:
-            self.modeling_options['openfast']['fst_vt']     = {}
             self.modeling_options['airfoils']['xfoil_path'] = ''
 
             

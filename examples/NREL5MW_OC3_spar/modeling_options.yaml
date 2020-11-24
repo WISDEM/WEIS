@@ -1,8 +1,7 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
 
-Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
-    flag: False
+WISDEM:
     RotorSE:
         flag: True
         n_aoa: 200        # Number of angles of attack used to define polars
@@ -47,6 +46,9 @@ Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
         flag: True
     BOS:
         flag: True
+
+Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
+    flag: False
 
 Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize OpenFAST)
     flag: False

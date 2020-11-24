@@ -301,7 +301,7 @@ class FASTLoadCases(ExplicitComponent):
         # Create instance of FAST reference model 
 
         fst_vt = self.options['modeling_options']['openfast']['fst_vt']
-
+        fst_vt['Fst'] = {}
         fst_vt['Fst']['OutFileFmt'] = 2
 
         # Update ElastoDyn
@@ -544,10 +544,6 @@ class FASTLoadCases(ExplicitComponent):
                              "RootMyb3", "RootMzb3", "RootFxc3", "RootFyc3", "RootFzc3", "RootFxb3", "RootFyb3", "RootFzb3", "BldPitch3"]
             channels_out += ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx", "B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
 
-        # Add additional options
-        if ('channels_out',) in self.options['modeling_options']['openfast']['fst_settings']:
-            channels_out += self.options['modeling_options']['openfast']['fst_settings'][('channels_out',)]
-
         channels = {}
         for var in channels_out:
             channels[var] = True
@@ -660,13 +656,18 @@ class FASTLoadCases(ExplicitComponent):
 
         iec.transient_dir_change        = '-'
         iec.transient_shear_orientation = 'v'
-        if ("Fst", "TStart") not in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
-            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] = 120.
-        T0                          = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TStart")]
-
-        if ("Fst", "TMax") not in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
-            self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TMax")] = 720.
+        if "TMax" in self.options['modeling_options']['Level3']['simulation'].keys():
+            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] = self.options['modeling_options']['Level3']['simulation']['TMax']
+        else:
+            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] = 720.
         iec.TMax                    = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TMax")]
+
+        if "TStart" in self.options['modeling_options']['Level3']['simulation'].keys():
+            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] = self.options['modeling_options']['Level3']['simulation']['TStart']
+        else:
+            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] = np.max([0. , iec.TMax - 600.])
+
+        T0                          = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TStart")]
 
         iec.TStart                      = (iec.TMax-T0)/2. + T0
         self.simtime                    = iec.TMax - T0
@@ -750,7 +751,7 @@ class FASTLoadCases(ExplicitComponent):
         
         # Load pCrunch Analysis
         loads_analysis         = Analysis.Loads_Analysis()
-        loads_analysis.verbose = self.options['modeling_options']['general']['verbosity']
+        loads_analysis.verbose = self.options['modeling_options']['General']['verbosity']
 
         # Initial time
         loads_analysis.t0 = self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')]
@@ -1021,7 +1022,7 @@ class FASTLoadCases(ExplicitComponent):
     def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
 
         # Perform rainflow counting
-        if self.options['modeling_options']['general']['verbosity']:
+        if self.options['modeling_options']['General']['verbosity']:
             print('Running Rainflow Counting')
             sys.stdout.flush()
 
@@ -1177,7 +1178,7 @@ class FASTLoadCases(ExplicitComponent):
                          ['SC', 'SS', spar_cap_ss_var_ok],
                          ['SC', 'PS', spar_cap_ps_var_ok]]
 
-        if self.options['modeling_options']['general']['verbosity']:
+        if self.options['modeling_options']['General']['verbosity']:
             print("Running Miner's Rule calculations")
             sys.stdout.flush()
 
