@@ -534,6 +534,7 @@ class WindPark(om.Group):
             self.connect('towerse.post.side_side_modes',    'aeroelastic.side_side_modes')
             self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
             self.connect('towerse.tower_outer_diameter',    'aeroelastic.tower_outer_diameter')
+            self.connect('tower.cd',                        'aeroelastic.tower_cd')
 
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')

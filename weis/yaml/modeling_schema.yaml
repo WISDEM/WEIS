@@ -1386,6 +1386,10 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run InflowWind
+                    Echo:
+                        type: boolean
+                        default: False
+                        description: Echo input data to "<RootName>.ech" (flag)
                     Method:
                         type: string
                         default: '3'
@@ -1397,6 +1401,13 @@ properties:
                         maximum: 10.0
                         unit: s
                         description: Integration time step, 0.0 for default (s)
+                    Gravity:
+                        type: number
+                        default: 9.81
+                        minimum: 0.0
+                        maximum: 100.0
+                        unit: m / s**2
+                        description: Gravitational acceleration (m/s^2)
                     FlapDOF1:
                         type: boolean
                         default: True
@@ -1584,6 +1595,20 @@ properties:
                         default: 0.0
                         unit: rad
                         description: Initial or fixed yaw rotational displacement of platform (radians)
+                    UndSling:
+                        type: number
+                        minimum: -10.
+                        maximum: 10.
+                        default: 0.
+                        unit: m
+                        description: Undersling length [distance from teeter pin to the rotor apex] (meters) [unused for 3 blades]
+                    Delta3:
+                        type: number
+                        minimum: -30.
+                        maximum: 30.
+                        default: 0.
+                        unit: deg
+                        description: Delta-3 angle for teetering rotors (degrees) [unused for 3 blades]
                     AzimB1Up:
                         type: number
                         minimum: -6.283185307179586 # -360 deg
@@ -1591,6 +1616,41 @@ properties:
                         default: 0.0
                         unit: rad
                         description: Azimuth value to use for I/O when blade 1 points up (radians)
+                    ShftGagL:
+                        type: number
+                        minimum: -10.
+                        maximum: 10.
+                        default: 0.
+                        unit: m
+                        description: Distance from rotor apex [3 blades] or teeter pin [2 blades] to shaft strain gages [positive for upwind rotors] (meters)
+                    NcIMUxn:
+                        type: number
+                        minimum: -10.
+                        maximum: 10.
+                        default: 0.
+                        unit: m
+                        description: Downwind distance from the tower-top to the nacelle IMU (meters)
+                    NcIMUyn:
+                        type: number
+                        minimum: -10.
+                        maximum: 10.
+                        default: 0.
+                        unit: m
+                        description: Lateral distance from the tower-top to the nacelle IMU (meters)
+                    NcIMUzn:
+                        type: number
+                        minimum: -10.
+                        maximum: 10.
+                        default: 0.
+                        unit: m
+                        description: Vertical distance from the tower-top to the nacelle IMU (meters)
+                    BldNodes:
+                        type: integer
+                        minimum: 10
+                        maximum: 200
+                        default: 50
+                        unit: none
+                        description: Number of blade nodes (per blade) used for analysis (-)
                     TeetMod:
                         type: string
                         enum: ['0', '1', '2', none, None, NONE, standard, Standard, STANDARD]
@@ -1645,6 +1705,155 @@ properties:
                         default: 0.0
                         unit: kg*m^2/rad/s^2
                         description: Rotor-teeter hard-stop linear-spring constant (N-m/rad) [used only for 2 blades and when TeetMod=1]
+                    
+            ElastoDynBlade:
+                type: object
+                default: {}
+                properties:
+                    BldFlDmp1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Blade flap mode 1 structural damping in percent of critical (%)
+                    BldFlDmp2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Blade flap mode 2 structural damping in percent of critical (%)
+                    BldEdDmp1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Blade edge mode 1 structural damping in percent of critical (%)
+                    FlStTunr1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Blade flapwise modal stiffness tuner, 1st mode (-)
+                    FlStTunr2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Blade flapwise modal stiffness tuner, 2nd mode (-)
+                    AdjBlMs:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Factor to adjust blade mass density (-)
+                    AdjFlSt:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Factor to adjust blade flap stiffness (-)
+                    AdjEdSt:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Factor to adjust blade edge stiffness (-)
+            ElastoDynTower:
+                type: object
+                default: {}
+                properties:
+                    TwrFADmp1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower 1st fore-aft mode structural damping ratio (%)
+                    TwrFADmp2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower 2nd fore-aft mode structural damping ratio (%)
+                    TwrSSDmp1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower 1st side-to-side mode structural damping ratio (%)
+                    TwrSSDmp2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower 2nd side-to-side mode structural damping ratio (%)
+                    FlStTunr1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Blade flapwise modal stiffness tuner, 1st mode (-)
+                    FAStTunr1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower fore-aft modal stiffness tuner, 1st mode (-)
+                    FAStTunr2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower fore-aft modal stiffness tuner, 2nd mode (-)
+                    SSStTunr1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower side-to-side stiffness tuner, 1st mode (-)
+                    SSStTunr2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Tower side-to-side stiffness tuner, 2nd mode (-)
+                    AdjTwMa:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Factor to adjust tower mass density (-)
+                    AdjFASt:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Factor to adjust tower fore-aft stiffness (-)
+                    AdjSSSt:
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        unit: none
+                        description: Factor to adjust tower side-to-side stiffness (-)
             BeamDyn:
                 type: object
                 default: {}

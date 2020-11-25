@@ -195,7 +195,7 @@ class RunXFOIL(ExplicitComponent):
         self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.xfoil_path    = af_init_options['xfoil_path']
+        self.xfoil_path    = self.options['modeling_options']['xfoil']['path']
 
         # Use openfast cores for parallelization of xfoil 
         FASTpref = self.options['modeling_options']['openfast']

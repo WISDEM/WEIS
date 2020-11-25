@@ -29,14 +29,15 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     
     def set_openfast_data(self):
         # Openfast
-        if self.modeling_options['Level2']['flag'] == True or self.modeling_options['Level3']['flag'] == True:
-            # Load Input OpenFAST model variable values
-            fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
-            fast.FAST_InputFile = self.modeling_options['openfast']['file_management']['FAST_InputFile']
-            if os.path.isabs(self.modeling_options['openfast']['file_management']['FAST_directory']):
-                fast.FAST_directory = self.modeling_options['openfast']['file_management']['FAST_directory']
-            else:
-                fast.FAST_directory = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), self.modeling_options['openfast']['file_management']['FAST_directory'])
+        if self.modeling_options['Level3']['flag'] == True:
+            if self.modeling_options['openfast']['file_management']['FAST_directory'] != 'none':
+                # Load Input OpenFAST model variable values
+                fast.FAST_InputFile = self.modeling_options['openfast']['file_management']['FAST_InputFile']
+                fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
+                if os.path.isabs(self.modeling_options['openfast']['file_management']['FAST_directory']):
+                    fast.FAST_directory = self.modeling_options['openfast']['file_management']['FAST_directory']
+                else:
+                    fast.FAST_directory = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), self.modeling_options['openfast']['file_management']['FAST_directory'])
 
             # Find the controller
             run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
@@ -46,24 +47,18 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.dylib')
             else:
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.so')
-            if self.modeling_options['openfast']['file_management']['path2dll'] != 'none':
-                if os.path.isabs(self.modeling_options['openfast']['file_management']['path2dll']):
-                    fast.path2dll = self.modeling_options['openfast']['file_management']['path2dll']
-                else:
-                    fast.path2dll = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), self.modeling_options['openfast']['file_management']['path2dll'])
-            else:
-                fast.path2dll = path2dll
+            if self.modeling_options['openfast']['file_management']['path2dll'] == 'none':
+                self.modeling_options['openfast']['file_management']['path2dll'] = path2dll
+                
+            if os.path.isabs(self.modeling_options['openfast']['file_management']['path2dll']) == False:
+                self.modeling_options['openfast']['file_management']['path2dll'] = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), self.modeling_options['openfast']['file_management']['path2dll'])
 
-            fast.execute()
-
-            if os.path.isabs(self.modeling_options['xfoil']['path']):
-                self.modeling_options['airfoils']['xfoil_path']   = self.modeling_options['xfoil']['path']
-            else:
-                self.modeling_options['airfoils']['xfoil_path'] = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), self.modeling_options['xfoil']['path'])
+            if self.modeling_options['openfast']['file_management']['FAST_directory'] != 'none':
+                fast.path2dll = self.modeling_options['openfast']['file_management']['path2dll']
+                fast.execute()
+            
             if self.modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2 and self.modeling_options['openfast']['dlc_settings']['run_power_curve'] == False and self.modeling_options['openfast']['dlc_settings']['run_IEC'] == False:
-                raise ValueError('WEIS is set to run OpenFAST, but both flags for power curve and IEC cases are set to False among the modeling options. Set at least one of the two to True to proceed.')
-        else:
-            self.modeling_options['airfoils']['xfoil_path'] = ''
+                raise Exception('WEIS is set to run OpenFAST, but both flags for power curve and IEC cases are set to False among the modeling options. Set at least one of the two to True to proceed.')
 
             
     def set_openmdao_vectors_control(self):

@@ -102,6 +102,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('sideside_stff',    val=np.zeros(N_beam),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
+        self.add_input('tower_cd',         val=np.zeros(n_height),                       desc='drag coefficients along tower height at corresponding locations')
 
         # DriveSE quantities
         self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
@@ -277,7 +278,8 @@ class FASTLoadCases(ExplicitComponent):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
 
-        fst_vt = self.update_FAST_model(inputs, discrete_inputs)
+        fst_vt = self.init_FAST_model()
+        fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
@@ -301,14 +303,41 @@ class FASTLoadCases(ExplicitComponent):
             except:
                 print('Failed to delete directory: %s'%self.FAST_runDirectory)
 
-
-    def update_FAST_model(self, inputs, discrete_inputs):
-
-        # Create instance of FAST reference model 
+    def init_FAST_model(self):
 
         fst_vt = self.options['modeling_options']['openfast']['fst_vt']
-        fst_vt['Fst'] = {}
-        fst_vt['Fst']['OutFileFmt'] = 2
+        
+        # Main .fst file`
+        fst_vt['Fst']               = {}
+        fst_vt['ElastoDyn']         = {}
+        fst_vt['ElastoDynBlade']    = {}
+        fst_vt['ElastoDynTower']    = {}
+        fst_vt['AeroDyn15']         = {}
+        fst_vt['AeroDynBlade']      = {}
+        fst_vt['ServoDyn']          = {}
+        fst_vt['InflowWind']        = {}
+        fst_vt['outlist']           = {}
+
+        for key in enumerate(self.options['modeling_options']['Level3']['simulation']):
+            fst_vt['Fst'][key[1]] = self.options['modeling_options']['Level3']['simulation'][key[1]]
+        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDyn']):
+            fst_vt['ElastoDyn'][key[1]] = self.options['modeling_options']['Level3']['ElastoDyn'][key[1]]
+        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDynBlade']):
+            fst_vt['ElastoDynBlade'][key[1]] = self.options['modeling_options']['Level3']['ElastoDynBlade'][key[1]]
+        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDynTower']):
+            fst_vt['ElastoDynTower'][key[1]] = self.options['modeling_options']['Level3']['ElastoDynTower'][key[1]]
+        for key in enumerate(self.options['modeling_options']['Level3']['AeroDyn']):
+            fst_vt['AeroDyn15'][key[1]] = self.options['modeling_options']['Level3']['AeroDyn'][key[1]]
+        for key in enumerate(self.options['modeling_options']['Level3']['InflowWind']):
+            fst_vt['InflowWind'][key[1]] = self.options['modeling_options']['Level3']['InflowWind'][key[1]]
+
+        fst_vt['ServoDyn']['DLL_FileName'] = self.options['modeling_options']['openfast']['file_management']['path2dll']
+
+        return fst_vt
+
+    def update_FAST_model(self, fst_vt, inputs, discrete_inputs):
+
+        # Update fst_vt nested dictionary with data coming from WISDEM
 
         # Update ElastoDyn
         fst_vt['ElastoDyn']['NumBl']  = self.n_blades
@@ -331,54 +360,51 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
 
         # Masses from DriveSE
-        if self.options['modeling_options']['openfast']['analysis_settings']['update_hub_nacelle']:
-            fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
-            fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
-            fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
-            fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
-            fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
-            fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I'][2]
-            fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
-            fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
-            fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
+        fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
+        fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
+        fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
+        fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
+        fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
+        fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I'][2]
+        fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
+        fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
+        fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
 
         
 
-        if self.options['modeling_options']['openfast']['analysis_settings']['update_tower']:
-            # TODO: there are issues here
-            #   - running the 15MW caused 120 tower points, some where nonunique heights
-            #   - hub height is wrong, not adding the tower top to hub correctly
+        # TODO: there are issues here
+        #   - running the 15MW caused 120 tower points, some where nonunique heights
+        fst_vt['ElastoDyn']['PtfmCMzt']  = inputs['tower_base_height']
+        tower_base_height = max(inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmCMzt'])
+        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+        fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][-1] + tower_base_height # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
-            tower_base_height = max(inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmCMzt'])
-            fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
-            fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
-            fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][-1] + tower_base_height # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+        # Update Inflowwind
+        fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
+        fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
 
-            # Update Inflowwind
-            fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
-            fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
+        # Update ElastoDyn Tower Input File
+        fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
+        fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
+        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
+        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
+        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        
+        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
+        tip_height= twr_elev[-1]-inputs['Rtip']
+        twr_index = np.argmin(abs(twr_elev - tip_height))
+        if twr_elev[twr_index] > tip_height:
+            twr_index -= 1
 
-            # Update ElastoDyn Tower Input File
-            fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
-            fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
-            fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
-            fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
-            fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
-            fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
-            fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
-            fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-            fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
-            
-            twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
-            tip_height= twr_elev[-1]-inputs['Rtip']
-            twr_index = np.argmin(abs(twr_elev - tip_height))
-            if twr_elev[twr_index] > tip_height:
-                twr_index -= 1
-
-            fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
-            fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
-            fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
-            fst_vt['AeroDyn15']['TwrCd']     = np.ones_like(fst_vt['AeroDyn15']['TwrDiam']) * np.mean(fst_vt['AeroDyn15']['TwrCd'][twr_index:])
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+        fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
+        fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
+        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][twr_index:]
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -390,6 +416,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['BMassDen']   = inputs['beam:rhoA']
         fst_vt['ElastoDynBlade']['FlpStff']    = inputs['beam:EIyy']
         fst_vt['ElastoDynBlade']['EdgStff']    = inputs['beam:EIxx']
+        fst_vt['ElastoDynBlade']['BldFl1Sh']   = np.zeros(5)
+        fst_vt['ElastoDynBlade']['BldFl2Sh']   = np.zeros(5)
+        fst_vt['ElastoDynBlade']['BldEdgSh']   = np.zeros(5)
         for i in range(5):
             fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
             fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
@@ -673,23 +702,12 @@ class FASTLoadCases(ExplicitComponent):
 
         iec.transient_dir_change        = '-'
         iec.transient_shear_orientation = 'v'
-        if "TMax" in self.options['modeling_options']['Level3']['simulation'].keys():
-            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] = self.options['modeling_options']['Level3']['simulation']['TMax']
-        else:
-            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] = 720.
-        iec.TMax                    = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TMax")]
-
-        if "TStart" in self.options['modeling_options']['Level3']['simulation'].keys():
-            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] = self.options['modeling_options']['Level3']['simulation']['TStart']
-        else:
-            self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] = np.max([0. , iec.TMax - 600.])
-
-        T0                          = self.options['modeling_options']['openfast']['fst_settings'][("Fst", "TStart")]
-
-        iec.TStart                      = (iec.TMax-T0)/2. + T0
-        self.simtime                    = iec.TMax - T0
-        self.TMax                       = iec.TMax
-        self.T0                         = T0
+        iec.TMax      = fst_vt['Fst']['TMax']
+        T0            = np.max([0. , iec.TMax - 600.])
+        iec.TStart    = (iec.TMax-T0)/2. + T0
+        self.simtime  = iec.TMax - T0
+        self.TMax     = iec.TMax
+        self.T0       = T0
 
         # path management
         iec.wind_dir        = self.FAST_runDirectory
@@ -711,14 +729,8 @@ class FASTLoadCases(ExplicitComponent):
         else:
             iec.case_name_base  = self.FAST_namingOut + '_IEC'
 
-        # OpenFAST Settings
-        # load user overwrite settings
-        case_inputs = {}
-        for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
-            case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
-
         # Run case setup, generate wind inputs
-        case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
+        case_list, case_name_list, dlc_list = iec.execute()
 
 
         return case_list, case_name_list, dlc_list
@@ -752,8 +764,6 @@ class FASTLoadCases(ExplicitComponent):
                 if ("InflowWind","HWindSpeed") in case_inputs:
                     print('WARNING: You have defined ("InflowWind","HWindSpeed"} in the openfast settings.'
                             'This will overwrite the default powercurve settings')
-                for var in list(self.options['modeling_options']['openfast']['fst_settings'].keys()):
-                    case_inputs[var] = {'vals':[self.options['modeling_options']['openfast']['fst_settings'][var]], 'group':0}
 
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
 
@@ -771,7 +781,7 @@ class FASTLoadCases(ExplicitComponent):
         loads_analysis.verbose = self.options['modeling_options']['General']['verbosity']
 
         # Initial time
-        loads_analysis.t0 = self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')]
+        loads_analysis.t0 = np.max([0. , fst_vt['Fst']['TMax'] - 600.])
         
         # Calc summary stats on the magnitude of a vector
         loads_analysis.channels_magnitude = {'LSShftF':["RotThrust", "LSShftFys", "LSShftFzs"], 
@@ -796,7 +806,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # DEL info
         if self.FASTpref['dlc_settings']['run_IEC']:
-            if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+            if fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
                 if self.n_blades == 2:
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
                 else:
