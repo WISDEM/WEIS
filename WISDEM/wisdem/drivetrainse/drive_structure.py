@@ -5,7 +5,7 @@ import numpy as np
 import openmdao.api as om
 
 import wisdem.pyframe3dd.pyframe3dd as frame3dd
-import wisdem.commonse.UtilizationSupplement as Util
+from wisdem.commonse.utilization_constraints import vonMisesStressUtilization
 from wisdem.commonse.cross_sections import Tube, IBeam
 from wisdem.commonse.utilities import nodal2sectional
 from wisdem.commonse import gravity
@@ -49,9 +49,9 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         Bearing 2 s-coordinate along drivetrain, measured from bedplate (direct) or tower center (geared)
     s_rotor : float, [m]
         Generator rotor attachment to lss s-coordinate measured from bedplate (direct) or tower center (geared)
-    m_rotor : float, [kg]
+    generator_rotor_mass : float, [kg]
         Generator rotor mass
-    I_rotor : numpy array[3], [kg*m**2]
+    generator_rotor_I : numpy array[3], [kg*m**2]
         Generator rotor moment of inertia (measured about its cm)
     gearbox_mass : float, [kg]
         Gearbox rotor mass
@@ -116,10 +116,14 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         self.add_input('s_mb1', val=0.0, units='m')
         self.add_input('s_mb2', val=0.0, units='m')
         self.add_input('s_rotor', val=0.0, units='m')
-        self.add_input('m_rotor', val=0.0, units='kg')
-        self.add_input('I_rotor', val=np.zeros(3), units='kg*m**2')
+        self.add_input('generator_rotor_mass', val=0.0, units='kg')
+        self.add_input('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
         self.add_input('gearbox_mass', val=0.0, units='kg')
         self.add_input('gearbox_I', val=np.zeros(3), units='kg*m**2')
+        self.add_input('brake_mass', val=0.0, units='kg')
+        self.add_input('brake_I', val=np.zeros(3), units='kg*m**2')
+        self.add_input('carrier_mass', val=0.0, units='kg')
+        self.add_input('carrier_I', val=np.zeros(3), units='kg*m**2')
         self.add_input('lss_E', val=0.0, units='Pa')
         self.add_input('lss_G', val=0.0, units='Pa')
         self.add_input('lss_rho', val=0.0, units='kg/m**3')
@@ -153,11 +157,17 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
 
         if self.options['direct_drive']:
             s_rotor    = float(inputs['s_rotor'])
-            m_rotor    = float(inputs['m_rotor'])
-            I_rotor    = inputs['I_rotor']
+            m_rotor    = float(inputs['generator_rotor_mass'])
+            I_rotor    = inputs['generator_rotor_I']
+
+            m_brake    = float(inputs['brake_mass'])
+            I_brake    = inputs['brake_I']
         else:
             m_gearbox  = float(inputs['gearbox_mass'])
             I_gearbox  = inputs['gearbox_I']
+            
+            m_carrier  = float(inputs['carrier_mass'])
+            I_carrier  = inputs['carrier_I']
 
         rho        = float(inputs['lss_rho'])
         E          = float(inputs['lss_E'])
@@ -180,17 +190,24 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         xnode = Cup * s_lss.copy()
         nodes = frame3dd.NodeData(inode, xnode, ynode, znode, rnode)
         # Grab indices for later
-        i1 = inode[find_nearest(xnode, Cup * s_mb1)]
-        i2 = inode[find_nearest(xnode, Cup * s_mb2)]
+        i1   = inode[find_nearest(xnode, Cup * s_mb1)]
+        i2   = inode[find_nearest(xnode, Cup * s_mb2)]
+        iadd = inode[1]
         # Differences between direct annd geared
         if self.options['direct_drive']:
             itorq   = inode[find_nearest(xnode, Cup * s_rotor)]
             m_torq  = m_rotor
             I_torq  = I_rotor
+            
+            m_add  = m_brake
+            I_add  = I_brake
         else:
             itorq   = inode[0]
-            m_torq  = m_gearbox
-            I_torq  = I_gearbox
+            m_torq  = m_gearbox - m_carrier
+            I_torq  = I_gearbox - I_carrier
+            
+            m_add  = m_carrier
+            I_add  = I_carrier
         # ------------------------------------
 
         # ------ reaction data ------------
@@ -232,12 +249,12 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
         myframe = frame3dd.Frame(nodes, reactions, elements, options)
 
         # ------ add hub and generator rotor (direct) or gearbox (geared) extra mass ------------
-        myframe.changeExtraNodeMass(np.r_[inode[-1], itorq], [m_hub, m_torq],
-                                    [I_hub[0], I_torq[0]],
-                                    [I_hub[1], I_torq[1]],
-                                    [I_hub[2], I_torq[2]],
-                                    [0.0, 0.0], [0.0, 0.0], [0.0, 0.0],
-                                    [cm_hub, 0.0], [0.0, 0.0], [0.0, 0.0], True)
+        three0 = np.zeros(3).tolist()
+        myframe.changeExtraNodeMass(np.r_[inode[-1], itorq, iadd], [m_hub, m_torq, m_add],
+                                    [I_hub[0], I_torq[0], I_add[0]],
+                                    [I_hub[1], I_torq[1], I_add[1]],
+                                    [I_hub[2], I_torq[2], I_add[2]],
+                                    three0, three0, three0, [cm_hub, 0.0, 0.0], three0, three0, True)
         # ------------------------------------
 
         # ------- NO dynamic analysis ----------
@@ -303,10 +320,10 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             outputs['lss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
             hoop = np.zeros(F.shape)
 
-            outputs['constr_lss_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['lss_axial_stress'][:,k],
-                                                                                 hoop,
-                                                                                 outputs['lss_shear_stress'][:,k],
-                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_lss_vonmises'][:,k] = vonMisesStressUtilization(outputs['lss_axial_stress'][:,k],
+                                                                            hoop,
+                                                                            outputs['lss_shear_stress'][:,k],
+                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
         outputs['torq_deflection'] = rotor_gearbox_deflection.max()
         outputs['torq_rotation']   = rotor_gearbox_rotation.max()
 
@@ -513,10 +530,10 @@ class HSS_Frame(om.ExplicitComponent):
             outputs['hss_shear_stress'][:,k] = 2.0*F/As + np.abs(Mxx)/C
             hoop = np.zeros(F.shape)
 
-            outputs['constr_hss_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['hss_axial_stress'][:,k],
-                                                                                 hoop,
-                                                                                 outputs['hss_shear_stress'][:,k],
-                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_hss_vonmises'][:,k] = vonMisesStressUtilization(outputs['hss_axial_stress'][:,k],
+                                                                            hoop,
+                                                                            outputs['hss_shear_stress'][:,k],
+                                                                            gamma_f*gamma_m*gamma_n, sigma_y)
 
 
 
@@ -570,9 +587,9 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         Maximum allowable deflection angle
     s_stator : float, [m]
         Generator stator attachment to lss s-coordinate measured from bedplate
-    m_stator : float, [kg]
+    generator_stator_mass : float, [kg]
         Generator stator mass
-    I_stator : numpy array[3], [kg*m**2]
+    generator_stator_I : numpy array[3], [kg*m**2]
         Generator stator moment of inertia (measured about cm)
     F_mb1 : numpy array[3, n_dlcs], [N]
         Force vector applied to bearing 1 in hub c.s.
@@ -655,8 +672,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         self.add_input('mb2_I', np.zeros(3), units='kg*m**2')
         self.add_input('mb2_max_defl_ang', 0.0, units='rad')
         self.add_input('s_stator', val=0.0, units='m')
-        self.add_input('m_stator', val=0.0, units='kg')
-        self.add_input('I_stator', val=np.zeros(3), units='kg*m**2')
+        self.add_input('generator_stator_mass', val=0.0, units='kg')
+        self.add_input('generator_stator_I', val=np.zeros(3), units='kg*m**2')
         self.add_input('F_mb1', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('F_mb2', val=np.zeros((3, n_dlcs)), units='N')
         self.add_input('M_mb1', val=np.zeros((3, n_dlcs)), units='N*m')
@@ -714,8 +731,8 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
         I_mb2      = inputs['mb2_I']
 
         s_stator   = float(inputs['s_stator'])
-        m_stator   = float(inputs['m_stator'])
-        I_stator   = inputs['I_stator']
+        m_stator   = float(inputs['generator_stator_mass'])
+        I_stator   = inputs['generator_stator_I']
 
         rho        = float(inputs['bedplate_rho'])
         E          = float(inputs['bedplate_E'])
@@ -877,10 +894,10 @@ class Nose_Stator_Bedplate_Frame(om.ExplicitComponent):
             #Bending_stress_inner = M[:(inose-1)] * nodal2sectional( (R_n-Ri) / (A_bed*e_cn*Ri) )[0]
             outputs['bedplate_nose_bending_stress'][:(inose-1),k] = Bending_stress_outer
 
-            outputs['constr_bedplate_nose_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
-                                                                                  outputs['bedplate_nose_bending_stress'][:,k],
-                                                                                  outputs['bedplate_nose_shear_stress'][:,k],
-                                                                                  gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_bedplate_nose_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_nose_axial_stress'][:,k],
+                                                                                      outputs['bedplate_nose_bending_stress'][:,k],
+                                                                                      outputs['bedplate_nose_shear_stress'][:,k],
+                                                                                      gamma_f*gamma_m*gamma_n, sigma_y)
 
         # Evaluate bearing limits
         outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']
@@ -924,12 +941,6 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
         component I
     mb2_max_defl_ang : float, [rad]
         Maximum allowable deflection angle
-    s_stator : float, [m]
-        Generator stator attachment to lss s-coordinate measured from bedplate
-    m_stator : float, [kg]
-        Generator stator mass
-    I_stator : numpy array[3], [kg*m**2]
-        Generator stator moment of inertia (measured about cm)
     F_mb1 : numpy array[3, n_dlcs], [N]
         Force vector applied to bearing 1 in hub c.s.
     F_mb2 : numpy array[3, n_dlcs], [N]
@@ -1105,7 +1116,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
 
         # ------ frame element data ------------
         # 2 parallel I-beams, with inner line of points to receive loads & distribute
-        # inner one is infinitely rigid plate
+        # No connections on ghost nodes, just connections to I-beams at same xval
         # Elements connect the lines, then connect the I-beams to the center nodes
         myI = IBeam(bed_w_flange, bed_t_flange, bed_h_web, bed_t_web)
 
@@ -1226,10 +1237,10 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             outputs['bedplate_shear_stress'][:,k] = (2.0*(np.abs(Vy)/Asy+np.abs(Vz)/Asz) + np.abs(Mxx)/C)[:(2*n-2)]
             hoop = np.zeros(2*n-2)
 
-            outputs['constr_bedplate_vonmises'][:,k] = Util.vonMisesStressUtilization(outputs['bedplate_axial_stress'][:,k],
-                                                                                      hoop,
-                                                                                      outputs['bedplate_shear_stress'][:,k],
-                                                                                      gamma_f*gamma_m*gamma_n, sigma_y)
+            outputs['constr_bedplate_vonmises'][:,k] = vonMisesStressUtilization(outputs['bedplate_axial_stress'][:,k],
+                                                                                 hoop,
+                                                                                 outputs['bedplate_shear_stress'][:,k],
+                                                                                 gamma_f*gamma_m*gamma_n, sigma_y)
 
         # Evaluate bearing limits
         outputs['constr_mb1_defl'] = outputs['mb1_rotation'] / inputs['mb1_max_defl_ang']

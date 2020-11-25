@@ -80,20 +80,25 @@ jobs:
         run: |
           python setup.py develop
       
-      # Run scripts within aeroelasticse folder
-      - name: Run examples aeroelasticse
+      # Run example scripts
+      - name: Run examples
         run: |
-          cd examples/aeroelasticse
-          python run_DLC.py
-          python run_general.py
+          cd weis/test
+          python test_examples.py
       
-      # Run scripts within rotor_opt folder, with and without MPI
-      - name: Run examples rotor optimization
+      # Run scripts within rotor_opt folder with MPI
+      - name: Run parallel examples rotor optimization
         run: |
           cd examples/rotor_opt
-          python weis_driver.py
           mpirun -np 2 python weis_driver.py
       
+      # Run scripts within control_opt folder, with and without MPI
+      - name: Run examples control optimization
+        run: |
+          cd examples/control_opt
+          python runOptimization.py
+          mpirun -np 2 python runOptimization.py
+
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
       #  run: |

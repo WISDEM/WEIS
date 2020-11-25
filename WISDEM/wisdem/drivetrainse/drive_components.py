@@ -244,7 +244,9 @@ class GeneratorSimple(om.ExplicitComponent):
     generator_I : numpy array[3], [kg*m**2]
         moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass
     generator_efficiency : numpy array[n_pc]
-        Generator efficiency with rpm values in first column and efficiency values (<1) in second column
+        Generator efficiency at various rpm values
+    lss_rpm : numpy array[n_pc], [rpm]
+        Low speed shaft rpm values at which the generator efficiency is given
     """
         
     def initialize(self):
@@ -259,15 +261,18 @@ class GeneratorSimple(om.ExplicitComponent):
         self.add_input('machine_rating', val=0.0, units='kW')
         self.add_input('rated_torque', 0.0, units='N*m')
         self.add_input('lss_rpm', np.zeros(n_pc), units='rpm')
-        self.add_input('gearbox_efficiency', val=1.0)
         self.add_input('generator_mass_user', 0.0, units='kg')
         self.add_input('generator_efficiency_user', val=np.zeros((n_pc, 2)) )
 
         self.add_output('R_generator', val=0.0, units='m')
         self.add_output('generator_mass', val=0.0, units='kg')
+        self.add_output('stator_mass', val=0.0, units='kg')
+        self.add_output('generator_rotor_mass', val=0.0, units='kg')
+        self.add_output('generator_stator_mass', val=0.0, units='kg')
         self.add_output('generator_efficiency', val=np.zeros(n_pc) )
+        self.add_output('generator_rotor_I', val=np.zeros(3), units='kg*m**2')
+        self.add_output('generator_stator_I', val=np.zeros(3), units='kg*m**2')
         self.add_output('generator_I', val=np.zeros(3), units='kg*m**2')
-        self.add_output('drivetrain_efficiency', val=np.zeros((n_pc,2)))
 
     def compute(self, inputs, outputs):
 
@@ -287,6 +292,7 @@ class GeneratorSimple(om.ExplicitComponent):
                 massExp   = 0.9223
                 mass = (massCoeff * rating ** massExp)
         outputs['generator_mass'] = mass
+        outputs['generator_rotor_mass'] = outputs['generator_stator_mass'] = 0.5*mass
         
         # calculate mass properties
         length = 1.8 * 0.015 * D_rotor
@@ -297,14 +303,13 @@ class GeneratorSimple(om.ExplicitComponent):
         I[0] = 0.5*R_generator**2
         I[1:] = (1./12.)*(3*R_generator**2 + length**2)
         outputs['generator_I'] = mass*I
+        outputs['generator_rotor_I'] = outputs['generator_stator_I'] = 0.5*mass*I
 
         # Efficiency performance- borrowed and adapted from servose
         # Note: Have to use lss_rpm no matter what here because servose interpolation based on lss shaft rpm
-        # If there is a gearbox and hss, no difference in efficiency because everything is ratio-ed
         rpm_full = inputs['lss_rpm']
         if np.any(eff_user):
             eff = np.interp(rpm_full, eff_user[:,0], eff_user[:,1])
-            eff_gear = 1.0
             
         else:
             if self.options['direct_drive']:
@@ -319,11 +324,9 @@ class GeneratorSimple(om.ExplicitComponent):
             # Normalize by rated
             ratio  = rpm_full / rpm_full[-1]
             eff    = 1.0 - (constant/ratio + linear + quadratic*ratio)
-            eff_gear = float(inputs['gearbox_efficiency'])
 
         eff = np.maximum(1e-3, eff)
         outputs['generator_efficiency'] = eff
-        outputs['drivetrain_efficiency'] = np.c_[rpm_full, eff_gear*eff]
 
 
         
@@ -831,8 +834,8 @@ class NacelleSystemAdder(om.ExplicitComponent): #added to drive to include elect
         outputs['nacelle_mass'] = m_nac
         outputs['nacelle_cm']   = cm_nac
         outputs['nacelle_I']    = util.unassembleI(I_nac)
-        outputs['other_mass']   = (inputs['hss_mass'] + inputs['hvac_mass'] + inputs['platforms_mass'] +
-                                   inputs['yaw_mass'] + inputs['cover_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
+        outputs['other_mass']   = (inputs['hvac_mass'] + inputs['platforms_mass'] + inputs['cover_mass'] + 
+                                   inputs['yaw_mass'] + inputs['converter_mass'] + inputs['transformer_mass'])
         outputs['mean_bearing_mass'] = 0.5*(inputs['mb1_mass'] + inputs['mb2_mass'])
         outputs['total_bedplate_mass'] = inputs['nose_mass'] + inputs['bedplate_mass']
 

@@ -95,7 +95,7 @@ AxCoefID  AxCd     AxCa     AxCp
              2   NJoints        - Number of joints (-)   [must be exactly 0 or at least 2]
 JointID   Jointxi     Jointyi     Jointzi  JointAxID   JointOvrlp   [JointOvrlp= 0: do nothing at joint, 1: eliminate overlaps by calculating super member]
    (-)     (m)         (m)         (m)        (-)       (switch)
-    1     0.00000     0.00000   -30.00010      1            0
+    1     0.00000     0.00000   -30.00000      1            0
     2     0.00000     0.00000    20.00000      1            0
 ---------------------- MEMBER CROSS-SECTION PROPERTIES -------------------------
              1   NPropSets      - Number of member property sets (-)

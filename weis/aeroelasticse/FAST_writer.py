@@ -1290,6 +1290,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.pitch_op_pc          = self.fst_vt['DISCON_in']['PC_GS_angles']
         controller.pc_gain_schedule.Kp  = self.fst_vt['DISCON_in']['PC_GS_KP']
         controller.pc_gain_schedule.Ki  = self.fst_vt['DISCON_in']['PC_GS_KI']
+        controller.Ki_ipc1p             = self.fst_vt['DISCON_in']['IPC_KI']
         controller.max_pitch            = self.fst_vt['DISCON_in']['PC_MaxPit']
         controller.min_pitch            = self.fst_vt['DISCON_in']['PC_MinPit']
         controller.vs_minspd            = self.fst_vt['DISCON_in']['VS_MinOMSpd']
@@ -1311,6 +1312,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.Ki_flap              = self.fst_vt['DISCON_in']['Flp_Ki']
         controller.flp_angle            = self.fst_vt['DISCON_in']['Flp_Angle']
         controller.flp_maxpit           = self.fst_vt['DISCON_in']['Flp_MaxPit']
+        controller.Ki_ipc1p             = self.fst_vt['DISCON_in']['IPC_KI'][0]
 
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()

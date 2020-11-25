@@ -1,7 +1,5 @@
 import numpy as np
 from wisdem.rotorse.geometry_tools.geometry import AirfoilShape
-from wisdem.commonse.utilities import arc_length
-from wisdem.commonse.csystem import DirectionVector
 
 def yaml2openmdao(wt_opt, modeling_options, wt_init):
     # Function to assign values to the openmdao group Wind_Turbine and all its components
@@ -99,9 +97,6 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init):
     else:
         costs = {}
 
-    if 'elastic_properties_mb' in blade.keys() and modeling_options['Analysis_Flags']['DriveSE']:
-        wt_opt = assign_RNA_values(wt_opt, modeling_options, blade, RNA)
-
     return wt_opt
 
 def assign_blade_values(wt_opt, modeling_options, blade):
@@ -165,7 +160,6 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # axpl.legend()
     # plt.show()
     # # np.savetxt('temp.txt', le_int2/wt_opt['blade.outer_shape_bem.chord'])
-    # exit()
 
     # # # Twist
     # theta_init      = wt_opt['blade.outer_shape_bem.twist']
@@ -183,7 +177,6 @@ def assign_outer_shape_bem_values(wt_opt, modeling_options, outer_shape_bem):
     # axc.set(xlabel='r/R' , ylabel='Twist (deg)')
     # axc.legend()
     # plt.show()
-    # exit()
 
     return wt_opt
 
@@ -207,7 +200,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 if internal_structure_2d_fem['webs'][i]['rotation']['fixed'] == 'twist':
                     definition_web[i] = 1
                 else:
-                    exit('Invalid rotation reference for web ' + self.modeling_options['blade']['web_name'][i] + '. Please check the yaml input file')
+                    raise ValueError('Invalid rotation reference for web ' + self.modeling_options['blade']['web_name'][i] + '. Please check the yaml input file')
             else:
                 web_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['rotation']['grid'], internal_structure_2d_fem['webs'][i]['rotation']['values'], left=0., right=0.)
                 definition_web[i] = 2
@@ -217,7 +210,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             web_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['webs'][i]['start_nd_arc']['values'], left=0., right=0.)
             web_end_nd[i,:]   = np.interp(nd_span, internal_structure_2d_fem['webs'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['webs'][i]['end_nd_arc']['values'], left=0., right=0.)
         else:
-            exit('Webs definition not supported. Please check the yaml input.')
+            raise ValueError('Webs definition not supported. Please check the yaml input.')
 
     n_layers        = modeling_options['blade']['n_layers']
     layer_name      = n_layers * ['']
@@ -250,7 +243,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                 if internal_structure_2d_fem['layers'][i]['rotation']['fixed'] == 'twist':
                     definition_layer[i] = 2
                 else:
-                    exit('Invalid rotation reference for layer ' + layer_name[i] + '. Please check the yaml input file.')
+                    raise ValueError('Invalid rotation reference for layer ' + layer_name[i] + '. Please check the yaml input file.')
             else:
                 layer_rotation[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['rotation']['grid'], internal_structure_2d_fem['layers'][i]['rotation']['values'], left=0., right=0.)
                 definition_layer[i] = 3
@@ -272,7 +265,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             if 'fixed' in internal_structure_2d_fem['layers'][i]['start_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'TE':
                     layer_start_nd[i,:] = np.zeros(n_span)
-                    # exit('No need to fix element to TE, set it to 0.')
+                    # raise ValueError('No need to fix element to TE, set it to 0.')
                 elif internal_structure_2d_fem['layers'][i]['start_nd_arc']['fixed'] == 'LE':
                     definition_layer[i] = 11
                 else:
@@ -284,14 +277,14 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                             flag = True
                             break
                     if flag == False:
-                        exit('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
+                        raise ValueError('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
             else:
                 layer_start_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['start_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['start_nd_arc']['values'], left=0., right=0.)
             if 'end_nd_arc' in internal_structure_2d_fem['layers'][i]:
                 if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                     if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                         layer_end_nd[i,:] = np.ones(n_span)
-                        # exit('No need to fix element to TE, set it to 0.')
+                        # raise ValueError('No need to fix element to TE, set it to 0.')
                     elif internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'LE':
                         definition_layer[i] = 12
                     else:
@@ -302,7 +295,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                                 flag = True
                                 break
                         if flag == False:
-                            exit('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
+                            raise ValueError('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
             if 'width' in internal_structure_2d_fem['layers'][i]:
                 definition_layer[i] = 7
                 layer_width[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['width']['grid'], internal_structure_2d_fem['layers'][i]['width']['values'], left=0., right=0.)
@@ -311,7 +304,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
             if 'fixed' in internal_structure_2d_fem['layers'][i]['end_nd_arc'].keys():
                 if internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'TE':
                     layer_end_nd[i,:] = np.ones(n_span)
-                    # exit('No need to fix element to TE, set it to 0.')
+                    # raise ValueError('No need to fix element to TE, set it to 0.')
                 elif internal_structure_2d_fem['layers'][i]['end_nd_arc']['fixed'] == 'LE':
                     definition_layer[i] = 12
                 else:
@@ -322,7 +315,7 @@ def assign_internal_structure_2d_fem_values(wt_opt, modeling_options, internal_s
                         flag = True
                         break
                     if flag == False:
-                        exit('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
+                        raise ValueError('Error with layer ' + internal_structure_2d_fem['layers'][i]['name'])
             else:
                 layer_end_nd[i,:] = np.interp(nd_span, internal_structure_2d_fem['layers'][i]['end_nd_arc']['grid'], internal_structure_2d_fem['layers'][i]['end_nd_arc']['values'], left=0., right=0.)
             if 'width' in internal_structure_2d_fem['layers'][i]:
@@ -379,28 +372,28 @@ def assign_te_flaps_values(wt_opt, modeling_options, blade):
 
             # Checks for consistency
             if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < 0.:
-                exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is defined smaller than 0, which corresponds to blade root. Please check the yaml input.')
+                raise ValueError('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is defined smaller than 0, which corresponds to blade root. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['span_start'] > 1.:
-                exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is defined bigger than 1, which corresponds to blade tip. Please check the yaml input.')
+                raise ValueError('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is defined bigger than 1, which corresponds to blade tip. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['span_end'] < 0.:
-                exit('Error: the end along blade span of the trailing edge flap number ' + str(i) + ' is defined smaller than 0, which corresponds to blade root. Please check the yaml input.')
+                raise ValueError('Error: the end along blade span of the trailing edge flap number ' + str(i) + ' is defined smaller than 0, which corresponds to blade root. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['span_end'] > 1.:
-                exit('Error: the end along blade span of the trailing edge flap number ' + str(i) + ' is defined bigger than 1, which corresponds to blade tip. Please check the yaml input.')
+                raise ValueError('Error: the end along blade span of the trailing edge flap number ' + str(i) + ' is defined bigger than 1, which corresponds to blade tip. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['span_start'] == blade['aerodynamic_control']['te_flaps'][i]['span_end']:
-                exit('Error: the start and end along blade span of the trailing edge flap number ' + str(i) + ' are defined equal. Please check the yaml input.')
+                raise ValueError('Error: the start and end along blade span of the trailing edge flap number ' + str(i) + ' are defined equal. Please check the yaml input.')
             elif i > 0:
                  if blade['aerodynamic_control']['te_flaps'][i]['span_start'] < blade['aerodynamic_control']['te_flaps'][i-1]['span_end']:
-                     exit('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is smaller than the end of the trailing edge flap number ' + str(i-1) + '. Please check the yaml input.')
+                     raise ValueError('Error: the start along blade span of the trailing edge flap number ' + str(i) + ' is smaller than the end of the trailing edge flap number ' + str(i-1) + '. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['chord_start'] < 0.2:
-                exit('Error: the start along the chord of the trailing edge flap number ' + str(i) + ' is smaller than 0.2, which is too close to the leading edge. Please check the yaml input.')
+                raise ValueError('Error: the start along the chord of the trailing edge flap number ' + str(i) + ' is smaller than 0.2, which is too close to the leading edge. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['chord_start'] > 1.:
-                exit('Error: the end along the chord of the trailing edge flap number ' + str(i) + ' is larger than 1., which is beyond the trailing edge. Please check the yaml input.')
+                raise ValueError('Error: the end along the chord of the trailing edge flap number ' + str(i) + ' is larger than 1., which is beyond the trailing edge. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos'] > 30. / 180. * np.pi:
-                exit('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is larger than 30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
+                raise ValueError('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is larger than 30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg'] < -30. / 180. * np.pi:
-                exit('Error: the max negative deflection of the trailing edge flap number ' + str(i) + ' is smaller than -30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
+                raise ValueError('Error: the max negative deflection of the trailing edge flap number ' + str(i) + ' is smaller than -30 deg, which is beyond the limits of applicability of this tool. Please check the yaml input.')
             elif blade['aerodynamic_control']['te_flaps'][i]['delta_max_pos'] < blade['aerodynamic_control']['te_flaps'][i]['delta_max_neg']:
-                exit('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is smaller than the max negative deflection. Please check the yaml input.')
+                raise ValueError('Error: the max positive deflection of the trailing edge flap number ' + str(i) + ' is smaller than the max negative deflection. Please check the yaml input.')
             else:
                 pass
 
@@ -624,6 +617,16 @@ def assign_tower_values(wt_opt, modeling_options, tower):
     wt_opt['tower.layer_thickness']   = 0.5*(thickness[:,:-1]+thickness[:,1:])
 
     wt_opt['tower.outfitting_factor'] = tower['internal_structure_2d_fem']['outfitting_factor']
+
+    if 'loading' in modeling_options:
+        wt_opt['towerse.rna_mass'] = modeling_options['loading']['mass']
+        wt_opt['towerse.rna_cg']   = modeling_options['loading']['center_of_mass']
+        wt_opt['towerse.rna_I']    = modeling_options['loading']['moment_of_inertia']
+        for k in range(modeling_options['tower']['nLC']):
+            kstr = '' if modeling_options['tower']['nLC'] == 0 else str(k+1)
+            wt_opt['towerse.pre'+kstr+'.rna_F'] = modeling_options['loading']['loads'][k]['force']
+            wt_opt['towerse.pre'+kstr+'.rna_M'] = modeling_options['loading']['loads'][k]['moment']
+            wt_opt['towerse.wind'+kstr+'.Uref'] = modeling_options['loading']['loads'][k]['velocity']
 
     return wt_opt
 
@@ -1064,8 +1067,8 @@ def assign_material_values(wt_opt, modeling_options, materials):
                 G[i,:]  = np.ones(3) * materials[i]['G']
             elif 'nu' in materials[i]:
                 G[i,:]  = np.ones(3) * materials[i]['E']/(2*(1+materials[i]['nu'])) # If G is not provided but the material is isotropic and we have E and nu we can just estimate it
-                warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
-                print(warning_shear_modulus_isotropic)
+                # warning_shear_modulus_isotropic = 'WARNING: NO shear modulus, G, was provided for material "%s". The code assumes 2G*(1 + nu) = E, which is only valid for isotropic materials.'%name[i]
+                # print(warning_shear_modulus_isotropic)
             if 'Xt' in materials[i]:
                 Xt[i,:] = np.ones(3) * materials[i]['Xt']
             if 'Xc' in materials[i]:
@@ -1078,7 +1081,7 @@ def assign_material_values(wt_opt, modeling_options, materials):
             Xc[i,:] = materials[i]['Xc']
 
         else:
-            exit('The flag orth must be set to either 0 or 1. Error in material ' + name[i])
+            raise ValueError('The flag orth must be set to either 0 or 1. Error in material ' + name[i])
         if 'fiber_density' in materials[i]:
             rho_fiber[i]    = materials[i]['fiber_density']
         if 'area_density_dry' in materials[i]:
@@ -1119,82 +1122,6 @@ def assign_material_values(wt_opt, modeling_options, materials):
     wt_opt['materials.waste']    = waste
 
     return wt_opt
-
-def assign_RNA_values(wt_opt, modeling_options, blade, RNA):
-
-    def _assembleI(I):
-        Ixx, Iyy, Izz, Ixy, Ixz, Iyz = I[0], I[1], I[2], I[3], I[4], I[5]
-        return np.array([[Ixx, Ixy, Ixz], [Ixy, Iyy, Iyz], [Ixz, Iyz, Izz]])
-
-    def _unassembleI(I):
-        return np.array([I[0, 0], I[1, 1], I[2, 2], I[0, 1], I[0, 2], I[1, 2]])
-
-    nd_span     = modeling_options['blade']['nd_span']
-    n_span      = len(nd_span)
-    ref_axis    = np.zeros((n_span,3))
-    ref_axis[:,0]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['x']['grid'], blade['outer_shape_bem']['reference_axis']['x']['values'])
-    ref_axis[:,1]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['y']['grid'], blade['outer_shape_bem']['reference_axis']['y']['values'])
-    ref_axis[:,2]  = np.interp(nd_span, blade['outer_shape_bem']['reference_axis']['z']['grid'], blade['outer_shape_bem']['reference_axis']['z']['values'])
-
-    blade_length = arc_length(ref_axis)[-1]
-
-    rhoA = np.zeros(n_span)
-    rhoA2interp = np.zeros(len(blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid']))
-    for i in range(len(rhoA2interp)):
-        rhoA2interp[i] = blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['values'][i][0]
-    rhoA = np.interp(nd_span, blade['elastic_properties_mb']['six_x_six']['inertia_matrix']['grid'], rhoA2interp)
-
-    rb   = nd_span * blade_length
-    blade_mass = np.trapz(rhoA, rb)
-    rR   = rb + wt_opt['hub.diameter'] * 0.5
-    blade_moment_of_inertia = np.trapz(rhoA * rR**2., rR)
-    tilt = wt_opt['nacelle.uptilt'] * 180. / np.pi
-    n_blades = wt_opt['configuration.n_blades']
-    mass_all_blades = n_blades * blade_mass
-    Ibeam = n_blades * blade_moment_of_inertia
-    Ixx = Ibeam
-    Iyy = Ibeam/2.0  # azimuthal average for 2 blades, exact for 3+
-    Izz = Ibeam/2.0
-    Ixy = 0.0
-    Ixz = 0.0
-    Iyz = 0.0  # azimuthal average for 2 blades, exact for 3+
-    # rotate to yaw c.s.
-    I = DirectionVector(Ixx, Iyy, Izz).hubToYaw(tilt)  # because off-diagonal components are all zero
-    I_all_blades = np.array([I.x, I.y, I.z, Ixy, Ixz, Iyz])
-
-    nac_mass = wt_opt['nacelle.above_yaw_mass'] + wt_opt['nacelle.yaw_mass']
-    rotor_mass = mass_all_blades + wt_opt['hub.system_mass']
-
-
-    # rna I
-    blades_I = _assembleI(I_all_blades)
-    hub_I = _assembleI(wt_opt['hub.system_I'])
-    nac_I = _assembleI(wt_opt['nacelle.nacelle_I'])
-    rotor_I = blades_I + hub_I
-
-    R_hub = wt_opt['hub.system_cm']
-    rotor_I_TT = rotor_I + rotor_mass*(np.dot(R_hub, R_hub)*np.eye(3) - np.outer(R_hub, R_hub))
-
-    R_nac = wt_opt['nacelle.nacelle_cm']
-    nac_I_TT = nac_I + nac_mass*(np.dot(R_nac, R_nac)*np.eye(3) - np.outer(R_nac, R_nac))
-
-
-    wt_opt['drivese.rna_mass'] = rotor_mass + nac_mass
-    wt_opt['drivese.rna_I_TT'] = _unassembleI(rotor_I_TT + nac_I_TT)
-    wt_opt['drivese.rna_cm']   = (rotor_mass*np.array(R_hub) + nac_mass*np.array(R_nac))/(rotor_mass + nac_mass)
-
-    if not RNA == {}:
-        if abs(wt_opt['drivese.rna_mass'] - RNA['elastic_properties_mb']['mass']) > 1.e3:
-            print('The mass of the RNA system does not match the quantities specified in blade, hub, and nacelle. Please check the input yaml.')
-        if abs(sum(wt_opt['drivese.rna_I_TT']) - sum(RNA['elastic_properties_mb']['inertia'])) > 1.e5:
-            print('The inertia of the RNA system does not match the quantities specified in blade, hub, and nacelle. Please check the input yaml.')
-        if abs(sum(wt_opt['drivese.rna_cm']) - sum(RNA['elastic_properties_mb']['center_mass'])) > 1.e-1:
-            print('The center of mass of the RNA system does not match the quantities specified in blade, hub, and nacelle. Please check the input yaml.')
-
-
-    return wt_opt
-
-
 
 if __name__ == "__main__":
     pass

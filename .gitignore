@@ -101,3 +101,14 @@ Thumbs.db
 # IntelliJ Things #
 ####################
 .idea/
+
+# Openfast
+*.outb
+*.out
+*.sum
+*.ech
+*.dbg
+
+# Temp
+*Temp*
+*temp*

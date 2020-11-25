@@ -128,8 +128,6 @@ class TestOC3Mass(unittest.TestCase):
 
         # Design constraints
         prob['max_draft'] = 200.0                # For manufacturability of rolling steel
-        prob['max_taper'] = 0.4                # For manufacturability of rolling steel
-        prob['min_d_to_t'] = 120.0 # For weld-ability
 
         # API 2U flag
         prob['loading'] = 'axial' #'hydrostatic'

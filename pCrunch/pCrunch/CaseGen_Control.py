@@ -2,10 +2,10 @@ import numpy as np
 import os, sys, copy, itertools
 import yaml
 import itertools
-# WISDEM 
-from wisdem.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
-from wisdem.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
-from wisdem.aeroelasticse.Util import FileTools
+# WEIS 
+from weis.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
+from weis.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
+from weis.aeroelasticse.Util import FileTools
 
 # ROSCO 
 from ROSCO_toolbox import controller as ROSCO_controller
@@ -95,7 +95,7 @@ class CaseGen_Control():
         Returns
         -------
         case_inputs: dict
-            Dictionary of case inputs for WISDEM's CaseGen_General
+            Dictionary of case inputs for AeroelasticSE's CaseGen_General
         tuning_inputs: dict
             Dictionary containing yaml input tuning parameters
         '''

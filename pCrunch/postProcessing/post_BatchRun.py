@@ -13,15 +13,16 @@ import pathlib
 from ROSCO_toolbox import utilities as ROSCO_utilites
 fast_io = ROSCO_utilites.FAST_IO()
 fast_pl = ROSCO_utilites.FAST_Plots()
-# WISDEM modules
-from wisdem.aeroelasticse.Util import FileTools
+
+from weis.aeroelasticse.Util import FileTools
 # Batch Analysis
 from pCrunch import pdTools
 from pCrunch import Processing, Analysis
 
 
 # Define input files paths
-output_dir      = '/projects/ssc/nabbas/DLC_Analysis/5MW_OC3Spar/5MW_OC3Spar_rosco/'
+weis_dir        = os.path.dirname ( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+output_dir      = os.path.join(weis_dir,'outputs','iea15mw','mass_play')
 results_dir     = 'results'
 save_results    = True
 
@@ -35,9 +36,9 @@ cm = pd.DataFrame(case_matrix)
 outfiles = []
 for file in os.listdir(output_dir):
     if file.endswith('.outb'):
-        outfiles.append(output_dir + file)
-    elif file.endswith('.out'):
-        outfiles.append(output_dir + file)
+        outfiles.append(os.path.join(output_dir,file))
+    elif file.endswith('.out') and not file.endswith('.MD.out'):
+        outfiles.append(os.path.join(output_dir,file))
 
 
 # Initialize processing classes
@@ -48,7 +49,7 @@ fa = Analysis.Loads_Analysis()
 # Set some processing parameters
 fp.OpenFAST_outfile_list = outfiles
 fp.t0 = 30
-fp.parallel_analysis = True
+fp.parallel_analysis = False
 fp.results_dir = os.path.join(output_dir, 'stats')
 fp.verbose=True
 
@@ -80,7 +81,7 @@ stats, load_rankings = fp.batch_processing()
 # #  --- Time domain analysis --- 
 # filenames = [outfiles[0][2], outfiles[1][2]] # select the 2nd run from each dataset
 # cases = {'Baseline': ['Wind1VelX', 'GenPwr', 'BldPitch1', 'GenTq', 'RotSpeed']}
-# fast_dict = fast_io.load_FAST_out(filenames, tmin=30)
+# fast_dict = fast_io.load_fast_out(filenames, tmin=30)
 # fast_pl.plot_fast_out(cases, fast_dict)
 
 # # Plot some spectral cases

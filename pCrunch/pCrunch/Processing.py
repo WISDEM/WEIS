@@ -323,7 +323,7 @@ def get_windspeeds(case_matrix, return_df=False):
     Parameters:
     ----------
     case_matrix: dict
-        case matrix data loaded from wisdem.aeroelasticse.Util.FileTools.load_yaml
+        case matrix data loaded from weis.aeroelasticse.Util.FileTools.load_yaml
     
     Returns:
     --------
@@ -382,7 +382,7 @@ def get_windspeeds(case_matrix, return_df=False):
 
 
 def save_yaml(outdir, fname, data_out):
-    ''' Save yaml file - ripped from WISDEM 
+    ''' Save yaml file - ripped from WEIS 
     
     Parameters:
     -----------
@@ -407,7 +407,7 @@ def save_yaml(outdir, fname, data_out):
 
 
 def load_yaml(fname_input, package=0):
-    ''' Import a .yaml file - ripped from WISDEM
+    ''' Import a .yaml file - ripped from WEIS
 
     Parameters:
     -----------
