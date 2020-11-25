@@ -581,6 +581,7 @@ def assign_tower_values(wt_opt, modeling_options, tower):
 
     # wt_opt['tower.s'] = svec
     wt_opt['tower.diameter']   = np.interp(svec, tower['outer_shape_bem']['outer_diameter']['grid'], tower['outer_shape_bem']['outer_diameter']['values'])
+    wt_opt['tower.cd']         = np.interp(svec, tower['outer_shape_bem']['drag_coefficient']['grid'], tower['outer_shape_bem']['drag_coefficient']['values'])
 
     wt_opt['tower.ref_axis'][:,0]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['x']['grid'], tower['outer_shape_bem']['reference_axis']['x']['values'])
     wt_opt['tower.ref_axis'][:,1]  = np.interp(svec, tower['outer_shape_bem']['reference_axis']['y']['grid'], tower['outer_shape_bem']['reference_axis']['y']['values'])
