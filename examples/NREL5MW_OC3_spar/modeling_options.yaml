@@ -23,6 +23,7 @@ Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize 
     simulation:
         TMax: 5.
         DT: 0.01
+        
     linearization:
         Linearize: False
     InflowWind:

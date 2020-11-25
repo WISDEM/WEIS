@@ -102,7 +102,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('sideside_stff',    val=np.zeros(N_beam),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
-        self.add_input('tower_cd',         val=np.zeros(n_height),                       desc='drag coefficients along tower height at corresponding locations')
+        self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
 
         # DriveSE quantities
         self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
