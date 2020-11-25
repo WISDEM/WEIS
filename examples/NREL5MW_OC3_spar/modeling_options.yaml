@@ -101,20 +101,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         flag: False
     ROSCO:
         flag: False
-        Flp_Mode: 0
-        LoggingLevel: 1
-        F_LPFType: 1
-        F_NotchType: 0
-        IPC_ControlMode: 0
-        VS_ControlMode: 2
-        PC_ControlMode: 1
-        Y_ControlMode: 0
-        SS_Mode: 1
-        WE_Mode: 2
-        PS_Mode: 1
-        SD_Mode: 1
-        Fl_Mode: 0
-        Flp_Mode: 0
     
 openfast:
     analysis_settings:
