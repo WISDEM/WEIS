@@ -1,6 +1,6 @@
 from openmdao.api import Group
 from wisdem.ccblade.ccblade_component import CCBladeLoads, AeroHubLoads
-from wisdem.rotorse.rotor_loads_defl_strains import BladeCurvature, TotalLoads, RunFrame3DD, TipDeflection, DesignConstraints
+from wisdem.rotorse.rotor_structure import BladeCurvature, TotalLoads, RunFrame3DD, TipDeflection, DesignConstraints
 
 
 class RotorLoadsDeflStrainsWEIS(Group):

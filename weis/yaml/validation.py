@@ -14,7 +14,7 @@ fdefaults_geom  = os.path.join(froot, 'geometry_defaults.yaml')
 fschema_geom    = os.path.join(froot, 'geometry_schema.yaml')
 fschema_model   = os.path.join(froot, 'modeling_schema.yaml')
 fschema_opt     = os.path.join(froot, 'analysis_schema.yaml')
-fschema_model_wisdem = os.path.join(froot, '..','..','WISDEM','wisdem','yaml', 'modeling_schema.yaml')
+fschema_model_wisdem = os.path.join(froot, '..','..','WISDEM','wisdem','inputs', 'modeling_schema.yaml')
 
 
 #---------------------
