@@ -35,7 +35,7 @@ class LinearTurbineModel(object):
 
             if not n_lin_cases:
                 print('No linear outputs found in '+ lin_file)
-                quit()
+                raise(NameError,'No linear outputs found in '+ lin_file)
 
             if n_lin_cases <= 10:
                 num_string = '%01d'
