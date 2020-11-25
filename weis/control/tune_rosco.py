@@ -38,8 +38,8 @@ class TuneROSCO(ExplicitComponent):
     def setup(self):
         self.modeling_options = self.options['modeling_options']
         rosco_init_options = self.modeling_options['Level3']['ROSCO']
-        servose_init_options = self.modeling_options['Level1']['ServoSE']
-        n_pc     = servose_init_options['n_pc']
+        rotorse_init_options = self.modeling_options['WISDEM']['RotorSE']
+        n_pc     = rotorse_init_options['n_pc']
 
         # Input parameters
         self.controller_params = {}
@@ -86,9 +86,9 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('ss_pcgain',         val=0.0,                                desc='')
         self.add_input('ps_percent',        val=0.0,                                desc='')
         # Rotor Power
-        self.n_pitch    = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
-        self.n_tsr      = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
-        self.n_U        = n_U       = servose_init_options['n_U_perf_surfaces']
+        self.n_pitch    = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
+        self.n_tsr      = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
+        self.n_U        = n_U       = rotorse_init_options['n_U_perf_surfaces']
         self.add_input('Cp_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero power coefficient')
         self.add_input('Ct_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero thrust coefficient')
         self.add_input('Cq_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero torque coefficient')
@@ -97,12 +97,12 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
 
         # For cc-blade & flaps tuning
-        self.n_span     = n_span       = self.modeling_options['blade']['n_span']
+        self.n_span     = n_span       = self.modeling_options['WISDEM']['RotorSE']['n_span']
         # self.n_af       = n_af         = af_init_options['n_af'] # Number of airfoils
         self.n_aoa      = n_aoa        = self.modeling_options['airfoils']['n_aoa']# Number of angle of attacks
         self.n_Re       = n_Re         = self.modeling_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab      = n_tab        = self.modeling_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_te_flaps = n_te_flaps   = self.modeling_options['blade']['n_te_flaps']
+        self.n_te_flaps = n_te_flaps   = self.modeling_options['WISDEM']['RotorSE']['n_te_flaps']
         self.add_input('r',             val=np.zeros(n_span),               units='m',          desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',         val=np.zeros(n_span),               units='m',          desc='chord length at each section')
         self.add_input('theta',         val=np.zeros(n_span),               units='deg',        desc='twist angle at each section (positive decreases angle of attack)')
@@ -361,20 +361,19 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        blade_init_options = modeling_options['blade']
-        servose_init_options = modeling_options['servose']
+        rotorse_init_options = modeling_options['RotorSE']
         airfoils = modeling_options['airfoils']
-        self.n_span        = n_span    = blade_init_options['n_span']
+        self.n_span        = n_span    = rotorse_init_options['n_span']
         self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = airfoils['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
-        self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
-        self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
-        self.min_TSR       = servose_init_options['min_tsr_perf_surfaces']
-        self.max_TSR       = servose_init_options['max_tsr_perf_surfaces']
-        self.min_pitch     = servose_init_options['min_pitch_perf_surfaces']
-        self.max_pitch     = servose_init_options['max_pitch_perf_surfaces']
+        self.n_pitch       = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = rotorse_init_options['n_U_perf_surfaces']
+        self.min_TSR       = rotorse_init_options['min_tsr_perf_surfaces']
+        self.max_TSR       = rotorse_init_options['max_tsr_perf_surfaces']
+        self.min_pitch     = rotorse_init_options['min_pitch_perf_surfaces']
+        self.max_pitch     = rotorse_init_options['max_pitch_perf_surfaces']
         
         # parameters        
         self.add_input('v_min',   val=0.0,             units='m/s',       desc='cut-in wind speed')

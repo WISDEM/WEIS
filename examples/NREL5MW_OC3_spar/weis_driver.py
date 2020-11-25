@@ -5,7 +5,7 @@ import os, time, sys
 
 ## File management
 run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input          = os.path.dirname( run_dir ) + os.sep + 'geometry' + os.sep + 'nrel5mw-spar_oc3.yaml'
+fname_wt_input          = run_dir + os.sep + 'nrel5mw-spar_oc3.yaml'
 fname_modeling_options  = run_dir + os.sep + 'modeling_options.yaml'
 fname_analysis_options  = run_dir + os.sep + 'analysis_options.yaml'
 

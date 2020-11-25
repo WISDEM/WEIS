@@ -12,7 +12,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        n_te_flaps = modeling_options['blade']['n_te_flaps']
+        n_te_flaps = modeling_options['WISDEM']['RotorSE']['n_te_flaps']
 
         self.add_input('aep',           val=0.0, units = 'GW * h')
         self.add_input('blade_mass',    val=0.0, units = 'kg')

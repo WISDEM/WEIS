@@ -1172,7 +1172,7 @@ class Floating(om.Group):
             ivc.add_output('ballast_volume',     val = np.zeros(n_ballasts),        units='m**3')
             ivc.add_output('grid_axial_joints',  val = np.zeros(n_axial_joints))
 
-        self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
+        # self.add_subsystem('alljoints', CombineJoints(floating_init_options=floating_init_options), promotes=['*'])
 
 class CombineJoints(om.ExplicitComponent):
     def initialize(self):

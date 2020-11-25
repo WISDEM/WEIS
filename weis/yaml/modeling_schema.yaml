@@ -1201,7 +1201,7 @@ properties:
         properties:
             flag:
                 type: boolean
-                default: False
+                default: True
                 description: Whether or not to run WEIS fidelity level 3 = nonlinear time domain (Linearize OpenFAST)
             simulation: # TODO: Should this also move to analysis settings?
                 type: object
@@ -2218,6 +2218,10 @@ properties:
                 default: {}
                 description: Options for WEIS fidelity level 3 = nonlinear time domain
                 properties:
+                    flag:
+                        type: boolean
+                        default: True
+                        description: Whether or not to tune and run ROSCO
                     LoggingLevel:
                         type: integer
                         enum: [0, 1, 2]

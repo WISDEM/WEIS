@@ -186,7 +186,7 @@ class RunXFOIL(ExplicitComponent):
         self.options.declare('opt_options')
         
     def setup(self):
-        blade_init_options = self.options['modeling_options']['blade']
+        blade_init_options = self.options['modeling_options']['RotorSE']
         self.n_span        = n_span     = blade_init_options['n_span']
         self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
         af_init_options    = self.options['modeling_options']['airfoils']

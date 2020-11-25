@@ -28,14 +28,13 @@ class FASTLoadCases(ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
-        blade_init_options   = self.options['modeling_options']['blade']
-        servose_init_options = self.options['modeling_options']['servose']
+        rotorse_init_options   = self.options['modeling_options']['WISDEM']['RotorSE']
         openfast_init_options = self.options['modeling_options']['openfast']
         mat_init_options     = self.options['modeling_options']['materials']
 
         self.n_blades      = self.options['modeling_options']['assembly']['number_of_blades']
-        self.n_span        = n_span    = blade_init_options['n_span']
-        self.n_pc          = n_pc      = servose_init_options['n_pc']
+        self.n_span        = n_span    = rotorse_init_options['n_span']
+        self.n_pc          = n_pc      = rotorse_init_options['n_pc']
         n_OF     = len(openfast_init_options['dlc_settings']['Power_Curve']['U'])
         if n_OF == 0 and openfast_init_options['dlc_settings']['run_power_curve']:
             for i in range(len(openfast_init_options['dlc_settings']['IEC'])):
@@ -44,11 +43,11 @@ class FASTLoadCases(ExplicitComponent):
             if n_OF == 0:
                 raise ValueError('There is a problem with the initialization of the DLCs to compute the powercurve. Please check modeling_options.yaml')
 
-        self.n_pitch       = n_pitch   = servose_init_options['n_pitch_perf_surfaces']
-        self.n_tsr         = n_tsr     = servose_init_options['n_tsr_perf_surfaces']
-        self.n_U           = n_U       = servose_init_options['n_U_perf_surfaces']
+        self.n_pitch       = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = rotorse_init_options['n_U_perf_surfaces']
         self.n_mat         = n_mat    = mat_init_options['n_mat']
-        self.n_layers      = n_layers = blade_init_options['n_layers']
+        self.n_layers      = n_layers = rotorse_init_options['n_layers']
 
         af_init_options    = self.options['modeling_options']['airfoils']
         self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
@@ -62,14 +61,14 @@ class FASTLoadCases(ExplicitComponent):
         self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
 
         monopile     = self.options['modeling_options']['flags']['monopile']
-        n_height_tow = self.options['modeling_options']['towerse']['n_height']
+        n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height']
         n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)
         N_beam       = (nFull-1)*2
         n_freq_tower = int(NFREQ/2)
-        n_freq_blade = int(self.options['modeling_options']['blade']['n_freq']/2)
-        n_pc         = int(self.options['modeling_options']['servose']['n_pc'])
+        n_freq_blade = int(self.options['modeling_options']['WISDEM']['RotorSE']['n_freq']/2)
+        n_pc         = int(self.options['modeling_options']['WISDEM']['RotorSE']['n_pc'])
 
         FASTpref = self.options['modeling_options']['openfast']
         # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
@@ -190,7 +189,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_discrete_input('layer_name',       val=n_layers * [''],     desc='1D array of the names of the layers modeled in the blade structure.')
         # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
         # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
-        self.layer_name = blade_init_options['layer_name']
+        self.layer_name = rotorse_init_options['layer_name']
 
         # FAST run preferences
         self.FASTpref            = FASTpref 
@@ -328,6 +327,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
+        fst_vt['ServoDyn'] = {}
         fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
 
         # Masses from DriveSE
@@ -1421,7 +1421,7 @@ class ModesElastoDyn(ExplicitComponent):
         self.options.declare('modeling_options')
 
     def setup(self):
-        n_span          = self.options['modeling_options']['blade']['n_span']
+        n_span          = self.options['modeling_options']['WISDEM']['RotorSE']['n_span']
         n_mat           = self.options['modeling_options']['materials']['n_mat']
 
         self.add_input('EA',    val=np.zeros(n_span), units='N',        desc='axial stiffness')

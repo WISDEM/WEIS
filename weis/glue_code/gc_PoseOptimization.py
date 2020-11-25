@@ -112,9 +112,9 @@ class PoseOptimization(object):
 
         # Set merit figure. Each objective has its own scaling.
         if self.opt['merit_figure'] == 'AEP':
-            wt_opt.model.add_objective('sse.AEP', ref = -1.e6)
+            wt_opt.model.add_objective('rp.AEP', ref = -1.e6)
         elif self.opt['merit_figure'] == 'blade_mass':
-            wt_opt.model.add_objective('elastic.precomp.blade_mass', ref = 1.e4)
+            wt_opt.model.add_objective('re.precomp.blade_mass', ref = 1.e4)
         elif self.opt['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
         elif self.opt['merit_figure'] == 'blade_tip_deflection':
@@ -124,8 +124,8 @@ class PoseOptimization(object):
         elif self.opt['merit_figure'] == 'tower_cost':
             wt_opt.model.add_objective('tcc.tower_cost')
         elif self.opt['merit_figure'] == 'Cp':
-            if self.modeling['Analysis_Flags']['ServoSE']:
-                wt_opt.model.add_objective('sse.powercurve.Cp_regII', ref = -1.)
+            if self.modeling['WISDEM']['RotorSE']:
+                wt_opt.model.add_objective('rp.powercurve.Cp_regII', ref = -1.)
             else:
                 wt_opt.model.add_objective('ccblade.CP', ref = -1.)
         elif self.opt['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
@@ -238,13 +238,13 @@ class PoseOptimization(object):
         blade_constraints = self.opt['constraints']['blade']
         if blade_constraints['strains_spar_cap_ss']['flag']:
             if self.blade_opt['structure']['spar_cap_ss']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainU_spar', upper= 1.0)
+                wt_opt.model.add_constraint('rs.constr.constr_max_strainU_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['strains_spar_cap_ps']['flag']:
             if self.blade_opt['structure']['spar_cap_ps']['flag'] or self.blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
-                wt_opt.model.add_constraint('rlds.constr.constr_max_strainL_spar', upper= 1.0)
+                wt_opt.model.add_constraint('rs.constr.constr_max_strainL_spar', upper= 1.0)
             else:
                 print('WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced.')
 
@@ -268,18 +268,18 @@ class PoseOptimization(object):
 
         if blade_constraints['frequency']['flap_above_3P']:
             if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('rlds.constr.constr_flap_f_margin', upper= 0.0)
+                wt_opt.model.add_constraint('rs.constr.constr_flap_f_margin', upper= 0.0)
             else:
                 print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
         if blade_constraints['frequency']['edge_above_3P']:
-            wt_opt.model.add_constraint('rlds.constr.constr_edge_f_margin', upper= 0.0)
+            wt_opt.model.add_constraint('rs.constr.constr_edge_f_margin', upper= 0.0)
 
         # if blade_constraints['frequency']['flap_below_3P']:
-        #     wt_opt.model.add_constraint('rlds.constr.constr_flap_f_below_3P', upper= 1.0)
+        #     wt_opt.model.add_constraint('rs.constr.constr_flap_f_below_3P', upper= 1.0)
 
         # if blade_constraints['frequency']['edge_below_3P']:
-        #     wt_opt.model.add_constraint('rlds.constr.constr_edge_f_below_3P', upper= 1.0)
+        #     wt_opt.model.add_constraint('rs.constr.constr_edge_f_below_3P', upper= 1.0)
 
         # if blade_constraints['frequency']['flap_above_3P'] and blade_constraints['frequency']['flap_below_3P']:
         #     exit('The blade flap frequency is constrained to be both above and below 3P. Please check the constraint flags.')
@@ -289,11 +289,11 @@ class PoseOptimization(object):
 
         if blade_constraints['rail_transport']['flag']:
             if blade_constraints['rail_transport']['8_axle']:
-                wt_opt.model.add_constraint('elastic.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
-                wt_opt.model.add_constraint('elastic.rail.constr_strainPS',         upper= 1.0)
-                wt_opt.model.add_constraint('elastic.rail.constr_strainSS',         upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_LV_8axle_horiz',   lower = 0.8, upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_strainPS',         upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_strainSS',         upper= 1.0)
             elif blade_constraints['rail_transport']['4_axle']:
-                wt_opt.model.add_constraint('elastic.rail.constr_LV_4axle_horiz', upper= 1.0)
+                wt_opt.model.add_constraint('re.rail.constr_LV_4axle_horiz', upper= 1.0)
             else:
                 exit('You have activated the rail transport constraint module. Please define whether you want to model 4- or 8-axle flatcars.')
 
@@ -351,7 +351,7 @@ class PoseOptimization(object):
 
         control_constraints = self.opt['constraints']['control']
         if control_constraints['flap_control']['flag']:
-            if self.modeling['Analysis_Flags']['OpenFAST'] != True:
+            if self.modeling_options['Level3']['flag'] != True:
                 exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
             wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
                 lower = control_constraints['flap_control']['min'],
@@ -360,7 +360,7 @@ class PoseOptimization(object):
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])    
         if control_constraints['rotor_overspeed']['flag']:
-            if self.modeling['Analysis_Flags']['OpenFAST'] != True:
+            if modeling_options['Level3']['flag'] != True:
                 exit('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
             wt_opt.model.add_constraint('aeroelastic.rotor_overspeed',
                 lower = control_constraints['rotor_overspeed']['min'],
@@ -407,8 +407,8 @@ class PoseOptimization(object):
         wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., self.blade_opt['aero_shape']['chord']['n_opt'])
         wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ss']['n_opt'])
         wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ps']['n_opt'])
-        wt_opt['rlds.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
-        wt_opt['rlds.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
+        wt_opt['rs.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
+        wt_opt['rs.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
         wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
         
         return wt_opt

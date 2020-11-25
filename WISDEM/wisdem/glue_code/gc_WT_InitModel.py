@@ -77,7 +77,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         floating_platform   = wt_init['components']['floating_platform']
         wt_opt              = assign_floating_values(wt_opt, modeling_options, floating_platform)
         mooring             = wt_init['components']['mooring']
-        wt_opt              = assign_mooring_values(wt_opt, modeling_options, mooring)
+        # wt_opt              = assign_mooring_values(wt_opt, modeling_options, mooring)
 
     if modeling_options['flags']['foundation']:
         foundation      = wt_init['components']['foundation']

@@ -252,6 +252,15 @@ properties:
                                     omega_max: *omega_max
                                     zeta_min: *zeta_min
                                     zeta_max: *zeta_max
+                            ipc_control:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    omega_min: *omega_min
+                                    omega_max: *omega_max
+                                    zeta_min: *zeta_min
+                                    zeta_max: *zeta_max
             tower:
                 type: object
                 default: {}
