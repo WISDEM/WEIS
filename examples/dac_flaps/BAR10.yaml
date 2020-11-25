@@ -1,6 +1,14 @@
 name: yaml_BAR10
 description: BAR baseline 10. Based on BAR00, with TE flaps between 0.7 and 0.8.
-
+assembly:
+    turbine_class: III
+    turbulence_class: A
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    hub_height: 140.
+    rotor_diameter: 206. 
+    rated_power: 5.e+6
 components:
     blade:
         outer_shape_bem:
@@ -784,12 +792,6 @@ materials:
       Xc: 360.e+006
       S: 0
       Xy: 450.e+6
-assembly:
-    turbine_class: III
-    turbulence_class: A
-    drivetrain: Geared
-    rotor_orientation: Upwind
-    number_of_blades: 3
 control:
     rated_power: 5.e+6
     Vin: 4.0
@@ -824,7 +826,6 @@ environment:
     water_dyn_viscosity: 1.3351e-3
     soil_shear_modulus: 140e6
     soil_poisson: 0.4
-
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
@@ -833,7 +834,6 @@ bos:
     distance_to_substation: 50.0
     distance_to_interconnection: 8.
     interconnect_voltage: 130
-
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075

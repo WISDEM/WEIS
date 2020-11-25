@@ -1,6 +1,14 @@
 name: 5MW with OC3 semisubmersible
 comments: NREL 5MW Offshore Reference Wind Turbine, modified for a more realisitic manufacturable blade with constant width spar caps, trailing edge reinforcement, and leading edge foam that wraps around the full LE w/o a gap -EMG
-
+assembly:
+    turbine_class: I
+    turbulence_class: B
+    drivetrain: Geared
+    rotor_orientation: Upwind
+    number_of_blades: 3
+    rotor_diameter: 126
+    hub_height: 90.
+    rated_power: 5.e+6
 components:
     blade:
         outer_shape_bem:
@@ -397,7 +405,6 @@ components:
               cost: 1e4
               max_vertical_load: 0.0
               max_lateral_load: 1e5
-
 airfoils:
    -  aerodynamic_center: 0.275
       polars:
@@ -623,15 +630,6 @@ materials:
       Xc: 65.36e+006
       orth: 0
       unit_cost: 3.63
-assembly:
-    turbine_class: I
-    turbulence_class: B
-    drivetrain: Geared
-    rotor_orientation: Upwind
-    number_of_blades: 3
-    rotor_diameter: 126
-    hub_height: 90.
-    rated_power: 5.e+6
 control:
     supervisory:
         Vin: 3.0
@@ -661,7 +659,6 @@ control:
     shutdown:
         limit_type: gen_speed
         limit_value: 2.0
-
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
@@ -675,7 +672,6 @@ environment:
     significant_wave_period: 13.6
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
-
 bos:
     plant_turbine_spacing: 7
     plant_row_spacing: 7
@@ -684,7 +680,6 @@ bos:
     distance_to_substation: 50.0
     distance_to_interconnection: 8.
     interconnect_voltage: 130
-
 costs:
     wake_loss_factor: 0.15
     fixed_charge_rate: 0.075
