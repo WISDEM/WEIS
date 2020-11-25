@@ -913,7 +913,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['MaxIter'], 'MaxIter', '- Maximum number of iteration steps (-) [used only when WakeMod=1]\n'))
         f.write('======  Dynamic Blade-Element/Momentum Theory Options  ====================================================== [used only when WakeMod=1]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['DBEMT_Mod'], 'DBEMT_Mod', '- Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1} (-) [used only when WakeMod=2]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['tau1_const'], 'tau1_const', '- Time constant for DBEMT (s) [used only when WakeMod=2 and DBEMT_Mod=1]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['tau1_const'], 'tau1_const', '- Time constant for DBEMT (s) [used only when WakeMod=2 and DBEMT_Mod=1]\n'))
         f.write('======  OLAF -- cOnvecting LAgrangian Filaments (Free Vortex Wake) Theory Options  ================== [used only when WakeMod=3]\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAFInputFileName'], 'OLAFInputFileName', '- Input file for OLAF [used only when WakeMod=3]\n'))  
         f.write('======  Beddoes-Leishman Unsteady Airfoil Aerodynamics Options  ===================================== [used only when AFAeroMod=2]\n')
@@ -948,7 +948,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['NBlOuts'], 'NBlOuts', '- Number of blade node outputs [0 - 9] (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['AeroDyn15']['BlOutNd']), 'BlOutNd', '- Blade nodes whose values will be output  (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['NTwOuts'], 'NTwOuts', '- Number of tower node outputs [0 - 9]  (-)\n'))
-        f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['AeroDyn15']['TwOutNd']), 'TwOutNd', '- Tower nodes whose values will be output  (-)\n'))
+        if self.fst_vt['AeroDyn15']['NTwOuts'] != 0:
+            f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['AeroDyn15']['TwOutNd']), 'TwOutNd', '- Tower nodes whose values will be output  (-)\n'))
+        else:
+            f.write('{:<22} {:<11} {:}'.format(0, 'TwOutNd', '- Tower nodes whose values will be output  (-)\n'))
         f.write('                   OutList             - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx for a listing of available output channels, (-)\n')
 
         outlist = self.get_outlist(self.fst_vt['outlist'], ['AeroDyn'])      
@@ -1293,7 +1296,10 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.pitch_op_pc          = self.fst_vt['DISCON_in']['PC_GS_angles']
         controller.pc_gain_schedule.Kp  = self.fst_vt['DISCON_in']['PC_GS_KP']
         controller.pc_gain_schedule.Ki  = self.fst_vt['DISCON_in']['PC_GS_KI']
-        controller.Ki_ipc1p             = self.fst_vt['DISCON_in']['IPC_KI']
+        if 'IPC_KI' in self.fst_vt['DISCON_in'].keys():
+            controller.Ki_ipc1p         = self.fst_vt['DISCON_in']['IPC_KI']
+        else:
+            controller.Ki_ipc1p         = 0.
         controller.max_pitch            = self.fst_vt['DISCON_in']['PC_MaxPit']
         controller.min_pitch            = self.fst_vt['DISCON_in']['PC_MinPit']
         controller.vs_minspd            = self.fst_vt['DISCON_in']['VS_MinOMSpd']
@@ -1315,7 +1321,6 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.Ki_flap              = self.fst_vt['DISCON_in']['Flp_Ki']
         controller.flp_angle            = self.fst_vt['DISCON_in']['Flp_Angle']
         controller.flp_maxpit           = self.fst_vt['DISCON_in']['Flp_MaxPit']
-        controller.Ki_ipc1p             = self.fst_vt['DISCON_in']['IPC_KI'][0]
 
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
@@ -1353,7 +1358,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         turbine.Ct.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
         turbine.Cq.pitch_initial_rad    = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
         turbine.Cq.TSR_initial          = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-        turbine.TurbineName             = self.fst_vt['description']
+        turbine.TurbineName             = 'WISDEM tuning'
         
         # Define DISCON infile paths
         self.fst_vt['ServoDyn']['DLL_InFile'] = self.FAST_namingOut + '_DISCON.IN'

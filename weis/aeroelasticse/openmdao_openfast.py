@@ -173,7 +173,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
         self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
-        
+        self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
+
+
         # Blade composite material properties (used for fatigue analysis)
         self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
         self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
@@ -330,8 +332,17 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15'][key[1]] = self.options['modeling_options']['Level3']['AeroDyn'][key[1]]
         for key in enumerate(self.options['modeling_options']['Level3']['InflowWind']):
             fst_vt['InflowWind'][key[1]] = self.options['modeling_options']['Level3']['InflowWind'][key[1]]
+        for key in enumerate(self.options['modeling_options']['Level3']['ServoDyn']):
+            fst_vt['ServoDyn'][key[1]] = self.options['modeling_options']['Level3']['ServoDyn'][key[1]]
 
         fst_vt['ServoDyn']['DLL_FileName'] = self.options['modeling_options']['openfast']['file_management']['path2dll']
+
+        if fst_vt['AeroDyn15']['IndToler'] == 0.:
+            fst_vt['AeroDyn15']['IndToler'] = 'default'
+        if fst_vt['AeroDyn15']['DTAero'] == 0.:
+            fst_vt['AeroDyn15']['DTAero'] = 'default'
+        if fst_vt['ElastoDyn']['DT'] == 0.:
+            fst_vt['ElastoDyn']['DT'] = 'default'
 
         return fst_vt
 
@@ -356,7 +367,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn'] = {}
         fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
 
         # Masses from DriveSE
@@ -448,8 +458,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
         
         # Update AeroDyn15
-        fst_vt['AeroDyn15']['AirDens']   = inputs['rho'][0]
+        fst_vt['AeroDyn15']['AirDens']   = float(inputs['rho'])
         fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
+        fst_vt['AeroDyn15']['SpdSound']  = float(inputs['speed_sound_air'])
+
 
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
@@ -568,6 +580,7 @@ class FASTLoadCases(ExplicitComponent):
 
         fst_vt['ElastoDyn']['NTwGages'] = 0
         fst_vt['ElastoDyn']['TwrGagNd'] = 0
+        fst_vt['AeroDyn15']['NTwOuts']  = 0
 
         return fst_vt
 
@@ -1043,7 +1056,7 @@ class FASTLoadCases(ExplicitComponent):
 
 
         # Get DELS from OpenFAST data
-        if self.options['modeling_options']['openfast']['fst_settings'][('Fst','TMax')] - loads_analysis.t0 > 60.:
+        if fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
                 try:
                     isinstance(pp,object)

@@ -509,27 +509,31 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run AeroDyn
+                    Echo:
+                        type: boolean
+                        default: False
+                        description: Echo input data to "<RootName>.ech" (flag)
                     DTAero:
                         type: number
-                        default: 0.0
-                        minimum: 0.0
-                        maximum: 10.0
+                        default: 0.
+                        minimum: 0.
+                        maximum: 10.
                         unit: s
-                        description: Time interval for aerodynamic calculations {use 0.0 for "default"} (s)
+                        description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
-                        type: string
-                        enum: [none, NONE, None, bemt, BEMT, '0', '1']
-                        default: BEMT
+                        type: integer
+                        enum: [0, 1]
+                        default: 1
                         description: Type of wake/induction model (switch) {0=none, 1=BEMT}
                     AFAeroMod:
-                        type: string
-                        enum: [steady, STEADY, unsteady, UNSTEADY, Steady, Unsteady, '1', '2']
-                        default: Unsteady
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 2
                         description: Type of blade airfoil aerodynamics model (switch) {1=steady model, 2=Beddoes-Leishman unsteady model} [must be 1 when linearizing]
                     TwrPotent:
-                        type: string
-                        enum: ['0', '1', '2', none, NONE, None, baseline, Baseline, BASELINE, Bak, bak, BAK]
-                        default: Baseline
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 1
                         description: Type tower influence on wind based on potential flow around the tower (switch) {0=none, 1=baseline potential flow, 2=potential flow with Bak correction}
                     TwrShadow:
                         type: boolean
@@ -556,9 +560,9 @@ properties:
                         default: AeroAcousticsInput.dat
                         description: Aeroacoustics input file
                     SkewMod:
-                        type: string
-                        enum: ['1', '2', '3', uncoupled, Uncoupled, UNCOUPLED, pitt/peters, Pitt/Peters, PITT/PETERS, coupled, Coupled, COUPLED]
-                        default: '2'
+                        type: integer
+                        enum: [1,2,3]
+                        default: 2
                         description: Type of skewed-wake correction model (switch) {1=uncoupled, 2=Pitt/Peters, 3=coupled} [used only when WakeMod=1]
                     SkewModFactor:
                         type: number
@@ -593,10 +597,10 @@ properties:
                         default: 500
                         description: Maximum number of iteration steps (-) [used only when WakeMod=1]
                     DBEMT_Mod:
-                        type: string
-                        enum: ['1', '2', constant, Constant, CONSTANT, steady, Steady, STEADY, unsteady, Unsteady, UNSTEADY]
-                        default: Unsteady
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=unsteady, time-dependent tau1} (-) [used only when WakeMod=2]
+                        type: integer
+                        enum: [1, 2, 3]
+                        default: 2
+                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=unsteady, 3=time-dependent tau1} (-) [used only when WakeMod=2]
                     tau1_const:
                         type: number
                         unit: s
@@ -609,23 +613,62 @@ properties:
                         default: unused
                         description: Input file for OLAF [used only when WakeMod=3]
                     UAMod:
-                        type: string
-                        enum: ['1', '2', '3', baseline, Baseline, BASELINE, original, Original, ORIGINAL, gonzalez, Gonzalez, GONZALEZ, minemma/pierce, Minemma/Pierce, MINEMMA/PIERCE]
-                        default: Minemma/Pierce
+                        type: integer
+                        enum: [1,2,3]
+                        default: 3
                         description: Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minemma/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]
                     FLookup:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
                     AFTabMod:
-                        type: string
-                        enum: ['1','2','3', 1D, 1d, 1-D, 1-d, 2D, 2d, 2-D, 2-d, user, User]
-                        default: '1'
+                        type: integer
+                        enum: [1,2,3]
+                        default: 1
                         description: Interpolation method for multiple airfoil tables {1=1D interpolation on AoA (first table only); 2=2D interpolation on AoA and Re; 3=2D interpolation on AoA and UserProp} (-)
+                    InCol_Alfa:
+                        type: integer
+                        default: 1
+                        description: The column in the airfoil tables that contains the angle of attack (-)
+                    InCol_Cl:
+                        type: integer
+                        default: 2
+                        description: The column in the airfoil tables that contains the lift coefficient (-)
+                    InCol_Cd:
+                        type: integer
+                        default: 3
+                        description: The column in the airfoil tables that contains the drag coefficient (-)
+                    InCol_Cm:
+                        type: integer
+                        default: 4
+                        description: The column in the airfoil tables that contains the pitching-moment coefficient; use zero if there is no Cm column (-)
+                    InCol_Cpmin:
+                        type: integer
+                        default: 0
+                        description: The column in the airfoil tables that contains the Cpmin coefficient; use zero if there is no Cpmin column (-)
                     UseBlCm:
                         type: boolean
                         default: True
                         description: Include aerodynamic pitching moment in calculations?  (flag)
+                    Patm:
+                        type: number
+                        minimum: 0.
+                        default: 1.035000000000000e+05 
+                        description: Atmospheric pressure (Pa) [used only when CavitCheck=True]
+                    Pvap:
+                        type: number
+                        minimum: 0.
+                        default: 1.700000000000000e+03
+                        description: Vapour pressure of fluid (Pa) [used only when CavitCheck=True]
+                    FluidDepth:
+                        type: number
+                        minimum: 0.
+                        default: 5.000000000000000e-01 
+                        description: Water depth above mid-hub height (m) [used only when CavitCheck=True]
+                    SumPrint:
+                        type: boolean
+                        default: False
+                        description: Print summary data to "<RootName>.sum" (flag)
             ElastoDyn:
                 type: object
                 default: {}
@@ -900,9 +943,9 @@ properties:
                         unit: none
                         description: Number of blade nodes (per blade) used for analysis (-)
                     TeetMod:
-                        type: string
-                        enum: ['0', '1', '2', none, None, NONE, standard, Standard, STANDARD]
-                        default: none
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
                         description: 'Rotor-teeter spring/damper model {0: none, 1: standard, 2: user-defined from routine UserTeet} (switch) [unused for 3 blades]'
                     TeetDmpP:
                         type: number
@@ -1655,11 +1698,25 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run ServoDyn
+                    Echo:
+                        type: boolean
+                        default: False
+                        description: Echo input data to "<RootName>.ech" (flag)
+                    DT:
+                        type: string
+                        default: 'default'
+                        description: Communication interval for controllers (s) (or "default")
                     PCMode:
                         type: integer
                         description: Pitch control mode {0 = none, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL}
                         default: 5
                         enum: [0,4,5]
+                    TPCOn:
+                        type: number
+                        default: 0.
+                        unit: s
+                        minimum: 0.
+                        description: Time to enable active pitch control (s) [unused when PCMode=0]
                     # Shutdown maneuvers are handled in aeroelasticse when DLCs defined, and shutdown control in geometry...leave out of here?
                     VSContrl:
                         type: integer
@@ -1671,46 +1728,317 @@ properties:
                         description: Generator model {1 = simple, 2 = Thevenin, 3 = user-defined from routine UserGen}
                         default: 1
                         enum: [1,2]
-                    GenStart:
-                        type: string
-                        description: Method of starting generator (speed = above some min speed, generator starts, time = start generator at t = 0 sec.)
-                        enum: [speed,Speed,SPEED,time,Time,TIME]
-                        default: time   # DZ: I may have a different opinion than aeroelasticse
+                    GenTiStr:
+                        type: boolean
+                        default: True
+                        description: Method to start the generator {True - timed using TimGenOn, False - generator speed using SpdGenOn} (flag)
+                    GenTiStp:
+                        type: boolean
+                        default: True
+                        description: Method to stop the generator {True - timed using TimGenOf, False - when generator power = 0} (flag)
+                    SpdGenOn:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: rpm
+                        description: Generator speed to turn on the generator for a startup (HSS speed) (rpm) [used only when GenTiStr=False]
+                    TimGenOn:
+                        type: number
+                        default: 0.
+                        minimum: 0.
+                        unit: s
+                        description: Time to turn on the generator for a startup (s) [used only when GenTiStr=True]
+                    TimGenOf:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: s
+                        description: Time to turn off the generator (s) [used only when GenTiStp=True]
+                    VS_RtGnSp:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: rpm
+                        description: Rated generator speed for simple variable-speed generator control (HSS side) (rpm) [used only when VSContrl=1]
+                    VS_RtTq:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: N * m
+                        description: Rated generator torque/constant generator torque in Region 3 for simple variable-speed generator control (HSS side) (N-m) [used only when VSContrl=1]
+                    VS_Rgn2K:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: N * m / rpm**2
+                        description: Generator torque constant in Region 2 for simple variable-speed generator control (HSS side) (N-m/rpm^2) [used only when VSContrl=1]
+                    VS_SlPc:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: none
+                        description: Rated generator slip percentage in Region 2 1/2 for simple variable-speed generator control (%) [used only when VSContrl=1]
+                    SIG_SlPc:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: none
+                        description: Rated generator slip percentage (%) [used only when VSContrl=0 and GenModel=1]
+                    SIG_SySp:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: rpm
+                        description: Synchronous (zero-torque) generator speed (rpm) [used only when VSContrl=0 and GenModel=1]
+                    SIG_RtTq:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: N * m
+                        description: Rated torque (N-m) [used only when VSContrl=0 and GenModel=1]
+                    SIG_PORt:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: none
+                        description: Pull-out ratio (Tpullout/Trated) (-) [used only when VSContrl=0 and GenModel=1]
+                    TEC_Freq:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: Hz
+                        description: Line frequency [50 or 60] (Hz) [used only when VSContrl=0 and GenModel=2]
+                    TEC_NPol:
+                        type: integer
+                        default: 0
+                        minimum: 0
+                        unit: none
+                        description: Number of poles [even integer > 0] (-) [used only when VSContrl=0 and GenModel=2]
+                    TEC_SRes:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: ohms
+                        description: Stator resistance (ohms) [used only when VSContrl=0 and GenModel=2]
+                    TEC_RRes:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: ohms
+                        description: Rotor resistance (ohms) [used only when VSContrl=0 and GenModel=2]
+                    TEC_VLL:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: volts
+                        description: Line-to-line RMS voltage (volts) [used only when VSContrl=0 and GenModel=2]
+                    TEC_SLR:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: ohms
+                        description: Stator leakage reactance (ohms) [used only when VSContrl=0 and GenModel=2]
+                    TEC_RLR:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: ohms
+                        description: Rotor leakage reactance (ohms) [used only when VSContrl=0 and GenModel=2]
+                    TEC_MR:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: ohms
+                        description: Magnetizing reactance (ohms) [used only when VSContrl=0 and GenModel=2]
                     HSSBrMode:
                         type: integer
                         description: HSS brake model {0 = none, 1 = simple, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL (not in ROSCO, yet)}
                         enum: [0,1,4]
                         default: 1
-                    NacTMD:
-                        type: object
-                        description: Nacelle tuned mass damper
-                        required:
-                            - CompNTMD
-                            - NTMDfile
-                        properties:
-                            CompNTMD:
-                                type: boolean
-                                description: Compute nacelle tuned mass damper {true/false}
-                                default: False
-                            NTMDfile:
-                                type: string
-                                description: Name of the file for nacelle tuned mass damper (quoted string) [unused when CompNTMD is false]
-                                default: "unused"
-                    TwrTMD:
-                        type: object
-                        description: Tower tuned mass damper
-                        required:
-                            - CompTTMD
-                            - TTMDfile
-                        properties:
-                            CompTTMD:
-                                type: boolean
-                                description: Compute tower tuned mass damper {true/false}
-                                default: False
-                            TTMDfile:
-                                type: string
-                                description: Name of the file for tower tuned mass damper (quoted string) [unused when CompTTMD is false]
-                                default: "unused"
+                    THSSBrDp:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: s
+                        description: Time to initiate deployment of the HSS brake (s)
+                    HSSBrDT:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: s
+                        description: Time for HSS-brake to reach full deployment once initiated (sec) [used only when HSSBrMode=1]
+                    HSSBrTqF:
+                        type: number
+                        default: 99999.
+                        minimum: 0.
+                        unit: N * m
+                        description: Fully deployed HSS-brake torque (N-m)
+                    YCMode:
+                        type: integer
+                        enum: [0,3,4,5]
+                        default: 0
+                        description: Yaw control mode {0 - none, 3 - user-defined from routine UserYawCont, 4 - user-defined from Simulink/Labview, 5 - user-defined from Bladed-style DLL} (switch)
+                    TYCOn:
+                        type: number
+                        default: 0.
+                        unit: s
+                        description: Time to enable active yaw control (s) [unused when YCMode=0]
+                    YawNeut:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Neutral yaw position--yaw spring force is zero at this yaw (degrees)
+                    YawSpr:
+                        type: number
+                        default: 0.
+                        unit: N * m / rad
+                        description: Nacelle-yaw spring constant (N-m/rad)
+                    YawDamp:
+                        type: number
+                        default: 0.
+                        unit: N * m / rad / s
+                        description: Nacelle-yaw damping constant (N-m/(rad/s))
+                    TYawManS:
+                        type: number
+                        default: 0.
+                        unit: s
+                        description: Time to start override yaw maneuver and end standard yaw control (s)
+                    YawManRat:
+                        type: number
+                        default: 0.25
+                        minimum: 1.e-6 
+                        unit: deg / s
+                        description: Yaw maneuver rate (in absolute value) (deg/s). It cannot be zero
+                    NacYawF:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Final yaw angle for override yaw maneuvers (degrees)
+                    CompNTMD:
+                        type: boolean
+                        default: False
+                        description: Compute nacelle tuned mass damper {true/false}
+                    NTMDfile:
+                        type: string
+                        default: none
+                        description: Name of the file for nacelle tuned mass damper (quoted string) [unused when CompNTMD is false]
+                    CompTTMD:
+                        type: boolean
+                        default: False
+                        description: Compute tower tuned mass damper {true/false}
+                    TTMDfile:
+                        type: string
+                        default: none
+                        description: Name of the file for tower tuned mass damper (quoted string) [unused when CompTTMD is false]
+                    DLL_ProcName:
+                        type: string
+                        default: "DISCON"
+                        description: Name of procedure in DLL to be called (-) [case sensitive; used only with DLL Interface]
+                    DLL_DT:
+                        type: string
+                        default: 'default'
+                        description: Communication interval for dynamic library (s) (or "default") [used only with Bladed Interface]
+                    DLL_Ramp:
+                        type: boolean
+                        default: False
+                        description: Whether a linear ramp should be used between DLL_DT time steps [introduces time shift when true] (flag) [used only with Bladed Interface]
+                    BPCutoff:
+                        type: number
+                        default: 99999.
+                        unit: Hz
+                        description: Cuttoff frequency for low-pass filter on blade pitch from DLL (Hz) [used only with Bladed Interface]
+                    NacYaw_North:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Reference yaw angle of the nacelle when the upwind end points due North (deg) [used only with Bladed Interface]
+                    Ptch_Cntrl:
+                        type: integer
+                        enum: [0,1]
+                        default: 0
+                        description: Record 28 Use individual pitch control {0 - collective pitch; 1 - individual pitch control} (switch) [used only with Bladed Interface]
+                    Ptch_SetPnt:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Record  5 Below-rated pitch angle set-point (deg) [used only with Bladed Interface]
+                    Ptch_Min:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Record  6 - Minimum pitch angle (deg) [used only with Bladed Interface]
+                    Ptch_Max:   
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Record  7 Maximum pitch angle (deg) [used only with Bladed Interface]
+                    PtchRate_Min:
+                        type: number
+                        default: 0.
+                        unit: deg / s 
+                        description: Record  8 Minimum pitch rate (most negative value allowed) (deg/s) [used only with Bladed Interface]
+                    PtchRate_Max:
+                        type: number
+                        default: 0.
+                        unit: deg / s
+                        description: Record  9 Maximum pitch rate  (deg/s) [used only with Bladed Interface]
+                    Gain_OM:
+                        type: number
+                        default: 0.
+                        unit: N * m / (rad / s)**2
+                        description: Record 16 Optimal mode gain (Nm/(rad/s)^2) [used only with Bladed Interface]
+                    GenSpd_MinOM:
+                        type: number
+                        default: 0.
+                        unit: rpm
+                        description: Record 17 Minimum generator speed (rpm) [used only with Bladed Interface]
+                    GenSpd_MaxOM:
+                        type: number
+                        default: 0.
+                        unit: rpm
+                        description: Record 18 Optimal mode maximum speed (rpm) [used only with Bladed Interface]
+                    GenSpd_Dem:
+                        type: number
+                        default: 0.
+                        unit: rpm
+                        description: Record 19 Demanded generator speed above rated (rpm) [used only with Bladed Interface]
+                    GenTrq_Dem: 
+                        type: number
+                        default: 0.
+                        unit: N * m
+                        description: Record 22 Demanded generator torque above rated (Nm) [used only with Bladed Interface]
+                    GenPwr_Dem: 
+                        type: number
+                        default: 0.
+                        unit: W
+                        description: Record 13 Demanded power (W) [used only with Bladed Interface]
+                    DLL_NumTrq:
+                        type: integer
+                        default: 0
+                        description: Record 26 No. of points in torque-speed look-up table {0 = none and use the optimal mode parameters; nonzero = ignore the optimal mode PARAMETERs by setting Record 16 to 0.0} (-) [used only with Bladed Interface]
+                    SumPrint:
+                        type: boolean
+                        default: False
+                        description: Print summary data to "<RootName>.sum" (flag)
+                    OutFile:
+                        type: integer
+                        default: 1
+                        description: Switch to determine where output will be placed 1 in module output file only; 2 in glue code output file only; 3 both (currently unused)
+                    TabDelim:
+                        type: boolean
+                        default: True
+                        description: Use tab delimiters in text tabular output file? (flag) (currently unused)
+                    OutFmt:
+                        type: string
+                        default: "ES10.3E2"
+                        description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
+                    TStart:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 100000.0
+                        unit: s
+                        description: Time to begin tabular output (s) (currently unused)
             ROSCO:
                 type: object
                 default: {}
