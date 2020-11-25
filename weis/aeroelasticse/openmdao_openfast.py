@@ -317,7 +317,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDynBlade']      = {}
         fst_vt['ServoDyn']          = {}
         fst_vt['InflowWind']        = {}
-        fst_vt['outlist']           = {}
 
         for key in enumerate(self.options['modeling_options']['Level3']['simulation']):
             fst_vt['Fst'][key[1]] = self.options['modeling_options']['Level3']['simulation'][key[1]]
@@ -399,8 +398,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TowerHt']   = inputs['tower_height'][-1] + tower_base_height # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
-        fst_vt['InflowWind']['RefHt'] = inputs['hub_height'][0]
-        fst_vt['InflowWind']['PLexp'] = inputs['shearExp'][0]
+        fst_vt['InflowWind']['RefHt'] = float(inputs['hub_height'])
+        fst_vt['InflowWind']['PLexp'] = float(inputs['shearExp'])
+        if fst_vt['InflowWind']['NWindVel'] == 1:
+            fst_vt['InflowWind']['WindVxiList'] = 0.
+            fst_vt['InflowWind']['WindVyiList'] = 0.
+            fst_vt['InflowWind']['WindVziList'] = float(inputs['hub_height'])
+        else:
+            raise Exception('The code only supports InflowWind NWindVel == 1')
 
         # Update ElastoDyn Tower Input File
         fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])

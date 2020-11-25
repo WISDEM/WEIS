@@ -344,12 +344,8 @@ components:
           drag_coefficient: 0.5
           distance_hub2mb: 1.0
           distance_mb2mb: 1.2
-          lss_diameter:
-              grid: [0.0, 1.0]
-              values: [3.0, 3.0]
-          lss_wall_thickness:
-              grid: [0.0, 1.0]
-              values: [0.1, 0.1]
+          lss_diameter: [3.0, 3.0]
+          lss_wall_thickness: [0.1, 0.1]
           nose_diameter:
               grid: [0.0, 1.0]
               values: [2.2, 2.2]

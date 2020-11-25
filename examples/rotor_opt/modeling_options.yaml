@@ -1,45 +1,22 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
 
-Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
-    flag: False
+WISDEM:
     RotorSE:
         flag: True
-        n_aoa: 200        # Number of angles of attack used to define polars
-        n_xy: 200         # Number of angles of coordinate points used to discretize each airfoil
-        n_span: 30        # Number of spanwise stations used to define the blade properties
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
     TowerSE:
         flag: True
-        wind: PowerWind         # Wind used in TowerSE
-        gamma_f: 1.35           # Safety factor for fatigue loads in TowerSE
-        gamma_m: 1.3            # Safety factor for material properties in TowerSE
-        gamma_n: 1.0            # Safety factor for ...
-        gamma_b: 1.1            # Safety factor for ...
-        gamma_fatigue: 1.9305   # Safety factor for fatigue loads in TowerSE
-        buckling_length: 30     # Buckling parameter in TowerSE
-        frame3dd:
-            shear: True
-            geom: True
-            nM: 2
-            tol: 1.e-9
-    ServoSE:
-        flag: True
-        n_pc: 20                        # Number of wind speeds to compute the power curve
-        n_pc_spline: 200                # Number of wind speeds to spline the power curve 
-        n_pitch_perf_surfaces: 20       # Number of pitch angles to determine the Cp-Ct-Cq-surfaces
-        min_pitch_perf_surfaces: -5.    # Min pitch angle of the Cp-Ct-Cq-surfaces
-        max_pitch_perf_surfaces: 30.    # Max pitch angle of the Cp-Ct-Cq-surfaces
-        n_tsr_perf_surfaces: 20         # Number of tsr values to determine the Cp-Ct-Cq-surfaces
-        min_tsr_perf_surfaces: 2.       # Min TSR of the Cp-Ct-Cq-surfaces
-        max_tsr_perf_surfaces: 12.      # Max TSR of the Cp-Ct-Cq-surfaces
-        n_U_perf_surfaces: 1            # Number of wind speeds to determine the Cp-Ct-Cq-surfaces
-        regulation_reg_III: False       # Flag to derive the regulation trajectory in region III in terms of pitch and TSR
     DriveSE:
         flag: True
     FloatingSE:
         flag: True
     BOS:
         flag: True
+
+Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
+    flag: False
 
 Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize OpenFAST)
     flag: False
@@ -70,7 +47,7 @@ Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 5.
+        TMax: 1.
         DT: 0.01
     linearization:
         Linearize: False
@@ -91,8 +68,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     ServoDyn:
         flag: False
     ROSCO:
-        flag: False
-
+        flag: True
     
 openfast:
     analysis_settings:
@@ -102,11 +78,8 @@ openfast:
         generate_af_coords: False
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
-        FAST_directory:    ../OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile  # Path to folder with the OpenFAST input files
-        FAST_InputFile:    IEA-15-240-RWT-Monopile.fst             # Name of the main OpenFAST input file (.fst)
         FAST_namingOut:    IEA15         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/iea15             # Path to folder with the OpenFAST output files
-        Simulation_Settings_File: openfast_settings.yaml
+        FAST_runDirectory: temp/IEA15             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   True
         run_IEC:           True
@@ -114,7 +87,7 @@ openfast:
         IEC: # Currently supported: 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
             - DLC:   1.1
               U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-              Seeds: [1,2]
+              Seeds: [1]
             # - DLC:   1.3
             #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
             #   Seeds: [11, 12, 13, 14, 15, 16]
@@ -140,9 +113,3 @@ yaml:
 xfoil:
     path       : Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
     run_parallel: True
-
-
-
-
-
-

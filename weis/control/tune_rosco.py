@@ -267,7 +267,6 @@ class TuneROSCO(ExplicitComponent):
 
         # DISCON Parameters
         #   - controller
-        self.modeling_options['openfast']['fst_vt'] = {}
         self.modeling_options['openfast']['fst_vt']['DISCON_in']  = {}
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['LoggingLevel'] = controller.LoggingLevel
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_LPFType'] = controller.F_LPFType

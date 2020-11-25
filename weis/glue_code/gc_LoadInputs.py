@@ -30,10 +30,13 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     def set_openfast_data(self):
         # Openfast
         if self.modeling_options['Level3']['flag'] == True:
+            fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
+            self.modeling_options['openfast']['fst_vt'] = {}
+            self.modeling_options['openfast']['fst_vt']['outlist'] = fast.fst_vt['outlist']
+
             if self.modeling_options['openfast']['file_management']['FAST_directory'] != 'none':
                 # Load Input OpenFAST model variable values
                 fast.FAST_InputFile = self.modeling_options['openfast']['file_management']['FAST_InputFile']
-                fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
                 if os.path.isabs(self.modeling_options['openfast']['file_management']['FAST_directory']):
                     fast.FAST_directory = self.modeling_options['openfast']['file_management']['FAST_directory']
                 else:

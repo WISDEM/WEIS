@@ -78,9 +78,8 @@ openfast:
         generate_af_coords: False
         debug_level:        2    # Flag to set the debug level, do not change
     file_management:
-        FAST_namingOut:    IEA15         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/iea15             # Path to folder with the OpenFAST output files
-        Simulation_Settings_File: openfast_settings.yaml
+        FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
+        FAST_runDirectory: temp/NREL5MW_OC3_spar             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   True
         run_IEC:           True
