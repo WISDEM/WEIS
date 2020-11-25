@@ -538,6 +538,7 @@ class WindPark(om.Group):
 
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
+            self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
             self.connect('tower_grid.height',               'aeroelastic.tower_height')
             if modeling_options['flags']['foundation']:

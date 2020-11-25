@@ -112,6 +112,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
         self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_input('nacelle_I',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
 
         # AeroDyn Inputs
         self.add_input('ref_axis_blade',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
@@ -369,12 +370,29 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
+        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
 
-        
+        # Platform inputs
+        fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
+        fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
+        fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
+
+        # Mass and inertia inputs
+        fst_vt['ElastoDyn']['TipMass(1)'] = 0.
+        fst_vt['ElastoDyn']['TipMass(2)'] = 0.
+        fst_vt['ElastoDyn']['TipMass(3)'] = 0.
+        fst_vt['ElastoDyn']['GenIner'] = 0.
+        fst_vt['ElastoDyn']['PtfmMass'] = 0.
+        fst_vt['ElastoDyn']['PtfmRIner'] = 0.
+        fst_vt['ElastoDyn']['PtfmPIner'] = 0.
+        fst_vt['ElastoDyn']['PtfmYIner'] = 0.
+
+        # Drivetrain inputs
+        fst_vt['ElastoDyn']['DTTorSpr'] = 0.
+        fst_vt['ElastoDyn']['DTTorDmp'] = 0.
 
         # TODO: there are issues here
         #   - running the 15MW caused 120 tower points, some where nonunique heights
-        fst_vt['ElastoDyn']['PtfmCMzt']  = inputs['tower_base_height']
         tower_base_height = max(inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmCMzt'])
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
@@ -542,6 +560,9 @@ class FASTLoadCases(ExplicitComponent):
             raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
         fst_vt['ElastoDyn']['BldGagNd'] = [idx+1 for idx in idx_out]
         fst_vt['ElastoDyn']['NBlGages'] = len(idx_out)
+
+        fst_vt['ElastoDyn']['NTwGages'] = 0
+        fst_vt['ElastoDyn']['TwrGagNd'] = 0
 
         return fst_vt
 
