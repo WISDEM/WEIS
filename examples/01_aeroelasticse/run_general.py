@@ -16,7 +16,7 @@ if __name__ == '__main__':
     fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
     run_dir1                    = os.path.dirname( os.path.dirname( os.path.realpath(weis.__file__) ) )
     fastBatch.FAST_exe          = os.path.join(run_dir1, 'local','bin','openfast')   # Path to executable
-    run_dir2                    = os.path.join(run_dir1, 'examples')
+    run_dir2                    = os.path.dirname( os.path.realpath(weis.__file__) )
     fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
     fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
