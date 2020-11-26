@@ -76,6 +76,7 @@ class WindPark(om.Group):
         if modeling_options['Level3']['flag']:
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # Aero analysis
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
+            self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
 
         self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options, freq_run=False))
         
@@ -153,6 +154,13 @@ class WindPark(om.Group):
             self.connect('env.mu_air',                     'sse_tune.mu')
             self.connect('blade.pa.chord_param',           'sse_tune.chord')
             self.connect('blade.pa.twist_param',           'sse_tune.theta')
+            # Connections to the stall check
+            self.connect('blade.outer_shape_bem.s',        'stall_check_of.s')
+            self.connect('airfoils.aoa',                   'stall_check_of.airfoils_aoa')
+            self.connect('xf.cl_interp_flaps',             'stall_check_of.airfoils_cl')
+            self.connect('xf.cd_interp_flaps',             'stall_check_of.airfoils_cd')
+            self.connect('xf.cm_interp_flaps',             'stall_check_of.airfoils_cm')
+            self.connect('aeroelastic.max_aoa',            'stall_check_of.aoa_along_span')
 
             self.connect('control.V_in' ,                   'sse_tune.v_min')
             self.connect('control.V_out' ,                  'sse_tune.v_max')
