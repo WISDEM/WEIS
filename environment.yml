@@ -25,6 +25,10 @@ dependencies:
   - matplotlib-base
   - geopy
   - pyside2
+  - dill
+  - control
+  - nlopt
+  - smt
   - pip:
     - simpy
     - marmot-agents
