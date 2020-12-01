@@ -178,7 +178,7 @@ if rank == 0:
     # Monopile
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
     run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
     fastBatch.channels          = channels
     fastBatch.FAST_runDirectory = iec.run_dir
     fastBatch.case_list         = case_list
@@ -192,8 +192,8 @@ if rank == 0:
 
     # U-Maine semi-sub
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
 
     if MPI:
         fastBatch.run_mpi(comm_map_down)

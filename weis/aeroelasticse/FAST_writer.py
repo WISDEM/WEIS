@@ -1350,7 +1350,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         controller.pc_gain_schedule.Kp  = self.fst_vt['DISCON_in']['PC_GS_KP']
         controller.pc_gain_schedule.Ki  = self.fst_vt['DISCON_in']['PC_GS_KI']
         if 'IPC_KI' in self.fst_vt['DISCON_in'].keys():
-            controller.Ki_ipc1p         = self.fst_vt['DISCON_in']['IPC_KI']
+            controller.Ki_ipc1p         = self.fst_vt['DISCON_in']['IPC_KI'][0]
         else:
             controller.Ki_ipc1p         = 0.
         controller.max_pitch            = self.fst_vt['DISCON_in']['PC_MaxPit']
