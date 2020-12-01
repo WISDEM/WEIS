@@ -98,7 +98,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
-            if modeling_options['Analysis_Flags']['OpenFAST']:
+            if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['openfast']['analysis_settings']['mpi_run']           = True
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
@@ -171,7 +171,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Analysis_Flags']['OpenFAST']:
+    if MPI and modeling_options['Level3']['flag']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
