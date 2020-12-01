@@ -13,7 +13,7 @@ from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.commonse.turbine_constraints  import TurbineConstraints
 from weis.aeroelasticse.openmdao_openfast import FASTLoadCases
 from weis.control.dac import RunXFOIL
-#from wisdem.rotorse.servose import ServoSE, NoStallConstraint
+from wisdem.rotorse.rotor_power import NoStallConstraint
 from weis.control.tune_rosco import ServoSE_ROSCO
 #from wisdem.rotorse.rotor_elasticity import RotorElasticity
 from weis.aeroelasticse.rotor_loads_defl_strainsWEIS import RotorLoadsDeflStrainsWEIS

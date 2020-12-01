@@ -97,12 +97,13 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
 
         # For cc-blade & flaps tuning
-        self.n_span     = n_span       = self.modeling_options['WISDEM']['RotorSE']['n_span']
+        rotorse_options = self.modeling_options['WISDEM']['RotorSE']
+        self.n_span     = n_span       = rotorse_options['n_span']
         # self.n_af       = n_af         = af_init_options['n_af'] # Number of airfoils
-        self.n_aoa      = n_aoa        = self.modeling_options['airfoils']['n_aoa']# Number of angle of attacks
-        self.n_Re       = n_Re         = self.modeling_options['airfoils']['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab      = n_tab        = self.modeling_options['airfoils']['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_te_flaps = n_te_flaps   = self.modeling_options['WISDEM']['RotorSE']['n_te_flaps']
+        self.n_aoa      = n_aoa        = rotorse_options['n_aoa']# Number of angle of attacks
+        self.n_Re       = n_Re         = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab      = n_tab        = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_te_flaps = n_te_flaps   = rotorse_options['n_te_flaps']
         self.add_input('r',             val=np.zeros(n_span),               units='m',          desc='radial locations where blade is defined (should be increasing and not go all the way to hub or tip)')
         self.add_input('chord',         val=np.zeros(n_span),               units='m',          desc='chord length at each section')
         self.add_input('theta',         val=np.zeros(n_span),               units='deg',        desc='twist angle at each section (positive decreases angle of attack)')
@@ -360,19 +361,18 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        rotorse_init_options = modeling_options['RotorSE']
-        airfoils = modeling_options['airfoils']
-        self.n_span        = n_span    = rotorse_init_options['n_span']
-        self.n_aoa         = n_aoa     = airfoils['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = airfoils['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = airfoils['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_pitch       = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
-        self.n_tsr         = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
-        self.n_U           = n_U       = rotorse_init_options['n_U_perf_surfaces']
-        self.min_TSR       = rotorse_init_options['min_tsr_perf_surfaces']
-        self.max_TSR       = rotorse_init_options['max_tsr_perf_surfaces']
-        self.min_pitch     = rotorse_init_options['min_pitch_perf_surfaces']
-        self.max_pitch     = rotorse_init_options['max_pitch_perf_surfaces']
+        rotorse_options  = modeling_options['RotorSE']
+        self.n_span        = n_span    = rotorse_options['n_span']
+        self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = rotorse_options['n_U_perf_surfaces']
+        self.min_TSR       = rotorse_options['min_tsr_perf_surfaces']
+        self.max_TSR       = rotorse_options['max_tsr_perf_surfaces']
+        self.min_pitch     = rotorse_options['min_pitch_perf_surfaces']
+        self.max_pitch     = rotorse_options['max_pitch_perf_surfaces']
         
         # parameters        
         self.add_input('v_min',   val=0.0,             units='m/s',       desc='cut-in wind speed')

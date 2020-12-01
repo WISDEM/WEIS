@@ -186,15 +186,14 @@ class RunXFOIL(ExplicitComponent):
         self.options.declare('opt_options')
         
     def setup(self):
-        blade_init_options = self.options['modeling_options']['RotorSE']
-        self.n_span        = n_span     = blade_init_options['n_span']
-        self.n_te_flaps    = n_te_flaps = blade_init_options['n_te_flaps']
-        af_init_options    = self.options['modeling_options']['airfoils']
-        self.n_tab         = af_init_options['n_tab']
-        self.n_aoa         = n_aoa      = af_init_options['n_aoa'] # Number of angle of attacks
-        self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
-        self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        rotorse_options = self.options['modeling_options']['RotorSE']
+        self.n_span        = n_span     = rotorse_options['n_span']
+        self.n_te_flaps    = n_te_flaps = rotorse_options['n_te_flaps']
+        self.n_tab         = rotorse_options['n_tab']
+        self.n_aoa         = n_aoa      = rotorse_options['n_aoa'] # Number of angle of attacks
+        self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
         self.xfoil_path    = self.options['modeling_options']['xfoil']['path']
 
         # Use openfast cores for parallelization of xfoil 

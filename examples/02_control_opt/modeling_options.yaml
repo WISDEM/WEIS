@@ -6,6 +6,8 @@ WISDEM:
         flag: True
         n_pitch_perf_surfaces: 5
         n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_cap_ss
+        spar_cap_ps: Spar_cap_ps
     TowerSE:
         flag: True
     DriveSE:
