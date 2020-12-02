@@ -4,8 +4,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        spar_cap_ss: Spar_cap_ss
-        spar_cap_ps: Spar_cap_ps
+        spar_cap_ss: Spar_cap_SS
+        spar_cap_ps: Spar_cap_PS
     TowerSE:
         flag: True
     DriveSE:
