@@ -33,6 +33,23 @@ Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize 
         flag: True
     ElastoDyn:
         flag: True
+        FlapDOF1: True
+        FlapDOF2: True
+        EdgeDOF: True
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: False
+        PtfmSwDOF: False
+        PtfmHvDOF: False
+        PtfmRDOF : False
+        PtfmPDOF : False
+        PtfmYDOF : False
     BeamDyn:
         flag: False
     HydroDyn:
