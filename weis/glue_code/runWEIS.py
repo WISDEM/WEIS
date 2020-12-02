@@ -31,7 +31,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             exit('ERROR: the parallelization logic only works for an even number of cores available')
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
-        if modeling_options['Analysis_Flags']['OpenFAST']:
+        if modeling_options['Level3']['flag']:
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, otherwise it is half of the number of DV (rounded to the lower integer). We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
