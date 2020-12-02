@@ -234,10 +234,10 @@ class WindPark(om.Group):
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
 
             #if modeling_options['Analysis_Flags']['TowerSE']:
-            self.connect('towerse.post.mass_den',           'aeroelastic.mass_den')
-            self.connect('towerse.post.foreaft_stff',       'aeroelastic.foreaft_stff')
-            self.connect('towerse.post.sideside_stff',      'aeroelastic.sideside_stff')
-            self.connect('towerse.post.sec_loc',            'aeroelastic.sec_loc')
+            self.connect('towerse.mass_den',                'aeroelastic.mass_den')
+            self.connect('towerse.foreaft_stff',            'aeroelastic.foreaft_stff')
+            self.connect('towerse.sideside_stff',           'aeroelastic.sideside_stff')
+            self.connect('towerse.sec_loc',                 'aeroelastic.sec_loc')
             self.connect('towerse.post.fore_aft_modes',     'aeroelastic.fore_aft_modes')
             self.connect('towerse.post.side_side_modes',    'aeroelastic.side_side_modes')
             self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
