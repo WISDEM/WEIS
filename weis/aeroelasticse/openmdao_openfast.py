@@ -804,6 +804,35 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_RootMyb'] = blade_root_flap_moment
         outputs['max_RootMyc'] = blade_root_oop_moment
         
+        ## Post process aerodynamic data
+        # Angles of attack - max, std, mean
+        r = inputs['r']-inputs['Rhub']
+        blade1_chans_aoa = ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha"]
+        blade2_chans_aoa = ["B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha", "B2N9Alpha"]
+        aoa_max_B1  = [np.max(sum_stats[var]['max'])    for var in blade1_chans_aoa]
+        aoa_mean_B1 = [np.mean(sum_stats[var]['mean'])  for var in blade1_chans_aoa]
+        aoa_std_B1  = [np.mean(sum_stats[var]['std'])   for var in blade1_chans_aoa]
+        aoa_max_B2  = [np.max(sum_stats[var]['max'])    for var in blade2_chans_aoa]
+        aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
+        aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
+        if self.n_blades == 2:
+            spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
+        elif self.n_blades == 3:
+            blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
+            aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
+            aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
+            aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
+            spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
+        else:
+            raise Exception('The calculations only support 2 or 3 bladed rotors')
+        outputs['max_aoa']  = spline_aoa_max(r)
+        outputs['std_aoa']  = spline_aoa_std(r)
+        outputs['mean_aoa'] = spline_aoa_mean(r)
+        
         ## Post process loads
         if self.FASTpref['dlc_settings']['run_IEC']:
             # TODO: support for BeamDyn
@@ -835,7 +864,6 @@ class FASTLoadCases(ExplicitComponent):
             spline_Fx = PchipInterpolator(self.R_out, Fx)
             spline_Fy = PchipInterpolator(self.R_out, Fy)
 
-            r = inputs['r']-inputs['Rhub']
             Fx_out = spline_Fx(r).flatten()
             Fy_out = spline_Fy(r).flatten()
             Fz_out = np.zeros_like(Fx_out)
@@ -855,34 +883,6 @@ class FASTLoadCases(ExplicitComponent):
             outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq']['val'],
                                         extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys']['val'],
                                         extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']['val']])*1.e3
-
-            ## Post process aerodynamic data
-            # Angles of attack - max, std, mean
-            blade1_chans_aoa = ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha"]
-            blade2_chans_aoa = ["B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha", "B2N9Alpha"]
-            aoa_max_B1  = [np.max(sum_stats[var]['max'])    for var in blade1_chans_aoa]
-            aoa_mean_B1 = [np.mean(sum_stats[var]['mean'])  for var in blade1_chans_aoa]
-            aoa_std_B1  = [np.mean(sum_stats[var]['std'])   for var in blade1_chans_aoa]
-            aoa_max_B2  = [np.max(sum_stats[var]['max'])    for var in blade2_chans_aoa]
-            aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
-            aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
-            if self.n_blades == 2:
-                spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
-            elif self.n_blades == 3:
-                blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
-                aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
-                aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
-                aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
-                spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
-            else:
-                raise Exception('The calculations only support 2 or 3 bladed rotors')
-            outputs['max_aoa']  = spline_aoa_max(r)
-            outputs['std_aoa']  = spline_aoa_std(r)
-            outputs['mean_aoa'] = spline_aoa_mean(r)
 
         if self.FASTpref['dlc_settings']['run_blade_fatigue']:
 
