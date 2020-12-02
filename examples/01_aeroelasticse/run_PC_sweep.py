@@ -29,11 +29,11 @@ def run_PC_sweep(omega,zeta=1.0):
     cut_in                  = 3.    # Cut in wind speed
     cut_out                 = 25.   # Cut out wind speed
     n_ws                    = 3    # Number of wind speed bins
-    TMax                    = 720.    # Length of wind grids and OpenFAST simulations, suggested 720 s
+    TMax                    = 5.    # Length of wind grids and OpenFAST simulations, suggested 720 s
     Vrated                  = 10.59 # Rated wind speed
     Ttrans                  = max([0., TMax - 60.])  # Start of the transient for DLC with a transient, e.g. DLC 1.4
     TStart                  = max([0., TMax - 600.]) # Start of the recording of the channels of OpenFAST
-    iec.cores               = 8
+    iec.cores               = 1
     iec.overwrite           = False
     
     # Initial conditions to start the OpenFAST runs
@@ -119,7 +119,6 @@ def run_PC_sweep(omega,zeta=1.0):
         path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dll')
     elif platform.system() == 'Darwin':
         path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dylib')
-        path2dll = '/Users/dzalkind/Tools/ROSCO_toolbox/ROSCO/build/libdiscon.dylib'
     else:
         path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.so')
 
@@ -146,7 +145,7 @@ def run_PC_sweep(omega,zeta=1.0):
     # load default params
     print('here')
     rt_dir              = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),'ROSCO_toolbox')
-    weis_dir            = os.path.dirname(rt_dir)
+    weis_dir            = os.path.join(rt_dir,'Tune_Cases')
     control_param_yaml  = os.path.join(rt_dir,'Tune_Cases','IEA15MW.yaml')
     inps                = yaml.safe_load(open(control_param_yaml))
     path_params         = inps['path_params']
@@ -214,12 +213,12 @@ def run_PC_sweep(omega,zeta=1.0):
     # U-Maine semi-sub
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
     fastBatch.FAST_runDirectory = iec.run_dir
-    if True:
-        fastBatch.run_multi(cores=4)
-    else:
-        fastBatch.run_serial()
+    # if True:
+    #     fastBatch.run_multi(cores=4)
+    # else:
+    fastBatch.run_serial()
 
 
 # Actually run example

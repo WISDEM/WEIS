@@ -77,7 +77,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     def update_ontology_control(self, wt_opt):
         # Update controller
         if self.modeling_options['flags']['control']:
-            self.wt_init['control']['tsr']      = float(wt_opt['pc.tsr_opt'])
+            self.wt_init['control']['tsr']      = float(wt_opt['control.rated_TSR'])
             self.wt_init['control']['PC_omega'] = float(wt_opt['tune_rosco_ivc.PC_omega'])
             self.wt_init['control']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
             self.wt_init['control']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])

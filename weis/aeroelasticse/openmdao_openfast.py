@@ -28,13 +28,13 @@ class FASTLoadCases(ExplicitComponent):
         self.options.declare('opt_options')
 
     def setup(self):
-        rotorse_init_options   = self.options['modeling_options']['WISDEM']['RotorSE']
+        rotorse_options = self.options['modeling_options']['WISDEM']['RotorSE']
         openfast_init_options = self.options['modeling_options']['openfast']
         mat_init_options     = self.options['modeling_options']['materials']
 
         self.n_blades      = self.options['modeling_options']['assembly']['number_of_blades']
-        self.n_span        = n_span    = rotorse_init_options['n_span']
-        self.n_pc          = n_pc      = rotorse_init_options['n_pc']
+        self.n_span        = n_span    = rotorse_options['n_span']
+        self.n_pc          = n_pc      = rotorse_options['n_pc']
         n_OF     = len(openfast_init_options['dlc_settings']['Power_Curve']['U'])
         if n_OF == 0 and openfast_init_options['dlc_settings']['run_power_curve']:
             for i in range(len(openfast_init_options['dlc_settings']['IEC'])):
@@ -43,32 +43,31 @@ class FASTLoadCases(ExplicitComponent):
             if n_OF == 0:
                 raise ValueError('There is a problem with the initialization of the DLCs to compute the powercurve. Please check modeling_options.yaml')
 
-        self.n_pitch       = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
-        self.n_tsr         = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
-        self.n_U           = n_U       = rotorse_init_options['n_U_perf_surfaces']
+        self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
+        self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
+        self.n_U           = n_U       = rotorse_options['n_U_perf_surfaces']
         self.n_mat         = n_mat    = mat_init_options['n_mat']
-        self.n_layers      = n_layers = rotorse_init_options['n_layers']
+        self.n_layers      = n_layers = rotorse_options['n_layers']
 
-        af_init_options    = self.options['modeling_options']['airfoils']
-        self.n_xy          = n_xy      = af_init_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.n_aoa         = n_aoa     = af_init_options['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = af_init_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = af_init_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+        self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+        self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
+        self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
+        self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         
-        self.te_ss_var       = self.options['opt_options']['optimization_variables']['blade']['structure']['te_ss']['name']
-        self.te_ps_var       = self.options['opt_options']['optimization_variables']['blade']['structure']['te_ps']['name']
-        self.spar_cap_ss_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ss']['name']
-        self.spar_cap_ps_var = self.options['opt_options']['optimization_variables']['blade']['structure']['spar_cap_ps']['name']
+        self.te_ss_var       = rotorse_options['te_ss']
+        self.te_ps_var       = rotorse_options['te_ps']
+        self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
+        self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
 
         monopile     = self.options['modeling_options']['flags']['monopile']
-        n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height']
-        n_height_mon = 0 if not monopile else self.options['modeling_options']['monopile']['n_height']
+        n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_tower']
+        n_height_mon = 0 if not monopile else self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
         nFull        = get_nfull(n_height)
         N_beam       = (nFull-1)*2
         n_freq_tower = int(NFREQ/2)
-        n_freq_blade = int(self.options['modeling_options']['WISDEM']['RotorSE']['n_freq']/2)
-        n_pc         = int(self.options['modeling_options']['WISDEM']['RotorSE']['n_pc'])
+        n_freq_blade = int(rotorse_options['n_freq']/2)
+        n_pc         = int(rotorse_options['n_pc'])
 
         FASTpref = self.options['modeling_options']['openfast']
         # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
@@ -194,7 +193,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_discrete_input('layer_name',       val=n_layers * [''],     desc='1D array of the names of the layers modeled in the blade structure.')
         # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
         # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
-        self.layer_name = rotorse_init_options['layer_name']
+        self.layer_name = rotorse_options['layer_name']
 
         # FAST run preferences
         self.FASTpref            = FASTpref 
@@ -828,7 +827,7 @@ class FASTLoadCases(ExplicitComponent):
         loads_analysis.verbose = self.options['modeling_options']['General']['verbosity']
 
         # Initial time
-        loads_analysis.t0 = np.max([0. , fst_vt['Fst']['TMax'] - 600.])
+        loads_analysis.t0 = np.max([0. , self.fst_vt['Fst']['TMax'] - 600.])
         
         # Calc summary stats on the magnitude of a vector
         loads_analysis.channels_magnitude = {'LSShftF':["RotThrust", "LSShftFys", "LSShftFzs"], 
@@ -853,7 +852,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # DEL info
         if self.FASTpref['dlc_settings']['run_IEC']:
-            if fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
+            if self.fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
                 if self.n_blades == 2:
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
                 else:
@@ -991,17 +990,17 @@ class FASTLoadCases(ExplicitComponent):
             aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
             aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
             if self.n_blades == 2:
-                spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
+                spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2], axis=0))
+                spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
+                spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
             elif self.n_blades == 3:
                 blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
                 aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
                 aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
                 aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
-                spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
+                spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
+                spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
+                spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
             else:
                 raise Exception('The calculations only support 2 or 3 bladed rotors')
             outputs['max_aoa']  = spline_aoa_max(r)
@@ -1093,7 +1092,7 @@ class FASTLoadCases(ExplicitComponent):
 
 
         # Get DELS from OpenFAST data
-        if fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
+        if self.fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
                 try:
                     isinstance(pp,object)

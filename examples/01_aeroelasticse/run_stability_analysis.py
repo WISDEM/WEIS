@@ -24,7 +24,7 @@ vs_rttq     = [14562.19651233, 21253.82369411, 27719.15475684, 33305.62448534, 3
 pitch       = [0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 0.000000000000000000e+00, 5.028566666950788466e+00, 7.295432135567896381e+00, 9.350468211315952516e+00, 1.132212278050246645e+01, 1.324996361480808460e+01, 1.514266119341111327e+01, 1.699625976655589454e+01, 1.880119840739241255e+01, 2.054541584970921164e+01]
 hws         = [4.000000000000000000e+00, 4.832424577380788122e+00, 5.518696861384214003e+00, 6.049303000255854990e+00, 6.416887155412576149e+00, 6.616353476066063166e+00, 6.644936743441012261e+00, 6.787632781640955848e+00, 7.099629917953507174e+00, 7.576602909218082438e+00, 8.080520074579327527e+00, 8.996831778689713843e+00, 9.920398901811577019e+00, 1.096983731662181683e+01, 1.213059856802962244e+01, 1.338659092287661245e+01, 1.472040245101897860e+01, 1.611354240841405527e+01, 1.754669757589685020e+01, 1.900000000000000000e+01]
 NLinTimes   = 36
-TMax        = 300.
+TMax        = 10.
 
 trim_case = np.zeros(len(rot_speeds), dtype=int)
 trim_gain = np.zeros(len(rot_speeds))
@@ -58,7 +58,8 @@ case_inputs[("ElastoDyn","TwSSDOF2")]   = {'vals':["True"], 'group':0}
 case_inputs[("Fst","TMax")]             = {'vals':[TMax], 'group':0}
 case_inputs[("Fst","DT")]               = {'vals':[0.0001], 'group':0}
 case_inputs[("Fst","CompInflow")]       = {'vals':[1], 'group':0}
-
+case_inputs[("Fst","CompHydro")]        = {'vals':[0], 'group':0}
+case_inputs[("Fst","CompSub")]          = {'vals':[0], 'group':0}
 case_inputs[("Fst","Linearize")]        = {'vals':["True"], 'group':0}
 case_inputs[("Fst","CalcSteady")]       = {'vals':["True"], 'group':0}
 case_inputs[("Fst","TrimCase")]         = {'vals':trim_case, 'group':1}
@@ -73,7 +74,7 @@ case_inputs[("Fst","LinOutputs")]       = {'vals':[1], 'group':0}
 case_inputs[("Fst","LinOutJac")]        = {'vals':["False"], 'group':0}
 case_inputs[("Fst","LinOutMod")]        = {'vals':["False"], 'group':0}
 case_inputs[("Fst","WrVTK")]            = {'vals':[2], 'group':0}
-case_inputs[("Fst","VTK_fps")]          = {'vals':[30], 'group':0}
+case_inputs[("Fst","VTK_fps")]          = {'vals':[50], 'group':0}
 
 
 case_inputs[("ServoDyn","PCMode")]      = {'vals':[0], 'group':0}
@@ -92,7 +93,7 @@ case_inputs[("ElastoDyn","BlPitch1")]   = {'vals': pitch, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
 case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
 
-case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='ie15mw')
+case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='iea15mw')
 
 fastBatch.case_list = case_list
 fastBatch.case_name_list = case_name_list

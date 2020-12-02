@@ -13,10 +13,10 @@ import os, platform
 # Paths calling the standard modules of WEIS
 fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
 run_dir1                    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
-fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-OLAF')   # Path to fst directory files
+run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
+fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-OLAF')   # Path to fst directory files
 fastBatch.FAST_InputFile    = 'IEA-15-240-RWT_OLAF.fst'   # FAST input file (ext=.fst)
-fastBatch.FAST_runDirectory = 'olaf/iea15mw'
+fastBatch.FAST_runDirectory = 'olaf' + os.sep + 'iea15mw'
 fastBatch.debug_level       = 2
 
 # User settings
@@ -59,11 +59,11 @@ case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
 
 # Find the controller
 if platform.system() == 'Windows':
-    path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dll')
+    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.dll')
 elif platform.system() == 'Darwin':
-    path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.dylib')
+    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.dylib')
 else:
-    path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.so')
+    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.so')
 
 case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 
