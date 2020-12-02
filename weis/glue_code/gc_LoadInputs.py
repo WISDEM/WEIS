@@ -62,6 +62,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             
             if self.modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2 and self.modeling_options['openfast']['dlc_settings']['run_power_curve'] == False and self.modeling_options['openfast']['dlc_settings']['run_IEC'] == False:
                 raise Exception('WEIS is set to run OpenFAST, but both flags for power curve and IEC cases are set to False among the modeling options. Set at least one of the two to True to proceed.')
+        
+        # XFoil
+        if not os.path.isfile(self.modeling_options["xfoil"]["path"]) and self.modeling_options['Level3']['ROSCO']['Flp_Mode']:
+            raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
 
             
     def set_openmdao_vectors_control(self):
@@ -70,7 +74,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
                 self.modeling_options['RotorSE']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
-                self.modeling_options['airfoils']['n_tab']   = 3
+                self.modeling_options['RotorSE']['n_tab']   = 3
             else:
                 exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
         

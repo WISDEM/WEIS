@@ -388,13 +388,13 @@ components:
                        -  [56.5131824838709, 0.0, 0.0, 0.0, 0.0, -4.734391978027805, 56.5131824838709, 0.0, 0.0, 0.0, -0.32214715515121983, 56.5131824838709, 4.734391978027805, 0.32214715515121983, 0.0, 4.067492688765855, 4.067492688765855, 0.0, 0.0, 0.0, 4.363036317393684]
                        -  [18.57845637577193, 0.0, 0.0, 0.0, 0.0, -2.085897037697946, 18.57845637577193, 0.0, 0.0, 0.0, -0.19893757207081628, 18.57845637577193, 2.085897037697946, 0.19893757207081628, 0.0, 1.0201618697482802, 1.0201618697482802, 0.0, 0.0, 0.0, 1.059785352160374]
                        -  [11.98150718774851, 0.0, 0.0, 0.0, 0.0, -0.7755202815656711, 11.98150718774851, 0.0, 0.0, 0.0, -0.08545371431055412, 11.98150718774851, 0.7755202815656711, 0.08545371431055412, 0.0, 0.2672106248422468, 0.2672106248422468, 0.0, 0.0, 0.0, 0.2760255620569213]
-        #aerodynamic_control:
-        #    te_flaps:
-        #       -  span_start: 0.7
-        #          span_end: 0.8
-        #          chord_start: 0.8
-        #          delta_max_pos: 0.17453292519943295   # 10 deg
-        #          delta_max_neg: -0.17453292519943295   # -10 deg
+        aerodynamic_control:
+           te_flaps:
+              -  span_start: 0.7
+                 span_end: 0.8
+                 chord_start: 0.8
+                 delta_max_pos: 0.17453292519943295   # 10 deg
+                 delta_max_neg: -0.17453292519943295   # -10 deg
     hub:
         cone_angle: 0.06981317007977318 # 4 deg
         diameter: 6.0
@@ -793,29 +793,37 @@ materials:
       S: 0
       Xy: 450.e+6
 control:
-    rated_power: 5.e+6
-    Vin: 4.0
-    Vout: 25.0
-    minOmega: 0.0
-    maxOmega: 0.9927432785343746
-    tsr: 10.5
-    pitch: 0.
-    maxTS: 85.
-    max_pitch_rate: 0.03488888888888889 # 2 deg/s
-    max_torque_rate: 4500000.
-    # Controller parameters 
-    PC_zeta: 1.1                      # Pitch controller desired damping ratio [-]
-    PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
-    VS_zeta: 0.5                      # Torque controller desired damping ratio [-]
-    VS_omega: 0.1                     # Torque controller desired natural frequency [rad/s]
-    max_pitch: 1.5707963267948966     # Maximum pitch angle [rad], {default = 90 degrees}
-    min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
-    vs_minspd: 0                      # Minimum rotor speed [rad/s], {default = 0 rad/s}
-    ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
-    ss_pcgain: .001                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
-    ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
-    Flp_omega: 3.1
-    Flp_zeta: 1.25
+    supervisory:
+        Vin: 4.0
+        Vout: 25.0
+        maxTS: 85.
+        rated_power: 5.e+6
+        minOmega: 0.0
+        maxOmega: 0.9927432785343746
+    pitch:
+        PC_zeta: 1.1   
+        PC_omega: 0.2  
+        ps_percent: 0.8
+        max_pitch: 1.57
+        max_pitch_rate: 0.03488888888888889
+        min_pitch: 0.
+    torque:
+        control_type: tsr_tracking
+        tsr: 10.5
+        VS_zeta: 0.5  
+        VS_omega: 0.1 
+        max_torque_rate: 4500000.
+        VS_minspd: 0.0
+        VS_maxspd: 2.00000
+    setpoint_smooth:
+        ss_vsgain: 1
+        ss_pcgain: .001
+    shutdown:
+        limit_type: gen_speed
+        limit_value: 2.0
+    dac:
+        Flp_omega: 3.1
+        Flp_zeta: 1.25
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5

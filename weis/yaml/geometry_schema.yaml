@@ -2708,6 +2708,25 @@ properties:
                             unit: (-)
                             minItems: 1
                             uniqueItems: false
+            dac:
+                type: object
+                description: Control parameters for distributed aerodynamic control devices
+                required:
+                    - Flp_omega
+                    - Flp_zeta
+                properties:
+                    Flp_omega:
+                        type: number
+                        description: Flap controller desired natural frequency. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: rad/s
+                        minimum: 0
+                        maximum: 5
+                    Flp_zeta:
+                        type: number
+                        description: Flap controller desired damping ratio. It is used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                        unit: none
+                        minimum: 0
+                        maximum: 5
 
             user_defined_SS_1: &uss
                 type: object

@@ -260,7 +260,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
             WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
-            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['openfast']['fst_vt']['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
+            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['Level3']['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
 
         # Tune Controller!
         controller = ROSCO_controller.Controller(rosco_init_options)
