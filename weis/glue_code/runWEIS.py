@@ -271,13 +271,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 if blade_opt_options['dac']['te_flap_end']['flag']:
                     wt_opt.model.add_design_var('dac_ivc.te_flap_end', 
                     lower=blade_opt_options['dac']['te_flap_end']['min_end'], 
-                    upper=blade_opt_options['dac']['te_flap_end']['max_end'], 
-                    ref=1e2)
+                    upper=blade_opt_options['dac']['te_flap_end']['max_end'])
                 if blade_opt_options['dac']['te_flap_ext']['flag']:
                     wt_opt.model.add_design_var('dac_ivc.te_flap_ext', 
                                         lower=blade_opt_options['dac']['te_flap_ext']['min_ext'], 
-                                        upper=blade_opt_options['dac']['te_flap_ext']['max_ext'],
-                                        ref=1e2)
+                                        upper=blade_opt_options['dac']['te_flap_ext']['max_ext'])
                     
             if tower_opt_options['outer_diameter']['flag']:
                 wt_opt.model.add_design_var('tower.diameter', lower=tower_opt_options['outer_diameter']['lower_bound'], upper=tower_opt_options['outer_diameter']['upper_bound'], ref=5.)
@@ -433,10 +431,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                     exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
                 wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
                     lower = control_constraints['flap_control']['min'],
-                    upper = control_constraints['flap_control']['max'])
+                    upper = control_constraints['flap_control']['max'], 
+                    ref=1e-7)
                 wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Ki', 
                     lower = control_constraints['flap_control']['min'],
-                    upper = control_constraints['flap_control']['max'])    
+                    upper = control_constraints['flap_control']['max'],
+                    ref=1e-7)    
             if control_constraints['rotor_overspeed']['flag']:
                 if modeling_options['Analysis_Flags']['OpenFAST'] != True:
                     exit('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
