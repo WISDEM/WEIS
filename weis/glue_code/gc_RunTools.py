@@ -46,7 +46,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
             if self.options['opt_options']['optimization_variables']['control']['servo']['torque_control']['flag']:
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['flap_control']['flag']:
-                print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
+                print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.6f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
             if self.options['opt_options']['optimization_variables']['control']['servo']['ipc_control']['flag']:
                 print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
             if self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_end']['flag']:
