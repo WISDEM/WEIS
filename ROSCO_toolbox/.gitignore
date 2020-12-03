@@ -38,6 +38,9 @@ _build
 *.dll
 *.bts
 
+outputs/
+results/
+
 # Other
 .pytest_cache
 examples/cp_ct_cq_lut.p
