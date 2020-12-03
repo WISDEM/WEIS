@@ -160,3 +160,4 @@ driver:
 recorder:
     flag: True
     file_name: log_opt.sql
+    plots: False

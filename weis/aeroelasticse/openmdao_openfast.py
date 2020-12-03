@@ -829,41 +829,41 @@ class FASTLoadCases(ExplicitComponent):
         Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
 
         # Save output plots
-        fast_pl = rosco_utilities.FAST_Plots()
+        if self.options['opt_options']['recorder']['plots']:
+            figs_fname = 'figures_i{:02.0f}r{:02.0f}.pdf'.format(self.of_inumber, rank)        
+            with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
+                for fast_out in FAST_Output:
+                    plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
+                                'Blade': ['TipDxc1', 'RootMyb1']}
+                    if self.n_tab > 1:
+                        plots2make['Baseline'].append('BLFLAP1')
 
-        figs_fname = 'figures_i{:02.0f}r{:02.0f}.pdf'.format(self.of_inumber, rank)        
-        with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
-            for fast_out in FAST_Output:
-                plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
-                             'Blade': ['TipDxc1', 'RootMyb1']}
-                if self.n_tab > 1:
-                    plots2make['Baseline'].append('BLFLAP1')
+                    numplots    = len(plots2make)
+                    maxchannels = np.max([len(plots2make[key]) for key in plots2make.keys()])
+                    fig = plt.figure(figsize=(8,6), constrained_layout=True)
+                    gs_all = fig.add_gridspec(1, numplots)
+                    for pnum, (gs, pname) in enumerate(zip(gs_all, plots2make.keys())):
+                        gs0 = gs.subgridspec(len(plots2make[pname]),1)
+                        for cid, channel in enumerate(plots2make[pname]):
+                            subplt = fig.add_subplot(gs0[cid])
+                            try:
+                                subplt.plot(fast_out['Time'], fast_out[channel])
+                                unit_idx = fast_out['meta']['channels'].index(channel)
+                                subplt.set_ylabel('{:^} \n ({:^})'.format(
+                                                    channel,
+                                                    fast_out['meta']['attribute_units'][unit_idx]))
+                                subplt.grid(True)
+                                subplt.set_xlabel('Time (s)')
+                            except:
+                                print('Cannot plot {}'.format(channel))
+                            if cid == 0:
+                                subplt.set_title(pname)
+                            if cid != len(plots2make[pname])-1:
+                                subplt.axes.get_xaxis().set_visible(False)
 
-                numplots    = len(plots2make)
-                maxchannels = np.max([len(plots2make[key]) for key in plots2make.keys()])
-                fig = plt.figure(figsize=(8,6), constrained_layout=True)
-                gs_all = fig.add_gridspec(1, numplots)
-                for pnum, (gs, pname) in enumerate(zip(gs_all, plots2make.keys())):
-                    gs0 = gs.subgridspec(len(plots2make[pname]),1)
-                    for cid, channel in enumerate(plots2make[pname]):
-                        subplt = fig.add_subplot(gs0[cid])
-                        try:
-                            subplt.plot(fast_out['Time'], fast_out[channel])
-                            unit_idx = fast_out['meta']['channels'].index(channel)
-                            subplt.set_ylabel('{:^} \n ({:^})'.format(
-                                                channel,
-                                                fast_out['meta']['attribute_units'][unit_idx]))
-                            subplt.grid(True)
-                            subplt.set_xlabel('Time (s)')
-                        except:
-                            print('Cannot plot {}'.format(channel))
-                        if cid == 0:
-                            subplt.set_title(pname)
-                        if cid != len(plots2make[pname])-1:
-                            subplt.axes.get_xaxis().set_visible(False)
-
-                    plt.suptitle(fast_out['meta']['name'])
-                pdf.savefig(fig)
+                        plt.suptitle(fast_out['meta']['name'])
+                    pdf.savefig(fig)
+                    plt.close('all')
 
 
             

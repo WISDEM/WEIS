@@ -147,25 +147,25 @@ properties:
                                     omega_min: &omega_min
                                         type: number
                                         default: 0.1
-                                        minimum: 0.0
+                                        minimum: 1.e-8
                                         maximum: 10.0
                                         unit: none
                                     omega_max: &omega_max
                                         type: number
                                         default: 0.7
-                                        minimum: 0.0
+                                        minimum: 1.e-8
                                         maximum: 10.0
                                         unit: none
                                     zeta_min: &zeta_min
                                         type: number
                                         default: 0.4
-                                        minimum: 0.0
+                                        minimum: 1.e-8
                                         maximum: 10.0
                                         unit: none
                                     zeta_max: &zeta_max
                                         type: number
                                         default: 1.5
-                                        minimum: 0.0
+                                        minimum: 1.e-8
                                         maximum: 10.0
                                         unit: none
                             torque_control:
@@ -454,4 +454,8 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
+            plots:
+                type: boolean
+                description: Generate plots from OpenFAST simulations on each function call (True/False) 
+                default: False
 
