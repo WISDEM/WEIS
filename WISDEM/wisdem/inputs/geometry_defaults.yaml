@@ -8,8 +8,6 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     rated_power: 5.e+6
-    rotor_diameter: 126
-    hub_height: 90.
 # Components
 components:
     # Blade
