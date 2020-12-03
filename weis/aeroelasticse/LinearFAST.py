@@ -267,12 +267,12 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","Linearize")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","TrimGain")] = {'vals':[4e-5], 'group':0}
+        case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
 
         case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
         case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}
 
-        if not self.HydroStates:
-            case_inputs[("Fst","CompHydro")] = {'vals':[0], 'group':0}
+        case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}
         
         # InflowWind
         case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
@@ -287,8 +287,8 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("ServoDyn","PCMode")] = {'vals':[0], 'group':0}
         case_inputs[("ServoDyn","VSContrl")] = {'vals':[1], 'group':0}
 
-        # Torque Control: these are turbine specific, update later
-        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[7.56], 'group':0}
+        # Torque Control: these are turbine specific, update later based on ROSCO
+        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[.95*7.56], 'group':0}
         case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[19.62e6], 'group':0}
         case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[3.7e5], 'group':0}
         case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
@@ -334,11 +334,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[('ElastoDyn','BlPitch2')] = case_inputs[('ElastoDyn','BlPitch1')]
         case_inputs[('ElastoDyn','BlPitch3')] = case_inputs[('ElastoDyn','BlPitch1')]
 
-        # Gen Speed to track
-        # set for now and update with GB ratio next
-        RefGenSpeed = 0.95 * np.array(case_inputs[('ElastoDyn','RotSpeed')]['vals']) * self.GBRatio
-        case_inputs[('ServoDyn','VS_RtGnSp')] = {'vals': RefGenSpeed.tolist(), 'group': 1}
-
         channels = {}
         for var in ["BldPitch1","BldPitch2","BldPitch3","IPDefl1","IPDefl2","IPDefl3","OoPDefl1","OoPDefl2","OoPDefl3", \
             "NcIMURAxs","TipDxc1", "TipDyc1", "Spn2MLxb1", "Spn2MLxb2","Spn2MLxb3","Spn2MLyb1", "Spn2MLyb2","Spn2MLyb3" \
@@ -373,7 +368,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TrimCase")] = {'vals':TrimCase.tolist(), 'group':1}
 
 
-        case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
         
 
         # Generate Cases
@@ -392,7 +386,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         
 
 
-def gen_linear_model(wind_speeds):
+def gen_linear_model(wind_speeds,dofs=['GenDOF']):
     """ 
     Generate OpenFAST linearizations across wind speeds
 
@@ -425,12 +419,15 @@ def gen_linear_model(wind_speeds):
     linear.v_rated          = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
     linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
     linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
-    linear.DOFs             = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
-    linear.TMax             = 600.   # should be 1000-2000 sec or more with hydrodynamic states
+    linear.DOFs             = dofs #,'TwFADOF1','PtfmPDOF']  # enable with 
+    linear.TMax             = 2000.   # should be 1000-2000 sec or more with hydrodynamic states
     linear.NLinTimes        = 12
 
     #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
-    linear.HydroStates      = False   # taking out to speed up for test
+    if any([d in ['PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmyDOF'] for d in dofs]):
+        linear.HydroStates      = True   # taking out to speed up for test
+    else:
+        linear.HydroStates      = False   # taking out to speed up for test
 
     # simulation setup
     linear.parallel         = True
@@ -441,10 +438,10 @@ def gen_linear_model(wind_speeds):
 
 
     # run steady state sims
-    linear.runFAST_steady()
+    # linear.runFAST_steady()
 
     # process results 
-    linear.postFAST_steady()
+    # linear.postFAST_steady()
 
     # run linearizations
     linear.runFAST_linear()

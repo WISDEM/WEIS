@@ -430,7 +430,7 @@ class LinearControlModel(object):
 
             # Pitch Actuator parameters
             # self.PC_ActBw           = controller.turbine.pitch_act_bw
-            self.PC_ActBw       = 1.5708  # hard code until this is pulled into ROSCO
+            self.PC_ActBw       = 100 #1.5708  # hard code until this is pulled into ROSCO
 
             # Gen Speed Filter parameters
             F_Gen_Freq          = controller.turbine.bld_edgewise_freq * 1/4
@@ -451,7 +451,7 @@ class LinearControlModel(object):
             fl_lpf              = self.low_pass_filter(Fl_Bw,Fl_Damp)
 
             # Pitch Actuator parameters
-            self.PC_ActBw           = DISCON_file['PC_ActBw']
+            self.PC_ActBw           = 100 #DISCON_file['PC_ActBw']
             
 
             # Gen Speed Filter parameters
@@ -462,7 +462,7 @@ class LinearControlModel(object):
 
         # Floating transfer function
         s = co.TransferFunction.s
-        self.C_Fl               = fl_lpf / s * self.Fl_Kp
+        self.C_Fl               = - fl_lpf / s * self.Fl_Kp
         self.C_Fl               = co.ss(self.C_Fl)
         self.C_Fl.InputName     = 'NcIMUTAzs'
         self.C_Fl.OutputName    = 'Fl_Pitch'
@@ -496,7 +496,7 @@ class LinearControlModel(object):
         s                   = co.TransferFunction.s
         self.C_PC           = -(kp + ki/s) * rpm2radps(1)
         self.C_PC           = co.ss(self.C_PC)
-        self.C_PC.InputName    = 'GenSpeed'
+        self.C_PC.InputName    = 'GenSpeedF'
         self.C_PC.OutputName   = 'PC_Pitch'   
 
     def connect_elements(self):
@@ -513,8 +513,8 @@ class LinearControlModel(object):
         # self.C_PC.OutputName = 'BldPitch'
 
         # control modules 
-        # mods = [self.C_PC,self.C_Fl,S,self.F_Gen,self.pitch_act] 
-        mods = [self.C_PC,self.C_Fl,S,self.pitch_act] 
+        mods = [self.C_PC,self.C_Fl,S,self.F_Gen,self.pitch_act] 
+        # mods = [self.C_PC,self.C_Fl,S,self.pitch_act] 
         # mods = [self.C_PC] 
 
 
