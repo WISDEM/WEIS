@@ -21,3 +21,6 @@ __pycache__
 # Temp
 *Temp*
 *temp*
+
+outputs/
+results/
