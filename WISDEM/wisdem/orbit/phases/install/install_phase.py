@@ -14,6 +14,7 @@ import simpy
 
 from wisdem.orbit.core import Port, Environment
 from wisdem.orbit.phases import BasePhase
+from wisdem.orbit.core.defaults import common_costs
 
 
 class InstallPhase(BasePhase):
@@ -103,7 +104,7 @@ class InstallPhase(BasePhase):
         else:
             key = "port_cost_per_month"
             port_config = self.config.get("port", {})
-            rate = port_config.get("monthly_rate", self.defaults[key])
+            rate = port_config.get("monthly_rate", common_costs[key])
 
             months = self.total_phase_time / (8760 / 12)
             return months * rate
@@ -143,8 +144,7 @@ class InstallPhase(BasePhase):
 
         s = sorted(self.env.actions, key=lambda x: (x["agent"], x["action"]))
         grouped = {
-            k: sum([i["duration"] for i in list(v)])
-            for k, v in groupby(s, key=lambda x: (x["agent"], x["action"]))
+            k: sum([i["duration"] for i in list(v)]) for k, v in groupby(s, key=lambda x: (x["agent"], x["action"]))
         }
         agents = list(set([k[0] for k in grouped.keys()]))
         for agent in agents:
@@ -189,9 +189,7 @@ class InstallPhase(BasePhase):
                 print("Vessel does not have storage capacity.")
                 continue
 
-            outputs[
-                f"{name}_cargo_mass_utilization"
-            ] = vessel.max_cargo_mass_utilization
+            outputs[f"{name}_cargo_mass_utilization"] = vessel.max_cargo_mass_utilization
 
         return outputs
 
@@ -215,8 +213,6 @@ class InstallPhase(BasePhase):
                 print("Vessel does not have storage capacity.")
                 continue
 
-            outputs[
-                f"{name}_deck_space_utilization"
-            ] = vessel.max_deck_space_utilization
+            outputs[f"{name}_deck_space_utilization"] = vessel.max_deck_space_utilization
 
         return outputs
