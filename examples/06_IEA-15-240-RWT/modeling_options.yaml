@@ -17,13 +17,10 @@ WISDEM:
     BOS:
         flag: True
 
-Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
-    flag: False
-
-Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize OpenFAST)
-    flag: False
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
     simulation:
-        TMax: 5.
+        TMax: 1.
         DT: 0.01
     linearization:
         Linearize: False
@@ -50,32 +47,6 @@ Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize 
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-    BeamDyn:
-        flag: False
-    HydroDyn:
-        flag: False
-    SubDyn:
-        flag: False
-    MoorDyn:
-        flag: False
-    ServoDyn:
-        flag: False
-    ROSCO:
-        flag: False
-
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
-    flag: True
-    simulation:
-        TMax: 1.
-        DT: 0.01
-    linearization:
-        Linearize: False
-    InflowWind:
-        flag: True
-    AeroDyn:
-        flag: True
-    ElastoDyn:
-        flag: True
     BeamDyn:
         flag: False
     HydroDyn:

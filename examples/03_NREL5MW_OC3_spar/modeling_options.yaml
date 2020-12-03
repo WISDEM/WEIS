@@ -17,12 +17,6 @@ WISDEM:
     BOS:
         flag: True
 
-Level1: # Options for WEIS fidelity level 1 = frequency domain (WISDEM)
-    flag: False
-
-Level2: # Options for WEIS fidelity level 2 = linearized time domain (Linearize OpenFAST)
-    flag: False
-
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
