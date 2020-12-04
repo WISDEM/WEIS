@@ -38,6 +38,11 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
+          
+      # Install testing dependencies
+      - name: Add testing dependencies
+        run: |
+          conda install testflo
 
       # Debugging session
       #- name: Setup tmate session
@@ -47,7 +52,12 @@ jobs:
       - name: Install WEIS
         shell: pwsh
         run: |
-          python setup.py develop      
+          python setup.py develop
+          
+      # Run all tests
+      - name: Run all tests within WEIS itself
+        run: |
+          testflo weis --coverage --coverpkg weis
       
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
@@ -69,11 +79,6 @@ jobs:
       #    cd examples/dac_flaps
       #    python dac_driver.py
       
-      # Run all tests
-      - name: Run all tests within WEIS itself
-        run: |
-          testflo weis --coverage --coverpkg weis
-          
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
