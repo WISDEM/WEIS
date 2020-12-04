@@ -51,11 +51,11 @@ jobs:
           python setup.py develop      
       
       # Run example scripts
-      #- name: Run examples
-      #  shell: pwsh
-      #  run: |
-      #    cd weis/test
-      #    python test_examples.py
+      - name: Run examples
+        shell: pwsh
+        run: |
+          cd weis/test
+          python test_examples.py
       
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
@@ -65,11 +65,11 @@ jobs:
           mpirun -np 2 python weis_driver.py
       
       # Run scripts within control_opt folder, with and without MPI
-      #- name: Run examples control optimization
-      #  shell: pwsh
-      #  run: |
-      #    cd examples/02_control_opt
-      #    mpirun -np 2 python runOptimization.py
+      - name: Run examples control optimization
+        shell: pwsh
+        run: |
+          cd examples/02_control_opt
+          mpirun -np 2 python runOptimization.py
 
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
