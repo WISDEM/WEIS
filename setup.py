@@ -40,8 +40,11 @@ class CMakeBuildExt(build_ext):
             localdir = os.path.join(this_directory, 'local')
 
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
+                          '-DCMAKE_Fortran_FLAGS_RELEASE="-O2"',
+                          '-DCMAKE_C_FLAGS_RELEASE="-O2"',
+                          '-DCMAKE_CXX_FLAGS_RELEASE="-O2"',
                           '-DCMAKE_INSTALL_PREFIX=' + localdir]
-            
+
             if platform.system() == 'Windows':
                 cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
                 
@@ -55,7 +58,7 @@ class CMakeBuildExt(build_ext):
             # Need fresh build directory for CMake
             os.makedirs(self.build_temp, exist_ok=True)
 
-            self.spawn(['cmake', '-S', ext.sourcedir, '-B', self.build_temp] + cmake_args)
+            self.spawn(['cmake','-S', ext.sourcedir, '-B', self.build_temp] + cmake_args)
             self.spawn(['cmake', '--build', self.build_temp, '-j', str(ncpus), '--target', 'install', '--config', 'Release'])
 
         else:
@@ -107,9 +110,10 @@ metadata = dict(
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.2','numpy','scipy','nlopt','dill','smt'],
+    install_requires              = ['openmdao>=3.2','numpy','scipy','nlopt','dill','smt','control','testflo'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     packages                      = weis_pkgs,
+    package_data                  =  {'':['*.yaml','*.xlsx']},
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
     ext_modules                   = [roscoExt, fastExt],

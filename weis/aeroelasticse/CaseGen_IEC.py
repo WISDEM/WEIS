@@ -79,7 +79,10 @@ class CaseGen_IEC():
                 IEC_WindType = 'NTM'
                 alpha = 0.2
                 iecwind = pyIECWind_turb()
-                TMax = 630.
+                if self.TMax == 0:
+                    TMax = 720.
+                else:
+                    TMax = self.TMax
 
             elif dlc in [1.3, 6.1, 6.3]:
                 if self.Turbine_Class == 'I':
@@ -93,19 +96,28 @@ class CaseGen_IEC():
                 IEC_WindType = '%uETM'%x
                 alpha = 0.11
                 iecwind = pyIECWind_turb()
-                TMax = 630.
+                if self.TMax == 0:
+                    TMax = 720.
+                else:
+                    TMax = self.TMax
 
             elif dlc == 1.4:
                 IEC_WindType = 'ECD'
                 alpha = 0.2
                 iecwind = pyIECWind_extreme()
-                TMax = 90.
+                if self.TMax == 0:
+                    TMax = 120.
+                else:
+                    TMax = self.TMax
 
             elif dlc == 1.5:
                 IEC_WindType = 'EWS'
                 alpha = 0.2
                 iecwind = pyIECWind_extreme()
-                TMax = 90.
+                if self.TMax == 0:
+                    TMax = 120.
+                else:
+                    TMax = self.TMax
 
             # Windfile generation setup
             if self.TMax == 0.:
@@ -283,7 +295,8 @@ class CaseGen_IEC():
             if ("Fst","TMax") not in case_inputs_i:
                 case_inputs_i[("Fst","TMax")] = {'vals':[TMax], 'group':0}
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
-            case_inputs_i[("InflowWind","Filename")] = {'vals':WindFile_out, 'group':1}
+            case_inputs_i[("InflowWind","UniformFilename")] = {'vals':WindFile_out, 'group':1}
+            case_inputs_i[("InflowWind","TurbSimFilename")] = {'vals':WindFile_out, 'group':1}
 
             if len(self.dlc_inputs['Yaw'][i]) > 0:
                     case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
@@ -298,7 +311,7 @@ class CaseGen_IEC():
             # make unique wave seeds
             if self.uniqueWaveSeeds:
                 seed_base   = int(float(dlc) * 10000)   # set wave seed based on dlc so no repeats
-                num_in_dlc  = len(case_inputs_i[("InflowWind","Filename")]['vals'])  # sims in each DLC
+                num_in_dlc  = len(case_inputs_i[("InflowWind","TurbSimFilename")]['vals'])  # sims in each DLC
                 wave_seeds  = (seed_base + np.arange(0,num_in_dlc)).tolist()
 
                 case_inputs_i[("HydroDyn","WaveSeed1")] = {'vals':wave_seeds, 'group':1}

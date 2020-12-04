@@ -9,15 +9,16 @@ thisdir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname( os.path.dirname( thisdir ))
 examples_dir = os.path.join(root_dir, 'examples')
 all_examples = Path(examples_dir).rglob('*.py') if os.path.exists(examples_dir) else []
+excluded_examples = ['run_PC_sweep.py','run_mass_sweep.py','dac_driver.py']
 
 class TestExamples(unittest.TestCase):
 
     def testAllExamplesRun(self):
         for f in all_examples:
             try:
-                if 'run_lin_turbine.py' not in str(f) and 'dac_driver.py' not in str(f):
+                if all([example not in str(f) for example in excluded_examples]):
                     # Go to location due to relative path use for airfoil files
-                    print(f)
+                    print("Running example:", f)
                     basepath = os.path.dirname(os.path.realpath(f))
                     os.chdir(basepath)
 
