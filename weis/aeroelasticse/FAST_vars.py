@@ -288,12 +288,12 @@ InflowWind['RefHt']     = 0.0
 InflowWind['PLexp']     = 0.0           
 
 # Parameters for Uniform wind file [used only for WindType = 2]
-InflowWind['Filename'] = ''            
+InflowWind['UniformFilename'] = ''            
 InflowWind['RefHt']    = 0.0           
 InflowWind['RefLength'] = 0.0           
 
 # Parameters for Binary TurbSim Full-Field files [used only for WindType = 3]
-InflowWind['Filename'] = ''            
+InflowWind['TurbSimFilename'] = ''            
 
 # Parameters for Binary Bladed-style Full-Field files [used only for WindType = 4]
 InflowWind['FilenameRoot'] = ''            
@@ -321,6 +321,7 @@ InflowWind['URef']        = 0.0
 InflowWind['WindProfile'] = 0             
 InflowWind['PLExp']       = 0.0           
 InflowWind['Z0']          = 0.0           
+InflowWind['InitPosition(x)'] = 0.0           
 
 # Inflow Wind Output Parameters (actual OutList included in master OutList)
 InflowWind['SumPrint']   = False         

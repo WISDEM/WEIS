@@ -847,19 +847,26 @@ class InputReader_OpenFAST(InputReader_Common):
         # Parameters for Steady Wind Conditions [used only for WindType = 1] (steady_wind_params)
         f.readline()
         self.fst_vt['InflowWind']['HWindSpeed'] = float_read(f.readline().split()[0])
-        self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        if self.fst_vt['InflowWind']['WindType'] == 1:
+            self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        else:
+            f.readline()
         self.fst_vt['InflowWind']['PLexp'] = float_read(f.readline().split()[0])
 
         # Parameters for Uniform wind file   [used only for WindType = 2] (uniform_wind_params)
         f.readline()
         self.fst_vt['InflowWind']['UniformFilename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
-        self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        if self.fst_vt['InflowWind']['WindType'] == 2:
+            self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        else:
+            f.readline()
         self.fst_vt['InflowWind']['RefLength'] = float_read(f.readline().split()[0])
 
         # Parameters for Binary TurbSim Full-Field files   [used only for WindType = 3] (turbsim_wind_params)
         f.readline()
         self.fst_vt['InflowWind']['TurbSimFilename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
-
+        if self.fst_vt['InflowWind']['WindType'] == 3 or self.fst_vt['InflowWind']['WindType'] == 4:
+            self.fst_vt['InflowWind']['RefHt'] = 0.
         # Parameters for Binary Bladed-style Full-Field files   [used only for WindType = 4] (bladed_wind_params)
         f.readline()
         self.fst_vt['InflowWind']['FilenameRoot'] = f.readline().split()[0][1:-1]       
@@ -876,7 +883,10 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['InflowWind']['dx']    = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['dy']    = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['dz']    = float_read(f.readline().split()[0])
-        self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        if self.fst_vt['InflowWind']['WindType'] == 5:
+            self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        else:
+            f.readline()
 
         # Scaling parameters for turbulence (still hawc_wind_params)
         f.readline()
