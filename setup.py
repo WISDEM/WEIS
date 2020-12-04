@@ -64,7 +64,7 @@ class CMakeBuildExt(build_ext):
                                '-DCMAKE_CXX_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_BUILD_TYPE="Release"']
                 
-            elif platform.node().find('GithubActionsVirtualMachine') >= 0:
+            elif platform.node().find('fv-az') >= 0:
                 cmake_args += ['-DCMAKE_BUIL_TYPE="Debug"',
                                '-DOPENFAST_DOUBLE_PRECISION="0"']
                               

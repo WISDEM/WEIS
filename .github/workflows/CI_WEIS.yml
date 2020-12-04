@@ -45,10 +45,10 @@ jobs:
       #  uses: mxschmitt/action-tmate@v3
         
       # Install WISDEM
-      #- name: Install WEIS
-      #  shell: pwsh
-      #  run: |
-      #    python setup.py develop      
+      - name: Install WEIS
+        shell: pwsh
+        run: |
+          python setup.py develop      
       
       # Run example scripts
       #- name: Run examples
