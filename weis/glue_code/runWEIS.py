@@ -31,7 +31,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             exit('ERROR: the parallelization logic only works for an even number of cores available')
 
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
-        if modeling_options['Analysis_Flags']['OpenFAST']:
+        if modeling_options['Level3']['flag']:
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, otherwise it is half of the number of DV (rounded to the lower integer). We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
@@ -98,7 +98,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
-            if modeling_options['Analysis_Flags']['OpenFAST']:
+            if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['openfast']['analysis_settings']['mpi_run']           = True
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
@@ -128,7 +128,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             wt_opt.setup(derivatives=False)
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
-        wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init)
+        wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = assign_ROSCO_values(wt_opt, modeling_options, wt_init['control'])
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         
@@ -171,7 +171,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Analysis_Flags']['OpenFAST']:
+    if MPI and modeling_options['Level3']['flag']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():

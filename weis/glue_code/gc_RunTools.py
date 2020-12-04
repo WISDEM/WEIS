@@ -12,7 +12,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        n_te_flaps = modeling_options['blade']['n_te_flaps']
+        n_te_flaps = modeling_options['WISDEM']['RotorSE']['n_te_flaps']
 
         self.add_input('aep',           val=0.0, units = 'GW * h')
         self.add_input('blade_mass',    val=0.0, units = 'kg')
@@ -39,7 +39,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         print('Tip Defl.:   {:<8.10f} m'.format(inputs['tip_deflection'][0]))
         
         # OpenFAST simulation summary
-        if self.options['modeling_options']['Analysis_Flags']['OpenFAST']: 
+        if self.options['modeling_options']['Level3']['flag']: 
             # Print optimization variables
             if self.options['opt_options']['optimization_variables']['control']['servo']['pitch_control']['flag']:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
