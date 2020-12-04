@@ -50,20 +50,19 @@ class CMakeBuildExt(build_ext):
             localdir = os.path.join(this_directory, 'local')
 
             # Custom tuning
+            tune = '-march=native -mtune=native'
             mycompiler = self.compiler.compiler[0]
-            print(mycompiler)
-            if (mycompiler.find('gcc') >= 0 or mycompiler.find('g++') >= 0 or
-                mycompiler.find('gfortran') >= 0 or mycompiler.find('clang') >= 0):
-                tune = '-march=native -mtune=native'
-            elif (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
+            if (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
                   mycompiler.find('icpc') >= 0):
                 tune = '-xHost'
                 
             # CMAKE profiles default for all
+            buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
                           '-DDOUBLE_PRECISION:BOOL=OFF',
-                          '-DCMAKE_INSTALL_PREFIX=' + localdir]
-            buildtype = 'Release'
+                          '-DCMAKE_INSTALL_PREFIX='+localdir,
+                          '-DCMAKE_BUILD_TYPE='+buildtype]
+            buildtype = buildtype.upper()
             
             if eagle_flag:
                 # On Eagle
@@ -72,22 +71,19 @@ class CMakeBuildExt(build_ext):
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
                 
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
-                               '-DCMAKE_C_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
-                               '-DCMAKE_CXX_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
-                               '-DCMAKE_BUILD_TYPE=Release',
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
+                               '-DCMAKE_C_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
+                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
                                '-DOPENMP=ON']
                 
             elif ci_flag:
-                # Github Actions builder
-                buildtype = 'Debug'
-                cmake_args += ['-DCMAKE_BUILD_TYPE=Debug']
+                # Github Actions builder- keep it simple
+                pass
                               
             else:
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE=-O2 '+tune,
-                               '-DCMAKE_C_FLAGS_RELEASE=-O2 '+tune,
-                               '-DCMAKE_CXX_FLAGS_RELEASE=-O2 '+tune,
-                               '-DCMAKE_BUILD_TYPE=Release']
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
+                               '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
+                               '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
                               
 
             if platform.system() == 'Windows':
@@ -98,6 +94,7 @@ class CMakeBuildExt(build_ext):
                 else:
                     cmake_args += ['-G', 'MinGW Makefiles']
 
+                    
             self.build_temp += '_'+ext.name
             os.makedirs(localdir, exist_ok=True)
             # Need fresh build directory for CMake
