@@ -59,10 +59,14 @@ class CMakeBuildExt(build_ext):
                   mycompiler.find('icpc') >= 0):
                 tune = '-xHost'
                 
-            # CMAKE profiles
-            cmake_args = ['-DBUILD_SHARED_LIBS=OFF','-DCMAKE_INSTALL_PREFIX=' + localdir]
+            # CMAKE profiles default for all
+            cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
+                          '-DDOUBLE_PRECISION:BOOL=OFF',
+                          '-DCMAKE_INSTALL_PREFIX=' + localdir]
             buildtype = 'Release'
+            
             if eagle_flag:
+                # On Eagle
                 try:
                     self.spawn(['ifort', '--version'])
                 except OSError:
@@ -76,7 +80,6 @@ class CMakeBuildExt(build_ext):
             elif ci_flag:
                 # Github Actions builder
                 buildtype = 'Debug'
-                cmake_args += ['-DDOUBLE_PRECISION:BOOL=OFF']
                               
             else:
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 '+tune+'"',
