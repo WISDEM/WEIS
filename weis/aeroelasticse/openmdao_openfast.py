@@ -1045,7 +1045,7 @@ class FASTLoadCases(ExplicitComponent):
             # get wind speed 
             if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
                 U = []
-                for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
+                for fname in [case[('InflowWind', 'TurbSimFilename')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
                     fname = os.path.split(fname)[-1]
                     ntm      = fname.split('NTM')[-1].split('_')
                     ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
@@ -1252,7 +1252,7 @@ class FASTLoadCases(ExplicitComponent):
             if dlci in [1.1, 1.2]:
             
                 # Get wind speed and seed of output file
-                ntm  = casei[('InflowWind', 'Filename')].split('NTM')[-1].split('_')
+                ntm  = casei[('InflowWind', 'TurbSimFilename')].split('NTM')[-1].split('_')
                 U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
                 Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
 
