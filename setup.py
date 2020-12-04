@@ -51,6 +51,7 @@ class CMakeBuildExt(build_ext):
 
             # Custom tuning
             mycompiler = self.compiler.compiler[0]
+            print(mycompiler)
             if (mycompiler.find('gcc') >= 0 or mycompiler.find('g++') >= 0 or
                 mycompiler.find('gfortran') >= 0 or mycompiler.find('clang') >= 0):
                 tune = '-march=native -mtune=native'
@@ -70,19 +71,19 @@ class CMakeBuildExt(build_ext):
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_C_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_CXX_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
-                               '-DOPENMP="ON"',
-                               '-DCMAKE_BUILD_TYPE="Release"']
+                               '-DOPENMP=ON',
+                               '-DCMAKE_BUILD_TYPE=Release']
                 
             elif ci_flag:
                 # Github Actions builder
-                cmake_args += ['-DCMAKE_BUILD_TYPE="Debug"',
-                               '-DDOUBLE_PRECISION:BOOL="OFF"']
+                cmake_args += ['-DCMAKE_BUILD_TYPE=Debug',
+                               '-DDOUBLE_PRECISION:BOOL=OFF']
                               
             else:
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 '+tune+'"',
                                '-DCMAKE_C_FLAGS_RELEASE="-O2 '+tune+'"',
                                '-DCMAKE_CXX_FLAGS_RELEASE="-O2 '+tune+'"',
-                               '-DCMAKE_BUILD_TYPE="Release"']
+                               '-DCMAKE_BUILD_TYPE=Release']
                               
 
             if platform.system() == 'Windows':
