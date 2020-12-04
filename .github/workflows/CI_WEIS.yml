@@ -5,7 +5,7 @@ name: CI_WEIS
 # We run CI on push commits and pull requests on master and develop branches
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, develop, testing ]
   pull_request:
     branches: [ master, develop ]
 
@@ -51,7 +51,7 @@ jobs:
       - name: Install dependencies
         run: |
           conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools swig xlrd pyside2
-          pip install simpy marmot-agents
+          pip install simpy marmot-agents testflo
       
       # Install dependencies of WEIS specific to macOS
       - name: Add dependendencies macOS specific
@@ -80,12 +80,6 @@ jobs:
         run: |
           python setup.py develop
       
-      # Run example scripts
-      - name: Run examples
-        run: |
-          cd weis/test
-          python test_examples.py
-      
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
         run: |
@@ -105,11 +99,18 @@ jobs:
       #    cd examples/dac_flaps
       #    python dac_driver.py
 
-      # Run scripts within multifidelity folder
-      - name: Run multifidelity tests
+      # Run all tests
+      - name: Run all tests within WEIS itself
         run: |
-          cd weis/multifidelity/test
-          python test_base_method.py
-          python test_base_model.py
-          python test_simple_models.py
-          python test_trust_region.py
+          testflo weis --coverage --coverpkg weis
+          
+      # Run coveralls
+      - name: Run coveralls
+        if: contains( matrix.os, 'ubuntu')
+        # This also works, https://github.com/AndreMiras/coveralls-python-action
+        #uses: AndreMiras/coveralls-python-action@develop
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
