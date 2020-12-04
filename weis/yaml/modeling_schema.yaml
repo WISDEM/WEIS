@@ -360,6 +360,14 @@ properties:
                         maximum: 1000.0
                         unit: none
                         description:  Reference length for linear horizontal and vertical sheer (-) [used only for WindType = 2]
+                    UniformFilename:
+                        type: string
+                        default: none
+                        description: Filename of time series data for uniform wind field [used only for WindType = 2]
+                    TurbSimFilename:
+                        type: string
+                        default: none
+                        description: Name of the Full field wind file to use (.bts) [used only for WindType = 3]
                     FilenameRoot:
                         type: string
                         default: none
@@ -497,6 +505,13 @@ properties:
                         maximum: 1000.
                         unit: m
                         description:  Surface roughness length (m) (used for LG wind profile type only)[HAWC-format files]
+                    InitPosition(x):
+                        type: number
+                        default: 0
+                        minimum: 0.
+                        maximum: 1000.
+                        unit: m
+                        description: Initial offset in +x direction (shift of wind box)
                     SumPrint:
                         type: boolean
                         default: False

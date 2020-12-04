@@ -852,13 +852,13 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Parameters for Uniform wind file   [used only for WindType = 2] (uniform_wind_params)
         f.readline()
-        self.fst_vt['InflowWind']['Filename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
+        self.fst_vt['InflowWind']['UniformFilename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
         self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['RefLength'] = float_read(f.readline().split()[0])
 
         # Parameters for Binary TurbSim Full-Field files   [used only for WindType = 3] (turbsim_wind_params)
         f.readline()
-        self.fst_vt['InflowWind']['Filename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
+        self.fst_vt['InflowWind']['TurbSimFilename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
 
         # Parameters for Binary Bladed-style Full-Field files   [used only for WindType = 4] (bladed_wind_params)
         f.readline()
@@ -894,6 +894,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['InflowWind']['WindProfile'] = int(f.readline().split()[0])
         self.fst_vt['InflowWind']['PLExp']       = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['Z0']          = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['InitPosition(x)'] = float_read(f.readline().split()[0])
 
         # Inflow Wind Output Parameters (inflow_out_params)
         f.readline()
