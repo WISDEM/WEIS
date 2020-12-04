@@ -72,19 +72,22 @@ class CMakeBuildExt(build_ext):
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
                 
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
-                               '-DCMAKE_C_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
-                               '-DCMAKE_CXX_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
+                               '-DCMAKE_C_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
+                               '-DCMAKE_CXX_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
+                               '-DCMAKE_BUILD_TYPE=Release',
                                '-DOPENMP=ON']
                 
             elif ci_flag:
                 # Github Actions builder
                 buildtype = 'Debug'
+                cmake_args += ['-DCMAKE_BUILD_TYPE=Debug']
                               
             else:
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 '+tune+'"',
-                               '-DCMAKE_C_FLAGS_RELEASE="-O2 '+tune+'"',
-                               '-DCMAKE_CXX_FLAGS_RELEASE="-O2 '+tune+'"']
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE=-O2 '+tune,
+                               '-DCMAKE_C_FLAGS_RELEASE=-O2 '+tune,
+                               '-DCMAKE_CXX_FLAGS_RELEASE=-O2 '+tune,
+                               '-DCMAKE_BUILD_TYPE=Release']
                               
 
             if platform.system() == 'Windows':
