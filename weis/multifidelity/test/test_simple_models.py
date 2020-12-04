@@ -35,12 +35,12 @@ class Test(unittest.TestCase):
         
         outputs = model.run(flattened_desvars)
         self.assertEqual(outputs['y'], 18.)
-        self.assertEqual(outputs['con'], 3.)
+        self.assertEqual(outputs['con'], 21.)
         
         # Should return the same values that were saved
         outputs = model.run(flattened_desvars)
         self.assertEqual(outputs['y'], 18.)
-        self.assertEqual(outputs['con'], 3.)
+        self.assertEqual(outputs['con'], 21.)
         
         # Should only have called the model once
         self.assertEqual(len(model.saved_desvars), 1)
