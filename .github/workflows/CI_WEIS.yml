@@ -54,7 +54,7 @@ jobs:
       - name: Run all tests within WEIS itself
         shell: pwsh
         run: |
-          pytest --cov=weis
+          pytest weis --cov=weis
       
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
