@@ -12,6 +12,16 @@ from io import open
 ncpus = multiprocessing.cpu_count()
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
+# Eagle environment
+eagle_flag = platform.node() in ['el'+str(m) for m in range(10)]
+ci_flag    = platform.node().find('fv-az') >= 0
+print(platform.node(), eagle_flag, ci_flag)
+print(os.uname())
+if eagle_flag:
+    os.environ["FC"] = "ifort"
+    os.environ["CC"] = "icc"
+    os.environ["CXX"] = "icpc"
+    
 # For the CMake Extensions
 class CMakeExtension(Extension):
 
@@ -48,13 +58,11 @@ class CMakeBuildExt(build_ext):
                   mycompiler.find('icpc') >= 0):
                 tune = '-xHost'
                 
-            # CMAKE profile for Eagle
+            # CMAKE profiles
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF','-DCMAKE_INSTALL_PREFIX=' + localdir]
-            if platform.node() in ['el'+str(m) for m in range(10)]:
+            
+            if eagle_flag:
                 try:
-                    self.spawn(['export','FC=ifort'])
-                    self.spawn(['export','CC=icc'])
-                    self.spawn(['export','CXX=icpc'])
                     self.spawn(['ifort', '--version'])
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
@@ -62,11 +70,13 @@ class CMakeBuildExt(build_ext):
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_C_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_CXX_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
+                               '-DOPENMP="ON"',
                                '-DCMAKE_BUILD_TYPE="Release"']
                 
-            elif platform.node().find('fv-az') >= 0:
-                cmake_args += ['-DCMAKE_BUIL_TYPE="Debug"',
-                               '-DOPENFAST_DOUBLE_PRECISION="0"']
+            elif ci_flag:
+                # Github Actions builder
+                cmake_args += ['-DCMAKE_BUILD_TYPE="Debug"',
+                               '-DDOUBLE_PRECISION:BOOL="OFF"']
                               
             else:
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 '+tune+'"',
