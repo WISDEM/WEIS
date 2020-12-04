@@ -1,0 +1,40 @@
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python
+  - pytest
+  - openmdao=3.4.0
+  - jsonschema
+  - ruamel_yaml
+  - pyyaml
+  - cmake
+  - make
+  - xlrd
+  - openpyxl
+  - cython
+  - swig
+  - pandas
+  - numpydoc
+  - six
+  - setuptools
+  - git
+  - numpy
+  - scipy
+  - matplotlib-base
+  - geopy
+  - pyside2
+  - dill
+  - control
+  - nlopt
+  - smt
+  - pip:
+    - simpy
+    - marmot-agents
+# Needs to be done outside of environment file:
+#  - m2w64-toolchain # [win]
+#  - libpython # [win]
+#  - compilers # [not win]
+#  - petsc4py # [not win]
+#  - mpi4py # [not win]
