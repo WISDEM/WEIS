@@ -61,7 +61,7 @@ class CMakeBuildExt(build_ext):
                 
             # CMAKE profiles
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF','-DCMAKE_INSTALL_PREFIX=' + localdir]
-            
+            buildtype = 'Release'
             if eagle_flag:
                 try:
                     self.spawn(['ifort', '--version'])
@@ -71,19 +71,17 @@ class CMakeBuildExt(build_ext):
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_C_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
                                '-DCMAKE_CXX_FLAGS_RELEASE="-O2 -xSKYLAKE-AVX512"',
-                               '-DOPENMP=ON',
-                               '-DCMAKE_BUILD_TYPE=Release']
+                               '-DOPENMP=ON']
                 
             elif ci_flag:
                 # Github Actions builder
-                cmake_args += ['-DCMAKE_BUILD_TYPE=Debug',
-                               '-DDOUBLE_PRECISION:BOOL=OFF']
+                buildtype = 'Debug'
+                cmake_args += ['-DDOUBLE_PRECISION:BOOL=OFF']
                               
             else:
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE="-O2 '+tune+'"',
                                '-DCMAKE_C_FLAGS_RELEASE="-O2 '+tune+'"',
-                               '-DCMAKE_CXX_FLAGS_RELEASE="-O2 '+tune+'"',
-                               '-DCMAKE_BUILD_TYPE=Release']
+                               '-DCMAKE_CXX_FLAGS_RELEASE="-O2 '+tune+'"']
                               
 
             if platform.system() == 'Windows':
@@ -100,7 +98,7 @@ class CMakeBuildExt(build_ext):
             os.makedirs(self.build_temp, exist_ok=True)
 
             self.spawn(['cmake','-S', ext.sourcedir, '-B', self.build_temp] + cmake_args)
-            self.spawn(['cmake', '--build', self.build_temp, '-j', str(ncpus), '--target', 'install'])
+            self.spawn(['cmake', '--build', self.build_temp, '-j', str(ncpus), '--target', 'install', '--config', buildtype])
 
         else:
             super().build_extension(ext)
