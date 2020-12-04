@@ -12,6 +12,16 @@ from io import open
 ncpus = multiprocessing.cpu_count()
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
+# Eagle environment
+eagle_flag = platform.node() in ['el'+str(m) for m in range(10)]
+ci_flag    = platform.node().find('fv-az') >= 0
+print(platform.node(), eagle_flag, ci_flag)
+print(os.uname())
+if eagle_flag:
+    os.environ["FC"] = "ifort"
+    os.environ["CC"] = "icc"
+    os.environ["CXX"] = "icpc"
+    
 # For the CMake Extensions
 class CMakeExtension(Extension):
 
@@ -39,11 +49,46 @@ class CMakeBuildExt(build_ext):
 
             localdir = os.path.join(this_directory, 'local')
 
+            # Custom tuning
+            mycompiler = self.compiler.compiler[0]
+            print(mycompiler)
+            if (mycompiler.find('gcc') >= 0 or mycompiler.find('g++') >= 0 or
+                mycompiler.find('gfortran') >= 0 or mycompiler.find('clang') >= 0):
+                tune = '-march=native -mtune=native'
+            elif (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
+                  mycompiler.find('icpc') >= 0):
+                tune = '-xHost'
+                
+            # CMAKE profiles default for all
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
-                          '-DCMAKE_Fortran_FLAGS_RELEASE="-O2"',
-                          '-DCMAKE_C_FLAGS_RELEASE="-O2"',
-                          '-DCMAKE_CXX_FLAGS_RELEASE="-O2"',
+                          '-DDOUBLE_PRECISION:BOOL=OFF',
                           '-DCMAKE_INSTALL_PREFIX=' + localdir]
+            buildtype = 'Release'
+            
+            if eagle_flag:
+                # On Eagle
+                try:
+                    self.spawn(['ifort', '--version'])
+                except OSError:
+                    raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
+                
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
+                               '-DCMAKE_C_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
+                               '-DCMAKE_CXX_FLAGS_RELEASE=-O2 -xSKYLAKE-AVX512',
+                               '-DCMAKE_BUILD_TYPE=Release',
+                               '-DOPENMP=ON']
+                
+            elif ci_flag:
+                # Github Actions builder
+                buildtype = 'Debug'
+                cmake_args += ['-DCMAKE_BUILD_TYPE=Debug']
+                              
+            else:
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_RELEASE=-O2 '+tune,
+                               '-DCMAKE_C_FLAGS_RELEASE=-O2 '+tune,
+                               '-DCMAKE_CXX_FLAGS_RELEASE=-O2 '+tune,
+                               '-DCMAKE_BUILD_TYPE=Release']
+                              
 
             if platform.system() == 'Windows':
                 cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
@@ -59,7 +104,7 @@ class CMakeBuildExt(build_ext):
             os.makedirs(self.build_temp, exist_ok=True)
 
             self.spawn(['cmake','-S', ext.sourcedir, '-B', self.build_temp] + cmake_args)
-            self.spawn(['cmake', '--build', self.build_temp, '-j', str(ncpus), '--target', 'install', '--config', 'Release'])
+            self.spawn(['cmake', '--build', self.build_temp, '-j', str(ncpus), '--target', 'install', '--config', buildtype])
 
         else:
             super().build_extension(ext)
