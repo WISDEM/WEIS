@@ -44,7 +44,8 @@ class CMakeBuildExt(build_ext):
             if (mycompiler.find('gcc') >= 0 or mycompiler.find('g++') >= 0 or
                 mycompiler.find('gfortran') >= 0 or mycompiler.find('clang') >= 0):
                 tune = '-march=native -mtune=native'
-            elif mycompiler.find('icc') >= 0 or mycompiler.find('ifort') >= 0:
+            elif (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
+                  mycompiler.find('icpc') >= 0):
                 tune = '-xHost'
                 
             # CMAKE profile for Eagle
@@ -52,6 +53,8 @@ class CMakeBuildExt(build_ext):
             if platform.node() in ['el'+str(m) for m in range(10)]:
                 try:
                     self.spawn(['export','FC=ifort'])
+                    self.spawn(['export','CC=icc'])
+                    self.spawn(['export','CXX=icpc'])
                     self.spawn(['ifort', '--version'])
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')

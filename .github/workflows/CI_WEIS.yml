@@ -32,43 +32,44 @@ jobs:
         # (if you use the shell here, cannot use 'compiler' package, but mpi only seems to work with it)
         run: |
           conda install -y petsc4py mpi4py 
-      
+          python -c "import platform; print(platform.node())"
+
       # Install dependencies of WISDEM specific to windows
-      - name: Add dependencies windows specific
-        if: contains( matrix.os, 'windows')
-        run: |
-          conda install -y m2w64-toolchain libpython
+      #- name: Add dependencies windows specific
+      #  if: contains( matrix.os, 'windows')
+      #  run: |
+      #    conda install -y m2w64-toolchain libpython
 
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
         
       # Install WISDEM
-      - name: Install WEIS
-        shell: pwsh
-        run: |
-          python setup.py develop      
+      #- name: Install WEIS
+      #  shell: pwsh
+      #  run: |
+      #    python setup.py develop      
       
       # Run example scripts
-      - name: Run examples
-        shell: pwsh
-        run: |
-          cd weis/test
-          python test_examples.py
+      #- name: Run examples
+      #  shell: pwsh
+      #  run: |
+      #    cd weis/test
+      #    python test_examples.py
       
       # Run scripts within rotor_opt folder with MPI
-      - name: Run parallel examples rotor optimization
-        shell: pwsh
-        run: |
-          cd examples/05_IEA-3.4-130-RWT
-          mpirun -np 2 python weis_driver.py
+      #- name: Run parallel examples rotor optimization
+      #  shell: pwsh
+      #  run: |
+      #    cd examples/05_IEA-3.4-130-RWT
+      #    mpirun -np 2 python weis_driver.py
       
       # Run scripts within control_opt folder, with and without MPI
-      - name: Run examples control optimization
-        shell: pwsh
-        run: |
-          cd examples/02_control_opt
-          mpirun -np 2 python runOptimization.py
+      #- name: Run examples control optimization
+      #  shell: pwsh
+      #  run: |
+      #    cd examples/02_control_opt
+      #    mpirun -np 2 python runOptimization.py
 
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
