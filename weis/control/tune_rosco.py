@@ -10,7 +10,7 @@ from ROSCO_toolbox import turbine as ROSCO_turbine
 from ROSCO_toolbox import utilities as ROSCO_utilities
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
-from wisdem.ccblade import CCAirfoil, CCBlade
+from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 
 class ServoSE_ROSCO(Group):
     def initialize(self):

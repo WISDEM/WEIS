@@ -20,6 +20,27 @@ properties:
         type: object
         default: {}
         properties:
+            rotor_diameter:
+                type: object
+                default: {}
+                description: Adjust the rotor diameter by changing the blade length (all blade properties constant with respect to non-dimensional span coordinates)
+                properties:
+                    flag: &flag
+                        type: boolean
+                        default: False
+                        description: Activates as a design variable or constraint
+                    minimum:
+                        type: number
+                        default: 0.
+                        minimum: 0.0
+                        maximum: 1000.0
+                        unit: m
+                    maximum:
+                        type: number
+                        default: 0.
+                        minimum: 0.0
+                        maximum: 1000.0
+                        unit: m
             blade:
                 type: object
                 default: {}
@@ -32,10 +53,7 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    flag: &flag
-                                        type: boolean
-                                        default: False
-                                        description: Activates as a design variable or constraint
+                                    flag: *flag
                                     inverse:
                                         type: boolean
                                         default: False
