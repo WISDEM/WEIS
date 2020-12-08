@@ -332,6 +332,12 @@ properties:
                         type: boolean
                         default: False
                         description: Echo input data to "<RootName>.ech" (flag)
+                    WindType:
+                        type: integer
+                        enum: [1,2,3,4,5]
+                        unit: none
+                        default: 1
+                        description: Switch for wind file type (1=steady; 2=uniform; 3=binary TurbSim FF; 4=binary Bladed-style FF; 5=HAWC format; 6=User defined)
                     PropagationDir:
                         type: number
                         default: 0.0
@@ -1732,7 +1738,66 @@ properties:
                         unit: s
                         minimum: 0.
                         description: Time to enable active pitch control (s) [unused when PCMode=0]
-                    # Shutdown maneuvers are handled in aeroelasticse when DLCs defined, and shutdown control in geometry...leave out of here?
+                    TPitManS1:
+                        type: number
+                        minimum: 0.
+                        unit: s
+                        default: 99999.
+                        description: Time to start override pitch maneuver for blade 1 and end standard pitch control (s)
+                    TPitManS2:
+                        type: number
+                        minimum: 0.
+                        unit: s
+                        default: 99999.
+                        description: Time to start override pitch maneuver for blade 2 and end standard pitch control (s)
+                    TPitManS3:
+                        type: number
+                        minimum: 0.
+                        unit: s
+                        default: 99999.
+                        description: Time to start override pitch maneuver for blade 3 and end standard pitch control (s)
+                    PitManRat(1):
+                        type: number
+                        minimum: 0.
+                        maximum: 30.
+                        unit: deg / s
+                        default: 0.
+                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 1 (deg/s)
+                    PitManRat(2):
+                        type: number
+                        minimum: 0.
+                        maximum: 30.
+                        unit: deg / s
+                        default: 0.
+                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 2 (deg/s)
+                    PitManRat(3):
+                        type: number
+                        minimum: 0.
+                        maximum: 30.
+                        unit: deg / s
+                        default: 0.
+                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 3 (deg/s)
+                    BlPitchF(1):
+                        type: number
+                        unit: deg
+                        default: 90.
+                        minimum: -180
+                        maximum: +180
+                        description: Blade 1 final pitch for pitch maneuvers (degrees)
+                    BlPitchF(2):
+                        type: number
+                        unit: deg
+                        default: 90.
+                        minimum: -180
+                        maximum: +180
+                        description: Blade 2 final pitch for pitch maneuvers (degrees)
+                    BlPitchF(3):
+                        type: number
+                        unit: deg
+                        default: 90.
+                        minimum: -180
+                        maximum: +180
+                        description: Blade 3 final pitch for pitch maneuvers (degrees)
                     VSContrl:
                         type: integer
                         description: Variable-speed control mode {0 = none, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL}

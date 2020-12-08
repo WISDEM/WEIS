@@ -156,24 +156,24 @@ class CaseGen_IEC():
                 case_inputs_i[("ServoDyn","TPitManS1")]  = {'vals':[self.TStart], 'group':0}
                 case_inputs_i[("ServoDyn","TPitManS2")]  = {'vals':[self.TStart], 'group':0}
                 case_inputs_i[("ServoDyn","TPitManS3")]  = {'vals':[self.TStart], 'group':0}
-                case_inputs_i[("ServoDyn","PitManRat1")] = {'vals':[self.PC_MaxRat], 'group':0}
-                case_inputs_i[("ServoDyn","PitManRat2")] = {'vals':[self.PC_MaxRat], 'group':0}
-                case_inputs_i[("ServoDyn","PitManRat3")] = {'vals':[self.PC_MaxRat], 'group':0}
-                case_inputs_i[("ServoDyn","BlPitchF1")]  = {'vals':[90.], 'group':0}
-                case_inputs_i[("ServoDyn","BlPitchF2")]  = {'vals':[90.], 'group':0}
-                case_inputs_i[("ServoDyn","BlPitchF3")]  = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat(1)")] = {'vals':[self.PC_MaxRat], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat(2)")] = {'vals':[self.PC_MaxRat], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat(3)")] = {'vals':[self.PC_MaxRat], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF(1)")]  = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF(2)")]  = {'vals':[90.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF(3)")]  = {'vals':[90.], 'group':0}
                 case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["True"], 'group':0}
                 case_inputs_i[("ServoDyn","TimGenOf")]   = {'vals':[self.TStart], 'group':0}
             else:
                 case_inputs_i[("ServoDyn","TPitManS1")]  = {'vals':[9999.9], 'group':0}
                 case_inputs_i[("ServoDyn","TPitManS2")]  = {'vals':[9999.9], 'group':0}
                 case_inputs_i[("ServoDyn","TPitManS3")]  = {'vals':[9999.9], 'group':0}
-                case_inputs_i[("ServoDyn","PitManRat1")] = {'vals':[2.], 'group':0}
-                case_inputs_i[("ServoDyn","PitManRat2")] = {'vals':[2.], 'group':0}
-                case_inputs_i[("ServoDyn","PitManRat3")] = {'vals':[2.], 'group':0}
-                case_inputs_i[("ServoDyn","BlPitchF1")]  = {'vals':[0.], 'group':0}
-                case_inputs_i[("ServoDyn","BlPitchF2")]  = {'vals':[0.], 'group':0}
-                case_inputs_i[("ServoDyn","BlPitchF3")]  = {'vals':[0.], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat(1)")] = {'vals':[2.], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat(2)")] = {'vals':[2.], 'group':0}
+                case_inputs_i[("ServoDyn","PitManRat(3)")] = {'vals':[2.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF(1)")]  = {'vals':[0.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF(2)")]  = {'vals':[0.], 'group':0}
+                case_inputs_i[("ServoDyn","BlPitchF(3)")]  = {'vals':[0.], 'group':0}
                 case_inputs_i[("ServoDyn","GenTiStp")]   = {'vals':["True"], 'group':0}
                 case_inputs_i[("ServoDyn","TimGenOf")]   = {'vals':[9999.9], 'group':0}
 
