@@ -239,8 +239,6 @@ class SimpleTrustRegion(BaseMethod):
             if plot:
                 self.plot_functions()
 
-            x_test = self.design_vectors[-1, :]
-
             if self.trust_radius <= self.radius_tol:
                 break
 
