@@ -14,9 +14,12 @@ class WindTurbineOntologyPython(object):
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
-        self.wt_init = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         self.defaults = sch.load_default_geometry_yaml()
+        if fname_input_wt is None:
+            self.wt_init = None
+        else:
+            self.wt_init = sch.load_geometry_yaml(fname_input_wt)
         self.set_run_flags()
         self.set_openmdao_vectors()
         self.set_opt_flags()
@@ -119,16 +122,12 @@ class WindTurbineOntologyPython(object):
         if self.modeling_options["flags"]["airfoils"]:
             self.modeling_options["RotorSE"]["n_af"] = len(self.wt_init["airfoils"])
             self.modeling_options["RotorSE"]["n_aoa"] = self.modeling_options["RotorSE"]["n_aoa"]
-            if self.modeling_options["RotorSE"]["n_aoa"] / 4.0 == int(
-                self.modeling_options["RotorSE"]["n_aoa"] / 4.0
-            ):
+            if self.modeling_options["RotorSE"]["n_aoa"] / 4.0 == int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0):
                 # One fourth of the angles of attack from -pi to -pi/6, half between -pi/6 to pi/6, and one fourth from pi/6 to pi
                 self.modeling_options["RotorSE"]["aoa"] = np.unique(
                     np.hstack(
                         [
-                            np.linspace(
-                                -np.pi, -np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0 + 1)
-                            ),
+                            np.linspace(-np.pi, -np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 4.0 + 1)),
                             np.linspace(
                                 -np.pi / 6.0, np.pi / 6.0, int(self.modeling_options["RotorSE"]["n_aoa"] / 2.0)
                             ),
@@ -460,10 +459,10 @@ class WindTurbineOntologyPython(object):
         if "opt_flag" in self.analysis_options["driver"]:
             self.analysis_options["opt_flag"] = self.analysis_options["driver"]["opt_flag"]
         else:
-            self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["optimization_variables"])
+            self.analysis_options["opt_flag"] = recursive_flag(self.analysis_options["design_variables"])
 
         # If not an optimization DV, then the number of points should be same as the discretization
-        blade_opt_options = self.analysis_options["optimization_variables"]["blade"]
+        blade_opt_options = self.analysis_options["design_variables"]["blade"]
         if not blade_opt_options["aero_shape"]["twist"]["flag"]:
             blade_opt_options["aero_shape"]["twist"]["n_opt"] = self.modeling_options["RotorSE"]["n_span"]
         elif blade_opt_options["aero_shape"]["twist"]["n_opt"] < 4:
@@ -748,9 +747,6 @@ class WindTurbineOntologyPython(object):
                 # Direct only
                 s_nose = np.linspace(0.0, 1.0, len(wt_opt["nacelle.nose_diameter"])).tolist()
                 s_bed = np.linspace(0.0, 1.0, len(wt_opt["nacelle.bedplate_wall_thickness"])).tolist()
-                self.wt_init["components"]["nacelle"]["drivetrain"]["access_diameter"] = float(
-                    wt_opt["nacelle.access_diameter"]
-                )
                 self.wt_init["components"]["nacelle"]["drivetrain"]["nose_diameter"] = wt_opt[
                     "nacelle.nose_diameter"
                 ].tolist()
@@ -971,5 +967,7 @@ class WindTurbineOntologyPython(object):
         if self.modeling_options["flags"]["control"]:
             self.wt_init["control"]["tsr"] = float(wt_opt["control.rated_TSR"])
 
-        # Write yaml with updated values
+        # Write yamls with updated values
         sch.write_geometry_yaml(self.wt_init, fname_output)
+        sch.write_modeling_yaml(self.modeling_options, fname_output)
+        sch.write_analysis_yaml(self.analysis_options, fname_output)
