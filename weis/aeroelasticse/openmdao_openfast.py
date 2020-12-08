@@ -194,6 +194,29 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
         self.layer_name = rotorse_options['layer_name']
 
+        # MoorDyn inputs
+        mooropt = self.options['modeling_options']["mooring"]
+        n_line_types = mooropt["n_line_types"]
+        self.add_discrete_input("line_type_names", val=[""] * n_line_types)
+        self.add_input("line_diameter", val=np.zeros(n_line_types), units="m")
+        self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
+        self.add_input("line_stiffness", val=np.zeros(n_line_types), units="N")
+        self.add_input("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
+        self.add_input("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
+        self.add_input("line_transverse_drag", val=np.zeros(n_line_types))
+        self.add_input("line_tangential_drag", val=np.zeros(n_line_types))
+
+        n_nodes = mooropt["n_nodes"]
+        self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
+        self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
+        self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+        self.add_input("nodes_added_mass", val=np.zeros(n_nodes))
+        self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
+            
+        n_lines = mooropt["n_lines"]
+        self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
+        self.add_discrete_input("node_names", val=[""] * n_nodes)
+        
         # FAST run preferences
         self.FASTpref            = FASTpref 
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
@@ -281,6 +304,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
+        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
@@ -313,6 +337,7 @@ class FASTLoadCases(ExplicitComponent):
     def init_FAST_model(self):
 
         fst_vt = self.options['modeling_options']['openfast']['fst_vt']
+        modeling_options = self.options['modeling_options']
         
         # Main .fst file`
         fst_vt['Fst']               = {}
@@ -324,22 +349,37 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']          = {}
         fst_vt['InflowWind']        = {}
 
-        for key in enumerate(self.options['modeling_options']['Level3']['simulation']):
-            fst_vt['Fst'][key[1]] = self.options['modeling_options']['Level3']['simulation'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDyn']):
-            fst_vt['ElastoDyn'][key[1]] = self.options['modeling_options']['Level3']['ElastoDyn'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDynBlade']):
-            fst_vt['ElastoDynBlade'][key[1]] = self.options['modeling_options']['Level3']['ElastoDynBlade'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDynTower']):
-            fst_vt['ElastoDynTower'][key[1]] = self.options['modeling_options']['Level3']['ElastoDynTower'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['AeroDyn']):
-            fst_vt['AeroDyn15'][key[1]] = self.options['modeling_options']['Level3']['AeroDyn'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['InflowWind']):
-            fst_vt['InflowWind'][key[1]] = self.options['modeling_options']['Level3']['InflowWind'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ServoDyn']):
-            fst_vt['ServoDyn'][key[1]] = self.options['modeling_options']['Level3']['ServoDyn'][key[1]]
+        for key in modeling_options['Level3']['simulation']:
+            fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
+            
+        for key in modeling_options['Level3']['ElastoDyn']:
+            fst_vt['ElastoDyn'][key] = modeling_options['Level3']['ElastoDyn'][key]
+            
+        for key in modeling_options['Level3']['ElastoDynBlade']:
+            fst_vt['ElastoDynBlade'][key] = modeling_options['Level3']['ElastoDynBlade'][key]
+            
+        for key in modeling_options['Level3']['ElastoDynTower']:
+            fst_vt['ElastoDynTower'][key] = modeling_options['Level3']['ElastoDynTower'][key]
+            
+        for key in modeling_options['Level3']['AeroDyn']:
+            fst_vt['AeroDyn15'][key] = modeling_options['Level3']['AeroDyn'][key]
+            
+        for key in modeling_options['Level3']['InflowWind']:
+            fst_vt['InflowWind'][key] = modeling_options['Level3']['InflowWind'][key]
+            
+        for key in modeling_options['Level3']['ServoDyn']:
+            fst_vt['ServoDyn'][key] = modeling_options['Level3']['ServoDyn'][key]
+            
+        for key in modeling_options['Level3']['SubDyn']:
+            fst_vt['ServoDyn'][key] = modeling_options['Level3']['SubDyn'][key]
+            
+        for key in modeling_options['Level3']['HydroDyn']:
+            fst_vt['ServoDyn'][key] = modeling_options['Level3']['HydroDyn'][key]
+            
+        for key in modeling_options['Level3']['MoorDyn']:
+            fst_vt['ServoDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
 
-        fst_vt['ServoDyn']['DLL_FileName'] = self.options['modeling_options']['openfast']['file_management']['path2dll']
+        fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['openfast']['file_management']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
             fst_vt['AeroDyn15']['IndToler'] = 'default'
@@ -350,7 +390,10 @@ class FASTLoadCases(ExplicitComponent):
 
         return fst_vt
 
+    
     def update_FAST_model(self, fst_vt, inputs, discrete_inputs):
+        
+        modeling_options = self.options['modeling_options']
 
         # Update fst_vt nested dictionary with data coming from WISDEM
 
@@ -501,7 +544,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
-                if self.options['modeling_options']['openfast']['analysis_settings']['generate_af_coords']:
+                if modeling_options['openfast']['analysis_settings']['generate_af_coords']:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
@@ -586,6 +629,60 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TwrGagNd'] = 0
         fst_vt['AeroDyn15']['NTwOuts']  = 0
 
+        # Moodyn inputs
+        n_line_types = modeling_options["mooring"]["n_line_types"]
+        fst_vt['MoorDyn']['NTypes'] = n_line_types
+        fst_vt['MoorDyn']['Name'] = modeling_options["mooring"]["line_type_name"][:]
+        fst_vt['MoorDyn']['Diam'] = inputs["line_diameter"]
+        fst_vt['MoorDyn']['MassDen'] = inputs["line_mass_density"]
+        fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+        fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones( n_line_types, dtype=np.int64)
+        fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
+        fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
+        fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
+        fst_vt['MoorDyn']['Cdn'] = inputs["line_tangential_drag"]
+            
+        n_nodes = modeling_options["mooring"]["n_nodes"]
+        fst_vt['MoorDyn']['NConnects'] = n_nodes
+        fst_vt['MoorDyn']['Node'] = [k+1 for k in range(n_nodes)]
+        fst_vt['MoorDyn']['Type'] = modeling_options["mooring"]["node_type"][:]
+        fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
+        fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
+        fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
+        fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
+        fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
+        fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
+        fst_vt['MoorDyn']['FY'] = np.zeros( n_nodes )
+        fst_vt['MoorDyn']['FZ'] = np.zeros( n_nodes )
+        fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
+        fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
+            
+        n_lines = modeling_options["mooring"]["n_lines"]
+        fst_vt['MoorDyn']['NLines'] = n_lines
+        fst_vt['MoorDyn']['Line'] = [k+1 for k in range(n_lines)]
+        fst_vt['MoorDyn']['LineType'] = modeling_options["mooring"]["line_type"][:]
+        fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
+        fst_vt['MoorDyn']['NumSegs'] = 50*np.ones( n_line_types, dtype=np.int64)
+        fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
+        fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
+        fst_vt['MoorDyn']['Flags_Outputs'] = ['-'] * n_lines
+        for k in range(n_lines):
+            id1 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node1"][k] )
+            id2 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node2"][k] )
+            if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
+                fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
+                fst_vt['MoorDyn']['NodeFair'][k] = id1+1
+                fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
+            if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
+                fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
+                fst_vt['MoorDyn']['NodeFair'][k] = id2+1
+                fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
+            else:
+                print(discrete_inputs['node_names'])
+                print(modeling_options["mooring"]["node1"][k], modeling_options["mooring"]["node2"][k])
+                print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
+                raise ValueError('Mooring line seems to be between unknown endpoint types?')
+            
         return fst_vt
 
 

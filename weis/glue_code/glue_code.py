@@ -285,6 +285,22 @@ class WindPark(om.Group):
             self.connect('sse_tune.aeroperf_tables.Ct',     'aeroelastic.Ct_aero_table')
             self.connect('sse_tune.aeroperf_tables.Cq',     'aeroelastic.Cq_aero_table')
 
+            self.connect("mooring.line_type_names", "aeroelastic.line_type_names")
+            self.connect("mooring.line_diameter", "aeroelastic.line_diameter")
+            self.connect("mooring.line_mass_density", "aeroelastic.line_mass_density")
+            self.connect("mooring.line_stiffness", "aeroelastic.line_stiffness")
+            self.connect("mooring.line_transverse_added_mass", "aeroelastic.line_transverse_added_mass")
+            self.connect("mooring.line_tangential_added_mass", "aeroelastic.line_tangential_added_mass")
+            self.connect("mooring.line_transverse_drag", "aeroelastic.line_transverse_drag")
+            self.connect("mooring.line_tangential_drag", "aeroelastic.line_tangential_drag")
+            self.connect("mooring.nodes_location_full", "aeroelastic.nodes_location_full")
+            self.connect("mooring.nodes_mass", "aeroelastic.nodes_mass")
+            self.connect("mooring.nodes_volume", "aeroelastic.nodes_volume")
+            self.connect("mooring.nodes_added_mass", "aeroelastic.nodes_added_mass")
+            self.connect("mooring.nodes_drag_area", "aeroelastic.nodes_drag_area")
+            self.connect("mooring.unstretched_length", "aeroelastic.unstretched_length")
+            self.connect("mooring.node_names", "aeroelastic.node_names")
+            
             # Temporary
             self.connect('xf.Re_loc',                       'aeroelastic.airfoils_Re_loc')
             self.connect('xf.Ma_loc',                       'aeroelastic.airfoils_Ma_loc')
