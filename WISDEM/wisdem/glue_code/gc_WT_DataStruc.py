@@ -1,10 +1,11 @@
-import numpy as np
 import copy
-from scipy.interpolate import PchipInterpolator, interp1d
+
+import numpy as np
 import openmdao.api as om
-from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing, remap2grid
-from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
+from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
 
 
 class WindTurbineOntologyOpenMDAO(om.Group):
@@ -165,12 +166,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             if modeling_options["DriveSE"]["direct"]:
                 # Direct only
                 nacelle_ivc.add_output(
-                    "access_diameter",
-                    val=0.0,
-                    units="m",
-                    desc="Minimum diameter for hollow shafts for maintenance access",
-                )
-                nacelle_ivc.add_output(
                     "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
                 )
                 nacelle_ivc.add_output(
@@ -329,7 +324,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 desc="1D array of the outer diameter values defined along the tower axis.",
             )
             ivc.add_output(
-                "cd", val=np.zeros(n_height_tower), desc="1D array of the drag coefficients defined along the tower height."
+                "cd",
+                val=np.zeros(n_height_tower),
+                desc="1D array of the drag coefficients defined along the tower height.",
             )
             ivc.add_output(
                 "layer_thickness",
@@ -529,27 +526,27 @@ class Blade(om.Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
         opt_var.add_output(
-            "s_opt_twist", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            "s_opt_twist", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
         )
         opt_var.add_output(
-            "s_opt_chord", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
+            "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
             "twist_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
         )
         opt_var.add_output(
             "chord_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
             "spar_cap_ss_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
             "spar_cap_ps_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
 
@@ -1212,9 +1209,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
 
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
-            Compute_Blade_Internal_Structure_2D_FEM(
-                rotorse_options=rotorse_options
-            ),
+            Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 

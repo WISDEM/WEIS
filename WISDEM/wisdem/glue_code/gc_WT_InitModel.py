@@ -628,7 +628,6 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
 
     if modeling_options["DriveSE"]["direct"]:
         # Direct only
-        wt_opt["nacelle.access_diameter"] = nacelle["drivetrain"]["access_diameter"]
         wt_opt["nacelle.nose_wall_thickness"] = nacelle["drivetrain"]["nose_wall_thickness"]
         wt_opt["nacelle.nose_diameter"] = nacelle["drivetrain"]["nose_diameter"]
 
@@ -1016,7 +1015,7 @@ def assign_configuration_values(wt_opt, assembly, opt_options):
     if int(assembly["number_of_blades"]) - assembly["number_of_blades"] != 0:
         raise Exception("ERROR: the number of blades must be an integer")
 
-    if assembly["rotor_diameter"] == 0.0 and opt_options["optimization_variables"]["rotor_diameter"]["flag"]:
+    if assembly["rotor_diameter"] == 0.0 and opt_options["design_variables"]["rotor_diameter"]["flag"]:
         raise Exception(
             "ERROR: you activated the rotor diameter as design variable, but you have not specified the rotor diameter in the geometry yaml."
         )
