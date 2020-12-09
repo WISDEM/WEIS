@@ -166,6 +166,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
             wt_initial.update_ontology_control(wt_opt)
+            # Remove the fst_vt key from the dictionary and write out the modeling options
+            modeling_options['openfast']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)
             
             # Save data to numpy and matlab arrays
