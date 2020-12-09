@@ -414,7 +414,6 @@ class WindPark(om.Group):
             self.connect('nacelle.transformer_mass_user',     'drivese_post.transformer_mass_user')
 
             if modeling_options['WISDEM']['DriveSE']['direct']:
-                self.connect('nacelle.access_diameter',           'drivese_post.access_diameter') # only used in direct
                 self.connect('nacelle.nose_diameter',             'drivese_post.nose_diameter') # only used in direct
                 self.connect('nacelle.nose_wall_thickness',       'drivese_post.nose_wall_thickness') # only used in direct
                 self.connect('nacelle.bedplate_wall_thickness',   'drivese_post.bedplate_wall_thickness') # only used in direct
