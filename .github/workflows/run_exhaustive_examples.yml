@@ -1,19 +1,13 @@
 name: run_exhaustive_examples
 
-# We run this exhaustive set of examples only on pulls or pushes to master
-on:
-  push:
-    branches:
-    - master
-  pull_request:
-    branches:
-    - master
+on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    if: "contains(github.event.head_commit.message, 'exhaustive_CI')"
     strategy:
       fail-fast: true
       matrix:
