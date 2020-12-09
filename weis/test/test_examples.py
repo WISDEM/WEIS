@@ -11,26 +11,26 @@ examples_dir = os.path.join(root_dir, "examples")
 
 # 02_ref turbines are regression tested in test_gluecode, no need to duplicate runtime
 all_scripts = [
-    "01_aeroelasticse/run_DLC",
-    "01_aeroelasticse/run_general",
-    # "01_aeroelasticse/run_mass_sweep",
-    "01_aeroelasticse/run_OLAF",
-    # "01_aeroelasticse/run_PC_sweep",
-    "01_aeroelasticse/run_stability_analysis",
-    
-    "02_control_opt/run_lin_turbine",
-    "02_control_opt/runOptimization",
-    
-    "03_NREL5MW_OC3_spar/weis_driver",
-    
-    # "04_NREL5MW_OC4_semi/",  # there appears to be no python file within this folder
-    
-    "05_IEA-3.4-130-RWT/weis_driver",
-    
-    "06_IEA-15-240-RWT/run_control_opt",
-    "06_IEA-15-240-RWT/weis_driver",
-    
-    # "07_te_flaps/dac_driver",
+    # "01_aeroelasticse/run_DLC",
+    # "01_aeroelasticse/run_general",
+    # # "01_aeroelasticse/run_mass_sweep",
+    # "01_aeroelasticse/run_OLAF",
+    # # "01_aeroelasticse/run_PC_sweep",
+    # "01_aeroelasticse/run_stability_analysis",
+    # 
+    # "02_control_opt/run_lin_turbine",
+    # "02_control_opt/runOptimization",
+    # 
+    # "03_NREL5MW_OC3_spar/weis_driver",
+    # 
+    # # "04_NREL5MW_OC4_semi/",  # there appears to be no python file within this folder
+    # 
+    # "05_IEA-3.4-130-RWT/weis_driver",
+    # 
+    # "06_IEA-15-240-RWT/run_control_opt",
+    # "06_IEA-15-240-RWT/weis_driver",
+    # 
+    # # "07_te_flaps/dac_driver",
 ]
 
 
