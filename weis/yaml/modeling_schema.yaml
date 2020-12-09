@@ -1758,25 +1758,25 @@ properties:
                         description: Time to start override pitch maneuver for blade 3 and end standard pitch control (s)
                     PitManRat(1):
                         type: number
-                        minimum: 0.
+                        minimum: 1.e-6
                         maximum: 30.
                         unit: deg / s
-                        default: 0.
-                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 1 (deg/s)
+                        default: 1.
+                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 1 (deg/s). It cannot be 0
                     PitManRat(2):
                         type: number
-                        minimum: 0.
+                        minimum: 1.e-6
                         maximum: 30.
                         unit: deg / s
-                        default: 0.
-                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 2 (deg/s)
+                        default: 1.
+                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 2 (deg/s). It cannot be 0
                     PitManRat(3):
                         type: number
-                        minimum: 0.
+                        minimum: 1.e-6
                         maximum: 30.
                         unit: deg / s
-                        default: 0.
-                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 3 (deg/s)
+                        default: 1.
+                        description: Pitch rate at which override pitch maneuver heads toward final pitch angle for blade 3 (deg/s). It cannot be 0
                     BlPitchF(1):
                         type: number
                         unit: deg
