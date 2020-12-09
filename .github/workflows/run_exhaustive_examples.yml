@@ -50,6 +50,13 @@ jobs:
         run: |
           python setup.py develop
           
+      # Run all examples
+      - name: Run tests within WEIS
+        shell: pwsh
+        run: |
+          cd weis/test
+          python run_examples.py
+          
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
         shell: pwsh
