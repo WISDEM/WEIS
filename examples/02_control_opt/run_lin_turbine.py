@@ -27,7 +27,7 @@ if __name__ == '__main__':
     weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
     
     # 0. Load linear models from gen_linear_model() in WEIS/wies/aeroelasticse/LinearFAST.py
-    lin_fast.gen_linear_model([16])
+    lin_turbine = lin_fast.gen_linear_model([16])
 
 
     # 1. Set up linear turbine model by running mbc transformation
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         controller      = ROSCO_controller.Controller(controller_params)
 
         # Load turbine data from OpenFAST and rotor performance text file
-        turbine.load_from_fast(path_params['FAST_InputFile'],path_params['FAST_directory'],dev_branch=True,rot_source='txt',txt_filename=path_params['rotor_performance_filename'])
+        turbine.load_from_fast(lin_turbine.FAST_InputFile,lin_turbine.FAST_directory,dev_branch=True)
 
         # Tune controller 
         controller.tune_controller(turbine)

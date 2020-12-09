@@ -401,7 +401,7 @@ def gen_linear_model(wind_speeds,dofs=['GenDOF']):
     linear.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
     
     linear.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
     linear.FAST_steadyDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_steady')
     linear.FAST_linearDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_lin')
     linear.debug_level              = 2
@@ -445,6 +445,8 @@ def gen_linear_model(wind_speeds,dofs=['GenDOF']):
 
     # run linearizations
     linear.runFAST_linear()
+
+    return linear
 
 
 

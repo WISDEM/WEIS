@@ -44,7 +44,18 @@ from pCrunch import Processing, Analysis
 import numpy as np
 import sys, os, platform, glob, yaml
 
-def run_turb_case(wind_speeds=[16],n_cores=1):
+def run_level3_case(wind_speeds=[16],omega=[],zeta=1,n_cores=1):
+    # Run FAST cases
+    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+    
+    # Select Turbine Model
+    model_dir                   = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), '01_aeroelasticse/OpenFAST_models')
+    fastBatch.FAST_directory    = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+
+    fastBatch.debug_level       = 2
+    fastBatch.overwrite_outfiles = False
+
     # Turbine inputs
     iec = CaseGen_IEC()
     iec.overwrite           = False
@@ -130,6 +141,52 @@ def run_turb_case(wind_speeds=[16],n_cores=1):
     case_inputs[('ServoDyn', 'TimGenOn')] = {'vals': [0.], 'group': 0}
     case_inputs[('ServoDyn', 'GenModel')] = {'vals': [1], 'group': 0}
 
+    # Set control parameters
+    if omega:
+        weis_dir            = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        control_param_yaml  = os.path.join(weis_dir,'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW.yaml')
+        inps                = yaml.safe_load(open(control_param_yaml))
+        path_params         = inps['path_params']
+        turbine_params      = inps['turbine_params']
+        controller_params   = inps['controller_params']
+
+        # make default controller, turbine objects for ROSCO_toolbox
+        turbine             = ROSCO_turbine.Turbine(turbine_params)
+        turbine.load_from_fast( fastBatch.FAST_InputFile,fastBatch.FAST_directory, dev_branch=True)
+
+        controller          = ROSCO_controller.Controller(controller_params)
+
+        # tune default controller
+        controller.tune_controller(turbine)
+
+        # check if inputs are lists
+        if not isinstance(omega,list):
+            omega = [omega]
+        if not isinstance(zeta,list):
+            zeta = [zeta]
+
+        # Loop through and make PI gains
+        pc_kp = []
+        pc_ki = []
+        m_omega = []  # flattened (omega,zeta) pairs
+        m_zeta = []  # flattened (omega,zeta) pairs
+        for o in omega:
+            for z in zeta:
+                controller.omega_pc = o
+                controller.zeta_pc  = z
+                controller.tune_controller(turbine)
+                pc_kp.append(controller.pc_gain_schedule.Kp.tolist())
+                pc_ki.append(controller.pc_gain_schedule.Ki.tolist())
+                m_omega.append(o)
+                m_zeta.append(z)
+
+        # add control gains to case_list
+        case_inputs = {}
+        case_inputs[('DISCON_in','omega')]          = {'vals': m_omega, 'group': 2}
+        case_inputs[('DISCON_in','zeta')]          = {'vals': m_zeta, 'group': 2}
+        case_inputs[('DISCON_in', 'PC_GS_KP')] = {'vals': pc_kp, 'group': 2}
+        case_inputs[('DISCON_in', 'PC_GS_KI')] = {'vals': pc_ki, 'group': 2}
+
 
     run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
     if platform.system() == 'Windows':
@@ -153,24 +210,16 @@ def run_turb_case(wind_speeds=[16],n_cores=1):
                                    "LSSTipMza","LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", \
                                        "TipRDxr", "TipRDyr", "TipRDzr"]:
         channels[var] = True
-
+    
+    
+    
 
     case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
 
-    # Run FAST cases
-    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
-    
-    # Select Turbine Model
-    model_dir                   = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), 'OpenFAST_models')
-    fastBatch.FAST_directory    = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
-    fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-
-    fastBatch.channels          = channels
-    fastBatch.FAST_runDirectory = iec.run_dir  # input!
     fastBatch.case_list         = case_list
     fastBatch.case_name_list    = case_name_list
-    fastBatch.debug_level       = 2
-    fastBatch.overwrite_outfiles = False
+    fastBatch.channels          = channels
+    fastBatch.FAST_runDirectory = iec.run_dir 
 
     if n_cores == 1:
         fastBatch.run_serial()
@@ -196,7 +245,7 @@ if __name__ == '__main__':
     linTurb = lin_mod.LinearTurbineModel(lin_file_dir,reduceStates=False)
 
     # 3. Run turbulent level 3 case
-    fastBatch = run_turb_case()
+    fastBatch = run_level3_case()
 
     # load wind disturbance from output file
     outfiles    = [os.path.join(fastBatch.FAST_runDirectory,case + '.outb') for case in fastBatch.case_name_list]
