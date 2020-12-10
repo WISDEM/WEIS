@@ -679,6 +679,10 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
                 fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
                 fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
+
+        # HydroDyn inputs
+        if self.options['modeling_options']['flags']['monopile']:
+            fst_vt['HydroDyn']['AddF0'] = np.zeros(6)
         
         # Moodyn inputs
         n_line_types = modeling_options["mooring"]["n_line_types"]
