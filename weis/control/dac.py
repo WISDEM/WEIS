@@ -2,7 +2,7 @@ import numpy as np
 import os, sys
 import copy
 from openmdao.api import ExplicitComponent
-from wisdem.ccblade import CCAirfoil
+from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 from wisdem.ccblade.Polar import Polar
 import csv  # for exporting airfoil polar tables
 import matplotlib.pyplot as plt

@@ -1,10 +1,11 @@
-import numpy as np
 import copy
-from scipy.interpolate import PchipInterpolator, interp1d
+
+import numpy as np
 import openmdao.api as om
-from wisdem.rotorse.geometry_tools.geometry import trailing_edge_smoothing, remap2grid
-from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
+from wisdem.rotorse.parametrize_rotor import ParametrizeBladeAero, ParametrizeBladeStruct
+from wisdem.rotorse.geometry_tools.geometry import remap2grid, trailing_edge_smoothing
 
 
 class WindTurbineOntologyOpenMDAO(om.Group):
@@ -165,12 +166,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
             if modeling_options["DriveSE"]["direct"]:
                 # Direct only
                 nacelle_ivc.add_output(
-                    "access_diameter",
-                    val=0.0,
-                    units="m",
-                    desc="Minimum diameter for hollow shafts for maintenance access",
-                )
-                nacelle_ivc.add_output(
                     "nose_diameter", val=np.zeros(2), units="m", desc="Diameter of nose (also called turret or spindle)"
                 )
                 nacelle_ivc.add_output(
@@ -329,7 +324,9 @@ class WindTurbineOntologyOpenMDAO(om.Group):
                 desc="1D array of the outer diameter values defined along the tower axis.",
             )
             ivc.add_output(
-                "cd", val=np.zeros(n_height_tower), desc="1D array of the drag coefficients defined along the tower height."
+                "cd",
+                val=np.zeros(n_height_tower),
+                desc="1D array of the drag coefficients defined along the tower height.",
             )
             ivc.add_output(
                 "layer_thickness",
@@ -354,13 +351,6 @@ class WindTurbineOntologyOpenMDAO(om.Group):
         # Monopile inputs
         if modeling_options["flags"]["monopile"]:
             self.add_subsystem("monopile", Monopile(towerse_options=modeling_options["TowerSE"]))
-
-        # Foundation inputs
-        if modeling_options["flags"]["foundation"]:
-            foundation_ivc = self.add_subsystem("foundation", om.IndepVarComp())
-            foundation_ivc.add_output(
-                "height", val=0.0, units="m", desc="Foundation height in respect to the ground level."
-            )
 
         if modeling_options["flags"]["floating_platform"]:
             self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"]))
@@ -529,27 +519,27 @@ class Blade(om.Group):
         # Optimization parameters initialized as indipendent variable component
         opt_var = om.IndepVarComp()
         opt_var.add_output(
-            "s_opt_twist", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
+            "s_opt_twist", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"])
         )
         opt_var.add_output(
-            "s_opt_chord", val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
+            "s_opt_chord", val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"])
         )
         opt_var.add_output(
             "twist_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["twist"]["n_opt"]),
         )
         opt_var.add_output(
             "chord_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["aero_shape"]["chord"]["n_opt"]),
         )
         opt_var.add_output("af_position", val=np.ones(rotorse_options["n_af_span"]))
         opt_var.add_output(
             "spar_cap_ss_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ss"]["n_opt"]),
         )
         opt_var.add_output(
             "spar_cap_ps_opt_gain",
-            val=np.ones(opt_options["optimization_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
+            val=np.ones(opt_options["design_variables"]["blade"]["structure"]["spar_cap_ps"]["n_opt"]),
         )
         self.add_subsystem("opt_var", opt_var)
 
@@ -1212,9 +1202,7 @@ class Blade_Internal_Structure_2D_FEM(om.Group):
 
         self.add_subsystem(
             "compute_internal_structure_2d_fem",
-            Compute_Blade_Internal_Structure_2D_FEM(
-                rotorse_options=rotorse_options
-            ),
+            Compute_Blade_Internal_Structure_2D_FEM(rotorse_options=rotorse_options),
             promotes=["*"],
         )
 
@@ -1778,14 +1766,22 @@ class Compute_Grid(om.ExplicitComponent):
             units="m",
             desc="Scalar of the tower length computed along its curved axis. A standard straight tower will be as high as long.",
         )
+        self.add_output(
+            "foundation_height",
+            val=0.0,
+            units="m",
+            desc="Foundation height in respect to the ground level.",
+        )
 
         # Declare all partial derivatives.
         self.declare_partials("height", "ref_axis")
         self.declare_partials("length", "ref_axis")
         self.declare_partials("s", "ref_axis")
+        self.declare_partials("foundation_height", "ref_axis")
 
     def compute(self, inputs, outputs):
         # Compute tower height and tower length (a straight tower will be high as long)
+        outputs["foundation_height"] = inputs["ref_axis"][0, 2]
         outputs["height"] = inputs["ref_axis"][-1, 2] - inputs["ref_axis"][0, 2]
         myarc = arc_length(inputs["ref_axis"])
         outputs["length"] = myarc[-1]
@@ -1798,6 +1794,8 @@ class Compute_Grid(om.ExplicitComponent):
         partials["height", "ref_axis"] = np.zeros((1, n_height * 3))
         partials["height", "ref_axis"][0, -1] = 1.0
         partials["height", "ref_axis"][0, 2] = -1.0
+        partials["foundation_height", "ref_axis"] = np.zeros((1, n_height * 3))
+        partials["foundation_height", "ref_axis"][0, 2] = 1.0
         arc_distances, d_arc_distances_d_points = arc_length_deriv(inputs["ref_axis"])
 
         # The length is based on only the final point in the arc,
@@ -1845,16 +1843,9 @@ class Monopile(om.Group):
         ivc.add_output(
             "outfitting_factor", val=0.0, desc="Multiplier that accounts for secondary structure mass inside of tower"
         )
-        ivc.add_output(
-            "transition_piece_height", val=0.0, units="m", desc="point mass height of transition piece above water line"
-        )
         ivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
         ivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
         ivc.add_output("gravity_foundation_mass", val=0.0, units="kg", desc="extra mass of gravity foundation")
-        ivc.add_output("suctionpile_depth", val=0.0, units="m", desc="depth of foundation in the soil")
-        ivc.add_output(
-            "suctionpile_depth_diam_ratio", 0.0, desc="ratio of sunction pile depth to mudline monopile diameter"
-        )
 
         self.add_subsystem("compute_monopile_grid", Compute_Grid(n_height=n_height), promotes=["*"])
 
@@ -2456,5 +2447,5 @@ class WT_Assembly(om.ExplicitComponent):
                     0, 2
                 ]
             else:
-                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2]
+                outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]

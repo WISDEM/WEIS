@@ -6,9 +6,9 @@ class PoseOptimization(object):
     def __init__(self, modeling_options, analysis_options):
         self.modeling    = modeling_options
         self.opt         = analysis_options
-        self.blade_opt   = self.opt['optimization_variables']['blade']
-        self.tower_opt   = self.opt['optimization_variables']['tower']
-        self.control_opt = self.opt['optimization_variables']['control']
+        self.blade_opt   = self.opt['design_variables']['blade']
+        self.tower_opt   = self.opt['design_variables']['tower']
+        self.control_opt = self.opt['design_variables']['control']
 
         
     def get_number_design_variables(self):
@@ -24,13 +24,13 @@ class PoseOptimization(object):
             n_DV += self.blade_opt['structure']['spar_cap_ss']['n_opt'] - 2
         if self.blade_opt['structure']['spar_cap_ps']['flag'] and not self.blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
             n_DV += self.blade_opt['structure']['spar_cap_ps']['n_opt'] - 2
-        if self.opt['optimization_variables']['control']['tsr']['flag']:
+        if self.opt['design_variables']['control']['tsr']['flag']:
             n_DV += 1
-        if self.opt['optimization_variables']['control']['servo']['pitch_control']['flag']:
+        if self.opt['design_variables']['control']['servo']['pitch_control']['flag']:
             n_DV += 2
-        if self.opt['optimization_variables']['control']['servo']['torque_control']['flag']:
+        if self.opt['design_variables']['control']['servo']['torque_control']['flag']:
             n_DV += 2
-        if self.opt['optimization_variables']['control']['servo']['flap_control']['flag']:
+        if self.opt['design_variables']['control']['servo']['flap_control']['flag']:
             n_DV += 2
         if 'dac' in self.blade_opt:
             if self.blade_opt['dac']['te_flap_end']['flag']:
@@ -301,7 +301,7 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint('ccblade.CM', lower= self.opt['constraints']['blade']['moment_coefficient']['min'], upper= self.opt['constraints']['blade']['moment_coefficient']['max'])
         if self.opt['constraints']['blade']['match_cl_cd']['flag_cl'] or self.opt['constraints']['blade']['match_cl_cd']['flag_cd']:
             data_target = np.loadtxt(self.opt['constraints']['blade']['match_cl_cd']['filename'])
-            eta_opt     = np.linspace(0., 1., self.opt['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
+            eta_opt     = np.linspace(0., 1., self.opt['design_variables']['blade']['aero_shape']['twist']['n_opt'])
             target_cl   = np.interp(eta_opt, data_target[:,0], data_target[:,3])
             target_cd   = np.interp(eta_opt, data_target[:,0], data_target[:,4])
             eps_cl = 1.e-2
@@ -311,7 +311,7 @@ class PoseOptimization(object):
                 wt_opt.model.add_constraint('ccblade.cd_n_opt', lower = target_cd-eps_cl, upper = target_cd+eps_cl)
         if self.opt['constraints']['blade']['match_L_D']['flag_L'] or self.opt['constraints']['blade']['match_L_D']['flag_D']:
             data_target = np.loadtxt(self.opt['constraints']['blade']['match_L_D']['filename'])
-            eta_opt     = np.linspace(0., 1., self.opt['optimization_variables']['blade']['aero_shape']['twist']['n_opt'])
+            eta_opt     = np.linspace(0., 1., self.opt['design_variables']['blade']['aero_shape']['twist']['n_opt'])
             target_L   = np.interp(eta_opt, data_target[:,0], data_target[:,7])
             target_D   = np.interp(eta_opt, data_target[:,0], data_target[:,8])
         eps_L  = 1.e+2

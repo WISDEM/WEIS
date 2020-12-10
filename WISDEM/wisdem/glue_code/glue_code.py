@@ -1,8 +1,6 @@
 import numpy as np
 import openmdao.api as om
-
 from wisdem.towerse.tower import TowerSE
-from wisdem.orbit.api.wisdem import Orbit
 from wisdem.rotorse.rotor_power import RotorPower, NoStallConstraint
 from wisdem.glue_code.gc_RunTools import Outputs_2_Screen, Convergence_Trends_Opt
 from wisdem.commonse.turbine_class import TurbineClass
@@ -15,6 +13,11 @@ from wisdem.nrelcsm.nrel_csm_cost_2015 import Turbine_CostsSE_2015
 from wisdem.commonse.turbine_constraints import TurbineConstraints
 from wisdem.plant_financese.plant_finance import PlantFinance
 from wisdem.landbosse.landbosse_omdao.landbosse import LandBOSSE
+
+try:
+    from wisdem.orbit.api.wisdem import Orbit
+except ImportError:
+    print("WARNING: Be sure to pip install simpy and marmot-agents for offshore BOS runs")
 
 
 class WT_RNTA(om.Group):
@@ -104,6 +107,7 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["blade"]:
                 self.connect("blade.pa.twist_param", "rp.theta")
                 self.connect("blade.pa.chord_param", "rp.chord")
+            self.connect("configuration.n_blades", "rs.constr.blade_number")
 
             # Connections from blade struct parametrization to rotor elasticity
             self.connect("blade.ps.layer_thickness_param", "re.precomp.layer_thickness")
@@ -318,7 +322,6 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.transformer_mass_user", "drivese.transformer_mass_user")
 
             if modeling_options["DriveSE"]["direct"]:
-                self.connect("nacelle.access_diameter", "drivese.access_diameter")  # only used in direct
                 self.connect("nacelle.nose_diameter", "drivese.nose_diameter")  # only used in direct
                 self.connect("nacelle.nose_wall_thickness", "drivese.nose_wall_thickness")  # only used in direct
                 self.connect(
@@ -460,8 +463,7 @@ class WT_RNTA(om.Group):
             self.connect("env.mu_air", "towerse.mu_air")
             self.connect("env.shear_exp", "towerse.shearExp")
             self.connect("assembly.hub_height", "towerse.hub_height")
-            if modeling_options["flags"]["foundation"]:
-                self.connect("foundation.height", ["towerse.wind_z0", "towerse.foundation_height"])  # TODO- environment
+            self.connect("tower_grid.foundation_height", "towerse.tower_foundation_height")  # TODO: towerse.wind_z0"
             self.connect("tower.diameter", "towerse.tower_outer_diameter_in")
             self.connect("tower_grid.height", "towerse.tower_height")
             self.connect("tower_grid.s", "towerse.tower_s")
@@ -477,6 +479,7 @@ class WT_RNTA(om.Group):
             self.connect("costs.labor_rate", "towerse.labor_cost_rate")
             self.connect("costs.painting_rate", "towerse.painting_cost_rate")
             if modeling_options["flags"]["monopile"]:
+                self.connect("env.water_depth", "towerse.water_depth")
                 self.connect("env.rho_water", "towerse.rho_water")
                 self.connect("env.mu_water", "towerse.mu_water")
                 self.connect("env.G_soil", "towerse.G_soil")
@@ -484,16 +487,15 @@ class WT_RNTA(om.Group):
                 self.connect("env.hsig_wave", "towerse.hsig_wave")
                 self.connect("env.Tsig_wave", "towerse.Tsig_wave")
                 self.connect("monopile.diameter", "towerse.monopile_outer_diameter_in")
+                self.connect("monopile.foundation_height", "towerse.monopile_foundation_height")
                 self.connect("monopile.height", "towerse.monopile_height")
                 self.connect("monopile.s", "towerse.monopile_s")
                 self.connect("monopile.layer_thickness", "towerse.monopile_layer_thickness")
                 self.connect("monopile.layer_mat", "towerse.monopile_layer_materials")
                 self.connect("monopile.outfitting_factor", "towerse.monopile_outfitting_factor")
-                self.connect("monopile.transition_piece_height", "towerse.transition_piece_height")
+                self.connect("monopile.transition_piece_cost", "towerse.transition_piece_cost")
                 self.connect("monopile.transition_piece_mass", "towerse.transition_piece_mass")
                 self.connect("monopile.gravity_foundation_mass", "towerse.gravity_foundation_mass")
-                self.connect("monopile.suctionpile_depth", "towerse.suctionpile_depth")
-                self.connect("monopile.suctionpile_depth_diam_ratio", "towerse.suctionpile_depth_diam_ratio")
 
         # Connections to turbine constraints
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["tower"]:
@@ -506,6 +508,9 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.overhang", "tcons.overhang")
             self.connect("assembly.tower_ref_axis", "tcons.ref_axis_tower")
             self.connect("tower.diameter", "tcons.d_full")
+            self.connect("towerse.tower.freqs", "tcons.tower_freq", src_indices=[0])
+            self.connect("configuration.n_blades", "tcons.blade_number")
+            self.connect("rp.powercurve.rated_Omega", "tcons.rated_Omega")
 
         # Connections to turbine capital cost
         self.connect("configuration.n_blades", "tcc.blade_number")
@@ -646,7 +651,7 @@ class WindPark(om.Group):
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")
                     self.connect("drivese.hub_system_mass", "landbosse.hub_mass")
                 self.connect("re.precomp.blade_mass", "landbosse.blade_mass")
-                self.connect("foundation.height", "landbosse.foundation_height")
+                self.connect("tower_grid.foundation_height", "landbosse.foundation_height")
                 self.connect("bos.plant_turbine_spacing", "landbosse.turbine_spacing_rotor_diameters")
                 self.connect("bos.plant_row_spacing", "landbosse.row_spacing_rotor_diameters")
                 self.connect("bos.commissioning_pct", "landbosse.commissioning_pct")
