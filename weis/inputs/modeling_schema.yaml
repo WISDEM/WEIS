@@ -1,13 +1,7 @@
-# Author: Pietro Bortolotti
-# Organization: National Renewable Energy Laboratory, Golden, CO
-# Date: 2020-04-28
-
-
-
 $schema: "http://json-schema.org/draft-07/schema#"
 $id: WEIS_model_options_schema_v00
 title: WEIS wind turbine modeling options schema
-description: Schema that describes the modeling options for WISDEM
+description: Schema that describes the modeling options for WEIS
 type: object
 properties:
     General:
@@ -385,11 +379,11 @@ properties:
                     FileName_u:
                         type: string
                         default: none
-                        description: Name of the file containing the u-component fluctuating wind (.bin) [Only used with WindType = 5] 
+                        description: Name of the file containing the u-component fluctuating wind (.bin) [Only used with WindType = 5]
                     FileName_v:
                         type: string
                         default: none
-                        description: Name of the file containing the v-component fluctuating wind (.bin) [Only used with WindType = 5] 
+                        description: Name of the file containing the v-component fluctuating wind (.bin) [Only used with WindType = 5]
                     FileName_w:
                         type: string
                         default: none
@@ -674,7 +668,7 @@ properties:
                     Patm:
                         type: number
                         minimum: 0.
-                        default: 1.035000000000000e+05 
+                        default: 1.035000000000000e+05
                         description: Atmospheric pressure (Pa) [used only when CavitCheck=True]
                     Pvap:
                         type: number
@@ -684,7 +678,7 @@ properties:
                     FluidDepth:
                         type: number
                         minimum: 0.
-                        default: 5.000000000000000e-01 
+                        default: 5.000000000000000e-01
                         description: Water depth above mid-hub height (m) [used only when CavitCheck=True]
                     SumPrint:
                         type: boolean
@@ -1986,7 +1980,7 @@ properties:
                     YawManRat:
                         type: number
                         default: 0.25
-                        minimum: 1.e-6 
+                        minimum: 1.e-6
                         unit: deg / s
                         description: Yaw maneuver rate (in absolute value) (deg/s). It cannot be zero
                     NacYawF:
@@ -2047,7 +2041,7 @@ properties:
                         default: 0.
                         unit: deg
                         description: Record  6 - Minimum pitch angle (deg) [used only with Bladed Interface]
-                    Ptch_Max:   
+                    Ptch_Max:
                         type: number
                         default: 0.
                         unit: deg
@@ -2055,7 +2049,7 @@ properties:
                     PtchRate_Min:
                         type: number
                         default: 0.
-                        unit: deg / s 
+                        unit: deg / s
                         description: Record  8 Minimum pitch rate (most negative value allowed) (deg/s) [used only with Bladed Interface]
                     PtchRate_Max:
                         type: number
@@ -2082,12 +2076,12 @@ properties:
                         default: 0.
                         unit: rpm
                         description: Record 19 Demanded generator speed above rated (rpm) [used only with Bladed Interface]
-                    GenTrq_Dem: 
+                    GenTrq_Dem:
                         type: number
                         default: 0.
                         unit: N * m
                         description: Record 22 Demanded generator torque above rated (Nm) [used only with Bladed Interface]
-                    GenPwr_Dem: 
+                    GenPwr_Dem:
                         type: number
                         default: 0.
                         unit: W

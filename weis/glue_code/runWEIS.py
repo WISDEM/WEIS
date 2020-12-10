@@ -169,6 +169,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Remove the fst_vt key from the dictionary and write out the modeling options
             modeling_options['openfast']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)
+            wt_initial.write_options(froot_out)
             
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
