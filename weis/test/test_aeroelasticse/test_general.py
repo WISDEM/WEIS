@@ -20,7 +20,7 @@ from weis.aeroelasticse.runFAST_pywrapper import (runFAST_pywrapper,
                                                   runFAST_pywrapper_batch)
 
 
-class TestDLC(unittest.TestCase):
+class TestGeneral(unittest.TestCase):
     def test_run(self):
         # Paths calling the standard modules of WEIS
         fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)

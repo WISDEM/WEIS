@@ -392,7 +392,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         
 
 
-def gen_linear_model(wind_speeds):
+def gen_linear_model(wind_speeds, Tmax=600.):
     """ 
     Generate OpenFAST linearizations across wind speeds
 
@@ -407,7 +407,7 @@ def gen_linear_model(wind_speeds):
     linear.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
     
     linear.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
     linear.FAST_steadyDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_steady')
     linear.FAST_linearDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_lin')
     linear.debug_level              = 2
@@ -426,7 +426,7 @@ def gen_linear_model(wind_speeds):
     linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
     linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
     linear.DOFs             = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
-    linear.TMax             = 600.   # should be 1000-2000 sec or more with hydrodynamic states
+    linear.TMax             = Tmax   # should be 1000-2000 sec or more with hydrodynamic states
     linear.NLinTimes        = 12
 
     #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
