@@ -1,4 +1,4 @@
-import numpy as np
+mport numpy as np
 import os, shutil, sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
@@ -183,6 +183,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
         self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
+        self.add_input('water_depth', val=0.0, units='m', desc='depth of water')
 
 
         # Blade composite material properties (used for fatigue analysis)
@@ -482,12 +483,13 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
-        
-        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
-        tip_height= twr_elev[-1]-inputs['Rtip']
-        twr_index = np.argmin(abs(twr_elev - tip_height))
-        if twr_elev[twr_index] > tip_height:
-            twr_index -= 1
+
+        twr_z_start = -float(inputs['water_depth']) if self.options['modeling_options']['flags']['monopile'] else tower_base_height
+        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + twr_z_start
+        #tip_height= twr_elev[-1]-inputs['Rtip']
+        twr_index = np.argmin(abs(twr_elev - tower_base_height))
+        #if twr_elev[twr_index] > tip_height:
+        #    twr_index -= 1
 
         fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
@@ -642,7 +644,7 @@ class FASTLoadCases(ExplicitComponent):
             mono_index = twr_index+1 # Duplicate intersection point
             n_joints = len(inputs['tower_outer_diameter'][:mono_index])
             fst_vt['SubDyn']['NJoints'] = n_joints
-            fst_vt['SubDyn']['JointID'] = np.arange( n_joints ) + 1
+            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointZss'] = twr_elev[:mono_index]
@@ -655,12 +657,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
             fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
             fst_vt['SubDyn']['NMembers'] = n_joints-1
-            fst_vt['SubDyn']['MemberID'] = np.arange( n_joints-1 ) + 1
-            fst_vt['SubDyn']['MJointID1'] = np.arange( n_joints-1 ) + 1
-            fst_vt['SubDyn']['MJointID2'] = np.arange( n_joints-1 ) + 2
-            fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_joints-1 ) + 1
+            fst_vt['SubDyn']['MemberID'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 2
+            fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['NPropSets'] = n_joints-1
-            fst_vt['SubDyn']['PropSetID'] = np.arange( n_joints-1 ) + 1
+            fst_vt['SubDyn']['PropSetID'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['YoungE'] = inputs['tower_E'][:mono_index]
             fst_vt['SubDyn']['ShearG'] = inputs['tower_G'][:mono_index]
             fst_vt['SubDyn']['MatDens'] = inputs['tower_rho'][:mono_index]
@@ -680,10 +682,51 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
                 fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
 
-        # HydroDyn inputs
-        if self.options['modeling_options']['flags']['monopile']:
+            # HydroDyn inputs
             fst_vt['HydroDyn']['AddF0'] = np.zeros(6)
-        
+            fst_vt['HydroDyn']['AddCLin'] = np.zeros((6,6))
+            fst_vt['HydroDyn']['AddBLin'] = np.zeros((6,6))
+            fst_vt['HydroDyn']['AddBQuad'] = np.zeros((6,6))
+            fst_vt['HydroDyn']['NAxCoeff'] = 1
+            fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoeff'], dtype=np.int_)
+            fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoeff'] )
+            fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoeff'] )
+            fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoeff'] )
+            fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
+            fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
+            fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
+            fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
+            fst_vt['HydroDyn']['Jointzi'] = fst_vt['SubDyn']['JointZss']
+            fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
+            fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID']
+            fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
+            fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
+            fst_vt['HydroDyn']['SimplCd'] = 1.0
+            fst_vt['HydroDyn']['SimplCdMG'] = 1.0
+            fst_vt['HydroDyn']['SimplCa'] = 1.0
+            fst_vt['HydroDyn']['SimplCaMG'] = 1.0
+            fst_vt['HydroDyn']['SimplCp'] = 1.0
+            fst_vt['HydroDyn']['SimplCpMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCa'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCp'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
+            fst_vt['HydroDyn']['NCoefDpth'] = 0
+            fst_vt['HydroDyn']['NCoefMembers'] = 0
+            fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
+            fst_vt['HydroDyn']['MemberID'] = fst_vt['SubDyn']['MemberID']
+            fst_vt['HydroDyn']['MJointID1'] = fst_vt['SubDyn']['MJointID1']
+            fst_vt['HydroDyn']['MJointID2'] = fst_vt['SubDyn']['MJointID2']
+            fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID1']
+            fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
+            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
+            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
+            fst_vt['HydroDyn']['NFillGroups'] = 0
+            fst_vt['HydroDyn']['NMGDepths'] = 0
+            
         # Moodyn inputs
         n_line_types = modeling_options["mooring"]["n_line_types"]
         fst_vt['MoorDyn']['NTypes'] = n_line_types

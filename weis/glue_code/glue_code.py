@@ -212,6 +212,7 @@ class WindPark(om.Group):
             self.connect('blade.pa.chord_param',            'aeroelastic.chord')
             self.connect('blade.pa.twist_param',            'aeroelastic.theta')
             self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
+            self.connect('env.water_depth',                 'aeroelastic.water_depth')
             self.connect('env.rho_air',                     'aeroelastic.rho')
             self.connect('env.speed_sound_air',             'aeroelastic.speed_sound_air')
             self.connect('env.mu_air',                      'aeroelastic.mu')                    
