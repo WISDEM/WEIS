@@ -1,7 +1,7 @@
 import os
 import unittest
 from time import time
-from weis.test.utils import execute_script
+from weis.test.utils import execute_script, run_all_scripts
 
 
 
@@ -37,13 +37,19 @@ all_scripts = [
 class TestExamples(unittest.TestCase):
     
     def test_aeroelasticse(self):
-        scripts = [m for m in all_scripts if m.find("01_") >= 0]
-        for k in scripts:
-            try:
-                execute_script(k)
-            except:
-                print("Failed to run,", k)
-                self.assertTrue(False)
+        run_all_scripts("01_")
+                    
+    def test_control_opt(self):
+        run_all_scripts("02_")
+                    
+    def test_OC3(self):
+        run_all_scripts("03_")
+                    
+    def test_IEA_3_4(self):
+        run_all_scripts("05_")
+                    
+    def test_IEA_15(self):
+        run_all_scripts("06_")
 
 
 def suite():

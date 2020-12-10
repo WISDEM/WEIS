@@ -3,6 +3,7 @@ import importlib
 from pathlib import Path
 from time import time
 
+
 def execute_script(fscript):
     thisdir = os.path.dirname(os.path.realpath(__file__))
     root_dir = os.path.dirname(os.path.dirname(thisdir))
@@ -27,3 +28,12 @@ def execute_script(fscript):
     s = time()
     spec.loader.exec_module(mod)
     print(time() - s, "seconds to run")
+    
+def run_all_scripts(folder_string):
+    scripts = [m for m in all_scripts if m.find(folder_string) >= 0]
+    for k in scripts:
+        try:
+            execute_script(k)
+        except:
+            print("Failed to run,", k)
+            self.assertTrue(False)
