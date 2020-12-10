@@ -1,9 +1,10 @@
 import os
 import jsonmerge
-from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults
+import wisdem.inputs
+from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types
 
 
-froot_wisdem           = os.path.dirname(load_yaml.__file__)
+froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
 fschema_geom_wisdem    = os.path.join(froot_wisdem, 'geometry_schema.yaml')
 fschema_model_wisdem   = os.path.join(froot_wisdem, 'modeling_schema.yaml')
 fschema_opt_wisdem     = os.path.join(froot_wisdem, 'analysis_schema.yaml')
@@ -48,10 +49,14 @@ def load_modeling_yaml(finput):
 def write_modeling_yaml(instance, foutput):
     weis_schema = get_modeling_schema()
     validate_without_defaults(instance, weis_schema)
-    sfx_str = '.yaml'
+    sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
-        sfx_str = ''
-    write_yaml(instance, foutput+sfx_str)
+        foutput = foutput[-5:]
+    elif foutput[-4:] == ".yml":
+        foutput = foutput[-4:]
+    sfx_str = "-modeling.yaml"
+    instance2 = simple_types(instance)
+    write_yaml(instance2, foutput+sfx_str)
 
 def get_analysis_schema():
     wisdem_schema = load_yaml(fschema_opt_wisdem)
@@ -66,7 +71,10 @@ def load_analysis_yaml(finput):
 def write_analysis_yaml(instance, foutput):
     merged_schema = get_analysis_schema()
     validate_without_defaults(instance, merged_schema)
-    sfx_str = '.yaml'
+    sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
-        sfx_str = ''
+        foutput = foutput[-5:]
+    elif foutput[-4:] == ".yml":
+        foutput = foutput[-4:]
+    sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput+sfx_str)

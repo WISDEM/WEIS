@@ -46,7 +46,10 @@ properties:
                                                     description: Names of the joints that are linked
                                                     items:
                                                         type: string
-                                                flag: *flag
+                                                flag: &flag
+                                                    type: boolean
+                                                    default: False
+                                                    description: Activates as a design variable or constraint
                                                 lower_bound: &lb_m
                                                     type: number
                                                     unit: meter
@@ -173,8 +176,16 @@ properties:
                                             size: &stiff_size
                                                 description: Applies a scalar multiplier to stiffener dimensions (web height, web thickness, flange height, flange thickness)
                                                 flag: *flag
-                                                min_gain: *mingain
-                                                max_gain: *maxgain
+                                                min_gain:  &mingain
+                                                    type: number
+                                                    default: 0.5
+                                                    unit: none
+                                                    description: Lower bound on scalar multiplier that will be applied to value at control points
+                                                max_gain: &maxgain
+                                                    type: number
+                                                    default: 1.5
+                                                    unit: none
+                                                    description: Upper bound on scalar multiplier that will be applied to value at control points
                                             spacing:
                                                 description: Adjust the spacing of the ring stiffeners in non-dimensional coordinates along the member axis
                                                 flag: *flag

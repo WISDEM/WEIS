@@ -249,8 +249,8 @@ class WindPark(om.Group):
             self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
             self.connect('tower_grid.height',               'aeroelastic.tower_height')
-            if modeling_options['flags']['foundation']:
-                self.connect('foundation.height',               'aeroelastic.tower_base_height')
+            if modeling_options['flags']['tower']:
+                self.connect('tower_grid.foundation_height', 'aeroelastic.tower_base_height')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
             self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')
@@ -548,8 +548,7 @@ class WindPark(om.Group):
                 self.connect('rp.gust.V_gust',               'towerse_post.wind.Uref')
                 
             self.connect('assembly.hub_height',           'towerse_post.wind_reference_height')  # TODO- environment
-            if modeling_options['flags']['foundation']:
-                self.connect('foundation.height',         ['towerse_post.wind_z0', 'towerse_post.foundation_height']) # TODO- environment
+            self.connect('tower_grid.foundation_height', 'towerse_post.tower_foundation_height') # TODO- environment
             self.connect('env.rho_air',                   'towerse_post.rho_air')
             self.connect('env.mu_air',                    'towerse_post.mu_air')                    
             self.connect('env.shear_exp',                 'towerse_post.shearExp')                    
@@ -570,21 +569,23 @@ class WindPark(om.Group):
             self.connect('costs.painting_rate',           'towerse_post.painting_cost_rate')
             
             if modeling_options['flags']['monopile']:
+                self.connect("env.water_depth",                  "towerse_post.water_depth")
                 self.connect('env.rho_water',                    'towerse_post.rho_water')
                 self.connect('env.mu_water',                     'towerse_post.mu_water')                    
                 self.connect('env.G_soil',                       'towerse_post.G_soil')                    
                 self.connect('env.nu_soil',                      'towerse_post.nu_soil')                    
+                self.connect("env.hsig_wave", "towerse_post.hsig_wave")
+                self.connect("env.Tsig_wave", "towerse_post.Tsig_wave")
                 self.connect('monopile.diameter',                'towerse_post.monopile_outer_diameter_in')
+                self.connect("monopile.foundation_height",       "towerse.monopile_foundation_height")
                 self.connect('monopile.height',                  'towerse_post.monopile_height')
                 self.connect('monopile.s',                       'towerse_post.monopile_s')
                 self.connect('monopile.layer_thickness',         'towerse_post.monopile_layer_thickness')
                 self.connect('monopile.layer_mat',               'towerse_post.monopile_layer_materials')
                 self.connect('monopile.outfitting_factor',       'towerse_post.monopile_outfitting_factor')
-                self.connect('monopile.transition_piece_height', 'towerse_post.transition_piece_height')
                 self.connect('monopile.transition_piece_mass',   'towerse_post.transition_piece_mass')
+                self.connect('monopile.transition_piece_cost',   'towerse_post.transition_piece_cost')
                 self.connect('monopile.gravity_foundation_mass', 'towerse_post.gravity_foundation_mass')
-                self.connect('monopile.suctionpile_depth',       'towerse_post.suctionpile_depth')
-                self.connect('monopile.suctionpile_depth_diam_ratio', 'towerse_post.suctionpile_depth_diam_ratio')
 
         #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
         #self.connect('max_taper_ratio',         'max_taper') # TODO- 
