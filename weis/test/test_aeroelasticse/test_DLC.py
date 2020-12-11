@@ -250,7 +250,9 @@ class TestDLC(unittest.TestCase):
         fastBatch.case_name_list = case_name_list
         fastBatch.debug_level = 2
 
-        fastBatch.run_serial()
+        out = fastBatch.run_serial()
+        
+        compare_regression_values(out, 'DLC_regression_values_1.pkl', train=False)
 
         # U-Maine semi-sub
         fastBatch.FAST_InputFile = (
@@ -262,7 +264,7 @@ class TestDLC(unittest.TestCase):
 
         out = fastBatch.run_serial()
         
-        compare_regression_values(out, 'DLC_regression_values.pkl')
+        compare_regression_values(out, 'DLC_regression_values_2.pkl', train=False)
         
 
 if __name__ == "__main__":

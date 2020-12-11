@@ -41,6 +41,13 @@ def run_all_scripts(folder_string):
             raise
             
 def compare_regression_values(values_to_test, truth_value_filename, train=False):
+    
+    # Change current working directory to the level where the main python script was called
+    import __main__
+    abspath = os.path.abspath(__main__.__file__)
+    dname = os.path.dirname(abspath)
+    truth_value_filename = os.path.join(dname, truth_value_filename)
+    
     if train:
         with open(truth_value_filename, "wb") as f:
             pickle.dump(values_to_test, f)
@@ -49,8 +56,8 @@ def compare_regression_values(values_to_test, truth_value_filename, train=False)
         with open(truth_value_filename, "rb") as f:
             truth_values = pickle.load(f)
             
-        for i_case, output_dict in enumerate(values_to_test):
-            truth_dict = truth_values[i_case]
+        for i_case, truth_dict in enumerate(truth_values):
+            output_dict = values_to_test[i_case]
             for key in output_dict:
                 if key == 'meta':
                     continue
