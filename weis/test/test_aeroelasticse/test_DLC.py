@@ -253,7 +253,7 @@ class TestDLC(unittest.TestCase):
         out = fastBatch.run_serial()
         
         this_file_dir = os.path.dirname(os.path.realpath(__file__))
-        compare_regression_values(out, 'DLC_regression_values_1.pkl', directory=this_file_dir, tol=1e-3, train=False)
+        compare_regression_values(out, 'DLC_regression_values_1.pkl', directory=this_file_dir, tol=1e-2, train=False)
 
         # U-Maine semi-sub
         fastBatch.FAST_InputFile = (
@@ -265,7 +265,7 @@ class TestDLC(unittest.TestCase):
 
         out = fastBatch.run_serial()
         
-        compare_regression_values(out, 'DLC_regression_values_2.pkl', directory=this_file_dir, tol=1e-3, train=False)
+        compare_regression_values(out, 'DLC_regression_values_2.pkl', directory=this_file_dir, tol=1e-2, train=False)
         
 
 if __name__ == "__main__":
