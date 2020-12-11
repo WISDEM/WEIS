@@ -32,11 +32,10 @@ class PoseOptimization(object):
             n_DV += 2
         if self.opt['design_variables']['control']['servo']['flap_control']['flag']:
             n_DV += 2
-        if 'dac' in self.blade_opt:
-            if self.blade_opt['dac']['te_flap_end']['flag']:
-                n_DV += self.modeling['blade']['n_te_flaps']
-            if self.blade_opt['dac']['te_flap_ext']['flag']:
-                n_DV += self.modeling['blade']['n_te_flaps']
+        if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
+            n_DV += self.modeling['blade']['n_te_flaps']
+        if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
+            n_DV += self.modeling['blade']['n_te_flaps']
         if self.tower_opt['outer_diameter']['flag']:
             n_DV += self.modeling['tower']['n_height']
         if self.tower_opt['layer_thickness']['flag']:
@@ -184,17 +183,16 @@ class PoseOptimization(object):
             indices  = range(1, spar_cap_ps_options['n_opt'] - 1)
             wt_opt.model.add_design_var('blade.opt_var.spar_cap_ps_opt_gain', indices = indices, lower=spar_cap_ps_options['min_gain'], upper=spar_cap_ps_options['max_gain'])
 
-        if 'dac' in self.blade_opt:
-            if self.blade_opt['dac']['te_flap_end']['flag']:
-                wt_opt.model.add_design_var('dac_ivc.te_flap_end', 
-                lower=self.blade_opt['dac']['te_flap_end']['min_end'], 
-                upper=self.blade_opt['dac']['te_flap_end']['max_end'], 
-                ref=1e2)
-            if self.blade_opt['dac']['te_flap_ext']['flag']:
-                wt_opt.model.add_design_var('dac_ivc.te_flap_ext', 
-                                    lower=self.blade_opt['dac']['te_flap_ext']['min_ext'], 
-                                    upper=self.blade_opt['dac']['te_flap_ext']['max_ext'],
-                                    ref=1e2)
+        if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
+            wt_opt.model.add_design_var('dac_ivc.te_flap_end', 
+            lower=self.opt['design_variables']['control']['flaps']['te_flap_end']['minimum'], 
+            upper=self.opt['design_variables']['control']['flaps']['maximum'], 
+            ref=1e2)
+        if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
+            wt_opt.model.add_design_var('dac_ivc.te_flap_ext', 
+                                lower=self.opt['design_variables']['control']['flaps']['te_flap_ext']['min_ext'], 
+                                upper=self.opt['design_variables']['control']['flaps']['te_flap_ext']['max_ext'],
+                                ref=1e2)
 
         if self.tower_opt['outer_diameter']['flag']:
             wt_opt.model.add_design_var('tower.diameter', lower=self.tower_opt['outer_diameter']['lower_bound'], upper=self.tower_opt['outer_diameter']['upper_bound'], ref=5.)

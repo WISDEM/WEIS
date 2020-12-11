@@ -615,8 +615,8 @@ class RunXFOIL(ExplicitComponent):
                         Re_loc[afi,:,:] = Re_loc_af
                         Ma_loc[afi,:,:] = Ma_loc_af
 
-                if not any([self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_ext']['flag'],
-                            self.options['opt_options']['optimization_variables']['blade']['dac']['te_flap_end']['flag']]):
+                if not any([self.options['opt_options']['design_variables']['control']['flaps']['te_flap_ext']['flag'],
+                            self.options['opt_options']['design_variables']['control']['flaps']['te_flap_end']['flag']]):
                     self.saved_polar_data['cl_interp_flaps'] = copy.copy(cl_interp_flaps)
                     self.saved_polar_data['cd_interp_flaps'] = copy.copy(cd_interp_flaps)
                     self.saved_polar_data['cm_interp_flaps'] = copy.copy(cm_interp_flaps)

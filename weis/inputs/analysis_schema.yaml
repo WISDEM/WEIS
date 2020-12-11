@@ -253,6 +253,40 @@ properties:
                 type: object
                 default: {}
                 properties:
+                    flaps:
+                        type: object
+                        default: {}
+                        properties:
+                            te_flap_end:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    minimum: 
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.1
+                                        default: 1.0
+                                    maximum:
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.1
+                                        default: 1.0
+                            te_flap_ext:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    minimum: 
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.0
+                                        default: 0.01
+                                    maximum:
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.0
+                                        default: 0.2
                     tsr:
                         type: object
                         default: {}

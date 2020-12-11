@@ -40,7 +40,8 @@ design_variables:
         n_opt: 8        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
-    dac:
+  control:
+    flaps:
       te_flap_ext:
         flag: False
         min_ext: 0.0
@@ -49,7 +50,6 @@ design_variables:
         flag: False
         min_end: 0.3
         max_end: 0.99
-  control:
     tsr:
       flag: False     # Flag to optimize the rotor tip speed ratio
       min_gain: 0.9   # Nondimensional lower bound
