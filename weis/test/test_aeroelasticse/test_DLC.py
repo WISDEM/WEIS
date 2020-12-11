@@ -198,6 +198,8 @@ class TestDLC(unittest.TestCase):
             "RtAeroCt",
             "RotSpeed",
             "BldPitch1",
+            "BldPitch2",
+            "BldPitch3",
             "TTDspSS",
             "TTDspFA",
             "NacYaw",
