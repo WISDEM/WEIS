@@ -40,13 +40,10 @@ def run_all_scripts(folder_string):
             print("Failed to run,", k)
             raise
             
-def compare_regression_values(values_to_test, truth_value_filename, train=False):
+def compare_regression_values(values_to_test, truth_value_filename, directory='', train=False):
     
     # Change current working directory to the level where the main python script was called
-    import __main__
-    abspath = os.path.abspath(__main__.__file__)
-    dname = os.path.dirname(abspath)
-    truth_value_filename = os.path.join(dname, truth_value_filename)
+    truth_value_filename = os.path.join(directory, truth_value_filename)
     
     if train:
         with open(truth_value_filename, "wb") as f:
