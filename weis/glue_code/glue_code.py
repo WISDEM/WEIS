@@ -244,14 +244,13 @@ class WindPark(om.Group):
             self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
             self.connect('towerse.tower_outer_diameter',    'aeroelastic.tower_outer_diameter')
             self.connect('tower.cd',                        'aeroelastic.tower_cd')
+            self.connect('tower_grid.height',               'aeroelastic.tower_height')
+            self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
+            self.connect('assembly.hub_height',             'aeroelastic.hub_height')
 
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
             self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
-            self.connect('assembly.hub_height',             'aeroelastic.hub_height')
-            self.connect('tower_grid.height',               'aeroelastic.tower_height')
-            if modeling_options['flags']['tower']:
-                self.connect('tower_grid.foundation_height', 'aeroelastic.tower_base_height')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
             self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')

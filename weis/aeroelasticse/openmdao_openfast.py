@@ -434,6 +434,15 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
+        #twr_z_start = -float(inputs['water_depth']) if self.options['modeling_options']['flags']['monopile'] else tower_base_height
+        #twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + twr_z_start
+        #twr_index = np.argmin(abs(twr_elev - tower_base_height))
+        
+        #fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+        #fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
+        #fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
+        #fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][1:]
+
         twr_monopile_elev = np.r_[0.0, np.cumsum(inputs['tower_section_height'])]
         start_tower_id = np.argmin(abs(twr_monopile_elev - (twr_monopile_elev[-1] - inputs['tower_height'])))
         if start_tower_id != 0:
