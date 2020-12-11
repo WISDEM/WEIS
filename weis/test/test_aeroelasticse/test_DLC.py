@@ -10,12 +10,11 @@ import unittest
 
 import numpy as np
 
-from openmdao.utils.assert_utils import assert_near_equal
 from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
-from weis.aeroelasticse.runFAST_pywrapper import (
-    runFAST_pywrapper,
-    runFAST_pywrapper_batch,
-)
+from weis.aeroelasticse.FAST_post import FAST_IO_timeseries
+from weis.aeroelasticse.runFAST_pywrapper import (runFAST_pywrapper,
+                                                  runFAST_pywrapper_batch)
+from weis.test.utils import compare_regression_values
 
 
 class TestDLC(unittest.TestCase):
@@ -76,12 +75,12 @@ class TestDLC(unittest.TestCase):
         iec.dlc_inputs["DLC"] = [1.1]  # , 1.3, 1.4, 1.5, 5.1, 6.1, 6.3]
         iec.dlc_inputs["U"] = [
             wind_speeds,
-            wind_speeds,
-            [Vrated - 2.0, Vrated, Vrated + 2.0],
-            wind_speeds,
-            [Vrated - 2.0, Vrated, Vrated + 2.0, cut_out],
-            [],
-            [],
+            # wind_speeds,
+            # [Vrated - 2.0, Vrated, Vrated + 2.0],
+            # wind_speeds,
+            # [Vrated - 2.0, Vrated, Vrated + 2.0, cut_out],
+            # [],
+            # [],
         ]
         iec.dlc_inputs["Seeds"] = [[1], [1], [], [], [1], [1], [1]]
         # iec.dlc_inputs['Seeds'] = [range(1,7), range(1,7),[],[], range(1,7), range(1,7), range(1,7)]
@@ -224,7 +223,7 @@ class TestDLC(unittest.TestCase):
         # for var in var_out+[var_x]:
 
         # Run FAST cases
-        fastBatch = runFAST_pywrapper_batch(FAST_ver="OpenFAST", dev_branch=True)
+        fastBatch = runFAST_pywrapper_batch(FAST_ver="OpenFAST", dev_branch=True, post=FAST_IO_timeseries)
 
         # Monopile
         fastBatch.FAST_InputFile = (
@@ -261,7 +260,9 @@ class TestDLC(unittest.TestCase):
             run_dir2, "OpenFAST_models", "IEA-15-240-RWT", "IEA-15-240-RWT-UMaineSemi"
         )  # Path to fst directory files
 
-        fastBatch.run_serial()
+        out = fastBatch.run_serial()
+        
+        compare_regression_values(out, 'DLC_regression_values.pkl')
         
 
 if __name__ == "__main__":

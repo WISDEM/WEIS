@@ -2,7 +2,9 @@ import os
 import importlib
 from pathlib import Path
 from time import time
+import pickle
 
+from openmdao.utils.assert_utils import assert_near_equal
 
 def execute_script(fscript):
     thisdir = os.path.dirname(os.path.realpath(__file__))
@@ -34,6 +36,35 @@ def run_all_scripts(folder_string):
     for k in scripts:
         try:
             execute_script(k)
-        except:
+        except Exception as e:
             print("Failed to run,", k)
-            self.assertTrue(False)
+            raise
+            
+def compare_regression_values(values_to_test, truth_value_filename, train=False):
+    if train:
+        with open(truth_value_filename, "wb") as f:
+            pickle.dump(values_to_test, f)
+        
+    else:
+        with open(truth_value_filename, "rb") as f:
+            truth_values = pickle.load(f)
+            
+        for i_case, output_dict in enumerate(values_to_test):
+            truth_dict = truth_values[i_case]
+            for key in output_dict:
+                if key == 'meta':
+                    continue
+                testing_value = output_dict[key]
+                truth_value = truth_dict[key]
+                
+                try:
+                    assert_near_equal(output_dict[key], truth_dict[key])
+                except Exception as e:
+                    print()
+                    print(f"Error: Comparison values not equal for {key}.")
+                    print()
+                    raise
+        
+        
+
+                
