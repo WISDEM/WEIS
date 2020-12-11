@@ -28,7 +28,7 @@ class TestDLC(unittest.TestCase):
         cut_in = 3.0  # Cut in wind speed
         cut_out = 25.0  # Cut out wind speed
         n_ws = 2  # Number of wind speed bins
-        TMax = 1.0  # Length of wind grids and OpenFAST simulations, suggested 720 s
+        TMax = 0.05  # Length of wind grids and OpenFAST simulations, suggested 720 s
         Vrated = 10.59  # Rated wind speed
         Ttrans = max(
             [0.0, TMax - 60.0]
