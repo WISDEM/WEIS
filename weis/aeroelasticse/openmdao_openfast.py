@@ -434,32 +434,19 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
-        #twr_z_start = -float(inputs['water_depth']) if self.options['modeling_options']['flags']['monopile'] else tower_base_height
-        #twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + twr_z_start
-        #twr_index = np.argmin(abs(twr_elev - tower_base_height))
-        
-        #fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
-        #fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
-        #fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
-        #fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][1:]
-
-        twr_monopile_elev = np.r_[0.0, np.cumsum(inputs['tower_section_height'])]
-        start_tower_id = np.argmin(abs(twr_monopile_elev - (twr_monopile_elev[-1] - inputs['tower_height'])))
-        if start_tower_id != 0:
-            twr_elev = twr_monopile_elev[start_tower_id:] - inputs['water_depth']
+        twr_z_start = -float(inputs['water_depth']) if self.options['modeling_options']['flags']['monopile'] else tower_base_height
+        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + twr_z_start
+        if tower_base_height > 1.:
+            twr_index = np.argmin(abs(twr_elev - tower_base_height))
         else:
-            twr_elev = twr_monopile_elev
-        twr_outer_D = inputs['tower_outer_diameter'][start_tower_id:]
-        twr_cd = inputs['tower_cd'][start_tower_id:]
-        blade_tip_height= twr_elev[-1]-inputs['Rtip'] + inputs['distance_tt_hub']
-        twr_index = np.argmin(abs(twr_elev - blade_tip_height))
-        if twr_elev[twr_index] > blade_tip_height:
-            twr_index -= 1
-
-        fst_vt['AeroDyn15']['NumTwrNds'] = len(twr_outer_D[twr_index:])
+            twr_index = np.argmin(abs(twr_elev - 1.)) # wind grid starts at 1 meter height, see pyIECWind.py, so take the first node above that
+            if twr_elev[twr_index] <= 1.:
+                twr_index += 1
+        
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
-        fst_vt['AeroDyn15']['TwrDiam']   = twr_outer_D[twr_index:]
-        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][twr_index:]
+        fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
+        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][0:]
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
