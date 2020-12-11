@@ -1,5 +1,10 @@
 # WEIS
 
+[![Coverage Status](https://coveralls.io/repos/github/johnjasa/WEIS/badge.svg?branch=testing)](https://coveralls.io/github/johnjasa/WEIS?branch=testing)
+[![Actions Status](https://github.com/{user}/{repo}/workflows/{action}/badge.svg)](https://github.com/{user}/{repo}/actions)
+[![Documentation Status](https://readthedocs.org/projects/weis/badge/?version=latest)](https://weis.readthedocs.io/en/latest/?badge=latest)
+
+
 WEIS, Wind Energy with Integrated Servo-control, performs multifidelity co-design of wind turbines. WEIS is a framework that combines multiple NREL-developed tools to enable design optimization of floating offshore wind turbines.
 
 Author: [NREL WISDEM & OpenFAST & Control Teams](mailto:systems.engineering@nrel.gov) 
