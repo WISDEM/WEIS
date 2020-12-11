@@ -31,7 +31,7 @@ def execute_script(fscript):
     spec.loader.exec_module(mod)
     print(time() - s, "seconds to run")
     
-def run_all_scripts(folder_string):
+def run_all_scripts(folder_string, all_scripts):
     scripts = [m for m in all_scripts if m.find(folder_string) >= 0]
     for k in scripts:
         try:

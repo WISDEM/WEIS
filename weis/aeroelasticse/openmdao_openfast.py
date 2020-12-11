@@ -940,7 +940,7 @@ class FASTLoadCases(ExplicitComponent):
                 blade_chans_Fy = ["B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
                 tip_max_chan   = "TipDxc3"
                 bld_pitch_chan = "BldPitch3"
-
+                
             # Return spanwise forces at instance of largest deflection
             Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fx]
             Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fy]

@@ -15,10 +15,10 @@ all_scripts = [
     # "01_aeroelasticse/run_PC_sweep",
     "01_aeroelasticse/run_stability_analysis",
     
-    "02_control_opt/run_lin_turbine",
-    "02_control_opt/runOptimization",
+    # "02_control_opt/run_lin_turbine",
+    # "02_control_opt/runOptimization",
     
-    "03_NREL5MW_OC3_spar/weis_driver",
+    # "03_NREL5MW_OC3_spar/weis_driver",
     
     # "04_NREL5MW_OC4_semi/",  # there appears to be no python file within this folder
     
@@ -37,19 +37,19 @@ all_scripts = [
 class TestExamples(unittest.TestCase):
     
     def test_aeroelasticse(self):
-        run_all_scripts("01_")
+        run_all_scripts("01_", all_scripts)
                     
     def test_control_opt(self):
-        run_all_scripts("02_")
+        run_all_scripts("02_", all_scripts)
                     
     def test_OC3(self):
-        run_all_scripts("03_")
+        run_all_scripts("03_", all_scripts)
                     
     def test_IEA_3_4(self):
-        run_all_scripts("05_")
+        run_all_scripts("05_", all_scripts)
                     
     def test_IEA_15(self):
-        run_all_scripts("06_")
+        run_all_scripts("06_", all_scripts)
 
 
 def suite():
