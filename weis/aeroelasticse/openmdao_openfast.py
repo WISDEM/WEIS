@@ -173,7 +173,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
         self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
-
+        self.add_input(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
 
         # Blade composite material properties (used for fatigue analysis)
         self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
@@ -432,16 +434,23 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
-        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + fst_vt['ElastoDyn']['TowerBsHt']
-        tip_height= twr_elev[-1]-inputs['Rtip']
-        twr_index = np.argmin(abs(twr_elev - tip_height))
-        if twr_elev[twr_index] > tip_height:
+        twr_monopile_elev = np.r_[0.0, np.cumsum(inputs['tower_section_height'])]
+        start_tower_id = np.argmin(abs(twr_monopile_elev - (twr_monopile_elev[-1] - inputs['tower_height'])))
+        if start_tower_id != 0:
+            twr_elev = twr_monopile_elev[start_tower_id:] - inputs['water_depth']
+        else:
+            twr_elev = twr_monopile_elev
+        twr_outer_D = inputs['tower_outer_diameter'][start_tower_id:]
+        twr_cd = inputs['tower_cd'][start_tower_id:]
+        blade_tip_height= twr_elev[-1]-inputs['Rtip'] + inputs['distance_tt_hub']
+        twr_index = np.argmin(abs(twr_elev - blade_tip_height))
+        if twr_elev[twr_index] > blade_tip_height:
             twr_index -= 1
 
-        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(twr_outer_D[twr_index:])
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
-        fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
-        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][1:]
+        fst_vt['AeroDyn15']['TwrDiam']   = twr_outer_D[twr_index:]
+        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][twr_index:]
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
