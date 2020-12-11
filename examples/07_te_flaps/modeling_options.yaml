@@ -22,12 +22,16 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     simulation:
         TMax: 1.
         DT: 0.01
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 0
+        CompHydro: 0
+        CompSub: 0
+        CompMooring: 0
+        CompIce: 0
     linearization:
         Linearize: False
-    InflowWind:
-        flag: True
-    AeroDyn:
-        flag: True
     ElastoDyn:
         flag: True
         FlapDOF1: True
@@ -47,16 +51,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-    BeamDyn:
-        flag: False
-    HydroDyn:
-        flag: False
-    SubDyn:
-        flag: False
-    MoorDyn:
-        flag: False
-    ServoDyn:
-        flag: False
     ROSCO:
         flag: True
         Flp_Mode: 2
