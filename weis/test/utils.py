@@ -40,7 +40,7 @@ def run_all_scripts(folder_string):
             print("Failed to run,", k)
             raise
             
-def compare_regression_values(values_to_test, truth_value_filename, directory='', train=False):
+def compare_regression_values(values_to_test, truth_value_filename, directory='', train=False, tol=1e-6):
     
     # Change current working directory to the level where the main python script was called
     truth_value_filename = os.path.join(directory, truth_value_filename)
@@ -62,7 +62,7 @@ def compare_regression_values(values_to_test, truth_value_filename, directory=''
                 truth_value = truth_dict[key]
                 
                 try:
-                    assert_near_equal(output_dict[key], truth_dict[key])
+                    assert_near_equal(output_dict[key], truth_dict[key], tolerance=tol)
                 except Exception as e:
                     print()
                     print(f"Error: Comparison values not equal for {key}.")
