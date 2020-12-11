@@ -1,4 +1,4 @@
-mport numpy as np
+import numpy as np
 import os, shutil, sys
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
@@ -184,6 +184,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
         self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
         self.add_input('water_depth', val=0.0, units='m', desc='depth of water')
+        self.add_input('rho_water',   val=0.0, units='kg/m**3',  desc='density of water')
+        self.add_input('mu_water',    val=0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
+        self.add_input('beta_wave',    val=0.0, units='deg', desc='Incident wave propagation heading direction')
+        self.add_input('Hsig_wave',    val=0.0, units='m', desc='Significant wave height of incident waves')
+        self.add_input('Tsig_wave',    val=0.0, units='s', desc='Peak-spectral period of incident waves')
 
 
         # Blade composite material properties (used for fatigue analysis)
@@ -207,24 +212,25 @@ class FASTLoadCases(ExplicitComponent):
 
         # MoorDyn inputs
         mooropt = self.options['modeling_options']["mooring"]
-        n_line_types = mooropt["n_line_types"]
-        n_nodes = mooropt["n_nodes"]
-        n_lines = mooropt["n_lines"]
-        self.add_discrete_input("line_type_names", val=[""] * n_line_types)
-        self.add_input("line_diameter", val=np.zeros(n_line_types), units="m")
-        self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-        self.add_input("line_stiffness", val=np.zeros(n_line_types), units="N")
-        self.add_input("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
-        self.add_input("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
-        self.add_input("line_transverse_drag", val=np.zeros(n_line_types))
-        self.add_input("line_tangential_drag", val=np.zeros(n_line_types))
-        self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
-        self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
-        self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
-        self.add_input("nodes_added_mass", val=np.zeros(n_nodes))
-        self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
-        self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
-        self.add_discrete_input("node_names", val=[""] * n_nodes)
+        if self.options["modeling_options"]["flags"]["mooring"]:
+            n_line_types = mooropt["n_line_types"]
+            n_nodes = mooropt["n_nodes"]
+            n_lines = mooropt["n_lines"]
+            self.add_discrete_input("line_type_names", val=[""] * n_line_types)
+            self.add_input("line_diameter", val=np.zeros(n_line_types), units="m")
+            self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
+            self.add_input("line_stiffness", val=np.zeros(n_line_types), units="N")
+            self.add_input("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
+            self.add_input("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
+            self.add_input("line_transverse_drag", val=np.zeros(n_line_types))
+            self.add_input("line_tangential_drag", val=np.zeros(n_line_types))
+            self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
+            self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
+            self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+            self.add_input("nodes_added_mass", val=np.zeros(n_nodes))
+            self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
+            self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
+            self.add_discrete_input("node_names", val=[""] * n_nodes)
         
         # FAST run preferences
         self.FASTpref            = FASTpref 
@@ -357,6 +363,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDynBlade']      = {}
         fst_vt['ServoDyn']          = {}
         fst_vt['InflowWind']        = {}
+        fst_vt['SubDyn']            = {}
+        fst_vt['HydroDyn']          = {}
+        fst_vt['MoorDyn']           = {}
 
         for key in modeling_options['Level3']['simulation']:
             fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
@@ -643,6 +652,7 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['modeling_options']['flags']['monopile']:
             mono_index = twr_index+1 # Duplicate intersection point
             n_joints = len(inputs['tower_outer_diameter'][:mono_index])
+            fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
             fst_vt['SubDyn']['NJoints'] = n_joints
             fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
@@ -662,10 +672,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 2
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['NPropSets'] = n_joints-1
-            fst_vt['SubDyn']['PropSetID'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['YoungE'] = inputs['tower_E'][:mono_index]
-            fst_vt['SubDyn']['ShearG'] = inputs['tower_G'][:mono_index]
-            fst_vt['SubDyn']['MatDens'] = inputs['tower_rho'][:mono_index]
+            fst_vt['SubDyn']['PropSetID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][:mono_index]
+            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][:mono_index]
+            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][:mono_index]
             fst_vt['SubDyn']['XsecD'] = nodal2sectional(inputs['tower_outer_diameter'][:mono_index])[0]
             fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][:mono_index]
             fst_vt['SubDyn']['NXPropSets'] = 0
@@ -683,15 +693,26 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
 
             # HydroDyn inputs
-            fst_vt['HydroDyn']['AddF0'] = np.zeros(6)
-            fst_vt['HydroDyn']['AddCLin'] = np.zeros((6,6))
-            fst_vt['HydroDyn']['AddBLin'] = np.zeros((6,6))
-            fst_vt['HydroDyn']['AddBQuad'] = np.zeros((6,6))
-            fst_vt['HydroDyn']['NAxCoeff'] = 1
-            fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoeff'], dtype=np.int_)
-            fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoeff'] )
-            fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoeff'] )
-            fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoeff'] )
+            fst_vt['HydroDyn']['WtrDens'] = float(inputs['rho_water'])
+            fst_vt['HydroDyn']['WtrDpth'] = float(inputs['water_depth'])
+            fst_vt['HydroDyn']['MSL2SWL'] = 0
+            fst_vt['HydroDyn']['WaveHs'] = float(inputs['Hsig_wave'])
+            fst_vt['HydroDyn']['WaveTp'] = float(inputs['Tsig_wave'])
+            if fst_vt['HydroDyn']['WavePkShp']<=-999.0: fst_vt['HydroDyn']['WavePkShp'] = "DEFAULT"
+            fst_vt['HydroDyn']['WaveDir'] = float(inputs['beta_wave'])
+            fst_vt['HydroDyn']['WaveDirRange'] = np.rad2deg(fst_vt['HydroDyn']['WaveDirRange'])
+            fst_vt['HydroDyn']['WaveElevxi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevxi']]
+            fst_vt['HydroDyn']['WaveElevyi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevyi']]
+            fst_vt['HydroDyn']['CurrSSDir'] = "DEFAULT" if fst_vt['HydroDyn']['CurrSSDir']<=-999.0 else np.rad2deg(fst_vt['HydroDyn']['CurrSSDir']) 
+            fst_vt['HydroDyn']['AddF0'] = np.array( fst_vt['HydroDyn']['AddF0'] )
+            fst_vt['HydroDyn']['AddCLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddCLin'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['AddBQuad'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['NAxCoef'] = 1
+            fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
+            fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
+            fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
+            fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
             fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
             fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
@@ -700,7 +721,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
-            fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID']
+            fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
             fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
             fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
             fst_vt['HydroDyn']['SimplCd'] = 1.0
@@ -728,58 +749,59 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NMGDepths'] = 0
             
         # Moodyn inputs
-        n_line_types = modeling_options["mooring"]["n_line_types"]
-        fst_vt['MoorDyn']['NTypes'] = n_line_types
-        fst_vt['MoorDyn']['Name'] = modeling_options["mooring"]["line_type_name"][:]
-        fst_vt['MoorDyn']['Diam'] = inputs["line_diameter"]
-        fst_vt['MoorDyn']['MassDen'] = inputs["line_mass_density"]
-        fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
-        fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones( n_line_types, dtype=np.int64)
-        fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
-        fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
-        fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
-        fst_vt['MoorDyn']['Cdn'] = inputs["line_tangential_drag"]
-            
-        n_nodes = modeling_options["mooring"]["n_nodes"]
-        fst_vt['MoorDyn']['NConnects'] = n_nodes
-        fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
-        fst_vt['MoorDyn']['Type'] = modeling_options["mooring"]["node_type"][:]
-        fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
-        fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
-        fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
-        fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
-        fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
-        fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
-        fst_vt['MoorDyn']['FY'] = np.zeros( n_nodes )
-        fst_vt['MoorDyn']['FZ'] = np.zeros( n_nodes )
-        fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
-        fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
-            
-        n_lines = modeling_options["mooring"]["n_lines"]
-        fst_vt['MoorDyn']['NLines'] = n_lines
-        fst_vt['MoorDyn']['Line'] = np.arange(n_lines)+1
-        fst_vt['MoorDyn']['LineType'] = modeling_options["mooring"]["line_type"][:]
-        fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
-        fst_vt['MoorDyn']['NumSegs'] = 50*np.ones( n_line_types, dtype=np.int64)
-        fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
-        fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
-        fst_vt['MoorDyn']['Flags_Outputs'] = ['-'] * n_lines
-        for k in range(n_lines):
-            id1 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node1"][k] )
-            id2 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node2"][k] )
-            if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
-                fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
-                fst_vt['MoorDyn']['NodeFair'][k] = id1+1
-                fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
-            if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
-                fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
-                fst_vt['MoorDyn']['NodeFair'][k] = id2+1
-                fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
-            else:
-                print(discrete_inputs['node_names'])
-                print(modeling_options["mooring"]["node1"][k], modeling_options["mooring"]["node2"][k])
-                print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
-                raise ValueError('Mooring line seems to be between unknown endpoint types?')
+        if modeling_options["flags"]["mooring"]:
+            n_line_types = modeling_options["mooring"]["n_line_types"]
+            fst_vt['MoorDyn']['NTypes'] = n_line_types
+            fst_vt['MoorDyn']['Name'] = modeling_options["mooring"]["line_type_name"][:]
+            fst_vt['MoorDyn']['Diam'] = inputs["line_diameter"]
+            fst_vt['MoorDyn']['MassDen'] = inputs["line_mass_density"]
+            fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones( n_line_types, dtype=np.int64)
+            fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
+            fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
+            fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
+            fst_vt['MoorDyn']['Cdn'] = inputs["line_tangential_drag"]
+
+            n_nodes = modeling_options["mooring"]["n_nodes"]
+            fst_vt['MoorDyn']['NConnects'] = n_nodes
+            fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
+            fst_vt['MoorDyn']['Type'] = modeling_options["mooring"]["node_type"][:]
+            fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
+            fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
+            fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
+            fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
+            fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
+            fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['FY'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['FZ'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
+            fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
+
+            n_lines = modeling_options["mooring"]["n_lines"]
+            fst_vt['MoorDyn']['NLines'] = n_lines
+            fst_vt['MoorDyn']['Line'] = np.arange(n_lines)+1
+            fst_vt['MoorDyn']['LineType'] = modeling_options["mooring"]["line_type"][:]
+            fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
+            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones( n_line_types, dtype=np.int64)
+            fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['Flags_Outputs'] = ['-'] * n_lines
+            for k in range(n_lines):
+                id1 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node1"][k] )
+                id2 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node2"][k] )
+                if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
+                    fst_vt['MoorDyn']['NodeFair'][k] = id1+1
+                    fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
+                if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
+                    fst_vt['MoorDyn']['NodeFair'][k] = id2+1
+                    fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
+                else:
+                    print(discrete_inputs['node_names'])
+                    print(modeling_options["mooring"]["node1"][k], modeling_options["mooring"]["node2"][k])
+                    print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
+                    raise ValueError('Mooring line seems to be between unknown endpoint types?')
             
         return fst_vt
 

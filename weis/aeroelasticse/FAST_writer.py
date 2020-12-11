@@ -1712,7 +1712,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NDiv'], 'NDiv', '- Number of sub-elements per member\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['CBMod'], 'CBMod', '- [T/F] If True perform C-B reduction, else full FEM dofs will be retained. If True, select Nmodes to retain in C-B reduced system.\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['Nmodes'], 'Nmodes', '- Number of internal modes to retain (ignored if CBMod=False). If Nmodes=0 --> Guyan Reduction.\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['JDampings'], 'JDampings', '- Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).\n'))
+        f.write('{:<22} {:<11} {:}'.format(", ".join(self.fst_vt['SubDyn']['JDampings']), 'JDampings', '- Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).\n'))
         f.write('---- STRUCTURE JOINTS: joints connect structure members (~Hydrodyn Input File)---\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NJoints'], 'NJoints', '- Number of joints (-)\n'))
         f.write(" ".join(['{:^11s}'.format(i) for i in ['JointID', 'JointXss', 'JointYss', 'JointZss']])+' [Coordinates of Member joints in SS-Coordinate System]\n')

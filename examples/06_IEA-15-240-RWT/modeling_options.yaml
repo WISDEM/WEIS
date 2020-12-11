@@ -22,6 +22,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     simulation:
         TMax: 1.
         DT: 0.01
+        CompHydro: 1
+        CompSub: 1
     linearization:
         Linearize: False
     InflowWind:
@@ -50,9 +52,15 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     BeamDyn:
         flag: False
     HydroDyn:
-        flag: False
+        flag: True
+        WaveTMax: 3630
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WaveSeed1: 123456789
+        WaveSeed2: 1011121314
+        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
     SubDyn:
-        flag: False
+        flag: True
     MoorDyn:
         flag: False
     ServoDyn:
@@ -95,11 +103,3 @@ openfast:
             turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
             U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True
-
-yaml:
-    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
-    path2schema: windIO/windIO/turbine/IEAontology_schema.yaml   # Path to the yams schema to run the validation
-
-xfoil:
-    path       : Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
-    run_parallel: True
