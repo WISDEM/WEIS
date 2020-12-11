@@ -257,10 +257,11 @@ class WindPark(om.Group):
             self.connect('towerse.E',                       'aeroelastic.tower_E')
             self.connect('towerse.G',                       'aeroelastic.tower_G')
             self.connect('towerse.rho',                     'aeroelastic.tower_rho')
-            self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass')
-            self.connect('towerse.transition_piece_I',      'aeroelastic.transition_piece_I', src_indices=[0,1,2])
-            self.connect('monopile.gravity_foundation_mass', 'aeroelastic.gravity_foundation_mass')
-            self.connect('towerse.gravity_foundation_I',    'aeroelastic.gravity_foundation_I', src_indices=[0,1,2])
+            if modeling_options['flags']['monopile']:
+                self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass')
+                self.connect('towerse.transition_piece_I',      'aeroelastic.transition_piece_I', src_indices=[0,1,2])
+                self.connect('monopile.gravity_foundation_mass', 'aeroelastic.gravity_foundation_mass')
+                self.connect('towerse.gravity_foundation_I',    'aeroelastic.gravity_foundation_I', src_indices=[0,1,2])
 
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
