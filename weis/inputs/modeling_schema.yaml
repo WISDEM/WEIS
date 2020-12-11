@@ -318,10 +318,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run InflowWind
                     Echo: *echo
                     WindType:
                         type: integer
@@ -682,10 +678,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run InflowWind
                     Echo: *echo
                     Method:
                         type: string
@@ -1196,10 +1188,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run BeamDyn
                     QuasiStaticInit:
                         type: boolean
                         default: True
@@ -1315,10 +1303,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run HydroDyn
                     Echo: *echo
                     WaveMod:
                         type: integer
@@ -1727,15 +1711,10 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run SubDyn
                     Echo: *echo
                     SDdeltaT:
                         type: number
-                        default: 0.0
-                        minimum: 0.0
+                        default: -999.0
                         maximum: 100.0
                         unit: s
                         description: Local Integration Step. If 0.0, the glue-code integration step will be used.
@@ -1821,10 +1800,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run MoorDyn
                     Echo: *echo
                     dtM:
                         type: number
@@ -1880,10 +1855,6 @@ properties:
                 default: {}
                 description: ServoDyn modelling options in OpenFAST
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run ServoDyn
                     Echo: *echo
                     DT:
                         type: string

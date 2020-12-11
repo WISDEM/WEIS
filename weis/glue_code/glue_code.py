@@ -248,6 +248,7 @@ class WindPark(om.Group):
             self.connect('towerse.post.side_side_modes',    'aeroelastic.side_side_modes')
             self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
             self.connect('towerse.tower_outer_diameter',    'aeroelastic.tower_outer_diameter')
+            self.connect('towerse.z_param',                 'aeroelastic.tower_monopile_z')
             self.connect('tower.cd',                        'aeroelastic.tower_cd')
             self.connect('tower_grid.height',               'aeroelastic.tower_height')
             self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')

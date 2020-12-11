@@ -101,7 +101,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('sideside_stff',    val=np.zeros(nFull-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
+        self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+        self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
+        self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
         self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
+        
         # These next ones are needed for SubDyn
         self.add_input('tower_wall_thickness', val=np.zeros(n_height-1), units='m')
         self.add_input('tower_E', val=np.zeros(n_height-1), units='Pa')
@@ -146,8 +150,6 @@ class FASTLoadCases(ExplicitComponent):
         # Turbine level inputs
         self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
-        self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
-        self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
         self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
@@ -183,13 +185,14 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
         self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
-        self.add_input('water_depth', val=0.0, units='m', desc='depth of water')
+        self.add_input(
+                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
         self.add_input('rho_water',   val=0.0, units='kg/m**3',  desc='density of water')
         self.add_input('mu_water',    val=0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
         self.add_input('beta_wave',    val=0.0, units='deg', desc='Incident wave propagation heading direction')
         self.add_input('Hsig_wave',    val=0.0, units='m', desc='Significant wave height of incident waves')
         self.add_input('Tsig_wave',    val=0.0, units='s', desc='Peak-spectral period of incident waves')
-
 
         # Blade composite material properties (used for fatigue analysis)
         self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
@@ -492,18 +495,17 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
-
-        twr_z_start = -float(inputs['water_depth']) if self.options['modeling_options']['flags']['monopile'] else tower_base_height
-        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + twr_z_start
-        #tip_height= twr_elev[-1]-inputs['Rtip']
-        twr_index = np.argmin(abs(twr_elev - tower_base_height))
-        #if twr_elev[twr_index] > tip_height:
-        #    twr_index -= 1
-
-        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+        
+        twr_elev  = inputs['tower_monopile_z']
+        twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
+        cd_index  = 0
+        if twr_elev[twr_index] <= 1.:
+            twr_index += 1
+            cd_index  += 1
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(twr_elev[twr_index:])
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
         fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
-        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][1:]
+        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -651,19 +653,20 @@ class FASTLoadCases(ExplicitComponent):
         # SubDyn inputs
         if self.options['modeling_options']['flags']['monopile']:
             mono_index = twr_index+1 # Duplicate intersection point
-            n_joints = len(inputs['tower_outer_diameter'][:mono_index])
+            n_joints = len(inputs['tower_outer_diameter'][1:mono_index]) # Omit submerged pile
+            if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
             fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
             fst_vt['SubDyn']['NJoints'] = n_joints
             fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointZss'] = twr_elev[:mono_index]
+            fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
             fst_vt['SubDyn']['NReact'] = 1
             fst_vt['SubDyn']['RJointID'] = [1]
             fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
             fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]
             fst_vt['SubDyn']['Rct_SoilFile'] = ['']
-            fst_vt['SubDyn']['IJointID'] = [1]
+            fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
             fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
             fst_vt['SubDyn']['NMembers'] = n_joints-1
@@ -673,11 +676,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['NPropSets'] = n_joints-1
             fst_vt['SubDyn']['PropSetID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][:mono_index]
-            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][:mono_index]
-            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][:mono_index]
-            fst_vt['SubDyn']['XsecD'] = nodal2sectional(inputs['tower_outer_diameter'][:mono_index])[0]
-            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][:mono_index]
+            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][1:mono_index]
+            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][1:mono_index]
+            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
+            fst_vt['SubDyn']['XsecD'] = nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
+            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
             fst_vt['SubDyn']['NXPropSets'] = 0
             fst_vt['SubDyn']['NCOSMs'] = 0
             fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
