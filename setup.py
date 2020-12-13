@@ -15,6 +15,7 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 # Eagle environment
 eagle_flag = platform.node() in ['el'+str(m) for m in range(10)]
 ci_flag    = platform.node().find('fv-az') >= 0
+ci_flag = True
 print(platform.node(), eagle_flag, ci_flag)
 print(os.uname())
 if eagle_flag:
