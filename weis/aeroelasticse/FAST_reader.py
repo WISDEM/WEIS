@@ -1065,7 +1065,7 @@ class InputReader_OpenFAST(InputReader_Common):
         # Dynamic Blade-Element/Momentum Theory Options 
         f.readline()
         self.fst_vt['AeroDyn15']['DBEMT_Mod']          = int(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['tau1_const']         = int(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['tau1_const']         = float_read(f.readline().split()[0])
 
         # Olaf -- cOnvecting LAgrangian Filaments (Free Vortex Wake) Theory Options
         f.readline()
