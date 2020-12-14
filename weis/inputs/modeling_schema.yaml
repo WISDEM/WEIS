@@ -328,10 +328,10 @@ properties:
                         description: Echo input data to "<RootName>.ech" (flag)
                     WindType:
                         type: integer
-                        enum: [1,2,3,4,5]
+                        enum: [1,2,3,4,5,6,7]
                         unit: none
                         default: 1
-                        description: Switch for wind file type (1=steady; 2=uniform; 3=binary TurbSim FF; 4=binary Bladed-style FF; 5=HAWC format; 6=User defined)
+                        description: Switch for wind file type (1=steady; 2=uniform; 3=binary TurbSim FF; 4=binary Bladed-style FF; 5=HAWC format; 6=User defined; 7=native Bladed FF)
                     PropagationDir:
                         type: number
                         default: 0.0
@@ -339,6 +339,13 @@ properties:
                         maximum: 360.0
                         unit: deg
                         description:  Direction of wind propagation (meteoroligical rotation from aligned with X (positive rotates towards -Y) -- degrees)
+                    VFlowAng:
+                        type: number
+                        default: 0.0
+                        minimum: -90.0
+                        maximum: 90.0
+                        unit: deg
+                        description:  Upflow angle (degrees) (not used for native Bladed format WindType=7)
                     NWindVel:
                         type: integer
                         default: 1
