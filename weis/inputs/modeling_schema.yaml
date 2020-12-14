@@ -48,7 +48,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    Echo:
+                    Echo: &echo
                         type: boolean
                         default: False
                         description: Echo input data to "<RootName>.ech" (flag)
@@ -318,14 +318,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run InflowWind
-                    Echo:
-                        type: boolean
-                        default: False
-                        description: Echo input data to "<RootName>.ech" (flag)
+                    Echo: *echo
                     WindType:
                         type: integer
                         enum: [1,2,3,4,5,6,7]
@@ -559,10 +552,7 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run AeroDyn
-                    Echo:
-                        type: boolean
-                        default: False
-                        description: Echo input data to "<RootName>.ech" (flag)
+                    Echo: *echo
                     DTAero:
                         type: number
                         default: 0.
@@ -723,14 +713,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run InflowWind
-                    Echo:
-                        type: boolean
-                        default: False
-                        description: Echo input data to "<RootName>.ech" (flag)
+                    Echo: *echo
                     Method:
                         type: string
                         default: '3'
@@ -1240,10 +1223,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run BeamDyn
                     QuasiStaticInit:
                         type: boolean
                         default: True
@@ -1359,17 +1338,16 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run HydroDyn
+                    Echo: *echo
                     WaveMod:
-                        type: string
-                        enum: ['0', '1', '2', '3', none, None, NONE, plane, Plane, PLANE, JONSWAP, jonswap, Jonswap, user, User, USER]
-                        description: Incident wave kinematics model {0 = none=still water, 1 = plane progressive (regular), 2 = JONSWAP/Pierson-Moskowitz spectrum (irregular), 3 = user-defind spectrum from routine UserWaveSpctrm (irregular)} (switch)
+                        type: integer
+                        enum: [0, 1, 2, 3, 4, 5, 6]
+                        default: 2
+                        description: Incident wave kinematics model {0- none/still water, 1- regular (periodic), 1P#- regular with user-specified phase, 2- JONSWAP/Pierson-Moskowitz spectrum (irregular), 3- White noise spectrum (irregular), 4- user-defined spectrum from routine UserWaveSpctrm (irregular), 5- Externally generated wave-elevation time series, 6- Externally generated full wave-kinematics time series [option 6 is invalid for PotMod/=0]} (switch)
                     WaveStMod:
-                        type: string
-                        enum: ['0', '1', '2', '3', none, None, NONE, vertical, Vertical, VERTICAL, extrapolation, Extrapolation, EXTRAPOLATION, Wheeler, WHEELER, wheeler]
+                        type: integer
+                        enum: [0, 1, 2, 3]
+                        default: 0
                         description: Model for stretching incident wave kinematics to instantaneous free surface {0 = none=no stretching, 1 = vertical stretching, 2 = extrapolation stretching, 3 = Wheeler stretching} (switch) [unused when WaveMod=0 or when PotMod/=0]
                     WaveTMax:
                         type: number
@@ -1387,9 +1365,7 @@ properties:
                         description: Time step for incident wave calculations     (sec) [unused when WaveMod=0; 0.1<=WaveDT<=1.0 recommended; determines WaveOmegaMax=Pi/WaveDT in the IFFT]
                     WavePkShp:
                         type: number
-                        default: 1.0
-                        minimum: 0.0
-                        maximum: 1e5
+                        default: -999.0
                         unit: none
                         description: Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]
                     WvLowCOff:
@@ -1414,9 +1390,9 @@ properties:
                         unit: rad
                         description: Incident wave propagation heading direction [unused when WaveMod=0 or 6]
                     WaveDirMod:
-                        type: string
-                        enum: ['0', '1', none, None, NONE, COS2S, cos2s, Cos2s]
-                        default: none
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
                         description: Directional spreading function {0 = none, 1 = COS2S} [only used when WaveMod=2,3, or 4]
                     WaveDirSpread:
                         type: number
@@ -1455,8 +1431,32 @@ properties:
                         description: Flag for normally distributed amplitudes [only used when WaveMod=2, 3, or 4]
                     WvKinFile:
                         type: string
-                        default: none
+                        default: ''
                         description: Root name of externally generated wave data file(s) (quoted string) [used only when WaveMod=5 or 6]
+                    NWaveElev:
+                        type: integer
+                        default: 1
+                        minimum: 0
+                        maximum: 9
+                        description: Number of points where the incident wave elevations can be computed (-) [maximum of 9 output locations]
+                    WaveElevxi:
+                        type: array
+                        default: [0.0]
+                        description: List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
+                        items:
+                            type: number
+                            default: 0.0
+                            unit: m
+                            maxItems: 9
+                    WaveElevyi:
+                        type: array
+                        default: [0.0]
+                        description: List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
+                        items:
+                            type: number
+                            default: 0.0
+                            unit: m
+                            maxItems: 9
                     WvDiffQTF:
                         type: boolean
                         default: True
@@ -1494,9 +1494,9 @@ properties:
                         unit: rad/s
                         description: High frequency cutoff used in the summation-frequencies  (rad/s) [Only used with a summation-frequency method]
                     CurrMod:
-                        type: string
-                        enum: ['0', '1', '2', none, None, NONE, standard, Standard, STANDARD, user, User, USER]
-                        default: '0'
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
                         description: Current profile model {0 = none=no current, 1 = standard, 2 = user-defined from routine UserCurrent} (switch)
                     CurrSSV0:
                         type: number
@@ -1507,8 +1507,7 @@ properties:
                         description: Sub-surface current velocity at still water level  (m/s) [used only when CurrMod=1]
                     CurrSSDir:
                         type: number
-                        default: 0.0
-                        minimum: 0.0
+                        default: -999.0
                         maximum: 6.283185307179586
                         unit: rad
                         description: Sub-surface current heading direction (radians) or 0.0 for default [used only when CurrMod=1]
@@ -1548,13 +1547,13 @@ properties:
                         unit: rad
                         description: Depth-independent current heading direction (radians) [used only when CurrMod=1]
                     PotMod:
-                        type: string
-                        enum: ['0', '1', '2', none, None, NONE, frequency-to-time, Frequency-to-Time, FIT]
-                        default: '1'
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
                         description: Potential-flow model {0 = none=no potential flow, 1 = frequency-to-time-domain transforms based on Capytaine/NEMOH/WAMIT output, 2 = fluid-impulse theory (FIT)} (switch)
                     PotFile:
                         type: string
-                        default: none
+                        default: ''
                         description: Root name of potential-flow model data; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
                     WAMITULEN:
                         type: number
@@ -1563,15 +1562,33 @@ properties:
                         default: 1.0
                         unit: m
                         description: Characteristic body length scale used to redimensionalize Capytaine/NEMOH/WAMIT output (meters) [only used when PotMod=1]
+                    PtfmVol0:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: m^3
+                        description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    PtfmCOBxt:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: m
+                        description: The xt offset of the center of buoyancy (COB) from the platform reference point (meters) [only used when PotMod=1]
+                    PtfmCOByt:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: m
+                        description: The yt offset of the center of buoyancy (COB) from the platform reference point (meters) [only used when PotMod=1]
                     ExctnMod:
-                        type: string
-                        enum: ['0', '1', '2', none, None, NONE, DFT, dft, state-space, State-Space, STATE-SPACE]
-                        default: '0'
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
                         description: Wave Excitation model {0 = None, 1 = DFT, 2 = state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ssexctn INPUT FILE]
                     RdtnMod:
-                        type: string
-                        enum: ['0', '1', '2', none, None, NONE, convolution, Convolution, CONVOLUTION, state-space, State-Space, STATE-SPACE]
-                        default: '0'
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
                         description: Radiation memory-effect model {0 = no memory-effect calculation, 1 = convolution, 2 = state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ss INPUT FILE]
                     RdtnTMax:
                         type: number
@@ -1588,76 +1605,167 @@ properties:
                         unit: s
                         description: Time step for wave radiation kernel calculations, use 0.0 for default (sec) [only used when PotMod=1; DT<=RdtnDT<=0.1 recommended; determines RdtnOmegaMax=Pi/RdtnDT in the cosine transform]
                     MnDrift:
-                        type: string
-                        enum: ['0', none, None, NONE, '7','8','9','10','11','12']
-                        default: '0'
+                        type: integer
+                        enum: [0, 7, 8, 9, 10, 11, 12]
+                        default: 0
                         description: Mean-drift 2nd-order forces computed {0 = None; [7, 8, 9, 10, 11, or 12] = WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
                     NewmanApp:
-                        type: string
-                        enum: ['0', none, None, NONE, '7','8','9','10','11','12']
-                        default: '0'
+                        type: integer
+                        enum: [0, 7, 8, 9, 10, 11, 12]
+                        default: 0
                         description: Mean- and slow-drift 2nd-order forces computed with Newman's approximation {0 = None; [7, 8, 9, 10, 11, or 12] = WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero. Used only when WaveDirMod=0]
                     DiffQTF:
-                        type: string
-                        enum: ['0', none, None, NONE, '10','11','12']
-                        default: '12'
+                        type: integer
+                        enum: [0, 10, 11, 12]
+                        default: 0
                         description: Full difference-frequency 2nd-order forces computed with full QTF {0 = None; [10, 11, or 12] = WAMIT file to use} [Only one of MnDrift, NewmanApp, or DiffQTF can be non-zero]
                     SumQTF:
-                        type: string
-                        enum: ['0', none, None, NONE, '10','11','12']
-                        default: '12'
+                        type: integer
+                        enum: [0, 10, 11, 12]
+                        default: 0
                         description: Full summation -frequency 2nd-order forces computed with full QTF {0 = None; [10, 11, or 12] = WAMIT file to use}
                     PtfmSgF:
-                        type: boolean
-                        default: True
+                        type: string
+                        default: 'True'
+                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
                         description: Platform horizontal surge translation force (flag) or DEFAULT
                     PtfmSwF:
-                        type: boolean
-                        default: True
+                        type: string
+                        default: 'True'
+                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
                         description: Platform horizontal sway translation force (flag) or DEFAULT
                     PtfmHvF:
-                        type: boolean
-                        default: True
+                        type: string
+                        default: 'True'
+                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
                         description: Platform vertical heave translation force (flag) or DEFAULT
                     PtfmRF:
-                        type: boolean
-                        default: True
+                        type: string
+                        default: 'True'
+                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
                         description: Platform roll tilt rotation force (flag) or DEFAULT
                     PtfmPF:
-                        type: boolean
-                        default: True
+                        type: string
+                        default: 'True'
+                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
                         description: Platform pitch tilt rotation force (flag) or DEFAULT
                     PtfmYF:
+                        type: string
+                        default: 'True'
+                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
+                        description: Platform yaw rotation force (flag) or DEFAULT
+                    AddF0:
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        description: Additional preload (N, N-m)
+                        items:
+                            type: number
+                            minItems: 6
+                            maxItems: 6
+                    AddCLin1: &addclin
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        description: Additional linear stiffness by row (N/m, N/rad, N-m/m, N-m/rad)
+                        items:
+                            type: number
+                            minItems: 6
+                            maxItems: 6
+                    AddCLin2: *addclin
+                    AddCLin3: *addclin
+                    AddCLin4: *addclin
+                    AddCLin5: *addclin
+                    AddCLin6: *addclin
+                    AddBLin1: &addblin
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        description: Additional linear damping by row (N/(m/s), N/(rad/s), N-m/(m/s), N-m/(rad/s))
+                        items:
+                            type: number
+                            minItems: 6
+                            maxItems: 6
+                    AddBLin2: *addblin
+                    AddBLin3: *addblin
+                    AddBLin4: *addblin
+                    AddBLin5: *addblin
+                    AddBLin6: *addblin
+                    AddBQuad1: &addbquad
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        description: Additional quadratic drag by row (N/(m/s)^2, N/(rad/s)^2, N-m(m/s)^2, N-m/(rad/s)^2)
+                        items:
+                            type: number
+                            minItems: 6
+                            maxItems: 6
+                    AddBQuad2: *addbquad
+                    AddBQuad3: *addbquad
+                    AddBQuad4: *addbquad
+                    AddBQuad5: *addbquad
+                    AddBQuad6: *addbquad
+                    NMOutputs:
+                        type: integer
+                        minimum: 0
+                        maximum: 9
+                        default: 0
+                        description: Number of member outputs (-) [must be < 10]
+                    NJOutputs:
+                        type: integer
+                        minimum: 0
+                        maximum: 9
+                        default: 0
+                        description: Number of joint outputs [Must be < 10]
+                    JOutLst:
+                        type: array
+                        default: [0]
+                        description: List of JointIDs which are to be output (-)[unused if NJOutputs=0]
+                        items:
+                            type: integer
+                            maxItems: 9
+                    HDSum:
                         type: boolean
                         default: True
-                        description: Platform yaw rotation force (flag) or DEFAULT
+                        description: Output a summary file [flag]
+                    OutAll:
+                        type: boolean
+                        default: False
+                        description: Output all user-specified member and joint loads (only at each member end, not interior locations) [flag]
+                    OutSwtch:
+                        type: integer
+                        enum: [1, 2, 3]
+                        default: 2
+                        description: Output requested channels to [1=Hydrodyn.out, 2=GlueCode.out, 3=both files]
+                    OutFmt:
+                        type: string
+                        default: 'ES11.4e2'
+                        description: Output format for numerical results (quoted string) [not checked for validity]
+                    OutSFmt:
+                        type: string
+                        default: 'A11'
+                        description: Output format for header strings (quoted string) [not checked for validity]
+                        
             SubDyn:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run SubDyn
+                    Echo: *echo
                     SDdeltaT:
                         type: number
-                        default: 0.0
-                        minimum: 0.0
+                        default: -999.0
                         maximum: 100.0
                         unit: s
                         description: Local Integration Step. If 0.0, the glue-code integration step will be used.
                     IntMethod:
-                        type: string
-                        enum: ['1', '2', '3', '4', RK4, AB4, ABM4, AM2]
+                        type: integer
+                        enum: [1, 2, 3, 4]
+                        default: 3
                         description: Integration Method [1/2/3/4 = RK4/AB4/ABM4/AM2].
                     SttcSolve:
                         type: boolean
                         default: True
                         description: Solve dynamics about static equilibrium point
                     FEMMod:
-                        type: string
-                        enum: ['1','2','3','4']
-                        default: '3'
+                        type: integer
+                        enum: [1, 2, 3, 4]
+                        default: 3
                         description: FEM switch = element model in the FEM. [1= Euler-Bernoulli(E-B);  2=Tapered E-B (unavailable);  3= 2-node Timoshenko;  4= 2-node tapered Timoshenko (unavailable)]
                     NDiv:
                         type: integer
@@ -1678,18 +1786,56 @@ properties:
                     JDampings:
                         type: array
                         description: Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).
-                        default: []
+                        default: [0.0]
                         items:
                             type: number
                             unit: none
+                    SSSum:
+                        type: boolean
+                        default: True
+                        description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
+                    OutCOSM:
+                        type: boolean
+                        default: False
+                        description: Output cosine matrices with the selected output member forces (flag)
+                    OutAll:
+                        type: boolean
+                        default: False
+                        description: Output all members' end forces (flag)
+                    OutSwtch:
+                        type: integer
+                        enum: [1, 2, 3]
+                        default: 2
+                        description: Output requested channels to 1=<rootname>.SD.out;  2=<rootname>.out (generated by FAST);  3=both files.
+                    TabDelim:
+                        type: boolean
+                        default: True
+                        description: Generate a tab-delimited output in the <rootname>.SD.out file
+                    OutDec:
+                        type: integer
+                        default: 1
+                        description: Decimation of output in the <rootname>.SD.out file
+                        minimum: 0
+                    OutFmt:
+                        type: string
+                        default: 'ES11.4e2'
+                        description: Output format for numerical results in the <rootname>.SD.out file (quoted string) [not checked for validity]
+                    OutSFmt:
+                        type: string
+                        default: 'A11'
+                        description: Output format for header strings in the <rootname>.SD.out file (quoted string) [not checked for validity]
+                    NMOutputs:
+                        type: integer
+                        minimum: 0
+                        maximum: 9
+                        default: 0
+                        description: Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].
+                            
             MoorDyn:
                 type: object
                 default: {}
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run MoorDyn
+                    Echo: *echo
                     dtM:
                         type: number
                         unit: s
@@ -1744,14 +1890,7 @@ properties:
                 default: {}
                 description: ServoDyn modelling options in OpenFAST
                 properties:
-                    flag:
-                        type: boolean
-                        default: False
-                        description: Whether or not to run ServoDyn
-                    Echo:
-                        type: boolean
-                        default: False
-                        description: Echo input data to "<RootName>.ech" (flag)
+                    Echo: *echo
                     DT:
                         type: string
                         default: 'default'

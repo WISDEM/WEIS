@@ -6,6 +6,7 @@ from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
 from wisdem.commonse.vertical_cylinder      import NFREQ
+from wisdem.commonse.utilities              import nodal2sectional
 from wisdem.towerse.tower                   import get_nfull
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
@@ -100,7 +101,20 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('sideside_stff',    val=np.zeros(nFull-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
+        self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+        self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
+        self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
         self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
+        
+        # These next ones are needed for SubDyn
+        self.add_input('tower_wall_thickness', val=np.zeros(n_height-1), units='m')
+        self.add_input('tower_E', val=np.zeros(n_height-1), units='Pa')
+        self.add_input('tower_G', val=np.zeros(n_height-1), units='Pa')
+        self.add_input('tower_rho', val=np.zeros(n_height-1), units='kg/m**3')
+        self.add_input('transition_piece_mass', val=0.0, units='kg')
+        self.add_input('transition_piece_I', val=np.zeros(3), units='kg*m**2')
+        self.add_input('gravity_foundation_mass', val=0.0, units='kg')
+        self.add_input('gravity_foundation_I', val=np.zeros(3), units='kg*m**2')
 
         # DriveSE quantities
         self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
@@ -136,8 +150,6 @@ class FASTLoadCases(ExplicitComponent):
         # Turbine level inputs
         self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
-        self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
-        self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
         self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
@@ -176,6 +188,11 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input(
                 "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
             )
+        self.add_input('rho_water',   val=0.0, units='kg/m**3',  desc='density of water')
+        self.add_input('mu_water',    val=0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
+        self.add_input('beta_wave',    val=0.0, units='deg', desc='Incident wave propagation heading direction')
+        self.add_input('Hsig_wave',    val=0.0, units='m', desc='Significant wave height of incident waves')
+        self.add_input('Tsig_wave',    val=0.0, units='s', desc='Peak-spectral period of incident waves')
 
         # Blade composite material properties (used for fatigue analysis)
         self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
@@ -196,6 +213,28 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
         self.layer_name = rotorse_options['layer_name']
 
+        # MoorDyn inputs
+        mooropt = self.options['modeling_options']["mooring"]
+        if self.options["modeling_options"]["flags"]["mooring"]:
+            n_line_types = mooropt["n_line_types"]
+            n_nodes = mooropt["n_nodes"]
+            n_lines = mooropt["n_lines"]
+            self.add_discrete_input("line_type_names", val=[""] * n_line_types)
+            self.add_input("line_diameter", val=np.zeros(n_line_types), units="m")
+            self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
+            self.add_input("line_stiffness", val=np.zeros(n_line_types), units="N")
+            self.add_input("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
+            self.add_input("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
+            self.add_input("line_transverse_drag", val=np.zeros(n_line_types))
+            self.add_input("line_tangential_drag", val=np.zeros(n_line_types))
+            self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
+            self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
+            self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+            self.add_input("nodes_added_mass", val=np.zeros(n_nodes))
+            self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
+            self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
+            self.add_discrete_input("node_names", val=[""] * n_nodes)
+        
         # FAST run preferences
         self.FASTpref            = FASTpref 
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
@@ -283,6 +322,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
+        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
@@ -315,6 +355,7 @@ class FASTLoadCases(ExplicitComponent):
     def init_FAST_model(self):
 
         fst_vt = self.options['modeling_options']['openfast']['fst_vt']
+        modeling_options = self.options['modeling_options']
         
         # Main .fst file`
         fst_vt['Fst']               = {}
@@ -325,23 +366,41 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDynBlade']      = {}
         fst_vt['ServoDyn']          = {}
         fst_vt['InflowWind']        = {}
+        fst_vt['SubDyn']            = {}
+        fst_vt['HydroDyn']          = {}
+        fst_vt['MoorDyn']           = {}
 
-        for key in enumerate(self.options['modeling_options']['Level3']['simulation']):
-            fst_vt['Fst'][key[1]] = self.options['modeling_options']['Level3']['simulation'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDyn']):
-            fst_vt['ElastoDyn'][key[1]] = self.options['modeling_options']['Level3']['ElastoDyn'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDynBlade']):
-            fst_vt['ElastoDynBlade'][key[1]] = self.options['modeling_options']['Level3']['ElastoDynBlade'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ElastoDynTower']):
-            fst_vt['ElastoDynTower'][key[1]] = self.options['modeling_options']['Level3']['ElastoDynTower'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['AeroDyn']):
-            fst_vt['AeroDyn15'][key[1]] = self.options['modeling_options']['Level3']['AeroDyn'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['InflowWind']):
-            fst_vt['InflowWind'][key[1]] = self.options['modeling_options']['Level3']['InflowWind'][key[1]]
-        for key in enumerate(self.options['modeling_options']['Level3']['ServoDyn']):
-            fst_vt['ServoDyn'][key[1]] = self.options['modeling_options']['Level3']['ServoDyn'][key[1]]
+        for key in modeling_options['Level3']['simulation']:
+            fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
+            
+        for key in modeling_options['Level3']['ElastoDyn']:
+            fst_vt['ElastoDyn'][key] = modeling_options['Level3']['ElastoDyn'][key]
+            
+        for key in modeling_options['Level3']['ElastoDynBlade']:
+            fst_vt['ElastoDynBlade'][key] = modeling_options['Level3']['ElastoDynBlade'][key]
+            
+        for key in modeling_options['Level3']['ElastoDynTower']:
+            fst_vt['ElastoDynTower'][key] = modeling_options['Level3']['ElastoDynTower'][key]
+            
+        for key in modeling_options['Level3']['AeroDyn']:
+            fst_vt['AeroDyn15'][key] = modeling_options['Level3']['AeroDyn'][key]
+            
+        for key in modeling_options['Level3']['InflowWind']:
+            fst_vt['InflowWind'][key] = modeling_options['Level3']['InflowWind'][key]
+            
+        for key in modeling_options['Level3']['ServoDyn']:
+            fst_vt['ServoDyn'][key] = modeling_options['Level3']['ServoDyn'][key]
+            
+        for key in modeling_options['Level3']['SubDyn']:
+            fst_vt['SubDyn'][key] = modeling_options['Level3']['SubDyn'][key]
+            
+        for key in modeling_options['Level3']['HydroDyn']:
+            fst_vt['HydroDyn'][key] = modeling_options['Level3']['HydroDyn'][key]
+            
+        for key in modeling_options['Level3']['MoorDyn']:
+            fst_vt['MoorDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
 
-        fst_vt['ServoDyn']['DLL_FileName'] = self.options['modeling_options']['openfast']['file_management']['path2dll']
+        fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['openfast']['file_management']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
             fst_vt['AeroDyn15']['IndToler'] = 'default'
@@ -352,7 +411,10 @@ class FASTLoadCases(ExplicitComponent):
 
         return fst_vt
 
+    
     def update_FAST_model(self, fst_vt, inputs, discrete_inputs):
+        
+        modeling_options = self.options['modeling_options']
 
         # Update fst_vt nested dictionary with data coming from WISDEM
 
@@ -435,19 +497,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
-        twr_z_start = -float(inputs['water_depth']) if self.options['modeling_options']['flags']['monopile'] else tower_base_height
-        twr_elev  = np.r_[0.0, np.cumsum(inputs['tower_section_height'])] + twr_z_start
-        if tower_base_height > 1.:
-            twr_index = np.argmin(abs(twr_elev - tower_base_height))
-        else:
-            twr_index = np.argmin(abs(twr_elev - 1.)) # wind grid starts at 1 meter height, see pyIECWind.py, so take the first node above that
-            if twr_elev[twr_index] <= 1.:
-                twr_index += 1
-        
-        fst_vt['AeroDyn15']['NumTwrNds'] = len(inputs['tower_outer_diameter'][twr_index:])
+        twr_elev  = inputs['tower_monopile_z']
+        twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
+        cd_index  = 0
+        if twr_elev[twr_index] <= 1.:
+            twr_index += 1
+            cd_index  += 1
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(twr_elev[twr_index:])
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
         fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
-        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][0:]
+        fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -507,7 +566,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
-                if self.options['modeling_options']['openfast']['analysis_settings']['generate_af_coords']:
+                if modeling_options['openfast']['analysis_settings']['generate_af_coords']:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
@@ -592,6 +651,162 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TwrGagNd'] = 0
         fst_vt['AeroDyn15']['NTwOuts']  = 0
 
+        # SubDyn inputs
+        if self.options['modeling_options']['flags']['monopile']:
+            mono_index = twr_index+1 # Duplicate intersection point
+            n_joints = len(inputs['tower_outer_diameter'][1:mono_index]) # Omit submerged pile
+            if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
+            fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
+            fst_vt['SubDyn']['NJoints'] = n_joints
+            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
+            fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
+            fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
+            fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
+            fst_vt['SubDyn']['NReact'] = 1
+            fst_vt['SubDyn']['RJointID'] = [1]
+            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
+            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]
+            fst_vt['SubDyn']['Rct_SoilFile'] = ['']
+            fst_vt['SubDyn']['IJointID'] = [n_joints]
+            fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
+            fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
+            fst_vt['SubDyn']['NMembers'] = n_joints-1
+            fst_vt['SubDyn']['MemberID'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 2
+            fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['NPropSets'] = n_joints-1
+            fst_vt['SubDyn']['PropSetID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][1:mono_index]
+            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][1:mono_index]
+            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
+            fst_vt['SubDyn']['XsecD'] = nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
+            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
+            fst_vt['SubDyn']['NXPropSets'] = 0
+            fst_vt['SubDyn']['NCOSMs'] = 0
+            fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
+            fst_vt['SubDyn']['CMJointID'] = np.arange( fst_vt['SubDyn']['NCmass'] ) + 1
+            fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
+            fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
+            fst_vt['SubDyn']['JMYY'] = [inputs['transition_piece_I'][1]]
+            fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
+            if inputs['gravity_foundation_mass'] > 0.0:
+                fst_vt['SubDyn']['JMass'] += [float(inputs['gravity_foundation_mass'])]
+                fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
+                fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
+                fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
+
+            # HydroDyn inputs
+            fst_vt['HydroDyn']['WtrDens'] = float(inputs['rho_water'])
+            fst_vt['HydroDyn']['WtrDpth'] = float(inputs['water_depth'])
+            fst_vt['HydroDyn']['MSL2SWL'] = 0
+            fst_vt['HydroDyn']['WaveHs'] = float(inputs['Hsig_wave'])
+            fst_vt['HydroDyn']['WaveTp'] = float(inputs['Tsig_wave'])
+            if fst_vt['HydroDyn']['WavePkShp']<=-999.0: fst_vt['HydroDyn']['WavePkShp'] = "DEFAULT"
+            fst_vt['HydroDyn']['WaveDir'] = float(inputs['beta_wave'])
+            fst_vt['HydroDyn']['WaveDirRange'] = np.rad2deg(fst_vt['HydroDyn']['WaveDirRange'])
+            fst_vt['HydroDyn']['WaveElevxi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevxi']]
+            fst_vt['HydroDyn']['WaveElevyi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevyi']]
+            fst_vt['HydroDyn']['CurrSSDir'] = "DEFAULT" if fst_vt['HydroDyn']['CurrSSDir']<=-999.0 else np.rad2deg(fst_vt['HydroDyn']['CurrSSDir']) 
+            fst_vt['HydroDyn']['AddF0'] = np.array( fst_vt['HydroDyn']['AddF0'] )
+            fst_vt['HydroDyn']['AddCLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddCLin'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['AddBQuad'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['NAxCoef'] = 1
+            fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
+            fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
+            fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
+            fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
+            fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
+            fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
+            fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
+            fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
+            fst_vt['HydroDyn']['Jointzi'] = fst_vt['SubDyn']['JointZss']
+            fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
+            fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
+            fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
+            fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
+            fst_vt['HydroDyn']['SimplCd'] = 1.0
+            fst_vt['HydroDyn']['SimplCdMG'] = 1.0
+            fst_vt['HydroDyn']['SimplCa'] = 1.0
+            fst_vt['HydroDyn']['SimplCaMG'] = 1.0
+            fst_vt['HydroDyn']['SimplCp'] = 1.0
+            fst_vt['HydroDyn']['SimplCpMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCa'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCp'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
+            fst_vt['HydroDyn']['NCoefDpth'] = 0
+            fst_vt['HydroDyn']['NCoefMembers'] = 0
+            fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
+            fst_vt['HydroDyn']['MemberID'] = fst_vt['SubDyn']['MemberID']
+            fst_vt['HydroDyn']['MJointID1'] = fst_vt['SubDyn']['MJointID1']
+            fst_vt['HydroDyn']['MJointID2'] = fst_vt['SubDyn']['MJointID2']
+            fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID1']
+            fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
+            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
+            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
+            fst_vt['HydroDyn']['NFillGroups'] = 0
+            fst_vt['HydroDyn']['NMGDepths'] = 0
+            
+        # Moodyn inputs
+        if modeling_options["flags"]["mooring"]:
+            n_line_types = modeling_options["mooring"]["n_line_types"]
+            fst_vt['MoorDyn']['NTypes'] = n_line_types
+            fst_vt['MoorDyn']['Name'] = modeling_options["mooring"]["line_type_name"][:]
+            fst_vt['MoorDyn']['Diam'] = inputs["line_diameter"]
+            fst_vt['MoorDyn']['MassDen'] = inputs["line_mass_density"]
+            fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones( n_line_types, dtype=np.int64)
+            fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
+            fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
+            fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
+            fst_vt['MoorDyn']['Cdn'] = inputs["line_tangential_drag"]
+
+            n_nodes = modeling_options["mooring"]["n_nodes"]
+            fst_vt['MoorDyn']['NConnects'] = n_nodes
+            fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
+            fst_vt['MoorDyn']['Type'] = modeling_options["mooring"]["node_type"][:]
+            fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
+            fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
+            fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
+            fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
+            fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
+            fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['FY'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['FZ'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
+            fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
+
+            n_lines = modeling_options["mooring"]["n_lines"]
+            fst_vt['MoorDyn']['NLines'] = n_lines
+            fst_vt['MoorDyn']['Line'] = np.arange(n_lines)+1
+            fst_vt['MoorDyn']['LineType'] = modeling_options["mooring"]["line_type"][:]
+            fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
+            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones( n_line_types, dtype=np.int64)
+            fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['Flags_Outputs'] = ['-'] * n_lines
+            for k in range(n_lines):
+                id1 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node1"][k] )
+                id2 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node2"][k] )
+                if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
+                    fst_vt['MoorDyn']['NodeFair'][k] = id1+1
+                    fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
+                if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
+                    fst_vt['MoorDyn']['NodeFair'][k] = id2+1
+                    fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
+                else:
+                    print(discrete_inputs['node_names'])
+                    print(modeling_options["mooring"]["node1"][k], modeling_options["mooring"]["node2"][k])
+                    print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
+                    raise ValueError('Mooring line seems to be between unknown endpoint types?')
+            
         return fst_vt
 
 
