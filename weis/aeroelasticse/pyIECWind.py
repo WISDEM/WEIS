@@ -439,9 +439,9 @@ class pyIECWind_turb():
         turbsim_vt.runtime_options.RandSeed1  = self.seed
         turbsim_vt.runtime_options.WrADTWR    = False
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
-        turbsim_vt.tmspecs.HubHt              = self.z_hub
-        turbsim_vt.tmspecs.GridHeight         = np.ceil(self.z_hub*1.9)
-        turbsim_vt.tmspecs.GridWidth          = np.ceil(self.z_hub*1.9)
+        turbsim_vt.tmspecs.HubHt              = self.z_hub # wind grid centered at hub height
+        turbsim_vt.tmspecs.GridHeight         = (self.z_hub - 1.) * 2.0 # wind grid stops 1 meter above the ground
+        turbsim_vt.tmspecs.GridWidth          = (self.z_hub - 1.) * 2.0 # squared wind grid
         turbsim_vt.tmspecs.NumGrid_Z          = 25
         turbsim_vt.tmspecs.NumGrid_Y          = 25
         turbsim_vt.tmspecs.HFlowAng           = 0.0

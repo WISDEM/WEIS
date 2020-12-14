@@ -32,6 +32,7 @@ dependencies:
   - pip:
     - simpy
     - marmot-agents
+    - jsonmerge
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

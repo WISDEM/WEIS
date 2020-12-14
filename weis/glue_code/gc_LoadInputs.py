@@ -1,6 +1,6 @@
-import numpy as np
-import os, platform
-import weis.yaml as sch
+import os
+import platform
+import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 
@@ -14,7 +14,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
-        self.defaults         = sch.load_default_geometry_yaml()
         
         self.modeling_options['RotorSE'] = self.modeling_options['WISDEM']['RotorSE'] 
         self.modeling_options['DriveSE'] = self.modeling_options['WISDEM']['DriveSE'] 
@@ -89,3 +88,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.wt_init['control']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
             self.wt_init['control']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])
             self.wt_init['control']['IPC_Ki1p'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])
+
+        
+    def write_options(self, fname_output):
+        # Override the WISDEM version to ensure that the WEIS options files are written instead
+        sch.write_modeling_yaml(self.modeling_options, fname_output)
+        sch.write_analysis_yaml(self.analysis_options, fname_output)
+            

@@ -126,7 +126,6 @@ def run_PC_sweep(omega,zeta=1.0):
     case_inputs[("AeroDyn15","TwrAero")]     = {'vals':["True"], 'group':0}
     case_inputs[("AeroDyn15","TwrPotent")]   = {'vals':[1], 'group':0}
     case_inputs[("AeroDyn15","TwrShadow")]   = {'vals':["True"], 'group':0}
-    case_inputs[("Fst","CompHydro")]         = {'vals':[1], 'group':0}
     case_inputs[("HydroDyn","WaveMod")]      = {'vals':[2], 'group':0}
     case_inputs[("HydroDyn","WvDiffQTF")]    = {'vals':["False"], 'group':0}
     channels = {}
