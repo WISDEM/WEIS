@@ -204,7 +204,6 @@ class CaseGen_IEC():
                 case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[5], 'group':0}
                 case_inputs_i[("AeroDyn15","AFAeroMod")]= {'vals':[2], 'group':0}
                 case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["True"], 'group':0}
-                case_inputs_i[("ElastoDyn","YawDOF")]   = {'vals':["True"], 'group':0}
 
 
             # Matrix combining N dlc variables that affect wind file generation
