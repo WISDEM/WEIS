@@ -30,10 +30,6 @@ all_scripts = [
     # "07_te_flaps/dac_driver",
 ]
 
-
-
-
-
 class TestExamples(unittest.TestCase):
     
     def test_aeroelasticse(self):
