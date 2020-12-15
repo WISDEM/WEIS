@@ -1,7 +1,7 @@
 # WEIS
 
 [![Coverage Status](https://coveralls.io/repos/github/johnjasa/WEIS/badge.svg?branch=testing)](https://coveralls.io/github/johnjasa/WEIS?branch=testing)
-[![Actions Status](https://github.com/{user}/{repo}/workflows/{action}/badge.svg)](https://github.com/{user}/{repo}/actions)
+[![Actions Status](https://github.com/johnjasa/WEIS/workflows/CI_WEIS/badge.svg)](https://github.com/johnjasa/WEIS/actions)
 [![Documentation Status](https://readthedocs.org/projects/weis/badge/?version=latest)](https://weis.readthedocs.io/en/latest/?badge=latest)
 
 
