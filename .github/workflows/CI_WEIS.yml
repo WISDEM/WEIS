@@ -50,6 +50,12 @@ jobs:
         run: |
           python setup.py develop
           
+      # List the collected tests for debugging purposes
+      - name: List tests
+        shell: pwsh
+        run: |
+          pytest weis --collect-only
+        
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
         shell: pwsh
