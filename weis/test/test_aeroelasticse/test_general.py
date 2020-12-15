@@ -18,6 +18,7 @@ from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
 from weis.aeroelasticse.runFAST_pywrapper import (runFAST_pywrapper,
                                                   runFAST_pywrapper_batch)
+from weis.test.utils import compare_regression_values
 
 
 class TestGeneral(unittest.TestCase):
@@ -106,9 +107,12 @@ class TestGeneral(unittest.TestCase):
 
         # Run OpenFAST, either serially or sequentially
         if n_cores == 1:
-            fastBatch.run_serial()
+            out = fastBatch.run_serial()
         else:
-            fastBatch.run_multi(n_cores)
+            out = fastBatch.run_multi(n_cores)
+            
+        this_file_dir = os.path.dirname(os.path.realpath(__file__))
+        compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=1e-3, train=False)
 
 if __name__ == "__main__":
     unittest.main()
