@@ -109,7 +109,7 @@ class TestGeneral(unittest.TestCase):
         out = fastBatch.run_serial()
             
         this_file_dir = os.path.dirname(os.path.realpath(__file__))
-        compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=1e-3, train=False)
+        compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=1e-3, train=True)
 
 if __name__ == "__main__":
     unittest.main()
