@@ -52,7 +52,7 @@ class TestGeneral(unittest.TestCase):
         fastBatch.debug_level       = 2
 
         # User settings
-        n_cores     = 3     # Number of available cores
+        n_cores     = 1     # Number of available cores
         TMax        = 1.  # Length of wind grids and OpenFAST simulations, suggested 720 s
         cut_in      = 3.    # Cut in wind speed
         cut_out     = 25.   # Cut out wind speed
@@ -106,10 +106,7 @@ class TestGeneral(unittest.TestCase):
         fastBatch.case_name_list = case_name_list
 
         # Run OpenFAST, either serially or sequentially
-        if n_cores == 1:
-            out = fastBatch.run_serial()
-        else:
-            out = fastBatch.run_multi(n_cores)
+        out = fastBatch.run_serial()
             
         this_file_dir = os.path.dirname(os.path.realpath(__file__))
         compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=1e-3, train=False)
