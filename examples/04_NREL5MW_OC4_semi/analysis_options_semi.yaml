@@ -1,7 +1,7 @@
 general:
     folder_output: outputs_floating_example
     fname_output: optimized_semi
-optimization_variables:
+design_variables:
     floating:
         joints:
             z_coordinate:

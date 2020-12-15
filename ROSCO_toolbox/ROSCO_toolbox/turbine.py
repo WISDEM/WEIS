@@ -12,7 +12,7 @@
 import os
 import numpy as np
 import datetime
-from wisdem.ccblade import CCAirfoil, CCBlade
+from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 from scipy import interpolate
 from numpy import gradient
 import pickle

@@ -216,6 +216,12 @@ class WindPark(om.Group):
             self.connect('env.speed_sound_air',             'aeroelastic.speed_sound_air')
             self.connect('env.mu_air',                      'aeroelastic.mu')                    
             self.connect('env.shear_exp',                   'aeroelastic.shearExp')                    
+            self.connect('env.water_depth',                 'aeroelastic.water_depth')
+            self.connect('env.rho_water',                   'aeroelastic.rho_water')
+            self.connect('env.mu_water',                    'aeroelastic.mu_water')
+            self.connect('env.Hsig_wave',                    'aeroelastic.Hsig_wave')
+            self.connect('env.Tsig_wave',                    'aeroelastic.Tsig_wave')
+            #self.connect('env.beta_wave',                    'aeroelastic.beta_wave') # TODO: NEED ONTOLOGY INPUT HERE
             self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
             self.connect('hub.radius',                      'aeroelastic.Rhub')
             self.connect('hub.cone',                        'aeroelastic.cone')
@@ -242,15 +248,24 @@ class WindPark(om.Group):
             self.connect('towerse.post.side_side_modes',    'aeroelastic.side_side_modes')
             self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
             self.connect('towerse.tower_outer_diameter',    'aeroelastic.tower_outer_diameter')
+            self.connect('towerse.z_param',                 'aeroelastic.tower_monopile_z')
             self.connect('tower.cd',                        'aeroelastic.tower_cd')
+            self.connect('tower_grid.height',               'aeroelastic.tower_height')
+            self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
+            self.connect('assembly.hub_height',             'aeroelastic.hub_height')
+            self.connect('towerse.tower_wall_thickness',    'aeroelastic.tower_wall_thickness')
+            self.connect('towerse.E',                       'aeroelastic.tower_E')
+            self.connect('towerse.G',                       'aeroelastic.tower_G')
+            self.connect('towerse.rho',                     'aeroelastic.tower_rho')
+            if modeling_options['flags']['monopile']:
+                self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass')
+                self.connect('towerse.transition_piece_I',      'aeroelastic.transition_piece_I', src_indices=[0,1,2])
+                self.connect('monopile.gravity_foundation_mass', 'aeroelastic.gravity_foundation_mass')
+                self.connect('towerse.gravity_foundation_I',    'aeroelastic.gravity_foundation_I', src_indices=[0,1,2])
 
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
             self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
-            self.connect('assembly.hub_height',             'aeroelastic.hub_height')
-            self.connect('tower_grid.height',               'aeroelastic.tower_height')
-            if modeling_options['flags']['foundation']:
-                self.connect('foundation.height',               'aeroelastic.tower_base_height')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
             self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')
@@ -285,6 +300,23 @@ class WindPark(om.Group):
             self.connect('sse_tune.aeroperf_tables.Ct',     'aeroelastic.Ct_aero_table')
             self.connect('sse_tune.aeroperf_tables.Cq',     'aeroelastic.Cq_aero_table')
 
+            if modeling_options['flags']['mooring']:
+                self.connect("mooring.line_type_names", "aeroelastic.line_type_names")
+                self.connect("mooring.line_diameter", "aeroelastic.line_diameter")
+                self.connect("mooring.line_mass_density", "aeroelastic.line_mass_density")
+                self.connect("mooring.line_stiffness", "aeroelastic.line_stiffness")
+                self.connect("mooring.line_transverse_added_mass", "aeroelastic.line_transverse_added_mass")
+                self.connect("mooring.line_tangential_added_mass", "aeroelastic.line_tangential_added_mass")
+                self.connect("mooring.line_transverse_drag", "aeroelastic.line_transverse_drag")
+                self.connect("mooring.line_tangential_drag", "aeroelastic.line_tangential_drag")
+                self.connect("mooring.nodes_location_full", "aeroelastic.nodes_location_full")
+                self.connect("mooring.nodes_mass", "aeroelastic.nodes_mass")
+                self.connect("mooring.nodes_volume", "aeroelastic.nodes_volume")
+                self.connect("mooring.nodes_added_mass", "aeroelastic.nodes_added_mass")
+                self.connect("mooring.nodes_drag_area", "aeroelastic.nodes_drag_area")
+                self.connect("mooring.unstretched_length", "aeroelastic.unstretched_length")
+                self.connect("mooring.node_names", "aeroelastic.node_names")
+            
             # Temporary
             self.connect('xf.Re_loc',                       'aeroelastic.airfoils_Re_loc')
             self.connect('xf.Ma_loc',                       'aeroelastic.airfoils_Ma_loc')
@@ -414,7 +446,6 @@ class WindPark(om.Group):
             self.connect('nacelle.transformer_mass_user',     'drivese_post.transformer_mass_user')
 
             if modeling_options['WISDEM']['DriveSE']['direct']:
-                self.connect('nacelle.access_diameter',           'drivese_post.access_diameter') # only used in direct
                 self.connect('nacelle.nose_diameter',             'drivese_post.nose_diameter') # only used in direct
                 self.connect('nacelle.nose_wall_thickness',       'drivese_post.nose_wall_thickness') # only used in direct
                 self.connect('nacelle.bedplate_wall_thickness',   'drivese_post.bedplate_wall_thickness') # only used in direct
@@ -549,8 +580,7 @@ class WindPark(om.Group):
                 self.connect('rp.gust.V_gust',               'towerse_post.wind.Uref')
                 
             self.connect('assembly.hub_height',           'towerse_post.wind_reference_height')  # TODO- environment
-            if modeling_options['flags']['foundation']:
-                self.connect('foundation.height',         ['towerse_post.wind_z0', 'towerse_post.foundation_height']) # TODO- environment
+            self.connect('tower_grid.foundation_height', 'towerse_post.tower_foundation_height') # TODO- environment
             self.connect('env.rho_air',                   'towerse_post.rho_air')
             self.connect('env.mu_air',                    'towerse_post.mu_air')                    
             self.connect('env.shear_exp',                 'towerse_post.shearExp')                    
@@ -571,21 +601,23 @@ class WindPark(om.Group):
             self.connect('costs.painting_rate',           'towerse_post.painting_cost_rate')
             
             if modeling_options['flags']['monopile']:
+                self.connect("env.water_depth",                  "towerse_post.water_depth")
                 self.connect('env.rho_water',                    'towerse_post.rho_water')
                 self.connect('env.mu_water',                     'towerse_post.mu_water')                    
                 self.connect('env.G_soil',                       'towerse_post.G_soil')                    
                 self.connect('env.nu_soil',                      'towerse_post.nu_soil')                    
+                self.connect("env.Hsig_wave",                    "towerse_post.Hsig_wave")
+                self.connect("env.Tsig_wave",                    "towerse_post.Tsig_wave")
                 self.connect('monopile.diameter',                'towerse_post.monopile_outer_diameter_in')
+                self.connect("monopile.foundation_height",       "towerse.monopile_foundation_height")
                 self.connect('monopile.height',                  'towerse_post.monopile_height')
                 self.connect('monopile.s',                       'towerse_post.monopile_s')
                 self.connect('monopile.layer_thickness',         'towerse_post.monopile_layer_thickness')
                 self.connect('monopile.layer_mat',               'towerse_post.monopile_layer_materials')
                 self.connect('monopile.outfitting_factor',       'towerse_post.monopile_outfitting_factor')
-                self.connect('monopile.transition_piece_height', 'towerse_post.transition_piece_height')
                 self.connect('monopile.transition_piece_mass',   'towerse_post.transition_piece_mass')
+                self.connect('monopile.transition_piece_cost',   'towerse_post.transition_piece_cost')
                 self.connect('monopile.gravity_foundation_mass', 'towerse_post.gravity_foundation_mass')
-                self.connect('monopile.suctionpile_depth',       'towerse_post.suctionpile_depth')
-                self.connect('monopile.suctionpile_depth_diam_ratio', 'towerse_post.suctionpile_depth_diam_ratio')
 
         #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
         #self.connect('max_taper_ratio',         'max_taper') # TODO- 
