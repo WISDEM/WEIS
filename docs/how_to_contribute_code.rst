@@ -118,5 +118,5 @@ These examples are useful for users to adapt, but are computationally expensive,
 Instead, we test them only when code is about to be added to the main WEIS develop or master branches through pull requests.
 The coverage from these examples are not considered in Coveralls.
 
-The examples that are covered are shown in :code:`weis/test/test_examples.py`.
-If you add an example to WEIS, make sure to add a call to it in the :code:`test_examples.py` script as well.
+The examples that are covered are shown in :code:`weis/test/run_examples.py`.
+If you add an example to WEIS, make sure to add a call to it in the :code:`run_examples.py` script as well.
