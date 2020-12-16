@@ -48,11 +48,18 @@ def run_all_scripts(folder_string, all_scripts):
 
 
 def compare_regression_values(
-    values_to_test, truth_value_filename, directory="", train=False, tol=1e-6
+    values_to_test,
+    truth_value_filename,
+    directory="",
+    train=False,
+    tol=1e-6,
+    keys_to_skip=[],
 ):
 
     # Change current working directory to the level where the main python script was called
     truth_value_filename = os.path.join(directory, truth_value_filename)
+
+    keys_to_skip.append("meta")
 
     if train:
         with open(truth_value_filename, "wb") as f:
@@ -65,7 +72,7 @@ def compare_regression_values(
         for i_case, truth_dict in enumerate(truth_values):
             output_dict = values_to_test[i_case]
             for key in output_dict:
-                if key == "meta":
+                if key in keys_to_skip:
                     continue
                 testing_value = output_dict[key]
                 truth_value = truth_dict[key]
