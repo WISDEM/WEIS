@@ -272,6 +272,7 @@ class TestDLC(unittest.TestCase):
             directory=this_file_dir,
             tol=1e-1,
             train=train,
+            keys_to_skip=keys_to_skip,
         )
 
         # U-Maine semi-sub
@@ -290,6 +291,7 @@ class TestDLC(unittest.TestCase):
             directory=this_file_dir,
             tol=1e-1,
             train=train,
+            keys_to_skip=keys_to_skip,
         )
 
 
