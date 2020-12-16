@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: |
           cd weis/test
-          python run_examples.py
+          pytest test_examples.py
           
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization

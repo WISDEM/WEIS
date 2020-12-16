@@ -371,6 +371,8 @@ def gen_linear_model():
 
     TODO: check for the models so we can skip this step if already run
     """
+    
+    broken_file_on_purpose
 
 
     linear = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
