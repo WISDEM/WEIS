@@ -30,7 +30,7 @@ class Test(unittest.TestCase):
         desvars_init = {}
         desvars_init["x"] = [2.0, 1.0]
 
-        model = simple_2D_high_model(desvars_init, "test.pkl")
+        model = simple_2D_high_model(desvars_init)
         self.assertEqual(model.total_size, 2)
 
         flattened_desvars = model.flatten_desvars(desvars_init)
@@ -63,7 +63,7 @@ class Test(unittest.TestCase):
         desvars_init = {}
         desvars_init["x"] = [2.0, 1.0, 0.5]
 
-        model = model_with_nd_outputs(desvars_init, "test2.pkl")
+        model = model_with_nd_outputs(desvars_init)
         self.assertEqual(model.total_size, 3)
 
         flattened_desvars = model.flatten_desvars(desvars_init)
