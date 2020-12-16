@@ -136,7 +136,7 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
         # Build pyOptSparse specially
         run_setup('setup.py', script_args=['install'])
     elif pkg == 'WISDEM':
-        if os.environ['FC'].find('ifort') >= 0:
+        if 'FC' in os.environ and os.environ['FC'].find('ifort') >= 0:
             compiler_str = 'intelem'
             run_setup('setup.py', script_args=['build_ext','--inplace','--fcompiler='+compiler_str,'--compiler='+compiler_str], stop_after='run')
         else:
