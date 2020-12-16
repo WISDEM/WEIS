@@ -55,7 +55,18 @@ jobs:
         shell: pwsh
         run: |
           cd weis/test
-          pytest test_examples.py
+          pytest test_examples.py --cov-config=.coverageac --cov=weis
+          
+      # Run coveralls
+      - name: Run coveralls
+        if: contains( matrix.os, 'ubuntu')
+        # This also works, https://github.com/AndreMiras/coveralls-python-action
+        #uses: AndreMiras/coveralls-python-action@develop
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
           
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
