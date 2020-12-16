@@ -254,7 +254,7 @@ class TestDLC(unittest.TestCase):
 
         out = fastBatch.run_serial()
         
-        train = True
+        train = False
         
         this_file_dir = os.path.dirname(os.path.realpath(__file__))
         compare_regression_values(out, 'DLC_regression_values_1.pkl', directory=this_file_dir, tol=1e-1, train=train)
