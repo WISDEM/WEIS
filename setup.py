@@ -15,8 +15,6 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 # Eagle environment
 eagle_flag = platform.node() in ['el'+str(m) for m in range(10)]
 ci_flag    = platform.node().find('fv-az') >= 0
-print(platform.node(), eagle_flag, ci_flag)
-print(os.uname())
 if eagle_flag:
     os.environ["FC"] = "ifort"
     os.environ["CC"] = "icc"
@@ -136,8 +134,14 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially
-        # run_setup('setup.py', script_args=['build_ext', '--inplace'])
         run_setup('setup.py', script_args=['install'])
+    elif pkg == 'WISDEM':
+        if os.environ['FC'].find('ifort') >= 0:
+            compiler_str = 'intelem'
+            run_setup('setup.py', script_args=['build_ext','--inplace','--fcompiler='+compiler_str,'--compiler='+compiler_str], stop_after='run')
+        else:
+            run_setup('setup.py', script_args=['build_ext','--inplace'], stop_after='run')
+            #run_setup('setup.py', script_args=['develop'], stop_after='run')
     else:
         run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
     # subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])  # This option runs `pip install -e .` on each package
