@@ -11,8 +11,8 @@ import pytest
 
 from wisdem.orbit import ProjectManager
 from wisdem.test.test_orbit.data import test_weather
-from wisdem.orbit.library import extract_library_specs
 from wisdem.orbit.manager import ProjectProgress
+from wisdem.orbit.core.library import extract_library_specs
 from wisdem.orbit.core.exceptions import (
     MissingInputs,
     PhaseNotFound,
@@ -157,9 +157,7 @@ def test_install_phase_start_parsing():
     }
 
     project = ProjectManager(config_mixed_starts, weather=weather_df)
-    defined, depends = project._parse_install_phase_values(
-        config_mixed_starts["install_phases"]
-    )
+    defined, depends = project._parse_install_phase_values(config_mixed_starts["install_phases"])
     assert len(defined) == 2
     assert len(depends) == 1
 
@@ -191,9 +189,7 @@ def test_chained_dependencies():
     assert min(tu) == (max(mp) - min(mp)) * 0.5 + min(mp)
 
 
-@pytest.mark.parametrize(
-    "m_start, t_start", [(0, 0), (0, 100), (100, 100), (100, 200)]
-)
+@pytest.mark.parametrize("m_start, t_start", [(0, 0), (0, 100), (100, 100), (100, 200)])
 def test_index_starts(m_start, t_start):
     """
     Tests functionality related to passing index starts into 'install_phases' sub-dict.
@@ -249,9 +245,7 @@ def test_start_dates_with_weather(m_start, t_start, expected):
 
 def test_duplicate_phase_definitions():
     config_with_duplicates = deepcopy(config)
-    config_with_duplicates["MonopileInstallation_1"] = {
-        "plant": {"num_turbines": 5}
-    }
+    config_with_duplicates["MonopileInstallation_1"] = {"plant": {"num_turbines": 5}}
 
     config_with_duplicates["MonopileInstallation_2"] = {
         "plant": {"num_turbines": 5},
@@ -267,11 +261,7 @@ def test_duplicate_phase_definitions():
     project = ProjectManager(config_with_duplicates)
     project.run_project()
 
-    df = (
-        pd.DataFrame(project.project_actions)
-        .groupby(["phase", "action"])
-        .count()["time"]
-    )
+    df = pd.DataFrame(project.project_actions).groupby(["phase", "action"]).count()["time"]
 
     assert df.loc[("MonopileInstallation_1", "Drive Monopile")] == 5
     assert df.loc[("MonopileInstallation_2", "Drive Monopile")] == 5
@@ -323,10 +313,7 @@ def test_resolve_project_capacity():
     out2 = ProjectManager.resolve_project_capacity(config2)
     assert out2["plant"]["capacity"] == 600
     assert out2["plant"]["num_turbines"] == config2["plant"]["num_turbines"]
-    assert (
-        out2["turbine"]["turbine_rating"]
-        == config2["turbine"]["turbine_rating"]
-    )
+    assert out2["turbine"]["turbine_rating"] == config2["turbine"]["turbine_rating"]
 
     # Missing number of turbines
     config3 = {"plant": {"capacity": 600}, "turbine": {"turbine_rating": 15}}
@@ -334,10 +321,7 @@ def test_resolve_project_capacity():
     out3 = ProjectManager.resolve_project_capacity(config3)
     assert out3["plant"]["capacity"] == config3["plant"]["capacity"]
     assert out3["plant"]["num_turbines"] == 40
-    assert (
-        out3["turbine"]["turbine_rating"]
-        == config3["turbine"]["turbine_rating"]
-    )
+    assert out3["turbine"]["turbine_rating"] == config3["turbine"]["turbine_rating"]
 
     # Test for float precision
     config4 = {
@@ -348,10 +332,7 @@ def test_resolve_project_capacity():
     out4 = ProjectManager.resolve_project_capacity(config4)
     assert out4["plant"]["capacity"] == config4["plant"]["capacity"]
     assert out4["plant"]["num_turbines"] == config4["plant"]["num_turbines"]
-    assert (
-        out4["turbine"]["turbine_rating"]
-        == config4["turbine"]["turbine_rating"]
-    )
+    assert out4["turbine"]["turbine_rating"] == config4["turbine"]["turbine_rating"]
 
     # Non matching calculated value
     config5 = {
@@ -594,31 +575,31 @@ def test_npv():
     baseline = project.npv
 
     config = deepcopy(complete_project)
-    config["ncf"] = 0.35
+    config["project_parameters"] = {"ncf": 0.35}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["offtake_price"] = 70
+    config["project_parameters"] = {"offtake_price": 70}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["project_lifetime"] = 30
+    config["project_parameters"] = {"project_lifetime": 30}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["discount_rate"] = 0.03
+    config["project_parameters"] = {"discount_rate": 0.03}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline
 
     config = deepcopy(complete_project)
-    config["opex_rate"] = 120
+    config["project_parameters"] = {"opex_rate": 120}
     project = ProjectManager(config)
     project.run_project()
     assert project.npv != baseline

@@ -1,0 +1,792 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: WISDEM_optimization_options_schema_v00
+title: WISDEM wind turbine optimization options schema
+description: Scehma that describes the analysis and optimization options for WISDEM
+type: object
+properties:
+    general:
+        type: object
+        default: {}
+        properties:
+            folder_output:
+                type: string
+                default: output
+                description: Name of folder to dump output files
+            fname_output:
+                type: string
+                default: output
+                description: File prefix for output files
+    design_variables:
+        type: object
+        default: {}
+        description: Sets the design variables in a design optimization and analysis
+        properties:
+            rotor_diameter:
+                type: object
+                default: {}
+                description: Adjust the rotor diameter by changing the blade length (all blade properties constant with respect to non-dimensional span coordinates)
+                properties:
+                    flag: &flag
+                        type: boolean
+                        default: False
+                        description: Activates as a design variable or constraint
+                    minimum:
+                        type: number
+                        default: 0.
+                        minimum: 0.0
+                        maximum: 1000.0
+                        unit: m
+                    maximum:
+                        type: number
+                        default: 0.
+                        minimum: 0.0
+                        maximum: 1000.0
+                        unit: m
+            blade:
+                type: object
+                default: {}
+                description: Design variables associated with the wind turbine blades
+                properties:
+                    aero_shape:
+                        type: object
+                        default: {}
+                        description: Design variables associated with the blade aerodynamic shape
+                        properties:
+                            twist:
+                                type: object
+                                default: {}
+                                description: Blade twist as a design variable by adding or subtracting radians from the initial value at spline control points along the span.
+                                properties:
+                                    flag: *flag
+                                    inverse:
+                                        type: boolean
+                                        default: False
+                                        description: Words TODO?
+                                    n_opt: &nopt
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the twist distribution along blade span. By default, the first two points are locked to prevent the optimizer to try to optimize the twist of the blade root cylinder.
+                                    lower_bound:
+                                        type: array
+                                        description: Lowest number of radians that can be added (typically negative to explore smaller twist angles)
+                                        default: [-0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1]
+                                        items:
+                                            type: number
+                                            unit: rad
+                                    upper_bound:
+                                        type: array
+                                        description: Largest number of radians that can be added (typically postive to explore greater twist angles)
+                                        default: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+                                        items:
+                                            type: number
+                                            unit: rad
+                            chord:
+                                type: object
+                                default: {}
+                                description: Blade chord as a design variable by scaling (multiplying) the initial value at spline control points along the span.
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the chord distribution along blade span. By default, the first two points close to blade root and the last point are locked. The first two points impact the diameter of the blade root cylinder, and the models implemented in WISDEM do not have the level of fidelity to appropriately size the blade root diameter. The last point controls the chord length at blade tip and due to the imperfect tip loss models of CCBlade, it is usually a good idea to taper the chord manually and do not let a numerical optimizer control it.
+                                    min_gain:  &mingain
+                                        type: number
+                                        default: 0.5
+                                        unit: none
+                                        description: Lower bound on scalar multiplier that will be applied to value at control points
+                                    max_gain: &maxgain
+                                        type: number
+                                        default: 1.5
+                                        unit: none
+                                        description: Upper bound on scalar multiplier that will be applied to value at control points
+                            af_positions:
+                                type: object
+                                default: {}
+                                description: Adjust airfoil positions along the blade span.
+                                properties:
+                                    flag: *flag
+                                    af_start:
+                                        type: integer
+                                        default: 4
+                                        minimum: 1
+                                        description: Index of airfoil where the optimization can start shifting airfoil position. The airfoil at blade tip is always locked.
+                    structure:
+                        type: object
+                        default: {}
+                        description: Design variables associated with the internal blade structure
+                        properties:
+                            spar_cap_ss:
+                                type: object
+                                description: Blade suction-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                    min_gain: *mingain
+                                    max_gain: *maxgain
+                            spar_cap_ps:
+                                type: object
+                                description: Blade pressure-side spar cap thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the spar cap on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                    min_gain: *mingain
+                                    max_gain: *maxgain
+                            te_ss:
+                                type: object
+                                default: {}
+                                description: Blade suction-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the suction side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                    min_gain: *mingain
+                                    max_gain: *maxgain
+                            te_ps:
+                                type: object
+                                description: Blade pressure-side trailing edge reinforcement thickness as a design variable by scaling (multiplying) the initial value at spline control points along the span.
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    n_opt:
+                                        type: integer
+                                        default: 8
+                                        minimum: 4
+                                        description: Number of equally-spaced control points of the spline parametrizing the thickness of the trailing edge reinforcement on the pressure side. By default, the first point close to blade root and the last point close to blade tip are locked. This is done to impose a pre-defined taper to small thicknesses and mimic a blade manufacturability constraint.
+                                    min_gain: *mingain
+                                    max_gain: *maxgain
+            control:
+                type: object
+                default: {}
+                description: Design variables associated with the control of the wind turbine
+                properties:
+                    tsr:
+                        type: object
+                        default: {}
+                        description: Adjust the tip-speed ratio (ratio between blade tip velocity and steady hub-height wind speed)
+                        properties:
+                            flag: *flag
+                            minimum:
+                                type: number
+                                default: 0.
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: none
+                                description: Minimum allowable value
+                            maximum:
+                                type: number
+                                default: 0.
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: none
+                                description: Maximum allowable value
+            hub:
+                type: object
+                default: {}
+                description: Design variables associated with the hub
+                properties:
+                    cone:
+                        type: object
+                        default: {}
+                        description: Adjust the blade attachment coning angle (positive values are always away from the tower whether upwind or downwind)
+                        properties:
+                            flag: *flag
+                            lower_bound: &angbound
+                                type: number
+                                minimum: 0.0
+                                maximum: 0.5235987756 # 30 deg
+                                default: 0.0
+                                unit: rad
+                                description: Design variable bound
+                            upper_bound: *angbound
+                    hub_diameter:
+                        type: object
+                        default: {}
+                        description: Adjust the rotor hub diameter
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 0.0
+                                maximum: 30.0
+                                default: 0.0
+                                unit: m
+                                description: Lowest value allowable for hub diameter
+                            upper_bound:
+                                type: number
+                                minimum: 0.0
+                                maximum: 30.0
+                                default: 30.0
+                                unit: m
+                                description: Highest value allowable for hub diameter
+            drivetrain:
+                type: object
+                default: {}
+                description: Design variables associated with the drivetrain
+                properties:
+                    uptilt:
+                        type: object
+                        default: {}
+                        description: Adjust the drive shaft tilt angle (positive values tilt away from the tower whether upwind or downwind)
+                        properties:
+                            flag: *flag
+                            lower_bound: *angbound
+                            upper_bound: *angbound
+                    overhang:
+                        type: object
+                        default: {}
+                        description: Adjust the x-distance, parallel to the ground or still water line, from the tower top center to the rotor apex.
+                        properties:
+                            flag: *flag
+                            lower_bound: &drive_dim_low
+                                type: number
+                                minimum: 0.1
+                                maximum: 30.0
+                                default: 0.1
+                                unit: m
+                                description: Lowest value allowable for design variable
+                            upper_bound: &drive_dim_up
+                                type: number
+                                minimum: 0.1
+                                maximum: 30.0
+                                default: 0.1
+                                unit: m
+                                description: Highest value allowable for design variable
+                    distance_tt_hub:
+                        type: object
+                        default: {}
+                        description: Adjust the z-dimension height from the tower top to the rotor apex
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    distance_hub_mb:
+                        type: object
+                        default: {}
+                        description: Adjust the distance along the drive staft from the hub flange to the first main bearing
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    distance_mb_mb:
+                        type: object
+                        default: {}
+                        description: Adjust the distance along the drive staft from the first to the second main bearing
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    generator_length:
+                        type: object
+                        default: {}
+                        description: Adjust the distance along the drive staft between the generator rotor drive shaft attachment to the stator bedplate attachment
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    gear_ratio:
+                        type: object
+                        default: {}
+                        description: For geared configurations only, adjust the gear ratio of the gearbox that multiplies the shaft speed and divides the torque
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 1.0
+                                maximum: 500.0
+                                default: 1.0
+                                unit: none
+                            upper_bound:
+                                type: number
+                                minimum: 1.0
+                                maximum: 1000.0
+                                default: 150.0
+                                unit: none
+                    lss_diameter:
+                        type: object
+                        default: {}
+                        description: Adjust the diameter at the beginning and end of the low speed shaft (assumes a linear taper)
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    hss_diameter:
+                        type: object
+                        default: {}
+                        description: Adjust the diameter at the beginning and end of the high speed shaft (assumes a linear taper)
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    nose_diameter:
+                        type: object
+                        default: {}
+                        description: For direct-drive configurations only, adjust the diameter at the beginning and end of the nose/turret (assumes a linear taper)
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_dim_low
+                            upper_bound: *drive_dim_up
+                    lss_wall_thickness:
+                        type: object
+                        default: {}
+                        description: Adjust the thickness at the beginning and end of the low speed shaft (assumes a linear taper)
+                        properties:
+                            flag: *flag
+                            lower_bound: &drive_th_low
+                                type: number
+                                minimum: 0.001
+                                maximum: 3.0
+                                default: 0.001
+                                unit: m
+                            upper_bound: &drive_th_up
+                                type: number
+                                minimum: 0.01
+                                maximum: 5.0
+                                default: 1.0
+                                unit: m
+                    hss_wall_thickness:
+                        type: object
+                        default: {}
+                        description: Adjust the thickness at the beginning and end of the high speed shaft (assumes a linear taper)
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_th_low
+                            upper_bound: *drive_th_up
+                    nose_wall_thickness:
+                        type: object
+                        default: {}
+                        description: For direct-drive configurations only, adjust the thickness at the beginning and end of the nose/turret (assumes a linear taper)
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_th_low
+                            upper_bound: *drive_th_up
+                    bedplate_wall_thickness:
+                        type: object
+                        default: {}
+                        description: For direct-drive configurations only, adjust the wall thickness along the elliptical bedplate
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_th_low
+                            upper_bound: *drive_th_up
+                    bedplate_web_thickness:
+                        type: object
+                        default: {}
+                        description: For geared configurations only, adjust the I-beam web thickness of the bedplate
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_th_low
+                            upper_bound: *drive_th_up
+                    bedplate_flange_thickness:
+                        type: object
+                        default: {}
+                        description: For geared configurations only, adjust the I-beam flange thickness of the bedplate
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_th_low
+                            upper_bound: *drive_th_up
+                    bedplate_flange_width:
+                        type: object
+                        default: {}
+                        description: For geared configurations only, adjust the I-beam flange width of the bedplate
+                        properties:
+                            flag: *flag
+                            lower_bound: *drive_th_low
+                            upper_bound: *drive_th_up
+            tower: &towdv
+                type: object
+                description: Design variables associated with the tower or monopile
+                default: {}
+                properties:
+                    outer_diameter:
+                        type: object
+                        description: Adjust the outer diamter of the cylindrical column at nodes along the height.  Linear tapering is assumed between the nodes, creating conical frustums in each section
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &dbound
+                                type: number
+                                minimum: 0.1
+                                maximum: 100.0
+                                default: 5.0
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *dbound
+                    layer_thickness:
+                        type: object
+                        default: {}
+                        description: Adjust the layer thickness of each section in the column
+                        properties:
+                            flag: *flag
+                            lower_bound: &tbound
+                                type: number
+                                minimum: 1e-5
+                                maximum: 1.0
+                                default: 1e-2
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *tbound
+                    section_height:
+                        type: object
+                        default: {}
+                        description: Adjust the height of each conical section
+                        properties:
+                            flag: *flag
+                            lower_bound: &sbound
+                                type: number
+                                minimum: 1e-1
+                                maximum: 100.0
+                                default: 5.0
+                                unit: m
+                                description: Design variable bound
+                            upper_bound: *sbound
+            monopile: *towdv
+    constraints:
+        # GB: These all need gammas or safety factors
+        type: object
+        default: {}
+        description: Activate the constraints that are applied to a design optimization
+        properties:
+            blade:
+                type: object
+                default: {}
+                description: Constraints associated with the blade design
+                properties:
+                    strains_spar_cap_ss:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the suction-side spar caps
+                        properties:
+                            flag: *flag
+                            max: &maxstrain
+                                type: number
+                                description: Maximum allowable strain value
+                                default: 4000e-6
+                                minimum: 1e-8
+                                maximum: 1e-1
+                    strains_spar_cap_ps:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable strain in the pressure-side spar caps
+                        properties:
+                            flag: *flag
+                            max: *maxstrain
+                    tip_deflection:
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable blade tip deflection towards the tower expressed as a safety factor on the parked margin.  Meaning a parked distance to the tower of 30m and a constraint value here of 1.5 would mean that 30/1.5=20m of deflection is the maximum allowable
+                        properties:
+                            flag: *flag
+                            margin:
+                                type: number
+                                default: 1.4175 #1.35*1.05
+                                minimum: 1.0
+                                maximum: 10.0
+                    rail_transport:
+                        type: object
+                        default: {}
+                        description: Enforce sufficient blade flexibility such that they can be transported on rail cars without exceeding maximum blade strains or derailment.  User can activate either 8-axle flatcars or 4-axle
+                        properties:
+                            8_axle: *flag
+                            4_axle: *flag
+                    stall:
+                        type: object
+                        description: Ensuring blade angles of attacks do not approach the stall point. Margin is expressed in radians from stall.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            margin:
+                                type: number
+                                default: 0.05233 # 3 deg
+                                minimum: 0.0
+                                maximum: 0.5
+                                unit: radians
+                    chord:
+                        type: object
+                        description: Enforcing max chord length limit at all points along blade span.
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 4.3
+                                minimum: 0.1
+                                maximum: 20.0
+                                unit: meter
+                    frequency:
+                        type: object
+                        description: Frequency separation constraint between blade fundamental frequency and blade passing (3P) frequency at rated conditions using gamma_freq margin. Can be activated for blade flap and/or edge modes.
+                        default: {}
+                        properties:
+                            flap_3P: *flag
+                            edge_3P: *flag
+                    moment_coefficient:
+                        type: object
+                        description: (EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &cmminmax
+                                type: number
+                                default: 0.15
+                                minimum: 0.01
+                                maximum: 5.0
+                            max: *cmminmax
+                    match_cl_cd:
+                        type: object
+                        description: (EXPERIMENTAL) Targeted airfoil cl/cd ratio (useful for inverse design approaches that is not recommendend for general use)
+                        default: {}
+                        properties:
+                            flag_cl: *flag
+                            flag_cd: *flag
+                            filename: &filepath
+                                type: string
+                                description: file path to constraint data
+                                default: ''
+                    match_L_D:
+                        type: object
+                        description: (EXPERIMENTAL) Targeted blade moment coefficient (useful for managing root flap loads or inverse design approaches that is not recommendend for general use)
+                        default: {}
+                        properties:
+                            flag_L: *flag
+                            flag_D: *flag
+                            filename: *filepath
+            tower: &towcon
+                type: object
+                default: {}
+                description: Constraints associated with the tower design
+                properties:
+                    height_constraint:
+                        type: object
+                        description: Double-sided constraint to ensure total tower height meets target hub height when adjusting section heights
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &hbound
+                                type: number
+                                minimum: 1e-6
+                                maximum: 10.0
+                                default: 1e-2
+                                unit: m
+                            upper_bound: *hbound
+                    stress: &vonmises
+                        type: object
+                        default: {}
+                        description: Enforce a maximum allowable von Mises stress relative to the material yield stress with safety factor of gamma_f * gamma_m * gamma_n
+                        properties:
+                            flag: *flag
+                    global_buckling: &globalb
+                        type: object
+                        default: {}
+                        description: Enforce a global buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
+                        properties:
+                            flag: *flag
+                    shell_buckling: &shellb
+                        type: object
+                        default: {}
+                        description: Enforce a shell buckling limit using Eurocode checks with safety factor of gamma_f * gamma_b
+                        properties:
+                            flag: *flag
+                    slope: &slope
+                        type: object
+                        default: {}
+                        description: Ensure that the diameter moving up the tower at any node is always equal or less than the diameter of the node preceding it
+                        properties:
+                            flag: *flag
+                    d_to_t: &d_to_t
+                        type: object
+                        description: Double-sided constraint to ensure target diameter to thickness ratio for manufacturing and structural objectives
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &dtbound
+                                type: number
+                                minimum: 1.0
+                                maximum: 2000.0
+                                default: 50.0
+                                unit: none
+                            upper_bound: *dtbound
+                    taper: &taper
+                        type: object
+                        description: Enforcing a max allowable conical frustum taper ratio per section
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &tapbound
+                                type: number
+                                minimum: 0.001
+                                maximum: 1.0
+                                default: 0.5
+                                unit: none
+                    frequency: &towfreq
+                        type: object
+                        description: Frequency separation constraint between all tower modal frequencies and blade period (1P) and passing (3P) frequencies at rated conditions using gamma_freq margin.
+                        default: {}
+                        properties:
+                            flag: *flag
+                    frequency_1: &towfreq1
+                        type: object
+                        description: Targeted range for tower first frequency constraint.  Since first and second frequencies are generally the same for the tower, this usually governs the second frequency as well (both fore-aft and side-side first frequency)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound: &fminmax
+                                type: number
+                                default: 0.1
+                                minimum: 0.01
+                                maximum: 1.0
+                                unit: Hz
+                            upper_bound: *fminmax
+            monopile:
+                type: object
+                default: {}
+                description: Constraints associated with the monopile design
+                properties:
+                    stress: *vonmises
+                    global_buckling: *globalb
+                    shell_buckling: *shellb
+                    slope: *slope
+                    d_to_t: *d_to_t
+                    taper: *taper
+                    frequency: *towfreq
+                    frequency_1: *towfreq1
+                    pile_depth:
+                        type: object
+                        description: Ensures that the submerged suction pile depth meets a minimum value
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                minimum: 0.0
+                                maximum: 200.0
+                                default: 0.0
+                                unit: m
+
+            hub:
+                type: object
+                default: {}
+                properties:
+                    hub_diameter:
+                        type: object
+                        default: {}
+                        description: Ensure that the diameter of the hub is sufficient to accommodate the number of blades and blade root diameter
+                        properties:
+                            flag: *flag
+            drivetrain:
+                type: object
+                default: {}
+                properties:
+                    lss: *vonmises
+                    hss: *vonmises
+                    bedplate:  *vonmises
+                    mb1: &mbcon
+                        type: object
+                        default: {}
+                        description: Ensure that the angular deflection at this meain bearing does not exceed the maximum allowable deflection for the bearing type
+                        properties:
+                            flag: *flag
+                    mb2: *mbcon
+                    length:
+                        type: object
+                        default: {}
+                        description: Ensure that the bedplate length is sufficient to meet desired overhang value
+                        properties:
+                            flag: *flag
+                    height:
+                        type: object
+                        default: {}
+                        description: Ensure that the bedplate height is sufficient to meet desired nacelle height value
+                        properties:
+                            flag: *flag
+                    access:
+                        type: object
+                        default: {}
+                        description: For direct-drive configurations only, ensure that the inner diameter of the nose/turret is big enough to allow human access
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                default: 2.0
+                                minimum: 0.1
+                                maximum: 5.0
+                                unit: meter
+                                description: Minimum size to ensure human maintenance access
+                    ecc:
+                        type: object
+                        default: {}
+                        description: For direct-drive configurations only, ensure that the elliptical bedplate length is greater than its height
+                        properties:
+                            flag: *flag
+
+    merit_figure:
+        type: string
+        description: Objective function / merit figure for optimization.  Choices are LCOE- levelized cost of energy, AEP- turbine annual energy production, Cp- rotor power coefficient, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass- tower+monopile mass, structural_cost- tower+monopile cost, blade_tip_deflection- blade tip deflection distance towards tower, My_std- blade flap moment standard deviation, flp1_std- trailing flap standard deviation
+        default: LCOE
+        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std]
+
+    driver:
+        type: object
+        description: Specification of the optimization driver (optimization algorithm) parameters
+        default: {}
+        properties:
+            tol:
+                type: number
+                description: Convergence tolerance (relative)
+                default: 1e-6
+                minimum: 1e-12
+                maximum: 1.0
+                unit: none
+            max_iter:
+                type: integer
+                description: Max number of optimization iterations
+                default: 100
+                minimum: 0
+                maximum: 100000
+            max_function_calls:
+                type: integer
+                description: Max number of calls to objective function evaluation
+                default: 100000
+                minimum: 0
+                maximum: 100000000
+            solver:
+                type: string
+                description: Optimization driver.  Can be one of [SLSQP, CONMIN, COBYLA, SNOPT]
+                default: SLSQP
+                enum: [SLSQP, CONMIN, COBYLA, SNOPT]
+            step_size:
+                type: number
+                description: Maximum step size
+                default: 1e-3
+                minimum: 1e-10
+                maximum: 100.0
+            form:
+                type: string
+                description: Finite difference calculation mode
+                default: central
+                enum: [central, forward, complex]
+
+    recorder:
+        type: object
+        default: {}
+        description: Optimization iteration recording via OpenMDAO
+        properties:
+            flag: *flag
+            file_name:
+                type: string
+                description: OpenMDAO recorder output SQL database file
+                default: log_opt.sql

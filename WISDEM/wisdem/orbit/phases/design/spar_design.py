@@ -42,7 +42,6 @@ class SparDesign(DesignPhase):
 
         config = self.initialize_library(config, **kwargs)
         self.config = self.validate_config(config)
-        self.extract_defaults()
         self._design = self.config.get("spar_design", {})
 
         self._outputs = {}
@@ -132,11 +131,7 @@ class SparDesign(DesignPhase):
         rating = self.config["turbine"]["turbine_rating"]
         depth = self.config["site"]["depth"]
 
-        mass = exp(
-            3.58
-            + 0.196 * (rating ** 0.5) * log(rating)
-            + 0.00001 * depth * log(depth)
-        )
+        mass = exp(3.58 + 0.196 * (rating ** 0.5) * log(rating) + 0.00001 * depth * log(depth))
 
         return mass
 
@@ -154,11 +149,7 @@ class SparDesign(DesignPhase):
     def unballasted_mass(self):
         """Returns the unballasted mass of the spar substructure."""
 
-        return (
-            self.stiffened_column_mass
-            + self.tapered_column_mass
-            + self.secondary_steel_mass
-        )
+        return self.stiffened_column_mass + self.tapered_column_mass + self.secondary_steel_mass
 
     @property
     def ballasted_mass(self):
@@ -170,12 +161,7 @@ class SparDesign(DesignPhase):
     def substructure_cost(self):
         """Returns the total cost (including ballast) of the spar substructure."""
 
-        return (
-            self.stiffened_column_cost
-            + self.tapered_column_cost
-            + self.secondary_steel_cost
-            + self.ballast_cost
-        )
+        return self.stiffened_column_cost + self.tapered_column_cost + self.secondary_steel_cost + self.ballast_cost
 
     @property
     def detailed_output(self):

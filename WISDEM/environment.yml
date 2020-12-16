@@ -1,0 +1,37 @@
+name: test
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python
+  - pytest
+  - pytest-cov
+  - coveralls
+  - openmdao
+  - jsonschema
+  - ruamel_yaml
+  - pyyaml
+  - make
+  - xlrd
+  - openpyxl
+  - cython
+  - swig
+  - pandas
+  - setuptools
+  - git
+  - numpy
+  - scipy
+  - matplotlib
+  - pyside2
+  - pip
+  - pip:
+    - simpy
+    - marmot-agents
+# Needs to be done outside of environment file:
+#  - m2w64-toolchain # [win]
+#  - libpython # [win]
+#  - compilers # [not win]
+#  - petsc4py # [not win]
+#  - mpi4py # [not win]

@@ -1,34 +1,31 @@
-# This is a workflow to test the installation of WEIS and the examples that come with it
-
 name: CI_WEIS
 
+<<<<<<< HEAD
 # We run CI on push commits and pull requests on master and develop branches
 on:
   push:
     branches: [ master, develop, multifidelity ]
   pull_request:
     branches: [ master, develop, multifidelity ]
+=======
+# We run CI on push commits on all branches
+on: [push]
+>>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single build
   build:
-    name: Compile and run examples
-    # We run the script on a matrix of operating systems and python versions
+    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
-      # Fail-fast set to false lets the jobs across platforms continue even if one fails
-      fail-fast: false
+      fail-fast: true
       matrix:
-        # Operating systems
-        os: [ubuntu-latest, macOS-latest]
-        # Python versions
-        python-version: [3.8]
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+        os: ["ubuntu-latest"] #, "macOS-latest"]
+        python-version: ["3.8"]
+        
     steps:
-      # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
       - uses: actions/checkout@v2
+<<<<<<< HEAD
       # GitHub Actions sintax to setup a conda environment (do not change) #
       - name: Setup conda
         #uses: conda-incubator/setup-miniconda@v1 
@@ -67,6 +64,28 @@ jobs:
       
       # Install dependencies of WEIS specific to windows
       - name: Add dependendencies windows specific
+=======
+      - uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          auto-update-conda: true
+          python-version: 3.8
+          environment-file: environment.yml
+      
+      # Install dependencies of WEIS specific to ubuntu
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+        shell: pwsh # putting in a shell command makes for compile linking problems later
+        # (if you use the shell here, cannot use 'compiler' package, but mpi only seems to work with it)
+        run: |
+          conda install -y petsc4py mpi4py 
+          python -c "import platform; print(platform.node())"
+
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependencies windows specific
+>>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
@@ -75,14 +94,21 @@ jobs:
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
         
+<<<<<<< HEAD
       # Install WEIS
+=======
+      # Install WISDEM
+>>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
       - name: Install WEIS
+        shell: pwsh
         run: |
           python setup.py develop
-      
-      # Run scripts within aeroelasticse folder
-      - name: Run examples aeroelasticse
+          
+      # List the collected tests for debugging purposes
+      - name: List tests
+        shell: pwsh
         run: |
+<<<<<<< HEAD
           cd examples/aeroelasticse
           python run_DLC.py
           python run_general.py
@@ -107,3 +133,23 @@ jobs:
       #  run: |
       #    cd examples/dac_flaps
       #    python dac_driver.py
+=======
+          pytest weis --collect-only
+        
+      # Run all tests within WEIS, but not computationally expensive examples
+      - name: Run tests within WEIS
+        shell: pwsh
+        run: |
+          pytest weis --cov-config=.coverageac --cov=weis
+      
+      # Run coveralls
+      - name: Run coveralls
+        if: contains( matrix.os, 'ubuntu')
+        # This also works, https://github.com/AndreMiras/coveralls-python-action
+        #uses: AndreMiras/coveralls-python-action@develop
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls
+>>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749

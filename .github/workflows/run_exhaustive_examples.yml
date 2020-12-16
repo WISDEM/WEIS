@@ -1,0 +1,79 @@
+name: run_exhaustive_examples
+
+on: [pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    # if: "contains(github.event.head_commit.message, 'exhaustive_CI')"  # This line could be used to have commit-specific instructions
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest"] #, "macOS-latest"]
+        python-version: ["3.8"]
+        
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          auto-update-conda: true
+          python-version: 3.8
+          environment-file: environment.yml
+      
+      # Install dependencies of WEIS specific to ubuntu
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+        shell: pwsh # putting in a shell command makes for compile linking problems later
+        # (if you use the shell here, cannot use 'compiler' package, but mpi only seems to work with it)
+        run: |
+          conda install -y petsc4py mpi4py 
+          python -c "import platform; print(platform.node())"
+
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+        
+      # Install WISDEM
+      - name: Install WEIS
+        shell: pwsh
+        run: |
+          python setup.py develop
+          
+      # Run all examples
+      - name: Run tests within WEIS
+        shell: pwsh
+        run: |
+          cd weis/test
+          pytest run_examples.py
+          
+      # Run scripts within rotor_opt folder with MPI
+      - name: Run parallel examples rotor optimization
+        shell: pwsh
+        run: |
+          cd examples/05_IEA-3.4-130-RWT
+          mpirun -np 2 python weis_driver.py
+      
+      # Run scripts within control_opt folder, with and without MPI
+      - name: Run examples control optimization
+        shell: pwsh
+        run: |
+          cd examples/02_control_opt
+          mpirun -np 2 python runOptimization.py
+
+      # Run scripts within dac folder
+      # - name: Run examples distributed aerodynamic control
+      #  run: |
+      #    cd examples/dac_flaps
+      #    python dac_driver.py
+      

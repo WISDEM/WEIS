@@ -1,4 +1,4 @@
-.. _documentation-label:
+.. _towerse_documentation-label:
 
 .. currentmodule:: wisdem.towerse.tower
 
@@ -9,7 +9,6 @@ Referenced Tower Modules
 ========================
 
 .. autoclass:: DiscretizationYAML
-.. autoclass:: MonopileFoundation
 .. autoclass:: TowerDiscretization
 .. autoclass:: TowerMass
 .. autoclass:: TurbineMass

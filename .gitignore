@@ -1,3 +1,11 @@
+*.py[cod]
+
+# Emacs
+*~
+
+# pyMAP
+outlist.map.sum
+
 # Packages
 *.egg
 *.egg-info
@@ -6,3 +14,101 @@ build
 local
 .DS_Store
 __pycache__
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+
+# Output files
+outputs/
+*.out
+
+# Sphinx
+_build
+generated
+
+# XCode
+*.xcodeproj
+
+# C extensions
+*.so
+*.dSYM
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.dylib
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+
+# Jupyter notebooks #
+#####################
+.ipynb_checkpoints
+
+# VSCode #
+##########
+.vscode/
+
+# IntelliJ Things #
+####################
+.idea/
+
+# Openfast
+*.outb
+*.out
+*.sum
+*.ech
+*.dbg
+
+# Temp
+*Temp*
+*temp*

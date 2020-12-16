@@ -1,14 +1,14 @@
 WISDEM Installation
 -------------------
 
-The recommended method for installing WISDEM is with `Anaconda <https://www.anaconda.com>`_.  This streamlines the installation of dependencies and creates self-contained environments suitable for testing and analysis.  WISDEM requires `Anaconda 64-bit <https://www.anaconda.com/distribution/>`_.
+Installation with `Anaconda <https://www.anaconda.com>`_ is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WISDEM requires `Anaconda 64-bit <https://www.anaconda.com/distribution/>`_.
 
 Configure Anaconda Environment
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
-
 The installation instructions below use the environment name, "wisdem-env," but any name is acceptable.
+
+Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac):
 
 .. code-block:: bash
 
@@ -16,40 +16,18 @@ The installation instructions below use the environment name, "wisdem-env," but 
     conda create -y --name wisdem-env python=3.7
     conda activate wisdem-env
 
-Note that older versions of anaconda on MacOS and Linux may instead require `source activate wisdem-env`
+Note that any future occasion on which you wish to use WISDEM, you will only have to start with ``conda activate wisdem-env``.
 
-.. _install_as_user:
-Install WISDEM as a User
-^^^^^^^^^^^^^^^^^^^^^^^^
+Install WISDEM
+^^^^^^^^^^^^^^
 
-From an active Anaconda environment, install WISDEM and its dependencies with:
-
-.. code-block:: bash
-
-    conda install -y wisdem
-
-Running WISDEM Tutorials
-^^^^^^^^^^^^^^^^^^^^^^^^
-
-To open up the WISDEM tutorials, you will have to clone the WISDEM source code.  First navigate to a directory where you want to place WISDEM and all of its files and then run with:
+In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems.
 
 .. code-block:: bash
 
-    conda install -y git jupyter
-    git clone https://github.com/WISDEM/WISDEM.git
-    cd WISDEM/tutorial-notebooks
-    jupyter notebook
-
-.. _install_as_developer:
-Install WISDEM as a Developer
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-If you wish to edit source files and/or contribute to WISDEM, you will need to install as a developer.  WISDEM is first installed with Anaconda to install all dependencies, but then reinstall WISDEM from source.  Note the differences between Windows and Mac/Linux build systems.
-
-.. code-block:: bash
-
-    conda install -y wisdem git jupyter
+    conda install -y wisdem git
     conda remove --force wisdem
+    pip install simpy marmot-agents
 
 For Mac / Linux systems:
 
@@ -69,6 +47,7 @@ Finally, for all systems:
 
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
+    git checkout develop
     python setup.py develop
 
 Install pyOptSparse (`Optional`)
@@ -82,3 +61,13 @@ Install pyOptSparse (`Optional`)
     cd pyoptsparse
     python setup.py install
     cd ..
+
+Run Unit Tests
+^^^^^^^^^^^^^^
+
+Each package has its own set of unit tests.  These can be run in batch with the `test_all.py` script located in the top level `test`-directory:
+
+.. code-block:: bash
+
+    cd test
+    python test_all.py

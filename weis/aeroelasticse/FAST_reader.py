@@ -839,6 +839,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['InflowWind']['Echo']           = bool_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindType']       = int(f.readline().split()[0])
         self.fst_vt['InflowWind']['PropogationDir'] = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['VFlowAng']       = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['NWindVel']       = int(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindVxiList']    = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindVyiList']    = float_read(f.readline().split()[0])
@@ -852,14 +853,13 @@ class InputReader_OpenFAST(InputReader_Common):
 
         # Parameters for Uniform wind file   [used only for WindType = 2] (uniform_wind_params)
         f.readline()
-        self.fst_vt['InflowWind']['Filename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
-        self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['Filename_Uni'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
+        self.fst_vt['InflowWind']['RefHt_Uni'] = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['RefLength'] = float_read(f.readline().split()[0])
 
         # Parameters for Binary TurbSim Full-Field files   [used only for WindType = 3] (turbsim_wind_params)
         f.readline()
-        self.fst_vt['InflowWind']['Filename'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
-
+        self.fst_vt['InflowWind']['FileName_BTS'] = os.path.join(os.path.split(inflow_file)[0], f.readline().split()[0][1:-1])
         # Parameters for Binary Bladed-style Full-Field files   [used only for WindType = 4] (bladed_wind_params)
         f.readline()
         self.fst_vt['InflowWind']['FilenameRoot'] = f.readline().split()[0][1:-1]       
@@ -876,7 +876,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['InflowWind']['dx']    = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['dy']    = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['dz']    = float_read(f.readline().split()[0])
-        self.fst_vt['InflowWind']['RefHt'] = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['RefHt_Hawc'] = float_read(f.readline().split()[0])
 
         # Scaling parameters for turbulence (still hawc_wind_params)
         f.readline()
@@ -892,8 +892,9 @@ class InputReader_OpenFAST(InputReader_Common):
         f.readline()
         self.fst_vt['InflowWind']['URef']        = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindProfile'] = int(f.readline().split()[0])
-        self.fst_vt['InflowWind']['PLExp']       = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['PLExp_Hawc']  = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['Z0']          = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['XOffset']     = float_read(f.readline().split()[0])
 
         # Inflow Wind Output Parameters (inflow_out_params)
         f.readline()
@@ -1054,7 +1055,7 @@ class InputReader_OpenFAST(InputReader_Common):
         # Dynamic Blade-Element/Momentum Theory Options 
         f.readline()
         self.fst_vt['AeroDyn15']['DBEMT_Mod']          = int(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['tau1_const']         = int(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['tau1_const']         = float_read(f.readline().split()[0])
 
         # Olaf -- cOnvecting LAgrangian Filaments (Free Vortex Wake) Theory Options
         f.readline()
@@ -1343,12 +1344,12 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['ServoDyn']['TPitManS1']    = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['TPitManS2']    = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['TPitManS3']    = float_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['PitManRat1']   = float_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['PitManRat2']   = float_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['PitManRat3']   = float_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['BlPitchF1']    = float_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['BlPitchF2']    = float_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['BlPitchF3']    = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['PitManRat(1)'] = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['PitManRat(2)'] = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['PitManRat(3)'] = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['BlPitchF(1)']  = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['BlPitchF(2)']  = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['BlPitchF(3)']  = float_read(f.readline().split()[0])
 
         # Geneartor and Torque Control (gen_torq_ctrl)
         f.readline()

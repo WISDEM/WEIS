@@ -1,10 +1,9 @@
-NREL_CSM
-=========
+NREL CSM
+========
 
 .. only:: html
 
-    Simple curve fit model to estimate wind plant cost of energy based on a limited number of input parameters for the turbine and plant.
-
+    Wind turbine capital cost models.
 
     .. rubric:: Table of Contents
 
@@ -12,8 +11,8 @@ NREL_CSM
 .. toctree::
 
     intro
-    tutorial
-    documentation
     theory
+    source
+    
 
 

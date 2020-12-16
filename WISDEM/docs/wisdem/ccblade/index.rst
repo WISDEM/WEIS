@@ -1,3 +1,5 @@
+.. _ccblade:
+
 CCBlade
 =======
 
@@ -12,6 +14,5 @@ CCBlade
 .. toctree::
 
     intro
-    tutorial
     documentation
     theory
