@@ -55,7 +55,7 @@ jobs:
         shell: pwsh
         run: |
           cd weis/test
-          pytest test_examples.py --cov-config=../../.coverageac --cov=weis
+          pytest run_examples.py --cov-config=../../.coverageac --cov=weis
           
       # Run coveralls
       - name: Run coveralls
