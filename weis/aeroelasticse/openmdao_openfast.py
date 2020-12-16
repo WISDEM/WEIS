@@ -1109,17 +1109,17 @@ class FASTLoadCases(ExplicitComponent):
         aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
         aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
         if self.n_blades == 2:
-            spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2], axis=0))
-            spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
-            spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
+            spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
         elif self.n_blades == 3:
             blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
             aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
             aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
             aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
-            spline_aoa_max      = PchipInterpolator(self.R_out, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
-            spline_aoa_std      = PchipInterpolator(self.R_out, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
-            spline_aoa_mean     = PchipInterpolator(self.R_out, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
+            spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
         else:
             raise Exception('The calculations only support 2 or 3 bladed rotors')
         outputs['max_aoa']  = spline_aoa_max(r)
