@@ -64,7 +64,7 @@ These tests should be a balance between minimizing computational cost and maximi
 This ensures continued functionality of WEIS while keeping development time short.
 
 Any Python file with :code:`test` in its name within the :code:`weis` package directory is tested with each commit to WEIS.
-This is done through GitHub Actions and you can see the automated testing progress on the GitHub repo under the :code:`Actions` tab.
+This is done through GitHub Actions and you can see the automated testing progress on the GitHub repo under the :code:`Actions` tab, `located here <https://github.com/WISDEM/WEIS/actions>`_.
 If any test fails, this information is passed on to GitHub and a red X will be shown next to the commit.
 Otherwise, if all tests pass, a green check mark appears to signify the code changes are valid.
 
@@ -113,10 +113,10 @@ This will automatically go through all of the tests in the repo to make sure eve
 This also automatically does a coverage test to ensure that any added code is covered in a test.
 The main developers of WEIS will then merge in the request or provide feedback on how to improve the contribution.
 
-In addition to the full unit and regression test suite, on pull requests additional examples are checked using GitHub Actions.
+In addition to the full unit and regression test suite, on pull requests additional examples are checked using GitHub Actions using the workflow labeled :code:`run_exhaustive_examples`.
 These examples are useful for users to adapt, but are computationally expensive, so we do not test them on every commit.
 Instead, we test them only when code is about to be added to the main WEIS develop or master branches through pull requests.
 The coverage from these examples are not considered in Coveralls.
 
-The examples that are covered are shown in :code:`weis/test/run_examples.py`.
-If you add an example to WEIS, make sure to add a call to it in the :code:`run_examples.py` script as well.
+The examples that are covered are shown in :code:`weis/test/test_examples.py`.
+If you add an example to WEIS, make sure to add a call to it in the :code:`test_examples.py` script as well.
