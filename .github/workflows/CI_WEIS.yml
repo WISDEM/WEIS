@@ -1,53 +1,48 @@
+# This is a workflow to test the installation of WEIS and the examples that come with it
+
 name: CI_WEIS
 
-<<<<<<< HEAD
 # We run CI on push commits and pull requests on master and develop branches
 on:
   push:
-    branches: [ master, develop, multifidelity ]
+    branches: [ master, develop ]
   pull_request:
-    branches: [ master, develop, multifidelity ]
-=======
-# We run CI on push commits on all branches
-on: [push]
->>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
+    branches: [ master, develop ]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  # This workflow contains a single build
   build:
-    name: Build (${{ matrix.os }})
+    name: Compile and run examples
+    # We run the script on a matrix of operating systems and python versions
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      # Fail-fast set to false lets the jobs across platforms continue even if one fails
+      fail-fast: false
       matrix:
-        os: ["ubuntu-latest"] #, "macOS-latest"]
-        python-version: ["3.8"]
-        
+        # Operating systems
+        os: [ubuntu-latest, macOS-latest]
+        # Python versions
+        python-version: [3.8]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
       - uses: actions/checkout@v2
-<<<<<<< HEAD
-      # GitHub Actions sintax to setup a conda environment (do not change) #
+      # GitHub Actions sintax to setup a conda environment (do not change)
       - name: Setup conda
-        #uses: conda-incubator/setup-miniconda@v1 
         uses: s-weigand/setup-conda@v1
         with:
-          auto-update-conda: true
+          update-conda: true
           python-version: ${{ matrix.python-version }}
           conda-channels: anaconda, conda-forge
       - run: conda --version
       - run: which python
       
       # Install dependencies of WEIS common across platforms
-      - name: Setup conda parameters
-        run: |
-          conda config --set always_yes yes --set changeps1 no
-          conda update -q conda
-          conda config --add channels conda-forge
-      
-      # Install dependencies of WEIS common across platforms
       - name: Install dependencies
         run: |
-          conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools swig xlrd pyside2
+          conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd
           pip install simpy marmot-agents
       
       # Install dependencies of WEIS specific to macOS
@@ -56,100 +51,39 @@ jobs:
         run: |
           conda install -y petsc4py mpi4py compilers
       
-      # Install dependencies of WEIS specific to ubuntu (not with compilers)
+      # Install dependencies of WEIS specific to ubuntu
       - name: Add dependendencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
         run: |
-          conda install -y petsc4py mpi4py 
+          conda install -y petsc4py mpi4py compilers
       
       # Install dependencies of WEIS specific to windows
       - name: Add dependendencies windows specific
-=======
-      - uses: conda-incubator/setup-miniconda@v2
-        # https://github.com/marketplace/actions/setup-miniconda
-        with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          auto-update-conda: true
-          python-version: 3.8
-          environment-file: environment.yml
-      
-      # Install dependencies of WEIS specific to ubuntu
-      - name: Add dependencies ubuntu specific
-        if: false == contains( matrix.os, 'windows')
-        shell: pwsh # putting in a shell command makes for compile linking problems later
-        # (if you use the shell here, cannot use 'compiler' package, but mpi only seems to work with it)
-        run: |
-          conda install -y petsc4py mpi4py 
-          python -c "import platform; print(platform.node())"
-
-      # Install dependencies of WISDEM specific to windows
-      - name: Add dependencies windows specific
->>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
-        
-<<<<<<< HEAD
+      
       # Install WEIS
-=======
-      # Install WISDEM
->>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
       - name: Install WEIS
-        shell: pwsh
         run: |
           python setup.py develop
-          
-      # List the collected tests for debugging purposes
-      - name: List tests
-        shell: pwsh
+      
+      # Run scripts within aeroelasticse folder
+      - name: Run examples aeroelasticse
         run: |
-<<<<<<< HEAD
           cd examples/aeroelasticse
           python run_DLC.py
           python run_general.py
       
-      # # Run scripts within rotor_opt folder, with and without MPI
-      # - name: Run examples rotor optimization
-      #   run: |
-      #     cd examples/rotor_opt
-      #     python weis_driver.py
-      #     mpirun -np 2 python weis_driver.py
-      
-      - name: Run multifidelity tests
+      # Run scripts within rotor_opt folder, with and without MPI
+      - name: Run examples rotor optimization
         run: |
-          cd weis/multifidelity/test
-          python test_base_method.py
-          python test_base_model.py
-          python test_simple_models.py
-          python test_trust_region.py
+          cd examples/rotor_opt
+          python weis_driver.py
+          mpirun -np 4 python weis_driver.py
       
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
       #  run: |
       #    cd examples/dac_flaps
       #    python dac_driver.py
-=======
-          pytest weis --collect-only
-        
-      # Run all tests within WEIS, but not computationally expensive examples
-      - name: Run tests within WEIS
-        shell: pwsh
-        run: |
-          pytest weis --cov-config=.coverageac --cov=weis
-      
-      # Run coveralls
-      - name: Run coveralls
-        if: contains( matrix.os, 'ubuntu')
-        # This also works, https://github.com/AndreMiras/coveralls-python-action
-        #uses: AndreMiras/coveralls-python-action@develop
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          coveralls
->>>>>>> a69a91100351b0b695720d1fa046ad1e3bd2c749
