@@ -13,7 +13,7 @@ all_scripts = [
     # "01_aeroelasticse/run_mass_sweep",
     "01_aeroelasticse/run_OLAF",
     # "01_aeroelasticse/run_PC_sweep",
-    "01_aeroelasticse/run_stability_analysis",
+    # "01_aeroelasticse/run_stability_analysis",
     
     # "02_control_opt/run_lin_turbine",
     # "02_control_opt/runOptimization",
