@@ -69,7 +69,7 @@ The installation instructions below use the environment name, "weis-env," but an
         module unload gcc
         python setup.py develop
 
-**NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`)
+**NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
 
 ## Developer guide
 
