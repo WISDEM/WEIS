@@ -1,7 +1,7 @@
 name: CI_WEIS
 
-# We run CI on push commits and pull requests on all branches
-on: [push, pull_request]
+# We run CI on push commits on all branches
+on: [push]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -48,31 +48,27 @@ jobs:
       - name: Install WEIS
         shell: pwsh
         run: |
-          python setup.py develop      
-      
-      # Run example scripts
-      - name: Run examples
+          python setup.py develop
+          
+      # List the collected tests for debugging purposes
+      - name: List tests
         shell: pwsh
         run: |
-          cd weis/test
-          python test_examples.py
-      
-      # Run scripts within rotor_opt folder with MPI
-      - name: Run parallel examples rotor optimization
+          pytest weis --collect-only
+        
+      # Run all tests within WEIS, but not computationally expensive examples
+      - name: Run tests within WEIS
         shell: pwsh
         run: |
-          cd examples/05_IEA-3.4-130-RWT
-          mpirun -np 2 python weis_driver.py
+          pytest weis --cov-config=.coverageac --cov=weis
       
-      # Run scripts within control_opt folder, with and without MPI
-      - name: Run examples control optimization
+      # Run coveralls
+      - name: Run coveralls
+        if: contains( matrix.os, 'ubuntu')
+        # This also works, https://github.com/AndreMiras/coveralls-python-action
+        #uses: AndreMiras/coveralls-python-action@develop
         shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd examples/02_control_opt
-          mpirun -np 2 python runOptimization.py
-
-      # Run scripts within dac folder
-      # - name: Run examples distributed aerodynamic control
-      #  run: |
-      #    cd examples/dac_flaps
-      #    python dac_driver.py
+          coveralls

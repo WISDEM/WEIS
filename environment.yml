@@ -5,6 +5,8 @@ channels:
 dependencies:
   - python
   - pytest
+  - pytest-cov
+  - coveralls
   - openmdao=3.4.0
   - jsonschema
   - ruamel_yaml

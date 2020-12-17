@@ -38,6 +38,7 @@ class simple_1D_high_model(BaseModel):
     def compute(self, desvars):
         outputs = {}
         outputs["y"] = simple_1D_high(desvars["x"])
+        outputs["con"] = desvars["x"]**4
         return outputs
 
 
@@ -45,6 +46,7 @@ class simple_1D_low_model(BaseModel):
     def compute(self, desvars):
         outputs = {}
         outputs["y"] = simple_1D_low(desvars["x"])
+        outputs["con"] = desvars["x"]**2
         return outputs
 
 
@@ -52,7 +54,7 @@ class simple_2D_high_model(BaseModel):
     def compute(self, desvars):
         outputs = {}
         outputs["y"] = simple_2D_high(desvars["x"])
-        outputs["con"] = np.sum(desvars["x"])
+        outputs["con"] = np.sum(desvars["x"]) + desvars["x"][1] ** 2 * outputs["y"]
         return outputs
 
 
@@ -60,7 +62,7 @@ class simple_2D_low_model(BaseModel):
     def compute(self, desvars):
         outputs = {}
         outputs["y"] = simple_2D_low(desvars["x"])
-        outputs["con"] = np.sum(desvars["x"]) + desvars["x"][1] ** 2 * outputs["y"]
+        outputs["con"] = np.sum(desvars["x"])
         return outputs
         
         
