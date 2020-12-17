@@ -42,21 +42,34 @@ The installation instructions below use the environment name, "weis-env," but an
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
         conda config --add channels conda-forge
-        conda create -y --name weis-env python=3.8
-        conda activate weis-env
+        conda create -y --name weis-env python=3.8       # (you can install an environment at a predefined path by switching "--name weis-env" with "--prefix path/weis-env")
+        conda activate weis-env                          # (if this does not work, try source activate weis-env)
     
-2.  Use conda to install the build dependencies.  Note the differences between Windows and Mac/Linux build systems
+2.  Use conda to install the build dependencies.  Note the differences between Windows and Mac/Linux build systems. Skip to point #3 if you are on the DOE HPC system Eagle
 
         conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd
         conda install -y petsc4py mpi4py compilers       # (Mac / Linux only)   
         conda install -y m2w64-toolchain libpython       # (Windows only)
-        pip install simpy marmot-agents
+        pip install simpy marmot-agents jsonmerge
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
-        module purge        # (On eagle, or other HPC cluster, only)
+        git checkout branch_name # (Only if you want to switch git branch, say develop)
         python setup.py develop
 
-**NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env`
+3. Instructions specific for DOE HPC system Eagle
+
+        conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd
+        conda install -y petsc4py mpi4py  
+        pip install simpy marmot-agents jsonmerge
+        git clone https://github.com/WISDEM/WEIS.git
+        cd WEIS
+        git checkout branch_name # (Only if you want to switch git branch, say develop)
+        module purge
+        module load conda comp-intel intel-mpi mkl
+        module unload gcc
+        python setup.py develop
+
+**NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
 
 ## Developer guide
 
