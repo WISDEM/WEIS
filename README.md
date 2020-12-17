@@ -56,7 +56,7 @@ The installation instructions below use the environment name, "weis-env," but an
         git checkout branch_name # (Only if you want to switch git branch, say develop)
         python setup.py develop
 
-3. Instruction specifics for DOE HPC system Eagle
+3. Instructions specific for DOE HPC system Eagle
 
         conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd
         conda install -y petsc4py mpi4py  
