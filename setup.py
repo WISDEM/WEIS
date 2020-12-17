@@ -19,6 +19,7 @@ if eagle_flag:
     os.environ["FC"] = "ifort"
     os.environ["CC"] = "icc"
     os.environ["CXX"] = "icpc"
+    os.environ["LDSHARED"] = "icc -pthread -shared"
     
 # For the CMake Extensions
 class CMakeExtension(Extension):
@@ -135,15 +136,6 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially
         run_setup('setup.py', script_args=['install'])
-    elif pkg == 'WISDEM':
-        if 'FC' in os.environ and os.environ['FC'].find('ifort') >= 0:
-            compiler_str = 'intelem'
-            run_setup('setup.py', script_args=['develop'], stop_after='run')
-            run_setup('setup.py', script_args=['build_ext','--inplace','--force','--fcompiler='+compiler_str,'--compiler='+compiler_str], stop_after='run')
-        else:
-            run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
-            #run_setup('setup.py', script_args=['build_ext','--inplace'], stop_after='run')
-            #run_setup('setup.py', script_args=['develop'], stop_after='run')
     else:
         run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
     # subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])  # This option runs `pip install -e .` on each package
