@@ -71,7 +71,7 @@ def compare_regression_values(
 
         for i_case, truth_dict in enumerate(truth_values):
             output_dict = values_to_test[i_case]
-            for key in output_dict:
+            for key in truth_dict:
                 if key in keys_to_skip:
                     continue
                 testing_value = output_dict[key]
