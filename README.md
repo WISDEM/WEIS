@@ -1,7 +1,7 @@
 # WEIS
 
 [![Coverage Status](https://coveralls.io/repos/github/WISDEM/WEIS/badge.svg?branch=develop)](https://coveralls.io/github/WISDEM/WEIS?branch=develop)
-[![Actions Status](https://github.com/WISDEM/WEIS/workflows/CI_WEIS/badge.svg)](https://github.com/WISDEM/WEIS/actions)
+[![Actions Status](https://github.com/WISDEM/WEIS/workflows/CI_WEIS/badge.svg?branch=develop)](https://github.com/WISDEM/WEIS/actions)
 [![Documentation Status](https://readthedocs.org/projects/weis/badge/?version=develop)](https://weis.readthedocs.io/en/develop/?badge=develop)
 
 
