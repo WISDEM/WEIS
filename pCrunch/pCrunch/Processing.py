@@ -15,7 +15,6 @@ except:
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from ROSCO_toolbox.utilities import FAST_IO
 
 from pCrunch import Analysis, pdTools
 
