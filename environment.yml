@@ -5,6 +5,8 @@ channels:
 dependencies:
   - python
   - pytest
+  - pytest-cov
+  - coveralls
   - openmdao=3.4.0
   - jsonschema
   - ruamel_yaml
@@ -32,6 +34,7 @@ dependencies:
   - pip:
     - simpy
     - marmot-agents
+    - jsonmerge
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

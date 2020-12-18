@@ -10,7 +10,7 @@ import seaborn as sns
 import fatpack # 3rd party module used for rainflow counting
 
 from scipy.interpolate import PchipInterpolator
-from ROSCO_toolbox.utilities import FAST_IO
+from ROSCO_toolbox.ofTools.fast_io.output_processing import output_processing
 
 from pCrunch import pdTools
 
@@ -88,7 +88,7 @@ class Loads_Analysis(object):
             list or dictionary containing OpenFAST output data
         '''
         # Load openfast data
-        fast_io = FAST_IO()
+        fast_io = output_processing()
         fast_data = fast_io.load_fast_out(filenames, tmin=self.t0, tmax=self.tf, verbose=self.verbose)
 
         # Get summary statistics

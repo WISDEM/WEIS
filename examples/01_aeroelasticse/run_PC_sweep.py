@@ -29,7 +29,7 @@ def run_PC_sweep(omega,zeta=1.0):
     cut_in                  = 3.    # Cut in wind speed
     cut_out                 = 25.   # Cut out wind speed
     n_ws                    = 3    # Number of wind speed bins
-    TMax                    = 5.    # Length of wind grids and OpenFAST simulations, suggested 720 s
+    TMax                    = 800.    # Length of wind grids and OpenFAST simulations, suggested 720 s
     Vrated                  = 10.59 # Rated wind speed
     Ttrans                  = max([0., TMax - 60.])  # Start of the transient for DLC with a transient, e.g. DLC 1.4
     TStart                  = max([0., TMax - 600.]) # Start of the recording of the channels of OpenFAST
@@ -84,6 +84,8 @@ def run_PC_sweep(omega,zeta=1.0):
     iec.wind_dir            = 'outputs/wind'
     # Management of parallelization
     # not using for now, copy from run_DLC.py if needed later
+    iec.parallel_windfile_gen = True
+    iec.cores = 4
 
     iec.run_dir = 'outputs/iea15mw/PC_sweep_play'
 
@@ -126,7 +128,6 @@ def run_PC_sweep(omega,zeta=1.0):
     case_inputs[("AeroDyn15","TwrAero")]     = {'vals':["True"], 'group':0}
     case_inputs[("AeroDyn15","TwrPotent")]   = {'vals':[1], 'group':0}
     case_inputs[("AeroDyn15","TwrShadow")]   = {'vals':["True"], 'group':0}
-    case_inputs[("Fst","CompHydro")]         = {'vals':[1], 'group':0}
     case_inputs[("HydroDyn","WaveMod")]      = {'vals':[2], 'group':0}
     case_inputs[("HydroDyn","WvDiffQTF")]    = {'vals':["False"], 'group':0}
     channels = {}
@@ -163,6 +164,7 @@ def run_PC_sweep(omega,zeta=1.0):
     # load default params
     print('here')
     rt_dir              = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),'ROSCO_toolbox')
+    rt_dir              = '/Users/dzalkind/Tools/ROSCO_toolbox'
     weis_dir            = os.path.join(rt_dir,'Tune_Cases')
     control_param_yaml  = os.path.join(rt_dir,'Tune_Cases','IEA15MW.yaml')
     inps                = yaml.safe_load(open(control_param_yaml))
@@ -172,7 +174,8 @@ def run_PC_sweep(omega,zeta=1.0):
 
     # make default controller, turbine objects for ROSCO_toolbox
     turbine             = ROSCO_turbine.Turbine(turbine_params)
-    turbine.load_from_fast( fastBatch.FAST_InputFile , fastBatch.FAST_directory, dev_branch=True)
+    turbine.load_from_fast( path_params['FAST_InputFile'],
+                            os.path.join(rt_dir, path_params['FAST_directory']), dev_branch=True)
 
     controller          = ROSCO_controller.Controller(controller_params)
 
@@ -216,14 +219,15 @@ def run_PC_sweep(omega,zeta=1.0):
     fastBatch.case_name_list    = case_name_list
     fastBatch.debug_level       = 2
 
+
     if True:
         fastBatch.run_multi(cores=4)
     else:
         fastBatch.run_serial()
- 
 
+if __name__ == '__main__':
 # Actually run example
-run_PC_sweep([.1,.15,.2,.25,.3,.35,.4,.45])      
+    run_PC_sweep([.1,.15,.2,.25,.3,.35,.4,.45])      
     
     
     

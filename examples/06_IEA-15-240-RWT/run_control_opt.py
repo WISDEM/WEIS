@@ -371,7 +371,7 @@ def gen_linear_model():
 
     TODO: check for the models so we can skip this step if already run
     """
-
+    
 
     linear = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
 

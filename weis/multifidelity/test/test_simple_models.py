@@ -16,13 +16,13 @@ class Test(unittest.TestCase):
         
         outputs = model.run(flattened_desvars)
         self.assertEqual(outputs['y'], 18.)
-        self.assertEqual(outputs['con'], 3.)
+        self.assertEqual(outputs['con'], 21.)
         
         flattened_desvars_2d = np.array([[2., 1.], [1., 0.5]])
         
         outputs = model.run_vec(flattened_desvars_2d)
         np.testing.assert_allclose(outputs['y'], [18., 0.5])
-        np.testing.assert_allclose(outputs['con'], [3., 1.5])
+        np.testing.assert_allclose(outputs['con'], [21., 1.625])
         
     def test_save_outputs(self):
         desvars_init = {}
@@ -35,12 +35,12 @@ class Test(unittest.TestCase):
         
         outputs = model.run(flattened_desvars)
         self.assertEqual(outputs['y'], 18.)
-        self.assertEqual(outputs['con'], 3.)
+        self.assertEqual(outputs['con'], 21.)
         
         # Should return the same values that were saved
         outputs = model.run(flattened_desvars)
         self.assertEqual(outputs['y'], 18.)
-        self.assertEqual(outputs['con'], 3.)
+        self.assertEqual(outputs['con'], 21.)
         
         # Should only have called the model once
         self.assertEqual(len(model.saved_desvars), 1)

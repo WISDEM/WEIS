@@ -1,7 +1,7 @@
 general:
     folder_output: pitch_opt
     fname_output: iea15mw
-optimization_variables:
+design_variables:
   blade:
     aero_shape:
       twist:

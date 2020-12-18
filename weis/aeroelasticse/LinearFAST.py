@@ -16,8 +16,6 @@ from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 # pCrunch Modules and instantiation
 import matplotlib.pyplot as plt 
 from ROSCO_toolbox import utilities as ROSCO_utilites
-fast_io = ROSCO_utilites.FAST_IO()
-fast_pl = ROSCO_utilites.FAST_Plots()
 
 # WISDEM modules
 from weis.aeroelasticse.Util import FileTools
@@ -179,7 +177,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         if self.overwrite or not os.path.exists(os.path.join(output_dir,'ss_ops.yaml')):
             stats, _ =fp.batch_processing()
 
-            if hasattr(stats,'__len__'):
+            if isinstance(stats,list):
                 stats = stats[0]
 
             windSortInd = np.argsort(stats['Wind1VelX']['mean'])
@@ -269,7 +267,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TrimGain")] = {'vals':[4e-5], 'group':0}
         case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
 
-        case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
+        case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}
         case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}
 
         case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}
@@ -386,7 +384,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         
 
 
-def gen_linear_model(wind_speeds,dofs=['GenDOF']):
+def gen_linear_model(wind_speeds,dofs=['GenDOF'],Tmax=600.):
     """ 
     Generate OpenFAST linearizations across wind speeds
 
@@ -420,7 +418,7 @@ def gen_linear_model(wind_speeds,dofs=['GenDOF']):
     linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
     linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
     linear.DOFs             = dofs #,'TwFADOF1','PtfmPDOF']  # enable with 
-    linear.TMax             = 2000.   # should be 1000-2000 sec or more with hydrodynamic states
+    linear.TMax             = Tmax.   # should be 1000-2000 sec or more with hydrodynamic states
     linear.NLinTimes        = 12
 
     #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
@@ -430,7 +428,7 @@ def gen_linear_model(wind_speeds,dofs=['GenDOF']):
         linear.HydroStates      = False   # taking out to speed up for test
 
     # simulation setup
-    linear.parallel         = True
+    linear.parallel         = False
     linear.cores            = 8
 
     # overwrite steady & linearizations

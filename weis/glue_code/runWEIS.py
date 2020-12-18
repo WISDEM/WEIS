@@ -136,9 +136,17 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # whatever values have been set by the yaml files.
         # This is useful for performing black-box wrapped optimization without
         # needing to modify the yaml files.
+        # Some logic is used here if the user gives a smalller size for the
+        # design variable than expected to input the values into the end
+        # of the array.
+        # This is useful when optimizing twist, where the first few indices
+        # do not need to be optimized as they correspond to a circular cross-section.
         if overridden_values is not None:
             for key in overridden_values:
-                wt_opt[key][:] = overridden_values[key]
+                num_values = np.array(overridden_values[key]).size
+                key_size = wt_opt[key].size
+                idx_start = key_size - num_values
+                wt_opt[key][idx_start:] = overridden_values[key]
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
@@ -166,7 +174,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
             wt_initial.update_ontology_control(wt_opt)
+            # Remove the fst_vt key from the dictionary and write out the modeling options
+            modeling_options['openfast']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)
+            wt_initial.write_options(froot_out)
             
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
@@ -187,25 +198,3 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         return wt_opt, modeling_options, opt_options
     else:
         return [], [], []
-
-if __name__ == "__main__":
-
-    ## File management
-    run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + 'examples' + os.sep + 'rotor_opt' + os.sep
-    fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml"
-    fname_modeling_options = run_dir + "modeling_options.yaml"
-    fname_analysis_options = run_dir + "analysis_options.yaml"
-
-
-    tt = time.time()
-    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
-    
-    if MPI:
-        rank = MPI.COMM_WORLD.Get_rank()
-    else:
-        rank = 0
-    if rank == 0:
-        print('Run time: %f'%(time.time()-tt))
-        sys.stdout.flush()
-
-        # print(wt_opt['aeroelastic.C_miners_SC_PS'])

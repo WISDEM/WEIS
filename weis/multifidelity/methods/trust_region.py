@@ -111,7 +111,7 @@ class SimpleTrustRegion(BaseMethod):
             tol=1e-10,
             bounds=bounds,
             constraints=self.list_of_constraints,
-            options={"disp": False},
+            options={"disp" : self.disp, "maxiter" : 20},
         )
         x_new = res.x
 
@@ -160,6 +160,7 @@ class SimpleTrustRegion(BaseMethod):
         # 4. Accept or reject the trial point according to that ratio
         # Unclear if this logic is needed; it's better to update the surrogate model with a bad point, even
         if predicted_reduction <= 0:
+            self.design_vectors = np.vstack((self.design_vectors, np.atleast_2d(x_new)))
             if self.disp:
                 print("not enough reduction! rejecting point")
         else:
@@ -182,7 +183,7 @@ class SimpleTrustRegion(BaseMethod):
             print("Actual reduction:", actual_reduction)
             print("Trust radius:", self.trust_radius)
 
-    def optimize(self, plot=False):
+    def optimize(self, plot=False, num_iterations=30):
         """
         Actually perform the trust-region optimization.
 
@@ -190,6 +191,8 @@ class SimpleTrustRegion(BaseMethod):
         ----------
         plot : boolean
             If True, plot a 2d representation of the optimization process.
+        num_iterations : int
+            Number of trust region iterations.
 
         """
         self.construct_approximations()
@@ -198,7 +201,7 @@ class SimpleTrustRegion(BaseMethod):
         if plot:
             self.plot_functions()
 
-        for i in range(30):
+        for i in range(num_iterations):
             self.process_constraints()
             x_new, hits_boundary = self.find_next_point()
 
@@ -210,20 +213,11 @@ class SimpleTrustRegion(BaseMethod):
                 self.plot_functions()
 
             x_test = self.design_vectors[-1, :]
-
+            
             if self.trust_radius <= 1e-6:
                 break
 
-        results = {}
-        results["optimal_design"] = self.design_vectors[-1, :]
-        results["high_fidelity_func_value"] = self.model_high.run(
-            self.design_vectors[-1, :]
-        )[self.objective]
-        results["number_high_fidelity_calls"] = len(self.design_vectors[:, 0])
-
-        if self.disp:
-            print()
-            print(results)
+        results = self.process_results()
 
         return results
 
@@ -301,6 +295,8 @@ class SimpleTrustRegion(BaseMethod):
                     f"image_{self.counter_plot}.png", dpi=300, bbox_inches="tight"
                 )
                 self.counter_plot += 1
+                
+            plt.close()
 
         else:
             import niceplots
