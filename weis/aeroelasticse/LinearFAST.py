@@ -16,8 +16,6 @@ from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 # pCrunch Modules and instantiation
 import matplotlib.pyplot as plt 
 from ROSCO_toolbox import utilities as ROSCO_utilites
-fast_io = ROSCO_utilites.FAST_IO()
-fast_pl = ROSCO_utilites.FAST_Plots()
 
 # WISDEM modules
 from weis.aeroelasticse.Util import FileTools
@@ -179,7 +177,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         if self.overwrite or not os.path.exists(os.path.join(output_dir,'ss_ops.yaml')):
             stats, _ =fp.batch_processing()
 
-            if hasattr(stats,'__len__'):
+            if isinstance(stats,list):
                 stats = stats[0]
 
             windSortInd = np.argsort(stats['Wind1VelX']['mean'])
@@ -268,7 +266,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","TrimGain")] = {'vals':[4e-5], 'group':0}
 
-        case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
+        case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}
         case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}
 
         if not self.HydroStates:
@@ -433,7 +431,7 @@ def gen_linear_model(wind_speeds, Tmax=600.):
     linear.HydroStates      = False   # taking out to speed up for test
 
     # simulation setup
-    linear.parallel         = True
+    linear.parallel         = False
     linear.cores            = 8
 
     # overwrite steady & linearizations
