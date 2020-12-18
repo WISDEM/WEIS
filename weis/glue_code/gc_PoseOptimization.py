@@ -333,10 +333,10 @@ class PoseOptimization(object):
         if tower_constraints['shell_buckling']['flag']:
             wt_opt.model.add_constraint('towerse.post.shell_buckling', upper=1.0)
 
-        if tower_constraints['constr_d_to_t']['flag']:
+        if tower_constraints['d_to_t']['flag']:
             wt_opt.model.add_constraint('towerse.constr_d_to_t', upper=0.0)
 
-        if tower_constraints['constr_taper']['flag']:
+        if tower_constraints['taper']['flag']:
             wt_opt.model.add_constraint('towerse.constr_taper', lower=0.0)
 
         if tower_constraints['slope']['flag']:
