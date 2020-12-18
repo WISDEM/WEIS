@@ -12,8 +12,10 @@ import numpy as np
 
 from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
 from weis.aeroelasticse.FAST_post import FAST_IO_timeseries
-from weis.aeroelasticse.runFAST_pywrapper import (runFAST_pywrapper,
-                                                  runFAST_pywrapper_batch)
+from weis.aeroelasticse.runFAST_pywrapper import (
+    runFAST_pywrapper,
+    runFAST_pywrapper_batch,
+)
 from weis.test.utils import compare_regression_values
 
 
@@ -225,7 +227,9 @@ class TestDLC(unittest.TestCase):
         # for var in var_out+[var_x]:
 
         # Run FAST cases
-        fastBatch = runFAST_pywrapper_batch(FAST_ver="OpenFAST", dev_branch=True, post=FAST_IO_timeseries)
+        fastBatch = runFAST_pywrapper_batch(
+            FAST_ver="OpenFAST", dev_branch=True, post=FAST_IO_timeseries
+        )
 
         # Monopile
         fastBatch.FAST_InputFile = (
@@ -253,11 +257,23 @@ class TestDLC(unittest.TestCase):
         fastBatch.debug_level = 2
 
         out = fastBatch.run_serial()
-        
+
         train = False
-        
+        keys_to_skip = [
+            "Wind1VelX",
+            "Wind1VelY",
+            "Wind1VelZ",
+        ]
+
         this_file_dir = os.path.dirname(os.path.realpath(__file__))
-        compare_regression_values(out, 'DLC_regression_values_1.pkl', directory=this_file_dir, tol=1e-1, train=train)
+        compare_regression_values(
+            out,
+            "DLC_regression_values_1.pkl",
+            directory=this_file_dir,
+            tol=1e-1,
+            train=train,
+            keys_to_skip=keys_to_skip,
+        )
 
         # U-Maine semi-sub
         fastBatch.FAST_InputFile = (
@@ -268,9 +284,16 @@ class TestDLC(unittest.TestCase):
         )  # Path to fst directory files
 
         out = fastBatch.run_serial()
-        
-        compare_regression_values(out, 'DLC_regression_values_2.pkl', directory=this_file_dir, tol=1e-1, train=train)
-        
+
+        compare_regression_values(
+            out,
+            "DLC_regression_values_2.pkl",
+            directory=this_file_dir,
+            tol=1e-1,
+            train=train,
+            keys_to_skip=keys_to_skip,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

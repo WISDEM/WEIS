@@ -13,14 +13,14 @@ ncpus = multiprocessing.cpu_count()
 this_directory = os.path.abspath(os.path.dirname(__file__))
 
 # Eagle environment
-eagle_flag = platform.node() in ['el'+str(m) for m in range(10)]
+eagle_nodes = ['el'+str(m) for m in range(10)] + ['ed'+str(m) for m in range(10)]
+eagle_flag = platform.node() in eagle_nodes
 ci_flag    = platform.node().find('fv-az') >= 0
-print(platform.node(), eagle_flag, ci_flag)
-print(os.uname())
 if eagle_flag:
     os.environ["FC"] = "ifort"
     os.environ["CC"] = "icc"
     os.environ["CXX"] = "icpc"
+    os.environ["LDSHARED"] = "icc -pthread -shared"
     
 # For the CMake Extensions
 class CMakeExtension(Extension):
@@ -136,7 +136,6 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially
-        # run_setup('setup.py', script_args=['build_ext', '--inplace'])
         run_setup('setup.py', script_args=['install'])
     else:
         run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
