@@ -75,46 +75,26 @@ class OpenFASTBase:
     def data(self, data):
         self._data = data
 
-    def calculated_channels(self, **kwargs):
+    def append_channel_magnitudes(self, channels):
         """
-        Calculates additional channels as vector sums of recorded channels.
+        Append the vector magnitude of `channels` to the dataset.
+
+        Parameters
+        ----------
+        channels : dict
+            Format: 'new-chan' ['chan1', 'chan2', 'chan3'],
         """
 
-        for chan in self._calc_chan:
+        for new_chan, chans in channels.items():
 
-            if chan == "RootFMxy1":
-                self._calculate_RootFMxy1()
+            if new_chan in self.channels:
+                print(f"Channel '{new_chan}' already exists.")
+                continue
 
-            if chan == "RootMMxy1":
-                self._calculate_RootMMxy1()
-
-    def _calculate_RootFMxy1(self):
-
-        Fy = np.where(self.channels == "RootFxc1")[0]
-        Fz = np.where(self.channels == "RootFyc1")[0]
-
-        if Fy.size == 1 and Fz.size == 1:
-
-            RootFMxy1 = np.sqrt(
-                self.data[:, Fy] ** 2 + self.data[:, Fz] ** 2
-            ).reshape(-1, 1)
-            self._data = np.append(self._data, RootFMxy1, axis=1)
-            self.channels = np.append(self.channels, "RootFMxy1")
-            self.units = np.append(self.units, "kN")
-
-    def _calculate_RootMMxy1(self):
-
-        My = np.where(self.channels == "RootMxc1")[0]
-        Mz = np.where(self.channels == "RootMyc1")[0]
-
-        if My.size == 1 and Mz.size == 1:
-
-            RootMMxy1 = np.sqrt(
-                self.data[:, My] ** 2 + self.data[:, Mz] ** 2
-            ).reshape(-1, 1)
-            self._data = np.append(self._data, RootMMxy1, axis=1)
-            self.channels = np.append(self.channels, "RootMMxy1")
-            self.units = np.append(self.units, "kN-m")
+            arrays = np.array([self[a] for a in chans]).T
+            normed = np.linalg.norm(arrays, axis=1).reshape(arrays.shape[0], 1)
+            self.data = np.append(self.data, normed, axis=1)
+            self.channels = np.append(self.channels, new_chan)
 
     @property
     def headers(self):
@@ -260,8 +240,6 @@ class OpenFASTOutput(OpenFASTBase):
             self.channels = channels
 
         self._dlc = dlc
-        self._calc_chan = kwargs.get("calculated_channels", [])
-        self.calculated_channels()
 
     @classmethod
     def from_dict(cls, data, name, **kwargs):
@@ -285,7 +263,6 @@ class OpenFASTBinary(OpenFASTBase):
         """
 
         self.filepath = filepath
-        self._calc_chan = kwargs.get("calculated_channels", [])
         self._chan_chars = kwargs.get("chan_char_length", 10)
         self._unit_chars = kwargs.get("unit_char_length", 10)
 
@@ -323,8 +300,6 @@ class OpenFASTBinary(OpenFASTBase):
                 ],
                 1,
             )
-
-        self.calculated_channels()
 
     def build_headers(self, f, num_channels):
         """
@@ -394,7 +369,6 @@ class OpenFASTAscii(OpenFASTBase):
         """
 
         self.filepath = filepath
-        self._calc_chan = kwargs.get("calculated_channels", [])
 
     @property
     def filename(self):
@@ -413,8 +387,6 @@ class OpenFASTAscii(OpenFASTBase):
             self.data = np.fromfile(f, float, sep="\t").reshape(
                 -1, len(self.channels)
             )
-
-        self.calculated_channels()
 
     def parse_header(self, f):
         """Reads the header data for file."""
