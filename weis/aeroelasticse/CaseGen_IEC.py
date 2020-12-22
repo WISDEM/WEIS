@@ -296,6 +296,7 @@ class CaseGen_IEC():
             case_inputs_i[("InflowWind","WindType")] = {'vals':WindFile_type_out, 'group':1}
             case_inputs_i[("InflowWind","Filename_Uni")] = {'vals':WindFile_out, 'group':1}
             case_inputs_i[("InflowWind","FileName_BTS")] = {'vals':WindFile_out, 'group':1}
+            case_inputs_i[("InflowWind","RefLength")] = {'vals':[self.D], 'group':0}
 
             if len(self.dlc_inputs['Yaw'][i]) > 0:
                     case_inputs_i[("ElastoDyn","NacYaw")] = {'vals':self.dlc_inputs['Yaw'][i], 'group':2}
