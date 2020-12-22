@@ -40,9 +40,13 @@ The core WEIS modules are:
 
 ## Installation
 
-Installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/).
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). 
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable.
+
+0.  On the DOE HPC system eagle, make sure to start from a clean setup and type
+        module purge
+        module load conda        
 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
@@ -69,8 +73,7 @@ The installation instructions below use the environment name, "weis-env," but an
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
         git checkout branch_name # (Only if you want to switch git branch, say develop)
-        module purge
-        module load conda comp-intel intel-mpi mkl
+        module load comp-intel intel-mpi mkl
         module unload gcc
         python setup.py develop
 
