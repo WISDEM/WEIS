@@ -55,12 +55,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         flag: True
     
 openfast:
-    analysis_settings:
-        Analysis_Level:     2           # Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
-        update_hub_nacelle: False
-        update_tower:       False
-        generate_af_coords: False
-        debug_level:        2    # Flag to set the debug level, do not change
     file_management:
         FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
         FAST_runDirectory: temp/NREL5MW_OC3_spar             # Path to folder with the OpenFAST output files

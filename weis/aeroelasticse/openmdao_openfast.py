@@ -1023,14 +1023,6 @@ class FASTLoadCases(ExplicitComponent):
                 case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
                 case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
 
-                # User defined simulation settings
-                if ("InflowWind","WindType") in case_inputs:
-                    print('WARNING: You have defined ("InflowWind","WindType"} in the openfast settings.'
-                            'This will overwrite the default powercurve settings')
-                if ("InflowWind","HWindSpeed") in case_inputs:
-                    print('WARNING: You have defined ("InflowWind","HWindSpeed"} in the openfast settings.'
-                            'This will overwrite the default powercurve settings')
-
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
 
             dlc_list = [0.]*len(case_name)
