@@ -15,7 +15,7 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywr
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
-from pCrunch import Analysis, pdTools, Processing
+from pCrunch import LoadsAnalysis
 from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
@@ -1042,120 +1042,94 @@ class FASTLoadCases(ExplicitComponent):
 
     def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
         
-        # Load pCrunch Analysis
-        loads_analysis         = Analysis.Loads_Analysis()
-        loads_analysis.verbose = self.options['modeling_options']['General']['verbosity']
-
-        # Initial time
-        loads_analysis.t0 = np.max([0. , self.fst_vt['Fst']['TMax'] - 600.])
-        
-        # Calc summary stats on the magnitude of a vector
-        loads_analysis.channels_magnitude = {'LSShftF':["RotThrust", "LSShftFys", "LSShftFzs"], 
-                                             'LSShftM':["RotTorq", "LSSTipMys", "LSSTipMzs"]}
-                                             # 'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
-                                             # 'RootMc2': ["RootMxc2", "RootMyc2", "RootMzc2"],
-                                             # 'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"]}
-                                             # 'TipDc1':['TipDxc1', 'TipDyc1', 'TipDzc1'],
-                                             # 'TipDc2':['TipDxc2', 'TipDyc2', 'TipDzc2'],
-                                             # 'TipDc3':['TipDxc3', 'TipDyc3', 'TipDzc3']}
-
-        # extreme event tables, return the value of these channels where over variables are at a maximum
-        loads_analysis.channels_extreme_table  = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
-        loads_analysis.channels_extreme_table += ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx", "B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
-        loads_analysis.channels_extreme_table += ['RotSpeed', 'BldPitch1', 'BldPitch2', 'Azimuth']
-        loads_analysis.channels_extreme_table += ["RootMxc1", "RootMyc1", "RootMzc1", "RootMxc2", "RootMyc2", "RootMzc2"]
-        loads_analysis.channels_extreme_table += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
-        if self.n_blades > 2:
-            loads_analysis.channels_extreme_table += ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx", "B3N1Fy",
-                                                      "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy",
-                                                      'BldPitch3', "RootMxc3", "RootMyc3", "RootMzc3"]
-
-        # DEL info
+        # Setup
+        tmax = self.fst_vt['Fst']['TMax']
+        t0 = np.max([0., tmax - 600.])
         if self.FASTpref['dlc_settings']['run_IEC']:
-            if self.fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
-                if self.n_blades == 2:
-                    loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
-                else:
-                    loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+            if (tmax - t0) > 60.:
+                pass
+
             else:
                 print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
-                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
-            loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
-        else:
-            print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
-        # get summary stats
-        sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
+        DEL_info = {
+            'RootMyb1': 10,
+            'RootMyb2': 10,
+            'RootMyb3': 10,
+            'TwrBsMxt': 3,
+            'TwrBsMyt': 3,
+            'TwrBsMzt': 3
+        }
 
-        # Setup paths for saving of output info
-        of_output_folder    =  os.path.join(self.options['opt_options']['general']['folder_output'],'of_outputs')
-        stats_output_folder =  os.path.join(of_output_folder, 'stats')
-        if not os.path.exists(stats_output_folder):
-            os.makedirs(of_output_folder)
-            os.makedirs(stats_output_folder)
-        # self.of_inumber = len(os.listdir(stats_output_folder))
+        magnitude_channels = {
+            'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
+            'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
+            'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
+            'RootMc2': ["RootMxc2", "RootMyc2", "RootMzc2"],
+            'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"]}
+            'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
+            'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
+            'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3']
+        }
 
-        # save summary stats
-        stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
-        Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
+        channel_extremes = [
+            'RotSpeed',
+            'BldPitch1', 'BldPitch2',
+            "RotThrust", "LSShftFys", "LSShftFzs",
+            "RotTorq", "LSSTipMys", "LSSTipMzs",
+            'Azimuth',
+            'TipDxc1', 'TipDxc2', 'TipDxc3',
+            "RootMxc1", "RootMyc1", "RootMzc1",
+            "RootMxc2", "RootMyc2", "RootMzc2",
+            'B1N1Fx', 'B1N2Fx', 'B1N3Fx', 'B1N4Fx', 'B1N5Fx', 'B1N6Fx', 'B1N7Fx', 'B1N8Fx', 'B1N9Fx',
+            'B1N1Fy', 'B1N2Fy', 'B1N3Fy', 'B1N4Fy', 'B1N5Fy', 'B1N6Fy', 'B1N7Fy', 'B1N8Fy', 'B1N9Fy',
+            'B2N1Fx', 'B2N2Fx', 'B2N3Fx', 'B2N4Fx', 'B2N5Fx', 'B2N6Fx', 'B2N7Fx', 'B2N8Fx', 'B2N9Fx',
+            'B2N1Fy', 'B2N2Fy', 'B2N3Fy', 'B2N4Fy', 'B2N5Fy', 'B2N6Fy', 'B2N7Fy', 'B2N8Fy', 'B2N9Fy',
 
-        # Save output plots
-        fast_pl = rosco_utilities.FAST_Plots()
+        ]
 
-        figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
-        with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
-            for fast_out in FAST_Output:
-                plots2make = {'Baseline': ['Wind1VelX', 'GenPwr', 'RotSpeed', 'BldPitch1', 'GenTq'],
-                             'Blade': ['TipDxc1', 'RootMyb1']}
-                if self.n_tab > 1:
-                    plots2make['Baseline'].append('BLFLAP1')
+        if self.n_blades > 2:
+            channel_extremes += [
+                "B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx",
+                "B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy",
+                'BldPitch3', "RootMxc3", "RootMyc3", "RootMzc3"
+                ]
 
-                numplots    = len(plots2make)
-                maxchannels = np.max([len(plots2make[key]) for key in plots2make.keys()])
-                fig = plt.figure(figsize=(8,6), constrained_layout=True)
-                gs_all = fig.add_gridspec(1, numplots)
-                for pnum, (gs, pname) in enumerate(zip(gs_all, plots2make.keys())):
-                    gs0 = gs.subgridspec(len(plots2make[pname]),1)
-                    for cid, channel in enumerate(plots2make[pname]):
-                        subplt = fig.add_subplot(gs0[cid])
-                        try:
-                            subplt.plot(fast_out['Time'], fast_out[channel])
-                            unit_idx = fast_out['meta']['channels'].index(channel)
-                            subplt.set_ylabel('{:^} \n ({:^})'.format(
-                                                channel,
-                                                fast_out['meta']['attribute_units'][unit_idx]))
-                            subplt.grid(True)
-                            subplt.set_xlabel('Time (s)')
-                        except:
-                            print('Cannot plot {}'.format(channel))
-                        if cid == 0:
-                            subplt.set_title(pname)
-                        if cid != len(plots2make[pname])-1:
-                            subplt.axes.get_xaxis().set_visible(False)
+        # Initialize
+        loads_analysis = LoadsAnalysis(
+            FAST_Output,
+            magnitude_channels=magnitude_channels       
+            fatigue_channels=DEL_info,
+            trim_data=(t0, tmax)
+            extreme_channels=channel_extremes
+        )
 
-                    plt.suptitle(fast_out['meta']['name'])
-                pdf.savefig(fig)
-                plt.close()
+        # Process
+        loads_analysis.process_outputs()  # TODO: Cores?
+        sum_stats = analysis.summary_stats
+        extreme_table = analysis.extreme_events
 
-        ## Post process loads
+        # Analysis
         if self.FASTpref['dlc_settings']['run_IEC']:
-            # TODO: support for BeamDyn
 
             # Determine blade with the maximum deflection magnitude
             if self.n_blades == 2:
                 defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max'])]
             else:
                 defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max']), max(sum_stats['TipDxc3']['max'])]
+
             if np.argmax(defl_mag) == 0:
                 blade_chans_Fx = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
                 blade_chans_Fy = ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
                 tip_max_chan   = "TipDxc1"
                 bld_pitch_chan = "BldPitch1"
+
             if np.argmax(defl_mag) == 1:
                 blade_chans_Fx = ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx"]
                 blade_chans_Fy = ["B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
                 tip_max_chan   = "TipDxc2"
                 bld_pitch_chan = "BldPitch2"
+
             if np.argmax(defl_mag) == 2:            
                 blade_chans_Fx = ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx"]
                 blade_chans_Fy = ["B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
@@ -1163,8 +1137,8 @@ class FASTLoadCases(ExplicitComponent):
                 bld_pitch_chan = "BldPitch3"
                 
             # Return spanwise forces at instance of largest deflection
-            Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fx]
-            Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var]['val'] for var in blade_chans_Fy]
+            Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
+            Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]
             spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
             spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
 
@@ -1177,9 +1151,9 @@ class FASTLoadCases(ExplicitComponent):
             outputs['loads_Px']      = Fx_out
             outputs['loads_Py']      = Fy_out*-1.
             outputs['loads_Pz']      = Fz_out
-            outputs['loads_Omega']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']['val']
-            outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']['val']
-            outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']['val']
+            outputs['loads_Omega']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']
+            outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']
+            outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']
 
             # Determine maximum root moment
             if self.n_blades == 2:
@@ -1192,12 +1166,12 @@ class FASTLoadCases(ExplicitComponent):
             outputs['max_RootMyc'] = blade_root_oop_moment
 
             ## Get hub momements and forces in the non-rotating frame
-            outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust']['val'],
-                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys']['val'],
-                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']['val']])*1.e3
-            outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq']['val'],
-                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys']['val'],
-                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']['val']])*1.e3
+            outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
+                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys'],
+                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']])*1.e3
+            outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
+                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
+                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
 
             ## Post process aerodynamic data
             # Angles of attack - max, std, mean
