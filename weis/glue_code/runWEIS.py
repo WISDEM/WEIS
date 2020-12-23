@@ -126,7 +126,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # If we're not performing optimization, we don't need to allocate
             # memory for the derivative arrays.
             wt_opt.setup(derivatives=False)
-        
+            
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = assign_ROSCO_values(wt_opt, modeling_options, wt_init['control'])

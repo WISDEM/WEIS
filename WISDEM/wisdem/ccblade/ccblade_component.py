@@ -481,6 +481,10 @@ class CCBladeTwist(ExplicitComponent):
         )
         self.add_output("CP", val=0.0, desc="Rotor power coefficient")
         self.add_output("CM", val=0.0, desc="Blade flapwise moment coefficient")
+        self.add_output('P',     val=0.0,              units='W',     desc='Rotor aerodynamic power')
+        self.add_output('T',     val=0.0,              units='N*m',   desc='Rotor aerodynamic thrust')
+        self.add_output('Q',     val=0.0,              units='N*m',   desc='Rotor aerodynamic torque')
+        self.add_output('M',     val=0.0,              units='N*m',   desc='Blade root flapwise moment')
         self.add_output("a", val=np.zeros(n_span), desc="Axial induction  along blade span")
         self.add_output("ap", val=np.zeros(n_span), desc="Tangential induction along blade span")
         self.add_output("alpha", val=np.zeros(n_span), units="deg", desc="Angles of attack along blade span")
@@ -671,7 +675,7 @@ class CCBladeTwist(ExplicitComponent):
         Omega = inputs["Uhub"] * inputs["tsr"] / inputs["Rtip"] * 30.0 / np.pi
 
         myout, derivs = get_cp_cm.evaluate([inputs["Uhub"]], [Omega], [inputs["pitch"]], coefficients=True)
-        _, _, _, _, CP, CT, CQ, CM = [myout[key] for key in ["P", "T", "Q", "M", "CP", "CT", "CQ", "CM"]]
+        P, T, Q, M, CP, CT, CQ, CM = [myout[key] for key in ['P','T','Q','M','CP','CT','CQ','CM']]
 
         # if self.options['opt_options']['design_variables']['blade']['aero_shape']['twist']['flag']:
         get_cp_cm.induction = False
@@ -684,6 +688,10 @@ class CCBladeTwist(ExplicitComponent):
         outputs["theta"] = twist
         outputs["CP"] = CP[0]
         outputs["CM"] = CM[0]
+        outputs['P']       = P
+        outputs['M']       = M
+        outputs['T']       = T
+        outputs['Q']       = Q
         outputs["a"] = loads["a"]
         outputs["ap"] = loads["ap"]
         outputs["alpha"] = loads["alpha"]

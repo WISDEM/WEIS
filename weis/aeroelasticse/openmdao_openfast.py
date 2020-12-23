@@ -285,6 +285,7 @@ class FASTLoadCases(ExplicitComponent):
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
         self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
+        self.add_output('P_aero_out',       val=np.zeros(n_OF), units='W',    desc='rotor aerodynamic power')
         self.add_output('Cp_out',      val=np.zeros(n_OF),               desc='rotor aero power coefficient')
         self.add_output('Omega_out',   val=np.zeros(n_OF), units='rpm',  desc='rotation speeds to run')
         self.add_output('pitch_out',   val=np.zeros(n_OF), units='deg',  desc='pitch angles to run')
@@ -1238,8 +1239,8 @@ class FASTLoadCases(ExplicitComponent):
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
                 print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
-
-            
+                
+            outputs['P_aero_out']  = outputs['P_out'] / (inputs['gearbox_efficiency'] * inputs['generator_efficiency'])
 
             outputs['V_out']       = np.unique(U)
 
