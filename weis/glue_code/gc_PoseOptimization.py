@@ -19,7 +19,7 @@ class PoseOptimization(object):
         if self.blade_opt['aero_shape']['chord']['flag']:    
             n_DV += self.blade_opt['aero_shape']['chord']['n_opt'] - 3            
         if self.blade_opt['aero_shape']['af_positions']['flag']:
-            n_DV += self.modeling['blade']['n_af_span'] - self.blade_opt['aero_shape']['af_positions']['af_start'] - 1
+            n_DV += self.modeling['RotorSE']['n_af_span'] - self.blade_opt['aero_shape']['af_positions']['af_start'] - 1
         if self.blade_opt['structure']['spar_cap_ss']['flag']:
             n_DV += self.blade_opt['structure']['spar_cap_ss']['n_opt'] - 2
         if self.blade_opt['structure']['spar_cap_ps']['flag'] and not self.blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
@@ -33,9 +33,9 @@ class PoseOptimization(object):
         if self.opt['design_variables']['control']['servo']['flap_control']['flag']:
             n_DV += 2
         if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
-            n_DV += self.modeling['blade']['n_te_flaps']
+            n_DV += self.modeling['RotorSE']['n_te_flaps']
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
-            n_DV += self.modeling['blade']['n_te_flaps']
+            n_DV += self.modeling['RotorSE']['n_te_flaps']
         if self.tower_opt['outer_diameter']['flag']:
             n_DV += self.modeling['tower']['n_height']
         if self.tower_opt['layer_thickness']['flag']:
@@ -157,7 +157,7 @@ class PoseOptimization(object):
             wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
 
         if self.blade_opt['aero_shape']['af_positions']['flag']:
-            n_af = self.modeling['blade']['n_af_span']
+            n_af = self.modeling['RotorSE']['n_af_span']
             indices  = range(self.blade_opt['aero_shape']['af_positions']['af_start'],n_af - 1)
             af_pos_init = wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']
             step_size   = self._get_step_size()
