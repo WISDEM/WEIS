@@ -75,7 +75,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['RotorSE']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
                 self.modeling_options['RotorSE']['n_tab']   = 3
             else:
-                exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
+                raise Exception('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
         
     def update_ontology_control(self, wt_opt):
         # Update controller
