@@ -502,6 +502,7 @@ class Power_Production(object):
         pwr_array = pwr_array.groupby('windspeeds').mean() 
         # find set of wind speeds
         ws_set = list(set(ws))
+        ws_set.sort()
         # wind probability
         wind_prob = self.prob_WindDist(ws_set, disttype='pdf')
         # Calculate AEP
