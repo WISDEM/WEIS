@@ -418,7 +418,7 @@ def gen_linear_model(wind_speeds,dofs=['GenDOF'],Tmax=600.):
     linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
     linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
     linear.DOFs             = dofs #,'TwFADOF1','PtfmPDOF']  # enable with 
-    linear.TMax             = Tmax.   # should be 1000-2000 sec or more with hydrodynamic states
+    linear.TMax             = Tmax   # should be 1000-2000 sec or more with hydrodynamic states
     linear.NLinTimes        = 12
 
     #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
