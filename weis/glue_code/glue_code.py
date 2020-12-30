@@ -571,9 +571,10 @@ class WindPark(om.Group):
                 if modeling_options['flags']['monopile']:
                     self.connect("env.water_depth",                  "towerse_post.water_depth")
                     self.connect('env.rho_water',                    'towerse_post.rho_water')
-                    self.connect('env.mu_water',                     'towerse_post.mu_water')                    
-                    self.connect('env.G_soil',                       'towerse_post.G_soil')                    
-                    self.connect('env.nu_soil',                      'towerse_post.nu_soil')                    
+                    self.connect('env.mu_water',                     'towerse_post.mu_water')
+                    if modeling_options["TowerSE"]["soil_springs"]:                  
+                        self.connect('env.G_soil',                       'towerse_post.G_soil')                    
+                        self.connect('env.nu_soil',                      'towerse_post.nu_soil')                    
                     self.connect("env.Hsig_wave",                    "towerse_post.Hsig_wave")
                     self.connect("env.Tsig_wave",                    "towerse_post.Tsig_wave")
                     self.connect('monopile.diameter',                'towerse_post.monopile_outer_diameter_in')

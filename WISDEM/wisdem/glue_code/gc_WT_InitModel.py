@@ -599,7 +599,7 @@ def assign_hub_values(wt_opt, hub):
 
 def assign_nacelle_values(wt_opt, modeling_options, nacelle):
     # Common direct and geared
-    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt_angle"]
+    wt_opt["nacelle.uptilt"] = nacelle["drivetrain"]["uptilt"]
     wt_opt["nacelle.distance_tt_hub"] = nacelle["drivetrain"]["distance_tt_hub"]
     wt_opt["nacelle.overhang"] = nacelle["drivetrain"]["overhang"]
     wt_opt["nacelle.distance_hub2mb"] = nacelle["drivetrain"]["distance_hub_mb"]
@@ -643,6 +643,7 @@ def assign_nacelle_values(wt_opt, modeling_options, nacelle):
         wt_opt["nacelle.hss_material"] = nacelle["drivetrain"]["hss_material"]
 
     if not modeling_options["flags"]["generator"]:
+        wt_opt["generator.generator_radius_user"] = nacelle["drivetrain"]["generator_radius_user"]
         wt_opt["generator.generator_mass_user"] = nacelle["drivetrain"]["generator_mass_user"]
 
         eff_user = np.c_[
