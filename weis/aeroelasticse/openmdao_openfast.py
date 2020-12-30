@@ -1069,12 +1069,9 @@ class FASTLoadCases(ExplicitComponent):
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
                 else:
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+                loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
             else:
                 print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
-                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
-            loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
-        else:
-            print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
