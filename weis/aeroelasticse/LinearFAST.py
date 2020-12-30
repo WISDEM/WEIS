@@ -406,6 +406,8 @@ def gen_linear_model(wind_speeds,dofs=['GenDOF'],Tmax=600.):
     linear.dev_branch               = True
     linear.write_yaml               = True
 
+    linear.FAST_exe                 = '/Users/dzalkind/Tools/openfast/install/bin/openfast'
+
     # do a read to get gearbox ratio
     fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)
     fastRead.FAST_InputFile = linear.FAST_InputFile   # FAST input file (ext=.fst)
