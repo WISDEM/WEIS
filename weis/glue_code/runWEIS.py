@@ -11,6 +11,8 @@ from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    
+MPI = False  # Hardcoded for multifidelity
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
     # Load all yaml inputs and validate (also fills in defaults)
