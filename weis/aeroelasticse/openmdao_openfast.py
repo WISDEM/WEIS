@@ -15,7 +15,7 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywr
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
-from pCrunch import LoadsAnalysis
+from pCrunch import LoadsAnalysis, PowerProduction
 from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
@@ -1047,7 +1047,8 @@ class FASTLoadCases(ExplicitComponent):
             sum_stats, extreme_table, DELs = self.loads_analysis(FAST_Output)
 
         # Analysis
-        self.find_spanwise_forces(sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.find_spanwise_forces(sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.calculate_AEP(sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if run_fatigue:
             pass
@@ -1139,7 +1140,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return sum_stats, extreme_table, DELs
 
-    def find_spanwise_forces(self, sum_stats, extreme_table, outputs):
+    def find_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
         Find the spanwise forces on the blades.
 
@@ -1240,6 +1241,59 @@ class FASTLoadCases(ExplicitComponent):
         outputs['mean_aoa'] = spline_aoa_mean(r)
 
     # TODO: 
+    def calculate_AEP(self, sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs):
+        """
+        Calculates annual energy production of the relevant DLCs in `case_list`.
+
+        Parameters
+        ----------
+        sum_stats : pd.DataFrame
+        case_list : list?
+            TODO:
+        """
+        ## Get AEP and power curve
+        if self.FASTpref['dlc_settings']['run_power_curve']:
+
+            # TODO: Which DLCs for finding AEP?
+            pwrcurv_stats = sum_stats.loc[sum_stats.index.str.contains("1.1")]
+
+            # Get wind speeds
+            if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
+                U = []
+                for fname in [case[('InflowWind', 'FileName_BTS')] for case in case_list if case in pwrcurv_stats.index]:
+                    fname = os.path.split(fname)[-1]
+                    ntm      = fname.split('NTM')[-1].split('_')
+                    ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
+                    ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
+                    U.append(ntm_U)
+
+            else:
+                U = [float(case[('InflowWind', 'HWindSpeed')]) for case in case_list if case in pwrcurv_stats.index]
+
+            # AEP Calculation
+            if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
+                turbine_class = discrete_inputs['turbine_class']
+                pp               = Analysis.PowerProduction(turbine_class)
+                AEP = pp.AEP(pwrcurv_stats, U)
+
+                outputs['P_out']       = pwrcurv_stats.loc[:, ('GenPwr', 'mean')] * 1.e3
+                outputs['Cp_out']      = pwrcurv_stats.loc[:, ('RtAeroCp', 'mean')]
+                outputs['Omega_out']   = pwrcurv_stats.loc[:, ('RotSpeed', 'mean')]
+                outputs['pitch_out']   = pwrcurv_stats.loc[:, ('BldPitch1', 'mean')]
+                outputs['AEP']         = AEP
+
+            else:
+                outputs['Cp_out']      = pwrcurv_stats.loc[:, ('RtAeroCp', 'mean')]
+                outputs['AEP']         = 0.0
+                outputs['Omega_out']   = pwrcurv_stats.loc[:, ('RotSpeed', 'mean')]
+                outputs['pitch_out']   = pwrcurv_stats.loc[:, ('BldPitch1', 'mean')]
+                if self.fst_vt['Fst']['CompServo'] == 1:
+                    outputs['P_out']       = pwrcurv_stats.loc[:, ('GenPwr', 'mean')][0] * 1.e3
+                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
+
+            outputs['V_out']       = np.unique(U)
+
+    # TODO: 
     def run_fatigue(self):
 
         if self.FASTpref['dlc_settings']['run_blade_fatigue']:  
@@ -1256,73 +1310,6 @@ class FASTLoadCases(ExplicitComponent):
 
             if len(idx_fat) > 0:
                 outputs, discrete_outputs = self.BladeFatigue(FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs)
-    
-    # TODO: 
-    def run_aep(self): 
-        ## Get AEP and power curve
-        if self.FASTpref['dlc_settings']['run_power_curve']:
-
-            # determine which dlc will be used for the powercurve calculations, allows using dlc 1.1 if specific power curve calculations were not run
-            idx_pwrcrv    = [i for i, dlc in enumerate(dlc_list) if dlc==0.]
-            idx_pwrcrv_11 = [i for i, dlc in enumerate(dlc_list) if dlc==1.1]
-            if len(idx_pwrcrv) == 0 and len(idx_pwrcrv_11) > 0:
-                idx_pwrcrv = idx_pwrcrv_11
-
-            # sort out power curve stats
-            stats_pwrcrv = {}
-            for var in sum_stats.keys():
-                if var != 'meta':
-                    stats_pwrcrv[var] = {}
-                    for stat in sum_stats[var].keys():
-                        stats_pwrcrv[var][stat] = [x for i, x in enumerate(sum_stats[var][stat]) if i in idx_pwrcrv]
-
-            stats_pwrcrv['meta'] = sum_stats['meta']
-
-            # get wind speed 
-            if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
-                U = []
-                for fname in [case[('InflowWind', 'FileName_BTS')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
-                    fname = os.path.split(fname)[-1]
-                    ntm      = fname.split('NTM')[-1].split('_')
-                    ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
-                    ntm_Seed = float(".".join(ntm[2].strip("Seed").split('.')[:-1]))
-                    U.append(ntm_U)
-            else:
-                U = [float(case[('InflowWind', 'HWindSpeed')]) for i, case in enumerate(case_list) if i in idx_pwrcrv]
-
-            # calc AEP
-            
-            if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
-                pp               = Analysis.Power_Production()
-                pp.windspeeds    = U
-                pp.turbine_class = discrete_inputs['turbine_class']
-                pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
-                AEP, perf_data   = pp.AEP(stats_pwrcrv, U, pwr_curve_vars=pwr_curve_vars)
-                outputs['P_out']       = perf_data['GenPwr']['mean'] * 1.e3
-                outputs['Cp_out']      = perf_data['RtAeroCp']['mean']
-                outputs['Omega_out']   = perf_data['RotSpeed']['mean']
-                outputs['pitch_out']   = perf_data['BldPitch1']['mean']
-                outputs['AEP']         = AEP
-            else:
-                outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
-                outputs['AEP']         = 0.0
-                outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
-                outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
-                if self.fst_vt['Fst']['CompServo'] == 1:
-                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
-                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
-
-            
-
-            outputs['V_out']       = np.unique(U)
-
-            ## TODO: solve for V rated with the power curve data
-            ## Maybe fit a least squares linear line above input rated wind speed, least squares quadratic to below rate, find intersection
-            # outputs['rated_V']     = 
-            # outputs['rated_Omega'] = 
-            # outputs['rated_pitch'] = 
-            # outputs['rated_T']     = 
-            # outputs['rated_Q']     = 
 
     # TODO: 
     def get_DELs(self):
