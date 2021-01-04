@@ -4,4 +4,4 @@ __maintainer__ = ["Nikhar Abbas", "Jake Nunemaker"]
 __email__ = ["nikhar.abbas@nrel.gov", "jake.nunemaker@nrel.gov"]
 
 
-from .analysis import LoadsAnalysis
+from .analysis import LoadsAnalysis, PowerProduction

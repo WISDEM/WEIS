@@ -363,121 +363,105 @@ class LoadsAnalysis:
         return DEL
 
 
-# class Power_Production(object):
-#     '''
-#     Class to generate power production stastics
-#     '''
-#     def __init__(self, **kwargs):
-#         # Turbine parameters
-#         self.turbine_class = 2
+class PowerProduction:
+    """Class to generate power production estimates."""
 
-#         for k, w in kwargs.items():
-#             try:
-#                 setattr(self, k, w)
-#             except:
-#                 pass
+    def __init__(self, turbine_class, **kwargs):
+        """
+        Creates an instance of `PowerProduction`.
 
-#         super(Power_Production, self).__init__()
+        Parameters
+        ----------
+        turbine_class : int
+        """
 
-#     def prob_WindDist(self, windspeed, disttype='pdf'):
-#         '''
-#         Generates the probability of a windspeed given the cumulative distribution or probability
-#         density function of a Weibull distribution per IEC 61400.
+        self.turbine_class = turbine_class
 
-#         NOTE: This uses the range of wind speeds simulated over, so if the simulated wind speed range
-#         is not indicative of operation range, using this cdf to calculate AEP is invalid
+    def prob_WindDist(self, windspeed, disttype="pdf"):
+        """
+        Generates the probability of a windspeed given the cumulative
+        distribution or probability density function of a Weibull distribution
+        per IEC 61400.
 
-#         Parameters:
-#         -----------
-#         windspeed: float or list-like
-#             wind speed(s) to calculate probability of
-#         disttype: str, optional
-#             type of probability, currently supports CDF or PDF
-#         Outputs:
-#         ----------
-#         p_bin: list
-#             list containing probabilities per wind speed bin
-#         '''
-#         if self.turbine_class == 1:
-#             Vavg = 50 * 0.2
-#         elif self.turbine_class == 2:
-#             Vavg = 42.5 * 0.2
-#         elif self.turbine_class == 3:
-#             Vavg = 37.5 * 0.2
+        NOTE: This uses the range of wind speeds simulated over, so if the
+        simulated wind speed range is not indicative of operation range, using
+        this cdf to calculate AEP is invalid
 
-#         # Define parameters
-#         k = 2 # Weibull shape parameter
-#         c = (2 * Vavg)/np.sqrt(np.pi) # Weibull scale parameter
+        Parameters
+        ----------
+        windspeed : float or list-like
+            wind speed(s) to calculate probability of
+        disttype : str, optional
+            type of probability, currently supports CDF or PDF
 
-#         if disttype.lower() == 'cdf':
-#             # Calculate probability of wind speed based on WeibulCDF
-#             wind_prob = 1 - np.exp(-(windspeed/c)**k)
-#         elif disttype.lower() == 'pdf':
-#             # Calculate probability of wind speed based on WeibulPDF
-#             wind_prob = (k/c) * (windspeed/c)**(k-1) * np.exp(-(windspeed/c)**k)
-#         else:
-#             raise ValueError('The {} probability distribution type is invalid'.format(disttype))
+        Returns
+        -------
+        p_bin : list
+            list containing probabilities per wind speed bin
+        """
 
-#         return wind_prob
+        if self.turbine_class == 1:
+            Vavg = 50 * 0.2
 
-#     def AEP(self, stats, windspeeds):
-#         '''
-#         Get AEPs for simulation cases
+        elif self.turbine_class == 2:
+            Vavg = 42.5 * 0.2
 
-#         TODO: Print/Save this someplace besides the console
+        elif self.turbine_class == 3:
+            Vavg = 37.5 * 0.2
 
-#         Parameters:
-#         ----------
-#         stats: dict, list, pd.DataFrame
-#             Dict (single case), list(multiple cases), df(single or multiple cases) containing
-#             summary statistics.
-#         windspeeds: list-like
-#             List of wind speed values corresponding to each power output in the stats input
-#             for a single dataset
+        # Define parameters
+        k = 2  # Weibull shape parameter
+        c = (2 * Vavg) / np.sqrt(np.pi)  # Weibull scale parameter
 
-#         Returns:
-#         --------
-#         AEP: List
-#             Annual energy production corresponding to
-#         '''
+        if disttype.lower() == "cdf":
+            # Calculate probability of wind speed based on WeibulCDF
+            wind_prob = 1 - np.exp(-(windspeed / c) ** k)
 
-#         # Make sure stats is in pandas df
-#         if isinstance(stats, dict):
-#             stats_df = pdTools.dict2df(stats)
-#         elif isinstance(stats, list):
-#             stats_df = pdTools.dict2df(stats)
-#         elif isinstance(stats, pd.DataFrame):
-#             stats_df = stats
-#         else:
-#             raise TypeError('Input stats is must be a dictionary, list, or pd.DataFrame containing OpenFAST output statistics.')
+        elif disttype.lower() == "pdf":
+            # Calculate probability of wind speed based on WeibulPDF
+            wind_prob = (
+                (k / c)
+                * (windspeed / c) ** (k - 1)
+                * np.exp(-(windspeed / c) ** k)
+            )
 
-#         # Check windspeed length
-#         if len(windspeeds) == len(stats_df):
-#             ws = windspeeds
-#         elif int(len(windspeeds)/len(stats_df.columns.levels[0])) == len(stats_df):
-#             ws = windspeeds[0:len(stats_df)]
-#             print('WARNING: Assuming the input windspeed array is duplicated for each dataset.')
-#         else:
-#             raise ValueError(
-#                 'Length of windspeeds is not the correct length for the input statistics.')
+        else:
+            raise ValueError(
+                f"The {disttype} probability distribution type is invalid"
+            )
 
-#         # load power array
-#         if 'GenPwr' in stats_df.columns.levels[0]:
-#             pwr_array = stats_df.loc[:, ('GenPwr', 'mean')]
-#             pwr_array = pwr_array.to_frame()
-#         elif 'GenPwr' in stats_df.columns.levels[1]:
-#             pwr_array = stats_df.loc[:, (slice(None), 'GenPwr', 'mean')]
-#         else:
-#             raise ValueError("('GenPwr','Mean') does not exist in the input statistics.")
+        return wind_prob
 
-#         # group and average powers by wind speeds
-#         pwr_array['windspeeds'] = ws
-#         pwr_array = pwr_array.groupby('windspeeds').mean()
-#         # find set of wind speeds
-#         ws_set = list(set(ws))
-#         # wind probability
-#         wind_prob = self.prob_WindDist(ws_set, disttype='pdf')
-#         # Calculate AEP
-#         AEP = np.trapz(pwr_array.T *  wind_prob, ws_set) * 8760
+    def AEP(self, stats, windspeeds):
+        """
+        Calculate AEP for simulation cases
 
-#         return AEP
+        Parameters:
+        ----------
+        stats : pd.DataFrame
+            DataFrame containing summary statistics of each DLC.
+        windspeeds : list-like
+            List of wind speed values corresponding to each power output in the stats input
+            for a single dataset
+
+        Returns:
+        --------
+        AEP : list
+            List of annual energy productions.
+        """
+
+        assert len(stats) == len(windspeeds)
+
+        pwr = stats.loc[:, ("GenPwr", "mean")].to_frame()
+
+        # Group and average powers by wind speeds
+        pwr["windspeeds"] = windspeeds
+        pwr = pwr.groupby("windspeeds").mean()
+
+        # Wind probability
+        wind_prob = self.prob_WindDist(list(pwr.index), disttype="pdf")
+
+        # Calculate AEP
+        AEP = np.trapz(pwr.T * wind_prob, list(pwr.index)) * 8760
+
+        return AEP
