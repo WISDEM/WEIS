@@ -13,114 +13,137 @@ import numpy as np
 import pandas as pd
 import fatpack
 
-from pCrunch.io import OpenFASTAscii, OpenFASTBinary
+from pCrunch.io import OpenFASTAscii, OpenFASTBinary, OpenFASTOutput
 
 
 class LoadsAnalysis:
     """Implementation of `mlife` in python."""
 
-    def __init__(self, directory, **kwargs):
+    def __init__(self, outputs, **kwargs):
         """
         Creates an instance of `pyLife`.
 
         Parameters
         ----------
-        directory : path-like
-            Path to OpenFAST output files.
-        extensions : list
-            List of extensions to include from `directory`.
-            Not used if `files` is passed.
-            Default: ["*.out", "*.outb"]
-        operating_files : list (optional)
-            Operating files to read.
-            Default: []
-        idling_files : list (optional)
-            Idling files to read.
-            Default: []
-        discrete_files : list (optional)
-            Discrete files to read.
-            Default: []
-        aggregate_statistics : bool (optional)
-            Flag for calculating aggregate statistics.
-            Default: True
-        calculated_channels : list (optional)
-            Flags for additional calculated channels.
-            Default: []
+        outputs : list
+            List of OpenFAST output filepaths or dicts of OpenFAST outputs.
+        directory : str (optional)
+            If directory is passed, list of files will be treated as relative
+            and appended to the directory.
         fatigue_channels : dict (optional)
             Dictionary with format:
             'channel': 'fatigue slope'
+        magnitude_channels : dict (optional)
+            Additional channels as vector magnitude of other channels.
+            Format: 'new-chan': ['chan1', 'chan2', 'chan3']
+        trim_data : tuple
+            Trim processed outputs to desired times.
+            Format: (min, max)
         """
 
-        self.directory = directory
+        self.outputs = outputs
         self.parse_settings(**kwargs)
-
-    @staticmethod
-    def valid_extension(fp, extensions):
-        return any([fnmatch(fp, ext) for ext in extensions])
 
     def parse_settings(self, **kwargs):
         """Parses settings from input kwargs."""
 
-        self._files = {
-            "operating": kwargs.get("operating_files", []),
-            "idle": kwargs.get("idling_files", []),
-            "discrete": kwargs.get("discrete_files", []),
-        }
-
-        self._cc = kwargs.get("calculated_channels", [])
+        self._directory = kwargs.get("directory", None)
+        self._ec = kwargs.get("extreme_channels", [])
+        self._mc = kwargs.get("magnitude_channels", {})
         self._fc = kwargs.get("fatigue_channels", {})
+        self._td = kwargs.get("trim_data", ())
 
-    def process_files(self, cores=1, **kwargs):
+    def process_outputs(self, cores=1, **kwargs):
         """
-        Processes all files for summary statistics, aggregate statistics and
-        configured damage equivalent loads.
+        Processes all outputs for summary statistics and configured damage
+        equivalent loads.
         """
 
         if cores > 1:
-            stats, dels = self._process_parallel(cores, **kwargs)
+            stats, extremes, dels = self._process_parallel(cores, **kwargs)
 
         else:
-            stats, dels = self._process_serial(**kwargs)
+            stats, extremes, dels = self._process_serial(**kwargs)
 
-        self.post_process(stats, dels, **kwargs)
+        self.post_process(stats, extremes, dels, **kwargs)
 
     def _process_serial(self, **kwargs):
-        """"""
+        """Process outputs in serieal in serial."""
 
         summary_stats = {}
+        extremes = {}
         DELs = {}
 
-        for i, f in enumerate(self.files):
-            filename, stats, dels = self._process_file(f, **kwargs)
+        for output in self.outputs:
+            filename, stats, extrs, dels = self._process_output(
+                output, **kwargs
+            )
             summary_stats[filename] = stats
+            extremes[filename] = extrs
             DELs[filename] = dels
 
-        return summary_stats, DELs
+        return summary_stats, extremes, DELs
 
     def _process_parallel(self, cores, **kwargs):
-        """"""
+        """
+        Process outputs in parallel.
+
+        Parameters
+        ----------
+        cores : int
+        """
 
         summary_stats = {}
+        extremes = {}
         DELs = {}
 
         pool = mp.Pool(cores)
-        returned = pool.map(partial(self._process_file, **kwargs), self.files)
+        returned = pool.map(
+            partial(self._process_output, **kwargs), self.outputs
+        )
         pool.close()
         pool.join()
 
-        for filename, stats, dels in returned:
+        for filename, stats, extrs, dels in returned:
             summary_stats[filename] = stats
+            extremes[filename] = extrs
             DELs[filename] = dels
 
-        return summary_stats, DELs
+        return summary_stats, extremes, DELs
 
-    def _process_file(self, file, **kwargs):
-        """"""
+    def _process_output(self, f, **kwargs):
+        """
+        Process OpenFAST output `f`.
 
-        output = self.read_file(file)
+        Parameters
+        ----------
+        f : str | tuple
+            Path to output or direct output in dict format.
+        """
+
+        if isinstance(f, str):
+            if self._directory:
+                fp = os.path.join(self._directory, f)
+
+            else:
+                fp = f
+
+            output = self.read_file(fp)
+
+        else:
+            data, channels, dlc = f
+            output = OpenFASTOutput(
+                data, channels, dlc, magnitude_channels=self._mc
+            )
+
+        if self._td:
+            output.trim_data(*self._td)
+
         stats = self.get_summary_stats(output, **kwargs)
+        extremes = output.extremes(self._ec)
         dels = self.get_DELs(output, **kwargs)
-        return output.filename, stats, dels
+
+        return output.filename, stats, extremes, dels
 
     def get_summary_stats(self, output, **kwargs):
         """
@@ -147,13 +170,35 @@ class LoadsAnalysis:
 
         return fstats
 
-    def post_process(self, stats, dels, **kwargs):
+    def get_extreme_events(self, output, channels, **kwargs):
+        """
+        Returns extreme events of `output`.
+
+        Parameters
+        ----------
+        output : OpenFASTOutput
+        channels : list
+        """
+
+        return output.extremes(channels)
+
+    def post_process(self, stats, extremes, dels, **kwargs):
         """Post processes internal data to produce DataFrame outputs."""
 
         # Summary statistics
         ss = pd.DataFrame.from_dict(stats, orient="index").stack().to_frame()
         ss = pd.DataFrame(ss[0].values.tolist(), index=ss.index)
         self._summary_stats = ss.unstack().swaplevel(axis=1)
+
+        # Extreme events
+        extreme_table = {}
+        for _, d in extremes.items():
+            for channel, sub in d.items():
+                if channel not in extreme_table.keys():
+                    extreme_table[channel] = []
+
+                extreme_table[channel].append(sub)
+        self._extremes = extreme_table
 
         # Damage equivalent loads
         dels = pd.DataFrame(dels).T
@@ -170,20 +215,25 @@ class LoadsAnalysis:
             Filename that is appended to `self.directory`
         """
 
-        fp = os.path.join(self.directory, f)
+        if self._directory:
+            fp = os.path.join(self._directory, f)
+
+        else:
+            fp = f
+
         try:
-            output = OpenFASTAscii(fp)
+            output = OpenFASTAscii(fp, magnitude_channels=self._mc)
             output.read()
 
         except UnicodeDecodeError:
-            output = OpenFASTBinary(fp)
+            output = OpenFASTBinary(fp, magnitude_channels=self._mc)
             output.read()
 
         return output
 
     def get_load_rankings(self, ranking_vars, ranking_stats, **kwargs):
         """
-        Returns load rankings across all files in `self.files`.
+        Returns load rankings across all outputs in `self.outputs`.
 
         Parameters
         ----------
@@ -202,7 +252,7 @@ class LoadsAnalysis:
             if not isinstance(var, list):
                 var = [var]
 
-            col = pd.MultiIndex.from_product([self.files, var])
+            col = pd.MultiIndex.from_product([self.outputs, var])
             if stat in ["max", "abs"]:
                 res = (
                     *summary_stats.loc[col][stat].idxmax(),
@@ -235,40 +285,29 @@ class LoadsAnalysis:
         return pd.DataFrame(out, columns=["file", "channel", "stat", "val"])
 
     @property
-    def operating_files(self):
-        return self._files["operating"]
-
-    @property
-    def idle_files(self):
-        return self._files["idle"]
-
-    @property
-    def discrete_files(self):
-        return self._files["discrete"]
-
-    @property
-    def files(self):
-        return [*self.operating_files, *self.idle_files, *self.discrete_files]
-
-    @property
-    def filepaths(self):
-        return [os.path.join(self.directory, fn) for fn in self._files]
-
-    @property
     def summary_stats(self):
-        """Returns summary statistics for all files in `self.files`."""
+        """Returns summary statistics for all outputs in `self.outputs`."""
 
         if getattr(self, "_summary_stats", None) is None:
-            raise ValueError("Files have not been processed.")
+            raise ValueError("Outputs have not been processed.")
 
         return self._summary_stats
+
+    @property
+    def extreme_events(self):
+        """Returns extreme events for all files and channels in `self._ec`."""
+
+        if getattr(self, "_extremes", None) is None:
+            raise ValueError("Outputs have not been processed.")
+
+        return self._extremes
 
     @property
     def DELs(self):
         """Returns damage equivalent loads for all channels in `self._fc`"""
 
         if getattr(self, "_dels", None) is None:
-            raise ValueError("Files have not been processed.")
+            raise ValueError("Outputs have not been processed.")
 
         return self._dels
 
@@ -292,7 +331,7 @@ class LoadsAnalysis:
 
             except IndexError as e:
                 print(f"Channel '{chan}' not found for DEL calculation.")
-                DELS[chan] = np.NaN
+                DELs[chan] = np.NaN
 
         return DELs
 

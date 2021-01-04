@@ -37,10 +37,6 @@ class OpenFASTBase:
         return self.description
 
     @property
-    def filename(self):
-        return self._dlc
-
-    @property
     def description(self):
         return getattr(
             self, "_desc", f"Unread OpenFAST output at '{self.filepath}'"
@@ -75,17 +71,29 @@ class OpenFASTBase:
     def data(self, data):
         self._data = data
 
-    def append_channel_magnitudes(self, channels):
+    @dataproperty
+    def time(self):
+        return self["Time"]
+
+    @time.setter
+    def time(self, time):
+        if "Time" in self.channels:
+            raise ValueError(f"'Time' channel already exists in output data.")
+
+        self.data = np.append(time, self.data, axis=1)
+        self.channels = np.append("Time", self.channels)
+
+    def append_magnitude_channels(self):
         """
         Append the vector magnitude of `channels` to the dataset.
 
         Parameters
         ----------
-        channels : dict
+        self._magnitude_channels : dict
             Format: 'new-chan' ['chan1', 'chan2', 'chan3'],
         """
 
-        for new_chan, chans in channels.items():
+        for new_chan, chans in self._magnitude_channels.items():
 
             if new_chan in self.channels:
                 print(f"Channel '{new_chan}' already exists.")
@@ -108,6 +116,23 @@ class OpenFASTBase:
                 else f"{self.channels[k]} [{self.units[k]}]"
                 for k in range(self.num_channels)
             ]
+
+    def extremes(self, channels):
+        """"""
+
+        sorter = np.argsort(self.channels)
+        exists = [c for c in channels if c in self.channels]
+        idx = sorter[np.searchsorted(self.channels, exists, sorter=sorter)]
+
+        extremes = {}
+        for chan, i in zip(exists, idx):
+            idx_max = self.idxmaxs[i]
+            extremes[chan] = {
+                "time": self.time[idx_max],
+                **dict(zip(exists, self.data[idx_max, idx])),
+            }
+
+        return extremes
 
     @dataproperty
     def df(self):
@@ -240,6 +265,12 @@ class OpenFASTOutput(OpenFASTBase):
             self.channels = channels
 
         self._dlc = dlc
+        self._magnitude_channels = kwargs.get("magnitude_channels", {})
+        self.append_magnitude_channels()
+
+    @property
+    def filename(self):
+        return self._dlc
 
     @classmethod
     def from_dict(cls, data, name, **kwargs):
@@ -265,6 +296,7 @@ class OpenFASTBinary(OpenFASTBase):
         self.filepath = filepath
         self._chan_chars = kwargs.get("chan_char_length", 10)
         self._unit_chars = kwargs.get("unit_char_length", 10)
+        self._magnitude_channels = kwargs.get("magnitude_channels", {})
 
     @property
     def filename(self):
@@ -276,30 +308,51 @@ class OpenFASTBinary(OpenFASTBase):
         with open(self.filepath, "rb") as f:
             self.fmt = np.fromfile(f, np.int16, 1)[0]
 
+            if self.fmt == 4:
+                self._chan_chars = np.fromfile(f, np.int16, 1)[0]
+                self._unit_chars = self._chan_chars
+
             num_channels = np.fromfile(f, np.int32, 1)[0]
             num_timesteps = np.fromfile(f, np.int32, 1)[0]
             num_points = num_channels * num_timesteps
             time_info = np.fromfile(f, np.float64, 2)
-            self.slopes = np.fromfile(f, np.float32, num_channels)
-            self.offset = np.fromfile(f, np.float32, num_channels)
+
+            if self.fmt == 3:
+                self.slopes = np.ones(num_channels)
+                self.offset = np.zeros(num_channels)
+
+            else:
+                self.slopes = np.fromfile(f, np.float32, num_channels)
+                self.offset = np.fromfile(f, np.float32, num_channels)
 
             length = np.fromfile(f, np.int32, 1)[0]
             chars = np.fromfile(f, np.uint8, length)
             self._desc = "".join(map(chr, chars)).strip()
 
             self.build_headers(f, num_channels)
-            self.build_time(f, time_info, num_timesteps)
+            time = self.build_time(f, time_info, num_timesteps)
 
-            raw = np.fromfile(f, np.int16, count=num_points).reshape(
-                num_timesteps, num_channels
-            )
-            self.data = np.concatenate(
-                [
-                    self.time.reshape(num_timesteps, 1),
-                    (raw - self.offset) / self.slopes,
-                ],
-                1,
-            )
+            if self.fmt == 3:
+                raw = np.fromfile(f, np.float64, count=num_points).reshape(
+                    num_timesteps, num_channels
+                )
+                self.data = np.concatenate(
+                    [time.reshape(num_timesteps, 1), raw], 1
+                )
+
+            else:
+                raw = np.fromfile(f, np.int16, count=num_points).reshape(
+                    num_timesteps, num_channels
+                )
+                self.data = np.concatenate(
+                    [
+                        time.reshape(num_timesteps, 1),
+                        (raw - self.offset) / self.slopes,
+                    ],
+                    1,
+                )
+
+        self.append_magnitude_channels()
 
     def build_headers(self, f, num_channels):
         """
@@ -344,11 +397,13 @@ class OpenFASTBinary(OpenFASTBase):
         if self.fmt == 1:
             scale, offset = info
             data = np.fromfile(f, np.int32, length)
-            self.time = (data - offset) / scale
+            time = (data - offset) / scale
 
         else:
             t1, incr = info
-            self.time = t1 + incr * np.arange(length)
+            time = t1 + incr * np.arange(length)
+
+        return time
 
 
 class OpenFASTAscii(OpenFASTBase):
@@ -369,6 +424,7 @@ class OpenFASTAscii(OpenFASTBase):
         """
 
         self.filepath = filepath
+        self._magnitude_channels = kwargs.get("magnitude_channels", {})
 
     @property
     def filename(self):
@@ -387,6 +443,8 @@ class OpenFASTAscii(OpenFASTBase):
             self.data = np.fromfile(f, float, sep="\t").reshape(
                 -1, len(self.channels)
             )
+
+        self.append_magnitude_channels()
 
     def parse_header(self, f):
         """Reads the header data for file."""
