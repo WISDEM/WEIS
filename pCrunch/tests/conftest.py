@@ -58,3 +58,9 @@ def Binary():
 def Output():
 
     pass
+
+
+@pytest.fixture()
+def magnitude_channels():
+
+    return {"Wind": ["WindVxi", "WindVyi", "WindVzi"]}
