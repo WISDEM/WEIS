@@ -96,7 +96,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
-        os.mkdir(folder_output)
+        try:
+            os.mkdir(folder_output)
+        except FileExistsError:  # Need this for the quasi-hacky parallelization used in multifidelity
+            pass
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         if MPI:
