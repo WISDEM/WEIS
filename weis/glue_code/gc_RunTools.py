@@ -4,6 +4,8 @@ import openmdao.api as om
 import numpy as np
 from wisdem.commonse.mpi_tools import MPI
 
+MPI = False  # Hardcoded for multifidelity
+
 class Outputs_2_Screen(om.ExplicitComponent):
     # Class to print outputs on screen
     def initialize(self):
