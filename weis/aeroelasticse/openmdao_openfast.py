@@ -1041,17 +1041,44 @@ class FASTLoadCases(ExplicitComponent):
             return [], [], []
 
     def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
-        
+
+        # Initialize
+        if self.FASTpref['dlc_settings']['run_IEC']:
+            sum_stats, extreme_table, DELs = self.loads_analysis(FAST_Output)
+
+        # Analysis
+        self.find_spanwise_forces(sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+
+        if run_fatigue:
+            pass
+
+    def loads_analysis(self, FAST_Output):
+        """
+        Perform loads analysis on the turbine using pCrunch.
+
+        Parameters
+        ----------
+        FAST_Output : list
+            List of OpenFAST outputs, channels and dlc.
+            Format: [
+                (np.array(t, chan), np.array(), str),
+            ]
+
+        Returns
+        -------
+        pd.DataFrame
+            Summary statistics for all outputs.
+        dict
+            Extreme events for all outputs.
+        pd.DataFrame
+            Damage equivalent loads.
+        """
+
         # Setup
         tmax = self.fst_vt['Fst']['TMax']
         t0 = np.max([0., tmax - 600.])
-        if self.FASTpref['dlc_settings']['run_IEC']:
-            if (tmax - t0) > 60.:
-                pass
 
-            else:
-                print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
-
+        # TODO: Elevate the following definitions to WEIS configuration options
         DEL_info = {
             'RootMyb1': 10,
             'RootMyb2': 10,
@@ -1066,7 +1093,7 @@ class FASTLoadCases(ExplicitComponent):
             'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
             'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
             'RootMc2': ["RootMxc2", "RootMyc2", "RootMzc2"],
-            'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"]}
+            'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"],
             'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
             'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
             'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3']
@@ -1098,111 +1125,124 @@ class FASTLoadCases(ExplicitComponent):
         # Initialize
         loads_analysis = LoadsAnalysis(
             FAST_Output,
-            magnitude_channels=magnitude_channels       
+            magnitude_channels=magnitude_channels,  
             fatigue_channels=DEL_info,
-            trim_data=(t0, tmax)
+            trim_data=(t0, tmax),
             extreme_channels=channel_extremes
         )
 
         # Process
         loads_analysis.process_outputs()  # TODO: Cores?
-        sum_stats = analysis.summary_stats
-        extreme_table = analysis.extreme_events
+        sum_stats = loads_analysis.summary_stats
+        extreme_table = loads_analysis.extreme_events
+        DELs = loads_analysis.DELs
 
-        # Analysis
-        if self.FASTpref['dlc_settings']['run_IEC']:
+        return sum_stats, extreme_table, DELs
 
-            # Determine blade with the maximum deflection magnitude
-            if self.n_blades == 2:
-                defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max'])]
-            else:
-                defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max']), max(sum_stats['TipDxc3']['max'])]
+    def find_spanwise_forces(self, sum_stats, extreme_table, outputs):
+        """
+        Find the spanwise forces on the blades.
 
-            if np.argmax(defl_mag) == 0:
-                blade_chans_Fx = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
-                blade_chans_Fy = ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
-                tip_max_chan   = "TipDxc1"
-                bld_pitch_chan = "BldPitch1"
+        Parameters
+        ----------
+        sum_stats : pd.DataFrame
+        extreme_table : dict
+        """
+        
+        # Determine blade with the maximum deflection magnitude
+        if self.n_blades == 2:
+            defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max'])]
+        else:
+            defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max']), max(sum_stats['TipDxc3']['max'])]
 
-            if np.argmax(defl_mag) == 1:
-                blade_chans_Fx = ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx"]
-                blade_chans_Fy = ["B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
-                tip_max_chan   = "TipDxc2"
-                bld_pitch_chan = "BldPitch2"
+        if np.argmax(defl_mag) == 0:
+            blade_chans_Fx = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
+            blade_chans_Fy = ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
+            tip_max_chan   = "TipDxc1"
+            bld_pitch_chan = "BldPitch1"
 
-            if np.argmax(defl_mag) == 2:            
-                blade_chans_Fx = ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx"]
-                blade_chans_Fy = ["B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
-                tip_max_chan   = "TipDxc3"
-                bld_pitch_chan = "BldPitch3"
-                
-            # Return spanwise forces at instance of largest deflection
-            Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
-            Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]
-            spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
-            spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
+        if np.argmax(defl_mag) == 1:
+            blade_chans_Fx = ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx"]
+            blade_chans_Fy = ["B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
+            tip_max_chan   = "TipDxc2"
+            bld_pitch_chan = "BldPitch2"
 
-            r = inputs['r']-inputs['Rhub']
-            Fx_out = spline_Fx(r).flatten()
-            Fy_out = spline_Fy(r).flatten()
-            Fz_out = np.zeros_like(Fx_out)
+        if np.argmax(defl_mag) == 2:            
+            blade_chans_Fx = ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx"]
+            blade_chans_Fy = ["B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
+            tip_max_chan   = "TipDxc3"
+            bld_pitch_chan = "BldPitch3"
+            
+        # Return spanwise forces at instance of largest deflection
+        Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
+        Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]
+        spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
+        spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
 
-            outputs['loads_r']       = r
-            outputs['loads_Px']      = Fx_out
-            outputs['loads_Py']      = Fy_out*-1.
-            outputs['loads_Pz']      = Fz_out
-            outputs['loads_Omega']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']
-            outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']
-            outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']
+        r = inputs['r']-inputs['Rhub']
+        Fx_out = spline_Fx(r).flatten()
+        Fy_out = spline_Fy(r).flatten()
+        Fz_out = np.zeros_like(Fx_out)
 
-            # Determine maximum root moment
-            if self.n_blades == 2:
-                blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max'])])
-                blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max'])])
-            else:
-                blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max']), max(sum_stats['RootMyb3']['max'])])
-                blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max']), max(sum_stats['RootMyc3']['max'])])
-            outputs['max_RootMyb'] = blade_root_flap_moment
-            outputs['max_RootMyc'] = blade_root_oop_moment
+        outputs['loads_r']       = r
+        outputs['loads_Px']      = Fx_out
+        outputs['loads_Py']      = Fy_out*-1.
+        outputs['loads_Pz']      = Fz_out
+        outputs['loads_Omega']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']
+        outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']
+        outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']
 
-            ## Get hub momements and forces in the non-rotating frame
-            outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
-                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys'],
-                                        extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']])*1.e3
-            outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
-                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
-                                        extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
+        # Determine maximum root moment
+        if self.n_blades == 2:
+            blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max'])])
+            blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max'])])
+        else:
+            blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max']), max(sum_stats['RootMyb3']['max'])])
+            blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max']), max(sum_stats['RootMyc3']['max'])])
+        outputs['max_RootMyb'] = blade_root_flap_moment
+        outputs['max_RootMyc'] = blade_root_oop_moment
 
-            ## Post process aerodynamic data
-            # Angles of attack - max, std, mean
-            blade1_chans_aoa = ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha"]
-            blade2_chans_aoa = ["B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha", "B2N9Alpha"]
-            aoa_max_B1  = [np.max(sum_stats[var]['max'])    for var in blade1_chans_aoa]
-            aoa_mean_B1 = [np.mean(sum_stats[var]['mean'])  for var in blade1_chans_aoa]
-            aoa_std_B1  = [np.mean(sum_stats[var]['std'])   for var in blade1_chans_aoa]
-            aoa_max_B2  = [np.max(sum_stats[var]['max'])    for var in blade2_chans_aoa]
-            aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
-            aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
-            if self.n_blades == 2:
-                spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
-            elif self.n_blades == 3:
-                blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
-                aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
-                aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
-                aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
-                spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
-                spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
-                spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
-            else:
-                raise Exception('The calculations only support 2 or 3 bladed rotors')
-            outputs['max_aoa']  = spline_aoa_max(r)
-            outputs['std_aoa']  = spline_aoa_std(r)
-            outputs['mean_aoa'] = spline_aoa_mean(r)
+        ## Get hub momements and forces in the non-rotating frame
+        outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
+                                    extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys'],
+                                    extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']])*1.e3
+        outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
+                                    extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
+                                    extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
 
-        if self.FASTpref['dlc_settings']['run_blade_fatigue']:
+        ## Post process aerodynamic data
+        # Angles of attack - max, std, mean
+        blade1_chans_aoa = ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha"]
+        blade2_chans_aoa = ["B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha", "B2N9Alpha"]
+        aoa_max_B1  = [np.max(sum_stats[var]['max'])    for var in blade1_chans_aoa]
+        aoa_mean_B1 = [np.mean(sum_stats[var]['mean'])  for var in blade1_chans_aoa]
+        aoa_std_B1  = [np.mean(sum_stats[var]['std'])   for var in blade1_chans_aoa]
+        aoa_max_B2  = [np.max(sum_stats[var]['max'])    for var in blade2_chans_aoa]
+        aoa_mean_B2 = [np.mean(sum_stats[var]['mean'])  for var in blade2_chans_aoa]
+        aoa_std_B2  = [np.mean(sum_stats[var]['std'])   for var in blade2_chans_aoa]                
+        if self.n_blades == 2:
+            spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_std_B1, aoa_std_B2], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2], axis=0))
+        elif self.n_blades == 3:
+            blade3_chans_aoa    = ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
+            aoa_max_B3          = [np.max(sum_stats[var]['max'])    for var in blade3_chans_aoa]
+            aoa_mean_B3         = [np.mean(sum_stats[var]['mean'])  for var in blade3_chans_aoa]
+            aoa_std_B3          = [np.mean(sum_stats[var]['std'])   for var in blade3_chans_aoa]
+            spline_aoa_max      = PchipInterpolator(self.R_out_AD, np.max([aoa_max_B1, aoa_max_B2, aoa_max_B3], axis=0))
+            spline_aoa_std      = PchipInterpolator(self.R_out_AD, np.mean([aoa_max_B1, aoa_std_B2, aoa_std_B3], axis=0))
+            spline_aoa_mean     = PchipInterpolator(self.R_out_AD, np.mean([aoa_mean_B1, aoa_mean_B2, aoa_mean_B3], axis=0))
+        else:
+            raise Exception('The calculations only support 2 or 3 bladed rotors')
 
+        outputs['max_aoa']  = spline_aoa_max(r)
+        outputs['std_aoa']  = spline_aoa_std(r)
+        outputs['mean_aoa'] = spline_aoa_mean(r)
+
+    # TODO: 
+    def run_fatigue(self):
+
+        if self.FASTpref['dlc_settings']['run_blade_fatigue']:  
             # determine which dlc will be used for fatigue calculations, checks for dlc 1.2, then dlc 1.1
             idx_fat_12 = [i for i, dlc in enumerate(dlc_list) if dlc==1.2]
             idx_fat_11 = [i for i, dlc in enumerate(dlc_list) if dlc==1.1]
@@ -1216,8 +1256,9 @@ class FASTLoadCases(ExplicitComponent):
 
             if len(idx_fat) > 0:
                 outputs, discrete_outputs = self.BladeFatigue(FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs)
-
-
+    
+    # TODO: 
+    def run_aep(self): 
         ## Get AEP and power curve
         if self.FASTpref['dlc_settings']['run_power_curve']:
 
@@ -1283,8 +1324,8 @@ class FASTLoadCases(ExplicitComponent):
             # outputs['rated_T']     = 
             # outputs['rated_Q']     = 
 
-
-
+    # TODO: 
+    def get_DELs(self):
         # Get DELS from OpenFAST data
         if self.fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
