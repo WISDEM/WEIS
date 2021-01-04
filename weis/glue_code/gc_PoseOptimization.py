@@ -19,7 +19,7 @@ class PoseOptimization(object):
         if self.blade_opt['aero_shape']['chord']['flag']:    
             n_DV += self.blade_opt['aero_shape']['chord']['n_opt'] - 3            
         if self.blade_opt['aero_shape']['af_positions']['flag']:
-            n_DV += self.modeling['blade']['n_af_span'] - self.blade_opt['aero_shape']['af_positions']['af_start'] - 1
+            n_DV += self.modeling['RotorSE']['n_af_span'] - self.blade_opt['aero_shape']['af_positions']['af_start'] - 1
         if self.blade_opt['structure']['spar_cap_ss']['flag']:
             n_DV += self.blade_opt['structure']['spar_cap_ss']['n_opt'] - 2
         if self.blade_opt['structure']['spar_cap_ps']['flag'] and not self.blade_opt['structure']['spar_cap_ps']['equal_to_suction']:
@@ -33,9 +33,9 @@ class PoseOptimization(object):
         if self.opt['design_variables']['control']['servo']['flap_control']['flag']:
             n_DV += 2
         if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
-            n_DV += self.modeling['blade']['n_te_flaps']
+            n_DV += self.modeling['RotorSE']['n_te_flaps']
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
-            n_DV += self.modeling['blade']['n_te_flaps']
+            n_DV += self.modeling['RotorSE']['n_te_flaps']
         if self.tower_opt['outer_diameter']['flag']:
             n_DV += self.modeling['tower']['n_height']
         if self.tower_opt['layer_thickness']['flag']:
@@ -157,7 +157,7 @@ class PoseOptimization(object):
             wt_opt.model.add_design_var('blade.opt_var.chord_opt_gain', indices = indices, lower=chord_options['min_gain'], upper=chord_options['max_gain'])
 
         if self.blade_opt['aero_shape']['af_positions']['flag']:
-            n_af = self.modeling['blade']['n_af_span']
+            n_af = self.modeling['RotorSE']['n_af_span']
             indices  = range(self.blade_opt['aero_shape']['af_positions']['af_start'],n_af - 1)
             af_pos_init = wt_init['components']['blade']['outer_shape_bem']['airfoil_position']['grid']
             step_size   = self._get_step_size()
@@ -254,7 +254,7 @@ class PoseOptimization(object):
 
         if blade_constraints['tip_deflection']['flag']:
             if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=blade_constraints['tip_deflection']['ratio'])
+                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=1.0)
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
@@ -401,13 +401,14 @@ class PoseOptimization(object):
             if max(wt_opt['blade.opt_var.twist_opt_gain']) > 1. or min(wt_opt['blade.opt_var.twist_opt_gain']) < 0.:
                 print('Warning: the initial twist violates the upper or lower bounds of the twist design variables.')
                 
-        blade_constraints = self.opt['constraints']['blade']
+        blade_constr = self.opt['constraints']['blade']
         wt_opt['blade.opt_var.s_opt_chord']  = np.linspace(0., 1., self.blade_opt['aero_shape']['chord']['n_opt'])
         wt_opt['blade.ps.s_opt_spar_cap_ss'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ss']['n_opt'])
         wt_opt['blade.ps.s_opt_spar_cap_ps'] = np.linspace(0., 1., self.blade_opt['structure']['spar_cap_ps']['n_opt'])
-        wt_opt['rs.constr.max_strainU_spar'] = blade_constraints['strains_spar_cap_ss']['max']
-        wt_opt['rs.constr.max_strainL_spar'] = blade_constraints['strains_spar_cap_ps']['max']
-        wt_opt['stall_check.stall_margin'] = blade_constraints['stall']['margin'] * 180. / np.pi
+        wt_opt['rs.constr.max_strainU_spar'] = blade_constr['strains_spar_cap_ss']['max']
+        wt_opt['rs.constr.max_strainL_spar'] = blade_constr['strains_spar_cap_ps']['max']
+        wt_opt['stall_check.stall_margin'] = blade_constr['stall']['margin'] * 180. / np.pi
+        wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
         
         return wt_opt
 
