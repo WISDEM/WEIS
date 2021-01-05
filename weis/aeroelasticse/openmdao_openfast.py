@@ -1023,14 +1023,6 @@ class FASTLoadCases(ExplicitComponent):
                 case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
                 case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
 
-                # User defined simulation settings
-                if ("InflowWind","WindType") in case_inputs:
-                    print('WARNING: You have defined ("InflowWind","WindType"} in the openfast settings.'
-                            'This will overwrite the default powercurve settings')
-                if ("InflowWind","HWindSpeed") in case_inputs:
-                    print('WARNING: You have defined ("InflowWind","HWindSpeed"} in the openfast settings.'
-                            'This will overwrite the default powercurve settings')
-
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
 
             dlc_list = [0.]*len(case_name)
@@ -1077,12 +1069,9 @@ class FASTLoadCases(ExplicitComponent):
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
                 else:
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+                loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
             else:
                 print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
-                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
-            loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
-        else:
-            print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)

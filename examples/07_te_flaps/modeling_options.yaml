@@ -4,10 +4,9 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_cap_ss
         spar_cap_ps: Spar_cap_ps
+        regulation_reg_III: True
     TowerSE:
         flag: True
     DriveSE:
@@ -20,18 +19,10 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 1.
         DT: 0.01
-        CompElast: 1
-        CompInflow: 1
-        CompAero: 2
-        CompServo: 0
-        CompHydro: 0
-        CompSub: 0
-        CompMooring: 0
-        CompIce: 0
-    linearization:
-        Linearize: False
+        TMax: 720
+        TStart: 120
+        SttsTime: 100.
     ElastoDyn:
         flag: True
         FlapDOF1: True
@@ -52,43 +43,32 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : False
         PtfmYDOF : False
     ROSCO:
-        flag: True
+        SD_Mode: 0
         Flp_Mode: 2
-    
+
 openfast:
     analysis_settings:
         Analysis_Level:     2           # Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
-        update_hub_nacelle: False
-        update_tower:       False
-        generate_af_coords: True
-        debug_level:        2    # Flag to set the debug level, do not change
     file_management:
         FAST_namingOut:    BAR10         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/BAR10             # Path to folder with the OpenFAST output files
+        FAST_runDirectory: outputs/DAC             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True
         run_blade_fatigue: False
         IEC: # Currently supported: 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
-            - DLC:   1.1
-              U:     [15.]
-              Seeds: [1]
+            #- DLC:   1.1
+            #  U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            #  Seeds: [1, 2]
+            - DLC:   1.3
+              U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+              Seeds: [3, 4]
             # - DLC:   1.3
-            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   1.4
-            # - DLC:   1.5
-            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   5.1
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   6.1
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   6.3
-            #   Seeds: [11, 12, 13, 14, 15, 16]
+            #   U:     [13.]
+            #   Seeds: [3]
         Power_Curve:
             turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
-            U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
+            U:    [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True
 
 yaml:

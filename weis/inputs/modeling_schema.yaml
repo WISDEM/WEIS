@@ -2338,9 +2338,9 @@ properties:
                         description: Setpoint Smoother mode {0, no setpoint smoothing, 1, use setpoint smoothing}
                     WE_Mode:
                         type: integer
-                        enum: [0, 2]
+                        enum: [0, 1, 2]
                         default: 2
-                        description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 2 = Extended Kalman Filter}
+                        description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 1 = Immersion and Invariance Estimator, 2 = Extended Kalman Filter}
                     PS_Mode:
                         type: integer
                         enum: [0, 1]
@@ -2371,6 +2371,24 @@ properties:
         type: object
         default: {}
         properties:
+            analysis_settings:
+                type: object
+                default: {}
+                properties:
+                    Analysis_Level:
+                        type: integer
+                        default: 2
+                        enum: [1,2]
+                        description: Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+                    generate_af_coords: 
+                        type: boolean
+                        default: False
+                        description: Flag to write airfoil coordinates out or not
+                    debug_level:
+                        type: integer
+                        default: 2
+                        enum: [2]
+                        description: Flag to set the debug level, do not change
             file_management:
                 type: object
                 default: {}
