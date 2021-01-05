@@ -73,7 +73,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                     n_OF_runs += n_U*n_Seeds
 
             n_DV = max([n_DV, 1])
-            max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
+            # max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
+            max_parallel_OF_runs = max_cores - 1  # HARDCODED FOR MULTIFIDELITY
+            n_FD = 1  # HARDCODED FOR MULTIFIDELITY
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
 
             modeling_options['openfast']['dlc_settings']['n_OF_runs'] = n_OF_runs
@@ -195,6 +197,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # close signal to subprocessors
         subprocessor_stop(comm_map_down)
         sys.stdout.flush()
-
         
-    return wt_opt, modeling_options, opt_options
+    if color_i == 0:
+        return wt_opt, modeling_options, opt_options
+    else:
+        return {}, {}, {}
