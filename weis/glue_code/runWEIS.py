@@ -5,14 +5,15 @@ from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.gc_PoseOptimization  import PoseOptimization
 from weis.glue_code.glue_code         import WindPark
-from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
-if MPI:
-    from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
-    
+
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
+    from wisdem.commonse.mpi_tools        import MPI
+    if MPI:
+        from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+        
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
@@ -79,17 +80,19 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
 
             modeling_options['openfast']['dlc_settings']['n_OF_runs'] = n_OF_runs
+            
+            # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
+            n_FD = max([n_FD, 1])
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
+            rank    = MPI.COMM_WORLD.Get_rank()
+            color_i = color_map[rank]
+            comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
-            n_FD = min([max_cores, n_DV])
-            n_OF_runs_parallel = 1
-        
-        # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
-        n_FD = max([n_FD, 1])
-        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
-        rank    = MPI.COMM_WORLD.Get_rank()
-        color_i = color_map[rank]
-        comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+            color_i = 0
+            rank = 0
+            MPI = False
+
     else:
         color_i = 0
         rank = 0
@@ -109,7 +112,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
                 modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
-            wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+            wt_opt = om.Problem(model=om.Group(), comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
