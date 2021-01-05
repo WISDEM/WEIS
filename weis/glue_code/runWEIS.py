@@ -12,8 +12,6 @@ from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
     
-MPI = False  # Hardcoded for multifidelity
-
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
@@ -109,7 +107,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
                 modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
-            n_FD = 1  # Hardcoded for multifidelity studies
             wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:

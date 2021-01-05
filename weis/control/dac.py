@@ -11,8 +11,6 @@ import multiprocessing as mp
 from functools import partial
 from wisdem.commonse.mpi_tools import MPI
 
-MPI = False  # Hardcoded for multifidelity
-
 def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0, multi_run=False, MPI_run=False):
     #This function is used to create and run xfoil simulations for a given set of airfoil coordinates
 

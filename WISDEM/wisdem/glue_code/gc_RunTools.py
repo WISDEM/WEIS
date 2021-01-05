@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 
-MPI = False  # Hardcoded for multifidelity
-
 
 class Convergence_Trends_Opt(om.ExplicitComponent):
     """
