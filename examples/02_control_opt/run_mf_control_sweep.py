@@ -66,7 +66,7 @@ class MF_Turbine(object):
         
         lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = self.FAST_directory
-        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin3')
+        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
         lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
         self.FAST_level2_Directory        = lin_fast.FAST_linearDirectory
         lin_fast.debug_level              = 2
