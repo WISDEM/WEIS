@@ -263,7 +263,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TMax")] = {'vals':[self.TMax], 'group':0}
         case_inputs[("Fst","Linearize")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}
-        case_inputs[("Fst","TrimGain")] = {'vals':[4e-5], 'group':0}
+        case_inputs[("Fst","TrimGain")] = {'vals':[1e-4], 'group':0}
         case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
 
         case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}
@@ -287,7 +287,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Torque Control: these are turbine specific, update later based on ROSCO
         rosco_inputs = ROSCO_utilities.read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
 
-        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi * 0.9], 'group':0}  # convert to rpm and use 95% of rated
+        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi * 0.5], 'group':0}  # convert to rpm and use 95% of rated
         case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[rosco_inputs['VS_RtTq']], 'group':0}
         case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[rosco_inputs['VS_Rgn2K']/ (30 / np.pi)**2] , 'group':0}  # reduce so k\omega^2 < VS_RtTq
         case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
@@ -296,6 +296,10 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[('ElastoDyn','BlPitch1')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
         case_inputs[('ElastoDyn','BlPitch2')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
         case_inputs[('ElastoDyn','BlPitch3')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
+
+        # Set initial rotor speed to rated
+        case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi], 'group':0}  # convert to rpm and use 95% of rated
+
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
         case_inputs[("HydroDyn","ExctnMod")] = {'vals':[2], 'group':0}
@@ -339,13 +343,12 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         channels = {}
         for var in ["BldPitch1","BldPitch2","BldPitch3","IPDefl1","IPDefl2","IPDefl3","OoPDefl1","OoPDefl2","OoPDefl3", \
-            "NcIMURAxs","TipDxc1", "TipDyc1", "Spn2MLxb1", "Spn2MLxb2","Spn2MLxb3","Spn2MLyb1", "Spn2MLyb2","Spn2MLyb3" \
-                "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", \
-                  "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", \
+            "NcIMURAxs","NcIMURAys", \
+                   "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", \
                       "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", \
                           "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", \
                               "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza", \
-                                  "LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr" \
+                                  "LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", \
                                       "TwstDefl1","TwstDefl2","TwstDefl3"]:
             channels[var] = True
 
