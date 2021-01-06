@@ -19,6 +19,8 @@ from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
 from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
 from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 from weis.aeroelasticse.LinearFAST import LinearFAST
+from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
+
 
 # weis control modules
 import weis.control.LinearModel as lin_mod
@@ -60,11 +62,13 @@ class MF_Turbine(object):
         lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True)
 
         # fast info
-        weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+        lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
         
         lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = self.FAST_directory
-        lin_fast.FAST_linearDirectory     = os.path.join(weis_dir,'outputs','iea_semi_lin')
+        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin3')
+        lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
+        self.FAST_level2_Directory        = lin_fast.FAST_linearDirectory
         lin_fast.debug_level              = 2
         lin_fast.dev_branch               = True
         lin_fast.write_yaml               = True
@@ -81,15 +85,22 @@ class MF_Turbine(object):
         lin_fast.cores                      = self.n_cores
 
         # overwrite steady & linearizations
-        lin_fast.overwrite        = False
-
+        # lin_fast.overwrite        = True
+        
+        # run OpenFAST linearizations
         lin_fast.gen_linear_model()
 
-    def run_level2(self):
-        pass
+        self.LinearTurbine = lin_mod.LinearTurbineModel(mf_turb.FAST_level2_Directory,reduceStates=False)
+
+    def run_level2(self,controller,disturbance):
+        linCont             = lin_mod.LinearControlModel(controller)
+        self.level2_out     = []
+        for dist in disturbance:
+            l2_out, _, P_cl = self.LinearTurbine.solve(dist,Plot=False,open_loop=False,controller=linCont)
+            self.level2_out.append(l2_out)
 
 
-    def run_level3(self,wind_speeds=[16],omega=[],zeta=1,n_cores=1):
+    def run_level3(self,controller,wind_speeds=[16]):
         # Run FAST cases
         fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
         
@@ -186,50 +197,54 @@ class MF_Turbine(object):
         case_inputs[('ServoDyn', 'GenModel')] = {'vals': [1], 'group': 0}
 
         # Set control parameters
-        if omega:
-            weis_dir            = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            control_param_yaml  = os.path.join(weis_dir,'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW.yaml')
-            inps                = yaml.safe_load(open(control_param_yaml))
-            path_params         = inps['path_params']
-            turbine_params      = inps['turbine_params']
-            controller_params   = inps['controller_params']
+        turbine         = ROSCO_turbine.Turbine(turbine_params)
+        turbine.load_from_fast(mf_turb.FAST_InputFile,
+            mf_turb.FAST_directory, \
+                dev_branch=True)
 
-            # make default controller, turbine objects for ROSCO_toolbox
-            turbine             = ROSCO_turbine.Turbine(turbine_params)
-            turbine.load_from_fast( fastBatch.FAST_InputFile,fastBatch.FAST_directory, dev_branch=True)
+        discon_vt = ROSCO_utilities.DISCON_dict(turbine,controller)
+        for discon_input in discon_vt:
+            case_inputs[('DISCON_in',discon_input)] = {'vals': [discon_vt[discon_input]], 'group': 0}
 
-            controller          = ROSCO_controller.Controller(controller_params)
 
-            # tune default controller
-            controller.tune_controller(turbine)
+        # if omega:
+        #     weis_dir            = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        #     control_param_yaml  = os.path.join(weis_dir,'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW.yaml')
+        #     inps                = yaml.safe_load(open(control_param_yaml))
+        #     path_params         = inps['path_params']
+        #     turbine_params      = inps['turbine_params']
+        #     controller_params   = inps['controller_params']
 
-            # check if inputs are lists
-            if not isinstance(omega,list):
-                omega = [omega]
-            if not isinstance(zeta,list):
-                zeta = [zeta]
+        #     # make default controller, turbine objects for ROSCO_toolbox
+        #     turbine             = ROSCO_turbine.Turbine(turbine_params)
+        #     turbine.load_from_fast( fastBatch.FAST_InputFile,fastBatch.FAST_directory, dev_branch=True)
 
-            # Loop through and make PI gains
-            pc_kp = []
-            pc_ki = []
-            m_omega = []  # flattened (omega,zeta) pairs
-            m_zeta = []  # flattened (omega,zeta) pairs
-            for o in omega:
-                for z in zeta:
-                    controller.omega_pc = o
-                    controller.zeta_pc  = z
-                    controller.tune_controller(turbine)
-                    pc_kp.append(controller.pc_gain_schedule.Kp.tolist())
-                    pc_ki.append(controller.pc_gain_schedule.Ki.tolist())
-                    m_omega.append(o)
-                    m_zeta.append(z)
+        #     controller          = ROSCO_controller.Controller(controller_params)
 
-            # add control gains to case_list
-            case_inputs = {}
-            case_inputs[('DISCON_in','omega')]          = {'vals': m_omega, 'group': 2}
-            case_inputs[('DISCON_in','zeta')]          = {'vals': m_zeta, 'group': 2}
-            case_inputs[('DISCON_in', 'PC_GS_KP')] = {'vals': pc_kp, 'group': 2}
-            case_inputs[('DISCON_in', 'PC_GS_KI')] = {'vals': pc_ki, 'group': 2}
+        #     # tune default controller
+        #     controller.tune_controller(turbine)
+
+        #     # check if inputs are lists
+        #     if not isinstance(omega,list):
+        #         omega = [omega]
+        #     if not isinstance(zeta,list):
+        #         zeta = [zeta]
+
+        #     # Loop through and make PI gains
+        #     pc_kp = []
+        #     pc_ki = []
+        #     m_omega = []  # flattened (omega,zeta) pairs
+        #     m_zeta = []  # flattened (omega,zeta) pairs
+        #     for o in omega:
+        #         for z in zeta:
+        #             controller.omega_pc = o
+        #             controller.zeta_pc  = z
+        #             controller.tune_controller(turbine)
+        #             pc_kp.append(controller.pc_gain_schedule.Kp.tolist())
+        #             pc_ki.append(controller.pc_gain_schedule.Ki.tolist())
+        #             m_omega.append(o)
+        #             m_zeta.append(z)
+
 
 
         run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
@@ -264,110 +279,87 @@ class MF_Turbine(object):
         fastBatch.case_name_list    = case_name_list
         fastBatch.channels          = channels
         fastBatch.FAST_runDirectory = iec.run_dir 
+        fastBatch.post              = FAST_IO_timeseries
 
         if self.n_cores == 1:
-            fastBatch.run_serial()
+            out = fastBatch.run_serial()
         else:
-            fastBatch.run_multi(cores=n_cores)
+            out = fastBatch.run_multi(cores=self.n_cores)
 
-        return fastBatch
+        self.level3_batch   = fastBatch
+        self.level3_out     = out
 
 
 
 if __name__ == '__main__':
+    weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
 
     # 0. Set up Model, using default input files
     mf_turb = MF_Turbine()
-    mf_turb.n_cores = 8
+    mf_turb.n_cores = 4
 
-    # 1. Run linearization procedure
+    # 1. Run linearization procedure, post-process linearization results, Load system from OpenFAST .lin files
     wind_speeds = np.arange(12,20,2).tolist()
     mf_turb.gen_level2_model(wind_speeds,dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
 
+    # 2. Set up common controller
+    # Load controller from yaml file 
+    parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
+    inps = yaml.safe_load(open(parameter_filename))
+    path_params         = inps['path_params']
+    turbine_params      = inps['turbine_params']
+    controller_params   = inps['controller_params']
 
-    # 2. post-process linearization results
+    controller_params['omega_pc'] = 0.15
 
-    # Load system from OpenFAST .lin files
-    lin_file_dir = os.path.join(weis_dir,'outputs/iea_semi_lin')
-    linTurb = lin_mod.LinearTurbineModel(lin_file_dir,reduceStates=False)
+    turbine         = ROSCO_turbine.Turbine(turbine_params)
+    controller      = ROSCO_controller.Controller(controller_params)
+
+    turbine.load_from_fast(mf_turb.FAST_InputFile,
+        mf_turb.FAST_directory, \
+            dev_branch=True)
+
+    controller.tune_controller(turbine)
 
     # 3. Run turbulent level 3 case
-    fast_batch = mf_turb.run_level3()
+    mf_turb.run_level3(controller,wind_speeds=[12,14,16])
 
-    # load wind disturbance from output file
-    outfiles    = [os.path.join(mf_turb.FAST_runDirectory,case + '.outb') for case in mf_turb.case_name_list]
-    fast_out    = fast_io.load_fast_out(outfiles)
-
-    Non_OutList = fast_out[0].keys()
-    Non_OutData = fast_out[0]
-
-    for out in fast_out:
+    # 4. Extract disturbance from level3 sims (wind only for now)
+    dist = []
+    for out in mf_turb.level3_out:
         u_h         = out['RtVAvgxh']
         tt          = out['Time']
+        dist.append({'Time':tt, 'Wind': u_h})
     
-    if True:
-        fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)
-        fastRead.FAST_InputFile = fastBatch.FAST_InputFile   # FAST input file (ext=.fst)
-        fastRead.FAST_directory = fastBatch.FAST_directory  # Path to fst directory files
-        fastRead.execute()
-
-        # Load Controller from DISCON.IN
-        fp = ROSCO_utilities.FileProcessing()
-        f = fp.read_DISCON(fastRead.fst_vt['ServoDyn']['DLL_InFile'])
-        linCont = lin_mod.LinearControlModel([],fromDISCON_IN=True,DISCON_file=f)
-    else:
-
-        # Load controller from yaml file 
-        parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
-        inps = yaml.safe_load(open(parameter_filename))
-        path_params         = inps['path_params']
-        turbine_params      = inps['turbine_params']
-        controller_params   = inps['controller_params']
-
-        controller_params['omega_pc'] = 0.15
-
-        # Instantiate turbine, controller, and file processing classes
-        turbine         = ROSCO_turbine.Turbine(turbine_params)
-        controller      = ROSCO_controller.Controller(controller_params)
-
-        # Load turbine data from OpenFAST and rotor performance text file
-        turbine.load_from_fast(fastBatch.case_name_list[0]+'.fst', \
-            fastBatch.FAST_runDirectory, \
-                dev_branch=True)
-
-        # Tune controller 
-        controller.tune_controller(turbine)
-
-        controller.turbine = turbine
-
-        linCont = lin_mod.LinearControlModel(controller)
-        print('here')
-
-
-
-    Lin_OutList, Lin_OutData, P_cl = linTurb.solve(tt,u_h,Plot=False,open_loop=False,controller=linCont)
-
-
+    # 5. Run level 2 simulation
+    controller.turbine  = turbine  # add turbine data to controller because ROSCO_toolbox
+    mf_turb.run_level2(controller,dist)
+    
     # comparison plot
     if True:
         comp_channels = ['RtVAvgxh','GenSpeed','TwrBsMyt','PtfmPitch']
+        fig = [None] * len(mf_turb.level3_out)
         ax = [None] * len(comp_channels)
-        plt.figure(2)
+        
+        for iFig, (l2_out, l3_out) in enumerate(zip(mf_turb.level2_out,mf_turb.level3_out)):
+            fig[iFig] = plt.figure()
 
-        for iPlot in range(0,len(comp_channels)):
-            ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
-            try:
-                ax[iPlot].plot(tt,Non_OutData[comp_channels[iPlot]])
-            except:
-                print(comp_channels[iPlot] + ' is not in OpenFAST OutList')
+            for iPlot, chan in enumerate(comp_channels):
+                ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
+                # level 3 output
+                try:
+                    ax[iPlot].plot(l3_out['Time'],l3_out[chan])
+                except:
+                    print(chan + ' is not in OpenFAST OutList')
 
-            try:
-                ax[iPlot].plot(tt,Lin_OutData[comp_channels[iPlot]])
-            except:
-                print(comp_channels[iPlot] + ' is not in Linearization OutList')
-            ax[iPlot].set_ylabel(comp_channels[iPlot])
-            ax[iPlot].grid(True)
-            if not iPlot == (len(comp_channels) - 1):
-                ax[iPlot].set_xticklabels([])
+                # level 2 output
+                try:
+                    ax[iPlot].plot(l2_out['Time'],l2_out[chan])
+                except:
+                    print(chan + ' is not in Linearization OutList')
+                ax[iPlot].set_ylabel(chan)
+                ax[iPlot].grid(True)
+                if not iPlot == (len(comp_channels) - 1):
+                    ax[iPlot].set_xticklabels([])
 
         plt.show()
