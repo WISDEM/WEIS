@@ -1043,17 +1043,14 @@ class FASTLoadCases(ExplicitComponent):
     def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
 
         # Initialize
-        if self.FASTpref['dlc_settings']['run_IEC']:
-            sum_stats, extreme_table, DELs = self.loads_analysis(FAST_Output)
+        sum_stats, extreme_table, DELs = self.get_summary_data(FAST_Output)
 
         # Analysis
-        outputs, discrete_outputs = self.find_spanwise_forces(sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_spanwise_forces(sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         outputs, discrete_outputs = self.calculate_AEP(sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
-        if run_fatigue:
-            pass
 
-    def loads_analysis(self, FAST_Output):
+    def get_summary_data(self, FAST_Output):
         """
         Perform loads analysis on the turbine using pCrunch.
 
@@ -1140,7 +1137,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return sum_stats, extreme_table, DELs
 
-    def find_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
+    def get_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
         Find the spanwise forces on the blades.
 
@@ -1240,7 +1237,6 @@ class FASTLoadCases(ExplicitComponent):
         outputs['std_aoa']  = spline_aoa_std(r)
         outputs['mean_aoa'] = spline_aoa_mean(r)
 
-    # TODO: 
     def calculate_AEP(self, sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs):
         """
         Calculates annual energy production of the relevant DLCs in `case_list`.
@@ -1289,7 +1285,9 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out']   = pwrcurv_stats.loc[:, ('BldPitch1', 'mean')]
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['P_out']       = pwrcurv_stats.loc[:, ('GenPwr', 'mean')][0] * 1.e3
-                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
+
+                else:
+                    print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
 
             outputs['V_out']       = np.unique(U)
 
