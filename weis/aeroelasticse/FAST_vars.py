@@ -1077,6 +1077,7 @@ MoorDyn['NumSegs']       = []
 MoorDyn['NodeAnch']      = []
 MoorDyn['NodeFair']      = []
 MoorDyn['Flags_Outputs'] = []
+MoorDyn['CtrlChan'] = []
 # SOLVER OPTIONS
 MoorDyn['dtM']           = 0.
 MoorDyn['kbot']          = 0.

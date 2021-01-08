@@ -2205,6 +2205,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MoorDyn']['NodeAnch']      = []
         self.fst_vt['MoorDyn']['NodeFair']      = []
         self.fst_vt['MoorDyn']['Flags_Outputs'] = []
+        self.fst_vt['MoorDyn']['CtrlChan'] = []
         for i in range(self.fst_vt['MoorDyn']['NLines']):
             data_line = f.readline().strip().split()
             self.fst_vt['MoorDyn']['Line'].append(int(data_line[0]))
@@ -2214,6 +2215,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['MoorDyn']['NodeAnch'].append(int(data_line[4]))
             self.fst_vt['MoorDyn']['NodeFair'].append(int(data_line[5]))
             self.fst_vt['MoorDyn']['Flags_Outputs'].append(str(data_line[6]))
+            self.fst_vt['MoorDyn']['CtrlChan'].append(str(data_line[7]))
         f.readline()
         self.fst_vt['MoorDyn']['dtM']       = float_read(f.readline().split()[0])
         self.fst_vt['MoorDyn']['kbot']      = float_read(f.readline().split()[0])
