@@ -13,6 +13,7 @@ import os
 import weis.control.LinearModel as lin_mod
 import weis.aeroelasticse.LinearFAST as lin_fast
 from ROSCO_toolbox import utilities as ROSCO_utilities
+from ROSCO_toolbox.ofTools.fast_io import output_processing
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
 from pCrunch.Analysis import Loads_Analysis
@@ -52,7 +53,7 @@ if __name__ == '__main__':
     else:
         # load wind disturbance from output file
         fast_io     = ROSCO_utilities.FAST_IO()
-        fast_out    = fast_io.load_FAST_out('/Users/dzalkind/Tools/matlab-toolbox/Simulations/SaveData/072720_183300.out')
+        fast_out    = output_processing.load_fast_out('/Users/dzalkind/Tools/matlab-toolbox/Simulations/SaveData/072720_183300.out')
         u_h         = fast_out[0]['RtVAvgxh']
         tt          = fast_out[0]['Time']
 

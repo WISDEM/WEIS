@@ -9,6 +9,6 @@ def FAST_IO_timeseries(fname):
     except:
         print('WARNING: ROSCO_toolbox required for wisdem.aeroelasticse.FAST_post.FAST_IO_timeseries')
     
-    fast_io = output_processing()
-    fast_data = fast_io.load_fast_out(fname, verbose=True)[0]
+    fast_out = output_processing()
+    fast_data = fast_out.load_fast_out(fname, verbose=True)[0]
     return fast_data

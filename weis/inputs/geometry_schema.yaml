@@ -133,6 +133,7 @@ properties:
             - pitch
             - torque
         optional:
+            - dac
             - setpoint_smooth
             - shutdown     # might need to be required?
             - yaw

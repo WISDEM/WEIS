@@ -64,7 +64,7 @@ class Loads_Analysis(object):
 
         super(Loads_Analysis, self).__init__()
 
-    def full_loads_analysis(self, filenames, get_load_ranking=True, return_FastData=False):
+    def full_loads_analysis(self, filenames, get_load_ranking=True, names=[], return_FastData=False):
         '''
         Load openfast data - get statistics - get load ranking - return data
         NOTE: Can be called to run in parallel if get_load_ranking=False (see Processing.batch_processing)
@@ -75,6 +75,8 @@ class Loads_Analysis(object):
             List of filenames to load and analyse
         get_load_ranking: bool, optional
             Get the load ranking for all cases
+        names: list of strings, optional (for load_ranking)
+            names corresponding to each dataset
         return_FastData, bool
             Return a dictionary or list constaining OpenFAST output data
 
@@ -96,7 +98,7 @@ class Loads_Analysis(object):
 
         # Get load rankings
         if get_load_ranking:
-            load_rankings = self.load_ranking(sum_stats)
+            load_rankings = self.load_ranking(sum_stats, names=names)
 
 
         if return_FastData:
@@ -146,8 +148,8 @@ class Loads_Analysis(object):
                         sum_stats['meta']['name'] = []
                         sum_stats['meta']['filename'] = []
                     # save some meta data
-                    sum_stats['meta']['name'] = fd['meta']['name']
-                    sum_stats['meta']['filename'] = fd['meta']['filename']
+                    sum_stats['meta']['name'].append(fd['meta']['name'])
+                    sum_stats['meta']['filename'].append(fd['meta']['filename'])
 
                 elif channel != 'Time' and channel in channel_list+list(self.channels_magnitude.keys()):
                     # try:

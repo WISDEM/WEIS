@@ -16,7 +16,6 @@ from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
 from pCrunch import Analysis, pdTools, Processing
-from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
 if MPI:
@@ -1069,12 +1068,9 @@ class FASTLoadCases(ExplicitComponent):
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10)]
                 else:
                     loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
+                loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
             else:
                 print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
-                loads_analysis.DEL_info = [('RootMyb1', 10), ('RootMyb2', 10), ('RootMyb3', 10)]
-            loads_analysis.DEL_info += [('TwrBsMxt', 3), ('TwrBsMyt', 3), ('TwrBsMzt', 3)]
-        else:
-            print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
         # get summary stats
         sum_stats, extreme_table = loads_analysis.summary_stats(FAST_Output)
@@ -1091,8 +1087,6 @@ class FASTLoadCases(ExplicitComponent):
         stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
         Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
 
-        # Save output plots
-        fast_pl = rosco_utilities.FAST_Plots()
 
         figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
         with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
