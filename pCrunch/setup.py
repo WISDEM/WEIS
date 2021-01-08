@@ -22,35 +22,27 @@ import os
 import sys
 from shutil import rmtree
 
-from setuptools import find_packages, setup, Command
+from setuptools import Command, setup, find_packages
 
 # Package meta-data.
-NAME = 'pCrunch'
-DESCRIPTION = 'Some tools for batch analysis of OpenFAST runs'
-URL = 'https://github.com/NREL/pCrunch'
-EMAIL = 'nikhar.abbas@nrel.gov'
-AUTHOR = 'Nikhar Abbas'
-REQUIRES_PYTHON = '>=3.4'
-VERSION = '0.1.1'
+NAME = "pCrunch"
+DESCRIPTION = "Some tools for batch analysis of OpenFAST runs"
+URL = "https://github.com/NREL/pCrunch"
+EMAIL = "nikhar.abbas@nrel.gov"
+AUTHOR = "Nikhar Abbas"
+REQUIRES_PYTHON = ">=3.4"
+VERSION = "0.0.1"
 
-# These packages are required for all of the code to be executed. 
+# These packages are required for all of the code to be executed.
 # - Maybe you can get away with older versions...
-REQUIRED = [
-    'matplotlib',
-    'numpy',
-    'pytest',
-    'scipy',
-    'pyYAML',
-    'seaborn',
-    'fatpack'
-]
+REQUIRED = ["matplotlib", "numpy", "pytest", "scipy", "pyYAML", "seaborn"]
 
 # Read the docs, one day, so we'll throw it in here!
 EXTRAS = {
-    'docs': {
-        'readthedocs-sphinx-ext>=0.5.15',
-        'Sphinx>=2.0',
-        'sphinxcontrib-napoleon>=0.7'
+    "docs": {
+        "readthedocs-sphinx-ext>=0.5.15",
+        "Sphinx>=2.0",
+        "sphinxcontrib-napoleon>=0.7",
     }
 }
 
@@ -63,8 +55,8 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 # Import the README and use it as the long-description.
 try:
-    with io.open(os.path.join(here, 'README.md'), encoding='utf-8') as f:
-        long_description = '\n' + f.read()
+    with io.open(os.path.join(here, "README.md"), encoding="utf-8") as f:
+        long_description = "\n" + f.read()
 except FileNotFoundError:
     long_description = DESCRIPTION
 
@@ -72,22 +64,22 @@ except FileNotFoundError:
 about = {}
 if not VERSION:
     project_slug = NAME.lower().replace("-", "_").replace(" ", "_")
-    with open(os.path.join(here, project_slug, '__version__.py')) as f:
+    with open(os.path.join(here, project_slug, "__version__.py")) as f:
         exec(f.read(), about)
 else:
-    about['__version__'] = VERSION
+    about["__version__"] = VERSION
 
 
 class UploadCommand(Command):
     """Support setup.py upload."""
 
-    description = 'Build and publish the package.'
+    description = "Build and publish the package."
     user_options = []
 
     @staticmethod
     def status(s):
         """Prints things in bold."""
-        print('\033[1m{0}\033[0m'.format(s))
+        print("\033[1m{0}\033[0m".format(s))
 
     def initialize_options(self):
         pass
@@ -97,46 +89,50 @@ class UploadCommand(Command):
 
     def run(self):
         try:
-            self.status('Removing previous builds...')
-            rmtree(os.path.join(here, 'dist'))
+            self.status("Removing previous builds...")
+            rmtree(os.path.join(here, "dist"))
         except OSError:
             pass
 
-        self.status('Building Source and Wheel (universal) distribution...')
-        os.system('{0} setup.py sdist bdist_wheel --universal'.format(sys.executable))
+        self.status("Building Source and Wheel (universal) distribution...")
+        os.system(
+            "{0} setup.py sdist bdist_wheel --universal".format(sys.executable)
+        )
 
-        self.status('Uploading the package to PyPI via Twine...')
-        os.system('twine upload dist/*')
+        self.status("Uploading the package to PyPI via Twine...")
+        os.system("twine upload dist/*")
 
-        self.status('Pushing git tags...')
-        os.system('git tag v{0}'.format(about['__version__']))
-        os.system('git push --tags')
-        
+        self.status("Pushing git tags...")
+        os.system("git tag v{0}".format(about["__version__"]))
+        os.system("git push --tags")
+
         sys.exit()
 
 
 # Where the magic happens:
 setup(
     name=NAME,
-    version=about['__version__'],
+    version=about["__version__"],
     description=DESCRIPTION,
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     author=AUTHOR,
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    packages=find_packages(
+        exclude=["tests", "*.tests", "*.tests.*", "tests.*"]
+    ),
+    # TODO: JN: Include package data for tests.
     # If your package is a single module, use this instead of 'packages':
     # py_modules=['mypackage'],
-
     # entry_points={
     #     'console_scripts': ['mycli=mymodule:cli'],
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
     include_package_data=True,
-    license='Apache License, Version 2.0',
+    license="Apache License, Version 2.0",
     # classifiers=[
     #     # Trove classifiers
     #     # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
@@ -148,7 +144,5 @@ setup(
     #     'Programming Language :: Python :: Implementation :: PyPy'
     # ],
     # $ setup.py publish support.
-    cmdclass={
-        'upload': UploadCommand,
-    },
+    cmdclass={"upload": UploadCommand},
 )

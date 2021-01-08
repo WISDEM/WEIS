@@ -10,65 +10,58 @@ import time
 import os
 import pathlib
 # ROSCO toolbox modules 
-# from ROSCO_toolbox import utilities as ROSCO_utilites
-# from ofTools.fast_io
-# fast_io = ROSCO_utilites.FAST_IO()
-# fast_pl = ROSCO_utilites.FAST_Plots()
-# WEIS modules
-from weis.aeroelasticse.Util import FileTools
-from ROSCO_toolbox.ofTools.fast_io.output_processing import output_processing
+from ROSCO_toolbox import utilities as ROSCO_utilites
+fast_io = ROSCO_utilites.FAST_IO()
+fast_pl = ROSCO_utilites.FAST_Plots()
+# WISDEM modules
+from wisdem.aeroelasticse.Util import FileTools
 # Batch Analysis
 from pCrunch import pdTools
 from pCrunch import Processing, Analysis
 
-if __name__ == '__main__':
-    # Define input files paths
-    output_dir      = '/Users/dzalkind/Tools/WEIS-2/outputs/iea15mw/PC_sweep_play'
-    results_dir     = 'results'
-    save_results    = True
+
+# Define input files paths
+output_dir      = '/projects/ssc/nabbas/DLC_Analysis/5MW_OC3Spar/5MW_OC3Spar_rosco/'
+results_dir     = 'results'
+save_results    = True
 
 
-    # Load case matrix into dataframe
-    fname_case_matrix = os.path.join(output_dir,'case_matrix.yaml')
-    case_matrix = FileTools.load_yaml(fname_case_matrix, package=1)
-    cm = pd.DataFrame(case_matrix)
+# Load case matrix into dataframe
+fname_case_matrix = os.path.join(output_dir,'case_matrix.yaml')
+case_matrix = FileTools.load_yaml(fname_case_matrix, package=1)
+cm = pd.DataFrame(case_matrix)
 
-    # Find all outfiles
-    outfiles = []
-    for file in os.listdir(output_dir):
-        if file.endswith('.outb'):
-            outfiles.append(os.path.join(output_dir,file))
-        elif file.endswith('.out') and not file.endswith('.MD.out'):
-            outfiles.append(os.path.join(output_dir,file))
-
-
-    # Initialize processing classes
-    fp = Processing.FAST_Processing()
-    fa = Analysis.Loads_Analysis()
+# Find all outfiles
+outfiles = []
+for file in os.listdir(output_dir):
+    if file.endswith('.outb'):
+        outfiles.append(output_dir + file)
+    elif file.endswith('.out'):
+        outfiles.append(output_dir + file)
 
 
-    # Set some processing parameters
-    fp.OpenFAST_outfile_list = outfiles
-    fp.t0 = 0
-    fp.parallel_analysis = False
-    fp.results_dir = os.path.join(output_dir, 'stats')
-    fp.verbose=True
+# Initialize processing classes
+fp = Processing.FAST_Processing()
+fa = Analysis.Loads_Analysis()
 
-    if save_results:
-        fp.save_LoadRanking = True
-        fp.save_SummaryStats = True
 
-    # Load and save statistics and load rankings
-    stats, load_rankings = fp.batch_processing()
+# Set some processing parameters
+fp.OpenFAST_outfile_list = outfiles
+fp.t0 = 30
+fp.parallel_analysis = True
+fp.results_dir = os.path.join(output_dir, 'stats')
+fp.verbose=True
 
-    
-    
+if save_results:
+    fp.save_LoadRanking = True
+    fp.save_SummaryStats = True
 
-    # Get wind speeds for processed runs
-    windspeeds, seed, IECtype, cm_wind = Processing.get_windspeeds(cm, return_df=True)
-    stats_df = pdTools.dict2df(stats)
+# Load and save statistics and load rankings
+stats, load_rankings = fp.batch_processing()
 
-    print('here')
+# # Get wind speeds for processed runs
+# windspeeds, seed, IECtype, cm_wind = Processing.get_windspeeds(cm, return_df=True)
+# stats_df = pdTools.dict2df(stats)
 
 
 # # Get AEP
@@ -82,6 +75,13 @@ if __name__ == '__main__':
 # AEP = pp.AEP(stats)
 # print('AEP = {}'.format(AEP))
 
+# # ========== Plotting ==========
+# an_plts = Analysis.wsPlotting()
+# #  --- Time domain analysis --- 
+# filenames = [outfiles[0][2], outfiles[1][2]] # select the 2nd run from each dataset
+# cases = {'Baseline': ['Wind1VelX', 'GenPwr', 'BldPitch1', 'GenTq', 'RotSpeed']}
+# fast_dict = fast_io.load_FAST_out(filenames, tmin=30)
+# fast_pl.plot_fast_out(cases, fast_dict)
 
 # # Plot some spectral cases
 # spec_cases = [('RootMyb1', 0), ('TwrBsFyt', 0)]
