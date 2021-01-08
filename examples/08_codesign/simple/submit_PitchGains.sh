@@ -1,14 +1,13 @@
 #!/bin/bash
 #SBATCH --account=weis
-#SBATCH --time=12:00:00
+#SBATCH --time=2:00:00
 #SBATCH --job-name=simple
 #SBATCH --nodes=1             # This should be nC/36 (36 cores on eagle)
 #SBATCH --ntasks-per-node=36
 #SBATCH --mail-user john.jasa@nrel.gov
 #SBATCH --mail-type BEGIN,END,FAIL
 #SBATCH --output=iea15.%j.out
-
-######SBATCH --partition=debug
+#SBATCH --partition=debug
 
 
 nDV=2 # Number of design variables (x2 for central difference)
