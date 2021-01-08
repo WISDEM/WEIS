@@ -20,6 +20,8 @@ from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenF
 from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
+from pCrunch.Analysis import Loads_Analysis
+
 
 
 # weis control modules
@@ -57,6 +59,30 @@ class MF_Turbine(object):
 
         # Parallel Processing
         self.n_cores            = 1
+
+        # Set up common controller
+        # Load controller from yaml file 
+        weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
+        parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
+        inps = yaml.safe_load(open(parameter_filename))
+        path_params         = inps['path_params']
+        turbine_params      = inps['turbine_params']
+        controller_params   = inps['controller_params']
+
+        controller_params['omega_pc'] = 0.15
+
+        turbine         = ROSCO_turbine.Turbine(turbine_params)
+        controller      = ROSCO_controller.Controller(controller_params)
+
+        turbine.load_from_fast(self.FAST_InputFile,
+            self.FAST_directory, \
+                dev_branch=True)
+
+        controller.tune_controller(turbine)
+
+        self.turbine        = turbine
+        controller.turbine  = turbine
+        self.controller     = controller
 
     def gen_level2_model(self,wind_speeds=[5,9,13,17,21],dofs=['GenDOF']):
         lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True)
@@ -100,7 +126,7 @@ class MF_Turbine(object):
             self.level2_out.append(l2_out)
 
 
-    def run_level3(self,controller,wind_speeds=[16]):
+    def run_level3(self,turbine,controller,wind_speeds=[16]):
         # Run FAST cases
         fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
         
@@ -197,54 +223,9 @@ class MF_Turbine(object):
         case_inputs[('ServoDyn', 'GenModel')] = {'vals': [1], 'group': 0}
 
         # Set control parameters
-        turbine         = ROSCO_turbine.Turbine(turbine_params)
-        turbine.load_from_fast(mf_turb.FAST_InputFile,
-            mf_turb.FAST_directory, \
-                dev_branch=True)
-
         discon_vt = ROSCO_utilities.DISCON_dict(turbine,controller)
         for discon_input in discon_vt:
             case_inputs[('DISCON_in',discon_input)] = {'vals': [discon_vt[discon_input]], 'group': 0}
-
-
-        # if omega:
-        #     weis_dir            = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        #     control_param_yaml  = os.path.join(weis_dir,'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW.yaml')
-        #     inps                = yaml.safe_load(open(control_param_yaml))
-        #     path_params         = inps['path_params']
-        #     turbine_params      = inps['turbine_params']
-        #     controller_params   = inps['controller_params']
-
-        #     # make default controller, turbine objects for ROSCO_toolbox
-        #     turbine             = ROSCO_turbine.Turbine(turbine_params)
-        #     turbine.load_from_fast( fastBatch.FAST_InputFile,fastBatch.FAST_directory, dev_branch=True)
-
-        #     controller          = ROSCO_controller.Controller(controller_params)
-
-        #     # tune default controller
-        #     controller.tune_controller(turbine)
-
-        #     # check if inputs are lists
-        #     if not isinstance(omega,list):
-        #         omega = [omega]
-        #     if not isinstance(zeta,list):
-        #         zeta = [zeta]
-
-        #     # Loop through and make PI gains
-        #     pc_kp = []
-        #     pc_ki = []
-        #     m_omega = []  # flattened (omega,zeta) pairs
-        #     m_zeta = []  # flattened (omega,zeta) pairs
-        #     for o in omega:
-        #         for z in zeta:
-        #             controller.omega_pc = o
-        #             controller.zeta_pc  = z
-        #             controller.tune_controller(turbine)
-        #             pc_kp.append(controller.pc_gain_schedule.Kp.tolist())
-        #             pc_ki.append(controller.pc_gain_schedule.Ki.tolist())
-        #             m_omega.append(o)
-        #             m_zeta.append(z)
-
 
 
         run_dir1            = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
@@ -290,76 +271,120 @@ class MF_Turbine(object):
         self.level3_out     = out
 
 
+class Level3_Turbine(object):
+    
+    def __init__(self,mf_turb):
+        self.mf_turb = mf_turb
+
+    def compute(self,omega_pc):
+        self.mf_turb.controller.omega_pc = omega_pc
+        self.mf_turb.run_level3(self.mf_turb.turbine,self.mf_turb.controller,wind_speeds=[12,14,16])
+
+        return compute_outputs(self.mf_turb.level3_out)
+
+
+
+class Level2_Turbine(object):
+
+    def __init__(self,mf_turb):
+        self.setup(mf_turb)
+
+    def setup(self,mf_turb):
+        
+        # 1. Run linearization procedure, post-process linearization results, Load system from OpenFAST .lin files
+        wind_speeds = np.arange(12,20,2).tolist()
+        mf_turb.gen_level2_model(wind_speeds,dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
+
+
+        # 3. Run turbulent level 3 case, do this until we can extract rotor avg. wind speed directly from IEC cases
+        mf_turb.run_level3(mf_turb.turbine,mf_turb.controller,wind_speeds=[12,14,16])
+
+        # 4. Extract disturbance from level3 sims (wind only for now)
+        dist = []
+        for out in mf_turb.level3_out:
+            u_h         = out['RtVAvgxh']
+            tt          = out['Time']
+            dist.append({'Time':tt, 'Wind': u_h})
+
+        # save data to object
+        self.disturbance    = dist
+        self.mf_turb        = mf_turb
+
+    def compute(self,omega_pc):
+        # 5. Run level 2 simulation
+        self.mf_turb.controller.omega_pc = omega_pc
+        self.mf_turb.run_level2(self.mf_turb.controller,self.disturbance)
+
+        outputs = compute_outputs(self.mf_turb.level2_out)
+        
+        # comparison plot
+        if False:
+            comp_channels = ['RtVAvgxh','GenSpeed','TwrBsMyt','PtfmPitch']
+            fig = [None] * len(mf_turb.level3_out)
+            ax = [None] * len(comp_channels)
+            
+            for iFig, (l2_out, l3_out) in enumerate(zip(mf_turb.level2_out,mf_turb.level3_out)):
+                fig[iFig] = plt.figure()
+
+                for iPlot, chan in enumerate(comp_channels):
+                    ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
+                    # level 3 output
+                    try:
+                        ax[iPlot].plot(l3_out['Time'],l3_out[chan])
+                    except:
+                        print(chan + ' is not in OpenFAST OutList')
+
+                    # level 2 output
+                    try:
+                        ax[iPlot].plot(l2_out['Time'],l2_out[chan])
+                    except:
+                        print(chan + ' is not in Linearization OutList')
+                    ax[iPlot].set_ylabel(chan)
+                    ax[iPlot].grid(True)
+                    if not iPlot == (len(comp_channels) - 1):
+                        ax[iPlot].set_xticklabels([])
+
+            plt.show()
+
+        return outputs
+
+def compute_outputs(levelX_out):
+    # compute Tower Base Myt DEL
+    for lx_out in levelX_out:
+        lx_out['meta'] = {}
+        lx_out['meta']['name'] = 'placeholder'
+    chan_info = [('TwrBsMyt',4)]
+    la = Loads_Analysis()
+    TwrBsMyt_DEL = la.get_DEL(levelX_out,chan_info)['TwrBsMyt'].tolist()
+
+    # Generator Speed Measures
+    GenSpeed_Max = [lx_out['GenSpeed'].max() for lx_out in levelX_out]
+    GenSpeed_Std = [lx_out['GenSpeed'].std() for lx_out in levelX_out]
+
+    # save outputs
+    outputs = {}
+    outputs['TwrBsMyt_DEL']     = TwrBsMyt_DEL[0]
+    outputs['GenSpeed_Max']     = GenSpeed_Max[0]
+    outputs['GenSpeed_Std']     = GenSpeed_Std[0]
+
+    return outputs
 
 if __name__ == '__main__':
-    weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
-
     # 0. Set up Model, using default input files
     mf_turb = MF_Turbine()
     mf_turb.n_cores = 4
 
-    # 1. Run linearization procedure, post-process linearization results, Load system from OpenFAST .lin files
-    wind_speeds = np.arange(12,20,2).tolist()
-    mf_turb.gen_level2_model(wind_speeds,dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
-
-    # 2. Set up common controller
-    # Load controller from yaml file 
-    parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
-    inps = yaml.safe_load(open(parameter_filename))
-    path_params         = inps['path_params']
-    turbine_params      = inps['turbine_params']
-    controller_params   = inps['controller_params']
-
-    controller_params['omega_pc'] = 0.15
-
-    turbine         = ROSCO_turbine.Turbine(turbine_params)
-    controller      = ROSCO_controller.Controller(controller_params)
-
-    turbine.load_from_fast(mf_turb.FAST_InputFile,
-        mf_turb.FAST_directory, \
-            dev_branch=True)
-
-    controller.tune_controller(turbine)
-
-    # 3. Run turbulent level 3 case
-    mf_turb.run_level3(controller,wind_speeds=[12,14,16])
-
-    # 4. Extract disturbance from level3 sims (wind only for now)
-    dist = []
-    for out in mf_turb.level3_out:
-        u_h         = out['RtVAvgxh']
-        tt          = out['Time']
-        dist.append({'Time':tt, 'Wind': u_h})
+    l2_turb = Level2_Turbine(mf_turb)
+    l3_turb = Level3_Turbine(mf_turb)
     
-    # 5. Run level 2 simulation
-    controller.turbine  = turbine  # add turbine data to controller because ROSCO_toolbox
-    mf_turb.run_level2(controller,dist)
+
+
+    l2_outs = l2_turb.compute(.15)
+    l3_outs = l3_turb.compute(.15)
+
+    print('here')
+
+
     
-    # comparison plot
-    if True:
-        comp_channels = ['RtVAvgxh','GenSpeed','TwrBsMyt','PtfmPitch']
-        fig = [None] * len(mf_turb.level3_out)
-        ax = [None] * len(comp_channels)
-        
-        for iFig, (l2_out, l3_out) in enumerate(zip(mf_turb.level2_out,mf_turb.level3_out)):
-            fig[iFig] = plt.figure()
-
-            for iPlot, chan in enumerate(comp_channels):
-                ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
-                # level 3 output
-                try:
-                    ax[iPlot].plot(l3_out['Time'],l3_out[chan])
-                except:
-                    print(chan + ' is not in OpenFAST OutList')
-
-                # level 2 output
-                try:
-                    ax[iPlot].plot(l2_out['Time'],l2_out[chan])
-                except:
-                    print(chan + ' is not in Linearization OutList')
-                ax[iPlot].set_ylabel(chan)
-                ax[iPlot].grid(True)
-                if not iPlot == (len(comp_channels) - 1):
-                    ax[iPlot].set_xticklabels([])
-
-        plt.show()
+    
+    
