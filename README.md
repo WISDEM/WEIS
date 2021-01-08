@@ -45,6 +45,7 @@ On laptop and personal computers, installation with [Anaconda](https://www.anaco
 The installation instructions below use the environment name, "weis-env," but any name is acceptable.
 
 0.  On the DOE HPC system eagle, make sure to start from a clean setup and type
+        
         module purge
         module load conda        
 
