@@ -2387,7 +2387,7 @@ properties:
                     debug_level:
                         type: integer
                         default: 2
-                        enum: [2]
+                        enum: [0,1,2]
                         description: Flag to set the debug level, do not change
             file_management:
                 type: object

@@ -1,5 +1,7 @@
 import numpy as np
 import os, shutil, sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
@@ -835,7 +837,9 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2"]
-        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "Azimuth"]
+        channels_out += ["RtAeroCp", "RtAeroCt"]
+        channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
+        channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
@@ -1376,7 +1380,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
 
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
+                outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)

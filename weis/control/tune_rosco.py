@@ -341,7 +341,7 @@ class TuneROSCO(ExplicitComponent):
         outputs['Flp_Kp']   = controller.Kp_flap[-1]
         outputs['Flp_Ki']   = controller.Ki_flap[-1]
         outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
-        outputs['PC_Ki']   = controller.pc_gain_schedule.Kp[0]
+        outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
 
 
         # outputs['PC_GS_angles'] = controller.pitch_op_pc
