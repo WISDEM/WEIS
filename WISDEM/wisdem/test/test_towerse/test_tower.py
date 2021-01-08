@@ -5,6 +5,7 @@ import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
 import wisdem.towerse.tower as tow
+import wisdem.commonse.utilities as util
 from wisdem.commonse import gravity as g
 from wisdem.commonse.vertical_cylinder import NFREQ, RIGID
 
@@ -387,19 +388,21 @@ class TestTowerSE(unittest.TestCase):
         npt.assert_equal(self.outputs["sigma_y_full"], self.inputs["sigma_y"][0] * np.ones(6))
         npt.assert_equal(self.outputs["unit_cost_full"], self.inputs["unit_cost"][0] * np.ones(6))
 
-        npt.assert_almost_equal(self.outputs["sec_loc"], np.linspace(0.0, 1.0, 6))
-        # npt.assert_equal(self.outputs["str_tw"], np.zeros(6))
-        # npt.assert_equal(self.outputs["tw_iner"], np.zeros(6))
-        npt.assert_equal(self.outputs["mass_den"], 1e3 * 9 * np.ones(6))
-        npt.assert_equal(self.outputs["foreaft_iner"], 1e3 * 11 * np.ones(6))
-        npt.assert_equal(self.outputs["sideside_iner"], 1e3 * 11 * np.ones(6))
-        npt.assert_equal(self.outputs["foreaft_stff"], 6 * 11 * np.ones(6))
-        npt.assert_equal(self.outputs["sideside_stff"], 6 * 11 * np.ones(6))
-        npt.assert_equal(self.outputs["tor_stff"], 7 * 10 * np.ones(6))
-        npt.assert_equal(self.outputs["axial_stff"], 6 * 9 * np.ones(6))
-        # npt.assert_equal(self.outputs["cg_offst"], np.zeros(6))
-        # npt.assert_equal(self.outputs["sc_offst"], np.zeros(6))
-        # npt.assert_equal(self.outputs["tc_offst"], np.zeros(6))
+        nout = 2
+        s = np.linspace(0, 1, nout + 1)
+        npt.assert_almost_equal(self.outputs["sec_loc"], util.nodal2sectional(s)[0])
+        # npt.assert_equal(self.outputs["str_tw"], np.zeros(nout))
+        # npt.assert_equal(self.outputs["tw_iner"], np.zeros(nout))
+        npt.assert_equal(self.outputs["mass_den"], 1e3 * 9 * np.ones(nout))
+        npt.assert_equal(self.outputs["foreaft_iner"], 1e3 * 11 * np.ones(nout))
+        npt.assert_equal(self.outputs["sideside_iner"], 1e3 * 11 * np.ones(nout))
+        npt.assert_equal(self.outputs["foreaft_stff"], 6 * 11 * np.ones(nout))
+        npt.assert_equal(self.outputs["sideside_stff"], 6 * 11 * np.ones(nout))
+        npt.assert_equal(self.outputs["tor_stff"], 7 * 10 * np.ones(nout))
+        npt.assert_equal(self.outputs["axial_stff"], 6 * 9 * np.ones(nout))
+        # npt.assert_equal(self.outputs["cg_offst"], np.zeros(nout))
+        # npt.assert_equal(self.outputs["sc_offst"], np.zeros(nout))
+        # npt.assert_equal(self.outputs["tc_offst"], np.zeros(nout))
 
     def testTowerMass(self):
 
@@ -700,7 +703,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -811,7 +814,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -938,7 +941,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -1060,7 +1063,7 @@ class TestTowerSE(unittest.TestCase):
         prob["rna_I"] = np.r_[1e5, 1e5, 2e5, np.zeros(3)]
         prob["rna_cg"] = np.array([-3.0, 0.0, 1.0])
         prob["wind_reference_height"] = 80.0
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["cd_usr"] = -1.0
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
@@ -1189,7 +1192,7 @@ class TestTowerSE(unittest.TestCase):
         # prob['nu_soil'] = 0.4
         prob["shearExp"] = 0.11
         prob["rho_air"] = 1.225
-        prob["wind_z0"] = 0.0
+        prob["z0"] = 0.0
         prob["mu_air"] = 1.7934e-5
         prob["life"] = 20.0
 
@@ -1345,7 +1348,7 @@ class TestTowerSE(unittest.TestCase):
 
         # --- wind & wave ---
         prob["wind_reference_height"] = wind_zref
-        prob["wind_z0"] = wind_z0
+        prob["z0"] = wind_z0
         prob["cd_usr"] = cd_usr
         prob["rho_air"] = 1.225
         prob["mu_air"] = 1.7934e-5
