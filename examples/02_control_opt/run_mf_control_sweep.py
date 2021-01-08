@@ -105,7 +105,7 @@ class MF_Turbine(object):
         lin_fast.TMax                       = 1600   # should be 1000-2000 sec or more with hydrodynamic states
         lin_fast.NLinTimes                  = 12
 
-        lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast/install/bin/openfast'
+        # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast-dev/install/bin/openfast'
 
         # simulation setup
         lin_fast.cores                      = self.n_cores
@@ -278,7 +278,7 @@ class Level3_Turbine(object):
 
     def compute(self,omega_pc):
         self.mf_turb.controller.omega_pc = omega_pc
-        self.mf_turb.run_level3(self.mf_turb.turbine,self.mf_turb.controller,wind_speeds=[12,14,16])
+        self.mf_turb.run_level3(self.mf_turb.turbine,self.mf_turb.controller,wind_speeds=[14,16,18])
 
         return compute_outputs(self.mf_turb.level3_out)
 
@@ -297,7 +297,7 @@ class Level2_Turbine(object):
 
 
         # 3. Run turbulent level 3 case, do this until we can extract rotor avg. wind speed directly from IEC cases
-        mf_turb.run_level3(mf_turb.turbine,mf_turb.controller,wind_speeds=[12,14,16])
+        mf_turb.run_level3(mf_turb.turbine,mf_turb.controller,wind_speeds=[14,16,18])
 
         # 4. Extract disturbance from level3 sims (wind only for now)
         dist = []
