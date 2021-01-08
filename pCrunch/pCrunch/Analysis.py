@@ -133,8 +133,8 @@ class Loads_Analysis(object):
         extreme_table = {}
 
         for fd in fast_data:
-            if self.verbose:
-                print('Processing data for {}'.format(fd['meta']['name']))
+            # if self.verbose:
+            #     print('Processing data for {}'.format(fd['meta']['name']))
 
             # Build channel list if it isn't input
             if channel_list == []:
@@ -360,8 +360,8 @@ class Loads_Analysis(object):
             dlist = [] # initiate blank list every loop
             # loop through channels and apply corresponding fatigue slope
             for var in dic.keys():
-                if self.verbose:
-                    print('Calculating DEL for {} in {}'.format(var, fd['meta']['name']))
+                # if self.verbose:
+                #     print('Calculating DEL for {} in {}'.format(var, fd['meta']['name']))
                 # find rainflow ranges
                 ranges = fatpack.find_rainflow_ranges(fd[var])
 
@@ -381,7 +381,7 @@ class Loads_Analysis(object):
             dfDEL.columns = dic.keys()
             
             #save simulation names
-            names.append(fd['meta']['name'])
+            # names.append(fd['meta']['name'])
         dfDEL['Case_Name'] = names
         
         return dfDEL
@@ -686,7 +686,7 @@ class wsPlotting(object):
                 sns.distplot(data[channel], kde=kde, label='case ' + str(idx))  # For a histogram
                 ax.set_title(channel + ' distribution')
 
-                units = data['meta']['attribute_units'][data['meta']['channels'].index(channel)]
+                # units = data['meta']['attribute_units'][data['meta']['channels'].index(channel)]
                 ax.set_xlabel('{} [{}]'.format(channel, units))
                 ax.grid(True)
             if names:

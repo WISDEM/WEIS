@@ -1106,10 +1106,10 @@ class FASTLoadCases(ExplicitComponent):
                         subplt = fig.add_subplot(gs0[cid])
                         try:
                             subplt.plot(fast_out['Time'], fast_out[channel])
-                            unit_idx = fast_out['meta']['channels'].index(channel)
-                            subplt.set_ylabel('{:^} \n ({:^})'.format(
-                                                channel,
-                                                fast_out['meta']['attribute_units'][unit_idx]))
+                            # unit_idx = fast_out['meta']['channels'].index(channel)
+                            # subplt.set_ylabel('{:^} \n ({:^})'.format(
+                            #                     channel,
+                            #                     fast_out['meta']['attribute_units'][unit_idx]))
                             subplt.grid(True)
                             subplt.set_xlabel('Time (s)')
                         except:
@@ -1119,7 +1119,7 @@ class FASTLoadCases(ExplicitComponent):
                         if cid != len(plots2make[pname])-1:
                             subplt.axes.get_xaxis().set_visible(False)
 
-                    plt.suptitle(fast_out['meta']['name'])
+                    # plt.suptitle(fast_out['meta']['name'])
                 pdf.savefig(fig)
                 plt.close()
 
@@ -1247,7 +1247,7 @@ class FASTLoadCases(ExplicitComponent):
                     for stat in sum_stats[var].keys():
                         stats_pwrcrv[var][stat] = [x for i, x in enumerate(sum_stats[var][stat]) if i in idx_pwrcrv]
 
-            stats_pwrcrv['meta'] = sum_stats['meta']
+            # stats_pwrcrv['meta'] = sum_stats['meta']
 
             # get wind speed 
             if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
