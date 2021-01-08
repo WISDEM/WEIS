@@ -16,6 +16,12 @@ from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
 
 import numpy as np
 
+from weis.aeroelasticse.openfast_library import FastLibAPI
+from ctypes import (
+    create_string_buffer,
+    c_double
+)
+
 class runFAST_pywrapper(object):
 
     def __init__(self, **kwargs):
@@ -91,14 +97,32 @@ class runFAST_pywrapper(object):
         FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
         FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
-        #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
-        if self.overwrite_outfiles or (not self.overwrite_outfiles and not (os.path.exists(FAST_Output) or os.path.exists(FAST_Output_txt))):
-            wrapper.execute()
-        else:
-            if self.debug_level>0:
-                print('OpenFAST not execute: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
+        # TODO: convert to bytes
+        # input_file_name = create_string_buffer(b"{}".format()    writer.FAST_InputFileOut)
+        # input_file_name = create_string_buffer(bytes(writer.FAST_InputFileOut))
+        input_file_name = create_string_buffer(b"/Users/rmudafor/Development/wisdem_weis/examples/03_NREL5MW_OC3_spar/temp/NREL5MW_OC3_spar/NREL5MW_OC3_spar_powercurve_0.fst")
+        t_max = c_double(self.fst_vt['Fst']['TMax'])
 
-        return FAST_Output
+        library_path = '/Users/rmudafor/Development/weis/build/modules/openfast-library/libopenfastlib.dylib'
+        openfastlib = FastLibAPI(library_path, input_file_name, t_max)
+        openfastlib.fast_run()
+
+        # #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
+        # if self.overwrite_outfiles or (not self.overwrite_outfiles and not (os.path.exists(FAST_Output) or os.path.exists(FAST_Output_txt))):
+        #     wrapper.execute()
+        # else:
+        #     if self.debug_level>0:
+        #         print('OpenFAST not execute: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
+
+        output_dict = {}
+        for i, channel in enumerate(openfastlib.output_channel_names):
+            # {
+            #     "channel": np.array([]),
+            #     "channel": np.array([]),
+            # }
+            output_dict[channel] = openfastlib.output_values[:,i]
+
+        return output_dict
 
 class runFAST_pywrapper_batch(object):
 
@@ -331,11 +355,11 @@ class runFAST_pywrapper_batch(object):
 def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, overwrite_outfiles, post):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
-    fast = runFAST_pywrapper(FAST_ver=FAST_ver)
-    fast.FAST_exe           = FAST_exe
-    fast.FAST_InputFile     = FAST_InputFile
-    fast.FAST_directory     = FAST_directory
-    fast.FAST_runDirectory  = FAST_runDirectory
+    fast = runFAST_pywrapper(FAST_ver=FAST_ver)     # FAST_ver = "OpenFAST"
+    fast.FAST_exe           = FAST_exe              # Path to FAST
+    fast.FAST_InputFile     = FAST_InputFile        # Name of the fst - does not include full path
+    fast.FAST_directory     = FAST_directory        # Path to directory containing the case files
+    fast.FAST_runDirectory  = FAST_runDirectory     # Where 
 
     fast.read_yaml          = read_yaml
     fast.FAST_yamlfile_in   = FAST_yamlfile_in
@@ -352,13 +376,13 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile,
 
     FAST_Output = fast.execute()
 
-    # Post process
-    if post:
-        out = post(FAST_Output)
-    else:
-        out = []
+    #  # Post process
+    # if post:
+    #     out = post(FAST_Output)
+    # else:
+    #    out = []
 
-    return out
+    return FAST_Output
 
 def eval_multi(data):
     # helper function for running with multiprocessing.Pool.map
