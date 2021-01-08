@@ -16,7 +16,6 @@ from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 
 from pCrunch import Analysis, pdTools, Processing
-from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
 if MPI:
@@ -1088,8 +1087,6 @@ class FASTLoadCases(ExplicitComponent):
         stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
         Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
 
-        # Save output plots
-        fast_pl = rosco_utilities.FAST_Plots()
 
         figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
         with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:

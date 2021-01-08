@@ -24,7 +24,6 @@ all_scripts = [
     
     "05_IEA-3.4-130-RWT/weis_driver",
     
-    "06_IEA-15-240-RWT/run_control_opt",
     "06_IEA-15-240-RWT/weis_driver",
     
     # "07_te_flaps/dac_driver",
