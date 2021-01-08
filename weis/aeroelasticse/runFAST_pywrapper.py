@@ -97,10 +97,7 @@ class runFAST_pywrapper(object):
         FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
         FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
-        # TODO: convert to bytes
-        # input_file_name = create_string_buffer(b"{}".format()    writer.FAST_InputFileOut)
-        # input_file_name = create_string_buffer(bytes(writer.FAST_InputFileOut))
-        input_file_name = create_string_buffer(b"/Users/rmudafor/Development/wisdem_weis/examples/03_NREL5MW_OC3_spar/temp/NREL5MW_OC3_spar/NREL5MW_OC3_spar_powercurve_0.fst")
+        input_file_name = create_string_buffer(writer.FAST_InputFileOut.encode('utf-8'))
         t_max = c_double(self.fst_vt['Fst']['TMax'])
 
         library_path = '/Users/rmudafor/Development/weis/build/modules/openfast-library/libopenfastlib.dylib'
