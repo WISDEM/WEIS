@@ -37,13 +37,13 @@ class PoseOptimization(object):
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
             n_DV += self.modeling['RotorSE']['n_te_flaps']
         if self.tower_opt['outer_diameter']['flag']:
-            n_DV += self.modeling['tower']['n_height']
+            n_DV += self.modeling["TowerSE"]["n_height_tower"]
         if self.tower_opt['layer_thickness']['flag']:
-            n_DV += (self.modeling['tower']['n_height'] - 1) * self.modeling['tower']['n_layers']
+            n_DV += (self.modeling["TowerSE"]["n_height_tower"] - 1) * self.modeling["TowerSE"]["n_layers_tower"]
         
         if self.opt['driver']['form'] == 'central':
             n_DV *= 2
-
+            
         return n_DV
 
     
