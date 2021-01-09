@@ -471,7 +471,7 @@ class TowerDiscretization(om.ExplicitComponent):
         Ixx = util.sectionalInterp(z, z_full, inputs["Ixx"])
         Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
         Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
-        outputs["sec_loc"] = (z - z_param[0]) / (z_param[-1] - z_param[0])
+        outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
         outputs["mass_den"] = rho * Az
         outputs["foreaft_iner"] = rho * Ixx
         outputs["sideside_iner"] = rho * Iyy
@@ -1213,7 +1213,7 @@ class TowerLeanSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        mod_opt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
 
         n_height_tow = mod_opt["n_height_tower"]
@@ -1353,7 +1353,7 @@ class TowerSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        mod_opt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
         nLC = mod_opt["nLC"]  # not yet supported
         wind = mod_opt["wind"]  # not yet supported

@@ -2,13 +2,12 @@ import numpy as np
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
-from wisdem.commonse import gravity
+from wisdem.commonse import NFREQ, gravity
 from wisdem.floatingse.member import NULL, MEMMAX, Member
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000
 RIGID = 1e30
-NFREQ = 5
 
 # TODO:
 # - Added mass, hydro stiffness?
@@ -272,12 +271,13 @@ class TowerPreMember(om.ExplicitComponent):
     def setup(self):
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("hub_height", 0.0, units="m")
+        self.add_input("distance_tt_hub", 0.0, units="m")
         self.add_output("hub_node", np.zeros(3), units="m")
 
     def compute(self, inputs, outputs):
         transition_node = inputs["transition_node"]
         hub_node = transition_node
-        hub_node[2] = float(inputs["hub_height"])
+        hub_node[2] = float(inputs["hub_height"] - inputs["distance_tt_hub"])
         outputs["hub_node"] = hub_node
 
 
@@ -349,9 +349,10 @@ class PlatformTowerFrame(om.ExplicitComponent):
         self.add_output("system_center_of_mass", np.zeros(3), units="m")
         self.add_output("system_mass", 0.0, units="kg")
         self.add_output("variable_ballast_mass", 0.0, units="kg")
+        self.add_output("transition_piece_I", np.zeros(6), units="kg*m**2")
 
     def compute(self, inputs, outputs):
-
+        # Combine nodes
         node_platform = inputs["platform_nodes"]
         node_tower = inputs["tower_nodes"]
 
@@ -363,6 +364,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         nelem_tower = np.where(inputs["tower_elem_A"] == NULL)[0][0]
         nelem_system = nelem_platform + nelem_tower
 
+        # Combine elements indices and have tower base node point to platform transition node
         outputs["tower_Fnode"] = np.zeros(node_tower.shape)
         outputs["tower_elem_n1"] = NULL * np.ones(MEMMAX, dtype=np.int_)
         outputs["tower_elem_n2"] = NULL * np.ones(MEMMAX, dtype=np.int_)
@@ -375,6 +377,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         tower_n2 += nnode_platform - 1
         tower_n1[0] = itrans_platform
 
+        # Store all outputs
         outputs["system_nodes"] = NULL * np.ones((NNODES_MAX, 3))
         outputs["system_Fnode"] = NULL * np.ones((NNODES_MAX, 3))
         outputs["system_Rnode"] = NULL * np.ones(NNODES_MAX)
@@ -418,6 +421,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
                 inputs["platform_" + var][:nelem_platform], inputs["tower_" + var][:nelem_tower]
             ]
 
+        # Mass summaries
         outputs["system_mass"] = (
             inputs["platform_mass"] + inputs["tower_mass"] + inputs["rna_mass"] + inputs["transition_piece_mass"]
         )
@@ -431,6 +435,11 @@ class PlatformTowerFrame(om.ExplicitComponent):
         outputs["variable_ballast_mass"] = (
             inputs["platform_displacement"] * inputs["rho_water"] - outputs["system_mass"]
         )
+
+        m_trans = float(inputs["transition_piece_mass"])
+        r_trans = inputs["platform_Rnode"][itrans_platform]
+        I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
+        outputs["transition_piece_I"] = I_trans
 
 
 class FrameAnalysis(om.ExplicitComponent):
@@ -480,6 +489,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("transition_piece_mass", 0.0, units="kg")
+        self.add_input("transition_piece_I", np.zeros(6), units="kg*m**2")
         self.add_input("rna_mass", 0.0, units="kg")
         self.add_input("rna_cg", np.zeros(3), units="m")
         self.add_input("rna_F", np.zeros(3), units="N")
@@ -503,6 +513,7 @@ class FrameAnalysis(om.ExplicitComponent):
         m_rna = float(inputs["rna_mass"])
         cg_rna = inputs["rna_cg"]
         I_rna = inputs["rna_I"]
+        I_trans = inputs["transition_piece_I"]
 
         fairlead_joints = inputs["mooring_fairlead_joints"]
         mooringF = inputs["mooring_neutral_load"]
@@ -544,15 +555,13 @@ class FrameAnalysis(om.ExplicitComponent):
             Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
             react_obj = pyframe3dd.ReactionData(rid + 1, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
 
-            frame3dd_opt = opt["FloatingSE"]["frame3dd"]
+            frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
             opt_obj = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], -1.0)
 
             myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
 
             # Added mass
             m_trans = float(inputs["transition_piece_mass"])
-            r_trans = inputs[frame + "_Rnode"][itrans]
-            I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
             if frame == "tower":
                 # TODO: Added mass and stiffness
                 m_trans += float(inputs["platform_mass"])
@@ -657,7 +666,7 @@ class FloatingFrame(om.Group):
             ("joint1", "transition_node"),
             ("joint2", "hub_node"),
         ]
-        for var in ["A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G"]:
+        for var in ["D", "t", "A", "Asx", "Asy", "rho", "Ixx", "Iyy", "Izz", "E", "G"]:
             prom += [("section_" + var, "tower_elem_" + var)]
         self.add_subsystem(
             "tower",
