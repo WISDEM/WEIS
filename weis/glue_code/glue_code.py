@@ -229,7 +229,6 @@ class WindPark(om.Group):
             self.connect('rp.powercurve.rated_efficiency', 'aeroelastic.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
 
-            #if modeling_options['Analysis_Flags']['TowerSE']:
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
             if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
                 self.connect('towerse.mass_den',                'aeroelastic.mass_den')
@@ -602,7 +601,7 @@ class WindPark(om.Group):
                     self.connect("env.water_depth",                  "towerse_post.water_depth")
                     self.connect('env.rho_water',                    'towerse_post.rho_water')
                     self.connect('env.mu_water',                     'towerse_post.mu_water')
-                    if modeling_options["TowerSE"]["soil_springs"]:                  
+                    if modeling_options["WISDEM"]["TowerSE"]["soil_springs"]:                  
                         self.connect('env.G_soil',                       'towerse_post.G_soil')                    
                         self.connect('env.nu_soil',                      'towerse_post.nu_soil')                    
                     self.connect("env.Hsig_wave",                    "towerse_post.Hsig_wave")
