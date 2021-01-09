@@ -17,14 +17,15 @@ class TestPlatform(unittest.TestCase):
 
         self.opt = {}
         self.opt["floating"] = {}
-        self.opt["FloatingSE"] = {}
+        self.opt["WISDEM"] = {}
+        self.opt["WISDEM"]["FloatingSE"] = {}
         self.opt["floating"]["members"] = {}
         self.opt["floating"]["members"]["n_members"] = n_member = 6
-        self.opt["FloatingSE"]["frame3dd"] = {}
-        self.opt["FloatingSE"]["frame3dd"]["shear"] = True
-        self.opt["FloatingSE"]["frame3dd"]["geom"] = True
-        self.opt["FloatingSE"]["frame3dd"]["tol"] = 1e-8
-        self.opt["FloatingSE"]["frame3dd"]["modal"] = False
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-8
+        self.opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False
         self.opt["mooring"] = {}
         self.opt["mooring"]["n_attach"] = 3
 
@@ -108,7 +109,6 @@ class TestPlatform(unittest.TestCase):
         self.inputs["rna_F"] = np.array([1e2, 1e1, 0.0])
         self.inputs["rna_M"] = np.array([2e1, 2e2, 0.0])
         self.inputs["transition_piece_mass"] = 1e3
-        self.inputs["transition_piece_I"] = 1e3 * np.arange(6)
         self.inputs["rho_water"] = 1e3
 
     def testTetrahedron(self):
@@ -171,20 +171,21 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
 
         # Test with set transition node
-        self.inputs["member0:transition_node"] = [0.0, 0.0, 1.0]
+        self.inputs["member1:transition_node"] = [0.5, 1.0, 0.0]
         myobj.node_mem2glob = {}
         myobj.node_glob2mem = {}
         myobj.compute(self.inputs, self.outputs)
-        npt.assert_equal(self.outputs["transition_node"], [0.0, 0.0, 1.0])
+        npt.assert_equal(self.outputs["transition_node"], [0.5, 1.0, 0.0])
 
     def testPre(self):
         inputs = {}
         outputs = {}
         inputs["transition_node"] = np.array([1, 1, 2])
         inputs["hub_height"] = 100.0
+        inputs["distance_tt_hub"] = 5.0
         myobj = frame.TowerPreMember()
         myobj.compute(inputs, outputs)
-        npt.assert_equal(outputs["hub_node"], np.array([1, 1, 100]))
+        npt.assert_equal(outputs["hub_node"], np.array([1, 1, 95]))
 
     def testPlatformTower(self):
         myobj = frame.PlatformFrame(options=self.opt)
@@ -244,6 +245,7 @@ class TestPlatform(unittest.TestCase):
             )
             / 2.2e4,
         )
+        npt.assert_equal(self.outputs["transition_piece_I"], 1e3 * 0.25 * np.r_[0.5, 0.5, 1.0, np.zeros(3)])
 
     def testRunFrame(self):
         myobj = frame.PlatformFrame(options=self.opt)
@@ -270,7 +272,8 @@ class TestGroup(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
-        opt["FloatingSE"] = {}
+        opt["WISDEM"] = {}
+        opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = n_member = 6
         opt["floating"]["members"]["n_height"] = [2]
@@ -284,16 +287,16 @@ class TestGroup(unittest.TestCase):
         opt["floating"]["tower"]["n_layers"] = [1]
         opt["floating"]["tower"]["n_ballasts"] = [0]
         opt["floating"]["tower"]["n_axial_joints"] = [0]
-        opt["FloatingSE"]["frame3dd"] = {}
-        opt["FloatingSE"]["frame3dd"]["shear"] = True
-        opt["FloatingSE"]["frame3dd"]["geom"] = True
-        opt["FloatingSE"]["frame3dd"]["tol"] = 1e-7
-        opt["FloatingSE"]["frame3dd"]["modal"] = False  # True
-        opt["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
-        opt["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
-        opt["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
-        opt["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
-        opt["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
+        opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-7
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False  # True
+        opt["WISDEM"]["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        opt["WISDEM"]["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
@@ -367,7 +370,8 @@ class TestGroup(unittest.TestCase):
 
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-        prob["tower.height"] = prob["hub_height"] = 77.6
+        prob["hub_height"] = 85.0
+        prob["distance_tt_hub"] = 5.0
         prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
         prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
         prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))

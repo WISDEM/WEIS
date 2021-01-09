@@ -2,7 +2,7 @@ import numpy as np
 import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
-from wisdem.commonse import gravity, NFREQ
+from wisdem.commonse import NFREQ, gravity
 from wisdem.floatingse.member import NULL, MEMMAX, Member
 
 NNODES_MAX = 1000
@@ -271,12 +271,13 @@ class TowerPreMember(om.ExplicitComponent):
     def setup(self):
         self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("hub_height", 0.0, units="m")
+        self.add_input("distance_tt_hub", 0.0, units="m")
         self.add_output("hub_node", np.zeros(3), units="m")
 
     def compute(self, inputs, outputs):
         transition_node = inputs["transition_node"]
         hub_node = transition_node
-        hub_node[2] = float(inputs["hub_height"])
+        hub_node[2] = float(inputs["hub_height"] - inputs["distance_tt_hub"])
         outputs["hub_node"] = hub_node
 
 
@@ -438,7 +439,7 @@ class PlatformTowerFrame(om.ExplicitComponent):
         m_trans = float(inputs["transition_piece_mass"])
         r_trans = inputs["platform_Rnode"][itrans_platform]
         I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
-        outputs['transition_piece_I'] = I_trans
+        outputs["transition_piece_I"] = I_trans
 
 
 class FrameAnalysis(om.ExplicitComponent):
@@ -512,7 +513,7 @@ class FrameAnalysis(om.ExplicitComponent):
         m_rna = float(inputs["rna_mass"])
         cg_rna = inputs["rna_cg"]
         I_rna = inputs["rna_I"]
-        I_trans = inputs['transition_piece_I']
+        I_trans = inputs["transition_piece_I"]
 
         fairlead_joints = inputs["mooring_fairlead_joints"]
         mooringF = inputs["mooring_neutral_load"]
@@ -554,7 +555,7 @@ class FrameAnalysis(om.ExplicitComponent):
             Rx = Ry = Rz = Rxx = Ryy = Rzz = np.array([RIGID])
             react_obj = pyframe3dd.ReactionData(rid + 1, Rx, Ry, Rz, Rxx, Ryy, Rzz, rigid=RIGID)
 
-            frame3dd_opt = opt["FloatingSE"]["frame3dd"]
+            frame3dd_opt = opt["WISDEM"]["FloatingSE"]["frame3dd"]
             opt_obj = pyframe3dd.Options(frame3dd_opt["shear"], frame3dd_opt["geom"], -1.0)
 
             myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)

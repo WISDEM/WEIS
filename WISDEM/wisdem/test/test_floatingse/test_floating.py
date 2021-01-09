@@ -13,7 +13,8 @@ class TestOC3Mass(unittest.TestCase):
 
         opt = {}
         opt["floating"] = {}
-        opt["FloatingSE"] = {}
+        opt["WISDEM"] = {}
+        opt["WISDEM"]["FloatingSE"] = {}
         opt["floating"]["members"] = {}
         opt["floating"]["members"]["n_members"] = 1
         opt["floating"]["members"]["n_height"] = [npts]
@@ -27,17 +28,17 @@ class TestOC3Mass(unittest.TestCase):
         opt["floating"]["tower"]["n_layers"] = [1]
         opt["floating"]["tower"]["n_ballasts"] = [0]
         opt["floating"]["tower"]["n_axial_joints"] = [0]
-        opt["FloatingSE"]["frame3dd"] = {}
-        opt["FloatingSE"]["frame3dd"]["shear"] = True
-        opt["FloatingSE"]["frame3dd"]["geom"] = True
-        opt["FloatingSE"]["frame3dd"]["modal"] = False
-        opt["FloatingSE"]["frame3dd"]["tol"] = 1e-6
-        opt["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
-        opt["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
-        opt["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
-        opt["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
-        opt["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
-        opt["FloatingSE"]["run_modal"] = True  # Not used
+        opt["WISDEM"]["FloatingSE"]["frame3dd"] = {}
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["shear"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["geom"] = True
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["modal"] = False
+        opt["WISDEM"]["FloatingSE"]["frame3dd"]["tol"] = 1e-6
+        opt["WISDEM"]["FloatingSE"]["gamma_f"] = 1.35  # Safety factor on loads
+        opt["WISDEM"]["FloatingSE"]["gamma_m"] = 1.3  # Safety factor on materials
+        opt["WISDEM"]["FloatingSE"]["gamma_n"] = 1.0  # Safety factor on consequence of failure
+        opt["WISDEM"]["FloatingSE"]["gamma_b"] = 1.1  # Safety factor on buckling
+        opt["WISDEM"]["FloatingSE"]["gamma_fatigue"] = 1.755  # Not used
+        opt["WISDEM"]["FloatingSE"]["run_modal"] = True  # Not used
         opt["mooring"] = {}
         opt["mooring"]["n_attach"] = 3
         opt["mooring"]["n_anchors"] = 3
@@ -120,6 +121,7 @@ class TestOC3Mass(unittest.TestCase):
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
         prob["hub_height"] = 85.0
+        prob["distance_tt_hub"] = 5.0
         prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
         prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
         prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))
