@@ -528,7 +528,7 @@ class WindPark(om.Group):
                     self.connect('generator.C_Fes'        , 'drivese_post.generator.C_Fes')
                     self.connect('generator.C_PM'         , 'drivese_post.generator.C_PM')
 
-                    if modeling_options['GeneratorSE']['type'] in ['pmsg_outer']:
+                    if modeling_options['WISDEM']['GeneratorSE']['type'] in ['pmsg_outer']:
                         self.connect('generator.N_c'          , 'drivese_post.generator.N_c')
                         self.connect('generator.b'            , 'drivese_post.generator.b')
                         self.connect('generator.c'            , 'drivese_post.generator.c')
@@ -546,13 +546,13 @@ class WindPark(om.Group):
                         self.connect('generator.B_tmax'       , 'drivese_post.generator.B_tmax')
                         self.connect('rp.powercurve.rated_mech', 'drivese_post.generator.P_mech')
 
-                    if modeling_options['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                    if modeling_options['WISDEM']['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
                         self.connect('generator.tau_p'        , 'drivese_post.generator.tau_p')
                         self.connect('generator.h_ys'         , 'drivese_post.generator.h_ys')
                         self.connect('generator.h_yr'         , 'drivese_post.generator.h_yr')
                         self.connect('generator.b_arm'        , 'drivese_post.generator.b_arm')
 
-                    elif modeling_options['GeneratorSE']['type'] in ['scig','dfig']:
+                    elif modeling_options['WISDEM']['GeneratorSE']['type'] in ['scig','dfig']:
                         self.connect('generator.B_symax'      , 'drivese_post.generator.B_symax')
                         self.connect('generator.S_Nmax'      , 'drivese_post.generator.S_Nmax')
 
