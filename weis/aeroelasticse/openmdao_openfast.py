@@ -479,7 +479,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # TODO: there are issues here
         #   - running the 15MW caused 120 tower points, some where nonunique heights
-        tower_base_height = max(inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmCMzt'])
+        tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
