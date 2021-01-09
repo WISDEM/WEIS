@@ -147,6 +147,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
 
         # Floating platform inputs
+        self.add_input("transition_node", np.zeros(3), units="m")
         self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
         self.add_input("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
         self.add_input("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
@@ -225,16 +226,15 @@ class FASTLoadCases(ExplicitComponent):
         # MoorDyn inputs
         mooropt = self.options['modeling_options']["mooring"]
         if self.options["modeling_options"]["flags"]["mooring"]:
-            n_line_types = mooropt["n_line_types"]
             n_nodes = mooropt["n_nodes"]
             n_lines = mooropt["n_lines"]
-            self.add_input("line_diameter", val=np.zeros(n_line_types), units="m")
-            self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-            self.add_input("line_stiffness", val=np.zeros(n_line_types), units="N")
-            self.add_input("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
-            self.add_input("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
-            self.add_input("line_transverse_drag", val=np.zeros(n_line_types))
-            self.add_input("line_tangential_drag", val=np.zeros(n_line_types))
+            self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
+            self.add_input("line_mass_density", val=np.zeros(n_lines), units="kg/m")
+            self.add_input("line_stiffness", val=np.zeros(n_lines), units="N")
+            self.add_input("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m")
+            self.add_input("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m")
+            self.add_input("line_transverse_drag", val=np.zeros(n_lines))
+            self.add_input("line_tangential_drag", val=np.zeros(n_lines))
             self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
             self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
             self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
@@ -377,6 +377,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['SubDyn']            = {}
         fst_vt['HydroDyn']          = {}
         fst_vt['MoorDyn']           = {}
+        fst_vt['MAP']               = {}
 
         for key in modeling_options['Level3']['simulation']:
             fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
@@ -679,10 +680,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
             fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
             fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
-            fst_vt['SubDyn']['NXPropSets'] = 0
-            fst_vt['SubDyn']['NCOSMs'] = 0
-            fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
-            fst_vt['SubDyn']['CMJointID'] = np.arange( fst_vt['SubDyn']['NCmass'] ) + 1
                 
         elif modeling_options['flags']['floating']:
             joints_xyz = inputs["platform_nodes"]
@@ -729,6 +726,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['NPropSets'] = n_members
             fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['NCOSMs'] = 0
+            fst_vt['SubDyn']['NXPropSets'] = 0
+            fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
+            fst_vt['SubDyn']['CMJointID'] = np.arange( fst_vt['SubDyn']['NCmass'] ) + 1
             fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
             fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
             fst_vt['SubDyn']['JMYY'] = [inputs['transition_piece_I'][1]]
@@ -804,15 +805,15 @@ class FASTLoadCases(ExplicitComponent):
             n_lines = mooropt["n_lines"]
             line_names = ['line'+str(m) for m in range(n_lines)]
             fst_vt['MoorDyn']['NTypes'] = n_lines
-            fst_vt['MoorDyn']['Name'] = line_names
-            fst_vt['MoorDyn']['Diam'] = inputs["line_diameter"]
-            fst_vt['MoorDyn']['MassDen'] = inputs["line_mass_density"]
+            fst_vt['MoorDyn']['Name'] = fst_vt['MAP']['LineType'] = line_names
+            fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
+            fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
             fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
             fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
             fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
-            fst_vt['MoorDyn']['Cdn'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['Cdt'] = inputs["line_tangential_drag"]
 
             n_nodes = mooropt["n_nodes"]
             fst_vt['MoorDyn']['NConnects'] = n_nodes

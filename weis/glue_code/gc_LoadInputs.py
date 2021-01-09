@@ -18,6 +18,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.modeling_options['RotorSE'] = self.modeling_options['WISDEM']['RotorSE'] 
         self.modeling_options['DriveSE'] = self.modeling_options['WISDEM']['DriveSE'] 
         self.modeling_options['TowerSE'] = self.modeling_options['WISDEM']['TowerSE'] 
+        self.modeling_options['FloatingSE'] = self.modeling_options['WISDEM']['FloatingSE'] 
         self.modeling_options['BOS'] = self.modeling_options['WISDEM']['BOS'] 
         
         self.set_run_flags()
