@@ -114,7 +114,7 @@ class runFAST_pywrapper(object):
         FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
         FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
-        input_file_name = create_string_buffer(writer.FAST_InputFileOut.encode())
+        input_file_name = create_string_buffer(writer.FAST_InputFileOut.encode('utf-8'))
         t_max = c_double(self.fst_vt['Fst']['TMax'])
 
         olddir = os.getcwd()
