@@ -3,24 +3,40 @@ A basic python script that demonstrates how to use the FST8 reader, writer, and 
 python setting. These functions are constructed to provide a simple interface for controlling FAST
 programmatically with minimal additional dependencies.
 """
-# Hacky way of doing relative imports
-from __future__ import print_function
-import os, sys, time
-import multiprocessing as mp
-# sys.path.insert(0, os.path.abspath(".."))
 
-from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenFAST, InputReader_FAST7
-from weis.aeroelasticse.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
+import os
+import sys
+import platform
+import multiprocessing as mp
+
+from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST, InputReader_FAST7
+from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST, InputWriter_FAST7
 from weis.aeroelasticse.FAST_wrapper import FastWrapper
 from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
 
 import numpy as np
 
-from weis.aeroelasticse.openfast_library import FastLibAPI
-from ctypes import (
-    create_string_buffer,
-    c_double
-)
+from ctypes import create_string_buffer, c_double
+import weis
+
+weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
+lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
+openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
+sys.path.append(openfast_pydir)
+from openfast_library import FastLibAPI
+
+mactype = platform.system().lower()
+if mactype == "linux" or mactype == "linux2":
+    libext = ".so"
+elif mactype == "darwin":
+    libext = '.dylib'
+    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = lib_dir
+elif mactype == "win32":
+    libext = '.dll'
+elif mactype == "cygwin":
+    libext = ".dll"
+else:
+    raise ValueError('Unknown platform type: '+mactype)
 
 class runFAST_pywrapper(object):
 
@@ -28,6 +44,7 @@ class runFAST_pywrapper(object):
         self.FAST_ver = 'OPENFAST' #(FAST7, FAST8, OPENFAST)
 
         self.FAST_exe           = None
+        self.FAST_lib           = None
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
@@ -97,14 +114,14 @@ class runFAST_pywrapper(object):
         FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
         FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
-        # TODO: convert to bytes
-        # input_file_name = create_string_buffer(b"{}".format()    writer.FAST_InputFileOut)
-        # input_file_name = create_string_buffer(bytes(writer.FAST_InputFileOut))
-        input_file_name = create_string_buffer(b"/Users/rmudafor/Development/wisdem_weis/examples/03_NREL5MW_OC3_spar/temp/NREL5MW_OC3_spar/NREL5MW_OC3_spar_powercurve_0.fst")
+        input_file_name = create_string_buffer(writer.FAST_InputFileOut.encode())
         t_max = c_double(self.fst_vt['Fst']['TMax'])
 
-        library_path = '/Users/rmudafor/Development/weis/build/modules/openfast-library/libopenfastlib.dylib'
-        openfastlib = FastLibAPI(library_path, input_file_name, t_max)
+        olddir = os.getcwd()
+        os.chdir(wrapper.FAST_directory)
+        
+        openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
+        #openfastlib.dt = c_double(0.1) # TODO: Need Raf's help
         openfastlib.fast_run()
 
         # #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
@@ -122,6 +139,8 @@ class runFAST_pywrapper(object):
             # }
             output_dict[channel] = openfastlib.output_values[:,i]
 
+        os.chdir(olddir)
+            
         return output_dict
 
 class runFAST_pywrapper_batch(object):
@@ -129,8 +148,8 @@ class runFAST_pywrapper_batch(object):
     def __init__(self, **kwargs):
 
         self.FAST_ver           = 'OpenFAST'
-        run_dir                 = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-        self.FAST_exe           = os.path.join(run_dir, 'local/bin/openfast')   # Path to executable
+        self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
+        self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
@@ -168,7 +187,7 @@ class runFAST_pywrapper_batch(object):
 
         out = [None]*len(self.case_list)
         for i, (case, case_name) in enumerate(zip(self.case_list, self.case_name_list)):
-            out[i] = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
+            out[i] = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_lib, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
 
         return out
 
@@ -189,6 +208,7 @@ class runFAST_pywrapper_batch(object):
             case_data.append(self.case_name_list[i])
             case_data.append(self.FAST_ver)
             case_data.append(self.FAST_exe)
+            case_data.append(self.FAST_lib)
             case_data.append(self.FAST_runDirectory)
             case_data.append(self.FAST_InputFile)
             case_data.append(self.FAST_directory)
@@ -234,6 +254,7 @@ class runFAST_pywrapper_batch(object):
             case_data.append(self.case_name_list[i])
             case_data.append(self.FAST_ver)
             case_data.append(self.FAST_exe)
+            case_data.append(self.FAST_lib)
             case_data.append(self.FAST_runDirectory)
             case_data.append(self.FAST_InputFile)
             case_data.append(self.FAST_directory)
@@ -293,6 +314,7 @@ class runFAST_pywrapper_batch(object):
     #             case_data.append(self.case_name_list[i])
     #             case_data.append(self.FAST_ver)
     #             case_data.append(self.FAST_exe)
+    #             case_data.append(self.FAST_lib)
     #             case_data.append(self.FAST_runDirectory)
     #             case_data.append(self.FAST_InputFile)
     #             case_data.append(self.FAST_directory)
@@ -352,11 +374,12 @@ class runFAST_pywrapper_batch(object):
 
 
 
-def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, overwrite_outfiles, post):
+def eval(case, case_name, FAST_ver, FAST_exe, FAST_lib, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, overwrite_outfiles, post):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
     fast = runFAST_pywrapper(FAST_ver=FAST_ver)     # FAST_ver = "OpenFAST"
     fast.FAST_exe           = FAST_exe              # Path to FAST
+    fast.FAST_lib           = FAST_lib              # Path to FAST
     fast.FAST_InputFile     = FAST_InputFile        # Name of the fst - does not include full path
     fast.FAST_directory     = FAST_directory        # Path to directory containing the case files
     fast.FAST_runDirectory  = FAST_runDirectory     # Where 
@@ -387,7 +410,7 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile,
 def eval_multi(data):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
-    return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15])
+    return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16])
 
 def example_runFAST_pywrapper_batch():
     """ 

@@ -2402,6 +2402,10 @@ properties:
                         type: string
                         default: none
                         description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_lib:
+                        type: string
+                        default: none
+                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
                     FAST_directory:
                         type: string
                         default: none
