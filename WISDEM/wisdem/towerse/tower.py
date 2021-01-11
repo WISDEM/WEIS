@@ -2,11 +2,11 @@ import copy
 
 import numpy as np
 import openmdao.api as om
+import wisdem.commonse.utilities as util
 import wisdem.commonse.utilization_constraints as util_con
-from wisdem.commonse.utilities import assembleI, unassembleI, nodal2sectional, sectionalInterp, interp_with_deriv
-from wisdem.commonse.environment import LogWind, PowerWind, TowerSoil, LinearWaves
+from wisdem.commonse.environment import TowerSoil
 from wisdem.commonse.cross_sections import CylindricalShellProperties
-from wisdem.commonse.wind_wave_drag import AeroHydroLoads, CylinderWaveDrag, CylinderWindDrag
+from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.vertical_cylinder import (
     NFREQ,
     RIGID,
@@ -15,11 +15,6 @@ from wisdem.commonse.vertical_cylinder import (
     CylinderDiscretization,
     get_nfull,
 )
-
-
-def find_nearest(array, value):
-    return (np.abs(array - value)).argmin()
-
 
 NPTS_SOIL = 10
 
@@ -103,6 +98,8 @@ class DiscretizationYAML(om.ExplicitComponent):
         Density of the materials along the tower sections.
     unit_cost : numpy array[n_height-1], [USD/kg]
         Unit costs of the materials along the tower sections.
+    outfitting_factor : numpy array[n_height-1]
+        Additional outfitting multiplier in each section
 
     """
 
@@ -413,39 +410,39 @@ class TowerDiscretization(om.ExplicitComponent):
         self.add_output("sigma_y_full", val=np.zeros(nFull - 1), units="Pa")
 
         # Tower Distributed Beam Properties (properties needed for ElastoDyn (OpenFAST) inputs or BModes inputs for verification purposes)
-        self.add_output("sec_loc", np.zeros(nFull - 1), desc="normalized sectional location")
-        self.add_output("str_tw", np.zeros(nFull - 1), units="deg", desc="structural twist of section")
-        self.add_output("tw_iner", np.zeros(nFull - 1), units="deg", desc="inertial twist of section")
-        self.add_output("mass_den", np.zeros(nFull - 1), units="kg/m", desc="sectional mass per unit length")
+        self.add_output("sec_loc", np.zeros(n_height - 1), desc="normalized sectional location")
+        self.add_output("str_tw", np.zeros(n_height - 1), units="deg", desc="structural twist of section")
+        self.add_output("tw_iner", np.zeros(n_height - 1), units="deg", desc="inertial twist of section")
+        self.add_output("mass_den", np.zeros(n_height - 1), units="kg/m", desc="sectional mass per unit length")
         self.add_output(
             "foreaft_iner",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="kg*m",
             desc="sectional fore-aft intertia per unit length about the Y_G inertia axis",
         )
         self.add_output(
             "sideside_iner",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="kg*m",
             desc="sectional side-side intertia per unit length about the Y_G inertia axis",
         )
         self.add_output(
             "foreaft_stff",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="N*m**2",
             desc="sectional fore-aft bending stiffness per unit length about the Y_E elastic axis",
         )
         self.add_output(
             "sideside_stff",
-            np.zeros(nFull - 1),
+            np.zeros(n_height - 1),
             units="N*m**2",
             desc="sectional side-side bending stiffness per unit length about the Y_E elastic axis",
         )
-        self.add_output("tor_stff", np.zeros(nFull - 1), units="N*m**2", desc="sectional torsional stiffness")
-        self.add_output("axial_stff", np.zeros(nFull - 1), units="N", desc="sectional axial stiffness")
-        self.add_output("cg_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional center of mass")
-        self.add_output("sc_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional shear center")
-        self.add_output("tc_offst", np.zeros(nFull - 1), units="m", desc="offset from the sectional tension center")
+        self.add_output("tor_stff", np.zeros(n_height - 1), units="N*m**2", desc="sectional torsional stiffness")
+        self.add_output("axial_stff", np.zeros(n_height - 1), units="N", desc="sectional axial stiffness")
+        self.add_output("cg_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional center of mass")
+        self.add_output("sc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional shear center")
+        self.add_output("tc_offst", np.zeros(n_height - 1), units="m", desc="offset from the sectional tension center")
 
         self.declare_partials("height_constraint", ["hub_height", "z_param"], method="fd")
         self.declare_partials("outfitting_full", ["outfitting_factor"], method="fd")
@@ -458,26 +455,30 @@ class TowerDiscretization(om.ExplicitComponent):
         z_section = 0.5 * (z_full[:-1] + z_full[1:])
 
         outputs["height_constraint"] = inputs["hub_height"] - z_param[-1]
-        outputs["rho_full"] = sectionalInterp(z_section, z_param, inputs["rho"])
-        outputs["outfitting_full"] = sectionalInterp(z_section, z_param, inputs["outfitting_factor"])
-        outputs["unit_cost_full"] = sectionalInterp(z_section, z_param, inputs["unit_cost"])
-        outputs["E_full"] = sectionalInterp(z_section, z_param, inputs["E"])
-        outputs["G_full"] = sectionalInterp(z_section, z_param, inputs["G"])
-        outputs["sigma_y_full"] = sectionalInterp(z_section, z_param, inputs["sigma_y"])
+        outputs["rho_full"] = util.sectionalInterp(z_section, z_param, inputs["rho"])
+        outputs["outfitting_full"] = util.sectionalInterp(z_section, z_param, inputs["outfitting_factor"])
+        outputs["unit_cost_full"] = util.sectionalInterp(z_section, z_param, inputs["unit_cost"])
+        outputs["E_full"] = util.sectionalInterp(z_section, z_param, inputs["E"])
+        outputs["G_full"] = util.sectionalInterp(z_section, z_param, inputs["G"])
+        outputs["sigma_y_full"] = util.sectionalInterp(z_section, z_param, inputs["sigma_y"])
 
         # Unpack for Elastodyn
-        rho = outputs["rho_full"]
-        E = outputs["E_full"]
-        G = outputs["G_full"]
-        z = z_section
+        z = 0.5 * (z_param[:-1] + z_param[1:])
+        rho = inputs["rho"]
+        E = inputs["E"]
+        G = inputs["G"]
+        Az = util.sectionalInterp(z, z_full, inputs["Az"])
+        Ixx = util.sectionalInterp(z, z_full, inputs["Ixx"])
+        Iyy = util.sectionalInterp(z, z_full, inputs["Iyy"])
+        Jz = util.sectionalInterp(z, z_full, inputs["Jz"])
         outputs["sec_loc"] = (z - z[0]) / (z[-1] - z[0])
-        outputs["mass_den"] = inputs["Az"] * rho
-        outputs["foreaft_iner"] = rho * inputs["Ixx"]
-        outputs["sideside_iner"] = rho * inputs["Iyy"]
-        outputs["foreaft_stff"] = E * inputs["Ixx"]
-        outputs["sideside_stff"] = E * inputs["Iyy"]
-        outputs["tor_stff"] = G * inputs["Jz"]
-        outputs["axial_stff"] = inputs["Az"] * E
+        outputs["mass_den"] = rho * Az
+        outputs["foreaft_iner"] = rho * Ixx
+        outputs["sideside_iner"] = rho * Iyy
+        outputs["foreaft_stff"] = E * Ixx
+        outputs["sideside_stff"] = E * Iyy
+        outputs["tor_stff"] = G * Jz
+        outputs["axial_stff"] = E * Az
 
 
 class TowerMass(om.ExplicitComponent):
@@ -579,7 +580,7 @@ class TowerMass(om.ExplicitComponent):
         ) / (m_cyl.sum() + m_trans + m_grav)
         outputs["tower_section_center_of_mass"] = inputs["cylinder_section_center_of_mass"]
 
-        outputs["monopile_mass"], dydx, dydxp, dydyp = interp_with_deriv(z_trans, z, np.r_[0.0, np.cumsum(m_cyl)])
+        outputs["monopile_mass"], dydx, dydxp, dydyp = util.interp_with_deriv(z_trans, z, np.r_[0.0, np.cumsum(m_cyl)])
         outputs["monopile_cost"] = (
             inputs["cylinder_cost"] * outputs["monopile_mass"] / m_cyl.sum() + inputs["transition_piece_cost"]
         )
@@ -591,7 +592,7 @@ class TowerMass(om.ExplicitComponent):
         outputs["tower_I_base"][:2] += m_trans * (z_trans - z[0]) ** 2
 
         # Mass properties for transition piece and gravity foundation
-        itrans = find_nearest(z, z_trans)
+        itrans = util.find_nearest(z, z_trans)
         r_trans = 0.5 * d[itrans]
         r_grav = 0.5 * d[0]
         I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]  # shell
@@ -668,9 +669,9 @@ class TurbineMass(om.ExplicitComponent):
         ]
 
         R = cg_rna
-        I_tower = assembleI(inputs["tower_I_base"])
-        I_rna = assembleI(inputs["rna_I"]) + inputs["rna_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
-        outputs["turbine_I_base"] = unassembleI(I_tower + I_rna)
+        I_tower = util.assembleI(inputs["tower_I_base"])
+        I_rna = util.assembleI(inputs["rna_I"]) + inputs["rna_mass"] * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs["turbine_I_base"] = util.unassembleI(I_tower + I_rna)
 
 
 class TowerPreFrame(om.ExplicitComponent):
@@ -857,7 +858,7 @@ class TowerPreFrame(om.ExplicitComponent):
         z = inputs["z_full"]
 
         # Prepare RNA, transition piece, and gravity foundation (if any applicable) for "extra node mass"
-        itrans = find_nearest(z, inputs["transition_piece_height"])
+        itrans = util.find_nearest(z, inputs["transition_piece_height"])
         mtrans = inputs["transition_piece_mass"]
         Itrans = inputs["transition_piece_I"]
         mgrav = inputs["gravity_foundation_mass"]
@@ -1145,8 +1146,8 @@ class TowerPostFrame(om.ExplicitComponent):
         sigma_y = inputs["sigma_y_full"]
         E = inputs["E_full"]
         t = inputs["t_full"]
-        d, _ = nodal2sectional(inputs["d_full"])
-        z_section, _ = nodal2sectional(inputs["z_full"])
+        d, _ = util.nodal2sectional(inputs["d_full"])
+        z_section, _ = util.nodal2sectional(inputs["z_full"])
         L_reinforced = self.options["modeling_options"]["buckling_length"] * np.ones(axial_stress.shape)
         gamma_f = self.options["modeling_options"]["gamma_f"]
         gamma_m = self.options["modeling_options"]["gamma_m"]
@@ -1212,7 +1213,7 @@ class TowerLeanSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        mod_opt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
 
         n_height_tow = mod_opt["n_height_tower"]
@@ -1352,7 +1353,7 @@ class TowerSE(om.Group):
         self.options.declare("modeling_options")
 
     def setup(self):
-        mod_opt = self.options["modeling_options"]["TowerSE"]
+        mod_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
         monopile = self.options["modeling_options"]["flags"]["monopile"]
         nLC = mod_opt["nLC"]  # not yet supported
         wind = mod_opt["wind"]  # not yet supported
@@ -1363,15 +1364,6 @@ class TowerSE(om.Group):
             n_height_tow if n_height_mon == 0 else n_height_tow + n_height_mon - 1
         )  # Should have one overlapping point
         nFull = get_nfull(n_height)
-
-        self.set_input_defaults("rho_air", 1.225, units="kg/m**3")
-        self.set_input_defaults("mu_air", 1.81206e-5, units="kg/m/s")
-        self.set_input_defaults("shearExp", 0.0)
-        self.set_input_defaults("wind_z0", 0.0)
-        self.set_input_defaults("beta_wind", 0.0, units="deg")
-
-        self.set_input_defaults("cd_usr", -1.0)
-        self.set_input_defaults("yaw", 0.0, units="deg")
         self.set_input_defaults("E", np.zeros(n_height - 1), units="N/m**2")
         self.set_input_defaults("G", np.zeros(n_height - 1), units="N/m**2")
         if monopile and mod_opt["soil_springs"]:
@@ -1397,43 +1389,25 @@ class TowerSE(om.Group):
         # Add in all Components that drive load cases
         # Note multiple load cases have to be handled by replicating components and not groups/assemblies.
         # Replicating Groups replicates the IndepVarComps which doesn't play nicely in OpenMDAO
+        prom = [("zref", "wind_reference_height"), "shearExp", "z0", "cd_usr", "yaw", "beta_wind", "rho_air", "mu_air"]
+        if monopile:
+            prom += [
+                "beta_wave",
+                "rho_water",
+                "mu_water",
+                "cm",
+                "Uc",
+                "Hsig_wave",
+                "Tsig_wave",
+                "water_depth",
+            ]
+
         for iLC in range(nLC):
             lc = "" if nLC == 1 else str(iLC + 1)
 
-            if wind is None or wind.lower() in ["power", "powerwind", ""]:
-                self.add_subsystem(
-                    "wind" + lc,
-                    PowerWind(nPoints=nFull),
-                    promotes=["shearExp", ("zref", "wind_reference_height"), ("z0", "wind_z0")],
-                )
-            elif wind.lower() == "logwind":
-                self.add_subsystem("wind" + lc, LogWind(nPoints=nFull))
-            else:
-                raise ValueError("Unknown wind type, " + wind)
-
             self.add_subsystem(
-                "windLoads" + lc, CylinderWindDrag(nPoints=nFull), promotes=["cd_usr", "rho_air", "mu_air", "beta_wind"]
+                "wind" + lc, CylinderEnvironment(nPoints=nFull, water_flag=monopile, wind=wind), promotes=prom
             )
-
-            if monopile:
-                self.add_subsystem(
-                    "wave" + lc,
-                    LinearWaves(nPoints=nFull),
-                    promotes=[
-                        ("z_floor", "water_depth"),
-                        "rho_water",
-                        "Hsig_wave",
-                        "Tsig_wave",
-                        ("z_surface", "wind_z0"),
-                    ],
-                )
-                self.add_subsystem(
-                    "waveLoads" + lc,
-                    CylinderWaveDrag(nPoints=nFull),
-                    promotes=["cm", "cd_usr", "rho_water", "mu_water", "beta_wave"],
-                )
-
-            self.add_subsystem("distLoads" + lc, AeroHydroLoads(nPoints=nFull), promotes=["yaw"])
 
             self.add_subsystem(
                 "pre" + lc,
@@ -1474,14 +1448,9 @@ class TowerSE(om.Group):
                 promotes=["life", "z_full", "d_full", "t_full", "rho_full", "E_full", "G_full", "sigma_y_full"],
             )
 
-            self.connect(
-                "z_full", ["wind" + lc + ".z", "windLoads" + lc + ".z", "distLoads" + lc + ".z", "tower" + lc + ".z"]
-            )
-            self.connect("d_full", ["windLoads" + lc + ".d", "tower" + lc + ".d"])
+            self.connect("z_full", ["wind" + lc + ".z", "tower" + lc + ".z"])
+            self.connect("d_full", ["wind" + lc + ".d", "tower" + lc + ".d"])
             self.connect("t_full", "tower" + lc + ".t")
-            if monopile:
-                self.connect("z_full", ["wave" + lc + ".z", "waveLoads" + lc + ".z"])
-                self.connect("d_full", "waveLoads" + lc + ".d")
 
             self.connect("rho_full", "tower" + lc + ".rho")
             self.connect("E_full", "tower" + lc + ".E")
@@ -1530,32 +1499,7 @@ class TowerSE(om.Group):
             self.connect("tower" + lc + ".hoop_stress_euro", "post" + lc + ".hoop_stress")
             self.connect("tower" + lc + ".cylinder_deflection", "post" + lc + ".tower_deflection_in")
 
-            self.connect("wind" + lc + ".U", "windLoads" + lc + ".U")
-            if monopile:
-                # connections to waveLoads1
-                self.connect("wave" + lc + ".U", "waveLoads" + lc + ".U")
-                self.connect("wave" + lc + ".A", "waveLoads" + lc + ".A")
-                self.connect("wave" + lc + ".p", "waveLoads" + lc + ".p")
-
-            # connections to distLoads1
-            self.connect("windLoads" + lc + ".windLoads_Px", "distLoads" + lc + ".windLoads_Px")
-            self.connect("windLoads" + lc + ".windLoads_Py", "distLoads" + lc + ".windLoads_Py")
-            self.connect("windLoads" + lc + ".windLoads_Pz", "distLoads" + lc + ".windLoads_Pz")
-            self.connect("windLoads" + lc + ".windLoads_qdyn", "distLoads" + lc + ".windLoads_qdyn")
-            self.connect("windLoads" + lc + ".windLoads_beta", "distLoads" + lc + ".windLoads_beta")
-            self.connect("windLoads" + lc + ".windLoads_z", "distLoads" + lc + ".windLoads_z")
-            self.connect("windLoads" + lc + ".windLoads_d", "distLoads" + lc + ".windLoads_d")
-
-            if monopile:
-                self.connect("waveLoads" + lc + ".waveLoads_Px", "distLoads" + lc + ".waveLoads_Px")
-                self.connect("waveLoads" + lc + ".waveLoads_Py", "distLoads" + lc + ".waveLoads_Py")
-                self.connect("waveLoads" + lc + ".waveLoads_Pz", "distLoads" + lc + ".waveLoads_Pz")
-                self.connect("waveLoads" + lc + ".waveLoads_pt", "distLoads" + lc + ".waveLoads_qdyn")
-                self.connect("waveLoads" + lc + ".waveLoads_beta", "distLoads" + lc + ".waveLoads_beta")
-                self.connect("waveLoads" + lc + ".waveLoads_z", "distLoads" + lc + ".waveLoads_z")
-                self.connect("waveLoads" + lc + ".waveLoads_d", "distLoads" + lc + ".waveLoads_d")
-
-            self.connect("distLoads" + lc + ".Px", "tower" + lc + ".Px")
-            self.connect("distLoads" + lc + ".Py", "tower" + lc + ".Py")
-            self.connect("distLoads" + lc + ".Pz", "tower" + lc + ".Pz")
-            self.connect("distLoads" + lc + ".qdyn", "tower" + lc + ".qdyn")
+            self.connect("wind" + lc + ".Px", "tower" + lc + ".Px")
+            self.connect("wind" + lc + ".Py", "tower" + lc + ".Py")
+            self.connect("wind" + lc + ".Pz", "tower" + lc + ".Pz")
+            self.connect("wind" + lc + ".qdyn", "tower" + lc + ".qdyn")

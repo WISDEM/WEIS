@@ -62,8 +62,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
 openfast:
     file_management:
-        FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/NREL5MW_OC3_spar             # Path to folder with the OpenFAST output files
+        FAST_namingOut:    NREL5MW_OC4_semi         # Name of the OpenFAST output files
+        FAST_runDirectory: temp/NREL5MW_OC4_semi             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   True
         run_IEC:           True
@@ -89,3 +89,4 @@ openfast:
             turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
             U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True
+
