@@ -121,7 +121,7 @@ class runFAST_pywrapper(object):
         os.chdir(wrapper.FAST_directory)
         
         openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
-        #openfastlib.dt = c_double(0.1) # TODO: Need Raf's help
+        openfastlib.dt = c_double(self.fst_vt['Fst']['DT'])
         openfastlib.fast_run()
 
         # #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
