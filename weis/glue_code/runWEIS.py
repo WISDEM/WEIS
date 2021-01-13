@@ -151,11 +151,18 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # do not need to be optimized as they correspond to a circular cross-section.
         if overridden_values is not None:
             for key in overridden_values:
-                num_values = np.array(overridden_values[key]).size
-                key_size = wt_opt[key].size
-                idx_start = key_size - num_values
-                wt_opt[key][idx_start:] = overridden_values[key]
-
+                data = overridden_values[key]
+                if isinstance(data, dict):
+                    values = np.array(data['values'])
+                    idx_start = int(data['idx_start'])
+                    num_values = values.size
+                    wt_opt[key][idx_start:idx_start+num_values] = values
+                else:
+                    num_values = np.array(overridden_values[key]).size
+                    key_size = wt_opt[key].size
+                    idx_start = key_size - num_values
+                    wt_opt[key][idx_start:] = overridden_values[key]
+                
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
         # so these values are correctly placed in the problem.

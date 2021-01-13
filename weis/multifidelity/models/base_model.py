@@ -66,10 +66,16 @@ class BaseModel:
         """
         self.desvar_shapes = OrderedDict()
         total_size = 0
+        self.idx_starts = {}
 
-        for key, value in desvars.items():
-            if isinstance(value, (float, list)):
-                value = np.array(value)
+        for key, data in desvars.items():
+            if isinstance(data, (float, list)):
+                value = np.array(data)
+            elif isinstance(data, dict):
+                value = np.array(data['values'])
+                self.idx_starts[key] = data['idx_start']
+            else:
+                value = data
 
             self.desvar_shapes[key] = value.shape
             total_size += value.size
@@ -255,9 +261,13 @@ class BaseModel:
         """
         flattened_desvars = []
 
-        for key, value in desvars.items():
-            if isinstance(value, (float, list)):
-                value = np.array(value)
+        for key, data in desvars.items():
+            if isinstance(data, (float, list)):
+                value = np.array(data)
+            elif isinstance(data, dict):
+                value = np.array(data['values'])
+            else:
+                value = data
             flattened_value = np.atleast_1d(np.squeeze(value.flatten()))
             flattened_desvars.extend(flattened_value)
 
@@ -281,9 +291,13 @@ class BaseModel:
         desvars = OrderedDict()
         for key, shape in self.desvar_shapes.items():
             size = int(np.prod(shape))
-            desvars[key] = flattened_desvars[
+            values = flattened_desvars[
                 size_counter : size_counter + size
             ].reshape(shape)
             size_counter += size
+            if key in self.idx_starts.keys():
+                desvars[key] = {'values' : values, 'idx_start' : self.idx_starts[key]}
+            else:
+                desvars[key] = values
 
         return desvars
