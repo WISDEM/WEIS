@@ -82,7 +82,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_FD = max([n_FD, 1])
             comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
             rank    = MPI.COMM_WORLD.Get_rank()
-            color_i = color_map[rank]
+            try:
+                color_i = color_map[rank]
+            except IndexError:
+                color_i = 0
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
