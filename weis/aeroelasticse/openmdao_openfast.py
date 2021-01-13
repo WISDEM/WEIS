@@ -332,8 +332,8 @@ class FASTLoadCases(ExplicitComponent):
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
 
-            FAST_Output, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-            self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
+            summary_stats, extreme_table, DELs, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
@@ -883,14 +883,14 @@ class FASTLoadCases(ExplicitComponent):
             FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
-                FAST_Output = fastBatch.run_serial()
+                summary_stats, extreme_table, DELs = fastBatch.run_serial()
             else:
                 FAST_Output = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
-        return FAST_Output, case_list, dlc_list
+        return summary_stats, extreme_table, DELs, case_list, dlc_list
 
     def DLC_creation_IEC(self, inputs, discrete_inputs, fst_vt, powercurve=False):
 
@@ -1031,15 +1031,15 @@ class FASTLoadCases(ExplicitComponent):
         else:
             return [], [], []
 
-    def post_process(self, FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
-
+    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
+        
         # Initialize
-        sum_stats, extreme_table, DELs = self.get_summary_data(FAST_Output)
+        # sum_stats, extreme_table, DELs = self.get_summary_data(FAST_Output)
 
         # Analysis
-        outputs, discrete_outputs = self.get_spanwise_forces(sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_spanwise_forces(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         # outputs, discrete_outputs = self.get_weighted_DELs(sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)  
-        outputs, discrete_outputs = self.calculate_AEP(sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)
+        # outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
     def get_summary_data(self, FAST_Output):
         """
@@ -1091,7 +1091,7 @@ class FASTLoadCases(ExplicitComponent):
         channel_extremes = [
             'RotSpeed',
             'BldPitch1', 'BldPitch2',
-            "RotThrust", "LSShftFys", "LSShftFzs",
+            "RotThrust", "LSShftFys", "LSShftFzs", 'LSShftF',
             "RotTorq", "LSSTipMys", "LSSTipMzs",
             'Azimuth',
             'TipDxc1', 'TipDxc2', 'TipDxc3',
@@ -1101,7 +1101,6 @@ class FASTLoadCases(ExplicitComponent):
             'B1N1Fy', 'B1N2Fy', 'B1N3Fy', 'B1N4Fy', 'B1N5Fy', 'B1N6Fy', 'B1N7Fy', 'B1N8Fy', 'B1N9Fy',
             'B2N1Fx', 'B2N2Fx', 'B2N3Fx', 'B2N4Fx', 'B2N5Fx', 'B2N6Fx', 'B2N7Fx', 'B2N8Fx', 'B2N9Fx',
             'B2N1Fy', 'B2N2Fy', 'B2N3Fy', 'B2N4Fy', 'B2N5Fy', 'B2N6Fy', 'B2N7Fy', 'B2N8Fy', 'B2N9Fy',
-
         ]
 
         if self.n_blades > 2:
@@ -1227,6 +1226,8 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_aoa']  = spline_aoa_max(r)
         outputs['std_aoa']  = spline_aoa_std(r)
         outputs['mean_aoa'] = spline_aoa_mean(r)
+
+        return outputs, discrete_outputs
 
     def calculate_AEP(self, sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs):
         """

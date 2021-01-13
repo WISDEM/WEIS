@@ -13,6 +13,8 @@ from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenF
 from weis.aeroelasticse.FAST_writer import InputWriter_Common, InputWriter_OpenFAST, InputWriter_FAST7
 from weis.aeroelasticse.FAST_wrapper import FastWrapper
 from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
+from pCrunch.io import OpenFASTOutput
+from pCrunch import LoadsAnalysis
 
 import numpy as np
 
@@ -21,6 +23,51 @@ from ctypes import (
     create_string_buffer,
     c_double
 )
+
+
+magnitude_channels = {
+    'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
+    'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
+    'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
+    'RootMc2': ["RootMxc2", "RootMyc2", "RootMzc2"],
+    'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"],
+    'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
+    'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
+    'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'],
+}
+
+fatigue_channels = {
+    'RootMc1': 10,
+    'RootMc2': 10,
+    'RootMc3': 10,
+}
+
+channel_extremes = [
+    'RotSpeed',
+    'BldPitch1','BldPitch2','BldPitch3',
+    "RotThrust","LSShftFys","LSShftFzs","RotTorq","LSSTipMys","LSSTipMzs","LSShftF","LSShftM",
+    'Azimuth',
+    'TipDxc1',
+    'TipDxc2',
+    'TipDxc3',
+    "RootMxc1","RootMyc1","RootMzc1",
+    "RootMxc2","RootMyc2","RootMzc2",
+    "RootMxc3","RootMyc3","RootMzc3",
+    'B1N1Fx','B1N2Fx','B1N3Fx','B1N4Fx','B1N5Fx','B1N6Fx','B1N7Fx','B1N8Fx','B1N9Fx',
+    'B1N1Fy','B1N2Fy','B1N3Fy','B1N4Fy','B1N5Fy','B1N6Fy','B1N7Fy','B1N8Fy','B1N9Fy',
+    'B2N1Fx','B2N2Fx','B2N3Fx','B2N4Fx','B2N5Fx','B2N6Fx','B2N7Fx','B2N8Fx','B2N9Fx',
+    'B2N1Fy','B2N2Fy','B2N3Fy','B2N4Fy','B2N5Fy','B2N6Fy','B2N7Fy','B2N8Fy','B2N9Fy',
+    "B3N1Fx","B3N2Fx","B3N3Fx","B3N4Fx","B3N5Fx","B3N6Fx","B3N7Fx","B3N8Fx","B3N9Fx",
+    "B3N1Fy","B3N2Fy","B3N3Fy","B3N4Fy","B3N5Fy","B3N6Fy","B3N7Fy","B3N8Fy","B3N9Fy",
+]
+
+la = LoadsAnalysis(
+    outputs=[],
+    magnitude_channels=magnitude_channels,
+    fatigue_channels=fatigue_channels,
+    extreme_channels=channel_extremes,
+)
+
 
 class runFAST_pywrapper(object):
 
@@ -100,10 +147,10 @@ class runFAST_pywrapper(object):
         # TODO: convert to bytes
         # input_file_name = create_string_buffer(b"{}".format()    writer.FAST_InputFileOut)
         # input_file_name = create_string_buffer(bytes(writer.FAST_InputFileOut))
-        input_file_name = create_string_buffer(b"/Users/rmudafor/Development/wisdem_weis/examples/03_NREL5MW_OC3_spar/temp/NREL5MW_OC3_spar/NREL5MW_OC3_spar_powercurve_0.fst")
+        input_file_name = create_string_buffer(b"/Users/jnunemak/Fun/repos/WEIS/examples/03_NREL5MW_OC3_spar/temp/NREL5MW_OC3_spar/NREL5MW_OC3_spar_powercurve_0.fst")
         t_max = c_double(self.fst_vt['Fst']['TMax'])
 
-        library_path = '/Users/rmudafor/Development/weis/build/modules/openfast-library/libopenfastlib.dylib'
+        library_path = '/Users/jnunemak/Projects/WEIS/raf/openfast/build/modules/openfast-library/libopenfastlib.dylib'
         openfastlib = FastLibAPI(library_path, input_file_name, t_max)
         openfastlib.fast_run()
 
@@ -122,7 +169,14 @@ class runFAST_pywrapper(object):
             # }
             output_dict[channel] = openfastlib.output_values[:,i]
 
-        return output_dict
+        output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
+        case_name, sum_stats, extremes, dels = la._process_output(output)
+
+        # if save_file:
+        #   write_fast
+
+        return case_name, sum_stats, extremes, dels
+
 
 class runFAST_pywrapper_batch(object):
 
@@ -159,18 +213,23 @@ class runFAST_pywrapper_batch(object):
 
         super(runFAST_pywrapper_batch, self).__init__()
 
-        
     def run_serial(self):
         # Run batch serially
-
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory)
 
-        out = [None]*len(self.case_list)
+        ss = {}
+        et = {}
+        dl = {}
         for i, (case, case_name) in enumerate(zip(self.case_list, self.case_name_list)):
-            out[i] = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
+            _name, _ss, _et, _dl = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
+            ss[_name] = _ss
+            et[_name] = _et
+            dl[_name] = _dl
 
-        return out
+        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
+
+        return summary_stats, extreme_table, DELs
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
@@ -208,9 +267,21 @@ class runFAST_pywrapper_batch(object):
         pool.close()
         pool.join()
 
-        return output
+        ss = {}
+        et = {}
+        dl = {}
+        for _name, _ss, _et, _dl in output:
+            ss[_name] = _ss
+            et[_name] = _et
+            dl[_name] = _dl
+
+        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
+
+        return summary_stats, extreme_table, DELs
 
     def run_mpi(self, mpi_comm_map_down):
+
+        raise NotImplementedError("Function 'run_multi' hasn't been configured to use new post processing routines.")
         # Run in parallel with mpi
         from mpi4py import MPI
 
@@ -375,13 +446,6 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_runDirectory, FAST_InputFile,
     fast.overwrite_outfiles = overwrite_outfiles
 
     FAST_Output = fast.execute()
-
-    #  # Post process
-    # if post:
-    #     out = post(FAST_Output)
-    # else:
-    #    out = []
-
     return FAST_Output
 
 def eval_multi(data):
