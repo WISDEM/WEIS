@@ -11,7 +11,7 @@ design_variables:
         lower_bound: [0.3490658503988659, 0.08726646259971647, 0.08726646259971647, 0., -0.08726646259971647, -0.08726646259971647, -0.08726646259971647, -0.08726646259971647]          # Lower bounds for the twist in [rad] at the n_opt locations
         upper_bound: [0.4363323129985824, 0.3490658503988659, 0.3490658503988659, 0.2617993877991494, 0.2617993877991494, 0.17453292519943295, 0.17453292519943295, 0.08726646259971647] # Upper bounds for the twist in [rad] at the n_opt locations
       chord:
-        flag: False     # Flag to optimize the chord
+        flag: True     # Flag to optimize the chord
         n_opt: 8        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
@@ -68,7 +68,7 @@ design_variables:
         zeta_min: 0.4
         zeta_max: 1.5
       flap_control:
-        flag: True
+        flag: False
         omega_min: 2.7
         omega_max: 3.5
         zeta_min: 0.7
