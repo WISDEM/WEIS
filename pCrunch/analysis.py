@@ -430,7 +430,7 @@ class PowerProduction:
 
         return wind_prob
 
-    def AEP(self, stats, windspeeds):
+    def AEP(self, stats, windspeeds, pwr_curve_vars):
         """
         Calculate AEP for simulation cases
 
@@ -457,9 +457,17 @@ class PowerProduction:
         pwr = pwr.groupby("windspeeds").mean()
 
         # Wind probability
-        wind_prob = self.prob_WindDist(list(pwr.index), disttype="pdf")
+        unique = list(np.unique(windspeeds))
+        wind_prob = self.prob_WindDist(unique, disttype="pdf")
 
         # Calculate AEP
-        AEP = np.trapz(pwr.T * wind_prob, list(pwr.index)) * 8760
+        AEP = np.trapz(pwr.T * wind_prob, unique) * 8760
 
-        return AEP
+        perf_data = {"U": unique}
+        for var in pwr_curve_vars:
+            perf_array = stats.loc[:, (var, "mean")].to_frame()
+            perf_array["windspeed"] = windspeeds
+            perf_array = perf_array.groupby("windspeed").mean()
+            perf_data[var] = perf_array[var]
+
+        return AEP, perf_data
