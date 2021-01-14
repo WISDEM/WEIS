@@ -202,8 +202,8 @@ class PoseOptimization(object):
 
         # -- Control -- 
         if self.control_opt['tsr']['flag']:
-            wt_opt.model.add_design_var('opt_var.tsr_opt_gain', lower=self.control_opt['tsr']['min_gain'], 
-                                                                upper=self.control_opt['tsr']['max_gain'])
+            wt_opt.model.add_design_var('control.rated_TSR', lower=control_opt["tsr"]["minimum"],
+                                                             upper=control_opt["tsr"]["maximum"], ref=1.e+1)
         if self.control_opt['servo']['pitch_control']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=self.control_opt['servo']['pitch_control']['omega_min'], 
                                                             upper=self.control_opt['servo']['pitch_control']['omega_max'])
