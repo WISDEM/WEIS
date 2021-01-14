@@ -150,13 +150,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # so these values are correctly placed in the problem.
         wt_opt = myopt.set_restart(wt_opt)
 
-        if 'check_totals' in opt_options['driver']:
-            if opt_options['driver']['check_totals']:
+        if 'check_totals' in opt_options['driver']['optimization']:
+            if opt_options['driver']['optimization']['check_totals']:
                 wt_opt.run_model()
                 totals = wt_opt.compute_totals()
         
-        if 'check_partials' in opt_options['driver']:
-            if opt_options['driver']['check_partials']:
+        if 'check_partials' in opt_options['driver']['optimization']:
+            if opt_options['driver']['optimization']['check_partials']:
                 wt_opt.run_model()
                 checks = wt_opt.check_partials(compact_print=True)
                 

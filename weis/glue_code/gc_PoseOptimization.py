@@ -18,7 +18,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
             n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
         
-        if self.opt['driver']['form'] == 'central':
+        if self.opt['driver']['optimization']['form'] == 'central':
             n_add *= 2
 
         return n_DV+n_add
