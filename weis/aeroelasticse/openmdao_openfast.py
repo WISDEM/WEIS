@@ -1147,8 +1147,8 @@ class FASTLoadCases(ExplicitComponent):
         Parameters
         ----------
         sum_stats : pd.DataFrame
-        case_list : list?
-            TODO:
+        case_list : list
+        dlc_list : list
         """
         ## Get AEP and power curve
         if self.FASTpref['dlc_settings']['run_power_curve']:
@@ -1291,23 +1291,6 @@ class FASTLoadCases(ExplicitComponent):
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
 
-    # def run_fatigue(self):
-
-    #     if self.FASTpref['dlc_settings']['run_blade_fatigue']:  
-    #         # determine which dlc will be used for fatigue calculations, checks for dlc 1.2, then dlc 1.1
-    #         idx_fat_12 = [i for i, dlc in enumerate(dlc_list) if dlc==1.2]
-    #         idx_fat_11 = [i for i, dlc in enumerate(dlc_list) if dlc==1.1]
-    #         if len(idx_fat_12) > 0:
-    #             idx_fat = idx_fat_12
-    #         elif len(idx_fat_11) > 0:
-    #             idx_fat = idx_fat_11
-    #         else:
-    #             print('Warning: User turned on "run_blade_fatigue", but IEC DLC 1.1 or 1.2 are not being run. Fatigue analysis will not be run.')
-    #             sys.stdout.flush()
-
-    #         if len(idx_fat) > 0:
-    #             outputs, discrete_outputs = self.BladeFatigue(FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs)
-
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
@@ -1318,7 +1301,6 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
-
 
 
     def writeCpsurfaces(self, inputs):
