@@ -1032,100 +1032,11 @@ class FASTLoadCases(ExplicitComponent):
             return [], [], []
 
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
-        
-        # Initialize
-        # sum_stats, extreme_table, DELs = self.get_summary_data(FAST_Output)
 
         # Analysis
         outputs, discrete_outputs = self.get_spanwise_forces(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         # outputs, discrete_outputs = self.get_weighted_DELs(sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)  
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
-
-    def get_summary_data(self, FAST_Output):
-        """
-        Perform loads analysis on the turbine using pCrunch.
-
-        Parameters
-        ----------
-        FAST_Output : list
-            List of OpenFAST outputs, channels and dlc.
-            Format: [
-                (np.array(t, chan), np.array(), str),
-            ]
-
-        Returns
-        -------
-        pd.DataFrame
-            Summary statistics for all outputs.
-        dict
-            Extreme events for all outputs.
-        pd.DataFrame
-            Damage equivalent loads.
-        """
-
-        # Setup
-        tmax = self.fst_vt['Fst']['TMax']
-        t0 = np.max([0., tmax - 600.])
-
-        # TODO: Elevate the following definitions to WEIS configuration options
-        DEL_info = {
-            'RootMyb1': 10,
-            'RootMyb2': 10,
-            'RootMyb3': 10,
-            'TwrBsMxt': 3,
-            'TwrBsMyt': 3,
-            'TwrBsMzt': 3
-        }
-
-        magnitude_channels = {
-            'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
-            'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
-            'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
-            'RootMc2': ["RootMxc2", "RootMyc2", "RootMzc2"],
-            'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"],
-            'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
-            'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
-            'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3']
-        }
-
-        channel_extremes = [
-            'RotSpeed',
-            'BldPitch1', 'BldPitch2',
-            "RotThrust", "LSShftFys", "LSShftFzs", 'LSShftF',
-            "RotTorq", "LSSTipMys", "LSSTipMzs",
-            'Azimuth',
-            'TipDxc1', 'TipDxc2', 'TipDxc3',
-            "RootMxc1", "RootMyc1", "RootMzc1",
-            "RootMxc2", "RootMyc2", "RootMzc2",
-            'B1N1Fx', 'B1N2Fx', 'B1N3Fx', 'B1N4Fx', 'B1N5Fx', 'B1N6Fx', 'B1N7Fx', 'B1N8Fx', 'B1N9Fx',
-            'B1N1Fy', 'B1N2Fy', 'B1N3Fy', 'B1N4Fy', 'B1N5Fy', 'B1N6Fy', 'B1N7Fy', 'B1N8Fy', 'B1N9Fy',
-            'B2N1Fx', 'B2N2Fx', 'B2N3Fx', 'B2N4Fx', 'B2N5Fx', 'B2N6Fx', 'B2N7Fx', 'B2N8Fx', 'B2N9Fx',
-            'B2N1Fy', 'B2N2Fy', 'B2N3Fy', 'B2N4Fy', 'B2N5Fy', 'B2N6Fy', 'B2N7Fy', 'B2N8Fy', 'B2N9Fy',
-        ]
-
-        if self.n_blades > 2:
-            channel_extremes += [
-                "B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx",
-                "B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy",
-                'BldPitch3', "RootMxc3", "RootMyc3", "RootMzc3"
-                ]
-
-        # Initialize
-        loads_analysis = LoadsAnalysis(
-            FAST_Output,
-            magnitude_channels=magnitude_channels,  
-            fatigue_channels=DEL_info,
-            trim_data=(t0, tmax),
-            extreme_channels=channel_extremes
-        )
-
-        # Process
-        loads_analysis.process_outputs()  # TODO: Cores?
-        sum_stats = loads_analysis.summary_stats
-        extreme_table = loads_analysis.extreme_events
-        DELs = loads_analysis.DELs
-
-        return sum_stats, extreme_table, DELs
 
     def get_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
@@ -1294,6 +1205,8 @@ class FASTLoadCases(ExplicitComponent):
                 print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
 
             outputs['V_out']       = np.unique(U)
+
+        return outputs, discrete_outputs
 
     # TODO: 
     def get_weighted_DELs(self):
