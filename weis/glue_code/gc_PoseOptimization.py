@@ -26,7 +26,6 @@ class PoseOptimizationWEIS(PoseOptimization):
 
     
     def set_objective(self, wt_opt):
-        
         if self.opt['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
             
