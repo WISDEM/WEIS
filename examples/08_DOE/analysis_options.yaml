@@ -1,6 +1,6 @@
 general:
     folder_output: outputs
-    fname_output: refturb_output
+    fname_output: doe_output
 design_variables:
   blade:
     aero_shape:
@@ -51,7 +51,7 @@ design_variables:
         max_end: 1.0
   control:
     tsr:
-      flag: True     # Flag to optimize the rotor tip speed ratio
+      flag: False     # Flag to optimize the rotor tip speed ratio
       min_gain: 0.9   # Nondimensional lower bound
       max_gain: 1.1   # Nondimensional upper bound
     servo:
@@ -68,7 +68,7 @@ design_variables:
         zeta_min: 0.4
         zeta_max: 1.5
       flap_control:
-        flag: False
+        flag: True
         omega_min: 2.7
         omega_max: 3.5
         zeta_min: 0.7
@@ -87,7 +87,7 @@ design_variables:
       lower_bound: 4.e-3
       upper_bound: 2.e-1
 
-merit_figure: AEP  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+merit_figure: 'blade_tip_deflection'  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
 constraints:
   blade:
@@ -160,7 +160,7 @@ constraints:
 
 driver:
   optimization:
-    flag: False
+    flag: False           # Flag to enable optimization
     tol: 1.e-2            # Optimality tolerance
     max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
@@ -169,7 +169,10 @@ driver:
     step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
-    flag: True
+    flag: True            # Flag to enable design of experiments
+    run_parallel: True    # Flag to run using parallel processing
+    generator: Uniform    # Type of input generator. (Uniform)
+    num_samples: 5            # number of samples for (Uniform only)
     
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
