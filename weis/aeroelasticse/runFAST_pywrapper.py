@@ -40,6 +40,10 @@ fatigue_channels = {
     'RootMc1': 10,
     'RootMc2': 10,
     'RootMc3': 10,
+    'RootMyb1': 10,
+    'RootMyb2': 10,
+    'RootMyb3': 10,
+    'TwrBsMyt': 10
 }
 
 channel_extremes = [

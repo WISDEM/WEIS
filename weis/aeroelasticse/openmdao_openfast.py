@@ -1035,8 +1035,10 @@ class FASTLoadCases(ExplicitComponent):
 
         # Analysis
         outputs, discrete_outputs = self.get_spanwise_forces(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
-        # outputs, discrete_outputs = self.get_weighted_DELs(sum_stats, case_list, inputs, discrete_inputs, outputs, discrete_outputs)  
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
+
+        if self.FASTpref['dlc_settings']['run_IEC']:
+            outputs, discrete_outputs = self.get_weighted_DELs(summary_stats, DELs, inputs, discrete_inputs, outputs, discrete_outputs)  
 
     def get_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
@@ -1208,89 +1210,56 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
-    # TODO: 
-    def get_weighted_DELs(self):
+    def get_weighted_DELs(self, sum_stats, DELs, inputs, discrete_inputs, outputs, discrete_outputs):
+        """
+
+        """
+
         # Get DELS from OpenFAST data
-        if self.fst_vt['Fst']['TMax'] - loads_analysis.t0 > 60.:
-            if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
-                try:
-                    isinstance(pp,object)
-                except(NameError):
-                    pp               = Analysis.Power_Production()
-                    pp.turbine_class = discrete_inputs['turbine_class']
-                
-                try:
-                    pp.windspeeds = U
-                except(NameError):
-                    if self.FASTpref['dlc_settings']['run_IEC']:
-                        U = []
-                        for dlc in self.FASTpref['dlc_settings']['IEC']:
-                            U_set = dlc['U']
-                            num_seeds = len(dlc['Seeds'])
-                            U_all = [U_set]*num_seeds
-                            U_dlc = [u for uset in U_all for u in uset]
-                        U.extend(U_dlc)
-                    elif self.FASTpref['dlc_settings']['run_power_curve']:
-                        U_set = self.FASTpref['dlc_settings']['Power_Curve']['U']
-                        num_seeds = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
-                        U_all = [U_set]*num_seeds
-                        U = [u for uset in U_all for u in uset]
-                        U = U.sort()
-                    else:
-                        exit('DLC settings do not support DEL_RootMyb optimization')
-                    pp.windspeeds = U.sort()
-                
-                # get pdf of windspeeds
-                ws_prob = pp.prob_WindDist(U, disttype='pdf')
-                # maximum sum of weighted DELS
-                if self.n_blades == 2:
-                    outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
-                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL'])])
-                else:
-                    outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*sum_stats['RootMyb1']['DEL']), 
-                                                    np.sum(ws_prob*sum_stats['RootMyb2']['DEL']),
-                                                    np.sum(ws_prob*sum_stats['RootMyb3']['DEL'])])
-                if self.n_blades == 2:
-                    outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
-                else:
-                    outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+        # if self.fst_vt['Fst']['TMax'] - self.options['modeling_options']['openfast']['fst_settings'][('Fst','TStart')] < 60.:
+        #     print('WARNING: the measurement window of the OpenFAST simulations is shorter than 60 seconds. No DEL can be estimated reliably.')
 
-            if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
-                try:
-                    isinstance(pp,object)
-                except(NameError):
-                    pp               = Analysis.Power_Production()
-                    pp.turbine_class = discrete_inputs['turbine_class']
-                
-                try: 
-                    pp.windspeeds = U
-                except(NameError):
-                    if self.FASTpref['dlc_settings']['run_IEC']:
-                        U = []
-                        for dlc in self.FASTpref['dlc_settings']['IEC']:
-                            U_set       = dlc['U']
-                            num_seeds   = len(dlc['Seeds'])
-                            U_all       = [U_set]*num_seeds
-                            U_dlc = [u for uset in U_all for u in uset]
-                        U.extend(U_dlc)
-                    elif self.FASTpref['dlc_settings']['run_power_curve']:
-                        U_set       = self.FASTpref['dlc_settings']['Power_Curve']['U']
-                        num_seeds   = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
-                        U_all       = [U_set]*num_seeds
-                        U = [u for uset in U_all for u in uset]
-                        U = U.sort()
-                    else:
-                        exit('DLC settings do not support DEL_TwrBsMyt optimization')
-                    pp.windspeeds = U.sort()
-                
-                # get pdf of windspeeds
-                ws_prob = pp.prob_WindDist(U, disttype='pdf')
-                # maximum sum of weighted DELS
-                outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
+        if self.FASTpref['dlc_settings']['run_IEC']:
+            U = []
+            for dlc in self.FASTpref['dlc_settings']['IEC']:
+                U_set       = dlc['U']
+                num_seeds   = len(dlc['Seeds'])
+                U_all       = [U_set]*num_seeds
+                U_dlc = [u for uset in U_all for u in uset]
+            U.extend(U_dlc)
+            U.sort()
 
-            if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
+        # elif self.FASTpref['dlc_settings']['run_power_curve']:
+        #     U_set           = self.FASTpref['dlc_settings']['Power_Curve']['U']
+        #     num_seeds       = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
+        #     U_all           = [U_set]*num_seeds
+        #     U = [u for uset in U_all for u in uset]
+        #     U.sort()
 
+        turbine_class = discrete_inputs['turbine_class']
+        pp = PowerProduction(turbine_class)
+        ws_prob = pp.prob_WindDist(U, disttype='pdf')
+
+        if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
+            if self.n_blades == 2:
+                outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
+                                                np.sum(ws_prob*DELs['RootMyb2'])])
+            else:
+                outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
+                                                np.sum(ws_prob*DELs['RootMyb2']),
+                                                np.sum(ws_prob*DELs['RootMyb3'])])
+            if self.n_blades == 2:
+                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
+            else:
+                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
+
+        if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
+            outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsMyt'])
+
+        if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
+            outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
+
+        return outputs, discrete_outputs
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
