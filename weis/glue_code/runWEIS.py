@@ -101,7 +101,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
                 modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
             # Parallel settings for OpenMDAO
-            wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+            if opt_options['driver']['optimization']['flag']:
+                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+            else: 
+                wt_opt = om.Problem(comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
