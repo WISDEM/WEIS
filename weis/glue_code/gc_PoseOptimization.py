@@ -117,7 +117,7 @@ class PoseOptimization(object):
         elif self.opt['merit_figure'] == 'LCOE':
             wt_opt.model.add_objective('financese.lcoe', ref = 0.1)
         elif self.opt['merit_figure'] == 'blade_tip_deflection':
-            wt_opt.model.add_objective('tcons.tip_deflection_ratio')
+            wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
         elif self.opt['merit_figure'] == 'tower_mass':
             wt_opt.model.add_objective('towerse.tower_mass')
         elif self.opt['merit_figure'] == 'tower_cost':
@@ -254,7 +254,7 @@ class PoseOptimization(object):
 
         if blade_constraints['tip_deflection']['flag']:
             if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=1.)
+                wt_opt.model.add_constraint('tcons_post.tip_deflection_ratio', upper=1.)
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
