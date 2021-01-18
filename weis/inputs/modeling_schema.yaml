@@ -12,10 +12,6 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
-    WISDEM:
-        type: object
-        default: {}
-        description: Options for running WISDEM.  No further options are included in this file.  They are populated using the modeling schema in the WISDEM project in python.
     Level1:
         type: object
         default: {}
