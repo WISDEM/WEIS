@@ -254,7 +254,7 @@ class PoseOptimization(object):
 
         if blade_constraints['tip_deflection']['flag']:
             if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
-                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=blade_constraints['tip_deflection']['ratio'])
+                wt_opt.model.add_constraint('tcons.tip_deflection_ratio', upper=1.)
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
