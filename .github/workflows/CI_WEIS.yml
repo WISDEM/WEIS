@@ -31,7 +31,7 @@ jobs:
         shell: pwsh # putting in a shell command makes for compile linking problems later
         # (if you use the shell here, cannot use 'compiler' package, but mpi only seems to work with it)
         run: |
-          conda install -y petsc4py mpi4py 
+          conda install -y petsc4py mpi4py openmpi==4.0.5
           python -c "import platform; print(platform.node())"
 
       # Install dependencies of WISDEM specific to windows
