@@ -562,9 +562,9 @@ properties:
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
                         type: integer
-                        enum: [0, 1]
+                        enum: [0, 1, 3]
                         default: 1
-                        description: Type of wake/induction model (switch) {0=none, 1=BEMT}
+                        description: Type of wake/induction model (switch) {0=none, 1=BEMT, 3=OLAF}
                     AFAeroMod:
                         type: integer
                         enum: [0, 1, 2]
