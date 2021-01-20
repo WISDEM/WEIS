@@ -45,7 +45,7 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_objective('aeroelastic.rotor_overspeed')
         
         elif self.opt['merit_figure'] == 'Cp':
-            wt_opt.model.add_objective('aeroelastic.Cp_out')
+            wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
         else:
             super(PoseOptimizationWEIS, self).set_objective(wt_opt)
                 
