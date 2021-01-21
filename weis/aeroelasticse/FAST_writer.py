@@ -1960,8 +1960,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write(" ".join(ln) + '\n')
         f.write('---------------------- LINE PROPERTIES --------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NLines'], 'NLines', '- number of line objects\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NumSegs', 'NodeAnch', 'NodeFair', 'Flags/Outputs']])+'\n')
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NumSegs', 'NodeAnch', 'NodeFair', 'Outputs', 'CtrlChan']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
         for i in range(self.fst_vt['MoorDyn']['NLines']):
             ln = []
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Line'][i]))
@@ -1970,7 +1970,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NumSegs'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeAnch'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeFair'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Flags_Outputs'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Outputs'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CtrlChan'][i]))
             f.write(" ".join(ln) + '\n')
         f.write('---------------------- SOLVER OPTIONS ---------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtM'], 'dtM', '- time step to use in mooring integration (s)\n'))

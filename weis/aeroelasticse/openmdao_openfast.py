@@ -839,7 +839,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['NumSegs'] = 50*np.ones(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['Flags_Outputs'] = ['-'] * n_lines
+            fst_vt['MoorDyn']['Outputs'] = ['-'] * n_lines
+            fst_vt['MoorDyn']['CtrlChan'] = np.zeros(n_lines, dtype=np.int64)
             for k in range(n_lines):
                 id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
                 id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
