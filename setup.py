@@ -58,7 +58,7 @@ class CMakeBuildExt(build_ext):
                 
             # CMAKE profiles default for all
             buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
-            cmake_args = ['-DBUILD_SHARED_LIBS=ON',
+            cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
                           '-DDOUBLE_PRECISION:BOOL=ON',
                           '-DCMAKE_INSTALL_PREFIX='+localdir,
                           '-DCMAKE_BUILD_TYPE='+buildtype]

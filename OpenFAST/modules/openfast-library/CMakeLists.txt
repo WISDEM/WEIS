@@ -53,7 +53,7 @@ add_library(openfast_postlib
   )
 target_link_libraries(openfast_postlib openfast_prelib scfastlib foamfastlib versioninfolib)
 
-add_library(openfastlib src/FAST_Library.f90)
+add_library(openfastlib SHARED src/FAST_Library.f90)
 target_link_libraries(openfastlib openfast_postlib openfast_prelib scfastlib foamfastlib)
 
 if (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU" AND ${CMAKE_Fortran_COMPILER_ID} STREQUAL "RELEASE")
