@@ -165,13 +165,12 @@ class runFAST_pywrapper(object):
         FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
         FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
-        input_file_name = create_string_buffer(writer.FAST_InputFileOut.encode('utf-8'))
+        input_file_name = create_string_buffer(os.path.abspath(writer.FAST_InputFileOut).encode('utf-8'))
         t_max = c_double(self.fst_vt['Fst']['TMax'])
 
         os.chdir(wrapper.FAST_directory)
         
         openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
-        openfastlib.dt = c_double(self.fst_vt['Fst']['DT'])
         openfastlib.fast_run()
 
         # #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
