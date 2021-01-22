@@ -14,14 +14,17 @@
 # limitations under the License.
 #
 
-if (GENERATE_TYPES)
-  generate_f90_types(src/MoorDyn_Registry.txt ${CMAKE_CURRENT_LIST_DIR}/src/MoorDyn_Types.f90)
-endif()
+# if (GENERATE_TYPES)
+#   generate_f90_types(src/MoorDyn_Registry.txt ${CMAKE_CURRENT_LIST_DIR}/src/MoorDyn_Types.f90)
+# endif()
 
 set(MOORDYN_LIBS_SOURCES
   src/MoorDyn.f90
   src/MoorDyn_IO.f90
   src/MoorDyn_Types.f90
+
+  # src/MoorDyn_Types_C.f90
+  # src/MoorDyn_C.f90
 )
 
 add_library(moordynlib ${MOORDYN_LIBS_SOURCES})
@@ -32,3 +35,12 @@ install(TARGETS moordynlib
   RUNTIME DESTINATION lib
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib)
+
+set(MD_DRIVER_SOURCES src/MoorDyn_Driver.f90)
+add_executable(moordyn_driver ${MD_DRIVER_SOURCES})
+target_link_libraries(moordyn_driver moordynlib nwtclibs versioninfolib ${CMAKE_DL_LIBS})
+
+install(TARGETS moordyn_driver
+  RUNTIME DESTINATION bin
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib)

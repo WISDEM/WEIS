@@ -243,17 +243,29 @@ class FASTLoadCases(ExplicitComponent):
             if os.path.isabs(FASTpref['file_management']['FAST_exe']):
                 self.FAST_exe = FASTpref['file_management']['FAST_exe']
             else:
-                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_exe'])
+                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             FASTpref['file_management']['FAST_exe'])
+
+        if FASTpref['file_management']['FAST_lib'] != 'none':
+            if os.path.isabs(FASTpref['file_management']['FAST_lib']):
+                self.FAST_lib = FASTpref['file_management']['FAST_lib']
+            else:
+                self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             FASTpref['file_management']['FAST_lib'])
+
         if os.path.isabs(FASTpref['file_management']['FAST_directory']):
             self.FAST_directory = FASTpref['file_management']['FAST_directory']
         else:
-            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_directory'])
+            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                               FASTpref['file_management']['FAST_directory'])
         
         if FASTpref['file_management']['Turbsim_exe'] != 'none':
             if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
                 self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
             else:
-                self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['Turbsim_exe'])
+                self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                                FASTpref['file_management']['Turbsim_exe'])
+                
         self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
@@ -865,6 +877,7 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
+            fastBatch.FAST_lib          = self.FAST_lib
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
