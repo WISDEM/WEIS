@@ -24,12 +24,16 @@ design_variables:
         n_opt: 4        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        lock_root: 1           # Lock the first DV from blade root
+        lock_tip: 1            # The last DV at blade tip is locked
       spar_cap_ps:
         flag: True     # Flag to optimize the spar cap thickness on the pressure side
         equal_to_suction: True # Flag to impose the spar cap thickness on pressure and suction sides equal
         n_opt: 4        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        lock_root: 1           # Lock the first DV from blade root
+        lock_tip: 1            # The last DV at blade tip is locked
       te_ss:
         flag: False     # Flag to optimize the trailing edge reinforcement thickness on the suction side
         n_opt: 8        # Number of control points along blade span
