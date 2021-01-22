@@ -159,6 +159,8 @@ constraints:
       max: 0.2
 
 driver:
+  optimization:
+    flag: True
     max_major_iter: 50    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 1000   # Maximum number of minor design iterations (SNOPT)
     solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
