@@ -978,7 +978,8 @@ class FASTLoadCases(ExplicitComponent):
         iec.dlc_inputs['U']     = []
         iec.dlc_inputs['Seeds'] = []
         iec.dlc_inputs['Yaw']   = []
-
+        iec.uniqueSeeds         = True
+        
         if powercurve:
             # running turbulent power curve
             iec.dlc_inputs['DLC'].append(1.1)
