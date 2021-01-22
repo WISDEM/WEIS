@@ -24,20 +24,20 @@ class FastLibAPI(CDLL):
         self.n_turbines = c_int(1)
         self.i_turb = c_int(0)
         self.dt = c_double(0.0)
-        self.abort_error_level = c_int(0)
+        self.abort_error_level = c_int(99)
         self.num_outs = c_int(0)
-        self.channel_names = create_string_buffer(20 * 4000)
+        self._channel_names = create_string_buffer(20 * 4000)
         self.output_array = None
-        self.error_status = c_int(0)
-        self.error_message = create_string_buffer(1025)
 
         # The inputs are meant to be from Simulink.
         # If < 8, FAST_SetExternalInputs simply returns,
         # but this behavior may change to an error
-        self._num_inputs = c_int(1)
-        self._inp_array = (c_double * 1)(0.0, )
+        ### MAKE THIS 8 OR 11
+        self._num_inputs = c_int(8)
+        self._inp_array = (c_double * 10)(0.0, )  # 10 is hard-coded in FAST_Library as MAXInitINPUTS
 
         self.output_values = None
+        self.ended = False
 
     def _initialize_routines(self):
         self.FAST_AllocateTurbines.argtypes = [
@@ -96,18 +96,22 @@ class FastLibAPI(CDLL):
         self.FAST_End.restype = c_int
 
     def _error_check(self, error_status, error_message):
-        if error_status.value > self.abort_error_level.value:
+        # print(error_status.value, error_message.value, self.abort_error_level.value)
+        if error_status.value >= self.abort_error_level.value:
             print(f"Error {error_status.value}: {error_message.value}")
             self.fast_end()
             exit
 
     def fast_init(self):
+        _error_message = create_string_buffer(1025)
+        _error_status = c_int(0)
+
         self.FAST_AllocateTurbines(
             byref(self.n_turbines),
-            byref(self.error_status),
-            self.error_message
+            byref(_error_status),
+            _error_message
         )
-        self._error_check(self.error_status, self.error_message)
+        self._error_check(_error_status, _error_message)
 
         self.FAST_Sizes(
             byref(self.i_turb),
@@ -117,11 +121,11 @@ class FastLibAPI(CDLL):
             byref(self.abort_error_level),
             byref(self.num_outs),
             byref(self.dt),
-            byref(self.error_status),
-            self.error_message,
-            self.channel_names
+            byref(_error_status),
+            _error_message,
+            self._channel_names
         )
-        self._error_check(self.error_status, self.error_message)
+        self._error_check(_error_status, _error_message)
 
         # Allocate the data for the outputs
         # NOTE: The ctypes array allocation (output_array) must be after the output_values
@@ -130,16 +134,19 @@ class FastLibAPI(CDLL):
         self.output_array = (c_double * self.num_outs.value)(0.0, )
 
     def fast_sim(self):
+        _error_message = create_string_buffer(1025)
+        _error_status = c_int(0)
+
         self.FAST_Start(
             byref(self.i_turb),
             byref(self._num_inputs),
             byref(self.num_outs),
             byref(self._inp_array),
             byref(self.output_array),
-            byref(self.error_status),
-            self.error_message
+            byref(_error_status),
+            _error_message
         )
-        self._error_check(self.error_status, self.error_message)
+        self._error_check(_error_status, _error_message)
         self.output_values[0] = self.output_array[:]
         
         for i in range( 1, self.total_time_steps ):
@@ -149,24 +156,29 @@ class FastLibAPI(CDLL):
                 byref(self.num_outs),
                 byref(self._inp_array),
                 byref(self.output_array),
-                byref(self.error_status),
-                self.error_message
+                byref(_error_status),
+                _error_message
             )
-            self._error_check(self.error_status, self.error_message)
+            self._error_check(_error_status, _error_message)
             self.output_values[i] = self.output_array[:]
         
     def fast_end(self):
-        self.FAST_DeallocateTurbines(
-            byref(self.error_status),
-            self.error_message
-        )
-        self._error_check(self.error_status, self.error_message)
+        _error_message = create_string_buffer(1025)
+        _error_status = c_int(0)
 
-        # StopTheProgram = c_bool(True)
-        # openfastlib.FAST_End(
-        #     byref(i_turb),
-        #     byref(StopTheProgram)
-        # )
+        if not self.ended:
+            self.ended = True
+
+            self.FAST_DeallocateTurbines(
+                byref(_error_status),
+                _error_message
+            )
+            self._error_check(_error_status, _error_message)
+
+            # self.FAST_End(
+            #     byref(self.i_turb),
+            #     byref(c_bool(True))
+            # )
 
     def fast_run(self):
         self.fast_init()
@@ -179,6 +191,6 @@ class FastLibAPI(CDLL):
 
     @property
     def output_channel_names(self):
-        output_channel_names = self.channel_names.value.split()
+        output_channel_names = self._channel_names.value.split()
         output_channel_names = [n.decode('UTF-8') for n in output_channel_names]        
         return output_channel_names
