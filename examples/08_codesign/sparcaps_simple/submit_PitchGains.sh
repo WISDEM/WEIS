@@ -2,7 +2,7 @@
 #SBATCH --account=weis
 #SBATCH --time=1:00:00
 #SBATCH --job-name=sparcaps
-#SBATCH --nodes=1             # This should be nC/36 (36 cores on eagle)
+#SBATCH --nodes=2             # This should be nC/36 (36 cores on eagle)
 #SBATCH --ntasks-per-node=36
 #SBATCH --mail-user john.jasa@nrel.gov
 #SBATCH --mail-type BEGIN,END,FAIL
