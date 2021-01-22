@@ -126,6 +126,9 @@ class WT_RNTA(om.Group):
             self.connect("blade.internal_structure_2d_fem.definition_layer", "re.precomp.definition_layer")
             self.connect("blade.internal_structure_2d_fem.web_start_nd", "re.precomp.web_start_nd")
             self.connect("blade.internal_structure_2d_fem.web_end_nd", "re.precomp.web_end_nd")
+            self.connect("blade.internal_structure_2d_fem.joint_position", "re.precomp.joint_position")
+            self.connect("blade.internal_structure_2d_fem.joint_mass", "re.precomp.joint_mass")
+            self.connect("blade.internal_structure_2d_fem.joint_cost", "re.precomp.joint_cost")
             self.connect("materials.name", "re.precomp.mat_name")
             self.connect("materials.orth", "re.precomp.orth")
             self.connect("materials.E", "re.precomp.E")
@@ -561,7 +564,7 @@ class WT_RNTA(om.Group):
                 ]:
                     self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
 
-                for var in ["joint1", "joint2", "transition_flag"]:
+                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2", "transition_flag"]:
                     self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
 
             # Mooring connections
