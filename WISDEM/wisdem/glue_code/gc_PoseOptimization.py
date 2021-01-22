@@ -182,7 +182,7 @@ class PoseOptimization(object):
                     criterion = self.opt['driver']['design_of_experiments']['criterion'],
                     seed = self.opt['driver']['design_of_experiments']['seed'])
             else:
-                exit('The generator type {} is unsupported.'.format(
+                raise Exception('The generator type {} is unsupported.'.format(
                     self.opt['driver']['design_of_experiments']['generator']))
 
             # Initialize driver
@@ -192,7 +192,7 @@ class PoseOptimization(object):
             wt_opt.driver.options['run_parallel'] = self.opt['driver']['design_of_experiments']['run_parallel']
 
         else:
-            exit('Design variables are set to be optimized or studied, but no driver is selected. Please enable a driver.')
+            raise Exception('Design variables are set to be optimized or studied, but no driver is selected. Please enable a driver.')
 
         return wt_opt
 
