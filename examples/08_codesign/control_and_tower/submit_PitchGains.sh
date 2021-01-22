@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --account=weis
-#SBATCH --time=6:00:00
+#SBATCH --time=18:00:00
 #SBATCH --job-name=control_and_tower
 #SBATCH --nodes=1             # This should be nC/36 (36 cores on eagle)
 #SBATCH --ntasks-per-node=36
