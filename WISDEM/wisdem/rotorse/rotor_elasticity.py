@@ -17,7 +17,7 @@ class RunPreComp(ExplicitComponent):
         self.options.declare("opt_options")
 
     def setup(self):
-        rotorse_options = self.options["modeling_options"]["RotorSE"]
+        rotorse_options = self.options["modeling_options"]["WISDEM"]["RotorSE"]
         self.n_span = n_span = rotorse_options["n_span"]
         self.n_webs = n_webs = rotorse_options["n_webs"]
         self.n_layers = n_layers = rotorse_options["n_layers"]
@@ -138,6 +138,10 @@ class RunPreComp(ExplicitComponent):
             units="kg/m**3",
             desc="1D array of the density of the materials. For composites, this is the density of the laminate.",
         )
+
+        self.add_input("joint_position", val=0.0, desc="Spanwise position of the segmentation joint.",)
+        self.add_input("joint_mass", val=0.0, desc="Mass of the joint.")
+        self.add_input("joint_cost", val=0.0, units='USD', desc="Cost of the joint.")
 
         # Outputs - Distributed beam properties
         self.add_output("z", val=np.zeros(n_span), units="m", desc="locations of properties along beam")
@@ -500,8 +504,8 @@ class RunPreComp(ExplicitComponent):
             return sec
             ##############################
 
-        layer_name = self.options["modeling_options"]["RotorSE"]["layer_name"]
-        layer_mat = self.options["modeling_options"]["RotorSE"]["layer_mat"]
+        layer_name = self.options["modeling_options"]["WISDEM"]["RotorSE"]["layer_name"]
+        layer_mat = self.options["modeling_options"]["WISDEM"]["RotorSE"]["layer_mat"]
 
         upperCS = [None] * self.n_span
         lowerCS = [None] * self.n_span
@@ -836,6 +840,13 @@ class RunPreComp(ExplicitComponent):
                     if j in lowerCS[i].mat_idx[sector_idx_strain_te_ps[i]]:
                         outputs["te_ps_mats"][i, j] = 1.0
 
+        if inputs["joint_mass"] > 0.:
+            s = (inputs["r"] - inputs["r"][0]) / (inputs["r"][-1] - inputs["r"][0])
+            id_station = np.argmin(abs(inputs["joint_position"] - s))
+            span = np.average([inputs["r"][id_station] - inputs["r"][id_station - 1],
+                               inputs["r"][id_station + 1] - inputs["r"][id_station]])
+            rhoA[id_station] += inputs["joint_mass"] / span
+
         outputs["z"] = inputs["r"]
         outputs["EIxx"] = EIxx
         outputs["EIyy"] = EIyy
@@ -953,6 +964,9 @@ class RunPreComp(ExplicitComponent):
         bcm.bladeLength = inputs["r"][-1] - inputs["r"][0]
         bcm.le_location = inputs["pitch_axis"]
         blade_cost, blade_mass = bcm.execute_blade_cost_model()
+
+        if inputs["joint_mass"] > 0.:
+            blade_cost += inputs["joint_cost"]
 
         outputs["total_blade_cost"] = blade_cost
         outputs["total_blade_mass"] = blade_mass

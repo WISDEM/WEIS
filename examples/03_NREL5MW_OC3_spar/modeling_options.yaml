@@ -25,15 +25,14 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompElast: 1
         CompInflow: 1
         CompAero: 2
-        CompServo: 0
-        CompHydro: 0
+        CompServo: 1
+        CompHydro: 1
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
     linearization:
         Linearize: False
     ElastoDyn:
-        flag: True
         FlapDOF1: True
         FlapDOF2: True
         EdgeDOF: True
@@ -41,16 +40,23 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
-        TwFADOF1 : False
-        TwFADOF2 : False
-        TwSSDOF1 : False
-        TwSSDOF2 : False
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
         PtfmSgDOF: False
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
+    HydroDyn:
+        WaveTMax: 1 #3630
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WaveSeed1: 123456789
+        WaveSeed2: 1011121314
+        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
     ROSCO:
         flag: True
     
@@ -83,17 +89,3 @@ openfast:
             turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
             U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True
-
-yaml:
-    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
-    path2schema: windIO/windIO/turbine/IEAontology_schema.yaml   # Path to the yams schema to run the validation
-
-xfoil:
-    path       : Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
-    run_parallel: True
-
-
-
-
-
-

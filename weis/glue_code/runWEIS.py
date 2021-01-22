@@ -3,7 +3,7 @@ import os, sys, time
 import openmdao.api as om
 from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
-from weis.glue_code.gc_PoseOptimization  import PoseOptimization
+from weis.glue_code.gc_PoseOptimization  import PoseOptimizationWEIS
 from weis.glue_code.glue_code         import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
@@ -19,7 +19,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
-    myopt = PoseOptimization(modeling_options, opt_options)
+    myopt = PoseOptimizationWEIS(modeling_options, opt_options)
 
     if MPI:
         n_DV = myopt.get_number_design_variables()
