@@ -168,8 +168,9 @@ driver:
     max_major_iter: 50    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 1000   # Maximum number of minor design iterations (SNOPT)
     solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1.e-3      # Step size for finite differencing
+    step_size: 1.e-2      # Step size for finite differencing
     form: forward         # Finite differencing mode, either forward or central
+    verify_level: -1
 
 recorder:
     flag: False              # Flag to activate OpenMDAO recorder
