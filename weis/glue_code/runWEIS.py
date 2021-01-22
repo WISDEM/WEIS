@@ -21,7 +21,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimizationWEIS(modeling_options, opt_options)
 
-    if MPI:
+    if MPI and opt_options['driver']['optimization']['flag']:
         n_DV = myopt.get_number_design_variables()
         
         # Extract the number of cores available
@@ -94,7 +94,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
-        if MPI:
+        if MPI and opt_options['driver']['optimization']['flag']:
             if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['openfast']['analysis_settings']['mpi_run']           = True
@@ -182,7 +182,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Level3']['flag']:
+    if MPI and modeling_options['Level3']['flag'] and opt_options['driver']['optimization']['flag']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
