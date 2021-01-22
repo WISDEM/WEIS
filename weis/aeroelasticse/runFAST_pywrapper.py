@@ -242,7 +242,7 @@ class runFAST_pywrapper_batch(object):
         et = {}
         dl = {}
         for i, (case, case_name) in enumerate(zip(self.case_list, self.case_name_list)):
-            _name, _ss, _et, _dl = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
+            _name, _ss, _et, _dl = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_lib, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
