@@ -14,17 +14,14 @@
 # limitations under the License.
 #
 
-# if (GENERATE_TYPES)
-#   generate_f90_types(src/MoorDyn_Registry.txt ${CMAKE_CURRENT_LIST_DIR}/src/MoorDyn_Types.f90)
-# endif()
+if (GENERATE_TYPES)
+  generate_f90_types(src/MoorDyn_Registry.txt ${CMAKE_CURRENT_LIST_DIR}/src/MoorDyn_Types.f90)
+endif()
 
 set(MOORDYN_LIBS_SOURCES
   src/MoorDyn.f90
   src/MoorDyn_IO.f90
   src/MoorDyn_Types.f90
-
-  # src/MoorDyn_Types_C.f90
-  # src/MoorDyn_C.f90
 )
 
 add_library(moordynlib ${MOORDYN_LIBS_SOURCES})
