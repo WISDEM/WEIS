@@ -331,7 +331,7 @@ class WindPark(om.Group):
                 self.connect("mooring.line_tangential_added_mass", "aeroelastic.line_tangential_added_mass")
                 self.connect("mooring.line_transverse_drag", "aeroelastic.line_transverse_drag")
                 self.connect("mooring.line_tangential_drag", "aeroelastic.line_tangential_drag")
-                self.connect("mooring.nodes_location", "aeroelastic.nodes_location_full")
+                self.connect("mooring.mooring_nodes", "aeroelastic.nodes_location_full")
                 self.connect("mooring.nodes_mass", "aeroelastic.nodes_mass")
                 self.connect("mooring.nodes_volume", "aeroelastic.nodes_volume")
                 self.connect("mooring.nodes_added_mass", "aeroelastic.nodes_added_mass")
