@@ -477,7 +477,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
-            fst_vt['ElastoDyn']['PtfmRefzt'] = 0.0 # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         else:
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
@@ -486,13 +485,13 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
-            fst_vt['ElastoDyn']['PtfmRefzt'] = float(inputs['tower_base_height']) # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
         # Drivetrain inputs
         fst_vt['ElastoDyn']['DTTorSpr'] = 0.
         fst_vt['ElastoDyn']['DTTorDmp'] = 0.
 
         tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
+        fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
@@ -519,6 +518,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
         twr_elev  = inputs['tower_monopile_z']
+        breakpoint()
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
         cd_index  = 0
         if twr_elev[twr_index] <= 1.:
