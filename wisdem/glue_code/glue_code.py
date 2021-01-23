@@ -149,7 +149,6 @@ class WT_RNTA(om.Group):
             if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
                 self.connect("blade.outer_shape_bem.pitch_axis", "re.rail.pitch_axis")
                 self.connect("assembly.blade_ref_axis", "re.rail.blade_ref_axis")
-                self.connect("blade.interp_airfoils.coord_xy_dim", "re.rail.coord_xy_dim")
                 self.connect("blade.interp_airfoils.coord_xy_interp", "re.rail.coord_xy_interp")
 
             # Connections from blade struct parametrization to rotor load anlysis
@@ -525,6 +524,7 @@ class WT_RNTA(om.Group):
             self.connect("tower.layer_thickness", "floatingse.tower.layer_thickness")
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
             self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
+            self.connect("floating.transition_node", "floatingse.transition_node")
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "floatingse.rna_F")
                 self.connect("drivese.base_M", "floatingse.rna_M")
@@ -534,14 +534,9 @@ class WT_RNTA(om.Group):
 
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
-                self.connect(
-                    "floating.member_" + kname + ".outer_diameter",
-                    "floatingse.member" + str(k) + ".outer_diameter_in",
-                )
-                self.connect(
-                    "floating.member_" + kname + ".outfitting_factor",
-                    "floatingse.member" + str(k) + ".outfitting_factor_in",
-                )
+                idx = modeling_options["floating"]["members"]["name2idx"][kname]
+                self.connect(f"floating.memgrp{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                self.connect(f"floating.memgrp{idx}.outfitting_factor", f"floatingse.member{k}.outfitting_factor_in")
 
                 for var in [
                     "s",
@@ -562,10 +557,10 @@ class WT_RNTA(om.Group):
                     "axial_stiffener_flange_thickness",
                     "axial_stiffener_spacing",
                 ]:
-                    self.connect("floating.member_" + kname + "." + var, "floatingse.member" + str(k) + "." + var)
+                    self.connect(f"floating.memgrp{idx}.{var}", f"floatingse.member{k}.{var}")
 
-                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2", "transition_flag"]:
-                    self.connect("floating.member_" + kname + ":" + var, "floatingse.member" + str(k) + "." + var)
+                for var in ["joint1", "joint2", "s_ghost1", "s_ghost2"]:
+                    self.connect(f"floating.member_{kname}:{var}", f"floatingse.member{k}.{var}")
 
             # Mooring connections
             self.connect("mooring.unstretched_length", "floatingse.line_length", src_indices=[0])
