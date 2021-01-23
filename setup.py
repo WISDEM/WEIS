@@ -78,7 +78,9 @@ class CMakeBuildExt(build_ext):
                 
             elif ci_flag:
                 # Github Actions builder- keep it simple
-                pass
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC',
+                               '-DCMAKE_C_FLAGS_'+buildtype+'=-fPIC',
+                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-fPIC']
                               
             else:
                 cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC '+tune,
