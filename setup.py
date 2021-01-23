@@ -71,9 +71,9 @@ class CMakeBuildExt(build_ext):
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
                 
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
-                               '-DCMAKE_C_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC -xSKYLAKE-AVX512',
+                               '-DCMAKE_C_FLAGS_'+buildtype+'=-fPIC -xSKYLAKE-AVX512',
+                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-fPIC -xSKYLAKE-AVX512',
                                '-DOPENMP=ON']
                 
             elif ci_flag:
@@ -81,9 +81,9 @@ class CMakeBuildExt(build_ext):
                 pass
                               
             else:
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
-                               '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC '+tune,
+                               '-DCMAKE_C_FLAGS_'+buildtype+'=-fPIC '+tune,
+                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-fPIC '+tune]
                               
 
             if platform.system() == 'Windows':
