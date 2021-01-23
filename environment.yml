@@ -3,34 +3,31 @@ channels:
   - defaults
 
 dependencies:
-  - python
+  - cmake
+  - control
+  - coveralls
+  - cython
+  - dill
+  - git
+  - jsonschema
+  - make
+  - matplotlib-base
+  - nlopt
+  - numpy
+  - openmdao
+  - openpyxl
+  - pandas
+  - pyside2
   - pytest
   - pytest-cov
-  - coveralls
-  - openmdao=3.4.0
-  - jsonschema
-  - ruamel_yaml
+  - python
   - pyyaml
-  - cmake
-  - make
-  - xlrd
-  - openpyxl
-  - cython
-  - swig
-  - pandas
-  - numpydoc
-  - six
-  - setuptools
-  - git
-  - numpy
+  - ruamel_yaml
   - scipy
-  - matplotlib-base
-  - geopy
-  - pyside2
-  - dill
-  - control
-  - nlopt
+  - setuptools
   - smt
+  - sortedcontainers
+  - swig
   - pip:
     - simpy
     - marmot-agents

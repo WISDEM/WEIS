@@ -186,7 +186,7 @@ class RunXFOIL(ExplicitComponent):
         self.options.declare('opt_options')
         
     def setup(self):
-        rotorse_options = self.options['modeling_options']['RotorSE']
+        rotorse_options = self.options['modeling_options']['WISDEM']['RotorSE']
         self.n_span        = n_span     = rotorse_options['n_span']
         self.n_te_flaps    = n_te_flaps = rotorse_options['n_te_flaps']
         self.n_tab         = rotorse_options['n_tab']
