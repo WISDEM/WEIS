@@ -518,7 +518,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
         twr_elev  = inputs['tower_monopile_z']
-        breakpoint()
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
         cd_index  = 0
         if twr_elev[twr_index] <= 1.:
