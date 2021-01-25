@@ -22,4 +22,4 @@ trust_region = SimpleTrustRegion(
 trust_region.add_objective("y")
 # trust_region.add_constraint("con", upper=0.25)
 
-results = trust_region.optimize(plot=True, num_iterations=20, num_basinhop_iterations=2)
+results = trust_region.optimize(plot=True, num_iterations=1, num_basinhop_iterations=1, interp_method="linear")

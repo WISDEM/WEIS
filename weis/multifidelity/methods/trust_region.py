@@ -8,6 +8,8 @@ from weis.multifidelity.models.testbed_components import (
     simple_2D_low_model,
 )
 from weis.multifidelity.methods.base_method import BaseMethod
+fontsize = 18
+plt.rcParams["font.size"] = fontsize
 
 
 class SimpleTrustRegion(BaseMethod):
@@ -210,7 +212,7 @@ class SimpleTrustRegion(BaseMethod):
             print("Trust radius:", self.trust_radius)
             print("Best func value:", new_point_high)
 
-    def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False):
+    def optimize(self, plot=False, num_iterations=100, num_basinhop_iterations=False, interp_method="smt"):
         """
         Actually perform the trust-region optimization.
 
@@ -222,7 +224,7 @@ class SimpleTrustRegion(BaseMethod):
             Number of trust region iterations.
 
         """
-        self.construct_approximations()
+        self.construct_approximations(interp_method=interp_method)
         self.process_constraints()
 
         if plot:
@@ -234,7 +236,7 @@ class SimpleTrustRegion(BaseMethod):
 
             self.update_trust_region(x_new, hits_boundary)
 
-            self.construct_approximations()
+            self.construct_approximations(interp_method=interp_method)
 
             if plot:
                 self.plot_functions()
@@ -350,54 +352,56 @@ class SimpleTrustRegion(BaseMethod):
 
             plt.figure()
 
-            plt.plot(squeezed_x, y_full_low, label="low-fidelity", c="tab:green")
-            plt.scatter(self.design_vectors, y_low, c="tab:green")
+            lw = 4
+            s = 100
+            plt.plot(squeezed_x, y_full_low, label="low-fidelity", c="tab:green", lw=lw)
+            plt.scatter(self.design_vectors, y_low, c="tab:green", s=s)
 
-            plt.plot(squeezed_x, y_full_high, label="high-fidelity", c="tab:orange")
-            plt.scatter(self.design_vectors, y_high, c="tab:orange")
+            plt.plot(squeezed_x, y_full_high, label="high-fidelity", c="tab:orange", lw=lw)
+            plt.scatter(self.design_vectors, y_high, c="tab:orange", s=s)
 
-            plt.plot(squeezed_x, np.squeeze(y_full), label="surrogate", c="tab:blue")
+            plt.plot(squeezed_x, np.squeeze(y_full), label="surrogate", c="tab:blue", lw=lw)
             
-            x = self.design_vectors[-1, 0]
-            y_plot = y_high[-1]
-            y_diff = 0.5
-            x_lb = max(x - self.trust_radius, self.bounds[0, 0])
-            x_ub = min(x + self.trust_radius, self.bounds[0, 1])
-            points = np.array(
-                [
-                    [x_lb, y_plot],
-                    [x_ub, y_plot],
-                ]
-            )
-            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
-
-            points = np.array(
-                [
-                    [x_lb, y_plot - y_diff],
-                    [x_lb, y_plot + y_diff],
-                ]
-            )
-            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
-
-            points = np.array(
-                [
-                    [x_ub, y_plot - y_diff],
-                    [x_ub, y_plot + y_diff],
-                ]
-            )
-            plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+            # x = self.design_vectors[-1, 0]
+            # y_plot = y_high[-1]
+            # y_diff = 0.5
+            # x_lb = max(x - self.trust_radius, self.bounds[0, 0])
+            # x_ub = min(x + self.trust_radius, self.bounds[0, 1])
+            # points = np.array(
+            #     [
+            #         [x_lb, y_plot],
+            #         [x_ub, y_plot],
+            #     ]
+            # )
+            # plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+            # 
+            # points = np.array(
+            #     [
+            #         [x_lb, y_plot - y_diff],
+            #         [x_lb, y_plot + y_diff],
+            #     ]
+            # )
+            # plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
+            # 
+            # points = np.array(
+            #     [
+            #         [x_ub, y_plot - y_diff],
+            #         [x_ub, y_plot + y_diff],
+            #     ]
+            # )
+            # plt.plot(points[:, 0], points[:, 1], "-", color="gray", clip_on=False)
 
             plt.xlim(self.bounds[0])
-            plt.ylim([-10, 10])
+            plt.ylim([-11, 10])
 
             plt.xlabel("x")
-            plt.ylabel("y")
+            plt.ylabel("y", rotation=0)
 
             ax = plt.gca()
-            ax.text(s="Low-fidelity", x=0.1, y=0.5, c="tab:green", fontsize=12)
-            ax.text(s="High-fidelity", x=0.26, y=-8.5, c="tab:orange", fontsize=12)
+            ax.text(s="Low-fidelity", x=0.1, y=2.5, c="tab:green", fontsize=fontsize)
+            ax.text(s="High-fidelity", x=0.2, y=-11., c="tab:orange", fontsize=fontsize)
             ax.text(
-                s="Augmented low-fidelity", x=0.6, y=-10.0, c="tab:blue", fontsize=12
+                s="Corrected low-fidelity", x=0.45, y=-8.0, c="tab:blue", fontsize=fontsize
             )
 
             niceplots.adjust_spines(outward=True)

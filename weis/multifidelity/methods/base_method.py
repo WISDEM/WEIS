@@ -3,6 +3,7 @@ from scipy.interpolate import Rbf
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import smt.surrogate_models as smt
+from scipy import interpolate
 
 
 class BaseMethod:
@@ -270,6 +271,14 @@ class BaseMethod:
                 # Create m_k = lofi + RBF
                 def approximation_function(x):
                     return self.model_low.run(x)[output_name] + e(*x)
+                    
+            if interp_method in ["linear", "quadratic", "cubic"]:
+                sm = interpolate.interp1d(np.squeeze(self.design_vectors), differences, kind=interp_method, fill_value="extrapolate")
+
+                def approximation_function(x, output_name=output_name, sm=sm):
+                    return self.model_low.run(x)[output_name] + sm(
+                        np.atleast_2d(x)
+                    )
 
             elif interp_method == "smt":
                 # If there's no difference between the high- and low-fidelity values,
