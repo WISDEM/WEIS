@@ -105,10 +105,10 @@ class PoseOptimizationWEIS(PoseOptimization):
         if control_constraints['flap_control']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff1',
+            wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2', 
+            wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Ki', 
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])    
         if control_constraints['rotor_overspeed']['flag']:
