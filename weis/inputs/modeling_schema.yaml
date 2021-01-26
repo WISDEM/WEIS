@@ -576,8 +576,9 @@ properties:
                         default: 1
                         description: Type tower influence on wind based on potential flow around the tower (switch) {0=none, 1=baseline potential flow, 2=potential flow with Bak correction}
                     TwrShadow:
-                        type: boolean
-                        default: True
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
                         description: Calculate tower influence on wind based on downstream tower shadow? (flag)
                     TwrAero:
                         type: boolean
