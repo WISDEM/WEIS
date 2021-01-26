@@ -800,7 +800,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
             fst_vt['HydroDyn']['PotMod'] = 1
-            fst_vt['HydroDyn']['PotFile'] = '/mnt/c/Users/jjasa/git/r-test/glue-codes/openfast/5MW_Baseline/HydroData/Spar'
+            this_file_dir = os.path.dirname(os.path.abspath(__file__))
+            fst_vt['HydroDyn']['PotFile'] = os.path.join(this_file_dir, '../../examples/03_NREL5MW_OC3_spar/HydroData/Spar')
             fst_vt['HydroDyn']['PtfmVol0'] = 8029.21
             fst_vt['HydroDyn']['ExctnMod'] = 1
             fst_vt['HydroDyn']['RdtnMod'] = 1
