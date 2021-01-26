@@ -340,7 +340,7 @@ class TuneROSCO(ExplicitComponent):
         # Outputs 
         if rosco_init_options['Flp_Mode'] >= 1:
             outputs['flptune_coeff1']   = 2*WISDEM_turbine.bld_flapwise_damp*WISDEM_turbine.bld_flapwise_freq + controller.kappa[-1]*WISDEM_turbine.bld_flapwise_freq**2*controller.Kp_flap[-1]
-            outputs['flptune_coeff2']   = WISDEM_turbine.bld_flapwise_freq**2*(controller.Kp_flap[-1]*controller.kappa[-1] + 1)
+            outputs['flptune_coeff2']   = WISDEM_turbine.bld_flapwise_freq**2*(controller.Ki_flap[-1]*controller.kappa[-1] + 1)
         outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
         outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
 
