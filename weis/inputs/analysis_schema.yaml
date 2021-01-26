@@ -170,7 +170,7 @@ properties:
                                 type: number
                                 default: 0.05
                                 minimum: 0.0
-                                maximum: 1.0e+6
+                                maximum: 1.0
                             max: *flapminmax
                     rotor_overspeed:
                         type: object
