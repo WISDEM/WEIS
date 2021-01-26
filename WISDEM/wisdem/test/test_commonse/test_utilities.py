@@ -3,6 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import wisdem.commonse.utilities as util
+from scipy.optimize import curve_fit
 
 npts = 100
 myones = np.ones((npts,))
@@ -26,11 +27,21 @@ class TestAny(unittest.TestCase):
     def testModalCoefficients(self):
         # Test exact 6-deg polynomial
         p = np.random.random((7,))
+        p[:2] = 0.0
         x = np.linspace(0, 1)
         y = np.polynomial.polynomial.polyval(x, p)
 
         pp = util.get_modal_coefficients(x, y)
         npt.assert_almost_equal(p[2:] / p[2:].sum(), pp)
+
+        # Test more complex and ensure get the same answer as curve fit
+        p = np.random.random((10,))
+        y = np.polynomial.polynomial.polyval(x, p)
+
+        pp = util.get_modal_coefficients(x, y)
+        cc, _ = curve_fit(util.mode_fit, x, y)
+        cc /= cc.sum()
+        npt.assert_almost_equal(pp, cc, 4)
 
     def testGetXYModes(self):
         r = np.linspace(0, 1, 20)
@@ -54,6 +65,13 @@ class TestAny(unittest.TestCase):
         th = np.deg2rad(45)
         Irot = util.rotateI(I, th, axis="z")
         npt.assert_almost_equal(Irot, np.array([-2.5, 5.5, 3, -0.5, -0.5 * np.sqrt(2), 5.5 * np.sqrt(2)]))
+
+    def testRotateAlignVectors(self):
+        a = np.array([np.cos(0.25 * np.pi), np.sin(0.25 * np.pi), 0])
+        b = np.array([0.0, 0.0, 1.0])
+        R = util.rotate_align_vectors(a, b)
+        b2 = np.array(R * np.asmatrix(a).T).flatten()
+        npt.assert_almost_equal(b, b2)
 
 
 def suite():

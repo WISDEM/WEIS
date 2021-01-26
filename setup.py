@@ -152,7 +152,7 @@ metadata = dict(
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.2','numpy','scipy','nlopt','dill','smt','control','jsonmerge'],
+    install_requires              = ['openmdao>=3.4','numpy','scipy','nlopt','dill','smt','control','jsonmerge'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     packages                      = weis_pkgs,
     package_data                  =  {'':['*.yaml','*.xlsx']},

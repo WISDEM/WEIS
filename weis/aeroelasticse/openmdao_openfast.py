@@ -1,12 +1,14 @@
 import numpy as np
 import os, shutil, sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
 from wisdem.commonse.vertical_cylinder      import NFREQ
-from wisdem.commonse.utilities              import nodal2sectional
+import wisdem.commonse.utilities              as util
 from wisdem.towerse.tower                   import get_nfull
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
@@ -14,9 +16,9 @@ from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
+from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 
 from pCrunch import Analysis, pdTools, Processing
-from ROSCO_toolbox import utilities as rosco_utilities
 import fatpack
 
 if MPI:
@@ -64,7 +66,6 @@ class FASTLoadCases(ExplicitComponent):
         n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_tower']
         n_height_mon = 0 if not monopile else self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
         n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
-        nFull        = get_nfull(n_height)
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(rotorse_options['n_freq']/2)
         n_pc         = int(rotorse_options['n_pc'])
@@ -95,10 +96,10 @@ class FASTLoadCases(ExplicitComponent):
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('side_side_modes',  val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_input('sec_loc',          val=np.zeros(nFull-1),                         desc='normalized sectional location')
-        self.add_input('mass_den',         val=np.zeros(nFull-1),         units='kg/m',   desc='sectional mass per unit length')
-        self.add_input('foreaft_stff',     val=np.zeros(nFull-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
-        self.add_input('sideside_stff',    val=np.zeros(nFull-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
+        self.add_input('sec_loc',          val=np.zeros(n_height-1),                         desc='normalized sectional location')
+        self.add_input('mass_den',         val=np.zeros(n_height-1),         units='kg/m',   desc='sectional mass per unit length')
+        self.add_input('foreaft_stff',     val=np.zeros(n_height-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
+        self.add_input('sideside_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
         self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
@@ -146,6 +147,20 @@ class FASTLoadCases(ExplicitComponent):
         
         # Airfoil coordinates
         self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
+
+        # Floating platform inputs
+        self.add_input("transition_node", np.zeros(3), units="m")
+        self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
+        self.add_input("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+        self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
+        self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
+        self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_input("platform_center_of_mass", np.zeros(3), units="m")
+        self.add_input("platform_mass", 0.0, units="kg")
+        self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
         
         # Turbine level inputs
         self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
@@ -216,17 +231,15 @@ class FASTLoadCases(ExplicitComponent):
         # MoorDyn inputs
         mooropt = self.options['modeling_options']["mooring"]
         if self.options["modeling_options"]["flags"]["mooring"]:
-            n_line_types = mooropt["n_line_types"]
             n_nodes = mooropt["n_nodes"]
             n_lines = mooropt["n_lines"]
-            self.add_discrete_input("line_type_names", val=[""] * n_line_types)
-            self.add_input("line_diameter", val=np.zeros(n_line_types), units="m")
-            self.add_input("line_mass_density", val=np.zeros(n_line_types), units="kg/m")
-            self.add_input("line_stiffness", val=np.zeros(n_line_types), units="N")
-            self.add_input("line_transverse_added_mass", val=np.zeros(n_line_types), units="kg/m")
-            self.add_input("line_tangential_added_mass", val=np.zeros(n_line_types), units="kg/m")
-            self.add_input("line_transverse_drag", val=np.zeros(n_line_types))
-            self.add_input("line_tangential_drag", val=np.zeros(n_line_types))
+            self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
+            self.add_input("line_mass_density", val=np.zeros(n_lines), units="kg/m")
+            self.add_input("line_stiffness", val=np.zeros(n_lines), units="N")
+            self.add_input("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m")
+            self.add_input("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m")
+            self.add_input("line_transverse_drag", val=np.zeros(n_lines))
+            self.add_input("line_tangential_drag", val=np.zeros(n_lines))
             self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
             self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
             self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
@@ -369,6 +382,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['SubDyn']            = {}
         fst_vt['HydroDyn']          = {}
         fst_vt['MoorDyn']           = {}
+        fst_vt['MAP']               = {}
 
         for key in modeling_options['Level3']['simulation']:
             fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
@@ -450,29 +464,35 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
         fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
 
-        # Platform inputs
-        fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
-        fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
-        fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
-
         # Mass and inertia inputs
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
-        fst_vt['ElastoDyn']['PtfmMass'] = 0.
-        fst_vt['ElastoDyn']['PtfmRIner'] = 0.
-        fst_vt['ElastoDyn']['PtfmPIner'] = 0.
-        fst_vt['ElastoDyn']['PtfmYIner'] = 0.
+        # TODO: There is some confusion on PtfmRefzt
+        if modeling_options['flags']['floating']:
+            fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"])
+            fst_vt['ElastoDyn']['PtfmRIner'] = float(inputs["platform_I_total"][0])
+            fst_vt['ElastoDyn']['PtfmPIner'] = float(inputs["platform_I_total"][1])
+            fst_vt['ElastoDyn']['PtfmYIner'] = float(inputs["platform_I_total"][2])
+            fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
+            fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
+            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
+        else:
+            fst_vt['ElastoDyn']['PtfmMass'] = 0.
+            fst_vt['ElastoDyn']['PtfmRIner'] = 0.
+            fst_vt['ElastoDyn']['PtfmPIner'] = 0.
+            fst_vt['ElastoDyn']['PtfmYIner'] = 0.
+            fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
+            fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
+            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
 
         # Drivetrain inputs
         fst_vt['ElastoDyn']['DTTorSpr'] = 0.
         fst_vt['ElastoDyn']['DTTorDmp'] = 0.
 
-        # TODO: there are issues here
-        #   - running the 15MW caused 120 tower points, some where nonunique heights
-        tower_base_height = max(inputs['tower_base_height'][0], fst_vt['ElastoDyn']['PtfmCMzt'])
-        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
         fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
@@ -651,14 +671,11 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TwrGagNd'] = 0
         fst_vt['AeroDyn15']['NTwOuts']  = 0
 
-        # SubDyn inputs
-        if self.options['modeling_options']['flags']['monopile']:
+        # SubDyn inputs- monopile and floating
+        if modeling_options['flags']['monopile']:
             mono_index = twr_index+1 # Duplicate intersection point
             n_joints = len(inputs['tower_outer_diameter'][1:mono_index]) # Omit submerged pile
-            if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
-            fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
-            fst_vt['SubDyn']['NJoints'] = n_joints
-            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
+            n_members = n_joints - 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
@@ -666,24 +683,62 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['RJointID'] = [1]
             fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
             fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]
-            fst_vt['SubDyn']['Rct_SoilFile'] = ['']
             fst_vt['SubDyn']['IJointID'] = [n_joints]
-            fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
-            fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
-            fst_vt['SubDyn']['NMembers'] = n_joints-1
-            fst_vt['SubDyn']['MemberID'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['MJointID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['MJointID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 2
-            fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['NPropSets'] = n_joints-1
-            fst_vt['SubDyn']['PropSetID1'] = np.arange( n_joints-1, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
             fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][1:mono_index]
             fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][1:mono_index]
             fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
-            fst_vt['SubDyn']['XsecD'] = nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
+            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
             fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
-            fst_vt['SubDyn']['NXPropSets'] = 0
+                
+        elif modeling_options['flags']['floating']:
+            joints_xyz = inputs["platform_nodes"]
+            n_joints = np.where(joints_xyz[:, 0] == NULL)[0][0]
+            joints_xyz = joints_xyz[:n_joints, :]
+            itrans = util.closest_node(joints_xyz, inputs["transition_node"])
+
+            N1 = np.int_(inputs["platform_elem_n1"])
+            n_members = np.where(N1 == NULL)[0][0]
+            N1 = N1[:n_members]
+            N2 = np.int_(inputs["platform_elem_n2"][:n_members])
+                
+            fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
+            fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
+            fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
+            fst_vt['SubDyn']['NReact'] = 0
+            fst_vt['SubDyn']['RJointID'] = []
+            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = []
+            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = []
+            if modeling_options['floating']['transition_joint'] is None:
+                fst_vt['SubDyn']['IJointID'] = []
+            else:
+                fst_vt['SubDyn']['IJointID'] = [itrans+1]
+            fst_vt['SubDyn']['MJointID1'] = N1+1
+            fst_vt['SubDyn']['MJointID2'] = N2+1
+            
+            fst_vt['SubDyn']['YoungE1'] = inputs["platform_elem_E"][:n_members]
+            fst_vt['SubDyn']['ShearG1'] = inputs["platform_elem_G"][:n_members]
+            fst_vt['SubDyn']['MatDens1'] = inputs["platform_elem_rho"][:n_members]
+            fst_vt['SubDyn']['XsecD'] = inputs["platform_elem_D"][:n_members]
+            fst_vt['SubDyn']['XsecT'] = inputs["platform_elem_t"][:n_members]
+            
+        # SubDyn inputs- offshore generic
+        if modeling_options['flags']['offshore']:
+            if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
+            fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
+            fst_vt['SubDyn']['Rct_SoilFile'] = ['']
+            fst_vt['SubDyn']['NJoints'] = n_joints
+            fst_vt['SubDyn']['JointID'] = np.arange( n_joints, dtype=np.int_) + 1
+            fst_vt['SubDyn']['ItfTDXss'] = fst_vt['SubDyn']['ItfTDYss'] = fst_vt['SubDyn']['ItfTDZss'] = [1]
+            fst_vt['SubDyn']['ItfRDXss'] = fst_vt['SubDyn']['ItfRDYss'] = fst_vt['SubDyn']['ItfRDZss'] = [1]
+            fst_vt['SubDyn']['NMembers'] = n_members
+            fst_vt['SubDyn']['MemberID'] = np.arange( n_members, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['NPropSets'] = n_members
+            fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['NCOSMs'] = 0
+            fst_vt['SubDyn']['NXPropSets'] = 0
             fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
             fst_vt['SubDyn']['CMJointID'] = np.arange( fst_vt['SubDyn']['NCmass'] ) + 1
             fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
@@ -695,8 +750,10 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
                 fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
                 fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
+        
 
-            # HydroDyn inputs
+        # HydroDyn inputs
+        if modeling_options['flags']['offshore']:
             fst_vt['HydroDyn']['WtrDens'] = float(inputs['rho_water'])
             fst_vt['HydroDyn']['WtrDpth'] = float(inputs['water_depth'])
             fst_vt['HydroDyn']['MSL2SWL'] = 0
@@ -752,24 +809,27 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
             
-        # Moodyn inputs
+        # Moordyn inputs
         if modeling_options["flags"]["mooring"]:
-            n_line_types = modeling_options["mooring"]["n_line_types"]
-            fst_vt['MoorDyn']['NTypes'] = n_line_types
-            fst_vt['MoorDyn']['Name'] = modeling_options["mooring"]["line_type_name"][:]
-            fst_vt['MoorDyn']['Diam'] = inputs["line_diameter"]
-            fst_vt['MoorDyn']['MassDen'] = inputs["line_mass_density"]
+            mooropt = modeling_options["mooring"]
+            # Creating a line type for each line, regardless of whether it is unique or not
+            n_lines = mooropt["n_lines"]
+            line_names = ['line'+str(m) for m in range(n_lines)]
+            fst_vt['MoorDyn']['NTypes'] = n_lines
+            fst_vt['MoorDyn']['Name'] = fst_vt['MAP']['LineType'] = line_names
+            fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
+            fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
             fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
-            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones( n_line_types, dtype=np.int64)
+            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
             fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
-            fst_vt['MoorDyn']['Cdn'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['Cdt'] = inputs["line_tangential_drag"]
 
-            n_nodes = modeling_options["mooring"]["n_nodes"]
+            n_nodes = mooropt["n_nodes"]
             fst_vt['MoorDyn']['NConnects'] = n_nodes
             fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
-            fst_vt['MoorDyn']['Type'] = modeling_options["mooring"]["node_type"][:]
+            fst_vt['MoorDyn']['Type'] = mooropt["node_type"][:]
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
@@ -781,18 +841,18 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
             fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
 
-            n_lines = modeling_options["mooring"]["n_lines"]
             fst_vt['MoorDyn']['NLines'] = n_lines
             fst_vt['MoorDyn']['Line'] = np.arange(n_lines)+1
-            fst_vt['MoorDyn']['LineType'] = modeling_options["mooring"]["line_type"][:]
+            fst_vt['MoorDyn']['LineType'] = line_names
             fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
-            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones( n_line_types, dtype=np.int64)
+            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['Flags_Outputs'] = ['-'] * n_lines
+            fst_vt['MoorDyn']['Outputs'] = ['-'] * n_lines
+            fst_vt['MoorDyn']['CtrlChan'] = np.zeros(n_lines, dtype=np.int64)
             for k in range(n_lines):
-                id1 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node1"][k] )
-                id2 = discrete_inputs['node_names'].index( modeling_options["mooring"]["node2"][k] )
+                id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
+                id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
                 if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
                     fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
                     fst_vt['MoorDyn']['NodeFair'][k] = id1+1
@@ -803,7 +863,7 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
                 else:
                     print(discrete_inputs['node_names'])
-                    print(modeling_options["mooring"]["node1"][k], modeling_options["mooring"]["node2"][k])
+                    print(mooropt["node1"][k], mooropt["node2"][k])
                     print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
                     raise ValueError('Mooring line seems to be between unknown endpoint types?')
             
@@ -836,7 +896,9 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2"]
-        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "Azimuth"]
+        channels_out += ["RtAeroCp", "RtAeroCt"]
+        channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
+        channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
@@ -1088,8 +1150,6 @@ class FASTLoadCases(ExplicitComponent):
         stats_fname = 'stats_i{}.yaml'.format(self.of_inumber)
         Processing.save_yaml(stats_output_folder, stats_fname, sum_stats)
 
-        # Save output plots
-        fast_pl = rosco_utilities.FAST_Plots()
 
         figs_fname = 'figures_i{}.pdf'.format(self.of_inumber)        
         with PdfPages(os.path.join(of_output_folder,figs_fname)) as pdf:
@@ -1379,7 +1439,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
 
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                outputs['rotor_overspeed'] = ( self.fst_vt['DISCON_in']['PC_RefSpd'] / np.max(sum_stats['RotSpeed']['max']) * 30./np.pi ) - 1.0
+                outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)

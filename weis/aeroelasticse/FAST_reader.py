@@ -1481,15 +1481,14 @@ class InputReader_OpenFAST(InputReader_Common):
         if os.path.exists(discon_in_file):
 
             # Read DISCON infiles
-            file_processing = ROSCO_utilities.FileProcessing()
-            self.fst_vt['DISCON_in'] = file_processing.read_DISCON(discon_in_file)
+            self.fst_vt['DISCON_in'] = ROSCO_utilities.read_DISCON(discon_in_file)
 
             # Some additional filename parsing
             self.fst_vt['DISCON_in']['PerfFileName'] = os.path.abspath(os.path.join(self.FAST_directory, self.fst_vt['DISCON_in']['PerfFileName']))
 
             # Try to read rotor performance data if it is available
             try:
-                pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = file_processing.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
+                pitch_vector, tsr_vector, Cp_table, Ct_table, Cq_table = ROSCO_utilities.load_from_txt(self.fst_vt['DISCON_in']['PerfFileName'])
 
                 RotorPerformance = ROSCO_turbine.RotorPerformance
                 Cp = RotorPerformance(Cp_table, pitch_vector, tsr_vector)
@@ -1505,7 +1504,7 @@ class InputReader_OpenFAST(InputReader_Common):
                 self.fst_vt['DISCON_in']['Ct_table'] = Ct_table
                 self.fst_vt['DISCON_in']['Cq_table'] = Cq_table
             except:
-                pass
+                print('WARNING: Cp table not loaded!')
             
             # Add some DISCON entries that might be needed within WISDEM        
             self.fst_vt['DISCON_in']['v_rated'] = 1.
@@ -2205,7 +2204,8 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['MoorDyn']['NumSegs']       = []
         self.fst_vt['MoorDyn']['NodeAnch']      = []
         self.fst_vt['MoorDyn']['NodeFair']      = []
-        self.fst_vt['MoorDyn']['Flags_Outputs'] = []
+        self.fst_vt['MoorDyn']['Outputs']       = []
+        self.fst_vt['MoorDyn']['CtrlChan']      = []
         for i in range(self.fst_vt['MoorDyn']['NLines']):
             data_line = f.readline().strip().split()
             self.fst_vt['MoorDyn']['Line'].append(int(data_line[0]))
@@ -2214,7 +2214,11 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['MoorDyn']['NumSegs'].append(int(data_line[3]))
             self.fst_vt['MoorDyn']['NodeAnch'].append(int(data_line[4]))
             self.fst_vt['MoorDyn']['NodeFair'].append(int(data_line[5]))
-            self.fst_vt['MoorDyn']['Flags_Outputs'].append(str(data_line[6]))
+            self.fst_vt['MoorDyn']['Outputs'].append(str(data_line[6]))
+            if len(data_line) > 7:
+                self.fst_vt['MoorDyn']['CtrlChan'].append(int(data_line[7]))
+            else:
+                self.fst_vt['MoorDyn']['CtrlChan'].append(0)
         f.readline()
         self.fst_vt['MoorDyn']['dtM']       = float_read(f.readline().split()[0])
         self.fst_vt['MoorDyn']['kbot']      = float_read(f.readline().split()[0])

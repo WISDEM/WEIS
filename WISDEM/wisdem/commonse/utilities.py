@@ -6,28 +6,34 @@ Copyright (c) NREL. All rights reserved.
 """
 
 from __future__ import print_function
+
 import numpy as np
 from scipy.linalg import solve_banded
+
+# from scipy.optimize import curve_fit
 
 
 def mode_fit(x, c2, c3, c4, c5, c6):
     return c2 * x ** 2.0 + c3 * x ** 3.0 + c4 * x ** 4.0 + c5 * x ** 5.0 + c6 * x ** 6.0
 
 
-def get_modal_coefficients(x, y, deg=6):
+def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
     # Normalize x input
     xn = (x - x.min()) / (x.max() - x.min())
 
-    # Get coefficients to 6th order polynomial
+    # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-    # coef, pcov = curve_fit(mode_fit, xn, y)
 
     # Normalize for Elastodyn
     if y.ndim > 1:
         p6 = p6[2:, :]
+        # p6 = np.zeros((5, y.shape[1]))
+        # for k in range(y.shape[1]):
+        #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
         p6 /= p6.sum(axis=0)[np.newaxis, :]
     else:
         p6 = p6[2:]
+        # p6, _ = curve_fit(mode_fit, xn, y)
         p6 /= p6.sum()
 
     return p6
@@ -39,7 +45,7 @@ def get_xy_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
-    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T, 6)
+    polys = get_modal_coefficients(r, np.vstack((xdsp, ydsp)).T)
     xpolys = polys[:, :nfreq].T
     ypolys = polys[:, nfreq:].T
 
@@ -330,6 +336,20 @@ def rotateI(I, th, axis="z"):
     return Iout
 
 
+def rotate_align_vectors(a, b):
+    # https://math.stackexchange.com/questions/180418/calculate-rotation-matrix-to-align-vector-a-to-vector-b-in-3d
+    mag_a = np.linalg.norm(a)
+    mag_b = np.linalg.norm(b)
+    unita = a / mag_a
+    unitb = b / mag_b
+    v = np.cross(unita, unitb)
+    s = np.linalg.norm(v)
+    c = np.dot(unita, unitb)
+    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    r = np.eye(3) + vx + np.dot(vx, vx) / (1 + c)  # *(1-c)/(s**2)
+    return np.asmatrix(r)
+
+
 def cubic_with_deriv(x, xp, yp):
     """deprecated"""
 
@@ -504,6 +524,25 @@ def smooth_abs(x, dx=0.01):
         dydx = dydx[0]
 
     return y, dydx
+
+
+def find_nearest(array, value):
+    return (np.abs(array - value)).argmin()
+
+
+def closest_node(nodemat, inode):
+    if not nodemat.shape[1] in [2, 3]:
+        if nodemat.shape[0] in [2, 3]:
+            xyz = nodemat.T
+        else:
+            raise ValueError("Expected an m X 2/3 input node array")
+    else:
+        xyz = nodemat
+
+    if not len(inode) in [2, 3]:
+        raise ValueError("Expected a size 2 or 3 node point")
+
+    return np.sqrt(np.sum((xyz - inode[np.newaxis, :]) ** 2, axis=1)).argmin()
 
 
 def nodal2sectional(x):

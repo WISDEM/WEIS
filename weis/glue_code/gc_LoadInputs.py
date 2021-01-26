@@ -15,11 +15,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         
-        self.modeling_options['RotorSE'] = self.modeling_options['WISDEM']['RotorSE'] 
-        self.modeling_options['DriveSE'] = self.modeling_options['WISDEM']['DriveSE'] 
-        self.modeling_options['TowerSE'] = self.modeling_options['WISDEM']['TowerSE'] 
-        self.modeling_options['BOS'] = self.modeling_options['WISDEM']['BOS'] 
-        
         self.set_run_flags()
         self.set_openmdao_vectors()
         self.set_openmdao_vectors_control()
@@ -69,11 +64,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             
     def set_openmdao_vectors_control(self):
         # Distributed aerodynamic control devices along blade
-        self.modeling_options['RotorSE']['n_te_flaps']      = 0
+        self.modeling_options['WISDEM']['RotorSE']['n_te_flaps']      = 0
         if 'aerodynamic_control' in self.wt_init['components']['blade']:
             if 'te_flaps' in self.wt_init['components']['blade']['aerodynamic_control']:
-                self.modeling_options['RotorSE']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
-                self.modeling_options['RotorSE']['n_tab']   = 3
+                self.modeling_options['WISDEM']['RotorSE']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
+                self.modeling_options['WISDEM']['RotorSE']['n_tab']   = 3
             else:
                 raise Exception('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
         
