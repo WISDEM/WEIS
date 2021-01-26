@@ -449,31 +449,31 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
 
         # Masses and inertias from DriveSE
-        fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
-        fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
+        fst_vt['ElastoDyn']['HubMass']   = 56780 #inputs['hub_system_mass'][0]
+        fst_vt['ElastoDyn']['HubIner']   = 115926 #inputs['hub_system_I'][0]
         fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
-        fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
-        fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
-        fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I'][2]
-        fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
+        fst_vt['ElastoDyn']['NacMass']   = 240000 #inputs['above_yaw_mass'][0]
+        fst_vt['ElastoDyn']['YawBrMass'] = 0 #inputs['yaw_mass'][0]
+        fst_vt['ElastoDyn']['NacYIner']  = 2.60789E+06 #inputs['nacelle_I'][2]
+        fst_vt['ElastoDyn']['NacCMxn']   = 1.9 #-k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
         fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
-        fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
+        fst_vt['ElastoDyn']['GenIner']   = 534.116 #float(inputs['GenIner'])
 
         # Platform inputs
         fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
         fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
-        fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
+        fst_vt['ElastoDyn']['PtfmCMzt'] = -89.9155
 
         # Mass and inertia inputs
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
-        fst_vt['ElastoDyn']['PtfmMass'] = 0.
-        fst_vt['ElastoDyn']['PtfmRIner'] = 0.
-        fst_vt['ElastoDyn']['PtfmPIner'] = 0.
-        fst_vt['ElastoDyn']['PtfmYIner'] = 0.
+        fst_vt['ElastoDyn']['PtfmMass'] = 7.4e6
+        fst_vt['ElastoDyn']['PtfmRIner'] = 4.2e9
+        fst_vt['ElastoDyn']['PtfmPIner'] = 4.2e9
+        fst_vt['ElastoDyn']['PtfmYIner'] = 1.6e8
 
         # Drivetrain inputs
         fst_vt['ElastoDyn']['DTTorSpr'] = 0.
@@ -483,7 +483,7 @@ class FASTLoadCases(ExplicitComponent):
         #   - running the 15MW caused 120 tower points, some where nonunique heights
         tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
-        fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+        fst_vt['ElastoDyn']['PtfmRefzt'] = 0 # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
@@ -799,7 +799,32 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
-            
+            fst_vt['HydroDyn']['PotMod'] = 1
+            fst_vt['HydroDyn']['PotFile'] = '/Users/dzalkind/Tools/openfast-main/reg_tests/r-test/glue-codes/openfast/5MW_Baseline/HydroData/Spar'          
+            fst_vt['HydroDyn']['PtfmVol0'] = 8029.21
+            fst_vt['HydroDyn']['ExctnMod'] = 1
+            fst_vt['HydroDyn']['RdtnMod'] = 1
+            fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+            fst_vt['HydroDyn']['WvDiffQTF'] = False
+            fst_vt['HydroDyn']['WvSumQTF'] = False
+
+            fst_vt['HydroDyn']['AddCLin'] = np.zeros((6,6))
+            fst_vt['HydroDyn']['AddCLin'][5,5] = 98340000
+
+            fst_vt['HydroDyn']['AddBLin'] = np.zeros((6,6))
+            fst_vt['HydroDyn']['AddBLin'][0,0] = 100000
+            fst_vt['HydroDyn']['AddBLin'][1,1] = 100000
+            fst_vt['HydroDyn']['AddBLin'][2,2] = 130000
+            fst_vt['HydroDyn']['AddBLin'][5,5] = 13000000
+
+            fst_vt['HydroDyn']['SimplCd'] = 0
+            fst_vt['HydroDyn']['SimplCdMG'] = 0
+            fst_vt['HydroDyn']['SimplCa'] = 0
+            fst_vt['HydroDyn']['SimplCaMG'] = 0
+
+            fst_vt['HydroDyn']['PropPot'] = [True] * 14
+
+
         # Moordyn inputs
         if modeling_options["flags"]["mooring"]:
             mooropt = modeling_options["mooring"]
@@ -824,6 +849,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
+            # dz hack
+            fst_vt['MoorDyn']['Z'][3:] = -70.
             fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
             fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
             fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
@@ -886,6 +913,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2"]
+        channels_out += ["PtfmPitch", "PtfmRoll", "PtfmYaw", "PtfmSurge", "PtfmSway", "PtfmHeave"]
         channels_out += ["RtAeroCp", "RtAeroCt"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]

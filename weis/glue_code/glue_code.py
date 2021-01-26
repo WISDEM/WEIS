@@ -170,6 +170,7 @@ class WindPark(om.Group):
                 self.connect('rs.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
                 self.connect('rs.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
                 self.connect('rp.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
+                self.connect('tower_grid.height',               'sse_tune.tune_rosco.TowerHt')
                 self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
                 self.connect('tune_rosco_ivc.max_pitch',        'sse_tune.tune_rosco.max_pitch') 
                 self.connect('tune_rosco_ivc.min_pitch',        'sse_tune.tune_rosco.min_pitch')
@@ -209,7 +210,7 @@ class WindPark(om.Group):
             self.connect('env.water_depth',                 'aeroelastic.water_depth')
             self.connect('env.rho_water',                   'aeroelastic.rho_water')
             self.connect('env.mu_water',                    'aeroelastic.mu_water')
-            self.connect('env.Hsig_wave',                    'aeroelastic.Hsig_wave')
+            self.connect('env.Hsig_wave',                    'aeroelastic.Hsig_wave')     # TODO: these depend on wind speed
             self.connect('env.Tsig_wave',                    'aeroelastic.Tsig_wave')
             #self.connect('env.beta_wave',                    'aeroelastic.beta_wave') # TODO: NEED ONTOLOGY INPUT HERE
             self.connect('assembly.rotor_radius',           'aeroelastic.Rtip')
