@@ -408,5 +408,5 @@ class SimpleTrustRegion(BaseMethod):
 
             plt.tight_layout()
 
-            plt.savefig(f"1d_{self.counter_plot}.png", dpi=300)
+            plt.savefig(f"1d_{self.counter_plot}.png", dpi=300, bbox_inches="tight")
             self.counter_plot += 1
