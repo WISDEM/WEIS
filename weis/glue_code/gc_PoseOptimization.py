@@ -60,8 +60,8 @@ class PoseOptimizationWEIS(PoseOptimization):
         if control_opt['servo']['pitch_control']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=control_opt['servo']['pitch_control']['omega_min'], 
                                                             upper=control_opt['servo']['pitch_control']['omega_max'])
-            wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt['servo']['pitch_control']['zeta_min'], 
-                                                           upper=control_opt['servo']['pitch_control']['zeta_max'])
+            # wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt['servo']['pitch_control']['zeta_min'], 
+            #                                                upper=control_opt['servo']['pitch_control']['zeta_max'])
         if control_opt['servo']['torque_control']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.VS_omega', lower=control_opt['servo']['torque_control']['omega_min'], 
                                                             upper=control_opt['servo']['torque_control']['omega_max'])
