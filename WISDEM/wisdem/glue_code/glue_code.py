@@ -35,10 +35,10 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
             self.linear_solver = lbgs = om.LinearBlockGS()
             self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options["maxiter"] = 5
+            nlbgs.options["maxiter"] = 10
             nlbgs.options["atol"] = 1e-2
             nlbgs.options["rtol"] = 1e-8
-            nlbgs.options["iprint"] = 0
+            nlbgs.options["iprint"] = 2
 
         # Analysis components
         self.add_subsystem(
