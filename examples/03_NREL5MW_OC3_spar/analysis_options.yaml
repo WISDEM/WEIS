@@ -56,7 +56,7 @@ design_variables:
       max_gain: 1.1   # Nondimensional upper bound
     servo:
       pitch_control:
-        flag: False
+        flag: True
         omega_min: 0.1
         omega_max: 0.7
         zeta_min: 0.4
@@ -223,7 +223,7 @@ design_variables:
             lower_bound: 0.1
             upper_bound: 2.0
 
-merit_figure: LCOE  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
 constraints:
   blade:
@@ -288,6 +288,10 @@ constraints:
       flag: False
       min: 0.0
       max: 0.1
+    rotor_overspeed:
+      flag: True
+      min: 0.0
+      max: 0.2
 
 driver:
     tol: 1.e-2            # Optimality tolerance
@@ -295,8 +299,8 @@ driver:
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1.e-3      # Step size for finite differencing
-    form: central         # Finite differencing mode, either forward or central
+    step_size: 2.5e-2      # Step size for finite differencing
+    form: forward         # Finite differencing mode, either forward or central
 
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
