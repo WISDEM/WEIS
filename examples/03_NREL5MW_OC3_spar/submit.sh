@@ -10,7 +10,7 @@
 #SBATCH --partition=debug
 
 
-nDV=1 # Number of design variables (x2 for central difference)
+nDV=2 # Number of design variables (x2 for central difference)
 nOF=1  # Number of openfast runs per finite-difference evaluation
 nC=$((nDV + nDV * nOF)) # Number of cores needed. Make sure to request an appropriate number of nodes = N / 36
 
