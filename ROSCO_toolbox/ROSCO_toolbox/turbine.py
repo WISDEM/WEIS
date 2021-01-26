@@ -545,7 +545,7 @@ class Turbine():
         self.span = r 
         self.chord = chord
         self.twist = theta
-        self.bld_flapwise_damp = self.fast.fst_vt['ElastoDynBlade']['BldFlDmp1']/100
+        self.bld_flapwise_damp = self.fast.fst_vt['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
 
 class RotorPerformance():
     '''
