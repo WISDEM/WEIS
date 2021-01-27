@@ -578,8 +578,8 @@ properties:
                     TwrShadow:
                         type: integer
                         enum: [0, 1, 2]
-                        default: 0
-                        description: Calculate tower influence on wind based on downstream tower shadow? (flag)
+                        default: 1
+                        description: Calculate tower influence on wind based on downstream tower shadow (switch) {0=none, 1=Powles model, 2=Eames model}
                     TwrAero:
                         type: boolean
                         default: True
@@ -706,6 +706,12 @@ properties:
                         minimum: 0.
                         default: 5.000000000000000e-01
                         description: Water depth above mid-hub height (m) [used only when CavitCheck=True]
+                    TwrTI:
+                        type: number
+                        default: 0.1
+                        minimum: 0.
+                        maximum: 10.
+                        description: Turbulence intensity used in the Eames tower shadow model. Values of TwrTI between 0.05 and 0.4 are recommended.
                     SumPrint:
                         type: boolean
                         default: False

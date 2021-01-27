@@ -29,6 +29,7 @@ Other Useful Docs
 
    how_to_contribute_code
    how_to_write_docs
+   known_issues
    
 Indices and Tables
 ==================
