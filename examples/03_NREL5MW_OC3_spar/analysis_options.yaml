@@ -291,13 +291,11 @@ constraints:
     rotor_overspeed:
       flag: True
       min: 0.0
-      max: 0.2
+      max: 0.3
 
 driver:
-  optimization:
-    flag: True
-    tol: 1.e-5            # Optimality tolerance
-    max_major_iter: 20    # Maximum number of major design iterations (SNOPT)
+    tol: 1.e-6            # Optimality tolerance
+    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
