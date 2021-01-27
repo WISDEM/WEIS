@@ -527,6 +527,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
         fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
+        fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
