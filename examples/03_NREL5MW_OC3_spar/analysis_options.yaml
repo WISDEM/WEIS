@@ -294,6 +294,7 @@ constraints:
       max: 0.3
 
 driver:
+  optimization:
     tol: 1.e-6            # Optimality tolerance
     max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
