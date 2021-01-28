@@ -42,6 +42,28 @@ CONTAINS
        
 
         OPEN(unit=UnControllerParameters, file=accINFILE(1), status='old', action='read')
+
+
+        IF (ALLOCATED(CntrPar%F_NotchBetaNumDen))  THEN
+           DEALLOCATE(CntrPar%F_NotchBetaNumDen)
+           DEALLOCATE(CntrPar%PC_GS_angles)
+           DEALLOCATE(CntrPar%PC_GS_KP)
+           DEALLOCATE(CntrPar%PC_GS_KI)
+           DEALLOCATE(CntrPar%PC_GS_KD)
+           DEALLOCATE(CntrPar%PC_GS_TF)
+           DEALLOCATE(CntrPar%IPC_KI)
+           DEALLOCATE(CntrPar%IPC_aziOffset)
+           DEALLOCATE(CntrPar%VS_KP)
+           DEALLOCATE(CntrPar%VS_KI)
+           DEALLOCATE(CntrPar%WE_CP)
+           DEALLOCATE(CntrPar%PerfTableSize)
+           DEALLOCATE(CntrPar%WE_FOPoles_v)
+           DEALLOCATE(CntrPar%WE_FOPoles)
+           DEALLOCATE(CntrPar%Y_IPC_KP)
+           DEALLOCATE(CntrPar%Y_IPC_KI)
+           DEALLOCATE(CntrPar%PS_WindSpeeds)
+           DEALLOCATE(CntrPar%PS_BldPitchMin)
+        END IF
         
         !----------------------- HEADER ------------------------
         READ(UnControllerParameters, *)
@@ -593,6 +615,14 @@ CONTAINS
         ! Local variables
         INTEGER(4)                  :: i ! iteration index
         OPEN(unit=UnPerfParameters, file=TRIM(CntrPar%PerfFileName), status='old', action='read') ! Should put input file into DISCON.IN
+
+        IF (ALLOCATED(PerfData%Beta_vec))  THEN
+           DEALLOCATE(PerfData%Beta_vec)
+           DEALLOCATE(PerfData%TSR_vec)
+           DEALLOCATE(PerfData%Cp_mat)
+           DEALLOCATE(PerfData%Ct_mat)
+           DEALLOCATE(PerfData%Cq_mat)
+        END IF
         
         ! ----------------------- Axis Definitions ------------------------
         READ(UnPerfParameters, *)

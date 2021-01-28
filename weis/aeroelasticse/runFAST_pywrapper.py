@@ -32,7 +32,7 @@ if mactype == "linux" or mactype == "linux2":
     libext = ".so"
 elif mactype == "darwin":
     libext = '.dylib'
-    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = lib_dir
+    #os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = lib_dir
 elif mactype == "win32":
     libext = '.dll'
 elif mactype == "cygwin":
@@ -187,6 +187,7 @@ class runFAST_pywrapper(object):
             #     "channel": np.array([]),
             # }
             output_dict[channel] = openfastlib.output_values[:,i]
+        openfastlib.close_library()
 
         output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
         case_name, sum_stats, extremes, dels = la._process_output(output)

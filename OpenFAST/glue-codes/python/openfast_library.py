@@ -8,6 +8,8 @@ from ctypes import (
     c_char,
     c_bool
 )
+import _ctypes
+import platform
 import numpy as np
 
 
@@ -203,3 +205,10 @@ class FastLibAPI(CDLL):
         output_channel_names = self._channel_names.value.split()
         output_channel_names = [n.decode('UTF-8') for n in output_channel_names]        
         return output_channel_names
+
+    def close_library(self):
+        mactype = platform.system().lower()
+        if mactype in ["linux", "linux2", "darwin"]:
+            _ctypes.dlclose(self._handle)
+        elif mactype in ["win32", "cygwin"]:
+            _ctypes.FreeLibrary(self._handle)
