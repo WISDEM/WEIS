@@ -32,7 +32,7 @@ if mactype == "linux" or mactype == "linux2":
     libext = ".so"
 elif mactype == "darwin":
     libext = '.dylib'
-    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = lib_dir
+    #os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = lib_dir
 elif mactype == "win32":
     libext = '.dll'
 elif mactype == "cygwin":
@@ -106,6 +106,7 @@ class runFAST_pywrapper(object):
         self.case               = {}     # dictionary of variable values to change
         self.channels           = {}     # dictionary of output channels to change
         self.debug_level        = 0
+        self.keep_time          = False
 
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
 
@@ -127,7 +128,7 @@ class runFAST_pywrapper(object):
         elif self.FAST_ver.lower() in ['fast8','openfast']:
             reader = InputReader_OpenFAST(FAST_ver=self.FAST_ver)
             writer = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
-        wrapper = FastWrapper(FAST_ver=self.FAST_ver, debug_level=self.debug_level)
+        #wrapper = FastWrapper(FAST_ver=self.FAST_ver, debug_level=self.debug_level)
 
         # Read input model, FAST files or Yaml
         if self.fst_vt == {}:
@@ -140,7 +141,7 @@ class runFAST_pywrapper(object):
                 reader.execute()
         
             # Initialize writer variables with input model
-            writer.fst_vt = reader.fst_vt
+            writer.fst_vt = self.fst_vt = reader.fst_vt
         else:
             writer.fst_vt = self.fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
@@ -158,17 +159,19 @@ class runFAST_pywrapper(object):
             writer.write_yaml()
 
         # Run FAST
-        wrapper.FAST_exe = self.FAST_exe
-        wrapper.FAST_InputFile = os.path.split(writer.FAST_InputFileOut)[1]
-        wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
+        #wrapper.FAST_exe = self.FAST_exe
+        #wrapper.FAST_InputFile = os.path.split(writer.FAST_InputFileOut)[1]
+        #wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
 
-        FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
-        FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
+        #FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
+        #FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
+        FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
         input_file_name = create_string_buffer(os.path.abspath(writer.FAST_InputFileOut).encode('utf-8'))
         t_max = c_double(self.fst_vt['Fst']['TMax'])
 
-        os.chdir(wrapper.FAST_directory)
+        orig_dir = os.getcwd()
+        os.chdir(FAST_directory)
         
         openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
         openfastlib.fast_run()
@@ -193,8 +196,10 @@ class runFAST_pywrapper(object):
 
         # if save_file:
         #   write_fast
+        os.chdir(orig_dir)
 
-        return case_name, sum_stats, extremes, dels
+        if not self.keep_time: output_dict = None
+        return case_name, sum_stats, extremes, dels, output_dict
 
 
 class runFAST_pywrapper_batch(object):
@@ -220,7 +225,8 @@ class runFAST_pywrapper_batch(object):
         self.channels           = {}
 
         self.overwrite_outfiles = True
-
+        self.keep_time          = False
+        
         self.post               = None
 
         # Optional population of class attributes from key word arguments
@@ -240,15 +246,17 @@ class runFAST_pywrapper_batch(object):
         ss = {}
         et = {}
         dl = {}
+        ct = []
         for i, (case, case_name) in enumerate(zip(self.case_list, self.case_name_list)):
-            _name, _ss, _et, _dl = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_lib, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.post)
+            _name, _ss, _et, _dl, _ct = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_lib, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.keep_time, self.post)
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
-
+            ct.append(_ct)
+        
         summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
 
-        return summary_stats, extreme_table, DELs
+        return summary_stats, extreme_table, DELs, ct
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
@@ -279,6 +287,7 @@ class runFAST_pywrapper_batch(object):
             case_data.append(self.channels)
             case_data.append(self.debug_level)
             case_data.append(self.overwrite_outfiles)
+            case_data.append(self.keep_time)
             case_data.append(self.post)
 
             case_data_all.append(case_data)
@@ -290,14 +299,16 @@ class runFAST_pywrapper_batch(object):
         ss = {}
         et = {}
         dl = {}
-        for _name, _ss, _et, _dl in output:
+        ct = []
+        for _name, _ss, _et, _dl, _ct in output:
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
+            ct.append(_ct)
 
         summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
 
-        return summary_stats, extreme_table, DELs
+        return summary_stats, extreme_table, DELs, ct
 
     def run_mpi(self, mpi_comm_map_down):
 
@@ -337,6 +348,7 @@ class runFAST_pywrapper_batch(object):
             case_data.append(self.channels)
             case_data.append(self.debug_level)
             case_data.append(self.overwrite_outfiles)
+            case_data.append(self.keep_time)
             case_data.append(self.post)
 
             case_data_all.append(case_data)
@@ -360,92 +372,9 @@ class runFAST_pywrapper_batch(object):
         return output
 
 
-    # def run_mpi(self, comm=None):
-    #     # Run in parallel with mpi
-    #     from mpi4py import MPI
-
-    #     # mpi comm management
-    #     if not comm:
-    #         comm = MPI.COMM_WORLD
-    #     size = comm.Get_size()
-    #     rank = comm.Get_rank()
-
-    #     N_cases = len(self.case_list)
-    #     N_loops = int(np.ceil(float(N_cases)/float(size)))
-        
-    #     # file management
-    #     if not os.path.exists(self.FAST_runDirectory) and rank == 0:
-    #         os.makedirs(self.FAST_runDirectory)
-
-    #     if rank == 0:
-    #         case_data_all = []
-    #         for i in range(N_cases):
-    #             case_data = []
-    #             case_data.append(self.case_list[i])
-    #             case_data.append(self.case_name_list[i])
-    #             case_data.append(self.FAST_ver)
-    #             case_data.append(self.FAST_exe)
-    #             case_data.append(self.FAST_lib)
-    #             case_data.append(self.FAST_runDirectory)
-    #             case_data.append(self.FAST_InputFile)
-    #             case_data.append(self.FAST_directory)
-    #             case_data.append(self.read_yaml)
-    #             case_data.append(self.FAST_yamlfile_in)
-    #             case_data.append(self.fst_vt)
-    #             case_data.append(self.write_yaml)
-    #             case_data.append(self.FAST_yamlfile_out)
-    #             case_data.append(self.channels)
-    #             case_data.append(self.debug_level)
-    #             case_data.append(self.post)
-
-    #             case_data_all.append(case_data)
-    #     else:
-    #         case_data_all = []
-
-    #     output = []
-    #     for i in range(N_loops):
-    #         # if # of cases left to run is less than comm size, split comm
-    #         n_resid = N_cases - i*size
-    #         if n_resid < size: 
-    #             split_comm = True
-    #             color = np.zeros(size)
-    #             for i in range(n_resid):
-    #                 color[i] = 1
-    #             color = [int(j) for j in color]
-    #             comm_i  = MPI.COMM_WORLD.Split(color, 1)
-    #         else:
-    #             split_comm = False
-    #             comm_i = comm
-
-    #         # position in case list
-    #         idx_s  = i*size
-    #         idx_e  = min((i+1)*size, N_cases)
-
-    #         # scatter out cases
-    #         if split_comm:
-    #             if color[rank] == 1:
-    #                 case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)    
-    #         else:
-    #             case_data_i = comm_i.scatter(case_data_all[idx_s:idx_e], root=0)
-            
-    #         # eval
-    #         out = eval_multi(case_data_i)
-
-    #         # gather results
-    #         if split_comm:
-    #             if color[rank] == 1:
-    #                 output_i = comm_i.gather(out, root=0)
-    #         else:
-    #             output_i = comm_i.gather(out, root=0)
-
-    #         if rank == 0:
-    #             output.extend(output_i)
-
-        # return output
 
 
-
-def eval(case, case_name, FAST_ver, FAST_exe, FAST_lib, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, overwrite_outfiles, post):
+def eval(case, case_name, FAST_ver, FAST_exe, FAST_lib, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, overwrite_outfiles, keep_time, post):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
     fast = runFAST_pywrapper(FAST_ver=FAST_ver)     # FAST_ver = "OpenFAST"
@@ -467,6 +396,7 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_lib, FAST_runDirectory, FAST_
     fast.debug_level        = debug_level
 
     fast.overwrite_outfiles = overwrite_outfiles
+    fast.keep_time = keep_time
 
     FAST_Output = fast.execute()
     return FAST_Output
@@ -474,7 +404,7 @@ def eval(case, case_name, FAST_ver, FAST_exe, FAST_lib, FAST_runDirectory, FAST_
 def eval_multi(data):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
-    return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16])
+    return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17])
 
 def example_runFAST_pywrapper_batch():
     """ 

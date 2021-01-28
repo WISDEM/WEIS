@@ -20,6 +20,7 @@ from weis.aeroelasticse.runFAST_pywrapper import (runFAST_pywrapper,
                                                   runFAST_pywrapper_batch)
 from weis.test.utils import compare_regression_values
 
+this_file_dir = os.path.dirname(os.path.realpath(__file__))
 
 class TestGeneral(unittest.TestCase):
     def test_run(self):
@@ -50,6 +51,7 @@ class TestGeneral(unittest.TestCase):
         fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
         fastBatch.debug_level       = 2
+        fastBatch.keep_time         = True
 
         # User settings
         n_cores     = 1     # Number of available cores
@@ -88,6 +90,72 @@ class TestGeneral(unittest.TestCase):
         case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
 
+        # Output channels
+        channels = {}
+        for var in [
+            "TipDxc1",
+            "TipDyc1",
+            "TipDzc1",
+            "TipDxb1",
+            "TipDyb1",
+            "TipDxc2",
+            "TipDyc2",
+            "TipDzc2",
+            "TipDxb2",
+            "TipDyb2",
+            "TipDxc3",
+            "TipDyc3",
+            "TipDzc3",
+            "TipDxb3",
+            "TipDyb3",
+            "RootMxc1",
+            "RootMyc1",
+            "RootMzc1",
+            "RootMxb1",
+            "RootMyb1",
+            "RootMxc2",
+            "RootMyc2",
+            "RootMzc2",
+            "RootMxb2",
+            "RootMyb2",
+            "RootMxc3",
+            "RootMyc3",
+            "RootMzc3",
+            "RootMxb3",
+            "RootMyb3",
+            "TwrBsMxt",
+            "TwrBsMyt",
+            "TwrBsMzt",
+            "GenPwr",
+            "GenTq",
+            "RotThrust",
+            "RtAeroCp",
+            "RtAeroCt",
+            "RotSpeed",
+            "BldPitch1",
+            "BldPitch2",
+            "BldPitch3",
+            "TTDspSS",
+            "TTDspFA",
+            "NacYaw",
+            # "Wind1VelX",
+            # "Wind1VelY",
+            # "Wind1VelZ",
+            "LSSTipMxa",
+            "LSSTipMya",
+            "LSSTipMza",
+            "LSSTipMxs",
+            "LSSTipMys",
+            "LSSTipMzs",
+            "LSShftFys",
+            "LSShftFzs",
+            "TipRDxr",
+            "TipRDyr",
+            "TipRDzr",
+        ]:
+            channels[var] = True
+        fastBatch.channels = channels
+        
         # Find the controller
         if platform.system() == 'Windows':
             sfx = 'dll'
@@ -106,9 +174,8 @@ class TestGeneral(unittest.TestCase):
         fastBatch.case_name_list = case_name_list
 
         # Run OpenFAST, either serially or sequentially
-        out = fastBatch.run_serial()
+        _,_,_,out = fastBatch.run_serial()
             
-        this_file_dir = os.path.dirname(os.path.realpath(__file__))
         compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=1e-3, train=False)
 
 if __name__ == "__main__":

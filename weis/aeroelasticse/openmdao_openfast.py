@@ -1,19 +1,13 @@
 import numpy as np
 import os, shutil, sys
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
 from wisdem.commonse.vertical_cylinder      import NFREQ
 import wisdem.commonse.utilities              as util
-from wisdem.towerse.tower                   import get_nfull
 from wisdem.rotorse.rotor_power             import eval_unsteady
-from wisdem.rotorse.geometry_tools.geometry import remap2grid
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
-from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
@@ -947,6 +941,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_directory    = self.FAST_directory
         fastBatch.debug_level       = self.debug_level
         fastBatch.fst_vt            = fst_vt
+        fastBatch.keep_time         = False
         fastBatch.post              = FAST_IO_timeseries
 
         fastBatch.case_list         = case_list
@@ -960,7 +955,7 @@ class FASTLoadCases(ExplicitComponent):
             FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
-                summary_stats, extreme_table, DELs = fastBatch.run_serial()
+                summary_stats, extreme_table, DELs, chan_time = fastBatch.run_serial()
             else:
                 FAST_Output = fastBatch.run_multi(self.cores)
 
