@@ -18,6 +18,8 @@ from weis.aeroelasticse.runFAST_pywrapper import (
 )
 from weis.test.utils import compare_regression_values
 
+this_file_dir = os.path.dirname(os.path.realpath(__file__))
+
 
 class TestDLC(unittest.TestCase):
     def test_run(self):
@@ -265,7 +267,6 @@ class TestDLC(unittest.TestCase):
             "Wind1VelZ",
         ]
 
-        this_file_dir = os.path.dirname(os.path.realpath(__file__))
         compare_regression_values(
             out,
             "DLC_regression_values_1.pkl",
