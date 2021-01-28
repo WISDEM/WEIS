@@ -150,7 +150,7 @@ class FastLibAPI(CDLL):
         )
         self.output_values[0] = self.output_array[:]
         if self.fatal_error:
-            self.fast_end()
+            self.fast_deinit()
             print(f"Error {self.error_status.value}: {self.error_message.value}")
             return
 
@@ -166,14 +166,22 @@ class FastLibAPI(CDLL):
             )
             self.output_values[0] = self.output_array[:]
             if self.fatal_error:
-                self.fast_end()
+                self.fast_deinit()
                 print(f"Error {self.error_status.value}: {self.error_message.value}")
                 return
         
-    def fast_end(self):
+    def fast_deinit(self):
         if not self.ended:
             self.ended = True
 
+            # Deallocate all the internal variables and allocatable arrays
+            # Despite the name, this does not actually end the program
+            self.FAST_End(
+                byref(self.i_turb),
+                byref(c_bool(False))
+            )
+
+            # Deallocate the Turbine array
             self.FAST_DeallocateTurbines(
                 byref(self.error_status),
                 self.error_message
@@ -182,17 +190,12 @@ class FastLibAPI(CDLL):
                 print(f"Error {self.error_status.value}: {self.error_message.value}")
                 return
 
-            self.FAST_End(
-                byref(self.i_turb),
-                byref(c_bool(False))
-            )
-
     def fast_run(self):
         self.fast_init()
         if self.fatal_error: return
         self.fast_sim()
         if self.fatal_error: return
-        # self.fast_end()
+        self.fast_deinit()
 
     @property
     def total_time_steps(self):
