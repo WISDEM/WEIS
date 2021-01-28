@@ -482,11 +482,14 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
+            # dz: seems like we need it
+            fst_vt['ElastoDyn']['PtfmRefzt'] = 0 # Vertical distance from the ground level 
             
-            fst_vt['ElastoDyn']['PtfmMass'] = 7.4e6
-            fst_vt['ElastoDyn']['PtfmRIner'] = 4.2e9
-            fst_vt['ElastoDyn']['PtfmPIner'] = 4.2e9
-            fst_vt['ElastoDyn']['PtfmYIner'] = 1.6e8
+            # fst_vt['ElastoDyn']['PtfmMass'] = 7.4e6
+            # fst_vt['ElastoDyn']['PtfmRIner'] = 4.2e9
+            # fst_vt['ElastoDyn']['PtfmPIner'] = 4.2e9
+            # fst_vt['ElastoDyn']['PtfmYIner'] = 1.6e8
+            # fst_vt['ElastoDyn']['PtfmCMzt'] = -89.9155
         else:
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
@@ -500,7 +503,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['DTTorSpr'] = 0.
         fst_vt['ElastoDyn']['DTTorDmp'] = 0.
 
-        tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
+        tower_base_height = 0 #max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
         fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
