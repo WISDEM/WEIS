@@ -1264,8 +1264,7 @@ class FASTLoadCases(ExplicitComponent):
 
             # Calculate AEP and Performance Data
             if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
-                turbine_class = discrete_inputs['turbine_class']
-                pp = Analysis.PowerProduction(turbine_class)
+                pp = PowerProduction(discrete_inputs['turbine_class'])
                 pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
                 AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
@@ -1313,8 +1312,7 @@ class FASTLoadCases(ExplicitComponent):
         #     U = [u for uset in U_all for u in uset]
         #     U.sort()
 
-        turbine_class = discrete_inputs['turbine_class']
-        pp = PowerProduction(turbine_class)
+        pp = PowerProduction(discrete_inputs['turbine_class'])
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
 
         if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
