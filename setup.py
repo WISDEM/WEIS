@@ -21,7 +21,7 @@ if eagle_flag:
     os.environ["CC"] = "icc"
     os.environ["CXX"] = "icpc"
     os.environ["LDSHARED"] = "icc -pthread -shared"
-    
+
 # For the CMake Extensions
 class CMakeExtension(Extension):
 
@@ -30,7 +30,7 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
 
 class CMakeBuildExt(build_ext):
-    
+
     def copy_extensions_to_source(self):
         newext = []
         for ext in self.extensions:
@@ -38,7 +38,7 @@ class CMakeBuildExt(build_ext):
             newext.append( ext )
         self.extensions = newext
         super().copy_extensions_to_source()
-    
+
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
             # Ensure that CMake is present and working
@@ -49,54 +49,44 @@ class CMakeBuildExt(build_ext):
 
             localdir = os.path.join(this_directory, 'local')
 
+            # CMAKE profiles default for all
+            buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
+            cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
+                          '-DDOUBLE_PRECISION:BOOL=OFF',
+                          '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+                          '-DCMAKE_INSTALL_PREFIX='+localdir,
+                          '-DCMAKE_BUILD_TYPE='+buildtype]
+            buildtype = buildtype.upper()
+
             # Custom tuning
-            tune = '-march=native -mtune=native'
             mycompiler = self.compiler.compiler[0]
             if (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
                   mycompiler.find('icpc') >= 0):
                 tune = '-xHost'
-                
-            # CMAKE profiles default for all
-            buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
-            cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
-                          '-DDOUBLE_PRECISION:BOOL=ON',
-                          '-DCMAKE_INSTALL_PREFIX='+localdir,
-                          '-DCMAKE_BUILD_TYPE='+buildtype]
-            buildtype = buildtype.upper()
-            
+            else:
+                tune = '-march=native -mtune=native'
+
             if eagle_flag:
-                # On Eagle
+                tune = '-xSKYLAKE-AVX512'
+                cmake_args += ['-DOPENMP=ON']
                 try:
                     self.spawn(['ifort', '--version'])
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
-                
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC -xSKYLAKE-AVX512',
-                               '-DCMAKE_C_FLAGS_'+buildtype+'=-fPIC -xSKYLAKE-AVX512',
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-fPIC -xSKYLAKE-AVX512',
-                               '-DOPENMP=ON']
-                
-            elif ci_flag:
-                # Github Actions builder- keep it simple
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC',
-                               '-DCMAKE_C_FLAGS_'+buildtype+'=-fPIC',
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-fPIC']
-                              
-            else:
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-fPIC '+tune,
-                               '-DCMAKE_C_FLAGS_'+buildtype+'=-fPIC '+tune,
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-fPIC '+tune]
-                              
+
+            if not ci_flag:
+                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
+                               '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
+                               '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
 
             if platform.system() == 'Windows':
                 cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
-                
+
                 if self.compiler.compiler_type == 'msvc':
                     cmake_args += ['-DCMAKE_GENERATOR_PLATFORM=x64']
                 else:
                     cmake_args += ['-G', 'MinGW Makefiles']
 
-                    
             self.build_temp += '_'+ext.name
             os.makedirs(localdir, exist_ok=True)
             # Need fresh build directory for CMake
