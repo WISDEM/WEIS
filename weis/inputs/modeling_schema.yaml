@@ -653,6 +653,149 @@ properties:
                         type: string
                         default: unused
                         description: Input file for OLAF [used only when WakeMod=3]
+                    OLAF:
+                        type: object
+                        default: {}
+                        properties:
+                            IntMethod:
+                                type: integer
+                                enumerate: [5]
+                                default: 5
+                                description: Integration method {5 Forward Euler 1st order, default 5} (switch)
+                            DTfvw:
+                                type: number
+                                default: 0.
+                                minimum: 0.
+                                maximum: 10.
+                                unit: s
+                                description: Time interval for wake propagation. {default dtaero} (s). Set it to 0. for default (same as main fst)
+                            FreeWakeStart:
+                                default: 0.
+                                minimum: 0.
+                                maximum: 10.
+                                unit: s 
+                                description:  Time when wake is free. (-) value = always free. {default 0.0} (s). Set it to 0. for default (same as main fst)
+                            FullCircStart:
+                                default: 0.
+                                minimum: 0.
+                                maximum: 10.
+                                unit: s 
+                                description: Time at which full circulation is reached. {default 0.0} (s). Set it to 0. for default (same as main fst)
+                            CircSolvingMethod:
+                                type: integer
+                                enumerate: [1, 2, 3]
+                                default: 1
+                                description: Circulation solving method {1 Cl-Based, 2 No-Flow Through, 3 Prescribed, default 1 }(switch)
+                            CircSolvConvCrit:
+                                type: number
+                                default: 0.001
+                                description: Convergence criteria {default 0.001} [only if CircSolvingMethod=1] (-)
+                            CircSolvRelaxation:
+                                type: number
+                                default: 0.1
+                                description: Relaxation factor {default 0.1} [only if CircSolvingMethod=1] (-)
+                            CircSolvMaxIter:
+                                type: integer
+                                default: 30
+                                description: Maximum number of iterations for circulation solving {default 30} (-)
+                            PrescribedCircFile:
+                                type: string
+                                default: "NA"
+                                description: File containing prescribed circulation [only if CircSolvingMethod=3] (quoted string)
+                            nNWPanel:
+                                type: integer
+                                minimum: 0
+                                default: 120
+                                description: Number of near-wake panels [integer] (-)
+                            WakeLength:
+                                type: integer
+                                minimum: 0
+                                default: 900
+                                description: Total wake distance [integer] (number of time steps)
+                            FreeWakeLength:
+                                type: integer
+                                default: 0
+                                minimum: 0
+                                description: Wake length that is free [integer] (number of time steps) {default WakeLength}
+                            FWShedVorticity:
+                                type: boolean
+                                default: False
+                                description: Include shed vorticity in the far wake {default false}
+                            DiffusionMethod:
+                                type: integer
+                                enumerate: [0, 1]
+                                default: 0
+                                description: Diffusion method to account for viscous effects {0 None, 1 Core Spreading, "default" 0}
+                            RegDeterMethod:
+                                type: integer
+                                enumerate: [0, 1, 2, 3]
+                                default: 0
+                                description: Method to determine the regularization parameters {0  Manual, 1 Optimized, 2 chord, 3 span default 0 }
+                            RegFunction:
+                                type: integer
+                                enumerate: [0, 1, 2, 3, 4]
+                                default: 3
+                                description: Viscous diffusion function {0 None, 1 Rankine, 2 LambOseen, 3 Vatistas, 4 Denominator, "default" 3} (switch)
+                            WakeRegMethod:
+                                type: integer
+                                enumerate: [0, 1, 2, 3, 4]
+                                default: 1  
+                                description: Wake regularization method {1 Constant, 2 Stretching, 3 Age, default 1} (switch)
+                            WakeRegFactor:
+                                type: number
+                                default: 0.25
+                                description: Wake regularization factor (m)
+                            WingRegFactor:
+                                type: number
+                                default: 0.25
+                                description: Wing regularization factor (m)
+                            CoreSpreadEddyVisc:
+                                type: number
+                                default: 100
+                                description: Eddy viscosity in core spreading methods, typical values 1-1000 
+                            TwrShadowOnWake:
+                                type: boolean
+                                default: False
+                                description: Include tower flow disturbance effects on wake convection {default:false} [only if TwrPotent or TwrShadow]
+                            ShearModel:
+                                type: integer
+                                enumerate: [0, 1]
+                                default: 0
+                                description: Shear Model {0 No treatment, 1 Mirrored vorticity, default 0}
+                            VelocityMethod:
+                                type: integer
+                                enumerate: [1, 2]
+                                default: 1
+                                description: Method to determine the velocity {1Biot-Savart Segment, 2Particle tree, default 1}
+                            TreeBranchFactor:
+                                type: number
+                                minimum: 0.
+                                default: 2.0
+                                description: Branch radius fraction above which a multipole calculation is used {default 2.0} [only if VelocityMethod=2]
+                            PartPerSegment:
+                                type: integer
+                                default: 1
+                                minimum: 0
+                                description: Number of particles per segment [only if VelocityMethod=2]
+                            WrVTk:
+                                type: integer
+                                default: 0
+                                enumerate: [0, 1]
+                                description: Outputs Visualization Toolkit (VTK) (independent of .fst option) {0 NoVTK, 1 Write VTK at each time step} (flag)
+                            nVTKBlades:
+                                type: integer
+                                default: 3
+                                enumerate: [0, 1, 2, 3, 4, 5, 6]
+                                description: Number of blades for which VTK files are exported {0 No VTK per blade, n VTK for blade 1 to n} (-) 
+                            VTKCoord:
+                                type: integer
+                                enumerate: [1, 2, 3]
+                                default: 1
+                                description: Coordinate system used for VTK export. {1 Global, 2 Hub, 3 Both, "default" 1} 
+                            VTK_fps:
+                                type: number
+                                default: 1
+                                description: Frame rate for VTK output (frames per second) {"all" for all glue code timesteps, "default" for all OLAF timesteps} [used only if WrVTK=1]
                     UAMod:
                         type: integer
                         enum: [1,2,3]
