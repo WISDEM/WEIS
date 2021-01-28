@@ -140,7 +140,7 @@ class runFAST_pywrapper(object):
                 reader.execute()
         
             # Initialize writer variables with input model
-            writer.fst_vt = reader.fst_vt
+            writer.fst_vt = self.fst_vt = reader.fst_vt
         else:
             writer.fst_vt = self.fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
