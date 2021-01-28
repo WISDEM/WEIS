@@ -1358,10 +1358,7 @@ class FASTLoadCases(ExplicitComponent):
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
 
-<<<<<<< HEAD
 
-=======
->>>>>>> develop
     def writeCpsurfaces(self, inputs):
         
         FASTpref  = self.options['modeling_options']['openfast']['FASTpref']
@@ -1417,12 +1414,8 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
-<<<<<<< HEAD
 
     # def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
-=======
-    def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
->>>>>>> develop
 
     #     # Perform rainflow counting
     #     if self.options['modeling_options']['General']['verbosity']:
