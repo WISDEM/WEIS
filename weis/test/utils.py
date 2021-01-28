@@ -21,7 +21,7 @@ def execute_script(fscript):
     print("NOW RUNNING:", fscript)
     print()
     fullpath = os.path.join(examples_dir, fscript + ".py")
-    basepath = os.path.join(examples_dir, fscript.split("/")[0])
+    basepath = os.path.dirname(os.path.realpath(fullpath))
     os.chdir(basepath)
 
     # Get script/module name
