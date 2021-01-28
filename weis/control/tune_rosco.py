@@ -260,7 +260,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
             WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
-            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['Level3']['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
+            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['Level3']['ElastoDynBlade']['BldFlDmp1']/100
 
         # Tune Controller!
         controller = ROSCO_controller.Controller(rosco_init_options)
@@ -338,10 +338,9 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
 
         # Outputs 
-        outputs['flptune_coeff1']   = 2*WISDEM_turbine.bld_flapwise_damp*WISDEM_turbine.bld_flapwise_freq + controller.kappa[-1]*WISDEM_turbine.bld_flapwise_freq**2*controller.Kp_flap[-1]
-        outputs['flptune_coeff2']   = WISDEM_turbine.bld_flapwise_freq**2*(controller.Kp_flap[-1]*controller.kappa[-1] + 1)
-
-
+        if rosco_init_options['Flp_Mode'] >= 1:
+            outputs['flptune_coeff1']   = 2*WISDEM_turbine.bld_flapwise_damp*WISDEM_turbine.bld_flapwise_freq + controller.kappa[-1]*WISDEM_turbine.bld_flapwise_freq**2*controller.Kp_flap[-1]
+            outputs['flptune_coeff2']   = WISDEM_turbine.bld_flapwise_freq**2*(controller.Ki_flap[-1]*controller.kappa[-1] + 1)
         outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
         outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
 

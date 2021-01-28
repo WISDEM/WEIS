@@ -71,6 +71,12 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt['servo']['ipc_control']['Ki_min'],
                                                             upper=control_opt['servo']['ipc_control']['Ki_max'],
                                                             ref=1.e-7)
+        if control_opt['flaps']['te_flap_end']['flag']:
+            wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=control_opt['flaps']['te_flap_end']['min_end'],
+                                                            upper=control_opt['flaps']['te_flap_end']['max_end'])
+        if control_opt['flaps']['te_flap_ext']['flag']:
+            wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=control_opt['flaps']['te_flap_ext']['minext'],
+                                                            upper=control_opt['flaps']['te_flap_ext']['max_ext'])
         if 'flap_control' in control_opt['servo']:
             if control_opt['servo']['flap_control']['flag']:
                 wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', 
