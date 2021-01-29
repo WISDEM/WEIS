@@ -464,11 +464,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
         fst_vt['ElastoDyn']['GenIner']   = 534.116 #float(inputs['GenIner'])
 
-        # Platform inputs
-        fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
-        fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
-        fst_vt['ElastoDyn']['PtfmCMzt'] = -89.9155
-
         # Mass and inertia inputs
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
@@ -485,11 +480,11 @@ class FASTLoadCases(ExplicitComponent):
             # dz: seems like we need it
             fst_vt['ElastoDyn']['PtfmRefzt'] = 0 # Vertical distance from the ground level 
             
-            fst_vt['ElastoDyn']['PtfmMass'] = 7.4e6
-            fst_vt['ElastoDyn']['PtfmRIner'] = 4.2e9
-            fst_vt['ElastoDyn']['PtfmPIner'] = 4.2e9
-            fst_vt['ElastoDyn']['PtfmYIner'] = 1.6e8
-            fst_vt['ElastoDyn']['PtfmCMzt'] = -89.9155
+            # fst_vt['ElastoDyn']['PtfmMass'] = 7.4e6
+            # fst_vt['ElastoDyn']['PtfmRIner'] = 4.2e9
+            # fst_vt['ElastoDyn']['PtfmPIner'] = 4.2e9
+            # fst_vt['ElastoDyn']['PtfmYIner'] = 1.6e8
+            # fst_vt['ElastoDyn']['PtfmCMzt'] = -89.9155
         else:
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
@@ -818,7 +813,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
+            fst_vt['HydroDyn']['PropPot'] = ['True']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
             fst_vt['HydroDyn']['PotMod'] = 1
@@ -844,8 +839,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['SimplCdMG'] = 0
             fst_vt['HydroDyn']['SimplCa'] = 0
             fst_vt['HydroDyn']['SimplCaMG'] = 0
-
-            fst_vt['HydroDyn']['PropPot'] = [True] * 14
 
 
         # Moordyn inputs

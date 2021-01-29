@@ -20,8 +20,8 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 110.
-        TStart: 100.
+        TMax: 300.
+        TStart: 0.
         DT: 0.0125
         CompElast: 1
         CompInflow: 1
@@ -31,6 +31,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompSub: 0
         CompMooring: 3
         CompIce: 0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
@@ -51,6 +52,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : False
+        SumPrint: True
     HydroDyn:
         WaveTMax: 800
         WvLowCOff: 0.15708
