@@ -54,7 +54,7 @@ jobs:
 
       # Debugging session
       - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+        uses: mxschmitt/action-tmate@v2
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
