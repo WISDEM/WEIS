@@ -9,7 +9,7 @@ jobs:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      #fail-fast: true
       matrix:
         os: ["ubuntu-latest"] #, "macOS-latest"]
         python-version: ["3.8"]
@@ -53,8 +53,8 @@ jobs:
           pytest weis --collect-only
 
       # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
