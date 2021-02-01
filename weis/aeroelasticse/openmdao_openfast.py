@@ -89,6 +89,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
         self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
         self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
+        self.add_input('platform_displacement', val=1.0,               desc='Volumetric platform displacement', units='m**3')
 
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
@@ -227,7 +228,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
         # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
         self.layer_name = rotorse_options['layer_name']
-
+        
         # MoorDyn inputs
         mooropt = self.options['modeling_options']["mooring"]
         if self.options["modeling_options"]["flags"]["mooring"]:
@@ -832,7 +833,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PotMod'] = 1
             this_file_dir = os.path.dirname(os.path.abspath(__file__))
             fst_vt['HydroDyn']['PotFile'] = os.path.join(this_file_dir, '../../examples/03_NREL5MW_OC3_spar/HydroData/Spar')
-            fst_vt['HydroDyn']['PtfmVol0'] = 8029.21
+            fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) # 8029.21
             fst_vt['HydroDyn']['ExctnMod'] = 1
             fst_vt['HydroDyn']['RdtnMod'] = 1
             fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
