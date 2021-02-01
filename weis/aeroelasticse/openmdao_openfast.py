@@ -452,17 +452,30 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
 
         # Masses and inertias from DriveSE
-        fst_vt['ElastoDyn']['HubMass']   = 56780 #inputs['hub_system_mass'][0]
-        fst_vt['ElastoDyn']['HubIner']   = 115926 #inputs['hub_system_I'][0]
-        fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
-        fst_vt['ElastoDyn']['NacMass']   = 240000 #inputs['above_yaw_mass'][0]
-        fst_vt['ElastoDyn']['YawBrMass'] = 0 #inputs['yaw_mass'][0]
-        fst_vt['ElastoDyn']['NacYIner']  = 2.60789E+06 #inputs['nacelle_I'][2]
-        fst_vt['ElastoDyn']['NacCMxn']   = 1.9 #-k*inputs['nacelle_cm'][0]
-        fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
-        fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
-        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
-        fst_vt['ElastoDyn']['GenIner']   = 534.116 #float(inputs['GenIner'])
+        if False:
+            fst_vt['ElastoDyn']['HubMass']   = 56780 #inputs['hub_system_mass'][0]
+            fst_vt['ElastoDyn']['HubIner']   = 115926 #inputs['hub_system_I'][0]
+            fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
+            fst_vt['ElastoDyn']['NacMass']   = 240000 #inputs['above_yaw_mass'][0]
+            fst_vt['ElastoDyn']['YawBrMass'] = 0 #inputs['yaw_mass'][0]
+            fst_vt['ElastoDyn']['NacYIner']  = 2.60789E+06 #inputs['nacelle_I'][2]
+            fst_vt['ElastoDyn']['NacCMxn']   = 1.9 #-k*inputs['nacelle_cm'][0]
+            fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
+            fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
+            fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
+            fst_vt['ElastoDyn']['GenIner']   = 534.116 #float(inputs['GenIner'])
+        else:
+            fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
+            fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
+            fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
+            fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
+            fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
+            fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I'][2]
+            fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
+            fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
+            fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
+            fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
+            fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
 
         # Mass and inertia inputs
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.

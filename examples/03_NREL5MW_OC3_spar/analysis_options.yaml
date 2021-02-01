@@ -56,7 +56,7 @@ design_variables:
       max_gain: 1.1   # Nondimensional upper bound
     servo:
       pitch_control:
-        flag: True
+        flag: False # True
         omega_min: 0.1
         omega_max: 0.7
         zeta_min: 0.4
@@ -289,13 +289,13 @@ constraints:
       min: 0.0
       max: 0.1
     rotor_overspeed:
-      flag: True
+      flag: False # True
       min: 0.0
       max: 0.3
 
 driver:
   optimization:
-    flag: True
+    flag: False
     tol: 1.e-6            # Optimality tolerance
     max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
