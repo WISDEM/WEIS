@@ -19,6 +19,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('lcoe',          val=0.0, units = 'USD/MW/h')
         self.add_input('DEL_RootMyb',   val=0.0, units = 'N*m')
         self.add_input('DEL_TwrBsMyt',  val=0.0, units = 'N*m')
+        self.add_input('Std_PtfmPitch', val=0.0, units = 'deg')
         self.add_input('PC_omega',      val=0.0, units = 'rad/s')
         self.add_input('PC_zeta',       val=0.0)
         self.add_input('VS_omega',      val=0.0, units='rad/s')
@@ -57,9 +58,11 @@ class Outputs_2_Screen(om.ExplicitComponent):
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
                 print('Max DEL(RootMyb): {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
             if self.options['opt_options']['merit_figure'] == 'rotor_overspeed':
-                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
+                print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))
+            if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+                print('Std_PtfmPitch: {:<8.10f} deg.'.format(inputs['Std_PtfmPitch'][0]))
             # Print constraints
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
+                print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))
         
         print('########################################')

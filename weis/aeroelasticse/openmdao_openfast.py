@@ -294,6 +294,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
+        self.add_output('Std_PtfmPitch',val=0.0,            units='deg',  desc='standard deviation of platform pitch angle')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
@@ -1472,6 +1473,11 @@ class FASTLoadCases(ExplicitComponent):
                 ws_prob = pp.prob_WindDist(U, disttype='pdf')
                 # maximum sum of weighted DELS
                 outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*sum_stats['TwrBsMyt']['DEL'])
+
+            if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+                # Let's just average the standard deviation of PtfmPitch for now
+                # TODO: weight based on WS distribution, or something else
+                outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
