@@ -7,6 +7,7 @@ Example script to compute the steady-state performance in OpenFAST
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
+from weis.aeroelasticse.openmdao_openfast import OLAFParams
 import numpy as np
 import os, platform
 
@@ -40,10 +41,11 @@ omega_init = np.interp(wind_speeds, u_ref, omega_ref)
 case_inputs = {}
 case_inputs[("Fst","TMax")]             = {'vals':[TMax], 'group':0}
 case_inputs[("Fst","DT")]               = {'vals':[0.01], 'group':0}
+case_inputs[("Fst","DT_Out")]           = {'vals':[0.1], 'group':0}
+case_inputs[("ServoDyn","DLL_DT")]      = {'vals':[0.01], 'group':0}
 case_inputs[("Fst","CompInflow")]       = {'vals':[1], 'group':0}
 case_inputs[("Fst","CompServo")]        = {'vals':[1], 'group':0}
 case_inputs[("Fst","OutFileFmt")]       = {'vals':[1], 'group':0}
-case_inputs[("Fst","DT_Out")]           = {'vals':[0.02], 'group':0}
 case_inputs[("ElastoDyn","GenDOF")]     = {'vals':['True'], 'group':0}
 case_inputs[("ServoDyn","PCMode")]      = {'vals':[5], 'group':0}
 case_inputs[("ServoDyn","VSContrl")]    = {'vals':[5], 'group':0}
@@ -56,6 +58,15 @@ case_inputs[("ElastoDyn","RotSpeed")]   = {'vals': omega_init, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch1")]   = {'vals': pitch_init, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
 case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
+dt_wanted, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(omega_init)
+dt_olaf = np.zeros_like(dt_wanted)
+dt = case_inputs[("Fst","DT")]["vals"]
+n_dt = dt_wanted / dt
+dt_olaf = dt * np.around(n_dt)
+case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_olaf, 'group':1} 
+# case_inputs[("AeroDyn15","OLAF","nNWPanel")] = {'vals':nNWPanel, 'group':1} 
+# case_inputs[("AeroDyn15","OLAF","WakeLength")] = {'vals':nFWPanel, 'group':1} 
+# case_inputs[("AeroDyn15","OLAF","FreeWakeLength")] = {'vals':nFWPanelFree, 'group':1} 
 
 # Find the controller
 if platform.system() == 'Windows':
