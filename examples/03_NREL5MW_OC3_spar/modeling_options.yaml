@@ -20,7 +20,7 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 300.
+        TMax: 700.
         TStart: 0.
         DT: 0.0125
         CompElast: 1
