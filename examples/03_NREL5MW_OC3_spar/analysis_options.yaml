@@ -301,9 +301,14 @@ driver:
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 2.5e-2      # Step size for finite differencing
+    step_size: 2.5e-3      # Step size for finite differencing
     form: forward         # Finite differencing mode, either forward or central
-
+  design_of_experiments:
+    flag: False           # Flag to enable design of experiments
+    run_parallel: True    # Flag to run using parallel processing
+    generator: Uniform    # Type of input generator. (Uniform)
+    num_samples: 5            # number of samples for (Uniform only)
+    
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
