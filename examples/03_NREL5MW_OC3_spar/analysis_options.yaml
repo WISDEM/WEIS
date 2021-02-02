@@ -190,8 +190,8 @@ design_variables:
             # This will set the same ballast for all of the members listed in the same names entry
             - name: main_col
               flag: False
-              lower_bound: 1.0
-              upper_bound: 1.e+6
+              lower_bound: 5.5e+3
+              upper_bound: 6.5e+3
     mooring:
       anchor_radius:
         # This adjusts the radius of all anchor nodes from (0,0)
