@@ -71,10 +71,3 @@ jobs:
       #  run: |
       #    cd examples/dac_flaps
       #    python dac_driver.py
-
-      # Run scripts within design of experiments folder
-      - name: Run examples design of experiments
-        shell: pwsh
-        run: |
-          cd examples/08_design_of_experiments
-          python weis_driver.py
