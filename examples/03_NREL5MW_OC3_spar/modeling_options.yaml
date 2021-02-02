@@ -4,8 +4,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 30
-        n_tsr_perf_surfaces: 30
+        n_pitch_perf_surfaces: 10
+        n_tsr_perf_surfaces: 10
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
     TowerSE:
@@ -20,7 +20,7 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 700.
+        TMax: 150.
         TStart: 0.
         DT: 0.0125
         CompElast: 1
