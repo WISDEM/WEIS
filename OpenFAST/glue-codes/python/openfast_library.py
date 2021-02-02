@@ -101,10 +101,6 @@ class FastLibAPI(CDLL):
     @property
     def fatal_error(self):
         return self.error_status.value >= self.abort_error_level.value
-        
-    @property
-    def fatal_error(self):
-        return self.error_status.value >= self.abort_error_level.value
 
     def fast_init(self):
         self.FAST_AllocateTurbines(
