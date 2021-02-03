@@ -76,11 +76,11 @@ def compare_regression_values(
                     continue
                 testing_value = output_dict[key]
                 truth_value = truth_dict[key]
-                print(key, testing_value, truth_value)
+
                 try:
                     assert_near_equal(testing_value, truth_value, tolerance=tol)
                 except Exception as e:
                     print()
-                    print(f"Error: Comparison values not equal for {key}.")
+                    print(f"Error: Comparison values not equal for {key}: Tested={testing_value}\tTruth={truth_value}.")
                     print()
-                    raise
+                    raise e
