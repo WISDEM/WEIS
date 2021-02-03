@@ -992,7 +992,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
-        if self.mpi_run:
+        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
             FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
@@ -1037,7 +1037,8 @@ class FASTLoadCases(ExplicitComponent):
         iec.dlc_inputs['U']     = []
         iec.dlc_inputs['Seeds'] = []
         iec.dlc_inputs['Yaw']   = []
-
+        iec.uniqueSeeds         = True
+        
         if powercurve:
             # running turbulent power curve
             iec.dlc_inputs['DLC'].append(1.1)
@@ -1095,7 +1096,7 @@ class FASTLoadCases(ExplicitComponent):
         iec.overwrite       = False # TODO: elevate these options to analysis input file
         iec.run_dir         = self.FAST_runDirectory
 
-        if self.mpi_run:
+        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
             iec.parallel_windfile_gen = True
             iec.mpi_run               = self.FASTpref['analysis_settings']['mpi_run']
             iec.comm_map_down         = self.FASTpref['analysis_settings']['mpi_comm_map_down']
