@@ -15,7 +15,7 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 # Eagle environment
 eagle_nodes = ['el'+str(m) for m in range(10)] + ['ed'+str(m) for m in range(10)]
 eagle_flag = platform.node() in eagle_nodes
-ci_flag    = False #platform.node().find('fv-az') >= 0
+ci_flag    = platform.node().find('fv-az') >= 0
 if eagle_flag:
     os.environ["FC"] = "ifort"
     os.environ["CC"] = "icc"
@@ -50,7 +50,7 @@ class CMakeBuildExt(build_ext):
             localdir = os.path.join(this_directory, 'local')
 
             # CMAKE profiles default for all
-            buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
+            buildtype = 'RelWithDebInfo' # Hydrodyn has errors in Debug mode
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
                           '-DDOUBLE_PRECISION:BOOL=ON',
                           '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
@@ -60,13 +60,10 @@ class CMakeBuildExt(build_ext):
 
             # Custom tuning
             mycompiler = self.compiler.compiler[0]
-            if (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
-                  mycompiler.find('icpc') >= 0):
-                tune = '-xHost'
-            else:
-                tune = '-march=native -mtune=native'
-
-            if eagle_flag:
+            if ci_flag:
+                tune = '-O0'
+                
+            elif eagle_flag:
                 tune = '-xSKYLAKE-AVX512'
                 cmake_args += ['-DOPENMP=ON']
                 try:
@@ -74,10 +71,16 @@ class CMakeBuildExt(build_ext):
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
 
-            if not ci_flag:
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
-                               '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
+            elif (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
+                  mycompiler.find('icpc') >= 0):
+                tune = '-xHost'
+                
+            else:
+                tune = '-march=native -mtune=native'
+
+            cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
+                           '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
+                           '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
 
             if platform.system() == 'Windows':
                 cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
