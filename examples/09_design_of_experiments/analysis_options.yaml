@@ -13,8 +13,8 @@ design_variables:
       chord:
         flag: True     # Flag to optimize the chord
         n_opt: 8        # Number of control points along blade span
-        min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
-        max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        min_gain: 0.9   # Nondimensional lower bound at the n_opt locations
+        max_gain: 1.1   # Nondimensional upper bound at the n_opt locations
       af_positions:
         flag: False     # Flag to optimize the airfoil positions
         af_start: 4     # Index of the first airfoil from blade root that can have the location optimized. First airfoil is number 0. Last airfoil is always locked at blade tip.

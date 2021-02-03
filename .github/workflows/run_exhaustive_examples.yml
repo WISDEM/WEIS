@@ -71,3 +71,10 @@ jobs:
       #  run: |
       #    cd examples/dac_flaps
       #    python dac_driver.py
+
+      # Run scripts within design of experiments folder
+      - name: Run examples design of experiments
+        shell: pwsh
+        run: |
+          cd examples/09_design_of_experiments
+          mpirun -np 4 python DOE_openfast.py
