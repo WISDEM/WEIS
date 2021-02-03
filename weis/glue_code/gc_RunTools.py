@@ -30,6 +30,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('tip_deflection',val=0.0, units='m')
         self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
         self.add_input('rotor_overspeed',val=0.0)
+        self.add_input('Max_PtfmPitch',val=0.0)
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -64,5 +65,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
             # Print constraints
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))
+            if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
+                print('Max_PtfmPitch: {:<8.10f} deg.'.format(inputs['Max_PtfmPitch'][0]))
+            if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+                print('Std_PtfmPitch: {:<8.10f} deg.'.format(inputs['Std_PtfmPitch'][0]))
         
         print('########################################')

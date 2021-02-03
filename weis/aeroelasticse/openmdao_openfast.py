@@ -332,7 +332,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('std_aoa',    val=np.zeros(n_span), units='deg', desc='distributed angles of attack - std')
         self.add_output('mean_aoa',   val=np.zeros(n_span), units='deg', desc='distributed angles of attack - mean')
 
-        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')
+        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')  # is this over a set of sims?
+        self.add_output('Max_PtfmPitch',  val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
         self.add_discrete_output('fst_vt_out', val={})
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
@@ -1496,6 +1497,17 @@ class FASTLoadCases(ExplicitComponent):
 
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+
+            if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
+                outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+
+            if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+                # If this is a merit function, do nothing for now
+                if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+                    print('WARNING: Std_PtfmPitch was flagged as a merit figure and constraint, it is being treated as a merit figure only')
+                else:
+                    # If this is a constraint, we want to output maximum std of all sims
+                    outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
 
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)

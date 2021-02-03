@@ -292,6 +292,12 @@ constraints:
       flag: False # True
       min: 0.0
       max: 0.3
+    Max_PtfmPitch:
+      flag: False
+      max: 5.
+    Std_PtfmPitch:
+      flag: False
+      max: 2.
 
 driver:
   optimization:

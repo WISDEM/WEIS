@@ -679,6 +679,7 @@ class WindPark(om.Group):
                 self.connect('aeroelastic.DEL_TwrBsMyt',       'outputs_2_screen_weis.DEL_TwrBsMyt')
                 self.connect('aeroelastic.rotor_overspeed',    'outputs_2_screen_weis.rotor_overspeed')
                 self.connect('aeroelastic.Std_PtfmPitch',      'outputs_2_screen_weis.Std_PtfmPitch')
+                self.connect('aeroelastic.Max_PtfmPitch',      'outputs_2_screen_weis.Max_PtfmPitch')
                 self.connect('tune_rosco_ivc.PC_omega',        'outputs_2_screen_weis.PC_omega')
                 self.connect('tune_rosco_ivc.PC_zeta',         'outputs_2_screen_weis.PC_zeta')
                 self.connect('tune_rosco_ivc.VS_omega',        'outputs_2_screen_weis.VS_omega')
