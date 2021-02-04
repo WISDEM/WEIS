@@ -1167,6 +1167,12 @@ class FASTLoadCases(ExplicitComponent):
         # Return spanwise forces at instance of largest deflection
         Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
         Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]
+        if np.any(np.isnan(Fx)):
+            print('WARNING: nans found in Fx extremes')
+            Fx[np.isnan(Fx)] = 0.0
+        if np.any(np.isnan(Fy)):
+            print('WARNING: nans found in Fx extremes')
+            Fy[np.isnan(Fy)] = 0.0
         spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
         spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
 
