@@ -1171,7 +1171,7 @@ class FASTLoadCases(ExplicitComponent):
             print('WARNING: nans found in Fx extremes')
             Fx[np.isnan(Fx)] = 0.0
         if np.any(np.isnan(Fy)):
-            print('WARNING: nans found in Fx extremes')
+            print('WARNING: nans found in Fy extremes')
             Fy[np.isnan(Fy)] = 0.0
         spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
         spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
