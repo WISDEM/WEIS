@@ -77,4 +77,4 @@ jobs:
         shell: pwsh
         run: |
           cd examples/09_design_of_experiments
-          mpirun -np 4 python DOE_openfast.py
+          mpirun -np 2 python DOE_openfast.py
