@@ -137,61 +137,12 @@ design_variables:
               lower_bound: 0.0
               upper_bound: 1.0
     members:
-      diameter:
-        linked_members:
-          # This will set the same diameter profile for all of the members listed in the same names entry
-          - names: [col1, col2, col3]
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 20.0
-          - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 5.0
-          - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 5.0
-        independent_members:
-          # This will set the same ballast for all of the members listed in the same names entry
-          - name: main_col
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 20.0
-      thickness:
-        linked_members:
-          # This will set the same thickness profile for all of the members listed in the same names entry
-          - names: [col1, col2, col3]
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 20.0
-          - names: [pontoon_lower12, pontoon_lower23, pontoon_lower31]
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 5.0
-          - names: [pontoon_upper12, pontoon_upper23, pontoon_upper31]
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 5.0
-        independent_members:
-          # This will set the same ballast for all of the members listed in the same names entry
-          - name: main_col
-            flag: False
-            lower_bound: 1.0
-            upper_bound: 20.0
-        ballast:
-          linked_members:
-            # This will set the same ballast for all of the members listed in the same names entry
-            - names: [col1, col2, col3]
-              flag: False
-              lower_bound: 1.0
-              upper_bound: 1.e+6
-          independent_members:
-            # This will set the same ballast for all of the members listed in the same names entry
-            - name: main_col
-              flag: False
-              lower_bound: 5.5e+3
-              upper_bound: 6.5e+3
+        flag: True
+        groups:
+            - names: [spar]
+              ballast:
+                  lower_bound: 1.0
+                  upper_bound: 1e4
     mooring:
       anchor_radius:
         # This adjusts the radius of all anchor nodes from (0,0)
