@@ -1,16 +1,24 @@
-import openmdao.api as om
+"""
+Simple script to show how to grab all cases from a DOE run. User can then
+postprocess or plot further.
+"""
+
+import glob
+import os
+import sys
+import time
 
 import numpy as np
-import os
 
+import openmdao.api as om
 
-log_files = []
-for file in os.listdir("outputs"):
-    if '.sql' in file:
-        log_files.append(os.path.join("outputs", file))
-        
-for log_file in log_files:
-    cr = om.CaseReader(log_file)
+# Simply gather all of the sql files
+run_dir = os.path.dirname(os.path.realpath(__file__))
+output_path = os.path.join(run_dir, "outputs")
+optimization_logs = glob.glob(os.path.join(output_path, "log_opt.sql*"))
+
+for log in optimization_logs:
+    cr = om.CaseReader(log)
 
     cases = cr.get_cases()
 
