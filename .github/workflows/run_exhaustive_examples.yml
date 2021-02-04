@@ -78,3 +78,4 @@ jobs:
         run: |
           cd examples/09_design_of_experiments
           mpirun -np 2 python DOE_openfast.py
+          python postprocess_results.py
