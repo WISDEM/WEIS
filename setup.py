@@ -50,7 +50,7 @@ class CMakeBuildExt(build_ext):
             localdir = os.path.join(this_directory, 'local')
 
             # CMAKE profiles default for all
-            buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
+            buildtype = 'RelWithDebInfo' # Hydrodyn has issues with Debug
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
                           '-DDOUBLE_PRECISION:BOOL=OFF',
                           '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
