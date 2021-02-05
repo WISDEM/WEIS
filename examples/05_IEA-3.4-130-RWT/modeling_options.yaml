@@ -23,7 +23,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompElast: 1
         CompInflow: 1
         CompAero: 2
-        CompServo: 0
+        CompServo: 1
         CompHydro: 0
         CompSub: 0
         CompMooring: 0

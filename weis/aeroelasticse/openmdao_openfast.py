@@ -1272,7 +1272,7 @@ class FASTLoadCases(ExplicitComponent):
             # Get windspeeds from case list 
             if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
                 U = []
-                for fname in [case[('InflowWind', 'Filename')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
+                for fname in [case[('InflowWind', 'Filename_Uni')] for i, case in enumerate(case_list) if i in idx_pwrcrv]:
                     fname = os.path.split(fname)[-1]
                     ntm      = fname.split('NTM')[-1].split('_')
                     ntm_U    = float(".".join(ntm[1].strip("U").split('.')[:-1]))
@@ -1353,7 +1353,8 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
             outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
-            
+        return outputs, discrete_outputs
+
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
         writer.fst_vt            = fst_vt
