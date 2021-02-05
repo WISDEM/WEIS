@@ -32,7 +32,6 @@ if mactype == "linux" or mactype == "linux2":
     libext = ".so"
 elif mactype == "darwin":
     libext = '.dylib'
-    #os.environ['DYLD_FALLBACK_LIBRARY_PATH'] = lib_dir
 elif mactype == "win32":
     libext = '.dll'
 elif mactype == "cygwin":
@@ -128,7 +127,6 @@ class runFAST_pywrapper(object):
         elif self.FAST_ver.lower() in ['fast8','openfast']:
             reader = InputReader_OpenFAST(FAST_ver=self.FAST_ver)
             writer = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
-        #wrapper = FastWrapper(FAST_ver=self.FAST_ver, debug_level=self.debug_level)
 
         # Read input model, FAST files or Yaml
         if self.fst_vt == {}:
@@ -158,14 +156,6 @@ class runFAST_pywrapper(object):
             writer.FAST_yamlfile = self.FAST_yamlfile_out
             writer.write_yaml()
 
-        # Run FAST
-        #wrapper.FAST_exe = self.FAST_exe
-        #wrapper.FAST_InputFile = os.path.split(writer.FAST_InputFileOut)[1]
-        #wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
-
-        #FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
-        #FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
-
         FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
         input_file_name = create_string_buffer(os.path.abspath(writer.FAST_InputFileOut).encode('utf-8'))
         t_max = c_double(self.fst_vt['Fst']['TMax'])
@@ -176,26 +166,14 @@ class runFAST_pywrapper(object):
         openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
         openfastlib.fast_run()
 
-        # #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
-        # if self.overwrite_outfiles or (not self.overwrite_outfiles and not (os.path.exists(FAST_Output) or os.path.exists(FAST_Output_txt))):
-        #     wrapper.execute()
-        # else:
-        #     if self.debug_level>0:
-        #         print('OpenFAST not execute: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
-
         output_dict = {}
         for i, channel in enumerate(openfastlib.output_channel_names):
-            # {
-            #     "channel": np.array([]),
-            #     "channel": np.array([]),
-            # }
             output_dict[channel] = openfastlib.output_values[:,i]
 
         output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
         case_name, sum_stats, extremes, dels = la._process_output(output)
 
-        # if save_file:
-        #   write_fast
+        # if save_file: write_fast
         os.chdir(orig_dir)
 
         if not self.keep_time: output_dict = None
@@ -405,168 +383,3 @@ def eval_multi(data):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
     return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17])
-
-def example_runFAST_pywrapper_batch():
-    """ 
-    Example of running a batch of cases, in serial or in parallel
-    """
-    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST')
-
-    # fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
-   # fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-    # fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
-    # fastBatch.FAST_runDirectory = 'temp/OpenFAST'
-    # fastBatch.debug_level = 2
-    fastBatch.FAST_exe          = '/projects/windse/importance_sampling/WT_Codes/openfast/build/glue-codes/openfast/openfast'   # Path to executable
-    fastBatch.FAST_InputFile    = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-    fastBatch.FAST_directory    = "/projects/windse/importance_sampling/WISDEM/xloads_tc/templates/openfast/5MW_Land_DLL_WTurb-Shutdown"   # Path to fst directory files
-    fastBatch.FAST_runDirectory = 'temp/OpenFAST'
-    fastBatch.debug_level       = 2
-    fastBatch.post              = FAST_IO_timeseries
-
-
-    ## Define case list explicitly
-    # case_list = [{}, {}]
-    # case_list[0]['Fst', 'TMax'] = 4.
-    # case_list[1]['Fst', 'TMax'] = 5.
-    # case_name_list = ['test01', 'test02']
-
-    ## Generate case list using General Case Generator
-    ## Specify several variables that change independently or collectly
-    case_inputs = {}
-    case_inputs[("Fst","TMax")] = {'vals':[5.], 'group':0}
-    case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
-    case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
-    case_inputs[("InflowWind","HWindSpeed")] = {'vals':[8., 9., 10., 11., 12.], 'group':1}
-    case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[9.156, 10.296, 11.431, 11.89, 12.1], 'group':1}
-    case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[0., 0., 0., 0., 3.823], 'group':1}
-    case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
-    case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-    case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
-    
-    from CaseGen_General import CaseGen_General
-    case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='testing')
-
-    fastBatch.case_list = case_list
-    fastBatch.case_name_list = case_name_list
-
-    # fastBatch.run_serial()
-    # fastBatch.run_multi(2)
-    fastBatch.run_mpi()
-
-
-def example_runFAST_CaseGenIEC():
-
-    from CaseGen_IEC import CaseGen_IEC
-    iec = CaseGen_IEC()
-
-    # Turbine Data
-    iec.init_cond = {} # can leave as {} if data not available
-    iec.init_cond[("ElastoDyn","RotSpeed")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
-    iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = [6.972, 7.183, 7.506, 7.942, 8.469, 9.156, 10.296, 11.431, 11.89, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1]
-    iec.init_cond[("ElastoDyn","BlPitch1")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
-    iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = [0., 0., 0., 0., 0., 0., 0., 0., 0., 3.823, 6.602, 8.668, 10.450, 12.055, 13.536, 14.920, 16.226, 17.473, 18.699, 19.941, 21.177, 22.347, 23.469]
-    iec.init_cond[("ElastoDyn","BlPitch2")] = iec.init_cond[("ElastoDyn","BlPitch1")]
-    iec.init_cond[("ElastoDyn","BlPitch3")] = iec.init_cond[("ElastoDyn","BlPitch1")]
-
-    iec.Turbine_Class = 'I' # I, II, III, IV
-    iec.Turbulence_Class = 'A'
-    iec.D = 126.
-    iec.z_hub = 90.
-
-    # DLC inputs
-    iec.dlc_inputs = {}
-    iec.dlc_inputs['DLC']   = [1.1, 1.5]
-    iec.dlc_inputs['U']     = [[8, 9, 10], [12]]
-    iec.dlc_inputs['Seeds'] = [[5, 6, 7], []]
-    iec.dlc_inputs['Yaw']   = [[], []]
-
-    iec.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
-    iec.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
-
-    # Naming, file management, etc
-    iec.wind_dir = 'temp/wind'
-    iec.case_name_base = 'testing'
-    iec.Turbsim_exe = 'C:/Users/egaertne/WT_Codes/Turbsim_v2.00.07/bin/TurbSim_x64.exe'
-    iec.debug_level = 2
-    iec.parallel_windfile_gen = True
-    iec.cores = 4
-    iec.run_dir = 'temp/OpenFAST'
-
-    # Run case generator / wind file writing
-    case_inputs = {}
-    case_inputs[('Fst','OutFileFmt')] = {'vals':[1], 'group':0}
-    case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
-
-    # Run FAST cases
-    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST')
-    fastBatch.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
-    fastBatch.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-    fastBatch.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
-    fastBatch.FAST_runDirectory = iec.run_dir
-
-    fastBatch.case_list = case_list
-    fastBatch.case_name_list = case_name_list
-    fastBatch.debug_level = 2
-
-    # fastBatch.run_serial()
-    fastBatch.run_multi(4)
-
-    
-def example_runFAST_pywrapper():
-    """ 
-    Example of reading, writing, and running FAST 7, 8 and OpenFAST.
-    """
-
-    FAST_ver = 'OpenFAST'
-    fast = runFAST_pywrapper(FAST_ver=FAST_ver, debug_level=2)
-
-    if FAST_ver.lower() == 'fast7':
-        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/FAST_v7.02.00d-bjj/FAST.exe'   # Path to executable
-        fast.FAST_InputFile = 'Test12.fst'   # FAST input file (ext=.fst)
-        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/FAST_v7.02.00d-bjj/CertTest/'   # Path to fst directory files
-        fast.FAST_runDirectory = 'temp/FAST7'
-        fast.FAST_namingOut = 'test'
-
-    elif FAST_ver.lower() == 'fast8':
-        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/FAST_v8.16.00a-bjj/bin/FAST_Win32.exe'   # Path to executable
-        fast.FAST_InputFile = 'NREL5MW_onshore.fst'   # FAST input file (ext=.fst)
-        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/FAST_v8.16.00a-bjj/ref/5mw_onshore/'   # Path to fst directory files
-        fast.FAST_runDirectory = 'temp/FAST8'
-        fast.FAST_namingOut = 'test'
-
-    # elif FAST_ver.lower() == 'openfast':
-    #     fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast/build/glue-codes/fast/openfast.exe'   # Path to executable
-    #     fast.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-    #     fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast/glue-codes/fast/5MW_Land_DLL_WTurb'   # Path to fst directory files
-    #     fast.FAST_runDirectory = 'temp/OpenFAST'
-    #     fast.FAST_namingOut = 'test'
-
-    #     fast.read_yaml = False
-    #     fast.FAST_yamlfile_in = 'temp/OpenFAST/test.yaml'
-
-    #     fast.write_yaml = False
-    #     fast.FAST_yamlfile_out = 'temp/OpenFAST/test.yaml'
-    elif FAST_ver.lower() == 'openfast':
-        fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast-dev/build/glue-codes/openfast/openfast.exe'   # Path to executable
-        # fast.FAST_InputFile = '5MW_Land_DLL_WTurb.fst'   # FAST input file (ext=.fst)
-        # fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_Land_DLL_WTurb'   # Path to fst directory files
-        fast.FAST_InputFile = '5MW_OC3Spar_DLL_WTurb_WavesIrr.fst'   # FAST input file (ext=.fst)
-        fast.FAST_directory = 'C:/Users/egaertne/WT_Codes/models/openfast-dev/r-test/glue-codes/openfast/5MW_OC3Spar_DLL_WTurb_WavesIrr'   # Path to fst directory files
-        fast.FAST_runDirectory = 'temp/OpenFAST'
-        fast.FAST_namingOut = 'test_run_spar'
-
-        fast.read_yaml = False
-        fast.FAST_yamlfile_in = 'temp/OpenFAST/test.yaml'
-
-        fast.write_yaml = False
-        fast.FAST_yamlfile_out = 'temp/OpenFAST/test.yaml'
-
-    fast.execute()
-
-
-if __name__=="__main__":
-
-    # example_runFAST_pywrapper()
-    example_runFAST_pywrapper_batch()
-    # example_runFAST_CaseGenIEC()
