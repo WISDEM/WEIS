@@ -247,7 +247,7 @@ constraints:
       flag: True
       max: 5.
     Std_PtfmPitch:
-      flag: True
+      flag: False
       max: 2.
 
 driver:
@@ -264,9 +264,9 @@ driver:
     flag: True           # Flag to enable design of experiments
     run_parallel: True    # Flag to run using parallel processing
     generator: FullFact    # Type of input generator. (Uniform)
-    num_samples: 2            # number of samples for (Uniform only)
+    num_samples: 12            # number of samples for (Uniform only)
     
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
-    includes: ['*pitch*']
+    includes: ['floatingse.platform_mass']
