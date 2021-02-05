@@ -1,4 +1,4 @@
-"""Tests suite for ORBIT."""
+"""Tests suite for pCrunch."""
 
 __author__ = ["Jake Nunemaker", "Nikhar Abbas"]
 __copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
