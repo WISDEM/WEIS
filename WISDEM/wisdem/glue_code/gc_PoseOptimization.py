@@ -789,9 +789,9 @@ class PoseOptimization(object):
         if self.opt["recorder"]["flag"]:
             recorder = om.SqliteRecorder(os.path.join(folder_output, self.opt["recorder"]["file_name"]))
             wt_opt.driver.add_recorder(recorder)
-            wt_opt.add_recorder(recorder)
 
-            wt_opt.driver.recording_options["excludes"] = ["*_df"]
+            wt_opt.driver.recording_options["includes"] = self.opt["recorder"]["includes"]
+            wt_opt.driver.recording_options["excludes"] = self.opt["recorder"]["excludes"]
             wt_opt.driver.recording_options["record_constraints"] = True
             wt_opt.driver.recording_options["record_desvars"] = True
             wt_opt.driver.recording_options["record_objectives"] = True
