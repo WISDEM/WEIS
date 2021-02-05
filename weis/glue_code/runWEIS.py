@@ -114,10 +114,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             wt_opt = myopt.set_objective(wt_opt)
             wt_opt = myopt.set_design_variables(wt_opt, wt_init)
             wt_opt = myopt.set_constraints(wt_opt)
-            wt_opt = myopt.set_recorders(wt_opt)
 
             if opt_options['driver']['design_of_experiments']['flag']:
                 wt_opt.driver.options['procs_per_model'] = 1 # n_OF_runs_parallel # int(max_cores / np.floor(max_cores/n_OF_runs))
+        
+        wt_opt = myopt.set_recorders(wt_opt)
         
         # Setup openmdao problem
         if opt_options['opt_flag']:

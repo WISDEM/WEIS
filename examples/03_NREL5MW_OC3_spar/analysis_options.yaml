@@ -56,7 +56,7 @@ design_variables:
       max_gain: 1.1   # Nondimensional upper bound
     servo:
       pitch_control:
-        flag: True # True
+        flag: True
         omega_min: 0.1
         omega_max: 0.5
         zeta_min: 0.4
@@ -269,3 +269,4 @@ driver:
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
+    includes: ['*pitch*']

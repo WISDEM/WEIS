@@ -1131,3 +1131,12 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
+            includes:
+                type: array
+                description: List of variables to include in the system recording.
+                default: []
+            excludes:
+                type: array
+                description: List of variables to exclude in the system recording.
+                default: []
+            
