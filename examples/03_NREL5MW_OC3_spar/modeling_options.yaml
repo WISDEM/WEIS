@@ -20,8 +20,8 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 150.
-        TStart: 0.
+        TMax: 0.
+        TStart: 100.
         DT: 0.0125
         CompElast: 1
         CompInflow: 1
@@ -73,7 +73,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 openfast:
     file_management:
         FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
-        FAST_runDirectory: outputs         # Path to folder with the OpenFAST output files
+        FAST_runDirectory: outputs_both         # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True
