@@ -16,7 +16,7 @@ False                  Echo        - Echo input data to <RootName>.ech (flag)
 ================== Parameters for Uniform wind file   [used only for WindType = 2] ============================
 "Wind/NoShr_9-14_Inc1_50s.wnd" Filename_Uni    - Filename of time series data for uniform wind field.      (-)
 150.0                  RefHt_Uni       - Reference height for horizontal wind speed                (m)
-125.88                 RefLength   - Reference length for linear horizontal and vertical sheer (-)
+240.0                  RefLength   - Reference length for linear horizontal and vertical sheer (-)
 ================== Parameters for Binary TurbSim Full-Field files   [used only for WindType = 3] ==============
 "Wind/145m_11mps_ClassA1ETM.bts" FileName_BTS    - Name of the Full field wind file to use (.bts)
 ================== Parameters for Binary Bladed-style Full-Field files   [used only for WindType = 4] =========
@@ -51,5 +51,7 @@ False                  TowerFile   - Have tower file (.twr) (flag)
 False                  SumPrint    - Print summary data to <RootName>.IfW.sum (flag)
 OutList      - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx for a listing of available output channels, (-)
 Wind1VelX
+Wind1VelY
+Wind1VelZ
 END of input file (the word "END" must appear in the first 3 columns of this last OutList line)
 ---------------------------------------------------------------------------------------
