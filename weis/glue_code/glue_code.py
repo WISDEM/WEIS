@@ -222,12 +222,16 @@ class WindPark(om.Group):
             #self.connect('nacelle.above_yaw_mass',          'aeroelastic.above_yaw_mass')
             self.connect('drivese.rna_mass',                'aeroelastic.above_yaw_mass')
             self.connect('drivese.yaw_mass',                'aeroelastic.yaw_mass')
-            self.connect('drivese.nacelle_I',               'aeroelastic.nacelle_I')
+            self.connect('drivese.nacelle_I_TT',            'aeroelastic.nacelle_I')
             self.connect('drivese.nacelle_cm',              'aeroelastic.nacelle_cm')
             self.connect('drivese.generator_I',             'aeroelastic.GenIner', src_indices=[0])
             self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio')
             self.connect('rp.powercurve.rated_efficiency', 'aeroelastic.generator_efficiency')
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
+            self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
+            self.connect('nacelle.overhang',                'aeroelastic.overhang')
+            self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
+            self.connect('drivese.constr_height',           'aeroelastic.twr2shaft')
 
             self.connect('assembly.hub_height',             'aeroelastic.hub_height')
             if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
@@ -286,9 +290,6 @@ class WindPark(om.Group):
                     #self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass') ## TODO
                     self.connect('floatingse.transition_piece_I',      'aeroelastic.transition_piece_I', src_indices=[0,1,2])
                     
-            self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
-            self.connect('nacelle.overhang',                'aeroelastic.overhang')
-            self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
             self.connect('airfoils.Re',                     'aeroelastic.airfoils_Re')
             self.connect('xf.cl_interp_flaps',              'aeroelastic.airfoils_cl')

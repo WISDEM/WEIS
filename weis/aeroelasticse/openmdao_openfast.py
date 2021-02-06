@@ -127,6 +127,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_input('nacelle_I',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
         self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
+        self.add_input('twr2shaft',       val=0.0,         units='m',   desc='Vertical distance from tower top plane to shaft start')
         self.add_input('GenIner',         val=0.0,         units='kg*m**2',   desc='Moments of inertia for the generator about high speed shaft')
 
         # AeroDyn Inputs
@@ -463,7 +464,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
-        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['distance_tt_hub'])
+        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['twr2shaft'])
         fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
 
         # Mass and inertia inputs
@@ -685,6 +686,7 @@ class FASTLoadCases(ExplicitComponent):
             mono_index = twr_index+1 # Duplicate intersection point
             n_joints = len(inputs['tower_outer_diameter'][1:mono_index]) # Omit submerged pile
             n_members = n_joints - 1
+            itrans = n_joints - 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
@@ -749,12 +751,13 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NCOSMs'] = 0
             fst_vt['SubDyn']['NXPropSets'] = 0
             fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
-            fst_vt['SubDyn']['CMJointID'] = np.arange( fst_vt['SubDyn']['NCmass'] ) + 1
+            fst_vt['SubDyn']['CMJointID'] = [itrans+1]
             fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
             fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
             fst_vt['SubDyn']['JMYY'] = [inputs['transition_piece_I'][1]]
             fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
             if inputs['gravity_foundation_mass'] > 0.0:
+                fst_vt['SubDyn']['CMJointID'] += [1]
                 fst_vt['SubDyn']['JMass'] += [float(inputs['gravity_foundation_mass'])]
                 fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
                 fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
