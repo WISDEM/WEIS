@@ -129,6 +129,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
         self.add_input('twr2shaft',       val=0.0,         units='m',   desc='Vertical distance from tower top plane to shaft start')
         self.add_input('GenIner',         val=0.0,         units='kg*m**2',   desc='Moments of inertia for the generator about high speed shaft')
+        self.add_input('drivetrain_spring_constant',         val=0.0,         units='N*m/rad',   desc='Moments of inertia for the generator about high speed shaft')
+        self.add_input("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad", desc='Equivalent damping coefficient for the drivetrain system')
 
         # AeroDyn Inputs
         self.add_input('ref_axis_blade',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
@@ -490,8 +492,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
 
         # Drivetrain inputs
-        fst_vt['ElastoDyn']['DTTorSpr'] = 0.
-        fst_vt['ElastoDyn']['DTTorDmp'] = 0.
+        fst_vt['ElastoDyn']['DTTorSpr'] = float(inputs['drivetrain_spring_constant'])
+        fst_vt['ElastoDyn']['DTTorDmp'] = float(inputs['drivetrain_damping_coefficient'])
 
         tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
         fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
