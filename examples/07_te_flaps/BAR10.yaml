@@ -411,6 +411,7 @@ components:
             generator_rpm_efficiency_user:
                 grid: [0.0, 1.0]
                 values: [0.95, 0.95]
+            damping_ratio: 0.01
             mb1Type: CARB
             mb2Type: SRB
             uptower: true
