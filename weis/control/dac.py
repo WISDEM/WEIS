@@ -208,7 +208,7 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI and self.options['modeling_options']['Level3']['flag']:
+        if MPI and self.options['modeling_options']['Level3']['flag'] and self.options['opt_options']['driver']['optimization']['flag']:
             self.mpi_comm_map_down = FASTpref['analysis_settings']['mpi_comm_map_down']
 
         # Inputs blade outer shape
@@ -529,7 +529,7 @@ class RunXFOIL(ExplicitComponent):
 
 
                 # Run XFoil as multiple processors with MPI
-                if MPI:
+                if MPI and self.options['opt_options']['driver']['optimization']['flag']:
                     run_xfoil_params['run_MPI'] = True
                     # mpi comm management
                     comm = MPI.COMM_WORLD

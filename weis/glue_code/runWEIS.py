@@ -21,7 +21,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimizationWEIS(modeling_options, opt_options)
 
-    if MPI:
+    if MPI and opt_options['driver']['optimization']['flag']:
         n_DV = myopt.get_number_design_variables()
         
         # Extract the number of cores available
@@ -94,7 +94,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
-        if MPI:
+        if MPI and opt_options['driver']['optimization']['flag']:
             if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['openfast']['analysis_settings']['mpi_run']           = True
@@ -115,6 +115,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             wt_opt = myopt.set_design_variables(wt_opt, wt_init)
             wt_opt = myopt.set_constraints(wt_opt)
             wt_opt = myopt.set_recorders(wt_opt)
+
+            if opt_options['driver']['design_of_experiments']['flag']:
+                wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs']
+                wt_opt.driver.options['procs_per_model'] = 1 # n_OF_runs_parallel # int(max_cores / np.floor(max_cores/n_OF_runs))
         
         # Setup openmdao problem
         if opt_options['opt_flag']:
@@ -150,13 +154,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # so these values are correctly placed in the problem.
         wt_opt = myopt.set_restart(wt_opt)
 
-        if 'check_totals' in opt_options['driver']:
-            if opt_options['driver']['check_totals']:
+        if 'check_totals' in opt_options['driver']['optimization']:
+            if opt_options['driver']['optimization']['check_totals']:
                 wt_opt.run_model()
                 totals = wt_opt.compute_totals()
         
-        if 'check_partials' in opt_options['driver']:
-            if opt_options['driver']['check_partials']:
+        if 'check_partials' in opt_options['driver']['optimization']:
+            if opt_options['driver']['optimization']['check_partials']:
                 wt_opt.run_model()
                 checks = wt_opt.check_partials(compact_print=True)
                 
@@ -179,7 +183,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Level3']['flag']:
+    if MPI and modeling_options['Level3']['flag'] and opt_options['driver']['optimization']['flag']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():

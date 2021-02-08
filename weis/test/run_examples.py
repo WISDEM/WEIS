@@ -27,6 +27,11 @@ all_scripts = [
     "06_IEA-15-240-RWT/weis_driver",
     
     # "07_te_flaps/dac_driver",
+
+    "08_OLAF/weis_driver",
+    
+    "09_design_of_experiments/weis_driver",
+    
 ]
 
 class TestExamples(unittest.TestCase):
@@ -46,6 +51,11 @@ class TestExamples(unittest.TestCase):
     def test_IEA_15(self):
         run_all_scripts("06_", all_scripts)
 
+    def test_OLAF(self):
+        run_all_scripts("08_", all_scripts)
+
+    def test_DOE(self):
+        run_all_scripts("09_", all_scripts)
 
 def suite():
     suite = unittest.TestSuite()
