@@ -97,10 +97,11 @@ class FASTLoadCases(ExplicitComponent):
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
         self.add_input('side_side_modes',  val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_input('sec_loc',          val=np.zeros(n_height-1),                         desc='normalized sectional location')
         self.add_input('mass_den',         val=np.zeros(n_height-1),         units='kg/m',   desc='sectional mass per unit length')
         self.add_input('foreaft_stff',     val=np.zeros(n_height-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
         self.add_input('sideside_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
+        self.add_input('tor_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='torsional stiffness per unit length about the Y_E elastic axis')
+        self.add_input('tor_freq',    val=0.0,         units='Hz', desc='First tower torsional frequency')
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
         self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
@@ -124,8 +125,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('hub_system_mass', val=0.0,                     units='kg', desc='mass of hub system')
         self.add_input('above_yaw_mass',  val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
         self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
+        self.add_input('rna_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the rna [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
         self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-        self.add_input('nacelle_I',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the component [Ixx, Iyy, Izz] around its center of mass')
+        self.add_input('nacelle_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the nacelle [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
         self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
         self.add_input('twr2shaft',       val=0.0,         units='m',   desc='Vertical distance from tower top plane to shaft start')
         self.add_input('GenIner',         val=0.0,         units='kg*m**2',   desc='Moments of inertia for the generator about high speed shaft')
@@ -462,7 +464,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
         fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
         fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
-        fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I'][2]
+        fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I_TT'][2]
         fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
@@ -483,6 +485,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
         else:
+            # Ptfm* can capture the transition piece for fixed-bottom, but we are doing that in subdyn, so only worry about getting height right
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
             fst_vt['ElastoDyn']['PtfmPIner'] = 0.
@@ -512,16 +515,6 @@ class FASTLoadCases(ExplicitComponent):
             raise Exception('The code only supports InflowWind NWindVel == 1')
 
         # Update ElastoDyn Tower Input File
-        fst_vt['ElastoDynTower']['NTwInpSt'] = len(inputs['sec_loc'])
-        fst_vt['ElastoDynTower']['HtFract']  = inputs['sec_loc']
-        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
-        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
-        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
-        
         twr_elev  = inputs['tower_monopile_z']
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
         cd_index  = 0
@@ -534,6 +527,32 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
         fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
 
+        z_tow = twr_elev[twr_index:]
+        z_sec = 0.5 * (z_tow[:-1] + z_tow[1:])
+        sec_loc = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
+        fst_vt['ElastoDynTower']['NTwInpSt'] = len(sec_loc)
+        fst_vt['ElastoDynTower']['HtFract']  = sec_loc
+        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den'][twr_index:]
+        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff'][twr_index:]
+        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff'][twr_index:]
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+
+        # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
+        k_tow_tor = inputs['tor_stff'][twr_index:] / np.diff(z_tow[twr_index:])
+        k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
+        # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the
+        # damping to the frequency of the first tower torsional mode- easier than getting the yaw inertia right
+        damp_ratio = 0.01
+        f_torsion = float(inputs['tor_freq'])
+        fst_vt['ServoDyn']['YawSpr'] = k_tow_tor
+        if f_torsion > 0.0:
+            fst_vt['ServoDyn']['YawDamp'] = damp_ratio * k_tow_tor / np.pi / f_torsion
+        else:
+            fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['rna_I_TT'][2])
+        
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
         fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])

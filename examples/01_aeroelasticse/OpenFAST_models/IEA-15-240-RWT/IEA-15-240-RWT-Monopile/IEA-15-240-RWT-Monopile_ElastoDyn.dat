@@ -82,7 +82,7 @@ True                   PtfmYDOF    - Platform yaw rotation DOF (flag)
 450000.0               PtfmMass    - Platform mass (kg)
 0.0                    PtfmRIner   - Platform inertia for roll tilt rotation about the platform CM (kg m^2)
 0.0                    PtfmPIner   - Platform inertia for pitch tilt rotation about the platform CM (kg m^2)
-13548889.3             PtfmYIner   - Platform inertia for yaw rotation about the platform CM (kg m^2)
+0.0                    PtfmYIner   - Platform inertia for yaw rotation about the platform CM (kg m^2)
 ---------------------- BLADE ---------------------------------------------------
 50                     BldNodes    - Number of blade nodes (per blade) used for analysis (-)
 "../IEA-15-240-RWT/IEA-15-240-RWT_ElastoDyn_blade.dat" BldFile1    - Name of file containing properties for blade 1 (quoted string)
