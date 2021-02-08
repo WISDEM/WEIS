@@ -278,7 +278,7 @@ class WindPark(om.Group):
                     self.connect('floatingse.tower.mass_den',                'aeroelastic.mass_den')
                     self.connect('floatingse.tower.foreaft_stff',            'aeroelastic.foreaft_stff')
                     self.connect('floatingse.tower.sideside_stff',           'aeroelastic.sideside_stff')
-                    self.connect('floatingse.tower.sec_loc',                 'aeroelastic.sec_loc')
+                    self.connect('floatingse.tower.tor_stff',                'aeroelastic.tor_stff')
                     self.connect('floatingse.tower.section_height',    'aeroelastic.tower_section_height')
                     self.connect('floatingse.tower.outer_diameter',    'aeroelastic.tower_outer_diameter')
                     self.connect('floatingse.tower.z_param',                 'aeroelastic.tower_monopile_z')

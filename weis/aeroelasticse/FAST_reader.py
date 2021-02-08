@@ -2079,6 +2079,8 @@ class InputReader_OpenFAST(InputReader_Common):
             channel_list = channels[1].split(',')
             self.set_outlist(self.fst_vt['outlist']['SubDyn'], channel_list)
             data = f.readline()
+            
+        f.close()
 
     def read_MAP(self):
         # MAP++
