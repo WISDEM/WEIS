@@ -249,12 +249,14 @@ class runFAST_pywrapper_batch(object):
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory)
 
+        case_data_all = self.create_case_data()
+            
         ss = {}
         et = {}
         dl = {}
         ct = []
-        for i, (case, case_name) in enumerate(zip(self.case_list, self.case_name_list)):
-            _name, _ss, _et, _dl, _ct = eval(case, case_name, self.FAST_ver, self.FAST_exe, self.FAST_lib, self.FAST_runDirectory, self.FAST_InputFile, self.FAST_directory, self.read_yaml, self.FAST_yamlfile_in, self.fst_vt, self.write_yaml, self.FAST_yamlfile_out, self.channels, self.debug_level, self.overwrite_outfiles, self.keep_time, self.post)
+        for c in case_data_all:
+            _name, _ss, _et, _dl, _ct = evaluate(c)
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
@@ -276,7 +278,7 @@ class runFAST_pywrapper_batch(object):
 
         case_data_all = self.create_case_data()
 
-        output = pool.map(eval_multi, case_data_all)
+        output = pool.map(evaluate_multi, case_data_all)
         pool.close()
         pool.join()
 
@@ -320,7 +322,7 @@ class runFAST_pywrapper_batch(object):
             idx_e    = min((i+1)*size, N_cases)
 
             for j, case_data in enumerate(case_data_all[idx_s:idx_e]):
-                data   = [eval_multi, case_data]
+                data   = [evaluate_multi, case_data]
                 rank_j = sub_ranks[j]
                 comm.send(data, dest=rank_j, tag=0)
 
@@ -346,7 +348,7 @@ class runFAST_pywrapper_batch(object):
 
 
 
-def eval(indict):
+def evaluate(indict):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
     known_keys = ['case', 'case_name', 'FAST_ver', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
@@ -380,7 +382,7 @@ def eval(indict):
     FAST_Output = fast.execute()
     return FAST_Output
 
-def eval_multi(indict):
+def evaluate_multi(indict):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
-    return eval(indict)
+    return evaluate(indict)
