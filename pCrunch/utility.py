@@ -47,11 +47,7 @@ def df2dict(df):
             "Converting DataFrames with multiindex > 3 to dictionaries is not supported"
         )
 
-    try:
-        _ = dfd["meta"]["filename"]
-
-    except IndexError:
-        dfd["meta"] = {"filename": list(df.index)}
+    dfd["meta"] = {"filename": list(df.index)}
 
     return dfd
 
@@ -170,6 +166,94 @@ def yaml2df(filename, names=[]):
     df = dict2df(data_list, names=names)
 
     return df
+
+
+def get_windspeeds(case_matrix, return_df=False):
+    """
+    Find windspeeds from case matrix
+    Parameters:
+    ----------
+    case_matrix: dict
+        case matrix data loaded from wisdem.aeroelasticse.Util.FileTools.load_yaml
+
+    Returns:
+    --------
+    windspeed: list
+        list of wind speeds
+    seed: seed
+        list of wind seeds
+    IECtype: list
+        list of IEC types
+    case_matrix: pd.DataFrame
+        case matrix dataframe with appended wind info
+    """
+
+    if isinstance(case_matrix, dict):
+        cmatrix = case_matrix
+
+    elif isinstance(case_matrix, pd.DataFrame):
+        cmatrix = case_matrix.to_dict("list")
+
+    else:
+        raise TypeError("case_matrix must be a dict or pd.DataFrame.")
+
+    windspeed = []
+    seed = []
+    IECtype = []
+    # loop through and parse each inflow filename text entry to get wind and seed #
+    for fname in cmatrix[("InflowWind", "Filename_Uni")]:
+        if ".bts" in fname:
+            obj = fname.split("U")[-1].split("_")
+            obj2 = obj[1].split("Seed")[-1].split(".bts")
+            windspeed.append(float(obj[0]))
+            seed.append(float(obj2[0]))
+            if "NTM" in fname:
+                IECtype.append("NTM")
+            elif "ETM" in fname:
+                IECtype.append("NTM")
+
+        elif "ECD" in fname:
+            obj = fname.split("U")[-1].split(".wnd")
+            windspeed.append(float(obj[0]))
+            seed.append([])
+            IECtype.append("ECD")
+
+        elif "EWS" in fname:
+            obj = fname.split("U")[-1].split(".wnd")
+            windspeed.append(float(obj[0]))
+            seed.append([])
+            IECtype.append("EWS")
+
+    if return_df:
+        case_matrix = pd.DataFrame(case_matrix)
+        case_matrix[("InflowWind", "WindSpeed")] = windspeed
+        case_matrix[("InflowWind", "Seed")] = seed
+        case_matrix[("InflowWind", "IECtype")] = IECtype
+
+        return windspeed, seed, IECtype, case_matrix
+
+    else:
+        return windspeed, seed, IECtype
+
+
+def convert_summary_stats(df):
+
+    out = {}
+    melted = df.to_dict(orient="list")
+    for col, stat in melted:
+
+        col = str(col)
+        stat = str(stat)
+        try:
+            out[col]
+
+        except KeyError:
+            out[col] = {}
+
+        out[col][stat] = list(melted[(col, stat)])
+        out["meta"] = {"filename": list(df.index)}
+
+    return out
 
 
 # class wsPlotting(object):

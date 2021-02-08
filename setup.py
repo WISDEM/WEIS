@@ -28,8 +28,8 @@ from setuptools import Command, setup, find_packages
 NAME = "pCrunch"
 DESCRIPTION = "Some tools for batch analysis of OpenFAST runs"
 URL = "https://github.com/NREL/pCrunch"
-EMAIL = "nikhar.abbas@nrel.gov"
-AUTHOR = "Nikhar Abbas"
+EMAIL = ["Jake.Nunemaker@nrel.gov", "nikhar.abbas@nrel.gov"]
+AUTHOR = ["Jake Nunemaker", "Nikhar Abbas"]
 REQUIRES_PYTHON = ">=3.4"
 VERSION = "0.0.1"
 
