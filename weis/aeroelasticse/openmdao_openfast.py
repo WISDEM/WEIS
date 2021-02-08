@@ -959,12 +959,12 @@ class FASTLoadCases(ExplicitComponent):
 
         # Run FAST
         if self.mpi_run:
-            FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
+            summary_stats, extreme_table, DELs, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
                 summary_stats, extreme_table, DELs, chan_time = fastBatch.run_serial()
             else:
-                FAST_Output = fastBatch.run_multi(self.cores)
+                summary_stats, extreme_table, DELs, chan_time = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1

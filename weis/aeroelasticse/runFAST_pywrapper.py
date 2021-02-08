@@ -216,6 +216,34 @@ class runFAST_pywrapper_batch(object):
 
         super(runFAST_pywrapper_batch, self).__init__()
 
+    def create_case_data(self):
+
+        case_data_all = []
+        for i in range(len(self.case_list)):
+            case_data = {}
+            case_data['case'] = self.case_list[i]
+            case_data['case_name'] = self.case_name_list[i]
+            case_data['FAST_ver'] = self.FAST_ver
+            case_data['FAST_exe'] = self.FAST_exe
+            case_data['FAST_lib'] = self.FAST_lib
+            case_data['FAST_runDirectory'] = self.FAST_runDirectory
+            case_data['FAST_InputFile'] = self.FAST_InputFile
+            case_data['FAST_directory'] = self.FAST_directory
+            case_data['read_yaml'] = self.read_yaml
+            case_data['FAST_yamlfile_in'] = self.FAST_yamlfile_in
+            case_data['fst_vt'] = self.fst_vt
+            case_data['write_yaml'] = self.write_yaml
+            case_data['FAST_yamlfile_out'] = self.FAST_yamlfile_out
+            case_data['channels'] = self.channels
+            case_data['debug_level'] = self.debug_level
+            case_data['overwrite_outfiles'] = self.overwrite_outfiles
+            case_data['keep_time'] = self.keep_time
+            case_data['post'] = self.post
+
+            case_data_all.append(case_data)
+
+        return case_data_all
+    
     def run_serial(self):
         # Run batch serially
         if not os.path.exists(self.FAST_runDirectory):
@@ -246,29 +274,7 @@ class runFAST_pywrapper_batch(object):
             cores = mp.cpu_count()
         pool = mp.Pool(cores)
 
-        case_data_all = []
-        for i in range(len(self.case_list)):
-            case_data = []
-            case_data.append(self.case_list[i])
-            case_data.append(self.case_name_list[i])
-            case_data.append(self.FAST_ver)
-            case_data.append(self.FAST_exe)
-            case_data.append(self.FAST_lib)
-            case_data.append(self.FAST_runDirectory)
-            case_data.append(self.FAST_InputFile)
-            case_data.append(self.FAST_directory)
-            case_data.append(self.read_yaml)
-            case_data.append(self.FAST_yamlfile_in)
-            case_data.append(self.fst_vt)
-            case_data.append(self.write_yaml)
-            case_data.append(self.FAST_yamlfile_out)
-            case_data.append(self.channels)
-            case_data.append(self.debug_level)
-            case_data.append(self.overwrite_outfiles)
-            case_data.append(self.keep_time)
-            case_data.append(self.post)
-
-            case_data_all.append(case_data)
+        case_data_all = self.create_case_data()
 
         output = pool.map(eval_multi, case_data_all)
         pool.close()
@@ -290,7 +296,6 @@ class runFAST_pywrapper_batch(object):
 
     def run_mpi(self, mpi_comm_map_down):
 
-        raise NotImplementedError("Function 'run_multi' hasn't been configured to use new post processing routines.")
         # Run in parallel with mpi
         from mpi4py import MPI
 
@@ -307,29 +312,7 @@ class runFAST_pywrapper_batch(object):
         if not os.path.exists(self.FAST_runDirectory) and rank == 0:
             os.makedirs(self.FAST_runDirectory)
 
-        case_data_all = []
-        for i in range(N_cases):
-            case_data = []
-            case_data.append(self.case_list[i])
-            case_data.append(self.case_name_list[i])
-            case_data.append(self.FAST_ver)
-            case_data.append(self.FAST_exe)
-            case_data.append(self.FAST_lib)
-            case_data.append(self.FAST_runDirectory)
-            case_data.append(self.FAST_InputFile)
-            case_data.append(self.FAST_directory)
-            case_data.append(self.read_yaml)
-            case_data.append(self.FAST_yamlfile_in)
-            case_data.append(self.fst_vt)
-            case_data.append(self.write_yaml)
-            case_data.append(self.FAST_yamlfile_out)
-            case_data.append(self.channels)
-            case_data.append(self.debug_level)
-            case_data.append(self.overwrite_outfiles)
-            case_data.append(self.keep_time)
-            case_data.append(self.post)
-
-            case_data_all.append(case_data)
+        case_data_all = self.create_case_data()
 
         output = []
         for i in range(N_loops):
@@ -347,39 +330,57 @@ class runFAST_pywrapper_batch(object):
                 data_out = comm.recv(source=rank_j, tag=1)
                 output.append(data_out)
 
-        return output
+        ss = {}
+        et = {}
+        dl = {}
+        ct = []
+        for _name, _ss, _et, _dl, _ct in output:
+            ss[_name] = _ss
+            et[_name] = _et
+            dl[_name] = _dl
+            ct.append(_ct)
+
+        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
+
+        return summary_stats, extreme_table, DELs, ct
 
 
 
-
-def eval(case, case_name, FAST_ver, FAST_exe, FAST_lib, FAST_runDirectory, FAST_InputFile, FAST_directory, read_yaml, FAST_yamlfile_in, fst_vt, write_yaml, FAST_yamlfile_out, channels, debug_level, overwrite_outfiles, keep_time, post):
+def eval(indict):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
-    fast = runFAST_pywrapper(FAST_ver=FAST_ver)     # FAST_ver = "OpenFAST"
-    fast.FAST_exe           = FAST_exe              # Path to FAST
-    fast.FAST_lib           = FAST_lib              # Path to FAST
-    fast.FAST_InputFile     = FAST_InputFile        # Name of the fst - does not include full path
-    fast.FAST_directory     = FAST_directory        # Path to directory containing the case files
-    fast.FAST_runDirectory  = FAST_runDirectory     # Where 
+    known_keys = ['case', 'case_name', 'FAST_ver', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
+                  'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
+                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'debug_level', 'overwrite_outfiles', 'keep_time', 'post']
+    for k in indict:
+        if k in known_keys: continue
+        print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
+    
+    fast = runFAST_pywrapper(FAST_ver=indict['FAST_ver'])     # FAST_ver = "OpenFAST"
+    fast.FAST_exe           = indict['FAST_exe']              # Path to FAST
+    fast.FAST_lib           = indict['FAST_lib']              # Path to FAST
+    fast.FAST_InputFile     = indict['FAST_InputFile']        # Name of the fst - does not include full path
+    fast.FAST_directory     = indict['FAST_directory']        # Path to directory containing the case files
+    fast.FAST_runDirectory  = indict['FAST_runDirectory']     # Where 
 
-    fast.read_yaml          = read_yaml
-    fast.FAST_yamlfile_in   = FAST_yamlfile_in
-    fast.fst_vt             = fst_vt
-    fast.write_yaml         = write_yaml
-    fast.FAST_yamlfile_out  = FAST_yamlfile_out
+    fast.read_yaml          = indict['read_yaml']
+    fast.FAST_yamlfile_in   = indict['FAST_yamlfile_in']
+    fast.fst_vt             = indict['fst_vt']
+    fast.write_yaml         = indict['write_yaml']
+    fast.FAST_yamlfile_out  = indict['FAST_yamlfile_out']
 
-    fast.FAST_namingOut     = case_name
-    fast.case               = case
-    fast.channels           = channels
-    fast.debug_level        = debug_level
+    fast.FAST_namingOut     = indict['case_name']
+    fast.case               = indict['case']
+    fast.channels           = indict['channels']
+    fast.debug_level        = indict['debug_level']
 
-    fast.overwrite_outfiles = overwrite_outfiles
-    fast.keep_time = keep_time
+    fast.overwrite_outfiles = indict['overwrite_outfiles']
+    fast.keep_time = indict['keep_time']
 
     FAST_Output = fast.execute()
     return FAST_Output
 
-def eval_multi(data):
+def eval_multi(indict):
     # helper function for running with multiprocessing.Pool.map
     # converts list of arguement values to arguments
-    return eval(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12], data[13], data[14], data[15], data[16], data[17])
+    return eval(indict)
