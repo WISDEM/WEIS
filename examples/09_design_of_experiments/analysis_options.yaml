@@ -13,8 +13,8 @@ design_variables:
       chord:
         flag: True     # Flag to optimize the chord
         n_opt: 8        # Number of control points along blade span
-        min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
-        max_gain: 2.0   # Nondimensional upper bound at the n_opt locations
+        min_gain: 0.9   # Nondimensional lower bound at the n_opt locations
+        max_gain: 1.1   # Nondimensional upper bound at the n_opt locations
       af_positions:
         flag: False     # Flag to optimize the airfoil positions
         af_start: 4     # Index of the first airfoil from blade root that can have the location optimized. First airfoil is number 0. Last airfoil is always locked at blade tip.
@@ -87,7 +87,7 @@ design_variables:
       lower_bound: 4.e-3
       upper_bound: 2.e-1
 
-merit_figure: 'blade_tip_deflection'  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+merit_figure: 'AEP'  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
 constraints:
   blade:
@@ -159,20 +159,11 @@ constraints:
       max: 0.2
 
 driver:
-  optimization:
-    flag: False           # Flag to enable optimization
-    tol: 1.e-2            # Optimality tolerance
-    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
-    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-    max_iter: 100         # Maximum number of iterations (SLSQP)
-    solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1.e-3      # Step size for finite differencing
-    form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
     flag: True            # Flag to enable design of experiments
-    run_parallel: False    # Flag to run using parallel processing
+    run_parallel: True    # Flag to run using parallel processing
     generator: Uniform    # Type of input generator. (Uniform)
-    num_samples: 5        # number of samples for (Uniform only)
+    num_samples: 2        # number of samples for (Uniform only)
     
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder

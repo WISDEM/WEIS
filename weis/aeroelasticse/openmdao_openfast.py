@@ -1,6 +1,7 @@
 import numpy as np
 import os, shutil, sys
 import matplotlib
+import copy
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import FigureCanvasPdf, PdfPages
@@ -400,7 +401,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynTower'][key] = modeling_options['Level3']['ElastoDynTower'][key]
             
         for key in modeling_options['Level3']['AeroDyn']:
-            fst_vt['AeroDyn15'][key] = modeling_options['Level3']['AeroDyn'][key]
+            fst_vt['AeroDyn15'][key] = copy.copy(modeling_options['Level3']['AeroDyn'][key])
             
         for key in modeling_options['Level3']['InflowWind']:
             fst_vt['InflowWind'][key] = modeling_options['Level3']['InflowWind'][key]
@@ -423,12 +424,13 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['IndToler'] = 'default'
         if fst_vt['AeroDyn15']['DTAero'] == 0.:
             fst_vt['AeroDyn15']['DTAero'] = 'default'
+        if fst_vt['AeroDyn15']['OLAF']['DTfvw'] == 0.:
+            fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'default'
         if fst_vt['ElastoDyn']['DT'] == 0.:
             fst_vt['ElastoDyn']['DT'] = 'default'
 
         return fst_vt
 
-    
     def update_FAST_model(self, fst_vt, inputs, discrete_inputs):
         
         modeling_options = self.options['modeling_options']
@@ -551,6 +553,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
         fst_vt['AeroDyn15']['TwrDiam']   = inputs['tower_outer_diameter'][twr_index:]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
+        fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
@@ -575,6 +578,12 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
         fst_vt['AeroDyn15']['SpdSound']  = float(inputs['speed_sound_air'])
 
+        # Update OLAF
+        if fst_vt['AeroDyn15']['WakeMod'] == 3:
+            _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
+            fst_vt['AeroDyn15']['OLAF']['nNWPanel'] = nNWPanel
+            fst_vt['AeroDyn15']['OLAF']['nFWPanel'] = nFWPanel
+            fst_vt['AeroDyn15']['OLAF']['nFWPanelFree'] = nFWPanelFree
 
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
@@ -919,7 +928,6 @@ class FASTLoadCases(ExplicitComponent):
             
         return fst_vt
 
-
     def run_FAST(self, inputs, discrete_inputs, fst_vt):
 
         case_list      = []
@@ -1024,6 +1032,12 @@ class FASTLoadCases(ExplicitComponent):
         iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = inputs['pitch_init']
         iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
         iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
+
+        # Set DT according to OLAF guidelines
+        if fst_vt['AeroDyn15']['WakeMod'] == 3:
+            dt_wanted, _, _, _ = OLAFParams(inputs['Omega_init'])
+            iec.init_cond[("Fst","DT")]        = {'U':inputs['U_init']}
+            iec.init_cond[("Fst","DT")]['val'] = dt_wanted
 
         # Todo: need a way to handle Metocean conditions for Offshore
         # if offshore:
@@ -1136,6 +1150,11 @@ class FASTLoadCases(ExplicitComponent):
                 case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
                 case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
                 case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
+
+                # Set DT according to OLAF guidelines
+                if fst_vt['AeroDyn15']['WakeMod'] == 3:
+                    dt_wanted, _, _, _ = OLAFParams(inputs['Omega_init'])
+                    case_inputs[("Fst","DT")]               = {'vals':dt_wanted, 'group':1}
 
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
 
@@ -1519,8 +1538,6 @@ class FASTLoadCases(ExplicitComponent):
         if self.debug_level > 0:
             print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
 
-
-
     def writeCpsurfaces(self, inputs):
         
         FASTpref  = self.options['modeling_options']['openfast']['FASTpref']
@@ -1575,7 +1592,6 @@ class FASTLoadCases(ExplicitComponent):
 
 
         return file_name
-
 
     def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -1811,6 +1827,37 @@ class FASTLoadCases(ExplicitComponent):
 
 def RayleighCDF(x, xbar=10.):
     return 1.0 - np.exp(-np.pi/4.0*(x/xbar)**2)
+
+def OLAFParams(omega_rpm, deltaPsiDeg=6, nNWrot=2, nFWrot=10, nFWrotFree=3, nPerAzimuth=None):
+    """
+    Computes recommended time step and wake length based on the rotational speed in RPM
+
+    INPUTS:
+     - omega_rpm: rotational speed in RPM
+     - deltaPsiDeg : azimuthal discretization in deg
+     - nNWrot : number of near wake rotations
+     - nFWrot : total number of far wake rotations
+     - nFWrotFree : number of far wake rotations that are free
+
+        deltaPsiDeg  -  nPerAzimuth
+             5            72
+             6            60
+             7            51.5
+             8            45
+    """
+    omega = omega_rpm*2*np.pi/60
+    T = 2*np.pi/omega
+    if nPerAzimuth is not None:
+        dt_wanted    = np.around(T/nPerAzimuth,2)
+    else:
+        dt_wanted    = np.around(deltaPsiDeg/(6*omega_rpm), 4)
+        nPerAzimuth = int(2*np.pi /(deltaPsiDeg*np.pi/180))
+
+    nNWPanel     = nNWrot*nPerAzimuth
+    nFWPanel     = nFWrot*nPerAzimuth
+    nFWPanelFree = nFWrotFree*nPerAzimuth
+
+    return dt_wanted, nNWPanel, nFWPanel, nFWPanelFree
 
 class ModesElastoDyn(ExplicitComponent):
     """
