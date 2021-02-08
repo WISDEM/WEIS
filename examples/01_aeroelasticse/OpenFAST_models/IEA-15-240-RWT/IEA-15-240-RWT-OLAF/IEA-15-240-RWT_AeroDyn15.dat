@@ -44,7 +44,7 @@ True                   FLookup     - Flag to indicate whether a lookup for f' wi
 3                      InCol_Cd    - The column in the airfoil tables that contains the drag coefficient (-)
 4                      InCol_Cm    - The column in the airfoil tables that contains the pitching-moment coefficient; use zero if there is no Cm column (-)
 0                      InCol_Cpmin - The column in the airfoil tables that contains the Cpmin coefficient; use zero if there is no Cpmin column (-)
-50                     NumAFfiles  - Number of airfoil files used (-)
+60                     NumAFfiles  - Number of airfoil files used (-)
 "../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_00.dat"    AFNames            - Airfoil file names (NumAFfiles lines) (quoted strings)
 "../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_01.dat"
 "../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_02.dat"
@@ -95,6 +95,16 @@ True                   FLookup     - Flag to indicate whether a lookup for f' wi
 "../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_47.dat"
 "../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_48.dat"
 "../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_49.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_50.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_51.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_52.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_53.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_54.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_55.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_56.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_57.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_58.dat"
+"../IEA-15-240-RWT/Airfoils/IEA-15-240-RWT_AeroDyn15_Polar_59.dat"
 ======  Rotor/Blade Properties  =====================================================================
 True                   UseBlCm     - Include aerodynamic pitching moment in calculations?  (flag)
 "../IEA-15-240-RWT/IEA-15-240-RWT_AeroDyn15_blade.dat" ADBlFile(1) - Name of file containing distributed aerodynamic properties for Blade #1 (-)
@@ -104,17 +114,17 @@ True                   UseBlCm     - Include aerodynamic pitching moment in calc
 11                     NumTwrNds   - Number of tower nodes used in the analysis  (-) [used only when TwrPotent/=0, TwrShadow/=0, or TwrAero=True]
 TwrElev        TwrDiam        TwrCd        TwrTI (used only with TwrShadow=2)
 (m)              (m)           (-)              (-)
-  15.           10.             1.              0.1
-  28.           10.             1.              0.1
-  41.            9.926          1.              0.1
-  54.            9.443          1.              0.1
-  67.            8.833          1.              0.1
-  80.            8.151          1.              0.1
-  93.            7.39           1.              0.1
- 106.            6.909          1.              0.1
- 119.            6.748          1.              0.1
- 132.            6.572          1.              0.1
- 144.495         6.5            1.              0.1
+  15.           10.            0.5              0.1
+  28.           10.            0.5              0.1
+  41.            9.926         0.5              0.1
+  54.            9.443         0.5              0.1
+  67.            8.833         0.5              0.1
+  80.            8.151         0.5              0.1
+  93.            7.39          0.5              0.1
+ 106.            6.909         0.5              0.1
+ 119.            6.748         0.5              0.1
+ 132.            6.572         0.5              0.1
+ 144.386         6.5           0.5              0.1
 ======  Outputs  ====================================================================================
 True                   SumPrint    - Generate a summary file listing input options and interpolated properties to "<rootname>.AD.sum"?  (flag)
 9                      NBlOuts     - Number of blade node outputs [0 - 9] (-)

@@ -124,7 +124,7 @@ TwrElev        TwrDiam        TwrCd         TwrTI (used only with TwrShadow=2)
  106.            6.909         0.5               0.1
  119.            6.748         0.5               0.1
  132.            6.572         0.5               0.1
- 144.495         6.5           0.5               0.1
+ 144.386         6.5           0.5               0.1
 ======  Outputs  ====================================================================================
 True                   SumPrint    - Generate a summary file listing input options and interpolated properties to "<rootname>.AD.sum"?  (flag)
 9                      NBlOuts     - Number of blade node outputs [0 - 9] (-)

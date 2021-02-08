@@ -36,7 +36,7 @@ True                   GenTiStp    - Method to stop the generator {T: timed usin
 9999.9                 SIG_PORt    - Pull-out ratio (Tpullout/Trated) (-) [used only when VSContrl=0 and GenModel=1]
 ---------------------- THEVENIN-EQUIVALENT INDUCTION GENERATOR -----------------
 9999.9                 TEC_Freq    - Line frequency [50 or 60] (Hz) [used only when VSContrl=0 and GenModel=2]
-0                      TEC_NPol    - Number of poles [even integer > 0] (-) [used only when VSContrl=0 and GenModel=2]
+100                    TEC_NPol    - Number of poles [even integer > 0] (-) [used only when VSContrl=0 and GenModel=2]
 9999.9                 TEC_SRes    - Stator resistance (ohms) [used only when VSContrl=0 and GenModel=2]
 9999.9                 TEC_RRes    - Rotor resistance (ohms) [used only when VSContrl=0 and GenModel=2]
 9999.9                 TEC_VLL     - Line-to-line RMS voltage (volts) [used only when VSContrl=0 and GenModel=2]
@@ -54,8 +54,6 @@ True                   GenTiStp    - Method to stop the generator {T: timed usin
 0.0                    YawNeut     - Neutral yaw position--yaw spring force is zero at this yaw (degrees)
 3256731209.0           YawSpr      - Nacelle-yaw spring constant (N-m/rad)
 2621683.0              YawDamp     - Nacelle-yaw damping constant (N-m/(rad/s))
-4.6273E+10             YawSpr      - Nacelle-yaw spring constant (N-m/rad)
-3.9088E+07             YawDamp     - Nacelle-yaw damping constant (N-m/(rad/s))
 9999.9                 TYawManS    - Time to start override yaw maneuver and end standard yaw control (s)
 0.25                   YawManRat   - Yaw maneuver rate (in absolute value) (deg/s)
 0.0                    NacYawF     - Final yaw angle for override yaw maneuvers (degrees)
