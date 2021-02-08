@@ -328,7 +328,7 @@ components:
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 3e3
+                      volume: 7.5e3
                       grid: [0.0, 0.4]
                     # - variable_flag: True
                     #   grid: [0.4, 1.0]
