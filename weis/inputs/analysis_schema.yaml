@@ -170,7 +170,7 @@ properties:
                                 type: number
                                 default: 0.05
                                 minimum: 0.0
-                                maximum: 1.0
+                                maximum: 1.e+6
                             max: *flapminmax
                     rotor_overspeed:
                         type: object
@@ -189,4 +189,4 @@ properties:
         type: string
         description: Objective function / merit figure for optimization
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std, DEL_RootMyb, DEL_TwrBsMyt, rotor_overspeed]
+
