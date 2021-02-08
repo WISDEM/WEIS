@@ -5,14 +5,11 @@ __email__ = ["nikhar.abbas@nrel.gov", "jake.nunemaker@nrel.gov"]
 
 
 import os
-import time
-import pathlib
 from fnmatch import fnmatch
 
 import numpy as np
 import pandas as pd
 import ruamel.yaml as ry
-import matplotlib.pyplot as plt
 
 from pCrunch import LoadsAnalysis, PowerProduction
 from pCrunch.io import load_FAST_out
@@ -56,7 +53,7 @@ channel_extremes = [
 
 # Run pCrunch
 la = LoadsAnalysis(
-    outfiles[:10],
+    outfiles,
     magnitude_channels=magnitude_channels,
     fatigue_channels=fatigue_channels,
     extreme_channels=channel_extremes,
@@ -85,7 +82,7 @@ turbine_class = 1
 pp = PowerProduction(turbine_class)
 AEP, perf_data = pp.AEP(
     la.summary_stats,
-    windspeeds[:10],
+    windspeeds,
     ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"],
 )
 print(f"AEP: {AEP}")
