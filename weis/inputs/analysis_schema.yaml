@@ -190,26 +190,24 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            min: &Max_PtfmPitch
+                            max: 
                                 type: number
                                 default: 6.0
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
-                            max: *Max_PtfmPitch
                     Std_PtfmPitch:
                         type: object
                         description: Maximum platform pitch standard deviation
                         default: {}
                         properties:
                             flag: *flag
-                            min: &Std_PtfmPitch
+                            max:
                                 type: number
                                 default: 2.0
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
-                            max: *Std_PtfmPitch
 
     merit_figure:
         type: string
