@@ -250,6 +250,37 @@ constraints:
       flag: False
       max: 2.
 
+  # floating:
+  #   operational_heel:
+  #       upper_bound: 0.08726646259971647 # 5 deg
+  #   survival_heel:
+  #       upper_bound: 0.17453292519943295 # 10 deg
+  #   max_surge:
+  #       flag: false
+  #       upper_bound: 0.1
+  #   buoyancy:
+  #       flag: False
+  #   fixed_ballast_capacity:
+  #       flag: False
+  #   variable_ballast_capacity:
+  #       flag: False
+  #   metacentric_height:
+  #       flag: False
+  #   freeboard_margin:
+  #       flag: false
+  #   draft_margin:
+  #       flag: false
+  #   fairlead_depth:
+  #       flag: false
+  #   mooring_surge:
+  #       flag: false
+  #   mooring_heel:
+  #       flag: false
+  #   mooring_tension:
+  #       flag: false
+  #   mooring_length:
+  #       flag: false
+
 driver:
   optimization:
     flag: True
@@ -258,7 +289,7 @@ driver:
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 2.5e-3      # Step size for finite differencing
+    step_size: 1      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
     flag: False           # Flag to enable design of experiments

@@ -127,15 +127,13 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = 0.0)    
         if control_constraints['Max_PtfmPitch']['flag']:
             if self.modeling['Level3']['flag'] != True:
-                exit('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
+                exit('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Max_PtfmPitch',
-                lower = control_constraints['Max_PtfmPitch']['min'],
                 upper = control_constraints['Max_PtfmPitch']['max'])
         if control_constraints['Std_PtfmPitch']['flag']:
             if self.modeling['Level3']['flag'] != True:
-                exit('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
+                exit('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Std_PtfmPitch',
-                lower = control_constraints['Std_PtfmPitch']['min'],
                 upper = control_constraints['Std_PtfmPitch']['max'])
 
         return wt_opt
