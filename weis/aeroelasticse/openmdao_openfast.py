@@ -541,7 +541,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
 
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
-        k_tow_tor = inputs['tor_stff'][twr_index:] / np.diff(z_tow[twr_index:])
+        monopile     = self.options['modeling_options']['flags']['monopile']
+        n_height_mon = 0 if not monopile else self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
+        k_tow_tor = inputs['tor_stff'][n_height_mon:] / np.diff(inputs['tower_monopile_z'][n_height_mon:])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
         # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the
         # damping to the frequency of the first tower torsional mode- easier than getting the yaw inertia right
