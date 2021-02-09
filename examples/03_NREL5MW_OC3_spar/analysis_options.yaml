@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs_opt_ball
+    folder_output: /scratch/dzalkind/WEIS-4/optimizations/outputs_opt_ball
     fname_output: refturb_output
 design_variables:
   blade:
@@ -253,12 +253,12 @@ constraints:
 driver:
   optimization:
     flag: True
-    tol: 1.e-6            # Optimality tolerance
+    tol: 1.e-4            # Optimality tolerance
     max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 2.5e-3      # Step size for finite differencing
+    step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
     flag: False           # Flag to enable design of experiments
