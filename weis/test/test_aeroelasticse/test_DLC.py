@@ -2,20 +2,15 @@
 Test the DLCs in OpenFAST through aeroelasticSE
 """
 
-import copy
 import os
 import platform
-import sys
 import unittest
 
 import numpy as np
 
 from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
 from weis.aeroelasticse.FAST_post import FAST_IO_timeseries
-from weis.aeroelasticse.runFAST_pywrapper import (
-    runFAST_pywrapper,
-    runFAST_pywrapper_batch,
-)
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
 
 this_file_dir = os.path.dirname(os.path.realpath(__file__))
