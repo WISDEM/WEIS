@@ -450,10 +450,12 @@ static void mdlTerminate(SimStruct *S)
       FAST_End(&iTurb, &tr);
       n_t_global = -2;
    }  
+
    FAST_DeallocateTurbines(&ErrStat2, ErrMsg2);
    if (ErrStat2 != ErrID_None){
       ssPrintf("\n%s\n", ErrMsg2);
    }
+
 }
 
 
