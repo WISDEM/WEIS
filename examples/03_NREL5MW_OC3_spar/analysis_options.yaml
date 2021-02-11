@@ -1,5 +1,5 @@
 general:
-    folder_output: /scratch/dzalkind/WEIS-4/optimizations/outputs_opt_ball
+    folder_output: /scratch/dzalkind/WEIS-4/optimizations/outputs_opt_ball_long
     fname_output: refturb_output
 design_variables:
   blade:
@@ -56,7 +56,7 @@ design_variables:
       max_gain: 1.1   # Nondimensional upper bound
     servo:
       pitch_control:
-        flag: False
+        flag: True
         omega_min: 0.1
         omega_max: 0.5
         zeta_min: 0.4
@@ -289,7 +289,7 @@ driver:
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
     solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 1      # Step size for finite differencing
+    step_size: 0.025      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
     flag: False           # Flag to enable design of experiments
