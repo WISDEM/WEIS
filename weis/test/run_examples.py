@@ -32,6 +32,10 @@ all_scripts = [
     
     "09_design_of_experiments/weis_driver",
     
+    "10_override_example/weis_driver",
+    
+    
+    
 ]
 
 class TestExamples(unittest.TestCase):
@@ -56,6 +60,9 @@ class TestExamples(unittest.TestCase):
 
     def test_DOE(self):
         run_all_scripts("09_", all_scripts)
+
+    def test_override(self):
+        run_all_scripts("10_", all_scripts)
 
 def suite():
     suite = unittest.TestSuite()
