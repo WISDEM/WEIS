@@ -1515,12 +1515,16 @@ class FASTLoadCases(ExplicitComponent):
             if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
                 # Let's just average the standard deviation of PtfmPitch for now
                 # TODO: weight based on WS distribution, or something else
+                print("sum_stats['PtfmPitch']['std']:")   # for debugging
+                print(sum_stats['PtfmPitch']['std'])   # for debugging
                 outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
             if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
+                print("sum_stats['PtfmPitch']['max']:")  # for debugging
+                print(sum_stats['PtfmPitch']['max'])  # for debugging
                 outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
             if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
@@ -1529,6 +1533,8 @@ class FASTLoadCases(ExplicitComponent):
                     print('WARNING: Std_PtfmPitch was flagged as a merit figure and constraint, it is being treated as a merit figure only')
                 else:
                     # If this is a constraint, we want to output maximum std of all sims
+                    print("sum_stats['PtfmPitch']['std']:")   # for debugging
+                    print(sum_stats['PtfmPitch']['std'])   # for debugging
                     outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
 
     def write_FAST(self, fst_vt, discrete_outputs):
