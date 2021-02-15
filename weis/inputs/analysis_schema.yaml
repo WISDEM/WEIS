@@ -84,11 +84,11 @@ properties:
                             flag: *flag
                             lower_bound:
                                 type: number
-                                default: 0.0
+                                default: 0.75
                                 unit: none
                             upper_bound:
                                 type: number
-                                default: 50.0
+                                default: 1.0
                                 unit: none
                     servo:
                         type: object

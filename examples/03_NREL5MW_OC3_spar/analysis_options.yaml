@@ -56,7 +56,7 @@ design_variables:
       max_gain: 1.1   # Nondimensional upper bound
     servo:
       pitch_control:
-        flag: True
+        flag: False
         omega_min: 0.1
         omega_max: 0.5
         zeta_min: 0.4
@@ -79,6 +79,10 @@ design_variables:
         omega_max: 3.5
         zeta_min: 0.7
         zeta_max: 1.3
+      ps_percent:
+        flag: False
+        lower_bound: 0.8
+        upper_bound: 1.0
 
   tower:
     outer_diameter:
