@@ -2596,6 +2596,14 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to compute blade fatigue with FAST
+                    unique_wind_seeds:
+                        type: boolean
+                        default: False
+                        description: Run different wind seeds for each wind speed
+                    unique_wave_seeds:
+                        type: boolean
+                        default: False
+                        description: Run different wave seeds for each wind speed
                     IEC:
                         type: array
                         default: [{}]

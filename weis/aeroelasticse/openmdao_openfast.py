@@ -987,6 +987,8 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
+        if not os.path.isdir(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory)
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
@@ -1052,7 +1054,8 @@ class FASTLoadCases(ExplicitComponent):
         iec.dlc_inputs['U']     = []
         iec.dlc_inputs['Seeds'] = []
         iec.dlc_inputs['Yaw']   = []
-        iec.uniqueSeeds         = True
+        iec.uniqueSeeds         = self.FASTpref['dlc_settings']['unique_wind_seeds']
+        iec.uniqueWaveSeeds     = self.FASTpref['dlc_settings']['unique_wave_seeds']
         
         if powercurve:
             # running turbulent power curve
