@@ -7,7 +7,7 @@ class TestOC3(unittest.TestCase):
         fscript = "03_NREL5MW_OC3_spar/weis_driver"
 
         execute_script(fscript)
-
+        self.assertTrue(True)
 
 if __name__ == "__main__":
     unittest.main()
