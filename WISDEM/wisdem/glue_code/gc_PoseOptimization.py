@@ -276,6 +276,8 @@ class PoseOptimization(object):
 
             # options
             wt_opt.driver.options["run_parallel"] = self.opt["driver"]["design_of_experiments"]["run_parallel"]
+        elif self.opt["driver"]["step_size_study"]["flag"]:
+            pass
 
         else:
             raise Exception(
