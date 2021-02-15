@@ -16,6 +16,14 @@ jobs:
         
     steps:
       - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          auto-update-conda: true
+          python-version: 3.8
+          environment-file: environment.yml
 
       # Debugging session
       - name: Setup tmate session
