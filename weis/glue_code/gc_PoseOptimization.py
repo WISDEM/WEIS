@@ -17,6 +17,8 @@ class PoseOptimizationWEIS(PoseOptimization):
             n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
             n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
+        if self.opt['design_variables']['control']['ps_percent']['flag']:
+            n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
         
         if self.opt['driver']['optimization']['form'] == 'central':
             n_add *= 2
@@ -82,6 +84,11 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', 
                                     lower=control_opt['servo']['flap_control']['zeta_min'], 
                                     upper=control_opt['servo']['flap_control']['zeta_max'])
+
+        if control_opt['ps_percent']['flag']:
+            wt_opt.model.add_design_var('tune_rosco_ivc.ps_percent', lower=control_opt['ps_percent']['lower_bound'],
+                                                            upper=control_opt['ps_percent']['upper_bound'])
+
         
         return wt_opt
 
