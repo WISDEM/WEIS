@@ -159,6 +159,8 @@ class PoseOptimization(object):
                 wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
                 wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
                 wt_opt.driver.options["maxiter"] = self.opt["driver"]["optimization"]["max_iter"]
+                if "rhobeg" in self.opt["driver"]["optimization"]:
+                    wt_opt.driver.opt_settings["rhobeg"] = self.opt["driver"]["optimization"]["rhobeg"]
 
             elif self.opt["driver"]["optimization"]["solver"] == "Nelder-Mead":
                 wt_opt.driver = om.ScipyOptimizeDriver()
@@ -276,6 +278,8 @@ class PoseOptimization(object):
 
             # options
             wt_opt.driver.options["run_parallel"] = self.opt["driver"]["design_of_experiments"]["run_parallel"]
+        elif self.opt["driver"]["step_size_study"]["flag"]:
+            pass
 
         else:
             raise Exception(
