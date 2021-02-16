@@ -64,16 +64,18 @@ jobs:
           cd examples/05_IEA-3.4-130-RWT
           mpirun -np 2 python weis_driver.py
       
-      # Run scripts within control_opt folder, with and without MPI
-      - name: Run examples control optimization
-        shell: pwsh
-        run: |
-          cd examples/02_control_opt
-          mpirun -np 2 python runOptimization.py
+
 
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
       #  run: |
       #    cd examples/dac_flaps
       #    python dac_driver.py
-      
+
+      # Run scripts within design of experiments folder
+      - name: Run examples design of experiments
+        shell: pwsh
+        run: |
+          cd examples/09_design_of_experiments
+          mpirun -np 2 python DOE_openfast.py
+          python postprocess_results.py

@@ -8,8 +8,22 @@ WISDEM:
         n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
+        n_span: 60
     TowerSE:
         flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        soil_springs: True
+        gravity_foundation: False
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
     DriveSE:
         flag: True
     FloatingSE:
@@ -50,10 +64,19 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
+    ElastoDynBlade:
+        BldFlDmp1: 3.0
+        BldFlDmp2: 3.0
+        BldEdDmp1: 3.0
+    ServoDyn:
+        YawSpr: 4.6273E+10
+        YawDamp: 3.9088E+07
     HydroDyn:
         WaveTMax: 1 #3630
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
+        WvLowCOffD: 0.0
+        WvHiCOffD: 3.04292
         WaveSeed1: 123456789
         WaveSeed2: 1011121314
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]

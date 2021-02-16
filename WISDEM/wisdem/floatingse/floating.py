@@ -1,9 +1,8 @@
 import openmdao.api as om
 from wisdem.floatingse.member import Member
+from wisdem.floatingse.constraints import FloatingConstraints
 from wisdem.floatingse.map_mooring import MapMooring
 from wisdem.floatingse.floating_frame import FloatingFrame
-
-# from wisdem.floatingse.substructure import Substructure, SubstructureGeometry
 
 
 class FloatingSE(om.Group):
@@ -35,8 +34,23 @@ class FloatingSE(om.Group):
             "painting_cost_rate",
             "labor_cost_rate",
         ]
-        # mem_prom += ["Uref", "zref", "shearExp", "z0", "cd_usr", "cm", "beta_wind", "rho_air", "mu_air", "beta_water",
-        #            "rho_water", "mu_water", "Uc", "Hsig_wave","Tsig_wave","rho_water","water_depth"]
+        mem_prom += [
+            "Uref",
+            "zref",
+            "z0",
+            "shearExp",
+            "cd_usr",
+            "cm",
+            "beta_wind",
+            "rho_air",
+            "mu_air",
+            "beta_wave",
+            "mu_water",
+            "Uc",
+            "Hsig_wave",
+            "Tsig_wave",
+            "water_depth",
+        ]
         for k in range(n_member):
             self.add_subsystem(
                 f"member{k}",
@@ -53,7 +67,7 @@ class FloatingSE(om.Group):
         self.add_subsystem("load", FloatingFrame(modeling_options=opt), promotes=["*"])
 
         # Evaluate system constraints
-        # self.add_subsystem("cons", FloatingConstraints(modeling_options=opt), promotes=["*"])
+        self.add_subsystem("cons", FloatingConstraints(modeling_options=opt), promotes=["*"])
 
         # Connect all input variables from all models
         mem_vars = [
@@ -71,6 +85,10 @@ class FloatingSE(om.Group):
             "section_E",
             "section_G",
             "idx_cb",
+            "variable_ballast_capacity",
+            "variable_ballast_Vpts",
+            "variable_ballast_spts",
+            "constr_ballast_capacity",
             "buoyancy_force",
             "displacement",
             "center_of_buoyancy",
@@ -81,6 +99,7 @@ class FloatingSE(om.Group):
             "Awater",
             "Iwater",
             "added_mass",
+            "waterline_centroid",
         ]
         for k in range(n_member):
             for var in mem_vars:

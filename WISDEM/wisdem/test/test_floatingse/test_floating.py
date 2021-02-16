@@ -103,26 +103,24 @@ class TestOC3Mass(unittest.TestCase):
         prob["operational_heel"] = 5.0  # Max heel (pitching) angle [deg]
 
         # Set environment to that used in OC3 testing campaign
-        # prob["rho_air"] = 1.226  # Density of air [kg/m^3]
-        # prob["mu_air"] = 1.78e-5  # Viscosity of air [kg/m/s]
+        prob["rho_air"] = 1.226  # Density of air [kg/m^3]
+        prob["mu_air"] = 1.78e-5  # Viscosity of air [kg/m/s]
         prob["rho_water"] = 1025.0  # Density of water [kg/m^3]
-        # prob["mu_water"] = 1.08e-3  # Viscosity of water [kg/m/s]
+        prob["mu_water"] = 1.08e-3  # Viscosity of water [kg/m/s]
         prob["water_depth"] = 320.0  # Distance to sea floor [m]
-        # prob["Hsig_wave"] = 0.0  # Significant wave height [m]
-        # prob["Tsig_wave"] = 1e3  # Wave period [s]
-        # prob["shearExp"] = 0.11  # Shear exponent in wind power law
-        # prob["cm"] = 2.0  # Added mass coefficient
-        # prob["Uc"] = 0.0  # Mean current speed
-        # prob["yaw"] = 0.0  # Turbine yaw angle
-        # prob["beta_wind"] = prob["beta_wave"] = 0.0
-        # prob["cd_usr"] = -1.0  # Compute drag coefficient
-        # prob["Uref"] = 10.0
-        # prob["zref"] = 100.0
+        prob["Hsig_wave"] = 1.0  # Significant wave height [m]
+        prob["Tsig_wave"] = 1e3  # Wave period [s]
+        prob["shearExp"] = 0.11  # Shear exponent in wind power law
+        prob["cm"] = 2.0  # Added mass coefficient
+        prob["Uc"] = 0.0  # Mean current speed
+        prob["beta_wind"] = prob["beta_wave"] = 0.0
+        prob["cd_usr"] = -1.0  # Compute drag coefficient
+        prob["Uref"] = 10.0
+        prob["zref"] = 100.0
 
         # Porperties of turbine tower
         nTower = prob.model.options["modeling_options"]["floating"]["tower"]["n_height"][0]
-        prob["hub_height"] = 85.0
-        prob["distance_tt_hub"] = 5.0
+        prob["tower_height"] = 85.0 - prob["member0.joint2"][2]
         prob["tower.s"] = np.linspace(0.0, 1.0, nTower)
         prob["tower.outer_diameter_in"] = np.linspace(6.5, 3.87, nTower)
         prob["tower.layer_thickness"] = np.linspace(0.027, 0.019, nTower).reshape((1, nTower))

@@ -812,12 +812,12 @@ class WindTurbineOntologyPython(object):
             for i in range(self.modeling_options["WISDEM"]["RotorSE"]["n_span"]):
                 Ii = np.zeros(21)
                 Ii[0] = wt_opt["re.rhoA"][i]
-                Ii[5] = -wt_opt["re.rhoA"][i] * wt_opt["re.precomp.y_cg"][i]
+                Ii[5] = -wt_opt["re.rhoA"][i] * wt_opt["re.y_cg"][i]
                 Ii[6] = wt_opt["re.rhoA"][i]
-                Ii[10] = wt_opt["re.rhoA"][i] * wt_opt["re.precomp.x_cg"][i]
+                Ii[10] = wt_opt["re.rhoA"][i] * wt_opt["re.x_cg"][i]
                 Ii[11] = wt_opt["re.rhoA"][i]
-                Ii[12] = wt_opt["re.rhoA"][i] * wt_opt["re.precomp.y_cg"][i]
-                Ii[13] = -wt_opt["re.rhoA"][i] * wt_opt["re.precomp.x_cg"][i]
+                Ii[12] = wt_opt["re.rhoA"][i] * wt_opt["re.y_cg"][i]
+                Ii[13] = -wt_opt["re.rhoA"][i] * wt_opt["re.x_cg"][i]
                 Ii[15] = wt_opt["re.precomp.edge_iner"][i]
                 Ii[16] = wt_opt["re.precomp.edge_iner"][i]
                 # Ii[18] = wt_opt['re.precomp.edge_iner'][i]
@@ -1085,6 +1085,79 @@ class WindTurbineOntologyPython(object):
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"][i]["thickness"][
                     "values"
                 ] = wt_opt["monopile.layer_thickness"][i, :].tolist()
+
+        # Update floating platform and mooring
+        if self.modeling_options["flags"]["floating"]:
+            yaml_out = self.wt_init["components"]["floating_platform"]
+            n_joints = self.modeling_options["floating"]["joints"]["n_joints"]
+            for i in range(n_joints):
+                yaml_out["joints"][i]["location"] = wt_opt["floating.location"][i, :].tolist()
+
+            n_members = self.modeling_options["floating"]["members"]["n_members"]
+            for i in range(n_members):
+                name_member = self.modeling_options["floating"]["members"]["name"][i]
+                idx = self.modeling_options["floating"]["members"]["name2idx"][name_member]
+
+                yaml_out["members"][i]["outer_shape"]["outer_diameter"]["grid"] = wt_opt[
+                    f"floating.memgrp{idx}.s"
+                ].tolist()
+                yaml_out["members"][i]["outer_shape"]["outer_diameter"]["values"] = wt_opt[
+                    f"floating.memgrp{idx}.outer_diameter"
+                ].tolist()
+
+                istruct = yaml_out["members"][i]["internal_structure"]
+
+                n_layers = self.modeling_options["floating"]["members"]["n_layers"][i]
+                for j in range(n_layers):
+                    istruct["layers"][j]["thickness"]["grid"] = wt_opt[f"floating.memgrp{idx}.s"].tolist()
+                    istruct["layers"][j]["thickness"]["values"] = wt_opt[f"floating.memgrp{idx}.layer_thickness"][
+                        j, :
+                    ].tolist()
+
+                if "ring_stiffeners" in istruct:
+                    istruct["ring_stiffeners"]["web_height"] = float(
+                        wt_opt[f"floating.memgrp{idx}.ring_stiffener_web_height"]
+                    )
+                    istruct["ring_stiffeners"]["web_thickness"] = float(
+                        wt_opt[f"floating.memgrp{idx}.ring_stiffener_web_thickness"]
+                    )
+                    istruct["ring_stiffeners"]["flange_thickness"] = float(
+                        wt_opt[f"floating.memgrp{idx}.ring_stiffener_flange_thickness"]
+                    )
+                    istruct["ring_stiffeners"]["flange_width"] = float(
+                        wt_opt[f"floating.memgrp{idx}.ring_stiffener_flange_width"]
+                    )
+                    istruct["ring_stiffeners"]["spacing"] = float(
+                        wt_opt[f"floating.memgrp{idx}.ring_stiffener_spacing"]
+                    )
+
+                if "longitudinal_stiffeners" in istruct:
+                    istruct["longitudinal_stiffeners"]["web_height"] = float(
+                        wt_opt[f"floating.memgrp{idx}.axial_stiffener_web_height"]
+                    )
+                    istruct["longitudinal_stiffeners"]["web_thickness"] = float(
+                        wt_opt[f"floating.memgrp{idx}.axial_stiffener_web_thickness"]
+                    )
+                    istruct["longitudinal_stiffeners"]["flange_thickness"] = float(
+                        wt_opt[f"floating.memgrp{idx}.axial_stiffener_flange_thickness"]
+                    )
+                    istruct["longitudinal_stiffeners"]["flange_width"] = float(
+                        wt_opt[f"floating.memgrp{idx}.axial_stiffener_flange_width"]
+                    )
+                    istruct["longitudinal_stiffeners"]["spacing"] = float(
+                        wt_opt[f"floating.memgrp{idx}.axial_stiffener_spacing"]
+                    )
+
+                n_ballasts = self.modeling_options["floating"]["members"]["n_ballasts"][i]
+                for j in range(n_ballasts):
+                    if self.modeling_options["floating"]["members"]["ballast_flag_member_" + name_member][j] == False:
+                        istruct["ballasts"][j]["volume"] = float(wt_opt[f"floating.memgrp{idx}.ballast_volume"][j])
+
+                if self.modeling_options["floating"]["members"]["n_axial_joints"][i] > 0:
+                    for j in range(self.modeling_options["floating"]["members"]["n_axial_joints"][i]):
+                        yaml_out["members"][i]["axial_joints"][j]["grid"] = float(
+                            wt_opt[f"floating.memgrp{idx}.grid_axial_joints"][j]
+                        )
 
         # Update rotor nacelle assembly
         if self.modeling_options["flags"]["RNA"]:

@@ -1936,7 +1936,7 @@ properties:
                     JDampings:
                         type: array
                         description: Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).
-                        default: [0.0]
+                        default: [1.0]
                         items:
                             type: number
                             unit: none
@@ -2251,8 +2251,8 @@ properties:
                     HSSBrMode:
                         type: integer
                         description: HSS brake model {0 = none, 1 = simple, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL (not in ROSCO, yet)}
-                        enum: [0,1,4]
-                        default: 1
+                        enum: [0,1,4,5]
+                        default: 0
                     THSSBrDp:
                         type: number
                         default: 99999.
@@ -2278,7 +2278,7 @@ properties:
                         description: Yaw control mode {0 - none, 3 - user-defined from routine UserYawCont, 4 - user-defined from Simulink/Labview, 5 - user-defined from Bladed-style DLL} (switch)
                     TYCOn:
                         type: number
-                        default: 0.
+                        default: 99999.
                         unit: s
                         description: Time to enable active yaw control (s) [unused when YCMode=0]
                     YawNeut:
@@ -2298,7 +2298,7 @@ properties:
                         description: Nacelle-yaw damping constant (N-m/(rad/s))
                     TYawManS:
                         type: number
-                        default: 0.
+                        default: 99999.
                         unit: s
                         description: Time to start override yaw maneuver and end standard yaw control (s)
                     YawManRat:
@@ -2552,6 +2552,10 @@ properties:
                         type: string
                         default: none
                         description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_lib:
+                        type: string
+                        default: none
+                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
                     FAST_directory:
                         type: string
                         default: none
