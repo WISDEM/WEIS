@@ -27,7 +27,7 @@ jobs:
           
       - name: which1
         shell: bash
-        run: which -a tmate
+        run: type -a tmate
         
       - uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
@@ -48,7 +48,7 @@ jobs:
           
       - name: which2
         shell: bash
-        run: which -a tmate
+        run: type -a tmate
         
       # Debugging session
       #- name: Setup tmate session
