@@ -24,6 +24,10 @@ jobs:
       - name: Print environment1
         shell: bash
         run: printenv
+          
+      - name: which1
+        shell: bash
+        run: which -a tmate
         
       - uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
@@ -41,7 +45,11 @@ jobs:
       - name: Print environment2
         shell: bash
         run: printenv
+          
+      - name: which2
+        shell: bash
+        run: which -a tmate
         
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
