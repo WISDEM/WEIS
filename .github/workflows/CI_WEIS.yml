@@ -32,7 +32,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
         with:
-          miniconda-version: "latest"
+          #miniconda-version: "latest"
           channels: conda-forge
           auto-update-conda: true
           python-version: 3.8
@@ -46,10 +46,10 @@ jobs:
         shell: bash
         run: printenv
           
-      - name: which2
-        shell: bash
-        run: type -a tmate
+      #- name: which2
+      #  shell: bash
+      #  run: type -a tmate
         
       # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
