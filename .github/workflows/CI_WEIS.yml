@@ -19,8 +19,11 @@ jobs:
           
       - name: Show custom environment1
         shell: bash
-        run: printenv
         run: cat $GITHUB_ENV
+          
+      - name: Print environment1
+        shell: bash
+        run: printenv
         
       - uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
@@ -33,8 +36,11 @@ jobs:
 
       - name: Show custom environment2
         shell: bash
-        run: printenv
         run: cat $GITHUB_ENV
+          
+      - name: Print environment2
+        shell: bash
+        run: printenv
         
       # Debugging session
       - name: Setup tmate session
