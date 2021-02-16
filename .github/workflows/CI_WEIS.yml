@@ -19,6 +19,7 @@ jobs:
           
       - name: Show custom environment1
         shell: bash
+        run: printenv
         run: cat $GITHUB_ENV
         
       - uses: conda-incubator/setup-miniconda@v2
@@ -32,6 +33,7 @@ jobs:
 
       - name: Show custom environment2
         shell: bash
+        run: printenv
         run: cat $GITHUB_ENV
         
       # Debugging session
