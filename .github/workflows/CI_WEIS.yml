@@ -25,9 +25,9 @@ jobs:
         shell: bash
         run: printenv
           
-      - name: which1
-        shell: bash
-        run: type -a tmate
+      #- name: which1
+      #  shell: bash
+      #  run: type -a tmate
         
       - uses: conda-incubator/setup-miniconda@v2
         # https://github.com/marketplace/actions/setup-miniconda
