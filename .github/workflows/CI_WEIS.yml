@@ -24,19 +24,23 @@ jobs:
       - name: Print environment1
         shell: bash
         run: printenv
-          
-      #- name: which1
-      #  shell: bash
-      #  run: type -a tmate
         
-      - uses: conda-incubator/setup-miniconda@v2
-        # https://github.com/marketplace/actions/setup-miniconda
+      #- uses: conda-incubator/setup-miniconda@v2
+      #  # https://github.com/marketplace/actions/setup-miniconda
+      #  with:
+      #    #miniconda-version: "latest"
+      #    channels: conda-forge
+      #    auto-update-conda: true
+      #    python-version: 3.8
+      #    environment-file: environment.yml
+        
+      - uses: s-weigand/setup-conda@v1
+        # https://github.com/marketplace/actions/setup-conda
         with:
-          #miniconda-version: "latest"
-          channels: conda-forge
-          auto-update-conda: true
+          update-conda: true
           python-version: 3.8
-          environment-file: environment.yml
+          conda-channels: conda-forge
+      - run: conda env update --file environment.yml
 
       - name: Show custom environment2
         shell: bash
