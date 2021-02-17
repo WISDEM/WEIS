@@ -326,6 +326,7 @@ class WindPark(om.Group):
             self.connect('sse_tune.aeroperf_tables.Cp',     'aeroelastic.Cp_aero_table')
             self.connect('sse_tune.aeroperf_tables.Ct',     'aeroelastic.Ct_aero_table')
             self.connect('sse_tune.aeroperf_tables.Cq',     'aeroelastic.Cq_aero_table')
+            self.connect('xf.flap_angles',                  'aeroelastic.airfoils_Ctrl')
 
             if modeling_options['flags']['mooring']:
                 self.connect("mooring.line_diameter", "aeroelastic.line_diameter")
@@ -342,11 +343,6 @@ class WindPark(om.Group):
                 self.connect("mooring.nodes_drag_area", "aeroelastic.nodes_drag_area")
                 self.connect("mooring.unstretched_length", "aeroelastic.unstretched_length")
                 self.connect("mooring.node_names", "aeroelastic.node_names")
-            
-            # Temporary
-            self.connect('xf.Re_loc',                       'aeroelastic.airfoils_Re_loc')
-            self.connect('xf.Ma_loc',                       'aeroelastic.airfoils_Ma_loc')
-            self.connect('xf.flap_angles',                  'aeroelastic.airfoils_Ctrl')
         
             if modeling_options['openfast']['dlc_settings']['run_blade_fatigue']:
                 self.connect('re.precomp.x_tc',                            'aeroelastic.x_tc')
