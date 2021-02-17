@@ -20,9 +20,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
-        TMax: 720
-        TStart: 120
-        SttsTime: 100.
+        TMax: 10
+        TStart: 0
+        SttsTime: 1.
     ElastoDyn:
         flag: True
         FlapDOF1: True
