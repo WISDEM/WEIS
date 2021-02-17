@@ -40,7 +40,8 @@ jobs:
           update-conda: true
           python-version: 3.8
           conda-channels: conda-forge
-      - run: conda env update --file environment.yml
+          activate-conda: true
+      - run: conda env update -n base --file environment.yml
 
       - name: Show custom environment2
         shell: bash
