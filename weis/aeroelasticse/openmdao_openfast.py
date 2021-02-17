@@ -647,10 +647,11 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
                 
                 fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = loop_index
-                fst_vt['AeroDyn15']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][j]
                 if fst_vt['AeroDyn15']['AFTabMod'] == 3:
                     fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = inputs['airfoils_Ctrl'][i,0,j]  # unsteady['Ctrl'] # added to unsteady function for variable flap controls at airfoils
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][0] # If AFTabMod==3 the Re is neglected, but it still must be the same across tables
                 else:
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][j]
                     fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = 0.
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha0']    = unsteady['alpha0']
