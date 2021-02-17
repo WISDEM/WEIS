@@ -16,24 +16,18 @@ jobs:
         
     steps:
       - uses: actions/checkout@v2
-          
-      - name: Show custom environment1
-        shell: bash
-        run: cat $GITHUB_ENV
-          
-      - name: Print environment1
-        shell: bash
-        run: printenv
-        
+
+      # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
       #  # https://github.com/marketplace/actions/setup-miniconda
       #  with:
-      #    miniconda-version: "latest"
+      #    #miniconda-version: "latest"
       #    channels: conda-forge
       #    auto-update-conda: true
       #    python-version: 3.8
       #    environment-file: environment.yml
         
+      # This is a less official, but more lightweight way to do miniconda
       - uses: s-weigand/setup-conda@v1
         # https://github.com/marketplace/actions/setup-conda
         with:
@@ -43,17 +37,11 @@ jobs:
           activate-conda: true
       - run: conda env update -n base --file environment.yml
 
-      - name: Show custom environment2
-        shell: bash
-        run: cat $GITHUB_ENV
-          
-      - name: Print environment2
-        shell: bash
-        run: printenv
-        
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+      #- name: Show custom environment
+      #  shell: bash
+      #  run: |
+      #      cat $GITHUB_ENV
+      #      printenv
       
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
@@ -70,7 +58,11 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
-        
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
+          
       # Install WISDEM
       - name: Install WEIS
         shell: pwsh
@@ -82,10 +74,6 @@ jobs:
         shell: pwsh
         run: |
           pytest weis --collect-only
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
