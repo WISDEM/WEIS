@@ -41,9 +41,9 @@ design_variables:
         max_end: 0.99
   control:
     tsr:
-      flag: False     # Flag to optimize the rotor tip speed ratio
-      min_gain: 0.9   # Nondimensional lower bound
-      max_gain: 1.1   # Nondimensional upper bound
+      flag: False
+      minimum: 7
+      maximum: 13
     servo:
       pitch_control:
         flag: False
