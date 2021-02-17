@@ -51,7 +51,7 @@ design_variables:
         max_end: 1.0
   control:
     tsr:
-      flag: True     # Flag to optimize the rotor tip speed ratio
+      flag: False     # Flag to optimize the rotor tip speed ratio
       minimum: 7
       maximum: 13
     servo:
