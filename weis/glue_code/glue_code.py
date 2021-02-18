@@ -299,6 +299,7 @@ class WindPark(om.Group):
             self.connect('xf.cd_interp_flaps',              'aeroelastic.airfoils_cd')
             self.connect('xf.cm_interp_flaps',              'aeroelastic.airfoils_cm')
             self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
+            self.connect('blade.interp_airfoils.ac_interp', 'aeroelastic.ac')
             self.connect('re.rhoA',                    'aeroelastic.beam:rhoA')
             self.connect('re.EIxx',                    'aeroelastic.beam:EIxx')
             self.connect('re.EIyy',                    'aeroelastic.beam:EIyy')

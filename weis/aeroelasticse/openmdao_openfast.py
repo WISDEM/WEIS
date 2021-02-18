@@ -133,6 +133,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
         self.add_input('theta',             val=np.zeros(n_span), units='deg', desc='twist at airfoil locations')
         self.add_input('rthick',            val=np.zeros(n_span), desc='relative thickness of airfoil distribution')
+        self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
         self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
@@ -695,11 +696,13 @@ class FASTLoadCases(ExplicitComponent):
         
         fst_vt['AeroDyn15']['af_coord'] = []
         fst_vt['AeroDyn15']['rthick']   = np.zeros(self.n_span)
+        fst_vt['AeroDyn15']['ac']   = np.zeros(self.n_span)
         for i in range(self.n_span):
             fst_vt['AeroDyn15']['af_coord'].append({})
             fst_vt['AeroDyn15']['af_coord'][i]['x']  = inputs['coord_xy_interp'][i,:,0]
             fst_vt['AeroDyn15']['af_coord'][i]['y']  = inputs['coord_xy_interp'][i,:,1]
             fst_vt['AeroDyn15']['rthick'][i]         = inputs['rthick'][i]
+            fst_vt['AeroDyn15']['ac'][i]             = inputs['ac'][i]
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]
