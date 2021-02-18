@@ -1250,7 +1250,7 @@ class InputReader_OpenFAST(InputReader_Common):
     def read_AeroDyn15Coord(self):
         
         self.fst_vt['AeroDyn15']['af_coord'] = []
-        self.fst_vt['AeroDyn15']['rthick']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
+        self.fst_vt['AeroDyn15']['ac']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
 
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
             self.fst_vt['AeroDyn15']['af_coord'].append({})
@@ -1263,7 +1263,7 @@ class InputReader_OpenFAST(InputReader_Common):
                 f.readline()
                 f.readline()
                 f.readline()
-                self.fst_vt['AeroDyn15']['rthick'][afi] = float(f.readline().split()[0])
+                self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
                 f.readline()
                 f.readline()
                 f.readline()
