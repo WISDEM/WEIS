@@ -87,6 +87,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
+        self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -461,7 +462,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
