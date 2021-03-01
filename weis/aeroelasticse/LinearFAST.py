@@ -15,9 +15,7 @@ from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 
 # pCrunch Modules and instantiation
 import matplotlib.pyplot as plt 
-from ROSCO_toolbox import utilities as ROSCO_utilites
-fast_io = ROSCO_utilites.FAST_IO()
-fast_pl = ROSCO_utilites.FAST_Plots()
+from ROSCO_toolbox import utilities as ROSCO_utilities
 
 # WISDEM modules
 from weis.aeroelasticse.Util import FileTools
@@ -75,7 +73,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.HydroStates        = True  
 
         # simulation setup
-        self.parallel           = False
         self.cores              = 4
 
         # overwrite steady & linearizations
@@ -135,7 +132,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         outfiles = glob.glob(os.path.join(self.FAST_steadyDirectory,'steady*.outb'))
 
         if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
-            if self.parallel:
+            if self.cores > 1:
                 self.run_multi(self.cores)
             else:
                 self.run_serial()
@@ -168,7 +165,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Set some processing parameters
         fp.OpenFAST_outfile_list        = outfiles
         fp.t0                           = self.TMax - 400            # make sure this is less than simulation time
-        fp.parallel_analysis            = self.parallel
+        fp.parallel_analysis            = self.cores > 1
         fp.parallel_cores               = self.cores
         fp.results_dir                  = os.path.join(output_dir, 'stats')
         fp.verbose                      = True
@@ -179,7 +176,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         if self.overwrite or not os.path.exists(os.path.join(output_dir,'ss_ops.yaml')):
             stats, _ =fp.batch_processing()
 
-            if hasattr(stats,'__len__'):
+            if isinstance(stats,list):
                 stats = stats[0]
 
             windSortInd = np.argsort(stats['Wind1VelX']['mean'])
@@ -257,7 +254,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         Example of running a batch of cases, in serial or in parallel
         """
 
-        ss_opFile = os.path.join(self.FAST_steadyDirectory,'ss_ops.yaml')
+        # ss_opFile = os.path.join(self.FAST_steadyDirectory,'ss_ops.yaml')
         self.FAST_runDirectory = self.FAST_linearDirectory
 
         ## Generate case list using General Case Generator
@@ -266,13 +263,13 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TMax")] = {'vals':[self.TMax], 'group':0}
         case_inputs[("Fst","Linearize")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}
-        case_inputs[("Fst","TrimGain")] = {'vals':[4e-5], 'group':0}
+        case_inputs[("Fst","TrimGain")] = {'vals':[1e-4], 'group':0}
+        case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
 
-        case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
+        case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}
         case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}
 
-        if not self.HydroStates:
-            case_inputs[("Fst","CompHydro")] = {'vals':[0], 'group':0}
+        case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}
         
         # InflowWind
         case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
@@ -287,11 +284,21 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("ServoDyn","PCMode")] = {'vals':[0], 'group':0}
         case_inputs[("ServoDyn","VSContrl")] = {'vals':[1], 'group':0}
 
-        # Torque Control: these are turbine specific, update later
-        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[7.56], 'group':0}
-        case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[19.62e6], 'group':0}
-        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[3.7e5], 'group':0}
+        # Torque Control: these are turbine specific, update later based on ROSCO
+        rosco_inputs = ROSCO_utilities.read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
+
+        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi * 0.5], 'group':0}  # convert to rpm and use 95% of rated
+        case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[rosco_inputs['VS_RtTq']], 'group':0}
+        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[rosco_inputs['VS_Rgn2K']/ (30 / np.pi)**2] , 'group':0}  # reduce so k\omega^2 < VS_RtTq
         case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
+
+        # set initial pitch to fine pitch (may be problematic at high wind speeds)
+        case_inputs[('ElastoDyn','BlPitch1')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
+        case_inputs[('ElastoDyn','BlPitch2')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
+        case_inputs[('ElastoDyn','BlPitch3')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
+
+        # Set initial rotor speed to rated
+        case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi], 'group':0}  # convert to rpm and use 95% of rated
 
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
@@ -324,30 +331,24 @@ class LinearFAST(runFAST_pywrapper_batch):
             case_inputs[("ElastoDyn",dof)] = {'vals':['True'], 'group':0}
         
         # Initial Conditions
-        ss_ops = load_yaml(ss_opFile)
-        uu = ss_ops['Wind1VelX']
+        # ss_ops = load_yaml(ss_opFile)
+        # uu = ss_ops['Wind1VelX']
 
-        for ic in ss_ops:
-            if ic != 'Wind1VelX':
-                case_inputs[("ElastoDyn",ic)] = {'vals': np.interp(case_inputs[("InflowWind","HWindSpeed")]['vals'],uu,ss_ops[ic]).tolist(), 'group': 1}
+        # for ic in ss_ops:
+        #     if ic != 'Wind1VelX':
+        #         case_inputs[("ElastoDyn",ic)] = {'vals': np.interp(case_inputs[("InflowWind","HWindSpeed")]['vals'],uu,ss_ops[ic]).tolist(), 'group': 1}
 
-        case_inputs[('ElastoDyn','BlPitch2')] = case_inputs[('ElastoDyn','BlPitch1')]
-        case_inputs[('ElastoDyn','BlPitch3')] = case_inputs[('ElastoDyn','BlPitch1')]
 
-        # Gen Speed to track
-        # set for now and update with GB ratio next
-        RefGenSpeed = 0.95 * np.array(case_inputs[('ElastoDyn','RotSpeed')]['vals']) * self.GBRatio
-        case_inputs[('ServoDyn','VS_RtGnSp')] = {'vals': RefGenSpeed.tolist(), 'group': 1}
+        
 
         channels = {}
         for var in ["BldPitch1","BldPitch2","BldPitch3","IPDefl1","IPDefl2","IPDefl3","OoPDefl1","OoPDefl2","OoPDefl3", \
-            "NcIMURAxs","TipDxc1", "TipDyc1", "Spn2MLxb1", "Spn2MLxb2","Spn2MLxb3","Spn2MLyb1", "Spn2MLyb2","Spn2MLyb3" \
-                "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", \
-                  "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", \
+            "NcIMURAxs","NcIMURAys", \
+                   "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", \
                       "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", \
                           "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", \
                               "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza", \
-                                  "LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr" \
+                                  "LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", \
                                       "TwstDefl1","TwstDefl2","TwstDefl3"]:
             channels[var] = True
 
@@ -373,7 +374,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TrimCase")] = {'vals':TrimCase.tolist(), 'group':1}
 
 
-        case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
         
 
         # Generate Cases
@@ -385,71 +385,76 @@ class LinearFAST(runFAST_pywrapper_batch):
         outfiles = glob.glob(os.path.join(self.FAST_linearDirectory,'lin*.outb'))
 
         if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
-            if self.parallel:
+            if self.cores > 1:
                 self.run_multi(self.cores)
             else:
                 self.run_serial()
         
 
 
-def gen_linear_model(wind_speeds, Tmax=600.):
-    """ 
-    Generate OpenFAST linearizations across wind speeds
+    def gen_linear_model(self):
+        """ 
+        Generate OpenFAST linearizations across wind speeds
 
-    Only needs to be performed once for each model
+        Only needs to be performed once for each model
 
-    """
+        """
 
+        # do a read to get gearbox ratio
+        fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)
+        fastRead.FAST_InputFile = self.FAST_InputFile   # FAST input file (ext=.fst)
+        fastRead.FAST_directory = self.FAST_directory   # Path to fst directory files
 
-    linear = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
+        fastRead.execute()
 
-    # fast info
-    linear.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+        # linearization setup
+        self.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
+        self.fst_vt           = fastRead.fst_vt
+
+        #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
+        if any([d in ['PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmyDOF'] for d in self.DOFs]):
+            self.HydroStates      = True   # taking out to speed up for test
+        else:
+            self.HydroStates      = False   # taking out to speed up for test
+
+        # run steady state sims
+        # self.runFAST_steady()
+
+        # process results 
+        # self.postFAST_steady()
     
-    linear.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
-    linear.FAST_steadyDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_steady')
-    linear.FAST_linearDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_lin')
-    linear.debug_level              = 2
-    linear.dev_branch               = True
-    linear.write_yaml               = True
-
-    # do a read to get gearbox ratio
-    fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)
-    fastRead.FAST_InputFile = linear.FAST_InputFile   # FAST input file (ext=.fst)
-    fastRead.FAST_directory = linear.FAST_directory   # Path to fst directory files
-
-    fastRead.execute()
-
-    # linearization setup
-    linear.v_rated          = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
-    linear.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
-    linear.WindSpeeds       = wind_speeds  #[8.,10.,12.,14.,24.]
-    linear.DOFs             = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
-    linear.TMax             = Tmax   # should be 1000-2000 sec or more with hydrodynamic states
-    linear.NLinTimes        = 12
-
-    #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
-    linear.HydroStates      = False   # taking out to speed up for test
-
-    # simulation setup
-    linear.parallel         = True
-    linear.cores            = 8
-
-    # overwrite steady & linearizations
-    linear.overwrite        = False
-
-
-    # run steady state sims
-    linear.runFAST_steady()
-
-    # process results 
-    linear.postFAST_steady()
-
-    # run linearizations
-    linear.runFAST_linear()
+        # run linearizations
+        self.runFAST_linear()
 
 
 
 if __name__ == '__main__':
-    gen_linear_model(np.arange(5,25,1,dtype=float).tolist())
+
+    lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
+
+    # fast info
+    lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+    
+    lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+    lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
+    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
+    lin_fast.debug_level              = 2
+    lin_fast.dev_branch               = True
+    lin_fast.write_yaml               = True
+    
+    lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
+    lin_fast.WindSpeeds                 = [8.,10.,12.,14.,24.]
+    lin_fast.DOFs                       = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
+    lin_fast.TMax                       = 600   # should be 1000-2000 sec or more with hydrodynamic states
+    lin_fast.NLinTimes                  = 12
+
+    lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast/install/bin/openfast'
+
+    # simulation setup
+    lin_fast.cores            = 8
+
+    # overwrite steady & linearizations
+    lin_fast.overwrite        = False
+
+    lin_fast.gen_linear_model(np.arange(5,25,4,dtype=float).tolist())

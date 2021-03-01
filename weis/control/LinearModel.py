@@ -35,7 +35,7 @@ class LinearTurbineModel(object):
 
             if not n_lin_cases:
                 print('No linear outputs found in '+ lin_file)
-                quit()
+                raise Exception('No linear outputs found in '+ lin_file)
 
             if n_lin_cases <= 10:
                 num_string = '%01d'
@@ -73,7 +73,7 @@ class LinearTurbineModel(object):
                 TwrDesc         = 'ED TwrBsMyt, (kN-m)'
                 AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
                 PltPitchDesc    = 'ED PtfmPitch, (deg)'
-                NacIMUFADesc    = 'ED NcIMURAxs, (deg/s^2)'
+                NacIMUFADesc    = 'ED NcIMURAys, (deg/s^2)'
 
                 indPitch        = matData['DescCntrlInpt'].index(PitchDesc)
                 indWind         = matData['DescCntrlInpt'].index(WindDesc)
@@ -308,11 +308,12 @@ class LinearTurbineModel(object):
         return P_cl
 
 
-    def solve(self,tt,u_h,Plot=True,open_loop=True,controller={},reduce_states=False):
+    def solve(self,disturbance,Plot=True,open_loop=True,controller={},reduce_states=False):
         ''' 
         Run linear simulation of open-loop turbine model
-        inputs: tt - vector of time indices
-                u_h - vector of wind speeds (usually rotor avg wind speed)
+        inputs: disturbance: dict containing
+                    Time - vector of time indices
+                    Wind - vector of wind speeds (usually rotor avg wind speed)
                 Plot - plot solution?
                 open_loop - (logical) run linearization in open loop or add closed-loop linear controllers
                 controller (optional) - linear controller to add if open_loop = False
@@ -320,6 +321,9 @@ class LinearTurbineModel(object):
         outputs: OutList - list of output channels, mimicking nonlinear OpenFAST
                  OutData - array of output channels, mimicking nonlinear OpenFAST
         '''
+        # Unpack disturbance
+        tt      = disturbance['Time']
+        u_h     = disturbance['Wind']
 
         # Get plant operating point
         self.ops, self.P_op        = self.get_plant_op(u_h,reduce_states)
@@ -390,8 +394,10 @@ class LinearTurbineModel(object):
         for i, out_chan in enumerate(OutList):
             OutData[out_chan] = OutData_arr[:,i]
 
+        # Add time to OutData
+        OutData['Time'] = tt
 
-        return OutList,OutData, P_op
+        return OutData, OutList, P_op
 
 
 class LinearControlModel(object):
@@ -430,7 +436,7 @@ class LinearControlModel(object):
 
             # Pitch Actuator parameters
             # self.PC_ActBw           = controller.turbine.pitch_act_bw
-            self.PC_ActBw       = 1.5708  # hard code until this is pulled into ROSCO
+            self.PC_ActBw       = 100 #1.5708  # hard code until this is pulled into ROSCO
 
             # Gen Speed Filter parameters
             F_Gen_Freq          = controller.turbine.bld_edgewise_freq * 1/4
@@ -451,7 +457,7 @@ class LinearControlModel(object):
             fl_lpf              = self.low_pass_filter(Fl_Bw,Fl_Damp)
 
             # Pitch Actuator parameters
-            self.PC_ActBw           = DISCON_file['PC_ActBw']
+            self.PC_ActBw           = 100 #DISCON_file['PC_ActBw']
             
 
             # Gen Speed Filter parameters
@@ -462,7 +468,7 @@ class LinearControlModel(object):
 
         # Floating transfer function
         s = co.TransferFunction.s
-        self.C_Fl               = fl_lpf / s * self.Fl_Kp
+        self.C_Fl               = - fl_lpf / s * np.mean(self.Fl_Kp) * deg2rad(1)
         self.C_Fl               = co.ss(self.C_Fl)
         self.C_Fl.InputName     = 'NcIMUTAzs'
         self.C_Fl.OutputName    = 'Fl_Pitch'
@@ -496,7 +502,7 @@ class LinearControlModel(object):
         s                   = co.TransferFunction.s
         self.C_PC           = -(kp + ki/s) * rpm2radps(1)
         self.C_PC           = co.ss(self.C_PC)
-        self.C_PC.InputName    = 'GenSpeed'
+        self.C_PC.InputName    = 'GenSpeedF'
         self.C_PC.OutputName   = 'PC_Pitch'   
 
     def connect_elements(self):
@@ -513,8 +519,8 @@ class LinearControlModel(object):
         # self.C_PC.OutputName = 'BldPitch'
 
         # control modules 
-        # mods = [self.C_PC,self.C_Fl,S,self.F_Gen,self.pitch_act] 
-        mods = [self.C_PC,self.C_Fl,S,self.pitch_act] 
+        mods = [self.C_PC,self.C_Fl,S,self.F_Gen,self.pitch_act] 
+        # mods = [self.C_PC,self.C_Fl,S,self.pitch_act] 
         # mods = [self.C_PC] 
 
 

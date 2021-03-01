@@ -110,7 +110,8 @@ class CMakeBuildExt(build_ext):
 # All of the extensions
 fastExt    = CMakeExtension('openfast','OpenFAST')
 roscoExt   = CMakeExtension('rosco','ROSCO')
-            
+extList = [roscoExt] if platform.system() == "Windows" else  [roscoExt, fastExt]
+
 # Setup content
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -157,7 +158,7 @@ metadata = dict(
     package_data                  =  {'':['*.yaml','*.xlsx']},
     python_requires               = '>=3.6',
     license                       = 'Apache License, Version 2.0',
-    ext_modules                   = [roscoExt, fastExt],
+    ext_modules                   = extList,
     cmdclass                      = {'build_ext': CMakeBuildExt},
     zip_safe                      = False,
 )

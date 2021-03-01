@@ -75,19 +75,20 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['RotorSE']['n_te_flaps'] = len(self.wt_init['components']['blade']['aerodynamic_control']['te_flaps'])
                 self.modeling_options['RotorSE']['n_tab']   = 3
             else:
-                exit('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
+                raise Exception('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
         
     def update_ontology_control(self, wt_opt):
         # Update controller
         if self.modeling_options['flags']['control']:
-            self.wt_init['control']['tsr']      = float(wt_opt['control.rated_TSR'])
-            self.wt_init['control']['PC_omega'] = float(wt_opt['tune_rosco_ivc.PC_omega'])
-            self.wt_init['control']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
-            self.wt_init['control']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])
-            self.wt_init['control']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
-            self.wt_init['control']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
-            self.wt_init['control']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])
-            self.wt_init['control']['IPC_Ki1p'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])
+            self.wt_init['control']['pitch']['PC_omega'] = float(wt_opt['tune_rosco_ivc.PC_omega'])
+            self.wt_init['control']['pitch']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
+            self.wt_init['control']['torque']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])
+            self.wt_init['control']['torque']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
+            if self.modeling_options['Level3']['ROSCO']['Flp_Mode'] > 0:
+                self.wt_init['control']['dac']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
+                self.wt_init['control']['dac']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])
+            if 'IPC' in self.wt_init['control'].keys():
+                self.wt_init['control']['IPC']['IPC_gain_1P'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])
 
         
     def write_options(self, fname_output):
