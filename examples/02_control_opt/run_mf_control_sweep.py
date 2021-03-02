@@ -62,7 +62,7 @@ class MF_Turbine(object):
 
         # Set up common controller
         # Load controller from yaml file 
-        weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
+        weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
         inps = yaml.safe_load(open(parameter_filename))
         path_params         = inps['path_params']
@@ -88,7 +88,7 @@ class MF_Turbine(object):
         lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True)
 
         # fast info
-        lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+        lin_fast.weis_dir                 = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + os.sep
         
         lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = self.FAST_directory
@@ -371,18 +371,35 @@ def compute_outputs(levelX_out):
 
 if __name__ == '__main__':
     # 0. Set up Model, using default input files
+    import time
+    s = time.time()
     mf_turb = MF_Turbine()
     mf_turb.n_cores = 4
 
     l2_turb = Level2_Turbine(mf_turb)
     l3_turb = Level3_Turbine(mf_turb)
     
-
-
+    print(time.time() - s)
+    s = time.time()
+    
     l2_outs = l2_turb.compute(.15)
+    
+    print(time.time() - s)
+    s = time.time()
     l3_outs = l3_turb.compute(.15)
+    
+    print(time.time() - s)
+    s = time.time()
 
-    print('here')
+    print('l2_outs')
+    print(l2_outs)
+    
+    print()
+
+    print('l3_outs')
+    print(l3_outs)
+    
+    
 
 
     

@@ -433,7 +433,7 @@ if __name__ == '__main__':
     lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
 
     # fast info
-    lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+    lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( os.path.abspath(__file__ ) ) ) ) + os.sep
     
     lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
