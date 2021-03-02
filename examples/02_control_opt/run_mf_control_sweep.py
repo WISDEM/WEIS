@@ -377,16 +377,16 @@ if __name__ == '__main__':
     mf_turb.n_cores = 4
 
     l2_turb = Level2_Turbine(mf_turb)
-    l3_turb = Level3_Turbine(mf_turb)
+    # l3_turb = Level3_Turbine(mf_turb)
     
     print(time.time() - s)
     s = time.time()
     
     l2_outs = l2_turb.compute(.15)
     
-    print(time.time() - s)
-    s = time.time()
-    l3_outs = l3_turb.compute(.15)
+    # print(time.time() - s)
+    # s = time.time()
+    # l3_outs = l3_turb.compute(.15)
     
     print(time.time() - s)
     s = time.time()
@@ -395,11 +395,11 @@ if __name__ == '__main__':
     print(l2_outs)
     
     print()
+    
+    l2_outs = l2_turb.compute(.16)
 
-    print('l3_outs')
-    print(l3_outs)
-    
-    
+    print('l2_outs changed')
+    print(l2_outs)
 
 
     
