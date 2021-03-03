@@ -119,6 +119,7 @@ class MF_Turbine(object):
         self.LinearTurbine = lin_mod.LinearTurbineModel(mf_turb.FAST_level2_Directory,reduceStates=False)
 
     def run_level2(self,controller,disturbance):
+        controller.tune_controller(self.turbine)
         linCont             = lin_mod.LinearControlModel(controller)
         self.level2_out     = []
         for dist in disturbance:
