@@ -224,7 +224,7 @@ class MF_Turbine(object):
         Compare level 2 and 3 timeseries, for debugging purposes
 
         '''
-        self.gen_level2_model(dofs=['GenDOF'])
+        self.gen_level2_model(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
 
         # Extract disturbance
         dist = []
