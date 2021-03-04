@@ -96,7 +96,7 @@ class runFAST_pywrapper(object):
             wrapper.execute()
         else:
             if self.debug_level>0:
-                print('OpenFAST not execute: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
+                print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
         return FAST_Output
 

@@ -382,13 +382,14 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.case_list = case_list
         self.case_name_list = case_name_list
 
-        outfiles = glob.glob(os.path.join(self.FAST_linearDirectory,'lin*.outb'))
+        # Let runFAST_pywrapper check for files
+        if not self.overwrite:
+            self.overwrite_outfiles = False  
 
-        if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
-            if self.cores > 1:
-                self.run_multi(self.cores)
-            else:
-                self.run_serial()
+        if self.cores > 1:
+            self.run_multi(self.cores)
+        else:
+            self.run_serial()
         
 
 
