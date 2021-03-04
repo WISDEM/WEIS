@@ -21,6 +21,7 @@ from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
 from pCrunch.Analysis import Loads_Analysis
+from weis.aeroelasticse.Turbsim_mdao.turbsim_file import TurbSimFile
 
 
 
@@ -49,8 +50,16 @@ import numpy as np
 import sys, os, platform, glob, yaml
 
 class MF_Turbine(object):
+    '''
+    Multifidelity turbine object:
+    - Level 2 linear openfast model
+    - Level 3 full nonlinear openfast simulation
 
-    def __init__(self):
+    Both models use the same wind inputs, via case_inputs, iec attributes
+
+    '''
+
+    def __init__(self,level2_wind_speeds=[14,16,18],level3_wind_speeds=[16]):
         # Turbine Model
         # Select Turbine Model
         model_dir               = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), '01_aeroelasticse/OpenFAST_models')
@@ -84,60 +93,7 @@ class MF_Turbine(object):
         controller.turbine  = turbine
         self.controller     = controller
 
-    def gen_level2_model(self,wind_speeds=[5,9,13,17,21],dofs=['GenDOF']):
-        lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True)
-
-        # fast info
-        lin_fast.weis_dir                 = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + os.sep
-        
-        lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
-        lin_fast.FAST_directory           = self.FAST_directory
-        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
-        lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
-        self.FAST_level2_Directory        = lin_fast.FAST_linearDirectory
-        lin_fast.debug_level              = 2
-        lin_fast.dev_branch               = True
-        lin_fast.write_yaml               = True
-        
-        lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
-        lin_fast.WindSpeeds                 = wind_speeds
-        lin_fast.DOFs                       = dofs  # enable with 
-        lin_fast.TMax                       = 1600   # should be 1000-2000 sec or more with hydrodynamic states
-        lin_fast.NLinTimes                  = 12
-
-        # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast-dev/install/bin/openfast'
-
-        # simulation setup
-        lin_fast.cores                      = self.n_cores
-
-        # overwrite steady & linearizations
-        # lin_fast.overwrite        = True
-        
-        # run OpenFAST linearizations
-        lin_fast.gen_linear_model()
-
-        self.LinearTurbine = lin_mod.LinearTurbineModel(mf_turb.FAST_level2_Directory,reduceStates=False)
-
-    def run_level2(self,controller,disturbance):
-        controller.tune_controller(self.turbine)
-        linCont             = lin_mod.LinearControlModel(controller)
-        self.level2_out     = []
-        for dist in disturbance:
-            l2_out, _, P_cl = self.LinearTurbine.solve(dist,Plot=False,open_loop=False,controller=linCont)
-            self.level2_out.append(l2_out)
-
-
-    def run_level3(self,turbine,controller,wind_speeds=[16]):
-        # Run FAST cases
-        fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
-        
-        # Select Turbine Model
-        fastBatch.FAST_directory    = self.FAST_directory
-        fastBatch.FAST_InputFile    = self.FAST_InputFile  # FAST input file (ext=.fst)
-
-        fastBatch.debug_level       = 2
-        fastBatch.overwrite_outfiles = False
-
+        # Set up cases
         # Turbine inputs
         iec = CaseGen_IEC()
         iec.overwrite           = False
@@ -178,12 +134,12 @@ class MF_Turbine(object):
         # DLC inputs
         iec.dlc_inputs = {}
 
-        if not isinstance(wind_speeds,list):
-            wind_speeds = [wind_speeds]
+        if not isinstance(level3_wind_speeds,list):
+            level3_wind_speeds = [level3_wind_speeds]
 
         iec.dlc_inputs['DLC']   = [1.1]
         iec.dlc_inputs['Seeds'] = [[25]]
-        iec.dlc_inputs['U']     = [wind_speeds]
+        iec.dlc_inputs['U']     = [level3_wind_speeds]
         
         iec.dlc_inputs['Yaw']   = [[]]
         iec.PC_MaxRat           = 2.
@@ -254,77 +210,44 @@ class MF_Turbine(object):
         
         
         
+        # Generate cases and safe to MF_Turbine object
+        self.case_list, self.case_name_list, self.dlc_list = iec.execute(case_inputs=case_inputs)
 
-        case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
+        # Save shared info to MF_Turbine
+        self.iec                    = iec
+        self.channels               = channels
+        self.level3_wind_speeds     = level3_wind_speeds
+        self.level2_wind_speeds     = level2_wind_speeds
 
-        fastBatch.case_list         = case_list
-        fastBatch.case_name_list    = case_name_list
-        fastBatch.channels          = channels
-        fastBatch.FAST_runDirectory = iec.run_dir 
-        fastBatch.post              = FAST_IO_timeseries
+    def compare(self):
+        ''' 
+        Compare level 2 and 3 timeseries, for debugging purposes
 
-        if self.n_cores == 1:
-            out = fastBatch.run_serial()
-        else:
-            out = fastBatch.run_multi(cores=self.n_cores)
+        '''
+        self.gen_level2_model(dofs=['GenDOF'])
 
-        self.level3_batch   = fastBatch
-        self.level3_out     = out
-
-
-class Level3_Turbine(object):
-    
-    def __init__(self,mf_turb):
-        self.mf_turb = mf_turb
-
-    def compute(self,omega_pc):
-        self.mf_turb.controller.omega_pc = omega_pc
-        self.mf_turb.run_level3(self.mf_turb.turbine,self.mf_turb.controller,wind_speeds=[14,16,18])
-
-        return compute_outputs(self.mf_turb.level3_out)
-
-
-
-class Level2_Turbine(object):
-
-    def __init__(self,mf_turb):
-        self.setup(mf_turb)
-
-    def setup(self,mf_turb):
-        
-        # 1. Run linearization procedure, post-process linearization results, Load system from OpenFAST .lin files
-        wind_speeds = np.arange(12,20,2).tolist()
-        mf_turb.gen_level2_model(wind_speeds,dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
-
-
-        # 3. Run turbulent level 3 case, do this until we can extract rotor avg. wind speed directly from IEC cases
-        mf_turb.run_level3(mf_turb.turbine,mf_turb.controller,wind_speeds=[14,16,18])
-
-        # 4. Extract disturbance from level3 sims (wind only for now)
+        # Extract disturbance
         dist = []
-        for out in mf_turb.level3_out:
-            u_h         = out['RtVAvgxh']
-            tt          = out['Time']
+        for case in self.case_list:
+            ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
+            ts_file.compute_rot_avg(self.iec.D/2)
+            u_h         = ts_file['rot_avg'][0,:]
+            tt          = ts_file['t']
             dist.append({'Time':tt, 'Wind': u_h})
 
-        # save data to object
-        self.disturbance    = dist
-        self.mf_turb        = mf_turb
+        # Run level 2
+        self.run_level2(self.controller,dist)
 
-    def compute(self,omega_pc):
-        # 5. Run level 2 simulation
-        self.mf_turb.controller.omega_pc = omega_pc
-        self.mf_turb.run_level2(self.mf_turb.controller,self.disturbance)
+        # Run level 3
+        self.run_level3(self.controller)
 
-        outputs = compute_outputs(self.mf_turb.level2_out)
-        
-        # comparison plot
-        if False:
+        # comparison plot, used to be in Level 2, not sure if information is here
+        if True:
             comp_channels = ['RtVAvgxh','GenSpeed','TwrBsMyt','PtfmPitch']
-            fig = [None] * len(mf_turb.level3_out)
+            fig = [None] * len(self.level3_out)
             ax = [None] * len(comp_channels)
             
-            for iFig, (l2_out, l3_out) in enumerate(zip(mf_turb.level2_out,mf_turb.level3_out)):
+            for iFig, (l2_out, l3_out) in enumerate(zip(self.level2_out,self.level3_out)):
                 fig[iFig] = plt.figure()
 
                 for iPlot, chan in enumerate(comp_channels):
@@ -345,7 +268,127 @@ class Level2_Turbine(object):
                     if not iPlot == (len(comp_channels) - 1):
                         ax[iPlot].set_xticklabels([])
 
+                fig[iFig].legend(('Level 3','Level 2'),ncol=2,loc=9)
+
             plt.show()
+
+
+    def gen_level2_model(self,dofs=['GenDOF']):
+        lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True)
+
+        # fast info
+        lin_fast.weis_dir                 = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + os.sep
+        
+        lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
+        lin_fast.FAST_directory           = self.FAST_directory
+        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
+        lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
+        self.FAST_level2_Directory        = lin_fast.FAST_linearDirectory
+        lin_fast.debug_level              = 2
+        lin_fast.dev_branch               = True
+        lin_fast.write_yaml               = True
+        
+        lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
+        lin_fast.WindSpeeds                 = self.level2_wind_speeds
+        lin_fast.DOFs                       = dofs  # enable with 
+        lin_fast.TMax                       = 1600   # should be 1000-2000 sec or more with hydrodynamic states
+        lin_fast.NLinTimes                  = 12
+
+        # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast-dev/install/bin/openfast'
+
+        # simulation setup
+        lin_fast.cores                      = self.n_cores
+
+        # overwrite steady & linearizations
+        # lin_fast.overwrite        = True
+        
+        # run OpenFAST linearizations
+        lin_fast.gen_linear_model()
+
+        self.LinearTurbine = lin_mod.LinearTurbineModel(mf_turb.FAST_level2_Directory,reduceStates=False)
+
+    def run_level2(self,controller,disturbance):
+        controller.tune_controller(self.turbine)
+        linCont             = lin_mod.LinearControlModel(controller)
+        self.level2_out     = []
+        for dist in disturbance:
+            l2_out, _, P_cl = self.LinearTurbine.solve(dist,Plot=False,open_loop=False,controller=linCont)
+            self.level2_out.append(l2_out)
+
+
+    def run_level3(self,controller):
+        # Run FAST cases
+        fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+        
+        # Select Turbine Model
+        fastBatch.FAST_directory    = self.FAST_directory
+        fastBatch.FAST_InputFile    = self.FAST_InputFile  # FAST input file (ext=.fst)
+
+        fastBatch.debug_level       = 2
+        fastBatch.overwrite_outfiles = False
+
+        
+        fastBatch.case_list         = self.case_list
+        fastBatch.case_name_list    = self.case_name_list
+        fastBatch.channels          = self.channels
+        fastBatch.FAST_runDirectory = self.iec.run_dir 
+        fastBatch.post              = FAST_IO_timeseries
+
+        if self.n_cores == 1:
+            out = fastBatch.run_serial()
+        else:
+            out = fastBatch.run_multi(cores=self.n_cores)
+
+        self.level3_batch   = fastBatch
+        self.level3_out     = out
+
+
+class Level3_Turbine(object):
+    
+    def __init__(self,mf_turb):
+        self.mf_turb = mf_turb
+
+    def compute(self,omega_pc):
+        self.mf_turb.controller.omega_pc = omega_pc
+        self.mf_turb.run_level3(self.mf_turb.turbine,self.mf_turb.controller)
+
+        return compute_outputs(self.mf_turb.level3_out)
+
+
+
+class Level2_Turbine(object):
+
+    def __init__(self,mf_turb):
+        self.setup(mf_turb)
+
+    def setup(self,mf_turb):
+        
+        # 1. Run linearization procedure, post-process linearization results, Load system from OpenFAST .lin files
+        mf_turb.gen_level2_model(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
+
+
+        # 3. Run turbulent level 3 case, do this until we can extract rotor avg. wind speed directly from IEC cases
+        # mf_turb.run_level3(mf_turb.turbine,mf_turb.controller)
+
+        # 4. Extract disturbance from level3 sims (wind only for now)
+        dist = []
+        for case in mf_turb.case_list:
+            ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
+            ts_file.compute_rot_avg(mf_turb.iec.D/2)
+            u_h         = ts_file['rot_avg'][0,:]
+            tt          = ts_file['t']
+            dist.append({'Time':tt, 'Wind': u_h})
+
+        # save data to object
+        self.disturbance    = dist
+        self.mf_turb        = mf_turb
+
+    def compute(self,omega_pc):
+        # 5. Run level 2 simulation
+        self.mf_turb.controller.omega_pc = omega_pc
+        self.mf_turb.run_level2(self.mf_turb.controller,self.disturbance)
+
+        outputs = compute_outputs(self.mf_turb.level2_out)
 
         return outputs
 
@@ -378,8 +421,20 @@ if __name__ == '__main__':
     # 0. Set up Model, using default input files
     import time
     s = time.time()
+
+    # # Test turbsim file reader
+    # ts_file = TurbSimFile('/Users/dzalkind/Tools/WEIS-2/wind/IEA-15MW/level3_NTM_U16.000000_Seed605.0.bts')
+
+    # ts_file.compute_rot_avg(120)
+
+    # if True:
+    #     plt.plot(ts_file['t'],ts_file['rot_avg'][0,:])
+    #     plt.show()
+
     mf_turb = MF_Turbine()
     mf_turb.n_cores = 4
+
+    mf_turb.compare()
 
     l2_turb = Level2_Turbine(mf_turb)
     # l3_turb = Level3_Turbine(mf_turb)

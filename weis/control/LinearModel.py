@@ -226,15 +226,15 @@ class LinearTurbineModel(object):
             self.ind_fast_outs     = matDict['indOuts'][0] - 1
             # self.ind_fast_outs       = matDict['indOuts'][0][0] - 1
 
-    def get_plant_op(self,u_h,reduce_states):
+    def get_plant_op(self,u_rot,reduce_states):
         '''
-        Interpolate system matrices using wind speed operating point uh_op = mean(u_h)
+        Interpolate system matrices using wind speed operating point wind_speed_op = mean(u_rot)
 
-        inputs: u_h timeseries of wind speeds
+        inputs: u_rot timeseries of wind speeds
 
         '''
 
-        uh_op = np.mean(u_h)
+        wind_speed_op = np.mean(u_rot)
 
         if len(self.u_h) > 1:
             f_A     = sp.interpolate.interp1d(self.u_h,self.A_ops)
@@ -246,17 +246,29 @@ class LinearTurbineModel(object):
             f_y     = sp.interpolate.interp1d(self.u_h,self.y_ops)
             f_x     = sp.interpolate.interp1d(self.u_h,self.x_ops)
 
-            A       = f_A(uh_op)
-            B       = f_B(uh_op)
-            C       = f_C(uh_op)
-            D       = f_D(uh_op)
+            if wind_speed_op < self.u_h.min() or wind_speed_op > self.u_h.max():
+                print('WARNING: Requested linearization operating point outside of range')
+                print('Simulation operating point is ' + str(wind_speed_op) + ' m/s')
+                print('Linearization operating points from ' + str(self.u_h.min()) + ' to ' + str(self.u_h.max()) + ' m/s')
+                print('Results may not be as expected')
 
-            u_op    = f_u(uh_op)
-            x_op    = f_x(uh_op)
-            y_op    = f_y(uh_op)
+            if wind_speed_op < self.u_h.min():
+                wind_speed_op = self.u_h.min()
+                
+            elif wind_speed_op > self.u_h.max():
+                wind_speed_op = self.u_h.max()
+
+            A       = f_A(wind_speed_op)
+            B       = f_B(wind_speed_op)
+            C       = f_C(wind_speed_op)
+            D       = f_D(wind_speed_op)
+
+            u_op    = f_u(wind_speed_op)
+            x_op    = f_x(wind_speed_op)
+            y_op    = f_y(wind_speed_op)
         else:
             print('WARNING: Only one linearization, at '+ str(self.u_h[0]) + ' m/s')
-            print('Simulation operating point is ' + str(uh_op) + 'm/s')
+            print('Simulation operating point is ' + str(wind_speed_op) + 'm/s')
             print('Results may not be as expected')
 
             # Set linear system to only linearization
@@ -279,7 +291,7 @@ class LinearTurbineModel(object):
         # operating points dict
         ops = {}
         ops['u']    = u_op[self.ind_fast_inps]
-        ops['uh']   = uh_op
+        ops['uh']   = wind_speed_op
         ops['y']    = y_op[self.ind_fast_outs]
         ops['x']    = x_op
 
@@ -336,7 +348,7 @@ class LinearTurbineModel(object):
             else:
                 print('WARNING: controller not LinearControlModel() object')
 
-        # linearize input (remove uh_op)
+        # linearize input (remove wind_speed_op)
         u_lin       = np.zeros((1,len(tt)))
         u_lin[0,:]  = u_h - self.ops['uh']
 
