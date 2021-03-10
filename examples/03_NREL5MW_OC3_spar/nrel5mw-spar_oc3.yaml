@@ -305,6 +305,19 @@ components:
             - name: spar_freeboard
               location: [0.0, 0.0, 10.0]
               transition: True
+
+            - name: anchor1
+              location: [853.87, 0.0, -320.0]
+              cylindrical: True
+
+            - name: anchor2
+              location: [853.87, 2.0943951023931953, -320.0] # 120deg
+              cylindrical: True
+
+            - name: anchor3
+              location: [853.87, 4.1887902047863905, -320.0] # 240deg
+              cylindrical: True
+
         members:
             - name: spar
               joint1: spar_keel
@@ -342,17 +355,17 @@ components:
         nodes:
             - name: line1_anchor
               node_type: fixed
-              location: [853.87, 0.0, -320.0]
+              joint: anchor1
               anchor_type: drag_embedment
 
             - name: line2_anchor
               node_type: fixed
-              location: [-426.94, 739.47, -320.0]
+              joint: anchor2
               anchor_type: drag_embedment
 
             - name: line3_anchor
               node_type: fixed
-              location: [-426.94, -739.47, -320.0]
+              joint: anchor3
               anchor_type: drag_embedment
 
             - name: line1_vessel
@@ -680,24 +693,26 @@ control:
         Vout: 25.0
         maxTS: 80.
         rated_power: 5.e+6
+        minOmega: 0.72256
+        maxOmega: 1.26711
     pitch:
-        PC_zeta: 0.7
-        PC_omega: 0.5
-        ps_percent: 0.8
-        max_pitch: 1.57
+        PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
+        PC_omega: 0.5                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
         max_pitch_rate: 0.1745
-        min_pitch: 0
+        min_pitch: 0                      # Minimum pitch angle [rad], {default = 0 degrees}
     torque:
         control_type: tsr_tracking
         tsr: 7.01754386
-        VS_zeta: 0.7
-        VS_omega: 0.2
+        VS_zeta: 0.7                      # Torque controller desired damping ratio [-]
+        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
-        VS_minspd: 0.72256
-        VS_maxspd: 2.00000
+        VS_minspd: 0.72256                # Minimum rotor speed [rad/s], {default = 0 rad/s}
+        VS_maxspd: 2.00000                # Minimum rotor speed [rad/s], {default = 0 rad/s}
     setpoint_smooth:
-        ss_vsgain: 1
-        ss_pcgain: .01
+        ss_vsgain: 1                      # Torque controller setpoint smoother gain bias percentage [%, <= 1 ], {default = 100%}
+        ss_pcgain: .01                    # Pitch controller setpoint smoother gain bias percentage  [%, <= 1 ], {default = 0.1%}
     shutdown:
         limit_type: gen_speed
         limit_value: 2.0
