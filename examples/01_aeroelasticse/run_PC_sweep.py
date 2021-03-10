@@ -9,7 +9,6 @@ from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
 import sys, os, platform, yaml
 import numpy as np
-from pCrunch.CaseGen_Control import append_case_matrix_yaml
 
 # ROSCO 
 from ROSCO_toolbox import controller as ROSCO_controller
