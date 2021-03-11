@@ -63,8 +63,8 @@ class MF_Turbine(object):
         # Turbine Model
         # Select Turbine Model
         model_dir               = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), '01_aeroelasticse/OpenFAST_models')
-        self.FAST_directory     = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
-        self.FAST_InputFile     = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+        self.FAST_directory     = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        self.FAST_InputFile     = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
 
         # Parallel Processing
         self.n_cores            = 1
@@ -281,8 +281,8 @@ class MF_Turbine(object):
         
         lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = self.FAST_directory
-        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
-        lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
+        lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_lin')
+        lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_steady')
         self.FAST_level2_Directory        = lin_fast.FAST_linearDirectory
         lin_fast.debug_level              = 2
         lin_fast.dev_branch               = True
@@ -364,7 +364,7 @@ class Level2_Turbine(object):
     def setup(self,mf_turb):
         
         # 1. Run linearization procedure, post-process linearization results, Load system from OpenFAST .lin files
-        mf_turb.gen_level2_model(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
+        mf_turb.gen_level2_model(dofs=['GenDOF','TwFADOF1'])
 
 
         # 3. Run turbulent level 3 case, do this until we can extract rotor avg. wind speed directly from IEC cases
@@ -434,7 +434,7 @@ if __name__ == '__main__':
     mf_turb = MF_Turbine()
     mf_turb.n_cores = 4
 
-    mf_turb.compare()
+    # mf_turb.compare()
 
     l2_turb = Level2_Turbine(mf_turb)
     # l3_turb = Level3_Turbine(mf_turb)

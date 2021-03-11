@@ -70,7 +70,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.NLinTimes          = 12
 
         #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
-        self.HydroStates        = True  
+        self.HydroStates        = False         # should probably be false by default  
 
         # simulation setup
         self.cores              = 4
@@ -269,6 +269,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}  # modeling inputs, but not yet
         case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}  # modeling inputs, but not yet
         case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}  # modeling inputs, but not yet
+        case_inputs[("Fst","CompSub")] = {'vals':[0], 'group':0}  # SubDyn can't be linearized with this version of OpenFAST, maybe in future
         
         # InflowWind
         case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
