@@ -98,8 +98,8 @@ class WindPark(om.Group):
             self.connect('dac_ivc.te_flap_ext',             'blade.outer_shape_bem.span_ext')
 
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect('blade.ps.s_opt_spar_cap_ss',   'rlds_post.constr.s_opt_spar_cap_ss')
-            self.connect('blade.ps.s_opt_spar_cap_ps',   'rlds_post.constr.s_opt_spar_cap_ps')
+            self.connect('blade.opt_var.s_opt_spar_cap_ss',   'rlds_post.constr.s_opt_spar_cap_ss')
+            self.connect('blade.opt_var.s_opt_spar_cap_ps',   'rlds_post.constr.s_opt_spar_cap_ps')
             
             # Connections to run xfoil for te flaps
             self.connect('blade.pa.chord_param',                  'xf.chord')
