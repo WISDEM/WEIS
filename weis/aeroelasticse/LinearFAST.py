@@ -263,13 +263,12 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TMax")] = {'vals':[self.TMax], 'group':0}
         case_inputs[("Fst","Linearize")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}
-        case_inputs[("Fst","TrimGain")] = {'vals':[1e-4], 'group':0}
-        case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}
+        case_inputs[("Fst","TrimGain")] = {'vals':[1e-4], 'group':0}  # modeling inputs, but not yet
+        case_inputs[("Fst","TrimTol")] = {'vals':[1e-5], 'group':0}  # modeling inputs, but not yet
 
-        case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}
-        case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}
-
-        case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}
+        case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0}  # modeling inputs, but not yet
+        case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}  # modeling inputs, but not yet
+        case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}  # modeling inputs, but not yet
         
         # InflowWind
         case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
@@ -302,6 +301,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
+        # Need to be this for linearization
         case_inputs[("HydroDyn","ExctnMod")] = {'vals':[2], 'group':0}
         case_inputs[("HydroDyn","RdtnMod")] = {'vals':[2], 'group':0}
         case_inputs[("HydroDyn","DiffQTF")] = {'vals':[0], 'group':0}

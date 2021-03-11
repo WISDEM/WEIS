@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 import os
 import weis.control.LinearModel as lin_mod
-import weis.aeroelasticse.LinearFAST as lin_fast
+from weis.aeroelasticse.LinearFAST import LinearFAST
 from ROSCO_toolbox import utilities as ROSCO_utilities
 from ROSCO_toolbox.ofTools.fast_io import output_processing
 from ROSCO_toolbox import controller as ROSCO_controller
@@ -27,8 +27,10 @@ if __name__ == '__main__':
 
     weis_dir = os.path.dirname(os.path.dirname(os.path.dirname( __file__)))
     
+    lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
+    
     # 0. Load linear models from gen_linear_model() in WEIS/wies/aeroelasticse/LinearFAST.py
-    lin_turbine = lin_fast.gen_linear_model([16])
+    lin_turbine = lin_fast.gen_linear_model()
 
 
     # 1. Set up linear turbine model by running mbc transformation

@@ -264,13 +264,13 @@ class PoseOptimization(object):
             else:
                 print('WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['frequency']['flap_above_3P']:
+        if blade_constraints['frequency']['flap_3P']:
             if self.blade_opt['structure']['spar_cap_ss']['flag'] or self.blade_opt['structure']['spar_cap_ps']['flag']:
                 wt_opt.model.add_constraint('rs.constr.constr_flap_f_margin', upper= 0.0)
             else:
                 print('WARNING: the blade flap frequencies are set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
-        if blade_constraints['frequency']['edge_above_3P']:
+        if blade_constraints['frequency']['edge_3P']:
             wt_opt.model.add_constraint('rs.constr.constr_edge_f_margin', upper= 0.0)
 
         # if blade_constraints['frequency']['flap_below_3P']:

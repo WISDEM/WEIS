@@ -14,6 +14,8 @@ from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
+from weis.aeroelasticse.LinearFAST       import LinearFAST
+
 
 from pCrunch import Analysis, pdTools, Processing
 import fatpack
@@ -861,9 +863,14 @@ class FASTLoadCases(ExplicitComponent):
             channels[var] = True
 
         # FAST wrapper setup
-        fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
+        # JJ->DZ: here is the first point in logic for linearization 
+        if self.FASTpref['linearization']:
+            fastBatch = LinearFAST(FAST_ver=self.FAST_ver)
+        else:
+            fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
         fastBatch.channels = channels
 
+        # JJ->DZ: we need to add the options and settings from `gen_linear_model` here
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
@@ -879,15 +886,25 @@ class FASTLoadCases(ExplicitComponent):
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
-        # Run FAST
-        if self.mpi_run:
-            FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
+        # JJ->DZ: the correct logic for when to run nonlinear or linearization 
+        # may need to be tweaked here.
+        # JJ->DZ: I'm hoping most of the options in `runFAST_linear` can be used as-is.
+        if self.FASTpref['linearization']:
+            linear_outputs = fastBatch.runFAST_linear()
+            
+            # JJ->DZ: this is where we can get hacky; maybe we break the normal
+            # workflow to just grab the linear outputs
+            return linear_outputs
         else:
-            if self.cores == 1:
-                FAST_Output = fastBatch.run_serial()
+            # Run FAST
+            if self.mpi_run:
+                FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
             else:
-                FAST_Output = fastBatch.run_multi(self.cores)
-
+                if self.cores == 1:
+                    FAST_Output = fastBatch.run_serial()
+                else:
+                    FAST_Output = fastBatch.run_multi(self.cores)
+                    
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
