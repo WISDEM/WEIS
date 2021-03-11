@@ -87,169 +87,8 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         super(LinearFAST, self).__init__()
 
-    def runFAST_steady(self):
-        """ 
-        Run batch of steady state cases for initial conditions, in serial or in parallel
-        TODO: determine whether we can skip this step
-        """
 
-        self.FAST_runDirectory = self.FAST_steadyDirectory
-
-        case_inputs = {}
-        case_inputs[("Fst","TMax")] = {'vals':[self.TMax], 'group':0}
-        case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
-        case_inputs[("Fst","OutFileFmt")] = {'vals':[2], 'group':0}
-
-        # Wind Speeds
-        case_inputs[("InflowWind","HWindSpeed")] = {'vals':self.WindSpeeds, 'group':1}
-
-        if platform.system() == 'Windows':
-            path2dll = os.path.join(self.weis_dir, 'local/lib/libdiscon.dll')
-        elif platform.system() == 'Darwin':
-            path2dll = os.path.join(self.weis_dir, 'local/lib/libdiscon.dylib')
-        else:
-            path2dll = os.path.join(self.weis_dir, 'local/lib/libdiscon.so')
-
-        case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
-
-        channels = {}
-        for var in ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxb1", "TipDyb1", "TipDxc2", "TipDyc2", "TipDzc2", "TipDxb2", "TipDyb2", "TipDxc3", "TipDyc3", "TipDzc3", "TipDxb3", "TipDyb3", "RootMxc1", "RootMyc1", "RootMzc1", "RootMxb1", "RootMyb1", "RootMxc2", "RootMyc2", "RootMzc2", "RootMxb2", "RootMyb2", "RootMxc3", "RootMyc3", "RootMzc3", "RootMxb3", "RootMyb3", "TwrBsMxt", "TwrBsMyt", "TwrBsMzt", "GenPwr", "GenTq", "RotThrust", "RtAeroCp", "RtAeroCt", "RotSpeed", "BldPitch1", "TTDspSS", "TTDspFA", "NacYaw", "Wind1VelX", "Wind1VelY", "Wind1VelZ", "LSSTipMxa","LSSTipMya","LSSTipMza","LSSTipMxs","LSSTipMys","LSSTipMzs","LSShftFys","LSShftFzs", "TipRDxr", "TipRDyr", "TipRDzr"]:
-            channels[var] = True
-
-        self.channels = channels
-
-        # # Initial Conditions: less important, trying to find them here
-        # case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[7.55], 'group':0}
-        # case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[3.823], 'group':0}
-        # case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
-        # case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-        
-        case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_steadyDirectory, namebase='steady')
-
-        self.case_list = case_list
-        self.case_name_list = case_name_list
-
-        outfiles = glob.glob(os.path.join(self.FAST_steadyDirectory,'steady*.outb'))
-
-        if self.overwrite or (len(outfiles) != len(self.WindSpeeds)): # if the steady output files are all there
-            if self.cores > 1:
-                self.run_multi(self.cores)
-            else:
-                self.run_serial()
-
-        
-    def postFAST_steady(self):
-        """
-        Post process results to get steady state information for all initial conditions at each wind speed
-        Save as ss_ops.yaml for 
-        """
-
-        # Plot steady states vs wind speed
-        PLOT = 0
-
-        # Define input files paths
-        output_dir      = self.FAST_steadyDirectory
-
-        # Find all outfiles
-        outfiles = []
-        for file in os.listdir(output_dir):
-            if file.endswith('.outb'):
-                outfiles.append(os.path.join(output_dir,file))
-            # elif file.endswith('.out') and not file.endswith('.MD.out'):  
-            #     outfiles.append(os.path.join(output_dir,file))
-
-
-        # Initialize processing classes
-        fp = Processing.FAST_Processing()
-
-        # Set some processing parameters
-        fp.OpenFAST_outfile_list        = outfiles
-        fp.t0                           = self.TMax - 400            # make sure this is less than simulation time
-        fp.parallel_analysis            = self.cores > 1
-        fp.parallel_cores               = self.cores
-        fp.results_dir                  = os.path.join(output_dir, 'stats')
-        fp.verbose                      = True
-        fp.save_LoadRanking             = True
-        fp.save_SummaryStats            = True
-
-        # Load and save statistics and load rankings
-        if self.overwrite or not os.path.exists(os.path.join(output_dir,'ss_ops.yaml')):
-            stats, _ =fp.batch_processing()
-
-            if isinstance(stats,list):
-                stats = stats[0]
-
-            windSortInd = np.argsort(stats['Wind1VelX']['mean'])
-
-            #            FAST output name,  FAST IC name
-            ssChannels = [['Wind1VelX',     'Wind1VelX'],  
-                        ['OoPDefl1',        'OoPDefl'],
-                        ['IPDefl1',         'IPDefl'],
-                        ['BldPitch1',       'BlPitch1'],
-                        ['RotSpeed',        'RotSpeed'],
-                        ['TTDspFA',         'TTDspFA'],
-                        ['TTDspSS',         'TTDspSS'],
-                        ['PtfmSurge',       'PtfmSurge'],
-                        ['PtfmSway',        'PtfmSway'],
-                        ['PtfmHeave',       'PtfmHeave'],
-                        ['PtfmRoll',        'PtfmRoll'],
-                        ['PtfmYaw',         'PtfmYaw'],
-                        ['PtfmPitch',       'PtfmPitch'],
-                        ]
-
-            ssChanData = {}
-            for iChan in ssChannels:
-                try:
-                    ssChanData[iChan[1]] = np.array(stats[iChan[0]]['mean'])[windSortInd].tolist()
-                except:
-                    print('Warning: ' + iChan[0] + ' is is not in OutList')
-
-
-            if PLOT:
-                fig1 = plt.figure()
-                ax1 = fig1.add_subplot(211)
-                ax2 = fig1.add_subplot(212)
-
-                ax1.plot(ssChanData['Wind1VelX'],ssChanData['BlPitch1'])
-                ax2.plot(ssChanData['Wind1VelX'],ssChanData['RotSpeed'])
-
-
-                fig2 = plt.figure()
-                ax1 = fig2.add_subplot(411)
-                ax2 = fig2.add_subplot(412)
-                ax3 = fig2.add_subplot(413)
-                ax4 = fig2.add_subplot(414)
-
-                ax1.plot(ssChanData['Wind1VelX'],ssChanData['OoPDefl'])
-                ax2.plot(ssChanData['Wind1VelX'],ssChanData['IPDefl'])
-                ax3.plot(ssChanData['Wind1VelX'],ssChanData['TTDspFA'])
-                ax4.plot(ssChanData['Wind1VelX'],ssChanData['TTDspSS'])
-
-                fig3 = plt.figure()
-                ax1 = fig3.add_subplot(611)
-                ax2 = fig3.add_subplot(612)
-                ax3 = fig3.add_subplot(613)
-                ax4 = fig3.add_subplot(614)
-                ax5 = fig3.add_subplot(615)
-                ax6 = fig3.add_subplot(616)
-
-                ax1.plot(ssChanData['Wind1VelX'],ssChanData['PtfmSurge'])
-                ax2.plot(ssChanData['Wind1VelX'],ssChanData['PtfmSway'])
-                ax3.plot(ssChanData['Wind1VelX'],ssChanData['PtfmHeave'])
-                ax4.plot(ssChanData['Wind1VelX'],ssChanData['PtfmRoll'])
-                ax5.plot(ssChanData['Wind1VelX'],ssChanData['PtfmPitch'])
-                ax6.plot(ssChanData['Wind1VelX'],ssChanData['PtfmYaw'])
-
-                plt.show()
-
-
-            # output steady states to yaml
-            save_yaml(output_dir,'ss_ops.yaml',ssChanData)
-
-
-
-
-    def runFAST_linear(self):
+    def gen_linear_cases(self):
         """ 
         Example of running a batch of cases, in serial or in parallel
         """
@@ -380,17 +219,9 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Generate Cases
         case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_linearDirectory, namebase='lin')
 
-        self.case_list = case_list
-        self.case_name_list = case_name_list
+        return case_list, case_name_list
 
-        # Let runFAST_pywrapper check for files
-        if not self.overwrite:
-            self.overwrite_outfiles = False  
-
-        if self.cores > 1:
-            self.run_multi(self.cores)
-        else:
-            self.run_serial()
+        
         
 
 
@@ -419,14 +250,18 @@ class LinearFAST(runFAST_pywrapper_batch):
         else:
             self.HydroStates      = False   # taking out to speed up for test
 
-        # run steady state sims
-        # self.runFAST_steady()
-
-        # process results 
-        # self.postFAST_steady()
     
         # run linearizations
-        self.runFAST_linear()
+        self.case_list, self.case_name_list = self.gen_linear_cases()
+
+        # Let runFAST_pywrapper check for files
+        if not self.overwrite:
+            self.overwrite_outfiles = False  
+
+        if self.cores > 1:
+            self.run_multi(self.cores)
+        else:
+            self.run_serial()
 
 
 
@@ -437,26 +272,26 @@ if __name__ == '__main__':
     # fast info
     lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( os.path.abspath(__file__ ) ) ) ) + os.sep
     
-    lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
-    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
-    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
+    lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
+    lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_steady')
+    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_lin')
     lin_fast.debug_level              = 2
     lin_fast.dev_branch               = True
     lin_fast.write_yaml               = True
     
     lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
-    lin_fast.WindSpeeds                 = [8.,10.,12.,14.,24.]
-    lin_fast.DOFs                       = ['GenDOF'] #,'TwFADOF1','PtfmPDOF']  # enable with 
+    lin_fast.WindSpeeds                 = [14,16,18]
+    lin_fast.DOFs                       = ['GenDOF','TwFADOF1'] #,'PtfmPDOF']  # enable with 
     lin_fast.TMax                       = 600   # should be 1000-2000 sec or more with hydrodynamic states
     lin_fast.NLinTimes                  = 12
 
-    lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast/install/bin/openfast'
+    # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast/install/bin/openfast'
 
     # simulation setup
     lin_fast.cores            = 8
 
     # overwrite steady & linearizations
-    lin_fast.overwrite        = False
+    lin_fast.overwrite        = True
 
-    lin_fast.gen_linear_model(np.arange(5,25,4,dtype=float).tolist())
+    lin_fast.gen_linear_model()
