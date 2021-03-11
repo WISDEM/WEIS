@@ -66,26 +66,33 @@ class LinearTurbineModel(object):
 
 
                 # Matrices, TODO: automate index selection here
+                if False:   # reduce I/O of matrices to something more reasonable
+                    PitchDesc       = 'ED Extended input: collective blade-pitch command, rad'
+                    WindDesc        = 'IfW Extended input: horizontal wind speed (steady/uniform wind), m/s'
+                    GenDesc         = 'ED GenSpeed, (rpm)'
+                    TwrDesc         = 'ED TwrBsMyt, (kN-m)'
+                    AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
+                    PltPitchDesc    = 'ED PtfmPitch, (deg)'
+                    NacIMUFADesc    = 'ED NcIMURAys, (deg/s^2)'
 
-                PitchDesc       = 'ED Extended input: collective blade-pitch command, rad'
-                WindDesc        = 'IfW Extended input: horizontal wind speed (steady/uniform wind), m/s'
-                GenDesc         = 'ED GenSpeed, (rpm)'
-                TwrDesc         = 'ED TwrBsMyt, (kN-m)'
-                AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
-                PltPitchDesc    = 'ED PtfmPitch, (deg)'
-                NacIMUFADesc    = 'ED NcIMURAys, (deg/s^2)'
+                    indPitch        = matData['DescCntrlInpt'].index(PitchDesc)
+                    indWind         = matData['DescCntrlInpt'].index(WindDesc)
+                    indGen          = matData['DescOutput'].index(GenDesc)
+                    indTwr          = matData['DescOutput'].index(TwrDesc)
+                    indAz           = matData['DescStates'].index(AzDesc)
+                    indPltPitch     = matData['DescOutput'].index(PltPitchDesc)
+                    indNacIMU       = matData['DescOutput'].index(NacIMUFADesc)
 
-                indPitch        = matData['DescCntrlInpt'].index(PitchDesc)
-                indWind         = matData['DescCntrlInpt'].index(WindDesc)
-                indGen          = matData['DescOutput'].index(GenDesc)
-                indTwr          = matData['DescOutput'].index(TwrDesc)
-                indAz           = matData['DescStates'].index(AzDesc)
-                indPltPitch     = matData['DescOutput'].index(PltPitchDesc)
-                indNacIMU       = matData['DescOutput'].index(NacIMUFADesc)
+                    indOuts         = np.array([indGen,indTwr,indPltPitch,indNacIMU]).reshape(-1,1)
+                    indInps         = np.array([indWind,indPitch]).reshape(-1,1)
+                    # TODO: add torque
+                
+                else:  # keep all inputs and outputs
+                    indInps = np.arange(0,matData['NumInputs']).reshape(-1,1)
+                    indOuts = np.arange(0,matData['NumOutputs']).reshape(-1,1)
 
-                indOuts         = np.array([indGen,indTwr,indPltPitch,indNacIMU]).reshape(-1,1)
-                indInps         = np.array([indWind,indPitch]).reshape(-1,1)
-                # TODO: add torque
+                    AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
+                    indAz           = matData['DescStates'].index(AzDesc)
 
                 # remove azimuth state
                 indStates       = np.arange(0,matData['NumStates'])
@@ -154,6 +161,11 @@ class LinearTurbineModel(object):
             # Input/Output Indices
             self.ind_fast_inps     = indInps.squeeze()
             self.ind_fast_outs     = indOuts.squeeze()
+
+            # Input, Output, State Descriptions
+            self.DescCntrlInpt      = matData['DescCntrlInpt']
+            self.DescStates         = matData['DescStates']
+            self.DescOutput         = matData['DescOutput']
 
         else:  # from matlab .mat file m
             matDict = loadmat(lin_file)
