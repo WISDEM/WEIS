@@ -5,8 +5,8 @@ import os, time, sys
 
 ## File management
 run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-wisdem_examples         = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep + "WISDEM" + os.sep + "examples"
-fname_wt_input          = wisdem_examples  + os.sep + "09_floating" + os.sep + "nrel5mw-spar_oc3.yaml"
+wisdem_examples         = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "WISDEM", "examples")
+fname_wt_input          = os.path.join(wisdem_examples, "09_floating", "nrel5mw-spar_oc3.yaml")
 fname_modeling_options  = run_dir + os.sep + "modeling_options.yaml"
 fname_analysis_options  = run_dir + os.sep + "analysis_options.yaml"
 
