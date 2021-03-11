@@ -10,12 +10,12 @@ from wisdem.commonse.utilities              import nodal2sectional
 from wisdem.towerse.tower                   import get_nfull
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from wisdem.rotorse.geometry_tools.geometry import remap2grid
-from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
-from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper, runFAST_pywrapper_batch
-from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
-from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
-from weis.aeroelasticse.LinearFAST       import LinearFAST
-
+from weis.aeroelasticse.FAST_writer         import InputWriter_OpenFAST
+from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.FAST_post           import FAST_IO_timeseries
+from weis.aeroelasticse.CaseGen_IEC         import CaseGen_General, CaseGen_IEC
+from weis.aeroelasticse.LinearFAST          import LinearFAST
+from weis.control.LinearModel               import LinearTurbineModel, LinearControlModel
 
 from pCrunch import Analysis, pdTools, Processing
 import fatpack
@@ -336,6 +336,14 @@ class FASTLoadCases(ExplicitComponent):
             # Run FAST with ElastoDyn
 
             FAST_Output, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+
+            if self.FASTpref['linearization']:
+                LinearTurbine = LinearTurbineModel(self.FAST_runDirectory)
+
+                # DZ->JJ: the info you seek is in LinearTurbine
+                # DZ TODO: post process operating points, do Level2 simulation, etc.
+                print('here')
+
             self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
@@ -838,7 +846,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2"]
-        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "BldPitch1", "BldPitch2", "Azimuth"]
+        channels_out += ["RtAeroCp", "RtAeroCt", "RotSpeed", "NacYaw",  "GenPwr", "GenTq", "GenSpeed", "BldPitch1", "BldPitch2", "Azimuth"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
@@ -848,6 +856,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
         channels_out += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
+        channels_out += ["PtfmSurge", "PtfmSway", "PtfmHeave", "PtfmRoll", "PtfmPitch", "PtfmYaw","NcIMURAys"]
         if self.n_blades > 2:
             channels_out += ["TipDxc3", "TipDyc3", "TipDzc3", "RootMxc3", "RootMyc3", "RootMzc3", "TipDxb3", "TipDyb3", "TipDzb3", "RootMxb3",
                              "RootMyb3", "RootMzb3", "RootFxc3", "RootFyc3", "RootFzc3", "RootFxb3", "RootFyb3", "RootFzb3", "BldPitch3"]
@@ -865,7 +874,12 @@ class FASTLoadCases(ExplicitComponent):
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization 
         if self.FASTpref['linearization']:
-            fastBatch = LinearFAST(FAST_ver=self.FAST_ver)
+            fastBatch               = LinearFAST(FAST_ver=self.FAST_ver)
+            fastBatch.fst_vt        = fst_vt
+            fastBatch.cores         = self.cores
+            fastBatch.WindSpeeds    = self.FASTpref['lin_wind_speeds']      # linearization wind speeds
+
+            case_list, case_name_list = fastBatch.gen_linear_cases(inputs)
         else:
             fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
         fastBatch.channels = channels
@@ -873,6 +887,7 @@ class FASTLoadCases(ExplicitComponent):
         # JJ->DZ: we need to add the options and settings from `gen_linear_model` here
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
+
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
@@ -889,22 +904,15 @@ class FASTLoadCases(ExplicitComponent):
         # JJ->DZ: the correct logic for when to run nonlinear or linearization 
         # may need to be tweaked here.
         # JJ->DZ: I'm hoping most of the options in `runFAST_linear` can be used as-is.
-        if self.FASTpref['linearization']:
-            linear_outputs = fastBatch.runFAST_linear()
-            
-            # JJ->DZ: this is where we can get hacky; maybe we break the normal
-            # workflow to just grab the linear outputs
-            return linear_outputs
+
+        if self.mpi_run:
+            FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
-            # Run FAST
-            if self.mpi_run:
-                FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
+            if self.cores == 1:
+                FAST_Output = fastBatch.run_serial()
             else:
-                if self.cores == 1:
-                    FAST_Output = fastBatch.run_serial()
-                else:
-                    FAST_Output = fastBatch.run_multi(self.cores)
-                    
+                FAST_Output = fastBatch.run_multi(self.cores)
+                   
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()

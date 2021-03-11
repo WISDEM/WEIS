@@ -65,7 +65,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.v_rated            = 11         # needed as input from RotorSE or something, to determine TrimCase for linearization
         self.GBRatio            = 1
         self.WindSpeeds         = [15]
-        self.DOFs               = ['GenDOF','TwFADOF1','PtfmPDOF']
+        self.DOFs               = ['GenDOF','TwFADOF1']
         self.TMax               = 2000.
         self.NLinTimes          = 12
 
@@ -88,13 +88,15 @@ class LinearFAST(runFAST_pywrapper_batch):
         super(LinearFAST, self).__init__()
 
 
-    def gen_linear_cases(self):
+    def gen_linear_cases(self,inputs={}):
         """ 
         Example of running a batch of cases, in serial or in parallel
-        """
 
-        # ss_opFile = os.path.join(self.FAST_steadyDirectory,'ss_ops.yaml')
-        self.FAST_runDirectory = self.FAST_linearDirectory
+        inputs: dict from openmdao_openfast, required for this method:
+            - pitch_init
+            - U_init
+
+        """        
 
         ## Generate case list using General Case Generator
         ## Specify several variables that change independently or collectly
@@ -122,9 +124,13 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Servodyn Inputs
         case_inputs[("ServoDyn","PCMode")] = {'vals':[0], 'group':0}
         case_inputs[("ServoDyn","VSContrl")] = {'vals':[1], 'group':0}
+        case_inputs[("ServoDyn","HSSBrMode")] = {'vals':[0], 'group':0}
 
-        # Torque Control: these are turbine specific, update later based on ROSCO
-        rosco_inputs = ROSCO_utilities.read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
+        # Torque Control: these are control/turbine specific, pull from ROSCO input file, if available
+        if 'DLL_InFile' in self.fst_vt['ServoDyn']:     # if using file inputs
+            rosco_inputs = ROSCO_utilities.read_DISCON(self.fst_vt['ServoDyn']['DLL_InFile'])
+        else:       # if using fst_vt inputs from openfast_openmdao
+            rosco_inputs = self.fst_vt['DISCON_in']
 
         case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi * 0.5], 'group':0}  # convert to rpm and use 95% of rated
         case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[rosco_inputs['VS_RtTq']], 'group':0}
@@ -132,9 +138,19 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
 
         # set initial pitch to fine pitch (may be problematic at high wind speeds)
-        case_inputs[('ElastoDyn','BlPitch1')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
-        case_inputs[('ElastoDyn','BlPitch2')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
-        case_inputs[('ElastoDyn','BlPitch3')] = {'vals': [rosco_inputs['PC_FinePit']], 'group': 0}
+        if 'pitch_init' in inputs:
+            pitch_init = np.interp(
+                self.WindSpeeds,inputs['U_init'],
+                inputs['pitch_init'],
+                left=inputs['pitch_init'][0],
+                right=inputs['pitch_init'][-1])
+            case_inputs[('ElastoDyn','BlPitch1')] = {'vals': pitch_init, 'group': 0}
+            case_inputs[('ElastoDyn','BlPitch2')] = {'vals': pitch_init, 'group': 0}
+            case_inputs[('ElastoDyn','BlPitch3')] = {'vals': pitch_init, 'group': 0}
+        else:
+            case_inputs[('ElastoDyn','BlPitch1')] = {'vals': [0], 'group': 0}
+            case_inputs[('ElastoDyn','BlPitch2')] = {'vals': [0], 'group': 0}
+            case_inputs[('ElastoDyn','BlPitch3')] = {'vals': [0], 'group': 0}
 
         # Set initial rotor speed to rated
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi], 'group':0}  # convert to rpm and use 95% of rated
@@ -217,7 +233,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         
 
         # Generate Cases
-        case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_linearDirectory, namebase='lin')
+        case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_runDirectory, namebase='lin')
 
         return case_list, case_name_list
 
@@ -232,6 +248,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         Only needs to be performed once for each model
 
         """
+        self.FAST_runDirectory = self.FAST_linearDirectory
 
         # do a read to get gearbox ratio
         fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)

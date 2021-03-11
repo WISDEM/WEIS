@@ -59,8 +59,14 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 fast.path2dll = self.modeling_options['openfast']['file_management']['path2dll']
                 fast.execute()
             
-            if self.modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2 and self.modeling_options['openfast']['dlc_settings']['run_power_curve'] == False and self.modeling_options['openfast']['dlc_settings']['run_IEC'] == False:
-                raise Exception('WEIS is set to run OpenFAST, but both flags for power curve and IEC cases are set to False among the modeling options. Set at least one of the two to True to proceed.')
+            if (
+                self.modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2 and 
+                self.modeling_options['openfast']['dlc_settings']['run_power_curve'] == False and 
+                self.modeling_options['openfast']['dlc_settings']['run_IEC'] == False and
+                self.modeling_options['openfast']['linearization'] == False
+            ):
+                raise Exception('WEIS is set to run OpenFAST, but flags for power curve, IEC cases, and linearization are set to False among the modeling options. \
+                    Set at least one of the two to True to proceed.')
         
         # XFoil
         if not os.path.isfile(self.modeling_options["xfoil"]["path"]) and self.modeling_options['Level3']['ROSCO']['Flp_Mode']:
