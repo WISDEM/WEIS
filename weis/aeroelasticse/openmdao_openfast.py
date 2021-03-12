@@ -19,6 +19,7 @@ from weis.control.LinearModel               import LinearTurbineModel, LinearCon
 
 from pCrunch import Analysis, pdTools, Processing
 import fatpack
+import pickle
 
 if MPI:
     from mpi4py   import MPI
@@ -325,6 +326,12 @@ class FASTLoadCases(ExplicitComponent):
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
         
+        if self.FASTpref['linearization']:
+            self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
+            ABCD_list = []
+            with open(self.lin_pkl_file_name, 'wb') as handle:
+                pickle.dump(ABCD_list, handle)
+        
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
@@ -342,8 +349,25 @@ class FASTLoadCases(ExplicitComponent):
 
                 # DZ->JJ: the info you seek is in LinearTurbine
                 # DZ TODO: post process operating points, do Level2 simulation, etc.
-                print('here')
-
+                print('Saving ABCD matrices!')
+                ABCD = {
+                    'A' : LinearTurbine.A_ops,
+                    'B' : LinearTurbine.B_ops,
+                    'C' : LinearTurbine.C_ops,
+                    'D' : LinearTurbine.D_ops,
+                    
+                    }
+                with open(self.lin_pkl_file_name, 'rb') as handle:
+                    ABCD_list = pickle.load(handle)
+                    
+                ABCD_list.append(ABCD)
+                
+                with open(self.lin_pkl_file_name, 'wb') as handle:
+                    pickle.dump(ABCD_list, handle)
+                    
+                print("All ABCDs so far")
+                print(ABCD_list)
+                
             self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
@@ -900,10 +924,6 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.channels          = channels
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
-
-        # JJ->DZ: the correct logic for when to run nonlinear or linearization 
-        # may need to be tweaked here.
-        # JJ->DZ: I'm hoping most of the options in `runFAST_linear` can be used as-is.
 
         if self.mpi_run:
             FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)

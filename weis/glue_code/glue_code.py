@@ -90,8 +90,8 @@ class WindPark(om.Group):
             
             # Post-processing
             self.add_subsystem('outputs_2_screen_weis',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
-            if opt_options['opt_flag']:
-                self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
+            # if opt_options['opt_flag']:
+            #     self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
 
             # Connections to blade 
             self.connect('dac_ivc.te_flap_end',             'blade.outer_shape_bem.span_end')

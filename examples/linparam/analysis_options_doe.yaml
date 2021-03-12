@@ -12,12 +12,15 @@ design_variables:
 merit_figure: Cp  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
 driver:
+  optimization:
+    flag: False           # Flag to enable optimization
   design_of_experiments:
     flag: True            # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing
-    generator: Uniform    # Type of input generator. (Uniform)
-    num_samples: 2        # number of samples for (Uniform only)
+    generator: FullFact    # Type of input generator. (Uniform)
+    num_samples: 5        # number of samples for (Uniform only)
 
 recorder:
-    flag: False             # Flag to activate OpenMDAO recorder
+    flag: True             # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
+    just_dvs: True          
