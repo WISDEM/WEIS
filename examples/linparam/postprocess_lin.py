@@ -31,11 +31,7 @@ import matplotlib.pyplot as plt
 A_plot = np.array(A_plot)
 tower_dia = np.array(tower_dia)
 
-print(tower_dia)
-print(tower_dia[:, 0])
-print(A_plot)
-
-plt.scatter(tower_dia[:, 0], A_plot)
+plt.scatter(tower_dia[:5, 0], A_plot[:5])
 
 plt.xlabel('Tower base diameter, m')
 plt.ylabel('A[1, 1]')

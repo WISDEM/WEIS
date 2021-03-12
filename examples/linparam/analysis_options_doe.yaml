@@ -9,8 +9,6 @@ design_variables:
       lower_bound: 3.87
       upper_bound: 8.0
 
-merit_figure: Cp  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
-
 driver:
   optimization:
     flag: False           # Flag to enable optimization
