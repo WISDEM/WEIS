@@ -98,8 +98,8 @@ class WindPark(om.Group):
             self.connect('dac_ivc.te_flap_ext',             'blade.outer_shape_bem.span_ext')
 
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect('blade.ps.s_opt_spar_cap_ss',   'rlds_post.constr.s_opt_spar_cap_ss')
-            self.connect('blade.ps.s_opt_spar_cap_ps',   'rlds_post.constr.s_opt_spar_cap_ps')
+            self.connect('blade.opt_var.s_opt_spar_cap_ss',   'rlds_post.constr.s_opt_spar_cap_ss')
+            self.connect('blade.opt_var.s_opt_spar_cap_ps',   'rlds_post.constr.s_opt_spar_cap_ps')
             
             # Connections to run xfoil for te flaps
             self.connect('blade.pa.chord_param',                  'xf.chord')
@@ -226,7 +226,8 @@ class WindPark(om.Group):
             self.connect('drivese.above_yaw_cm',            'aeroelastic.nacelle_cm')
             self.connect('drivese.generator_I',             'aeroelastic.GenIner', src_indices=[0])
             self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio')
-            self.connect('rp.powercurve.rated_efficiency', 'aeroelastic.generator_efficiency')
+            self.connect('rp.powercurve.rated_efficiency',  'aeroelastic.generator_efficiency')
+            self.connect('control.max_pitch_rate' ,         'aeroelastic.max_pitch_rate')
             self.connect('nacelle.gearbox_efficiency',      'aeroelastic.gearbox_efficiency')
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
@@ -299,6 +300,7 @@ class WindPark(om.Group):
             self.connect('xf.cd_interp_flaps',              'aeroelastic.airfoils_cd')
             self.connect('xf.cm_interp_flaps',              'aeroelastic.airfoils_cm')
             self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
+            self.connect('blade.interp_airfoils.ac_interp', 'aeroelastic.ac')
             self.connect('re.rhoA',                    'aeroelastic.beam:rhoA')
             self.connect('re.EIxx',                    'aeroelastic.beam:EIxx')
             self.connect('re.EIyy',                    'aeroelastic.beam:EIyy')

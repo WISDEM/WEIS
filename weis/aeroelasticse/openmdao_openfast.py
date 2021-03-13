@@ -87,6 +87,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
+        self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -133,6 +134,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
         self.add_input('theta',             val=np.zeros(n_span), units='deg', desc='twist at airfoil locations')
         self.add_input('rthick',            val=np.zeros(n_span), desc='relative thickness of airfoil distribution')
+        self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
         self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
@@ -460,7 +462,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
@@ -695,11 +700,13 @@ class FASTLoadCases(ExplicitComponent):
         
         fst_vt['AeroDyn15']['af_coord'] = []
         fst_vt['AeroDyn15']['rthick']   = np.zeros(self.n_span)
+        fst_vt['AeroDyn15']['ac']   = np.zeros(self.n_span)
         for i in range(self.n_span):
             fst_vt['AeroDyn15']['af_coord'].append({})
             fst_vt['AeroDyn15']['af_coord'][i]['x']  = inputs['coord_xy_interp'][i,:,0]
             fst_vt['AeroDyn15']['af_coord'][i]['y']  = inputs['coord_xy_interp'][i,:,1]
             fst_vt['AeroDyn15']['rthick'][i]         = inputs['rthick'][i]
+            fst_vt['AeroDyn15']['ac'][i]             = inputs['ac'][i]
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]

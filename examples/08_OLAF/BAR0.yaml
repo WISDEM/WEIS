@@ -662,7 +662,7 @@ materials:
    -  {name: resin, description: epoxy, E: 1000000.0, nu: 0.3, G: 312500.0, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 0.0, Xc: 0.0, S: 0.0, rho: 1150.0, alpha: 0.0, orth: 0.0, unit_cost: 3.63}
    -  {name: steel, description: Steel of the tower, source: Standard steel with higher density to account for auxiliary systems of the tower (elevator stairs etc), orth: 0.0, rho: 8500.0, alpha: 0.0, E: 210000000000.0, nu: 0.3, G: 65625000000.0, GIc: 0.0, GIIc: 0.0, alp0: 0.0, Xt: 360000000.0, Xc: 360000000.0, S: 0.0, Xy: 450000000.0}
 control:
-    supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 85.0, rated_power: 5000000.0, minOmega: 0.0, maxOmega: 0.9927432785343746}
+    supervisory: {Vin: 4.0, Vout: 25.0, maxTS: 85.0, rated_power: 5000000.0}
     pitch: {PC_zeta: 1.1, PC_omega: 0.2, ps_percent: 0.8, max_pitch: 1.57, max_pitch_rate: 0.03488888888888889, min_pitch: 0.0}
     torque: {control_type: tsr_tracking, tsr: 10.5, VS_zeta: 0.5, VS_omega: 0.1, max_torque_rate: 4500000.0, VS_minspd: 0.0, VS_maxspd: 2.0}
     setpoint_smooth: {ss_vsgain: 1, ss_pcgain: 0.001}
