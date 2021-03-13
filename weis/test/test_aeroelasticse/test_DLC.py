@@ -2,21 +2,18 @@
 Test the DLCs in OpenFAST through aeroelasticSE
 """
 
-import copy
 import os
 import platform
-import sys
 import unittest
 
 import numpy as np
 
 from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
 from weis.aeroelasticse.FAST_post import FAST_IO_timeseries
-from weis.aeroelasticse.runFAST_pywrapper import (
-    runFAST_pywrapper,
-    runFAST_pywrapper_batch,
-)
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
+
+this_file_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 class TestDLC(unittest.TestCase):
@@ -255,8 +252,9 @@ class TestDLC(unittest.TestCase):
         fastBatch.case_list = case_list
         fastBatch.case_name_list = case_name_list
         fastBatch.debug_level = 2
+        fastBatch.keep_time = True
 
-        out = fastBatch.run_serial()
+        _,_,_,out = fastBatch.run_serial()
 
         train = False
         keys_to_skip = [
@@ -265,7 +263,6 @@ class TestDLC(unittest.TestCase):
             "Wind1VelZ",
         ]
 
-        this_file_dir = os.path.dirname(os.path.realpath(__file__))
         compare_regression_values(
             out,
             "DLC_regression_values_1.pkl",
@@ -283,7 +280,7 @@ class TestDLC(unittest.TestCase):
             run_dir2, "OpenFAST_models", "IEA-15-240-RWT", "IEA-15-240-RWT-UMaineSemi"
         )  # Path to fst directory files
 
-        out = fastBatch.run_serial()
+        _,_,_,out = fastBatch.run_serial()
 
         compare_regression_values(
             out,

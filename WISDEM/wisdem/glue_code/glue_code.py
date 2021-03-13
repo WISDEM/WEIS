@@ -152,8 +152,8 @@ class WT_RNTA(om.Group):
                 self.connect("blade.interp_airfoils.coord_xy_interp", "re.rail.coord_xy_interp")
 
             # Connections from blade struct parametrization to rotor load anlysis
-            self.connect("blade.ps.s_opt_spar_cap_ss", "rs.constr.s_opt_spar_cap_ss")
-            self.connect("blade.ps.s_opt_spar_cap_ps", "rs.constr.s_opt_spar_cap_ps")
+            self.connect("blade.opt_var.s_opt_spar_cap_ss", "rs.constr.s_opt_spar_cap_ss")
+            self.connect("blade.opt_var.s_opt_spar_cap_ps", "rs.constr.s_opt_spar_cap_ps")
 
             # Connection from ra to rs for the rated conditions
             # self.connect('rp.powercurve.rated_V',        'rs.aero_rated.V_load')
@@ -251,6 +251,13 @@ class WT_RNTA(om.Group):
             self.connect("re.precomp.yl_strain_te", "rs.yl_strain_te")
             self.connect("blade.outer_shape_bem.s", "rs.constr.s")
 
+            self.connect("blade.internal_structure_2d_fem.d_f", "rs.brs.d_f")
+            self.connect("blade.internal_structure_2d_fem.sigma_max", "rs.brs.sigma_max")
+            self.connect("blade.pa.chord_param", "rs.brs.rootD", src_indices=[0])
+            self.connect("blade.ps.layer_thickness_param", "rs.brs.layer_thickness")
+            self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rs.brs.layer_start_nd")
+            self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rs.brs.layer_end_nd")
+
             # Connections to rotorse-rc
             # self.connect('blade.length',                                    'rotorse.rc.blade_length')
             # self.connect('blade.outer_shape_bem.s',                         'rotorse.rc.s')
@@ -306,6 +313,7 @@ class WT_RNTA(om.Group):
             self.connect("nacelle.distance_tt_hub", "drivese.drive_height")
             self.connect("nacelle.uptilt", "drivese.tilt")
             self.connect("nacelle.gear_ratio", "drivese.gear_ratio")
+            self.connect("nacelle.damping_ratio", "drivese.damping_ratio")
             self.connect("nacelle.mb1Type", "drivese.bear1.bearing_type")
             self.connect("nacelle.mb2Type", "drivese.bear2.bearing_type")
             self.connect("nacelle.lss_diameter", "drivese.lss_diameter")
@@ -503,12 +511,15 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["floating"]:
             self.connect("env.rho_water", "floatingse.rho_water")
             self.connect("env.water_depth", "floatingse.water_depth")
-            # self.connect("env.mu_water", "floatingse.mu_water")
+            self.connect("env.mu_water", "floatingse.mu_water")
             self.connect("env.Hsig_wave", "floatingse.Hsig_wave")
-            # self.connect("env.Tsig_wave", "floatingse.Tsig_wave")
-            # self.connect("env.rho_air", "floatingse.rho_air")
-            # self.connect("env.mu_air", "floatingse.mu_air")
-            # self.connect("env.shear_exp", "floatingse.shearExp")
+            self.connect("env.Tsig_wave", "floatingse.Tsig_wave")
+            self.connect("env.rho_air", "floatingse.rho_air")
+            self.connect("env.mu_air", "floatingse.mu_air")
+            self.connect("env.shear_exp", "floatingse.shearExp")
+            self.connect("assembly.hub_height", "floatingse.zref")
+            if modeling_options["flags"]["blade"]:
+                self.connect("rp.gust.V_gust", "floatingse.Uref")
             self.connect("materials.name", "floatingse.material_names")
             self.connect("materials.E", "floatingse.E_mat")
             self.connect("materials.G", "floatingse.G_mat")

@@ -8,17 +8,17 @@ design_variables:
         flag: False  # Flag to optimize the twist
         inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
         n_opt: 20     # Number of control points along blade span
-        lower_bound: [0.26183354, 0.2230693, 0.18158914, 0.13477374, 0.07618275, 0.02795962, 0.01146387, 0.00617178, 0.00127423, -0.0052858, -0.01278764, -0.02249582, -0.03758844, -0.05534088, -0.07038717, -0.08335621, -0.09570016, -0.10806486, -0.12024473, -0.13221456]         # Lower bounds for the twist in [rad] at the n_opt locations
-        upper_bound: [0.43636646, 0.39760223, 0.35612206, 0.30930667, 0.25071568, 0.20249254, 0.18599679, 0.18070471, 0.17580715, 0.16924712, 0.16174529, 0.1520371, 0.13694449, 0.11919205, 0.10414576, 0.09117671, 0.07883277, 0.06646807, 0.0542882, 0.04231837] # Upper bounds for the twist in [rad] at the n_opt locations
-        lock_root: 4
-        lock_tip: 0
+        max_decrease: 0.1 # Maximum decrease for the twist in [rad] at the n_opt locations
+        max_increase: 0.1 # Maximum increase for the twist in [rad] at the n_opt locations
+        index_start: 4 # Lock the first four DVs from blade root
+        index_end: 20 # All DVs close to blade tip are active
       chord:
         flag: False     # Flag to optimize the chord
         n_opt: 20        # Number of control points along blade span
         min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
         max_gain: 5.0   # Nondimensional upper bound at the n_opt locations
-        lock_root: 4
-        lock_tip: 0
+        index_start: 4 # Lock the first four DVs from blade root
+        index_end: 20 # All DVs close to blade tip are active
 
 merit_figure: Cp  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
@@ -27,9 +27,13 @@ constraints:
     strains_spar_cap_ss:
       flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
       max:  3500.e-6  # Value of maximum strains [-]
+      index_start: 4  # Do not check strains at the first four n_opt locations
+      index_end: 20   # Check strains all the way to the tip
     strains_spar_cap_ps:
       flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
       max:  3500.e-6  # Value of maximum strains [-]
+      index_start: 4  # Do not check strains at the first four n_opt locations
+      index_end: 20   # Check strains all the way to the tip
     tip_deflection:
       flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
     stall:
@@ -41,7 +45,7 @@ constraints:
 
 driver:
     optimization:
-      flag: True
+      flag: False
       tol: 1.e-3            # Optimality tolerance
       max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
       max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
