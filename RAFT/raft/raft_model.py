@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import raft.member2pnl as pnl
-import hams.pyhams as ph
+import pyhams.pyhams as ph
 
 #import F6T1RNA as structural    # import turbine structural model functions
 # reload the libraries each time in case we make any changes
