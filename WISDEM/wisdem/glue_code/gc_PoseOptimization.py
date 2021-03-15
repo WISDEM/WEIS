@@ -169,6 +169,13 @@ class PoseOptimization(object):
                 if "adaptive" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.options["adaptive"] = self.opt["driver"]["optimization"]["adaptive"]
 
+            elif self.opt["driver"]["optimization"]["solver"] == "Nelder-Mead":
+                wt_opt.driver = om.ScipyOptimizeDriver()
+                wt_opt.driver.options["optimizer"] = self.opt["driver"]["optimization"]["solver"]
+                wt_opt.driver.options["tol"] = self.opt["driver"]["optimization"]["tol"]
+                if "adaptive" in self.opt["driver"]["optimization"]:
+                    wt_opt.driver.options["adaptive"] = self.opt["driver"]["optimization"]["adaptive"]
+
             # The next two optimization methods require pyOptSparse.
             elif self.opt["driver"]["optimization"]["solver"] == "CONMIN":
                 try:
