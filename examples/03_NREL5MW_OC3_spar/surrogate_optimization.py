@@ -12,6 +12,7 @@ from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 from weis.optimization_drivers.nlopt_driver import NLoptDriver
 
 from scipy.interpolate import Rbf
+from numpy.random import Generator, PCG64
 
 class Paraboloid_New(om.ExplicitComponent):
     """
@@ -47,26 +48,29 @@ class WT_DOE(om.ExplicitComponent):
         # Load DOE results
         folder_output   = '/Users/dzalkind/Tools/WEIS-4/DOE/outputs_both'
         data_out        = load_yaml(os.path.join(folder_output,'doe_results.yaml'))
-        omega           = data_out['tune_rosco_ivc.PC_omega']
-        vol_b           = np.array(data_out['floating.memgrp0.ballast_volume'])/1000
+        omega           = data_out['rec_out']['tune_rosco_ivc.PC_omega']
+        vol_b           = np.array(data_out['rec_out']['floating.memgrp0.ballast_volume'])/1000
 
-        self.stoc            = False
-        self.sigma           = 1e-2
+        self.sigma           = {}
+        self.sigma['rotor_overspeed']   = 1e-4 #1e-3
+        self.sigma['platform_mass']     = 0
+        self.sigma['Max_PtfmPitch']     = 1e-3 #1e-2
+        
 
         # Extract the data.
         x = omega
         y = vol_b
-        z = data_out['aeroelastic.rotor_overspeed']
+        z = data_out['rec_out']['aeroelastic.rotor_overspeed']
 
         # Make an n-dimensional interpolator.
         self.rbfi_overspeed = Rbf(x, y, z)
 
-        z = data_out['floatingse.platform_mass']
+        z = data_out['rec_out']['floatingse.platform_mass']
 
         # Make an n-dimensional interpolator.
         self.rbfi_mass = Rbf(x, y, z)
 
-        z = data_out['aeroelastic.Max_PtfmPitch']
+        z = data_out['rec_out']['aeroelastic.Max_PtfmPitch']
 
         # Make an n-dimensional interpolator.
         self.rbfi_max_pitch = Rbf(x, y, z)
@@ -94,12 +98,18 @@ class WT_DOE(om.ExplicitComponent):
         pc_omega = inputs['pc_omega']
         vol_b = inputs['vol_b'] / 1000
 
-        # Predict on the regular grid.
-        outputs['max_ptfm_pitch']   = self.rbfi_max_pitch(pc_omega, vol_b) + self.stoc * self.sigma  * np.random.randn()
-        outputs['ptfm_mass']        = self.rbfi_mass(pc_omega, vol_b) + self.stoc * self.sigma  * np.random.randn()
-        outputs['overspeed']        = self.rbfi_overspeed(pc_omega, vol_b) + self.stoc * self.sigma  * np.random.randn()
+        # Random Seed
+        seed = (1e6 * pc_omega * vol_b).astype(int)
+        # seed = int(str(int(1e6 * pc_omega[0])) + str(int(1e6 * vol_b[0])))
 
-        # print('here')
+        rg = Generator(PCG64(seed))
+        
+        # Predict on the regular grid.
+        outputs['max_ptfm_pitch']   = self.rbfi_max_pitch(pc_omega, vol_b) + self.sigma['Max_PtfmPitch']  * rg.standard_normal()
+        outputs['ptfm_mass']        = self.rbfi_mass(pc_omega, vol_b) + self.sigma['platform_mass']   * rg.standard_normal()
+        outputs['overspeed']        = self.rbfi_overspeed(pc_omega, vol_b) + self.sigma['rotor_overspeed']   * rg.standard_normal()
+
+        print('here')
         
 
     # def compute_partials(self, inputs, partials):
@@ -126,11 +136,11 @@ prob.model.add_subsystem('wt', WT_DOE(), promotes_inputs=['pc_omega', 'vol_b'])
 # # Design variables 'x' and 'y' span components, so we need to provide a common initial
 # # value for them.
 
-optimizer = 'ISRES'
+optimizer = 'SLSQP'
 record = True
 plot_record = True
 warm_start = False
-print_debug = False
+print_debug = True
 
 # # setup the optimization
 if optimizer == 'COBYLA':
@@ -146,6 +156,18 @@ if optimizer == 'COBYLA':
     prob.driver.opt_settings['tol'] = 1e-6
     prob.driver.opt_settings['disp'] = True
     prob.driver.opt_settings['catol'] = 2e-4
+
+if optimizer == 'SLSQP':
+    prob.driver = om.ScipyOptimizeDriver()
+    prob.driver.options['optimizer'] = 'SLSQP'
+    # prob.driver.opt_settings["maxfun"] = 1000
+    prob.driver.opt_settings['maxiter'] = 100
+    prob.driver.opt_settings['tol'] = 1e-3
+    prob.driver.opt_settings['disp'] = True
+    
+    step_size = 1e-3
+    prob.model.approx_totals(method="fd", step=step_size, form='forward')
+
 
     prob.model.set_input_defaults('pc_omega', .25)
     # prob.model.set_input_defaults('vol_b', 7500)
@@ -170,33 +192,48 @@ elif optimizer == 'DIRECT':
     prob.driver = NLoptDriver()
     prob.driver.options['optimizer'] = 'GN_ORIG_DIRECT'
     prob.driver.options['maxiter'] = 50
+    # prob.driver.options['tol'] = 1e-6
+    # prob.driver.options['xtol'] = 1e-3
 
 elif optimizer == 'MMA':
     prob.driver = NLoptDriver()
     prob.driver.options['optimizer'] = 'LD_MMA'
     step_size = 1e-3
     prob.model.approx_totals(method="fd", step=step_size, form='forward')
-    prob.driver.options['tol'] = 1e-6
-    prob.driver.options['xtol'] = 1e-3
+    prob.driver.options['tol'] = 1e-3
+    prob.driver.options['xtol'] = 1e-2
 
 elif optimizer == 'ISRES':
     prob.driver = NLoptDriver()
     prob.driver.options['optimizer'] = 'GN_ISRES'
-    prob.driver.options['maxiter'] = 100
+    prob.driver.options['maxiter'] = 1000
     prob.driver.options['numgen'] = 10
 
 
 elif optimizer == 'LN_COBYLA':
     prob.driver = NLoptDriver()
     prob.driver.options['optimizer'] = 'LN_COBYLA'
-    prob.driver.options['tol'] = 1e-5
+    prob.driver.options['tol'] = 1e-3
+    prob.driver.options['xtol'] = 1e-2
     print('here')
 elif optimizer == 'MLSL':
     prob.driver = NLoptDriver()
     prob.driver.options['optimizer'] = 'LN_COBYLA'
     prob.driver.options['tol'] = 1e-5
     print('here')
-
+elif optimizer == 'AGS':
+    prob.driver = NLoptDriver()
+    prob.driver.options['optimizer'] = 'GN_AGS'
+    # prob.driver.options['tol'] = 1e-5
+    print('here')
+elif optimizer == 'CCSAQ':
+    prob.driver = NLoptDriver()
+    prob.driver.options['optimizer'] = 'LD_CCSAQ'
+    step_size = 1e-3
+    prob.model.approx_totals(method="fd", step=step_size, form='forward')
+    prob.driver.options['tol'] = 1e-5
+    prob.driver.options['xtol'] = 1e-3
+    print('here')
 
 
 
