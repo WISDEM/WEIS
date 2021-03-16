@@ -26,7 +26,7 @@ from pCrunch import Processing, Analysis
 
 
 import numpy as np
-import sys, os, platform, glob
+import sys, os, platform
 
 class LinearFAST(runFAST_pywrapper_batch):
     ''' 
@@ -76,7 +76,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.cores              = 4
 
         # overwrite steady & linearizations
-        self.overwrite          = False
+        self.overwrite          = True
 
         # Optional population of class attributes from key word arguments
         for (k, w) in kwargs.items():
@@ -158,6 +158,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
         # Need to be this for linearization
+        case_inputs[("HydroDyn","WaveMod")] = {'vals':[0], 'group':0}
         case_inputs[("HydroDyn","ExctnMod")] = {'vals':[2], 'group':0}
         case_inputs[("HydroDyn","RdtnMod")] = {'vals':[2], 'group':0}
         case_inputs[("HydroDyn","DiffQTF")] = {'vals':[0], 'group':0}
@@ -248,7 +249,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         Only needs to be performed once for each model
 
         """
-        self.FAST_runDirectory = self.FAST_linearDirectory
 
         # do a read to get gearbox ratio
         fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)
@@ -291,8 +291,7 @@ if __name__ == '__main__':
     
     lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
     lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
-    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_steady')
-    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_lin')
+    lin_fast.FAST_runDirectory        = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_lin')
     lin_fast.debug_level              = 2
     lin_fast.dev_branch               = True
     lin_fast.write_yaml               = True
