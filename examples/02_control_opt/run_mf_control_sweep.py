@@ -310,7 +310,7 @@ class MF_Turbine(object):
         lin_fast.cores                      = self.n_cores
 
         # overwrite steady & linearizations
-        lin_fast.overwrite        = False           # for debugging only
+        # lin_fast.overwrite        = False           # for debugging only
         
         # run OpenFAST linearizations
         lin_fast.gen_linear_model()
@@ -339,7 +339,7 @@ class MF_Turbine(object):
         fastBatch.FAST_InputFile    = self.FAST_InputFile  # FAST input file (ext=.fst)
 
         fastBatch.debug_level       = 2
-        fastBatch.overwrite_outfiles = False        # for debugging purposes
+        # fastBatch.overwrite_outfiles = False        # for debugging purposes
 
         
         fastBatch.case_list         = self.case_list

@@ -923,7 +923,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.case_name_list    = case_name_list
         fastBatch.channels          = channels
 
-        fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
+        # fastBatch.overwrite_outfiles = False  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         if self.mpi_run:
             FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
