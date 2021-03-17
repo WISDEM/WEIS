@@ -850,7 +850,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['PropPot'] = ['True']* fst_vt['HydroDyn']['NMembers']
+            fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
@@ -859,6 +859,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+                fst_vt['HydroDyn']['PropPot'] = ['True']* fst_vt['HydroDyn']['NMembers']
                 
                 # set PotFile directory relative to WEIS
                 # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
@@ -959,7 +960,6 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2"]
-        channels_out += ["PtfmPitch", "PtfmRoll", "PtfmYaw", "PtfmSurge", "PtfmSway", "PtfmHeave"]
         channels_out += ["RtAeroCp", "RtAeroCt"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
@@ -981,6 +981,10 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.n_tab > 1:
             channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+
+        # Floating output channels
+        if self.options['modeling_options']['flags']['floating']:
+            channels_out += ["PtfmPitch", "PtfmRoll", "PtfmYaw", "PtfmSurge", "PtfmSway", "PtfmHeave"]
             
         channels = {}
         for var in channels_out:
