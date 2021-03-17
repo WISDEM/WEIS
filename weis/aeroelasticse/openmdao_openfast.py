@@ -493,14 +493,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
-            # dz: seems like we need it
-            fst_vt['ElastoDyn']['PtfmRefzt'] = 0 # Vertical distance from the ground level 
-            
-            # fst_vt['ElastoDyn']['PtfmMass'] = 7.4e6
-            # fst_vt['ElastoDyn']['PtfmRIner'] = 4.2e9
-            # fst_vt['ElastoDyn']['PtfmPIner'] = 4.2e9
-            # fst_vt['ElastoDyn']['PtfmYIner'] = 1.6e8
-            # fst_vt['ElastoDyn']['PtfmCMzt'] = -89.9155
+
         else:
             # Ptfm* can capture the transition piece for fixed-bottom, but we are doing that in subdyn, so only worry about getting height right
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
@@ -516,7 +509,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['DTTorDmp'] = float(inputs['drivetrain_damping_coefficient'])
 
         tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
-        fst_vt['ElastoDyn']['PtfmRefzt'] = 0# tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+        fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
@@ -909,8 +902,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
-            # dz hack
-            fst_vt['MoorDyn']['Z'][3:] = -70.
             fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
             fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
             fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
