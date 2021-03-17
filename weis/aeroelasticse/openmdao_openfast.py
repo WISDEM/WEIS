@@ -853,29 +853,23 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PropPot'] = ['True']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
-            fst_vt['HydroDyn']['PotMod'] = 1
-            this_file_dir = os.path.dirname(os.path.abspath(__file__))
-            fst_vt['HydroDyn']['PotFile'] = os.path.join(this_file_dir, '../../examples/03_NREL5MW_OC3_spar/HydroData/Spar')
-            fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / 7.462e6) - 1) * .9 )  #* 1.04 # 8029.21
-            fst_vt['HydroDyn']['ExctnMod'] = 1
-            fst_vt['HydroDyn']['RdtnMod'] = 1
-            fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
-            fst_vt['HydroDyn']['WvDiffQTF'] = False
-            fst_vt['HydroDyn']['WvSumQTF'] = False
 
-            # fst_vt['HydroDyn']['AddCLin'] = np.zeros((6,6))
-            # fst_vt['HydroDyn']['AddCLin'][5,5] = 98340000
-
-            # fst_vt['HydroDyn']['AddBLin'] = np.zeros((6,6))
-            # fst_vt['HydroDyn']['AddBLin'][0,0] = 100000
-            # fst_vt['HydroDyn']['AddBLin'][1,1] = 100000
-            # fst_vt['HydroDyn']['AddBLin'][2,2] = 130000
-            # fst_vt['HydroDyn']['AddBLin'][5,5] = 13000000
-
-            fst_vt['HydroDyn']['SimplCd'] = 0
-            fst_vt['HydroDyn']['SimplCdMG'] = 0
-            fst_vt['HydroDyn']['SimplCa'] = 0
-            fst_vt['HydroDyn']['SimplCaMG'] = 0
+            # If we're using the potential model, need these settings that aren't default
+            if fst_vt['HydroDyn']['PotMod']:
+                fst_vt['HydroDyn']['ExctnMod'] = 1
+                fst_vt['HydroDyn']['RdtnMod'] = 1
+                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+                
+                # set PotFile directory relative to WEIS
+                # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
+                weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                if fst_vt['HydroDyn']['PotFile']:
+                    fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
+                else:
+                    raise Exception('If PotMod=1, PotFile must be specified in modeling options')
+                
+                # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
+                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / 7.462e6) - 1) * .9 )  #* 1.04 # 8029.21
 
 
         # Moordyn inputs

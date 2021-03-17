@@ -64,6 +64,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBLin3: [0.0, 0.0, 130000.0, 0.0, 0.0, 0.0]
         AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 13000000]
         AddCLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 98340000]
+        PotMod: 1
+        PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar        # relative to?
     ROSCO:
         flag: True
         SD_Mode: 0
