@@ -1198,6 +1198,12 @@ class FASTLoadCases(ExplicitComponent):
         if self.FASTpref['dlc_settings']['run_IEC']:
             outputs, discrete_outputs = self.get_weighted_DELs(summary_stats, DELs, inputs, discrete_inputs, outputs, discrete_outputs)  
 
+        outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+
+        if self.options['modeling_options']['flags']['floating']:
+            outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+
+
     def get_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
         Find the spanwise forces on the blades.
@@ -1390,42 +1396,8 @@ class FASTLoadCases(ExplicitComponent):
                 U_all       = [U_set]*num_seeds
                 U_dlc = [u for uset in U_all for u in uset]
             U.extend(U_dlc)
-            U.sort()
+            U.sort()          
             
-            
-        if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
-            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
-
-        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            # If this is a merit function, do nothing for now
-            if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
-                # Let's just average the standard deviation of PtfmPitch for now
-                # TODO: weight based on WS distribution, or something else
-                print("sum_stats['PtfmPitch']['std']:")   # for debugging
-                print(sum_stats['PtfmPitch']['std'])   # for debugging
-                outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
-
-        # elif self.FASTpref['dlc_settings']['run_power_curve']:
-        #     U_set           = self.FASTpref['dlc_settings']['Power_Curve']['U']
-        #     num_seeds       = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
-        #     U_all           = [U_set]*num_seeds
-        #     U = [u for uset in U_all for u in uset]
-        #     U.sort()
-
-            if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
-                print("sum_stats['PtfmPitch']['max']:")  # for debugging
-                print(sum_stats['PtfmPitch']['max'])  # for debugging
-                outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
-
-            if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-                # If this is a merit function, do nothing for now
-                if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
-                    print('WARNING: Std_PtfmPitch was flagged as a merit figure and constraint, it is being treated as a merit figure only')
-                else:
-                    # If this is a constraint, we want to output maximum std of all sims
-                    print("sum_stats['PtfmPitch']['std']:")   # for debugging
-                    print(sum_stats['PtfmPitch']['std'])   # for debugging
-                    outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
         
         pp = PowerProduction(discrete_inputs['turbine_class'])
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
@@ -1446,11 +1418,52 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
             outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsMyt'])
 
+        return outputs, discrete_outputs
+
+    def get_control_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+        ''' 
+        calculate control measures:
+            - rotor_overspeed
+
+        given:
+            - sum_stats : pd.DataFrame
+        '''
+
         if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
             outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
         return outputs, discrete_outputs
 
+    def get_floating_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+        '''
+        calculate floating measures:
+            - Std_PtfmPitch (max over all dlcs if constraint, mean otheriwse)
+            - Max_PtfmPitch
+
+        given:
+            - sum_stats : pd.DataFrame
+        '''
+        
+        if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+            # Let's just average the standard deviation of PtfmPitch for now
+            # TODO: weight based on WS distribution, or something else
+            print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            print(sum_stats['PtfmPitch']['std'])   # for debugging
+            outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
+
+        if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
+            print("sum_stats['PtfmPitch']['max']:")  # for debugging
+            print(sum_stats['PtfmPitch']['max'])  # for debugging
+            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+
+        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+            print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            print(sum_stats['PtfmPitch']['std'])   # for debugging
+            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+
+        return outputs, discrete_outputs
+
+    
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
         writer.fst_vt            = fst_vt
