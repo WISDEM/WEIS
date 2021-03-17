@@ -1718,6 +1718,12 @@ properties:
                         minimum: 0.0
                         units: m^3
                         description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    PtfmMass_Init:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: kg
+                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass. 
                     PtfmCOBxt:
                         type: number
                         default: 0.0

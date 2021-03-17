@@ -869,7 +869,8 @@ class FASTLoadCases(ExplicitComponent):
                     raise Exception('If PotMod=1, PotFile must be specified in modeling options')
                 
                 # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
-                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / 7.462e6) - 1) * .9 )  #* 1.04 # 8029.21
+                if fst_vt['HydroDyn']['PtfmMass_Init']:
+                    fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
 
 
         # Moordyn inputs
