@@ -168,7 +168,7 @@ class runFAST_pywrapper(object):
 
         output_dict = {}
         for i, channel in enumerate(openfastlib.output_channel_names):
-            output_dict[channel] = openfastlib.output_values[:,i]
+            output_dict[channel] = np.array(openfastlib.output_values[:,i]).copy()
 
         output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
         output.trim_data(tmin = self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
