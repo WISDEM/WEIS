@@ -58,10 +58,6 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
           
       # Install WISDEM
       - name: Install WEIS
@@ -80,6 +76,10 @@ jobs:
         shell: pwsh
         run: |
           pytest weis --cov-config=.coverageac --cov=weis
+
+      # Debugging session
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
       
       # Run coveralls
       - name: Run coveralls
