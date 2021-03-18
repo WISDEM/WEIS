@@ -56,7 +56,7 @@ class OpenFASTBase:
 
         print('PRE-TRIM',self.time[0], self.time[-1], self.data.shape)
         print('TRIMMING', tmin, tmax)
-        print(self.time)
+        print(self.data[0,:])
         idx = np.where((self.time >= tmin) & (self.time <= tmax))[0]
         if tmin > self.time.max():
             raise ValueError(
@@ -65,7 +65,8 @@ class OpenFASTBase:
 
         self.data = self.data[idx,:]
         print('POST-TRIM',self.time[0], self.time[-1], self.data.shape)
-        print(self.time)
+        print(self.data[0,:])
+        print(self.channels)
         
     #@dataproperty
     #def data(self):
@@ -261,7 +262,7 @@ class OpenFASTOutput(OpenFASTBase):
         data : np.ndarray
         """
 
-        self.data = data.copy()
+        self.data = data
 
         if isinstance(channels, list):
             self.channels = np.array(channels)
