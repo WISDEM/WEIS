@@ -54,13 +54,13 @@ class OpenFASTBase:
             Ending time.
         """
 
-        idx = np.where((self.time >= tmin) & (self.time <= tmax))
-        if tmin > max(self.time):
+        idx = np.where((self.time >= tmin) & (self.time <= tmax))[0]
+        if tmin > self.time.max():
             raise ValueError(
                 f"Initial time '{tmin}' is after the end of the simulation."
             )
 
-        self.data = self.data[idx]
+        self.data = self.data[idx,:]
 
     @dataproperty
     def data(self):

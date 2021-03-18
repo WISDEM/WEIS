@@ -172,7 +172,7 @@ class runFAST_pywrapper(object):
 
         output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
         print('TRIMMING:',self.fst_vt['Fst']['TStart'], self.fst_vt['Fst']['TMax'])
-        #output.trim_data(tmin = self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
+        output.trim_data(tmin = self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
         case_name, sum_stats, extremes, dels = la._process_output(output)
 
         # if save_file: write_fast
