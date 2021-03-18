@@ -54,14 +54,18 @@ class OpenFASTBase:
             Ending time.
         """
 
+        print('PRE-TRIM',self.time[0],self.time[-1], self.time.shape, self.data.shape)
+        print('TRIMMING', tmin, tmax)
         idx = np.where((self.time >= tmin) & (self.time <= tmax))[0]
         if tmin > self.time.max():
             raise ValueError(
                 f"Initial time '{tmin}' is after the end of the simulation."
             )
 
+        self.time = self.time[idx]
         self.data = self.data[idx,:]
-
+        print('POST-TRIM',self.time[0],self.time[-1], self.time.shape, self.data.shape)
+        
     @dataproperty
     def data(self):
         """Returns output data at `self._data`."""
