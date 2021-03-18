@@ -54,8 +54,6 @@ class OpenFASTBase:
             Ending time.
         """
 
-        print('PRE-TRIM',self.time[0],self.time[-1], self.data.shape)
-        print('TRIMMING', tmin, tmax)
         idx = np.where((self.time >= tmin) & (self.time <= tmax))[0]
         if tmin > self.time.max():
             raise ValueError(
@@ -63,7 +61,7 @@ class OpenFASTBase:
             )
 
         self.data = self.data[idx,:]
-        print('POST-TRIM',self.time[0], self.time[-1], self.data.shape)
+
         
     @dataproperty
     def data(self):
