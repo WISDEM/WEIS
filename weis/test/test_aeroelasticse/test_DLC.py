@@ -261,7 +261,6 @@ class TestDLC(unittest.TestCase):
             "Wind1VelX",
             "Wind1VelY",
             "Wind1VelZ",
-            "Wave1Elev",
         ]
 
         compare_regression_values(
