@@ -348,6 +348,8 @@ class FASTLoadCases(ExplicitComponent):
                 LinearTurbine = LinearTurbineModel(self.FAST_runDirectory,case_name_list,nlin=12)      # hard-code number of linearization points for meow, will be modelling input soon
 
                 # DZ->JJ: the info you seek is in LinearTurbine
+                # LinearTurbine.omega_rpm has the rotor speed at each linearization point
+                # LinearTurbine.Desc* has a description of all the inputs, states, outputs
                 # DZ TODO: post process operating points, do Level2 simulation, etc.
                 print('Saving ABCD matrices!')
                 ABCD = {

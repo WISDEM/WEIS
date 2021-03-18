@@ -46,6 +46,7 @@ class LinearTurbineModel(object):
                     u_ops = np.zeros((matData['NumInputs'],n_lin_cases))
                     y_ops = np.zeros((matData['NumOutputs'],n_lin_cases))
                     x_ops = np.zeros((matData['NumStates'],n_lin_cases))
+                    omega = np.zeros((nlin,n_lin_cases))
 
                 # operating points
                 # u_ops \in real(n_inps,n_ops)
@@ -56,6 +57,9 @@ class LinearTurbineModel(object):
 
                 # x_ops \in real(n_states,n_ops), note this is un-reduced state space model states, with all hydro states
                 x_ops[:,iCase] = np.mean(matData['xop'],1)
+
+                # store rotor speed in rpm of each linearization, omega \in real(n_linear,n_cases)
+                omega[:,iCase] = matData['Omega'] * 60 / (2 * np.pi)
                 
                 # keep all inputs and outputs
                 indInps = np.arange(0,matData['NumInputs']).reshape(-1,1)
@@ -134,8 +138,10 @@ class LinearTurbineModel(object):
 
             # Input, Output, State Descriptions
             self.DescCntrlInpt      = matData['DescCntrlInpt']
-            self.DescStates         = matData['DescStates']
+            self.DescStates         = np.array(matData['DescStates'])[indStates].squeeze().tolist()         # remove Azimuth state here
             self.DescOutput         = matData['DescOutput']
+            self.StateDerivOrder    = matData['StateDerivOrder']
+            self.omega_rpm          = omega
 
         else:  # from matlab .mat file m
             matDict = loadmat(lin_file)
