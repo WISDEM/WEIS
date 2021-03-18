@@ -59,16 +59,16 @@ jobs:
         run: |
           conda install -y m2w64-toolchain libpython
 
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
-        
       # Install WISDEM
       - name: Install WEIS
         shell: bash
         run: |
           python setup.py develop
           
+      # Debugging session
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        
       # Run all examples
       - name: Run tests within WEIS
         shell: bash
