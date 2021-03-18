@@ -342,10 +342,10 @@ class FASTLoadCases(ExplicitComponent):
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
 
-            FAST_Output, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            FAST_Output, case_list, dlc_list, case_name_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
             if self.FASTpref['linearization']:
-                LinearTurbine = LinearTurbineModel(self.FAST_runDirectory)
+                LinearTurbine = LinearTurbineModel(self.FAST_runDirectory,case_name_list,nlin=12)      # hard-code number of linearization points for meow, will be modelling input soon
 
                 # DZ->JJ: the info you seek is in LinearTurbine
                 # DZ TODO: post process operating points, do Level2 simulation, etc.
@@ -923,7 +923,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.case_name_list    = case_name_list
         fastBatch.channels          = channels
 
-        fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
+        # fastBatch.overwrite_outfiles = False  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         if self.mpi_run:
             FAST_Output = fastBatch.run_mpi(self.mpi_comm_map_down)
@@ -936,7 +936,7 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
-        return FAST_Output, case_list, dlc_list
+        return FAST_Output, case_list, dlc_list, case_name_list
 
     def DLC_creation_IEC(self, inputs, discrete_inputs, fst_vt, powercurve=False):
 

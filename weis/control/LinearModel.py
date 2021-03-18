@@ -14,37 +14,30 @@ import re
 from itertools import chain
 from scipy.io import loadmat
 
-import os, glob
+import os
 
 
 class LinearTurbineModel(object):
 
 
-    def __init__(self,lin_file,reduceStates=False,fromMat=False):
+    def __init__(self,lin_file_dir,lin_file_names,nlin=12,reduceStates=False,fromMat=False):
         '''
-            inputs: lin_file - directory of linear file outputs from OpenFAST
-                             - if fromMat = True, lin_file is .mat from matlab version of mbc3
+            inputs:    
+                lin_file_dir (string) - directory of linear file outputs from OpenFAST
+                lin_file_names (list of strings) - name of output file from OpenFAST, without extension
+                nlin (integer) - number of linearization points
+                
+                - if fromMat = True, lin_file is .mat from matlab version of mbc3
         '''
         if not fromMat:
-            # figure out number of linear cases
-            out_prefix = 'lin'
-            out_suffix = '.outb'
-            out_files    = glob.glob(os.path.join(lin_file,out_prefix+'*'+out_suffix))
 
-            n_lin_cases     = len(out_files)
-
-            if not n_lin_cases:
-                print('No linear outputs found in '+ lin_file)
-                raise Exception('No linear outputs found in '+ lin_file)
-
-            if n_lin_cases <= 10:
-                num_string = '%01d'
-            else:
-                num_string = '%02d'
+            # Number of linearization cases or OpenFAST sims, different from nlin/NLinTimes in OpenFAST
+            n_lin_cases = len(lin_file_names)
 
             u_ops = np.array([],[])
             for iCase in range(0,n_lin_cases):
-                lin_files_i = glob.glob(os.path.join(lin_file,out_prefix + '_' + num_string%(iCase) + '.*.lin'  ))
+                # nlin array of linearization outputs for iCase
+                lin_files_i = [os.path.realpath(os.path.join(lin_file_dir,lin_file_names[iCase] + '.{}.lin'.format(i_lin+1))) for i_lin in range(0,nlin)]
 
                 MBC, matData, FAST_linData = mbc.fx_mbc3(lin_files_i)
 
@@ -63,38 +56,15 @@ class LinearTurbineModel(object):
 
                 # x_ops \in real(n_states,n_ops), note this is un-reduced state space model states, with all hydro states
                 x_ops[:,iCase] = np.mean(matData['xop'],1)
-
-
-                # Matrices, TODO: automate index selection here
-                if False:   # reduce I/O of matrices to something more reasonable
-                    PitchDesc       = 'ED Extended input: collective blade-pitch command, rad'
-                    WindDesc        = 'IfW Extended input: horizontal wind speed (steady/uniform wind), m/s'
-                    GenDesc         = 'ED GenSpeed, (rpm)'
-                    TwrDesc         = 'ED TwrBsMyt, (kN-m)'
-                    AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
-                    PltPitchDesc    = 'ED PtfmPitch, (deg)'
-                    NacIMUFADesc    = 'ED NcIMURAys, (deg/s^2)'
-
-                    indPitch        = matData['DescCntrlInpt'].index(PitchDesc)
-                    indWind         = matData['DescCntrlInpt'].index(WindDesc)
-                    indGen          = matData['DescOutput'].index(GenDesc)
-                    indTwr          = matData['DescOutput'].index(TwrDesc)
-                    indAz           = matData['DescStates'].index(AzDesc)
-                    indPltPitch     = matData['DescOutput'].index(PltPitchDesc)
-                    indNacIMU       = matData['DescOutput'].index(NacIMUFADesc)
-
-                    indOuts         = np.array([indGen,indTwr,indPltPitch,indNacIMU]).reshape(-1,1)
-                    indInps         = np.array([indWind,indPitch]).reshape(-1,1)
-                    # TODO: add torque
                 
-                else:  # keep all inputs and outputs
-                    indInps = np.arange(0,matData['NumInputs']).reshape(-1,1)
-                    indOuts = np.arange(0,matData['NumOutputs']).reshape(-1,1)
-
-                    AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
-                    indAz           = matData['DescStates'].index(AzDesc)
+                # keep all inputs and outputs
+                indInps = np.arange(0,matData['NumInputs']).reshape(-1,1)
+                indOuts = np.arange(0,matData['NumOutputs']).reshape(-1,1)
 
                 # remove azimuth state
+                AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
+                indAz           = matData['DescStates'].index(AzDesc)
+
                 indStates       = np.arange(0,matData['NumStates'])
                 indStates       = np.delete(indStates,indAz)
                 indStates       = indStates.reshape(-1,1)
@@ -297,8 +267,8 @@ class LinearTurbineModel(object):
         P_op                = co.StateSpace(A,B,C,D)
         if reduce_states:
             P_op            = co.minreal(P_op,tol=1e-7,verbose=False)
-        P_op.InputName      = ['RtVAvgxh','BldPitch']
-        P_op.OutputName     = ['GenSpeed','TwrBsMyt','PtfmPitch','NcIMUTAzs']
+        P_op.InputName      = self.DescCntrlInpt
+        P_op.OutputName     = self.DescOutput
 
         # operating points dict
         ops = {}
@@ -326,13 +296,14 @@ class LinearTurbineModel(object):
 
 
         lin_control_model.connect_elements()
+        #    TODO: add torque control
 
-        P_cl = connect_ml([self.P_op,lin_control_model.C_all],['RtVAvgxh'],['GenSpeed','TwrBsMyt','PtfmPitch','NcIMUTAzs','BldPitch'])
+        P_cl = connect_ml([self.P_op,lin_control_model.C_all],self.DescCntrlInpt, self.DescOutput)
 
         return P_cl
 
 
-    def solve(self,disturbance,Plot=True,open_loop=True,controller={},reduce_states=False):
+    def solve(self,disturbance,Plot=False,open_loop=True,controller={},reduce_states=False):
         ''' 
         Run linear simulation of open-loop turbine model
         inputs: disturbance: dict containing
@@ -361,8 +332,10 @@ class LinearTurbineModel(object):
                 print('WARNING: controller not LinearControlModel() object')
 
         # linearize input (remove wind_speed_op)
-        u_lin       = np.zeros((1,len(tt)))
-        u_lin[0,:]  = u_h - self.ops['uh']
+        u_lin       = np.zeros((len(self.DescCntrlInpt),len(tt)))
+
+        indWind     = self.DescCntrlInpt.index('IfW Extended input: horizontal wind speed (steady/uniform wind), m/s')
+        u_lin[indWind,:]  = u_h - self.ops['uh']
 
         # linear solve
         _,y_lin,xx = co.forced_response(P_op,T=tt,U=u_lin)
@@ -371,47 +344,30 @@ class LinearTurbineModel(object):
         # Add back in operating points
         # Note that bld pitch was an input operating point that we are moving to the output operating point
         # TODO: designate CONTROL inputs that become outputs in closed-loop simulations
-        y_op = np.concatenate((self.ops['y'],self.ops['u'][-1:]))   #TODO: make blade pitch operationg point in radians
+        y_op = self.ops['y']   #TODO: make blade pitch operationg point in radians
         u_op = self.ops['u']
 
         y   = y_op.reshape(-1,1) + y_lin
         u   = u_op[0].reshape(-1,1) + u_lin
 
-        # plot
-        ax = [None] * 4
+        # plot, for debugging 
         if Plot:
-            plt.figure(1)
-            ax[0] = plt.subplot(411)
-            ax[0].plot(tt,u[0,:])
-            ax[0].set_ylabel('RtVAvgxh')
-            ax[0].set_xticklabels([])
-            ax[0].grid(True)
+            chans = ['RtVAvgxh','GenSpeed']
+            fig, ax = plt.subplots(len(chans),1)
+            for i, chan in enumerate(chans):
+                ind = [chan in out for out in self.DescOutput].index(True)      # channel index
+                ax[i].plot(tt,y[ind,:])
+                ax[i].grid(True)
+                ax[i].set_ylabel(chan)
 
-            ax[1] = plt.subplot(412)
-            ax[1].plot(tt,y[0,:])
-            ax[1].set_ylabel('GenSpeed')
-            ax[1].set_xticklabels([])
-            ax[1].grid(True)
-
-            ax[2] = plt.subplot(413)
-            ax[2].plot(tt,y[1,:])
-            ax[2].set_ylabel('TwrBsMyt')
-            ax[2].set_xticklabels([])
-            ax[2].grid(True)
-
-            ax[3] = plt.subplot(414)
-            ax[3].plot(tt,y[2,:])
-            ax[3].set_ylabel('PtfmPitch')
-            ax[3].grid(True)
-
-
-
+                if i < len(chans):
+                    ax[i].set_xticklabels([])
             plt.show()
 
-        # return linear output
-        OutList     = [P_op.InputName,P_op.OutputName]
-        OutList     = list(chain.from_iterable(OutList))  #flatten list
-        OutData_arr = np.concatenate((u,y)).T
+        # Shorten output names from linearization output to one like level3 openfast output
+        # This depends on how openfast sets up the linearization output names and may break if that is changed
+        OutList     = [out_name.split()[1][:-1] for out_name in P_op.OutputName]
+        OutData_arr = y.T
 
         # Turn OutData into dict like in ROSCO_toolbox
         OutData = {}
@@ -444,6 +400,14 @@ class LinearControlModel(object):
         fromDISON_IN if you want to skip that and read directly from DISCON_file object
         '''
 
+        # Define input/output description strings
+        self.DescPitch       = 'ED Extended input: collective blade-pitch command, rad'
+        self.DescGen         = 'ED GenSpeed, (rpm)'
+        self.DescTwr         = 'ED TwrBsMyt, (kN-m)'
+        self.DescAz          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
+        self.DescPltPitch    = 'ED PtfmPitch, (deg)'
+        self.DescNacIMUFA    = 'ED NcIMURAys, (deg/s^2)'
+        # TODO: add torque control signals
 
 
         if not fromDISCON_IN:            
@@ -494,19 +458,19 @@ class LinearControlModel(object):
         s = co.TransferFunction.s
         self.C_Fl               = - fl_lpf / s * np.mean(self.Fl_Kp) * deg2rad(1)
         self.C_Fl               = co.ss(self.C_Fl)
-        self.C_Fl.InputName     = 'NcIMUTAzs'
+        self.C_Fl.InputName     = self.DescNacIMUFA
         self.C_Fl.OutputName    = 'Fl_Pitch'
 
         # pitch actuator model
         pitch_act               = self.low_pass_filter(self.PC_ActBw,.707)
         self.pitch_act          = co.ss(pitch_act)
         self.pitch_act.InputName   = 'PitchCmd'
-        self.pitch_act.OutputName  = 'BldPitch'
+        self.pitch_act.OutputName  = self.DescPitch
 
         # generator filter model
         self.F_Gen          = self.low_pass_filter(F_Gen_Freq,F_Gen_Damp)
         self.F_Gen          = co.ss(self.F_Gen)
-        self.F_Gen.InputName   = 'GenSpeed'
+        self.F_Gen.InputName   = self.DescGen
         self.F_Gen.OutputName  = 'GenSpeedF'
 
 
@@ -539,9 +503,6 @@ class LinearControlModel(object):
 
         # Have to connect everything...
 
-        # simplify for meow
-        # self.C_PC.OutputName = 'BldPitch'
-
         # control modules 
         mods = [self.C_PC,self.C_Fl,S,self.F_Gen,self.pitch_act] 
         # mods = [self.C_PC,self.C_Fl,S,self.pitch_act] 
@@ -549,8 +510,8 @@ class LinearControlModel(object):
 
 
 
-        inVNames = ['GenSpeed','NcIMUTAzs']
-        outVNames = ['BldPitch']
+        inVNames = [self.DescGen, self.DescNacIMUFA]
+        outVNames = [self.DescPitch]
 
         self.C_all  = connect_ml(mods,inVNames,outVNames)
 
