@@ -326,7 +326,7 @@ class FASTLoadCases(ExplicitComponent):
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
         
-        if self.FASTpref['linearization']:
+        if self.options['modeling_options']['Level2']['flag']:
             self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
             ABCD_list = []
             with open(self.lin_pkl_file_name, 'wb') as handle:
@@ -344,7 +344,7 @@ class FASTLoadCases(ExplicitComponent):
 
             FAST_Output, case_list, dlc_list, case_name_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
-            if self.FASTpref['linearization']:
+            if self.options['modeling_options']['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(self.FAST_runDirectory,case_name_list,nlin=12)      # hard-code number of linearization points for meow, will be modelling input soon
 
                 # DZ->JJ: the info you seek is in LinearTurbine
@@ -899,11 +899,11 @@ class FASTLoadCases(ExplicitComponent):
 
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization 
-        if self.FASTpref['linearization']:
-            fastBatch               = LinearFAST(FAST_ver=self.FAST_ver)
+        if self.options['modeling_options']['Level2']['flag']:
+            linearization_options   = self.options['modeling_options']['Level2']['linearization']
+            fastBatch               = LinearFAST(**linearization_options)
             fastBatch.fst_vt        = fst_vt
             fastBatch.cores         = self.cores
-            fastBatch.WindSpeeds    = self.FASTpref['lin_wind_speeds']      # linearization wind speeds
 
             case_list, case_name_list = fastBatch.gen_linear_cases(inputs)
         else:

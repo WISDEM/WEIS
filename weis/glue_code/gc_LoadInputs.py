@@ -27,8 +27,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.set_opt_flags()
     
     def set_openfast_data(self):
-        # Openfast
-        if self.modeling_options['Level3']['flag'] == True:
+        # Level2 and Level3 OpenFAST should be initialized with same info
+        if self.modeling_options['Level3']['flag'] or self.modeling_options['Level2']['flag']:
             fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
             self.modeling_options['openfast']['fst_vt'] = {}
             self.modeling_options['openfast']['fst_vt']['outlist'] = fast.fst_vt['outlist']
@@ -63,7 +63,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2 and 
                 self.modeling_options['openfast']['dlc_settings']['run_power_curve'] == False and 
                 self.modeling_options['openfast']['dlc_settings']['run_IEC'] == False and
-                self.modeling_options['openfast']['linearization'] == False
+                self.modeling_options['Level2']['flag'] == False
             ):
                 raise Exception('WEIS is set to run OpenFAST, but flags for power curve, IEC cases, and linearization are set to False among the modeling options. \
                     Set at least one of the two to True to proceed.')
