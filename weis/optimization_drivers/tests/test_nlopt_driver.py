@@ -908,6 +908,8 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 7.16667, 1e-6)
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
+
+
     def test_debug_print_option(self):
 
         prob = om.Problem()
