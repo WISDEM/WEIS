@@ -196,6 +196,7 @@ CONTAINS
     !       5| d    e   f
     !       6| g    H   i
 
+        use ieee_arithmetic
         IMPLICIT NONE
         ! Inputs
         REAL(8), DIMENSION(:),   INTENT(IN)     :: xData        ! Provided x data (vector), to find query point (should be monotonically increasing)
@@ -215,7 +216,7 @@ CONTAINS
         
         ! ---- Find corner indices surrounding desired interpolation point -----
             ! x-direction
-        IF (xq <= MINVAL(xData)) THEN       ! On lower x-bound, just need to find zData(yq)
+        IF (xq <= MINVAL(xData) .OR. (ieee_is_nan(xq))) THEN       ! On lower x-bound, just need to find zData(yq)
             j = 1
             jj = 1
             interp2d = interp1d(yData,zData(:,j),yq)
@@ -241,7 +242,7 @@ CONTAINS
         ENDIF
         j = j-1 ! Move j back one
             ! y-direction
-        IF (yq <= MINVAL(yData)) THEN       ! On lower y-bound, just need to find zData(xq)
+        IF (yq <= MINVAL(yData) .OR. (ieee_is_nan(yq))) THEN       ! On lower y-bound, just need to find zData(xq)
             i = 1
             ii = 1
             interp2d = interp1d(xData,zData(i,:),xq)
@@ -266,7 +267,7 @@ CONTAINS
             END DO
         ENDIF
         i = i-1 ! move i back one
-        
+
         ! ---- Do bilinear interpolation ----
         ! Find values at corners 
         fQ(1,1) = zData(i,j)
