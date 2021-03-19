@@ -66,15 +66,15 @@ jobs:
           python setup.py develop
           
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
         
       # Run all examples
       - name: Run tests within WEIS
         shell: bash
         run: |
           cd weis/test
-          pytest run_examples.py
+          python run_examples.py
           
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization

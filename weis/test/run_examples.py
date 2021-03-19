@@ -1,7 +1,5 @@
-import os
 import unittest
-from time import time
-from weis.test.utils import execute_script, run_all_scripts
+from weis.test.utils import run_all_scripts
 
 
 
@@ -71,4 +69,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)
