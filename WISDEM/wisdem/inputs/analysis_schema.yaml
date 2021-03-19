@@ -458,6 +458,36 @@ properties:
                                 unit: m
                                 description: Design variable bound
                             upper_bound: *sbound
+                    E:
+                        type: object
+                        default: {}
+                        description: Isotropic Young's modulus
+                        properties:
+                            flag: *flag
+                            lower_bound: &ebound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e12
+                                default: 200.e+009
+                                unit: Pa
+                                description: Design variable bound
+                            upper_bound: *ebound
+                    rho:
+                        type: object
+                        default: {}
+                        description: Material density of the tower
+                        properties:
+                            flag: *flag
+                            lower_bound: &rbound
+                                type: number
+                                minimum: 1.
+                                maximum: 1.e5
+                                default: 7800
+                                unit: kg/m**3
+                                description: Design variable bound
+                            upper_bound: *rbound
+                            
+                    
             monopile: *towdv
     constraints:
         # GB: These all need gammas or safety factors

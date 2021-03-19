@@ -70,7 +70,7 @@ properties:
                     DOFs:
                         type: array
                         description: List of degrees-of-freedom to linearize about
-                        default: ['GenDOF','TwrFADOF1']
+                        default: ['GenDOF','TwFADOF1']
                         items:
                             type: string
                             enum: ['FlapDOF1','FlapDOF2','EdgeDOF','TeetDOF','DrTrDOF','GenDOF','YawDOF','TwFADOF1','TwFADOF2','TwSSDOF1','TwSSDOF1','PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmYDOF']

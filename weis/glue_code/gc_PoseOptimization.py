@@ -3,7 +3,8 @@ import openmdao.api as om
 import os
 
 class PoseOptimization(object):
-    def __init__(self, modeling_options, analysis_options):
+    def __init__(self, wt_init, modeling_options, analysis_options):
+        self.wt_init     = wt_init
         self.modeling    = modeling_options
         self.opt         = analysis_options
         self.blade_opt   = self.opt['design_variables']['blade']
@@ -240,6 +241,27 @@ class PoseOptimization(object):
 
         if self.tower_opt['layer_thickness']['flag']:
             wt_opt.model.add_design_var('tower.layer_thickness', lower=self.tower_opt['layer_thickness']['lower_bound'], upper=self.tower_opt['layer_thickness']['upper_bound'], ref=1e-2)
+
+        if self.tower_opt["E"]["flag"]:
+            wt_opt.model.add_design_var(
+                "towerse.E_user",
+                lower=self.tower_opt["E"]["lower_bound"],
+                upper=self.tower_opt["E"]["upper_bound"],
+                ref=1e9,
+            )
+            
+        for idx, material in enumerate(wt_init["materials"]):
+            if material['name'] == 'steel':
+                tower_material_index = idx
+
+        if self.tower_opt["rho"]["flag"]:
+            wt_opt.model.add_design_var(
+                "materials.rho",
+                lower=self.tower_opt["rho"]["lower_bound"],
+                upper=self.tower_opt["rho"]["upper_bound"],
+                ref=1e3,
+                indices=[tower_material_index],
+            )
 
         # -- Control -- 
         if self.control_opt['tsr']['flag']:

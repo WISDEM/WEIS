@@ -357,7 +357,13 @@ class FASTLoadCases(ExplicitComponent):
                     'B' : LinearTurbine.B_ops,
                     'C' : LinearTurbine.C_ops,
                     'D' : LinearTurbine.D_ops,
-                    
+                    'omega_rpm' : LinearTurbine.omega_rpm,
+                    'DescCntrlInpt' : LinearTurbine.DescCntrlInpt,
+                    'DescStates' : LinearTurbine.DescStates,
+                    'DescOutput' : LinearTurbine.DescOutput,
+                    'StateDerivOrder' : LinearTurbine.StateDerivOrder,
+                    'ind_fast_inps' : LinearTurbine.ind_fast_inps,
+                    'ind_fast_outs' : LinearTurbine.ind_fast_outs,
                     }
                 with open(self.lin_pkl_file_name, 'rb') as handle:
                     ABCD_list = pickle.load(handle)
@@ -367,9 +373,6 @@ class FASTLoadCases(ExplicitComponent):
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
                     
-                print("All ABCDs so far")
-                print(ABCD_list)
-                
             self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)

@@ -5,13 +5,19 @@ import pickle
 
 with open("tower_doe/ABCD_matrices.pkl", 'rb') as handle:
     ABCD_list = pickle.load(handle)
+    
+print("Information available in the pickle file:")
+for key in ABCD_list[0]:
+    print(key)
+print()    
+
 
 cr = om.CaseReader("tower_doe/log_opt.sql")
 
 driver_cases = cr.get_cases('driver')
 
 A_plot = []
-tower_dia = []
+DVs = []
 for idx, case in enumerate(driver_cases):
     print('===================')
     dvs = case.get_design_vars(scaled=False)
@@ -24,16 +30,16 @@ for idx, case in enumerate(driver_cases):
     print()
     
     A_plot.append(ABCD_list[idx]['A'][1, 1])
-    tower_dia.append(dvs[key])
+    DVs.append(dvs[key])
     
 import matplotlib.pyplot as plt
 
 A_plot = np.array(A_plot)
-tower_dia = np.array(tower_dia)
+DVs = np.array(DVs)
 
-plt.scatter(tower_dia[::5, 1], A_plot[::5])
+plt.scatter(DVs, A_plot[:])
 
-plt.xlabel('Tower base diameter, m')
+plt.xlabel("Tower Young's Modulus, Pa")
 plt.ylabel('A[1, 1]')
 plt.tight_layout()
 
