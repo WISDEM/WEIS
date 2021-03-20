@@ -78,7 +78,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvLowCOffD: 0.0
         WvHiCOffD: 3.04292
         WaveSeed1: 123456789
-        WaveSeed2: 1011121314
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
     ROSCO:
         flag: True

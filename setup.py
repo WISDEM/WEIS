@@ -61,7 +61,7 @@ class CMakeBuildExt(build_ext):
             # Custom tuning
             mycompiler = self.compiler.compiler[0]
             if ci_flag:
-                tune = '-O0'
+                tune = '-O0 -g'  #-ffpe-trap=invalid,zero,overflow,underflow
                 
             elif eagle_flag:
                 tune = '-xSKYLAKE-AVX512'
