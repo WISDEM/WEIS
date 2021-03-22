@@ -1,4 +1,3 @@
-from numpy import zeros, array
 import numpy as np
 from weis.aeroelasticse.FAST_vars_out import FstOutput, Fst7Output
 
@@ -179,29 +178,29 @@ ElastoDynBlade['AdjFlSt']         = 0.0           #Factor to adjust blade flap s
 ElastoDynBlade['AdjEdSt']         = 0.0           #Factor to adjust blade edge stiffness (-)
         
 # Distributed Blade Properties
-ElastoDynBlade['BlFract']         = zeros([1])    
-ElastoDynBlade['AeroCent']        = zeros([1])    
-ElastoDynBlade['PitchAxis']       = zeros([1])    
-ElastoDynBlade['StrcTwst']        = zeros([1])    
-ElastoDynBlade['BMassDen']        = zeros([1])    
-ElastoDynBlade['FlpStff']         = zeros([1])    
-ElastoDynBlade['EdgStff']         = zeros([1])    
-ElastoDynBlade['GJStff']          = zeros([1])    
-ElastoDynBlade['EAStff']          = zeros([1])    
-ElastoDynBlade['Alpha']           = zeros([1])    
-ElastoDynBlade['FlpIner']         = zeros([1])    
-ElastoDynBlade['EdgIner']         = zeros([1])    
-ElastoDynBlade['PrecrvRef']       = zeros([1])    
-ElastoDynBlade['PreswpRef']       = zeros([1])    #[AH] Added during openmdao1 update
-ElastoDynBlade['FlpcgOf']         = zeros([1])    
-ElastoDynBlade['Edgcgof']         = zeros([1])    
-ElastoDynBlade['FlpEAOf']         = zeros([1])    
-ElastoDynBlade['EdgEAOf']         = zeros([1])    
+ElastoDynBlade['BlFract']         = np.zeros([1])    
+ElastoDynBlade['AeroCent']        = np.zeros([1])    
+ElastoDynBlade['PitchAxis']       = np.zeros([1])    
+ElastoDynBlade['StrcTwst']        = np.zeros([1])    
+ElastoDynBlade['BMassDen']        = np.zeros([1])    
+ElastoDynBlade['FlpStff']         = np.zeros([1])    
+ElastoDynBlade['EdgStff']         = np.zeros([1])    
+ElastoDynBlade['GJStff']          = np.zeros([1])    
+ElastoDynBlade['EAStff']          = np.zeros([1])    
+ElastoDynBlade['Alpha']           = np.zeros([1])    
+ElastoDynBlade['FlpIner']         = np.zeros([1])    
+ElastoDynBlade['EdgIner']         = np.zeros([1])    
+ElastoDynBlade['PrecrvRef']       = np.zeros([1])    
+ElastoDynBlade['PreswpRef']       = np.zeros([1])    #[AH] Added during openmdao1 update
+ElastoDynBlade['FlpcgOf']         = np.zeros([1])    
+ElastoDynBlade['Edgcgof']         = np.zeros([1])    
+ElastoDynBlade['FlpEAOf']         = np.zeros([1])    
+ElastoDynBlade['EdgEAOf']         = np.zeros([1])    
         
 # Blade Mode Shapes
-ElastoDynBlade['BldFl1Sh']        = zeros([1])    
-ElastoDynBlade['BldFl2Sh']        = zeros([1])    
-ElastoDynBlade['BldEdgSh']        = zeros([1])    
+ElastoDynBlade['BldFl1Sh']        = np.zeros([1])    
+ElastoDynBlade['BldFl2Sh']        = np.zeros([1])    
+ElastoDynBlade['BldEdgSh']        = np.zeros([1])    
 
 # Rotor-Teeter
 ElastoDyn['TeetMod']        = 0             
@@ -243,22 +242,22 @@ ElastoDynTower['AdjFASt']              = 0.0           #Factor to adjust tower f
 ElastoDynTower['AdjSSSt']              = 0.0           #Factor to adjust tower side-to-side stiffness (-)
      
 # Distributed Tower Properties
-ElastoDynTower['HtFract']              = zeros([1])    
-ElastoDynTower['TMassDen']             = zeros([1])    
-ElastoDynTower['TwFAStif']             = zeros([1])    
-ElastoDynTower['TwSSStif']             = zeros([1])    
-ElastoDynTower['TwGJStif']             = zeros([1])    
-ElastoDynTower['TwEAStif']             = zeros([1])    
-ElastoDynTower['TwFAIner']             = zeros([1])    
-ElastoDynTower['TwSSIner']             = zeros([1])    
-ElastoDynTower['TwFAcgOf']             = zeros([1])    
-ElastoDynTower['TwSScgOf']             = zeros([1])    
+ElastoDynTower['HtFract']              = np.zeros([1])    
+ElastoDynTower['TMassDen']             = np.zeros([1])    
+ElastoDynTower['TwFAStif']             = np.zeros([1])    
+ElastoDynTower['TwSSStif']             = np.zeros([1])    
+ElastoDynTower['TwGJStif']             = np.zeros([1])    
+ElastoDynTower['TwEAStif']             = np.zeros([1])    
+ElastoDynTower['TwFAIner']             = np.zeros([1])    
+ElastoDynTower['TwSSIner']             = np.zeros([1])    
+ElastoDynTower['TwFAcgOf']             = np.zeros([1])    
+ElastoDynTower['TwSScgOf']             = np.zeros([1])    
         
 # Tower Mode Shapes
-ElastoDynTower['TwFAM1Sh']             = zeros([1])    #Tower Fore-Aft Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
-ElastoDynTower['TwFAM2Sh']             = zeros([1])    #Tower Fore-Aft Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
-ElastoDynTower['TwSSM1Sh']             = zeros([1])    #Tower Side-to-Side Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
-ElastoDynTower['TwSSM2Sh']             = zeros([1])    #Tower Side-to-Side Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
+ElastoDynTower['TwFAM1Sh']             = np.zeros([1])    #Tower Fore-Aft Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
+ElastoDynTower['TwFAM2Sh']             = np.zeros([1])    #Tower Fore-Aft Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
+ElastoDynTower['TwSSM1Sh']             = np.zeros([1])    #Tower Side-to-Side Mode 1 Shape Coefficients x^2, x^3, x^4, x^5, x^6
+ElastoDynTower['TwSSM2Sh']             = np.zeros([1])    #Tower Side-to-Side Mode 2 Shape Coefficients x^2, x^3, x^4, x^5, x^6
 
 ElastoDyn = {}
 ElastoDyn['SumPrint']       = False         
@@ -329,14 +328,14 @@ InflowWind['SumPrint']   = False
 # # Wnd Wind File Parameters
 # WndWind = {}
 # WndWind['TimeSteps']          = 0             #number of time steps
-# WndWind['Time']               = zeros([1])    #time steps
-# WndWind['HorSpd']             = zeros([1])    #horizontal wind speed
-# WndWind['WindDir']            = zeros([1])    #wind direction
-# WndWind['VerSpd']             = zeros([1])    #vertical wind speed
-# WndWind['HorShr']             = zeros([1])    #horizontal shear
-# WndWind['VerShr']             = zeros([1])    #vertical power-law shear
-# WndWind['LnVShr']             = zeros([1])    #vertical linear shear
-# WndWind['GstSpd']             = zeros([1])    #gust speed not sheared by Aerodyn
+# WndWind['Time']               = np.zeros([1])    #time steps
+# WndWind['HorSpd']             = np.zeros([1])    #horizontal wind speed
+# WndWind['WindDir']            = np.zeros([1])    #wind direction
+# WndWind['VerSpd']             = np.zeros([1])    #vertical wind speed
+# WndWind['HorShr']             = np.zeros([1])    #horizontal shear
+# WndWind['VerShr']             = np.zeros([1])    #vertical power-law shear
+# WndWind['LnVShr']             = np.zeros([1])    #vertical linear shear
+# WndWind['GstSpd']             = np.zeros([1])    #gust speed not sheared by Aerodyn
 
 # AeroDyn Parameters
 AeroDyn14 = {}
@@ -393,10 +392,10 @@ AeroDynPolar['CnNegStall']  = 0.0           #Cn at stall value for negative angl
 AeroDynPolar['alphaCdMin']  = 0.0           #Angle of attack for minimum CD (deg)
 AeroDynPolar['CdMin']       = 0.0           #Minimum Cd Value
 
-AeroDynPolar['alpha']       = zeros([1])    #angle of attack
-AeroDynPolar['cl']          = zeros([1])    #coefficient of lift
-AeroDynPolar['cd']          = zeros([1])    #coefficient of drag
-AeroDynPolar['cm']          = zeros([1])    #coefficient of the pitching moment
+AeroDynPolar['alpha']       = np.zeros([1])    #angle of attack
+AeroDynPolar['cl']          = np.zeros([1])    #coefficient of lift
+AeroDynPolar['cd']          = np.zeros([1])    #coefficient of drag
+AeroDynPolar['cm']          = np.zeros([1])    #coefficient of the pitching moment
 
 AeroDynPolar['Re']          = 0.0
 AeroDynPolar['Ctrl']        = 0.0
@@ -609,8 +608,8 @@ ServoDyn['GenSpd_Dem']       = 0.0
 ServoDyn['GenTrq_Dem']       = 0.0           
 ServoDyn['GenPwr_Dem']       = 0.0           
 ServoDyn['DLL_NumTrq']       = 0.0           
-ServoDyn['GenSpd_TLU']       = zeros([0])    
-ServoDyn['GenTrq_TLU']       = zeros([0])    
+ServoDyn['GenSpd_TLU']       = np.zeros([0])    
+ServoDyn['GenTrq_TLU']       = np.zeros([0])    
 
 # ServoDyn Output Params
 ServoDyn['SumPrint']         = False         

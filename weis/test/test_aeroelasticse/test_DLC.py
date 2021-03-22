@@ -257,11 +257,13 @@ class TestDLC(unittest.TestCase):
         _,_,_,out = fastBatch.run_serial()
 
         train = False
-        keys_to_skip = [
-            "Wind1VelX",
-            "Wind1VelY",
-            "Wind1VelZ",
-        ]
+        keys_to_skip = []
+        #keys_to_skip = [
+        #    "Wind1VelX",
+        #    "Wind1VelY",
+        #    "Wind1VelZ",
+        #    "Wave1Elev",
+        #]
 
         compare_regression_values(
             out,
