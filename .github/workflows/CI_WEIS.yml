@@ -46,11 +46,11 @@ jobs:
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
-        shell: pwsh 
+        shell: bash 
         # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
         # Mpi only seems to work with the shell command though, so instead rely on system compilers
         run: |
-          conda install -y petsc4py mpi4py openmpi==4.0.5
+          conda install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"
 
       # Install dependencies of WISDEM specific to windows
@@ -58,35 +58,35 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
           
       # Install WISDEM
       - name: Install WEIS
-        shell: pwsh
+        shell: bash
         run: |
           python setup.py develop
           
       # List the collected tests for debugging purposes
       - name: List tests
-        shell: pwsh
+        shell: bash
         run: |
           pytest weis --collect-only
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
-        shell: pwsh
+        shell: bash
         run: |
           pytest weis --cov-config=.coverageac --cov=weis
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
       
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu')
         # This also works, https://github.com/AndreMiras/coveralls-python-action
         #uses: AndreMiras/coveralls-python-action@develop
-        shell: pwsh
+        shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

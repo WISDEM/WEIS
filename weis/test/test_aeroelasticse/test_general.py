@@ -4,20 +4,14 @@ Example script to compute the steady-state performance in OpenFAST
 
 """
 
-import copy
 import os
 import platform
-import sys
 import unittest
 
 import numpy as np
 
-import weis
-from openmdao.utils.assert_utils import assert_near_equal
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from weis.aeroelasticse.CaseGen_IEC import CaseGen_IEC
-from weis.aeroelasticse.runFAST_pywrapper import (runFAST_pywrapper,
-                                                  runFAST_pywrapper_batch)
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
 
 this_file_dir = os.path.dirname(os.path.realpath(__file__))
@@ -138,9 +132,9 @@ class TestGeneral(unittest.TestCase):
             "TTDspSS",
             "TTDspFA",
             "NacYaw",
-            # "Wind1VelX",
-            # "Wind1VelY",
-            # "Wind1VelZ",
+            "Wind1VelX",
+            "Wind1VelY",
+            "Wind1VelZ",
             "LSSTipMxa",
             "LSSTipMya",
             "LSSTipMza",

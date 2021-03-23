@@ -14,7 +14,7 @@ from scipy import stats
 def dataproperty(f):
     @property
     def wrapper(self, *args, **kwargs):
-        if getattr(self, "_data", None) is None:
+        if getattr(self, "data", None) is None:
             raise AttributeError("Output has not been read yet.")
         return f(self, *args, **kwargs)
 
@@ -27,7 +27,7 @@ class OpenFASTBase:
     def __getitem__(self, chan):
         try:
             idx = np.where(self.channels == chan)[0][0]
-
+                
         except IndexError:
             raise IndexError(f"Channel '{chan}' not found.")
 
@@ -54,22 +54,22 @@ class OpenFASTBase:
             Ending time.
         """
 
-        idx = np.where((self.time >= tmin) & (self.time <= tmax))
-        if tmin > max(self.time):
+        idx = np.where((self.time >= tmin) & (self.time <= tmax))[0]
+        if tmin > self.time.max():
             raise ValueError(
                 f"Initial time '{tmin}' is after the end of the simulation."
             )
 
-        self.data = self.data[idx]
+        self.data = self.data[idx,:]
+        
+    #@dataproperty
+    #def data(self):
+    #    """Returns output data at `self.data`."""
+    #    return self.data
 
-    @dataproperty
-    def data(self):
-        """Returns output data at `self._data`."""
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data = data
+    #@data.setter
+    #def data(self, data):
+    #    self.data = data
 
     @dataproperty
     def time(self):
@@ -78,10 +78,10 @@ class OpenFASTBase:
     @time.setter
     def time(self, time):
         if "Time" in self.channels:
-            raise ValueError(f"'Time' channel already exists in output data.")
+            raise ValueError("'Time' channel already exists in output data.")
 
-        self.data = np.append(time, self.data, axis=1)
-        self.channels = np.append("Time", self.channels)
+        self.data = np.append(self.data, time, axis=1)
+        self.channels = np.append(self.channels, "Time")
 
     def append_magnitude_channels(self):
         """
@@ -256,7 +256,7 @@ class OpenFASTOutput(OpenFASTBase):
         data : np.ndarray
         """
 
-        self._data = data
+        self.data = data
 
         if isinstance(channels, list):
             self.channels = np.array(channels)
