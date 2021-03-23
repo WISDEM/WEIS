@@ -631,7 +631,7 @@ class WindPark(om.Group):
             # Connections to turbine constraints
             if modeling_options['WISDEM']['TowerSE']['flag']:
                 self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
-                self.connect('rlds_post.tip_pos.tip_deflection',     'tcons_post.tip_deflection')
+                self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
                 self.connect('assembly.rotor_radius',           'tcons_post.Rtip')
                 self.connect('blade.outer_shape_bem.ref_axis',  'tcons_post.ref_axis_blade')
                 self.connect('hub.cone',                        'tcons_post.precone')
@@ -671,7 +671,7 @@ class WindPark(om.Group):
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
                 
             self.connect('re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
-            self.connect('rlds_post.tip_pos.tip_deflection', 'outputs_2_screen_weis.tip_deflection')
+            self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
             
             if modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                 self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen_weis.DEL_RootMyb')
