@@ -137,6 +137,8 @@ class TuneROSCO(ExplicitComponent):
         # Controller Tuning Parameters
         self.add_input('PC_zeta',           val=0.0,                                            desc='Pitch controller damping ratio')
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
+        self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
+        self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
         if rosco_init_options['Flp_Mode'] > 0:
@@ -207,9 +209,9 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'])
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
         
-        # Hard coded (DZ)
-        WISDEM_turbine.twr_freq         = 100
-        WISDEM_turbine.ptfm_freq        = .2
+        # Floating Feedback Filters
+        WISDEM_turbine.twr_freq         = float(inputs['twr_freq'])
+        WISDEM_turbine.ptfm_freq        = float(inputs['ptfm_freq'])
 
         # Load Cp tables
         self.Cp_table       = inputs['Cp_table']
