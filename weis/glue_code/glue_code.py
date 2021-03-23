@@ -19,7 +19,7 @@ from weis.control.tune_rosco import ServoSE_ROSCO
 from weis.aeroelasticse.rotor_loads_defl_strainsWEIS import RotorLoadsDeflStrainsWEIS
 from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
-from raft.omdao_raft import RAFT_WEIS
+from weis.frequency.raft_wrapper import RAFT_WEIS
 
 class WindPark(om.Group):
     # Openmdao group to run the analysis of the wind turbine
@@ -75,39 +75,52 @@ class WindPark(om.Group):
         if modeling_options['Level1']['flag']:
             self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options))
             self.connect('drivese.rna_mass', 'raft.turbine_mRNA')
-            self.connect('drivese.rna_I_TT', 'raft.turbine_IxRNA', src_indices=[0])
-            self.connect('drivese.rna_I_TT', 'raft.turbine_IrRNA', src_indices=[1])
-            self.connect('drivese.rna_cm', 'raft.turbine_xCG_RNA')
+            self.connect('drivese.rna_I_TT', 'raft.rna_I_TT')
+            self.connect('drivese.rna_cm', 'raft.rna_cm')
+            self.connect("nacelle.distance_tt_hub", "raft.drive_height")
             self.connect('drivese.base_F', 'raft.turbine_Fthrust', src_indices=[0])
             self.connect('assembly.hub_height', 'raft.turbine_hHub')
+            self.connect("tower.layer_thickness", "raft.tower_layer_thickness")
+            self.connect("tower_grid.s", "raft.turbine_tower_stations")
+            self.connect('tower.diameter', 'raft.turbine_tower_d')
+            self.connect('env.water_depth', 'raft.mooring_water_depth')
+            self.connect('env.rho_air', 'raft.rho_air')
+            self.connect('env.mu_air', 'raft.mu_air')
             if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
-                self.connect('towerse.tor_stff', 'raft.turbine_yaw_stiffness')
+                self.connect('towerse.rho', 'raft.tower_rho')
+                self.connect('towerse.tower_section_height', 'raft.tower_section_height')
+                self.connect('towerse.tor_stff', 'raft.tower_torsional_stiffness')
+                self.connect('towerse.wind.wind.U', 'raft.tower_U')
                 self.connect('tower.reference_axis', 'raft.turbine_tower_rA', src_indices=[0,2])
                 self.connect('tower.reference_axis', 'raft.turbine_tower_rB', src_indices=[-1,2])
-                self.connect('towerse.z_param', 'raft.turbine_tower_stations')
-                self.connect('towerse.tower_outer_diameter', 'raft.turbine_tower_d')
-                self.connect('towerse.tower_wall_thickness', 'raft.turbine_tower_t')
             elif modeling_options["flags"]["floating"]:
-                self.connect('floatingse.tower.tor_stff', 'raft.turbine_yaw_stiffness')
+                self.connect('floatingse.tower.rho', 'raft.tower_rho')
+                self.connect('floatingse.tower.section_height', 'raft.tower_section_height')
+                self.connect('floatingse.tower.tor_stff', 'raft.tower_torsional_stiffness')
                 self.connect('floatingse.tower.transition_node', 'raft.turbine_tower_rA')
                 self.connect('floatingse.tower.tower_top_node', 'raft.turbine_tower_rB')
-                self.connect('floatingse.tower.z_param', 'raft.turbine_tower_stations')
-                self.connect('floatingse.tower.outer_diameter', 'raft.turbine_tower_d')
-                self.connect('floatingse.tower.wall_thickness', 'raft.turbine_tower_t')
-                self.connect('env.water_depth', 'raft.mooring_water_depth')
+                self.connect('floatingse.tower.env.wind.U', 'raft.tower_U')
+                self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
 
                 for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                     idx = modeling_options["floating"]["members"]["name2idx"][kname]
                     self.connect(f"floating.memgrp{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
-                    self.connect(f"floating.member_{kname}:joint1", f"raft.platform_member{k+1}_rA")
-                    self.connect(f"floating.member_{kname}:joint2", f"raft.platform_member{k+1}_rB")
-                    self.connect(f"floatingse.member{k}.z_param", f"raft.platform_member{k+1}_stations")
-                    self.connect(f"floatingse.member{k}.h_ballast", f"raft.platform_member{k+1}_l_fill")
-                    self.connect(f"floatingse.member{k}.rho_ballast", f"raft.platform_member{k+1}_rho_fill")
+                    self.connect(f"floating.memgrp{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
+                    self.connect(f"floatingse.member{k}.height", f"raft.member{k}:height")
+                    self.connect(f"floatingse.member{k}.rho", f"raft.member{k}:rho")
+                    self.connect(f"floating.memgrp{idx}.s", f"raft.platform_member{k+1}_stations")
+                    self.connect(f"floating.memgrp{idx}.ring_stiffener_web_height", f"raft.member{k}:ring_stiffener_web_height")
+                    self.connect(f"floating.memgrp{idx}.ring_stiffener_web_thickness", f"raft.member{k}:ring_stiffener_web_thickness")
+                    self.connect(f"floating.memgrp{idx}.ring_stiffener_flange_width", f"raft.member{k}:ring_stiffener_flange_width")
+                    self.connect(f"floating.memgrp{idx}.ring_stiffener_flange_thickness", f"raft.member{k}:ring_stiffener_flange_thickness")
+                    self.connect(f"floating.memgrp{idx}.ring_stiffener_spacing", f"raft.member{k}:ring_stiffener_spacing")
                     self.connect(f"floating.memgrp{idx}.bulkhead_grid", f"raft.platform_member{k+1}_cap_stations")
                     self.connect(f"floating.memgrp{idx}.bulkhead_thickness", f"raft.platform_member{k+1}_cap_t")
-
-                self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
+                    self.connect(f"floating.member_{kname}:joint1", f"raft.platform_member{k+1}_rA")
+                    self.connect(f"floating.member_{kname}:joint2", f"raft.platform_member{k+1}_rB")
+                    self.connect(f"floating.memgrp{idx}.ballast_grid", f"raft.member{k}:ballast_grid")
+                    self.connect(f"floatingse.member{k}.h_ballast", f"raft.member{k}:h_ballast")
+                    self.connect(f"floatingse.member{k}.rho_ballast", f"raft.member{k}:rho_ballast")
 
                 
         if modeling_options['Level3']['flag']:

@@ -19,17 +19,26 @@ properties:
     Level1:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 1 = frequency domain (WISDEM)
+        description: Options for WEIS fidelity level 1 = frequency domain (RAFT)
         properties:
             flag:
                 type: boolean
                 default: False
-                description: Whether or not to run WEIS fidelity level 1 = frequency domain (WISDEM)
+                description: Whether or not to run WEIS fidelity level 1 = frequency domain (RAFT)
+            frequencies:
+                type: array
+                description: List of frequencies [Hz] to evaluate the response of the platform and turbine
+                default: [0.1, 0.21544346900318834, 0.46415888336127786, 1.0, 2.1544346900318834, 4.6415888336127775, 10.0, 21.54434690031882, 46.41588833612777, 100.0] # logspace(-1,2,10)
+                items:
+                    type: number
+                    uniqueItems: True
+                    minimum: 0.0
+                    maximum: 1e3
 
     Level2:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 1 = frequency domain (WISDEM)
+        description: Options for WEIS fidelity level 2 = linearized time domain (OpenFAST)
         properties:
             flag:
                 type: boolean

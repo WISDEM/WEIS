@@ -18,12 +18,16 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.set_run_flags()
         self.set_openmdao_vectors()
         self.set_openmdao_vectors_control()
-        self.set_openfast_data()
+        self.set_weis_data()
         self.set_opt_flags()
     
-    def set_openfast_data(self):
+    def set_weis_data(self):
+        # RAFT
+        if self.modeling_options['Level1']['flag']:
+            self.modeling_options['Level1']['n_freq'] = len(self.modeling_options['Level1']['frequencies'])
+        
         # Openfast
-        if self.modeling_options['Level3']['flag'] == True:
+        if self.modeling_options['Level3']['flag']:
             fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
             self.modeling_options['openfast']['fst_vt'] = {}
             self.modeling_options['openfast']['fst_vt']['outlist'] = fast.fst_vt['outlist']
