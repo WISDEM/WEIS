@@ -194,7 +194,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         n_member = len(opt["floating"]["members"]["name"])
         var_height = inputs['member_variable_height']
         for k in range(n_member):
-            discrete_outputs[f"platform_member{k+1}_potMod"] = opt["floating"]["members"]["model_potential"][k]
+            discrete_outputs[f"platform_member{k+1}_potMod"] = opt["Level1"]["model_potential"][k]
             
             # Member thickness
             outputs[f"platform_member{k+1}_t"] = inputs[f"member{k}:layer_thickness"].sum(axis=0)

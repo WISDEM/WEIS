@@ -34,6 +34,13 @@ properties:
                     uniqueItems: True
                     minimum: 0.0
                     maximum: 1e3
+            potential_bem_members: &potbem
+                type: array
+                description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
+                default: []
+                items:
+                    type: string
+                    uniqueItems: True
 
     Level2:
         type: object
@@ -44,6 +51,7 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run WEIS fidelity level 2 = linearized OpenFAST
+                
     Level3:
         type: object
         default: {}
@@ -53,6 +61,7 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run WEIS fidelity level 3 = nonlinear time domain (Linearize OpenFAST)
+            potential_bem_members: *potbem
             simulation: # TODO: Should this also move to analysis settings?
                 type: object
                 default: {}
