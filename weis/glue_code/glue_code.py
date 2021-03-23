@@ -97,10 +97,10 @@ class WindPark(om.Group):
                 self.connect('floatingse.tower.rho', 'raft.tower_rho')
                 self.connect('floatingse.tower.section_height', 'raft.tower_section_height')
                 self.connect('floatingse.tower.tor_stff', 'raft.tower_torsional_stiffness')
-                self.connect('floatingse.tower.transition_node', 'raft.turbine_tower_rA')
-                self.connect('floatingse.tower.tower_top_node', 'raft.turbine_tower_rB')
+                self.connect('floating.transition_node', 'raft.turbine_tower_rA')
+                self.connect('floatingse.tower_top_node', 'raft.turbine_tower_rB')
                 self.connect('floatingse.tower.env.wind.U', 'raft.tower_U')
-                self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
+                self.connect("floatingse.member_variable_height", "raft.member_variable_height")
 
                 for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                     idx = modeling_options["floating"]["members"]["name2idx"][kname]
@@ -119,8 +119,14 @@ class WindPark(om.Group):
                     self.connect(f"floating.member_{kname}:joint1", f"raft.platform_member{k+1}_rA")
                     self.connect(f"floating.member_{kname}:joint2", f"raft.platform_member{k+1}_rB")
                     self.connect(f"floating.memgrp{idx}.ballast_grid", f"raft.member{k}:ballast_grid")
-                    self.connect(f"floatingse.member{k}.h_ballast", f"raft.member{k}:h_ballast")
-                    self.connect(f"floatingse.member{k}.rho_ballast", f"raft.member{k}:rho_ballast")
+                    self.connect(f"floatingse.member{k}.ballast_height", f"raft.member{k}:ballast_height")
+                    self.connect(f"floatingse.member{k}.ballast_density", f"raft.member{k}:ballast_density")
+                    
+                self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
+                self.connect("mooring.unstretched_length", 'raft.unstretched_length')
+                for var in ['diameter','mass_density','stiffness','breaking_load','cost_rate',
+                            'transverse_added_mass','tangential_added_mass','transverse_drag','tangential_drag']:
+                    self.connect(f'mooring.line_{var}', f'raft.line_{var}')
 
                 
         if modeling_options['Level3']['flag']:

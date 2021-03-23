@@ -51,7 +51,7 @@ properties:
         properties:
             flag:
                 type: boolean
-                default: True
+                default: False
                 description: Whether or not to run WEIS fidelity level 3 = nonlinear time domain (Linearize OpenFAST)
             simulation: # TODO: Should this also move to analysis settings?
                 type: object
