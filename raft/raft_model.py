@@ -512,7 +512,7 @@ class Member:
                     # this would cause the inner member to stick out beyond the end point based on the following else calcs
                     # not including this for now since the modeler should be aware to not do this
                     raise ValueError('This setup cannot be handled by getIneria yet')
-                elif i < n-1 and L==self.cap_stations[i+1]: # if there's a discontinuity in the member and l=0
+                elif i < len(self.cap_stations)-1 and L==self.cap_stations[i+1]: # if there's a discontinuity in the member and l=0
                     dA = np.interp(L-h, self.stations, d)   # make an end cap going down from the lower member
                     dB = d[i]
                     dBi = d_hole
@@ -576,7 +576,7 @@ class Member:
                     # this would cause the inner member to stick out beyond the end point based on the following else calcs
                     # not including this for now since the modeler should be aware to not do this
                     raise ValueError('This setup cannot be handled by getIneria yet')
-                elif i < n-1 and L==self.cap_stations[i+1]:
+                elif i < len(self.cap_stations)-1 and L==self.cap_stations[i+1]:
                     slA = np.interp(L-h, self.stations, sl)
                     slB = sl[i]
                     slBi = sl_hole
@@ -1739,7 +1739,7 @@ class Model():
         # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
         self.ms.BodyList[0].setPosition(np.zeros(6))
         self.ms.initialize()
-        fig, ax = self.ms.plot(rbound=70)
+        fig, ax = self.ms.plot()
         #fig = plt.figure(figsize=(20/2.54,12/2.54))
         #ax = Axes3D(fig)
 

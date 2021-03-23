@@ -4,107 +4,6 @@ import numpy as np
 
 ndim = 3
 ndof = 6
-
-class RAFT_WEIS(om.Group):
-
-    def initialize(self):
-        self.options.declare('modeling_options')
-    
-    def setup(self):
-        # Create RAFT options structure from WEIS options structure
-        weis_opt = self.options['modeling_options']
-
-        raft_opt = {}
-        turbine_opt = {}
-        mooring_opt = {}
-        member_opt = {}
-
-        self.add_subsystem('pre', RAFT_WEIS_Prep(modeling_options=weis_opt), promotes=['*'])
-        self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
-                                              turbine_options=turbine_opt,
-                                              mooring_options=mooring_opt,
-                                              member_options=member_opt), promotes=['*'])
-
-class RAFT_WEIS_Prep(om.ExplicitComponent):
-
-    def initialize(self):
-        self.options.declare('modeling_options')
-    
-    def setup(self):
-        opt = self.options['modeling_options']
-        nfreq = len(opt['Level1']['frequencies'])
-        n_nodes = opt['mooring']['n_nodes']
-        n_lines = opt['mooring']['n_lines']
-        n_line_types = opt['mooring']['n_line_types']
-        
-        self.add_input("tower_layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
-        self.add_output("tower_turbine_t", val=np.zeros(n_height), units="m")
-        self.add_output("tower_turbine_rho_shell", val=0.0, units="kg/m**3")
-        self.add_output("turbine_tower_gamma", val=0.0, units="deg")
-        
-        for k, kname in enumerate(opt["floating"]["members"]["name"]):
-            idx = opt["floating"]["members"]["name2idx"][kname]
-            self.add_input(f"member{k}:layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
-            self.add_output(f"platform_member{k}_t", val=np.zeros(n_height), units="m")
-            self.add_output(f"platform_member{k}_gamma", val=0.0, units="deg")
-            self.add_output(f"platform_member{k}_rho_shell", val=0.0, units="kg/m**3")
-            self.add_discrete_output(f"platform_member{k}_potMod", val=False)
-
-        self.add_input('mooring_nodes', val=np.zeros((n_nodes, 3)), desc='Mooring node locations in global xyz')
-        for k in range(n_nodes):
-            self.add_discrete_output(f'mooring_point{k+1}_name', val=f'line{k+1}', desc='Mooring point identifier')
-            self.add_discrete_output(f'mooring_point{k+1}_type', val='fixed', desc='Mooring connection type')
-            self.add_output(f'mooring_point{k+1}_location', val=np.zeros(3), desc='Mooring node location')
-
-        for k in range(n_lines):
-            self.add_discrete_output(f'mooring_line{k+1}_endA', val='default', desc='End A coordinates')
-            self.add_discrete_output(f'mooring_line{k+1}_endB', val='default', desc='End B coordinates')
-            self.add_discrete_output(f'mooring_line{k+1}_type', val='mooring_line_type1', desc='Mooring line type')
-            self.add_output(f'mooring_line{k+1}_length', val=0.0, units='m', desc='Length of line')
-
-        # line types
-        for k in range(n_line_types):
-            self.add_discrete_output(f'mooring_line_type{k+1}_name', val='default', desc='Name of line type')
-            self.add_output(f'mooring_line_type{k+1}_diameter', val=0.0, units='m', desc='Diameter of mooring line type')
-            self.add_output(f'mooring_line_type{k+1}_mass_density', val=0.0, units='kg/m**3', desc='Mass density of line type')
-            self.add_output(f'mooring_line_type{k+1}_stiffness', val=0.0, desc='Stiffness of line type')
-            self.add_output(f'mooring_line_type{k+1}_breaking_load', val=0.0, desc='Breaking load of line type')
-            self.add_output(f'mooring_line_type{k+1}_cost', val=0.0, units='USD', desc='Cost of mooring line type')
-            self.add_output(f'mooring_line_type{k+1}_transverse_added_mass', val=0.0, desc='Transverse added mass')
-            self.add_output(f'mooring_line_type{k+1}_tangential_added_mass', val=0.0, desc='Tangential added mass')
-            self.add_output(f'mooring_line_type{k+1}_transverse_drag', val=0.0, desc='Transverse drag')
-            self.add_output(f'mooring_line_type{k+1}_tangential_drag', val=0.0, desc='Tangential drag') 
-           
-        self.add_output('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
-    
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-        opt = self.options['modeling_options']
-        
-        outputs['frequency_range'] = np.array( opt['Level1']['frequencies'] )
-        
-        for k in range(opt['mooring']['n_nodes']):
-            discrete_outputs[f'mooring_point{k+1}_name'] = opt['mooring']['nodes'][k]["name"]
-            discrete_outputs[f'mooring_point{k+1}_type'] = opt['mooring']['nodes'][k]["node_type"]
-            outputs[f'mooring_point{k+1}_location'] = inputs['mooding_nodes'][k,:]
-
-        for k in range(opt['mooring']['n_lines']):
-            discrete_outputs[f'mooring_line{k+1}_endA'] = opt['mooring']["lines"][k]["node1"]
-            discrete_outputs[f'mooring_line{k+1}_endB'] = opt['mooring']["lines"][k]["node2"]
-            discrete_outputs[f'mooring_line{k+1}_type'] = opt['mooring']["lines"][k]["line_type"]
-            outputs[f'mooring_line{k+1}_length'] = opt['mooring']["lines"][k]["unstretched_length"]
-
-        for k in range(opt['mooring']['n_line_types']):
-            discrete_outputs[f'mooring_line_type{k+1}_name'] = opt['mooring']["line_types"][k]["name"]
-            outputs[f'mooring_line_type{k+1}_diameter'] = opt['mooring']["line_types"][k]["diameter"]
-            outputs[f'mooring_line_type{k+1}_mass_density'] = opt['mooring']["line_types"][k]["mass_density"]
-            outputs[f'mooring_line_type{k+1}_stiffness'] = opt['mooring']["line_types"][k]["stiffness"]
-            outputs[f'mooring_line_type{k+1}_breaking_load'] = opt['mooring']["line_types"][k]["breaking_load"]
-            outputs[f'mooring_line_type{k+1}_cost'] = opt['mooring']["line_types"][k]["cost"]
-            outputs[f'mooring_line_type{k+1}_transverse_added_mass'] = opt['mooring']["line_types"][k]["transverse_added_mass"]
-            outputs[f'mooring_line_type{k+1}_tangential_added_mass'] = opt['mooring']["line_types"][k]["tangential_added_mass"]
-            outputs[f'mooring_line_type{k+1}_transverse_drag'] = opt['mooring']["line_types"][k]["transverse_drag"]
-            outputs[f'mooring_line_type{k+1}_tangential_drag'] = opt['mooring']["line_types"][k]["tangential_drag"]
-            
 class RAFT_OMDAO(om.ExplicitComponent):
     """
     RAFT OpenMDAO Wrapper API
@@ -143,29 +42,22 @@ class RAFT_OMDAO(om.ExplicitComponent):
         nconnections = mooring_opt['nconnections']
 
         # frequency domain
-        # WEIS WILL LIKELY HAVE THIS IN MODELING OPTIONS
         self.add_input('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
 
         # turbine inputs
         self.add_input('turbine_mRNA', val=0.0, units='kg', desc='RNA mass')
-        # WHICH CS?
         self.add_input('turbine_IxRNA', val=0.0, units='kg*m**2', desc='RNA moment of inertia about local x axis')
-        # RNA IS NOT A SYMMETRIC INERTIA TENSOR- IS THAT ASSUMED WITH Ir?
         self.add_input('turbine_IrRNA', val=0.0, units='kg*m**2', desc='RNA moment of inertia about local y or z axes')
         self.add_input('turbine_xCG_RNA', val=0.0, units='m', desc='x location of RNA center of mass')
         
         self.add_input('turbine_hHub', val=0.0, units='m', desc='Hub height above water line')
-        # ON THE SHAFT?  AT THE TOWER TOP?
         self.add_input('turbine_Fthrust', val=0.0, units='N', desc='Temporary thrust force to use')
-        # HOW IS THIS DEFINED?
         self.add_input('turbine_yaw_stiffness', val=0.0, units='N*m', desc='Additional yaw stiffness to apply if not modeling crowfoot in the mooring system')
         # tower inputs
         self.add_input('turbine_tower_rA', val=np.zeros(ndim), units='m', desc='End A coordinates')
         self.add_input('turbine_tower_rB', val=np.zeros(ndim), units='m', desc='End B coordinates')
-        # NEED UNITS HERE
         self.add_input('turbine_tower_gamma', val=0.0, units='deg', desc='Twist angle about z-axis')
-        # WHAT ARE THESE STATIONS FOR?
-        self.add_input('turbine_tower_stations', val=np.zeros(turbine_npts), units='m', desc='Location of stations along axis, will be normalized along rA to rB')
+        self.add_input('turbine_tower_stations', val=np.zeros(turbine_npts), desc='Location of stations along axis, will be normalized along rA to rB')
         if turbine_opt['scalar_diameters']:
             self.add_input('turbine_tower_d', val=0.0, units='m', desc='Diameters if circular or side lengths if rectangular')
         else:
@@ -173,12 +65,12 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 self.add_input('turbine_tower_d', val=np.zeros(turbine_npts), units='m', desc='Diameters if circular or side lengths if rectangular')
             elif turbine_opt['shape'] == 'rect':
                 self.add_input('turbine_tower_d', val=np.zeros(2 * turbine_npts), units='m', desc='Diameters if circular or side lengths if rectangular')
-        # WISDEM USES CONSTANT THICKNESS PER SECTION, SO NPTS-1, CAN ACCOMMODATE THOUGH
+
         if turbine_opt['scalar_thicknesses']:
             self.add_input('turbine_tower_t', val=0.0, units='m', desc='Wall thicknesses at station locations')
         else:
             self.add_input('turbine_tower_t', val=np.zeros(turbine_npts), units='m', desc='Wall thicknesses at station locations')
-        # WE HAVE TRANVERSE CD ON THE TOWER, BUT THAT IS ALL
+
         if turbine_opt['scalar_coefficients']:
             self.add_input('turbine_tower_Cd', val=0.0, desc='Transverse drag coefficient')
             self.add_input('turbine_tower_Ca', val=0.0, desc='Transverse added mass coefficient')
@@ -196,7 +88,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
             mnpts = member_npts[i - 1]
             mnpts_lfill = member_npts_lfill[i - 1]
-            mnpts_rho_fill = member_npts_rho_fill[i - 1]
             mncaps = member_ncaps[i - 1]
             mnreps = member_nreps[i - 1]
             mshape = member_shape[i - 1]
@@ -205,17 +96,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
             scalar_coeff = member_scalar_coeff[i - 1]
             m_name = f'platform_member{i}_'
 
-            # WHEN DEVELOPING THE WEIS PARAMETERIZATION, REPEAT COLUMNS VIA HEADING WAS VOTED AGAINST
-            # WOULD LIKELY ONLY HAVE THIS INFORMATION FOR OPTIMIZATION RUNS, MIGHT SET UP WITHOUT THIS FOR NOW
             self.add_input(m_name+'heading', val=np.zeros(mnreps), units='deg', desc='Heading rotation of column about z axis (for repeated members)')
             self.add_input(m_name+'rA', val=np.zeros(ndim), units='m', desc='End A coordinates')
             self.add_input(m_name+'rB', val=np.zeros(ndim), units='m', desc='End B coordinates')
-            # NEED UNITS HERE
-            self.add_input(m_name+'gamma', val=0.0, desc='Twist angle about the member z axis')
-            # SHOULDN'T THIS BE A MODELING USER OPTION?
+            self.add_input(m_name+'gamma', val=0.0, units='deg', desc='Twist angle about the member z axis')
+            # ADD THIS AS AN OPTION IN WEIS
             self.add_discrete_input(m_name+'potMod', val=False, desc='Whether to model the member with potential flow')
-            # WHAT IS THIS FOR?
-            self.add_input(m_name+'stations', val=np.zeros(mnpts), units='m', desc='Location of stations along axis, will be normalized from end A to B')
+            self.add_input(m_name+'stations', val=np.zeros(mnpts), desc='Location of stations along axis, will be normalized from end A to B')
             if scalar_d:
                 self.add_input(m_name+'d', val=0.0, units='m', desc='Diameters if circular, side lengths if rectangular')
             else:
@@ -239,14 +126,14 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 self.add_input(m_name+'CaEnd', val=np.zeros(mnpts), desc='End axial added mass coefficient')
             self.add_input(m_name+'rho_shell', val=0.0, units='kg/m**3', desc='Material density')
             # optional
-            # WOULD NEED STARTING AND END LOCATION FOR HEIGHT, RIGHT?  DOES THIS INCLUDE VARIABLE WATER BALLAST?
             self.add_input(m_name+'l_fill', val=np.zeros(mnpts_lfill), units='m', desc='Fill heights of ballast in each section')
-            self.add_input(m_name+'rho_fill', val=np.zeros(mnpts_rho_fill), units='kg/m**3', desc='Material density of ballast in each section')
-            self.add_input(m_name+'cap_stations', val=np.zeros(mncaps), units='m', desc='Location along member of any inner structures (same scaling as stations')
+            self.add_input(m_name+'rho_fill', val=np.zeros(mnpts_lfill), units='kg/m**3', desc='Material density of ballast in each section')
+            self.add_input(m_name+'cap_stations', val=np.zeros(mncaps), desc='Location along member of any inner structures (same scaling as stations')
             self.add_input(m_name+'cap_t', val=np.zeros(mncaps), units='m', desc='Thickness of any internal structures')
-            # SHOULD BE ABLE TO DETERMINE THIS FROM DIAMETER SCHEDULE
             self.add_input(m_name+'cap_d_in', val=np.zeros(mncaps), units='m', desc='Inner diameter of internal structures')
-            # OTHER THINGS TO CONSIDER: STIFFENERS- THIN END CAPS?, OUTFITTING FACTOR- SCALE DENSITY?
+            self.add_input(m_name+'ring_spacing', val=0.0, desc='Spacing of internal structures placed based on spacing.  Dimension is same as used in stations')
+            self.add_input(m_name+'ring_t', val=0.0, units='m', desc='Effective thickness of any internal structures placed based on spacing')
+            self.add_input(m_name+'ring_h', val=0.0, units='m', desc='Effective web height of internal structures placed based on spacing')
             
         # mooring inputs
         self.add_input('mooring_water_depth', val=0.0, units='m', desc='Uniform water depth')
@@ -323,11 +210,16 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
         nmembers = members_opt['nmembers']
         member_npts = members_opt['npts']
+        member_npts_lfill = members_opt['npts_lfill']
+        member_npts_rho_fill = members_opt['npts_rho_fill']
+        member_ncaps = members_opt['ncaps']
+        member_nreps = members_opt['nreps']
         member_shapes = members_opt['shape']
         member_scalar_t = members_opt['scalar_thicknesses']
         member_scalar_d = members_opt['scalar_diameters']
         member_scalar_coeff = members_opt['scalar_coefficients']
 
+        
         nlines = mooring_opt['nlines']
         nline_types = mooring_opt['nline_types']
         nconnections = mooring_opt['nconnections']
@@ -380,6 +272,10 @@ class RAFT_OMDAO(om.ExplicitComponent):
         for i in range(nmembers):
             m_name = f'platform_member{i+1}_'
             m_shape = member_shapes[i]
+            mnpts_lfill = member_npts_lfill[i]
+            mncaps = member_ncaps[i]
+            mnreps = member_nreps[i]
+            
             design['platform']['members'][i]['name'] = m_name
             design['platform']['members'][i]['type'] = i + 2
             design['platform']['members'][i]['rA'] = inputs[m_name+'rA']
@@ -407,15 +303,29 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 design['platform']['members'][i]['CdEnd'] = inputs[m_name+'CdEnd']
                 design['platform']['members'][i]['CaEnd'] = inputs[m_name+'CaEnd']
             design['platform']['members'][i]['rho_shell'] = float(inputs[m_name+'rho_shell'])
-            if np.count_nonzero(inputs[m_name+'heading']) > 0:
+            if mnreps > 0:
                 design['platform']['members'][i]['heading'] = inputs[m_name+'heading']
-            if np.count_nonzero(inputs[m_name+'rho_fill']) > 0:
+            if mnpts_lfill > 0:
                 design['platform']['members'][i]['l_fill'] = inputs[m_name+'l_fill']
                 design['platform']['members'][i]['rho_fill'] = inputs[m_name+'rho_fill']
-            if np.count_nonzero(inputs[m_name+'cap_t']) > 0:
-                design['platform']['members'][i]['cap_stations'] = inputs[m_name+'cap_stations']
-                design['platform']['members'][i]['cap_t'] = inputs[m_name+'cap_t']
-                design['platform']['members'][i]['cap_d_in'] = inputs[m_name+'cap_d_in']
+            if ( (mncaps > 0) or (inputs[m_name+'ring_spacing'] > 0) ):
+                # Member discretization
+                s_grid = inputs[m_name+'stations']
+                s_height = s_grid[-1] - s_grid[0]
+                # Get locations of internal structures based on spacing
+                ring_spacing = inputs[m_name+'ring_spacing']
+                n_stiff = 0 if ring_spacing == 0.0 else int(np.floor(s_height / ring_spacing))
+                s_ring = (np.arange(1, n_stiff + 0.1) - 0.5) * (ring_spacing / s_height)
+                d_ring = np.interp(s_ring, s_grid, inputs[m_name+'d'])
+                # Combine internal structures based on spacing and defined positions
+                s_cap = np.r_[s_ring, inputs[m_name+'cap_stations']]
+                t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), inputs[m_name+'cap_t']]
+                di_cap = np.r_[d_ring-2*inputs[m_name+'ring_h'], inputs[m_name+'cap_d_in']]
+                # Store vectors in sorted order
+                isort = np.argsort(s_cap)
+                design['platform']['members'][i]['cap_stations'] = s_cap[isort]
+                design['platform']['members'][i]['cap_t'] = t_cap[isort]
+                design['platform']['members'][i]['cap_d_in'] = di_cap[isort]
 
         design['mooring'] = {}
         design['mooring']['water_depth'] = inputs['mooring_water_depth']
