@@ -145,8 +145,8 @@ design_variables:
         groups:
             - names: [spar]
               ballast:
-                  lower_bound: 5.5e3
-                  upper_bound: 8e3
+                  lower_bound: 0.25e3
+                  upper_bound: 2.5e3
     mooring:
       anchor_radius:
         # This adjusts the radius of all anchor nodes from (0,0)
