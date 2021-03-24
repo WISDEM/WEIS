@@ -16,8 +16,12 @@ from ROSCO_toolbox import turbine as ROSCO_turbine
 from ROSCO_toolbox import utilities as ROSCO_Utilities
 
 def run_PC_sweep(omega,zeta=1.0):
-    # Process inputs, single (omega, zeta) or multiple?
-    
+    # Set up OpenFAST model
+    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+    fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+    run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+
     
     # Turbine inputs
     iec = CaseGen_IEC()
@@ -86,7 +90,7 @@ def run_PC_sweep(omega,zeta=1.0):
     iec.parallel_windfile_gen = True
     iec.cores = 4
 
-    iec.run_dir = 'outputs/iea15mw/PC_sweep_play'
+    iec.run_dir = 'outputs/iea15mw/PC_sweep'
 
     # Run case generator / wind file writing
     case_inputs = {}
@@ -145,7 +149,6 @@ def run_PC_sweep(omega,zeta=1.0):
     # load default params
     print('here')
     rt_dir              = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))),'ROSCO_toolbox')
-    rt_dir              = '/Users/dzalkind/Tools/ROSCO_toolbox'
     weis_dir            = os.path.join(rt_dir,'Tune_Cases')
     control_param_yaml  = os.path.join(rt_dir,'Tune_Cases','IEA15MW.yaml')
     inps                = yaml.safe_load(open(control_param_yaml))
@@ -155,8 +158,7 @@ def run_PC_sweep(omega,zeta=1.0):
 
     # make default controller, turbine objects for ROSCO_toolbox
     turbine             = ROSCO_turbine.Turbine(turbine_params)
-    turbine.load_from_fast( path_params['FAST_InputFile'],
-                            os.path.join(rt_dir, path_params['FAST_directory']), dev_branch=True)
+    turbine.load_from_fast( fastBatch.FAST_InputFile, fastBatch.FAST_directory, dev_branch=True)
 
     controller          = ROSCO_controller.Controller(controller_params)
 
@@ -186,15 +188,14 @@ def run_PC_sweep(omega,zeta=1.0):
     case_inputs[('DISCON_in', 'PC_GS_KP')] = {'vals': pc_kp, 'group': 3}
     case_inputs[('DISCON_in', 'PC_GS_KI')] = {'vals': pc_ki, 'group': 3}
 
-    iec.case_name_base = 'pc_play'
+    iec.case_name_base = 'pc_omega'
 
     # generate cases
     case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
 
     #for var in var_out+[var_x]:
 
-    # Run FAST cases
-    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+    
 
     # Monopile
     # fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
@@ -211,10 +212,7 @@ def run_PC_sweep(omega,zeta=1.0):
     # else:
     #     fastBatch.run_serial()
 
-    # U-Maine semi-sub
-    fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    
     fastBatch.FAST_runDirectory = iec.run_dir
     if True:
         fastBatch.run_multi(cores=4)

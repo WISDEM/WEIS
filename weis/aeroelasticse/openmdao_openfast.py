@@ -88,6 +88,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
+        self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -134,6 +135,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
         self.add_input('theta',             val=np.zeros(n_span), units='deg', desc='twist at airfoil locations')
         self.add_input('rthick',            val=np.zeros(n_span), desc='relative thickness of airfoil distribution')
+        self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
         self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
         self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
@@ -142,8 +144,6 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
         self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
-        self.add_input('airfoils_Re_loc',   val=np.zeros((n_span, n_Re, n_tab)), desc='temporary - matrix of Re numbers')
-        self.add_input('airfoils_Ma_loc',   val=np.zeros((n_span, n_Re, n_tab)), desc='temporary - matrix of Ma numbers')
         self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
         
         # Airfoil coordinates
@@ -465,7 +465,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']      = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
@@ -614,16 +617,34 @@ class FASTLoadCases(ExplicitComponent):
         # fst_vt['AeroDyn15']['af_data'] = [{}]*len(airfoils)
         fst_vt['AeroDyn15']['af_data'] = []
 
-        if self.n_tab > 1:
+        # Set the AD15 flag AFTabMod, deciding whether we use more Re per airfoil or user-defined tables (used for example in distributed aerodynamic control)
+        if fst_vt['AeroDyn15']['AFTabMod'] == 1:
+            # If AFTabMod is the default coming form the schema, check the value from WISDEM, which might be set to 2 if more Re per airfoil are defined in the geometry yaml 
+            fst_vt['AeroDyn15']['AFTabMod'] = modeling_options["WISDEM"]["RotorSE"]["AFTabMod"]
+        if self.n_tab > 1 and fst_vt['AeroDyn15']['AFTabMod'] == 1:
             fst_vt['AeroDyn15']['AFTabMod'] = 3
+        elif self.n_tab > 1 and fst_vt['AeroDyn15']['AFTabMod'] == 2:
+            raise Exception('OpenFAST does not support both multiple Re and multiple user defined tabs. Please remove DAC devices or Re polars')
 
         for i in range(self.n_span): # No of blade radial stations
         
             fst_vt['AeroDyn15']['af_data'].append([])
             
+            if fst_vt['AeroDyn15']['AFTabMod'] == 1:
+                loop_index = 1
+            elif fst_vt['AeroDyn15']['AFTabMod'] == 2:
+                loop_index = self.n_Re
+            else:
+                loop_index = self.n_tab
 
-            for j in range(self.n_tab): # No of tabs; if there are no flaps at this blade station
-                unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,j], inputs['airfoils_cd'][i,:,0,j], inputs['airfoils_cm'][i,:,0,j])
+            for j in range(loop_index): # Number of tabs or Re
+                if fst_vt['AeroDyn15']['AFTabMod'] == 1:
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,0], inputs['airfoils_cd'][i,:,0,0], inputs['airfoils_cm'][i,:,0,0])
+                elif fst_vt['AeroDyn15']['AFTabMod'] == 2:
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,j,0], inputs['airfoils_cd'][i,:,j,0], inputs['airfoils_cm'][i,:,j,0])
+                else:
+                    unsteady = eval_unsteady(inputs['airfoils_aoa'], inputs['airfoils_cl'][i,:,0,j], inputs['airfoils_cd'][i,:,0,j], inputs['airfoils_cm'][i,:,0,j])
+                
                 fst_vt['AeroDyn15']['af_data'][i].append({})
 
 
@@ -633,13 +654,14 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
-                fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = self.n_tab
-                if inputs['airfoils_Re_loc'][i][0][j] == 0:  # check if Re ws locally determined (e.g. for trailing edge flaps)
-                    fst_vt['AeroDyn15']['af_data'][i][j]['Re']        =  0.75       # TODO: functionality for multiple Re tables
+                
+                fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = loop_index
+                if fst_vt['AeroDyn15']['AFTabMod'] == 3:
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = inputs['airfoils_Ctrl'][i,0,j]  # unsteady['Ctrl'] # added to unsteady function for variable flap controls at airfoils
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][0] # If AFTabMod==3 the Re is neglected, but it still must be the same across tables
                 else:
-                    fst_vt['AeroDyn15']['af_data'][i][j]['Re'] = inputs['airfoils_Re_loc'][i,0,j]/1000000  # give in millions
-                fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = inputs['airfoils_Ctrl'][i,0,j]  # unsteady['Ctrl'] # added to unsteady function for variable flap controls at airfoils
-
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Re']   = inputs['airfoils_Re'][j]
+                    fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = 0.
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha0']    = unsteady['alpha0']
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = unsteady['alpha1']
@@ -682,11 +704,13 @@ class FASTLoadCases(ExplicitComponent):
         
         fst_vt['AeroDyn15']['af_coord'] = []
         fst_vt['AeroDyn15']['rthick']   = np.zeros(self.n_span)
+        fst_vt['AeroDyn15']['ac']   = np.zeros(self.n_span)
         for i in range(self.n_span):
             fst_vt['AeroDyn15']['af_coord'].append({})
             fst_vt['AeroDyn15']['af_coord'][i]['x']  = inputs['coord_xy_interp'][i,:,0]
             fst_vt['AeroDyn15']['af_coord'][i]['y']  = inputs['coord_xy_interp'][i,:,1]
             fst_vt['AeroDyn15']['rthick'][i]         = inputs['rthick'][i]
+            fst_vt['AeroDyn15']['ac'][i]             = inputs['ac'][i]
                 
         # AeroDyn spanwise output positions
         r = r/r[-1]

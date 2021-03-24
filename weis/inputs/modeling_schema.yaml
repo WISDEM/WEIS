@@ -1570,11 +1570,8 @@ properties:
                         default: -561580799
                         description: First random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]
                     WaveSeed2:
-                        type: integer
-                        minimum: -2147483648
-                        maximum: 2147483647
-                        default: -1669871451
-                        description: Second random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]
+                        default: RANLUX
+                        description: Second random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]. Use RANLUX for internal FAST pseudo-random number generator
                     WaveNDAmp:
                         type: boolean
                         default: True

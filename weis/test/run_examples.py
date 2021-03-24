@@ -1,7 +1,5 @@
-import os
 import unittest
-from time import time
-from weis.test.utils import execute_script, run_all_scripts
+from weis.test.utils import run_all_scripts
 
 
 
@@ -18,9 +16,9 @@ all_scripts = [
     # "02_control_opt/run_lin_turbine",
     # "02_control_opt/runOptimization",
     
-    # "03_NREL5MW_OC3_spar/weis_driver",
+    "03_NREL5MW_OC3_spar/weis_driver",
     
-    # "04_NREL5MW_OC4_semi/",  # there appears to be no python file within this folder
+    "04_NREL5MW_OC4_semi/weis_driver",
     
     "05_IEA-3.4-130-RWT/weis_driver",
     
@@ -71,4 +69,9 @@ def suite():
 
 
 if __name__ == "__main__":
-    unittest.TextTestRunner().run(suite())
+    result = unittest.TextTestRunner().run(suite())
+
+    if result.wasSuccessful():
+        exit(0)
+    else:
+        exit(1)

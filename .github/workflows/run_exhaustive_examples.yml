@@ -16,22 +16,41 @@ jobs:
         
     steps:
       - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
-        # https://github.com/marketplace/actions/setup-miniconda
+
+      # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
+      #- uses: conda-incubator/setup-miniconda@v2
+      #  # https://github.com/marketplace/actions/setup-miniconda
+      #  with:
+      #    #miniconda-version: "latest"
+      #    channels: conda-forge
+      #    auto-update-conda: true
+      #    python-version: 3.8
+      #    environment-file: environment.yml
+        
+      # This is a less official, but more lightweight way to do miniconda
+      - uses: s-weigand/setup-conda@v1
+        # https://github.com/marketplace/actions/setup-conda
         with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          auto-update-conda: true
+          update-conda: true
           python-version: 3.8
-          environment-file: environment.yml
+          conda-channels: conda-forge
+          activate-conda: true
+      - run: conda env update -n base --file environment.yml
+
+      #- name: Show custom environment
+      #  shell: bash
+      #  run: |
+      #      cat $GITHUB_ENV
+      #      printenv
       
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
-        shell: pwsh # putting in a shell command makes for compile linking problems later
-        # (if you use the shell here, cannot use 'compiler' package, but mpi only seems to work with it)
+        shell: bash 
+        # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
+        # Mpi only seems to work with the shell command though, so instead rely on system compilers
         run: |
-          conda install -y petsc4py mpi4py openmpi==4.0.5
+          conda install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"
 
       # Install dependencies of WISDEM specific to windows
@@ -40,31 +59,29 @@ jobs:
         run: |
           conda install -y m2w64-toolchain libpython
 
+      # Install WISDEM
+      - name: Install WEIS
+        shell: bash
+        run: |
+          python setup.py develop
+          
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
         
-      # Install WISDEM
-      - name: Install WEIS
-        shell: pwsh
-        run: |
-          python setup.py develop
-          
       # Run all examples
       - name: Run tests within WEIS
-        shell: pwsh
+        shell: bash
         run: |
           cd weis/test
-          pytest run_examples.py
+          python run_examples.py
           
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
-        shell: pwsh
+        shell: bash
         run: |
           cd examples/05_IEA-3.4-130-RWT
           mpirun -np 2 python weis_driver.py
-      
-
 
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
@@ -74,7 +91,7 @@ jobs:
 
       # Run scripts within design of experiments folder
       - name: Run examples design of experiments
-        shell: pwsh
+        shell: bash
         run: |
           cd examples/09_design_of_experiments
           mpirun -np 2 python DOE_openfast.py

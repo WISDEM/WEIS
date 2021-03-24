@@ -150,6 +150,7 @@ else:
     path2dll = os.path.join(run_dir1, 'local/lib/libdiscon.so')
 
 case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
+case_inputs[("AeroDyn15","AFAeroMod")]   = {'vals':[2], 'group':0}
 case_inputs[("AeroDyn15","TwrAero")]     = {'vals':["True"], 'group':0}
 case_inputs[("AeroDyn15","TwrPotent")]   = {'vals':[1], 'group':0}
 case_inputs[("AeroDyn15","TwrShadow")]   = {'vals':[1], 'group':0}
