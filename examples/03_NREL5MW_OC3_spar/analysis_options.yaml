@@ -1,5 +1,5 @@
 general:
-    folder_output: /scratch/dzalkind/WEIS-4/optimizations/outputs_opt_ball_long
+    folder_output: /Users/dzalkind/Tools/WEIS-4/optimizations/outputs_opt_both_debug4
     fname_output: refturb_output
 design_variables:
   blade:
@@ -244,9 +244,9 @@ constraints:
       min: 0.0
       max: 0.1
     rotor_overspeed:
-      flag: False # True
+      flag: True # True
       min: 0.0
-      max: 0.3
+      max: 0.25
     Max_PtfmPitch:
       flag: True
       max: 6.
@@ -288,12 +288,12 @@ constraints:
 driver:
   optimization:
     flag: True
-    tol: 1.e-4            # Optimality tolerance
+    tol: 1.e-3            # Optimality tolerance
     max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
     max_iter: 100         # Maximum number of iterations (SLSQP)
-    solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-    step_size: 0.025      # Step size for finite differencing
+    solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
     flag: False           # Flag to enable design of experiments

@@ -329,7 +329,7 @@ components:
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 1e3
+                      volume: 6.5e3
                       grid: [0.0, 0.4]
                     - variable_flag: True
                       grid: [0.4, 1.0]
@@ -706,6 +706,7 @@ control:
     shutdown:
         limit_type: gen_speed
         limit_value: 2.0
+    
 
 environment:
     air_density: 1.225
