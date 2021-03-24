@@ -9,23 +9,17 @@
 # 2020-06-17: Trying to create a new quasi-static mooring system solver based on my Catenary function adapted from FAST v7, and using MoorDyn architecture
 
 import numpy as np
-
 import moorpy.MoorSolve as msolve
+#import scipy.optimize
 
-
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib import cm
-
-from mpl_toolkits.mplot3d import Axes3D
-
-import scipy.optimize
-
-
-# reload the libraries each time in case we make any changes
-import importlib
-msolve = importlib.reload(msolve)
-
+# Import plot libraries if need be, but don't error if not available
+try:
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    #from matplotlib import cm
+    from mpl_toolkits.mplot3d import Axes3D
+except:
+    pass
 
  
 # base class for MoorPy exceptions
@@ -285,7 +279,7 @@ def Catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                         print(f" Iteration {i}: HF={info4['Xs'][i,0]: 8.4e}, VF={info4['Xs'][i,1]: 8.4e}, EX={info4['Es'][i,0]: 6.2e}, EZ={info4['Es'][i,1]: 6.2e}")
                                 
 
-                                
+                    '''
                     # plot solve performance
                     fig, ax = plt.subplots(4,1, sharex=True)
                     ax[0].plot(np.hstack([info2['Xs'][:,0], info3['Xs'][:,0], info4['Xs'][:,0]]))
@@ -328,6 +322,7 @@ def Catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                     plt.show()
                 
                     #breakpoint()
+                    '''
                     
                     raise CatenaryError("Catenary solver failed.")
                 
@@ -1063,9 +1058,9 @@ class Line():
         '''
         
         if endB == 1:
-            self.rB = np.array(r, dtype=np.float)
+            self.rB = np.array(r, dtype=np.float_)
         elif endB == 0:
-            self.rA = np.array(r, dtype=np.float)
+            self.rA = np.array(r, dtype=np.float_)
         else:
             raise LineError("setEndPosition: endB value has to be either 1 or 0")
         
@@ -1259,10 +1254,10 @@ class Point():
     
         self.number = num
         self.type = type               # 1: fixed/attached to something, 0 free to move, or -1 coupled externally
-        self.r = np.array(r, dtype=np.float)
+        self.r = np.array(r, dtype=np.float_)
                 
-        self.m = np.float(m)
-        self.v = np.float(v)
+        self.m = np.float_(m)
+        self.v = np.float_(v)
         self.fExt = fExt               # external forces plus weight/buoyancy
         
         self.attached     = []         # ID numbers of any Lines attached to the Point
@@ -1333,7 +1328,7 @@ class Point():
         
         # update the position of the Point itself
         if len(r)==3:
-            self.r = np.array(r, dtype=np.float)
+            self.r = np.array(r, dtype=np.float_)
         else:
             raise ValueError(f"Point setPosition method requires an argument of size 3, but size {len(r):d} was provided")
         
@@ -1501,17 +1496,17 @@ class Body():
         
         self.number = num
         self.type   = type                          # 0 free to move, or -1 coupled externally
-        self.r6     = np.array(r6, dtype=np.float)  # 6DOF position and orientation vector [m, rad]
+        self.r6     = np.array(r6, dtype=np.float_)  # 6DOF position and orientation vector [m, rad]
         self.m      = m                             # mass, centered at CG [kg]
         self.v      = v                             # volume, assumed centered at reference point [m^3]
-        self.rCG    = np.array(rCG, dtype=np.float) # center of gravity position in body reference frame [m]
+        self.rCG    = np.array(rCG, dtype=np.float_) # center of gravity position in body reference frame [m]
         self.AWP    = AWP                           # waterplane area - used for hydrostatic heave stiffness if nonzero
         if np.isscalar(rM):
-            self.rM = np.array([0,0,rM], dtype=np.float) # coordinates of body metacenter relative to body reference frame [m]
+            self.rM = np.array([0,0,rM], dtype=np.float_) # coordinates of body metacenter relative to body reference frame [m]
         else:
-            self.rM = np.array(rM, dtype=np.float)          
+            self.rM = np.array(rM, dtype=np.float_)          
                 
-        self.f6Ext  = np.array(f6Ext, dtype=np.float)    # for adding external forces and moments in global orientation (not including weight/buoyancy)
+        self.f6Ext  = np.array(f6Ext, dtype=np.float_)    # for adding external forces and moments in global orientation (not including weight/buoyancy)
         
         
         self.attachedP   = []          # ID numbers of any Points attached to the Body
@@ -1566,7 +1561,7 @@ class Body():
         '''
         
         if len(r6)==6:
-            self.r6 = np.array(r6, dtype=np.float)  # update the position of the Body itself
+            self.r6 = np.array(r6, dtype=np.float_)  # update the position of the Body itself
         else:
             raise ValueError(f"Body setPosition method requires an argument of size 6, but size {len(r6):d} was provided")
         
@@ -1873,17 +1868,17 @@ class System():
             self.load(file)
     
     
-    def addBody(self, type, r6, m=0, v=0, rCG=np.zeros(3), AWP=0, rM=np.zeros(3), f6Ext=np.zeros(6)):
+    def addBody(self, mytype, r6, m=0, v=0, rCG=np.zeros(3), AWP=0, rM=np.zeros(3), f6Ext=np.zeros(6)):
         '''Convenience function to add a Body to a mooring system.'''
-        self.BodyList.append( Body(self, len(self.BodyList)+1, type, r6, m=m, v=v, rCG=rCG, AWP=AWP, rM=rM, f6Ext=f6Ext) )
+        self.BodyList.append( Body(self, len(self.BodyList)+1, mytype, r6, m=m, v=v, rCG=rCG, AWP=AWP, rM=rM, f6Ext=f6Ext) )
     
         # TODO: display output message
         
         
-    def addPoint(self, type, r, m=0, v=0, fExt=np.zeros(3)):
+    def addPoint(self, mytype, r, m=0, v=0, fExt=np.zeros(3)):
         '''Convenience function to add a Point to a mooring system.'''
 
-        self.PointList.append( Point(self, len(self.PointList)+1, type, r, m=m, v=v, fExt=fExt) )
+        self.PointList.append( Point(self, len(self.PointList)+1, mytype, r, m=m, v=v, fExt=fExt) )
         
         #print("Created Point "+str(self.PointList[-1].number))
         # Including this print line, prints out the same statement twice. A print statement is already called in the Point init method
@@ -1943,7 +1938,7 @@ class System():
                     line = next(f)
                     while line.count('---') == 0:
                         entries = line.split()
-                        self.LineTypes[entries[0]] = LineType(entries[0], np.float(entries[1]), np.float(entries[2]), np.float(entries[3])) 
+                        self.LineTypes[entries[0]] = LineType(entries[0], np.float_(entries[1]), np.float_(entries[2]), np.float_(entries[3])) 
                         line = next(f)
                         
                         
@@ -1983,8 +1978,8 @@ class System():
                         r6  = np.array(entries[1:7], dtype=float)   # initial position and orientation [m, rad]
                         r6[3:] = r6[3:]*np.pi/180.0                 # convert from deg to rad
                         rCG = np.array(entries[7:10], dtype=float)  # location of body CG in body reference frame [m]
-                        m = np.float(entries[10])                   # mass, centered at CG [kg]
-                        v = np.float(entries[11])                   # volume, assumed centered at reference point [m^3]
+                        m = np.float_(entries[10])                   # mass, centered at CG [kg]
+                        v = np.float_(entries[11])                   # volume, assumed centered at reference point [m^3]
                         
                         self.BodyList.append( Body(self, num, bodyType, r6, m=m, v=v, rCG=rCG) )
                                     
@@ -2055,8 +2050,8 @@ class System():
                             print("Point type not recognized")
                         
                         r = np.array(entries[2:5], dtype=float)
-                        m = np.float(entries[5])
-                        v = np.float(entries[6])
+                        m = np.float_(entries[5])
+                        v = np.float_(entries[6])
                         fExt = np.array(entries[7:10], dtype=float)
                                             
                         self.PointList.append( Point(self, num, pointType, r, m=m, v=v, fExt=fExt) )
@@ -2076,7 +2071,7 @@ class System():
                         
                         num    = np.int(entries[0])
                         #dia    = LineTypes[entries[1]].d # find diameter based on specified rod type string
-                        lUnstr = np.float(entries[2])
+                        lUnstr = np.float_(entries[2])
                         nSegs  = np.int(entries[3])         
                         #w = LineTypes[entries[1]].w  # line wet weight per unit length
                         #EA= LineTypes[entries[1]].EA 
@@ -2103,11 +2098,11 @@ class System():
                         #print(entries)
                         
                         if entry1 == "g" or entry1 == "gravity":
-                            self.g  = np.float(entry0)
+                            self.g  = np.float_(entry0)
                         elif entries[1] == "WtrDpth":
-                            self.depth = np.float(entry0)
+                            self.depth = np.float_(entry0)
                         elif entry1=="rho" or entry1=="wtrdnsty":
-                            self.rho = np.float(entry0)
+                            self.rho = np.float_(entry0)
                         
                         line = next(f)
 
@@ -2181,12 +2176,12 @@ class System():
             r = np.array(d['location'], dtype=float)
             
             if 'mass' in d:
-                m = np.float(d['mass'])
+                m = np.float_(d['mass'])
             else:
                 m = 0.0
             
             if 'volume' in d:
-                v = np.float(d['volume'])
+                v = np.float_(d['volume'])
             else:
                 v = 0.0
                                 
@@ -2198,7 +2193,7 @@ class System():
         
             num = i+1
             
-            lUnstr = np.float(d['length'])      
+            lUnstr = np.float_(d['length'])      
             
             self.LineList.append( Line(self, num, lUnstr, self.LineTypes[d['type']]) )
             
@@ -2521,7 +2516,7 @@ class System():
             raise ValueError("getPositions called with invalid DOFtype input. Must be free, coupled, or both")
         
         
-        X = np.array([], dtype=np.float)
+        X = np.array([], dtype=np.float_)
         if len(dXvals)>0: dX = []
         
         # gather DOFs from free bodies or points        
@@ -2556,7 +2551,7 @@ class System():
         
         
         if len(dXvals)>0:
-            dX = np.array(dX, dtype=np.float)
+            dX = np.array(dX, dtype=np.float_)
             return X, dX
         else:
             return X
@@ -2751,8 +2746,8 @@ class System():
                 X0  += [*Point.r ]               # add free Point position to vector
                 db  += [ 5., 5., 5.]                # specify maximum step size for point positions
             
-        X0 = np.array(X0, dtype=np.float)
-        db = np.array(db, dtype=np.float)
+        X0 = np.array(X0, dtype=np.float_)
+        db = np.array(db, dtype=np.float_)
         '''
         X0, db = self.getPositions(DOFtype=DOFtype, dXvals=[5.0, 0.3])
         
@@ -3014,7 +3009,7 @@ class System():
             
             for i in range(n):                                # loop through each DOF
                 
-                X2 = np.array(X1, dtype=np.float)  
+                X2 = np.array(X1, dtype=np.float_)  
                 X2[i] += dX[i]                                # perturb positions by dx in each DOF in turn            
                 F2p = self.mooringEq(X2, DOFtype=DOFtype)     # system net force/moment vector from positive perturbation
                 
@@ -3037,7 +3032,7 @@ class System():
                 # potentially iterate with smaller step sizes if we're at a taut-slack transition (but don't get too small, or else numerical errors)
                 for j in range(nTries):
                     
-                    X2 = np.array(X1, dtype=np.float)  
+                    X2 = np.array(X1, dtype=np.float_)  
                     X2[i] += dXi                               # perturb positions by dx in each DOF in turn            
                     F2p = self.mooringEq(X2, DOFtype=DOFtype)  # system net force/moment vector from positive perturbation
                                         
@@ -3132,7 +3127,7 @@ class System():
         
             for i in range(self.nCpldDOF):                    # loop through each DOF
                 
-                X2 = np.array(X1, dtype=np.float)  
+                X2 = np.array(X1, dtype=np.float_)  
                 X2[i] += dX[i]                                # perturb positions by dx in each DOF in turn            
                 self.setPositions(X2, DOFtype="coupled")      # set the perturbed coupled DOFs
                 self.solveEquilibrium()                       # let the system settle into equilibrium 
@@ -3157,7 +3152,7 @@ class System():
                 # potentially iterate with smaller step sizes if we're at a taut-slack transition (but don't get too small, or else numerical errors)
                 for j in range(nTries):
                     
-                    X2 = np.array(X1, dtype=np.float)  
+                    X2 = np.array(X1, dtype=np.float_)  
                     X2[i] += dXi                                  # perturb positions by dx in each DOF in turn            
                     self.setPositions(X2, DOFtype="coupled")      # set the perturbed coupled DOFs
                     self.solveEquilibrium()                       # let the system settle into equilibrium 
@@ -3440,7 +3435,7 @@ class System():
             To hold the points and drawing of the plot
 
         '''
-      
+        
         # if axes not passed in, make a new figure
         if ax == None:
             fig, ax = plt.subplots(1,1)

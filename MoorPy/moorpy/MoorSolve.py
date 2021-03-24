@@ -1,11 +1,6 @@
 # a file to hold the custom solvers used in MoorPy
 
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
-
-from scipy.optimize import fsolve
-import scipy.optimize
 
 
 # ================================ original above / modified below ===========================================
@@ -141,7 +136,7 @@ def dsolve(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxIt
 
     # process inputs and format as arrays in case they aren't already
     
-    X = np.array(X0, dtype=np.float)         # start off design variable
+    X = np.array(X0, dtype=np.float_)         # start off design variable
     N = len(X)
     
     Xs = np.zeros([maxIter,N]) # make arrays to store X and error results of the solve
@@ -150,9 +145,9 @@ def dsolve(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxIt
     
     # check the target Y value input
     if len(Ytarget)==N:
-        Ytarget = np.array(Ytarget, dtype=np.float)
+        Ytarget = np.array(Ytarget, dtype=np.float_)
     elif len(Ytarget)==0:
-        Ytarget = np.zeros(N, dtype=np.float)
+        Ytarget = np.zeros(N, dtype=np.float_)
     else:
         raise TypeError("Ytarget must be of same length as X0")
     
@@ -187,14 +182,14 @@ def dsolve(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxIt
     if len(Xmin)==0:
         Xmin = np.zeros(N)-np.inf
     elif len(Xmin)==N:
-        Xmin = np.array(Xmin, dtype=np.float)
+        Xmin = np.array(Xmin, dtype=np.float_)
     else:
         raise TypeError("Xmin must be of same length as X0")
         
     if len(Xmax)==0:
         Xmax = np.zeros(N)+np.inf
     elif len(Xmax)==N:
-        Xmax = np.array(Xmax, dtype=np.float)
+        Xmax = np.array(Xmax, dtype=np.float_)
     else:
         raise TypeError("Xmax must be of same length as X0")
     
@@ -203,7 +198,7 @@ def dsolve(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxIt
     if len(dX_last)==0:
         dX_last = np.zeros(N)
     else:
-        dX_last = np.array(dX_last, dtype=np.float)
+        dX_last = np.array(dX_last, dtype=np.float_)
 
     if plots>2:
         print(f"Starting dsolve iterations>>>   aiming for Y={Ytarget}")
@@ -346,7 +341,7 @@ def dopt(eval_func, X0, tol=0.0001, maxIter=20, Xmin=[], Xmax=[], a_max=1.15, dX
     if len(X0) == 0:
         raise ValueError("X0 cannot be empty")
         
-    X = np.array(X0, dtype=np.float)         # start off design variable (optimized)
+    X = np.array(X0, dtype=np.float_)         # start off design variable (optimized)
     
     # do a test call to see what size the results are
     f, g, Xextra, Yextra, oths, stop = eval_func(X) #, XtLast, Ytarget, args)
@@ -364,20 +359,20 @@ def dopt(eval_func, X0, tol=0.0001, maxIter=20, Xmin=[], Xmax=[], a_max=1.15, dX
     if len(Xmin)==0:
         Xmin = np.zeros(N)-np.inf
     elif len(Xmin)==N:
-        Xmin = np.array(Xmin, dtype=np.float)
+        Xmin = np.array(Xmin, dtype=np.float_)
     else:
         raise TypeError("Xmin must be of same length as X0")
         
     if len(Xmax)==0:
         Xmax = np.zeros(N)+np.inf
     elif len(Xmax)==N:
-        Xmax = np.array(Xmax, dtype=np.float)
+        Xmax = np.array(Xmax, dtype=np.float_)
     else:
         raise TypeError("Xmax must be of same length as X0")
     
 
     if len(dX_last)==N:
-        dX_last = np.array(dX_last, dtype=np.float)
+        dX_last = np.array(dX_last, dtype=np.float_)
     elif len(dX_last)==0:
         dX_last = np.zeros(N)
     else:
@@ -427,7 +422,7 @@ def dopt(eval_func, X0, tol=0.0001, maxIter=20, Xmin=[], Xmax=[], a_max=1.15, dX
             
             dX = np.zeros(N)  # optimization step size to take
             
-            X2 = np.array(X, dtype=np.float) 
+            X2 = np.array(X, dtype=np.float_) 
             
             Jf = np.zeros([N])
             Jg = np.zeros([N,m])
