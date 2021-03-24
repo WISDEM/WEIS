@@ -191,7 +191,7 @@ class NLoptDriver(Driver):
         str
             The name of the current optimizer.
         """
-        return "NLopt" + self.options["optimizer"]
+        return "NLopt_" + self.options["optimizer"]
 
     def _setup_driver(self, problem):
         """
