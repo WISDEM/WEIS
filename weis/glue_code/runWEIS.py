@@ -80,18 +80,19 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_OF_runs_parallel = 1
         
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
-        if opt_options['driver']['optimization']['flag']:
-            n_FD = max([n_FD, 1])
-            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
-            rank    = MPI.COMM_WORLD.Get_rank()
-            color_i = color_map[rank]
-            comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
-        elif opt_options['driver']['design_of_experiments']['flag']:
+        if opt_options['driver']['design_of_experiments']['flag']:
             n_FD = MPI.COMM_WORLD.Get_size()
             n_OF_runs_parallel = 1
             rank    = MPI.COMM_WORLD.Get_rank()
             comm_map_up = comm_map_down = [[r] for r in np.arange(0,MPI.COMM_WORLD.Get_size())]
             color_i = 0
+        else:
+            n_FD = max([n_FD, 1])
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
+            rank    = MPI.COMM_WORLD.Get_rank()
+            color_i = color_map[rank]
+            comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+
     else:
         color_i = 0
         rank = 0
