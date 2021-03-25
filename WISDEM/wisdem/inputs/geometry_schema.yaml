@@ -2391,22 +2391,6 @@ properties:
                         minimum: 0
                         maximum: 1
 
-                    fl_feedback:
-                        type: object
-                        description: Platform velocity feedback using nacelle IMU
-                        required:
-                            - gain
-                        optional:
-                            - filter
-                        properties:
-                            gain:
-                                type: number
-                                description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                unit: seconds
-                            filter:
-                                $ref: "#/definitions/filter"
-                                description: Nacelle IMU filter, used to remove tower natural frequency.  Usually a LPF or Notch Filter
-
                     twr_feedback:
                         type: object
                         description: Tower velocity feedback using nacelle IMU
