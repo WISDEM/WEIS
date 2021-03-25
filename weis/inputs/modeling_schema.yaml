@@ -2513,6 +2513,12 @@ properties:
                         enum: [0, 1, 2]
                         default: 0
                         description: Power control mode {0 = no power control, 1 = constant power, 2 = open loop power from PwC_OpenLoop_Inp, 3 = open loop power vs. wind speed from PwC_OpenLoop_Inp}
+                    Bld_FlpDamp:
+                        type: number
+                        default: 0.7
+                        minimum: 0.0
+                        maximum: 2.0
+                        description: Blade collective flapwise damping at rated wind speed, used for flap controller tuning
 
     openfast:
         type: object
