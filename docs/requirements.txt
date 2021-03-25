@@ -1,0 +1,17 @@
+# Requirements list for wisdem
+
+# simulation
+matplotlib
+numpy
+scipy
+openmdao>=2.0
+simpy
+marmot-agents
+
+# docs
+sphinx>2.0
+numpydoc
+numpydoc
+sphinxcontrib.bibtex<2.0.0
+sphinx-rtd-theme
+# sphinx-autoapi
