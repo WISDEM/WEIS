@@ -20,8 +20,8 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 720.
-        TStart: 120.
+        TMax: 200.0
+        TStart: 0.0
         DT: 0.0125
         CompElast: 1
         CompInflow: 1
@@ -31,7 +31,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompSub: 0
         CompMooring: 3
         CompIce: 0
-        OutFileFmt: 3
+        SttsTime: 10.0
     linearization:
         Linearize: False
     ElastoDyn:
@@ -40,7 +40,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         EdgeDOF: True
         TeetDOF: False
         DrTrDOF: False 
-        GenDOF: True
+        GenDOF: False
         YawDOF: False  
         TwFADOF1 : True
         TwFADOF2 : True
@@ -64,6 +64,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBLin3: [0.0, 0.0, 130000.0, 0.0, 0.0, 0.0]
         AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 13000000]
         AddCLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 98340000]
+        PotMod: 1
+        PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar        # relative to WEIS
+        PtfmMass_Init: 7.462e6
     ROSCO:
         flag: True
         SD_Mode: 0
@@ -73,7 +76,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 openfast:
     file_management:
         FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
-        FAST_runDirectory: /scratch/dzalkind/WEIS-4/optimizations/outputs_opt_ball         # Path to folder with the OpenFAST output files
+        FAST_runDirectory: /Users/dzalkind/Tools/WEIS-4/optimizations/outputs_opt_both_debug4         # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True
@@ -97,5 +100,5 @@ openfast:
             #   Seeds: [11, 12, 13, 14, 15, 16]
         Power_Curve:
             turbulent_power_curve: False # False: Steady Wind, True: Turbulent Inflow
-            U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
+            U:     [5.0, 10.0] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True

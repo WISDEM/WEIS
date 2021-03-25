@@ -65,7 +65,6 @@ MODULE NWTC_IO
    CHARACTER(*), PARAMETER       :: CommChars = '!#%'                            !< Comment characters that mark the end of useful input
    INTEGER(IntKi), PARAMETER     :: NWTC_SizeOfNumWord = 200                     !< maximum length of the words containing numeric input (for ParseVar routines)
 
-
       ! Parameters for writing to echo files (in this module only)
 
    INTEGER(IntKi), PARAMETER :: NWTC_MaxAryLen = 100 !< the maximum length of arrays that can be printed with the array formats below (used to make sure we don't crash when trying to write too many):

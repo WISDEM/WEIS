@@ -1570,11 +1570,8 @@ properties:
                         default: -561580799
                         description: First random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]
                     WaveSeed2:
-                        type: integer
-                        minimum: -2147483648
-                        maximum: 2147483647
-                        default: -1669871451
-                        description: Second random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]
+                        default: RANLUX
+                        description: Second random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]. Use RANLUX for internal FAST pseudo-random number generator
                     WaveNDAmp:
                         type: boolean
                         default: True
@@ -1704,7 +1701,7 @@ properties:
                     PotFile:
                         type: string
                         default: ''
-                        description: Root name of potential-flow model data; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
+                        description: Root name of potential-flow model data (relative to WEIS dir); WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
                     WAMITULEN:
                         type: number
                         minimum: 0.0
@@ -1718,6 +1715,12 @@ properties:
                         minimum: 0.0
                         units: m^3
                         description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    PtfmMass_Init:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: kg
+                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass. 
                     PtfmCOBxt:
                         type: number
                         default: 0.0
@@ -1936,7 +1939,7 @@ properties:
                     JDampings:
                         type: array
                         description: Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).
-                        default: [0.0]
+                        default: [1.0]
                         items:
                             type: number
                             unit: none
@@ -2251,8 +2254,8 @@ properties:
                     HSSBrMode:
                         type: integer
                         description: HSS brake model {0 = none, 1 = simple, 4 = user-defined from Simulink/Labview, 5 = user-defined from Bladed-style DLL (not in ROSCO, yet)}
-                        enum: [0,1,4]
-                        default: 1
+                        enum: [0,1,4,5]
+                        default: 0
                     THSSBrDp:
                         type: number
                         default: 99999.
@@ -2278,7 +2281,7 @@ properties:
                         description: Yaw control mode {0 - none, 3 - user-defined from routine UserYawCont, 4 - user-defined from Simulink/Labview, 5 - user-defined from Bladed-style DLL} (switch)
                     TYCOn:
                         type: number
-                        default: 0.
+                        default: 99999.
                         unit: s
                         description: Time to enable active yaw control (s) [unused when YCMode=0]
                     YawNeut:
@@ -2298,7 +2301,7 @@ properties:
                         description: Nacelle-yaw damping constant (N-m/(rad/s))
                     TYawManS:
                         type: number
-                        default: 0.
+                        default: 99999.
                         unit: s
                         description: Time to start override yaw maneuver and end standard yaw control (s)
                     YawManRat:
@@ -2552,6 +2555,10 @@ properties:
                         type: string
                         default: none
                         description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_lib:
+                        type: string
+                        default: none
+                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
                     FAST_directory:
                         type: string
                         default: none

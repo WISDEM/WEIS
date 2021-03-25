@@ -164,11 +164,23 @@ class NLoptDriver(Driver):
             "maxiter", 200, lower=0, desc="Maximum number of iterations."
         )
         self.options.declare(
+            "numgen", 10, lower=0, desc="Maximum number of iterations."
+        )
+        self.options.declare(
             "maxtime",
             0.0,
             lower=0.0,
             desc="Maximum time in seconds to perform optimization.",
         )
+        self.options.declare(
+            "xtol",
+            1.0e-3,
+            lower=0.0,
+            desc="Tolerance for termination. Based on "
+            + "relative function value change. Uses the "
+            + "method `set_xtol_rel()` from NLOpt.",
+        )
+        
 
     def _get_name(self):
         """
@@ -386,8 +398,10 @@ class NLoptDriver(Driver):
             if opt in _optimizers:
                 opt_prob.set_min_objective(self._objfunc)
                 opt_prob.set_ftol_rel(self.options["tol"])
+                opt_prob.set_xtol_rel(self.options["xtol"])
                 opt_prob.set_maxeval(int(self.options["maxiter"]))
                 opt_prob.set_maxtime(self.options["maxtime"])
+                opt_prob.set_population(int(self.options["maxiter"]/self.options["numgen"]))
                 opt_prob.optimize(x_init)
                 self.result = opt_prob.last_optimize_result()
 
