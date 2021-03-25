@@ -6,6 +6,7 @@ from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 from wisdem.ccblade.Polar import Polar
 import csv  # for exporting airfoil polar tables
 import matplotlib.pyplot as plt
+import time
 
 import multiprocessing as mp
 from functools import partial
@@ -42,11 +43,15 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
     # Set filenames 
     # if multi_run or MPI_run:
     pid = mp.current_process().pid
-    print('PID = {}'.format(pid))
-    LoadFlnmAF    = 'airfoil_p{}.txt'.format(pid)
-    saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
-    xfoilFlnm     = 'xfoil_input_p{}.txt'.format(pid)
-    NUL_fname     = 'NUL_p{}'.format(pid)
+    print('Running xfoil on PID = {}'.format(pid))
+
+    xfoil_rundir = 'xfoil_run_p{}'.format(pid)
+    if not os.path.exists(xfoil_rundir):
+        os.makedirs(xfoil_rundir)
+    LoadFlnmAF    = os.path.join(xfoil_rundir,'airfoil_p{}.txt'.format(pid))
+    saveFlnmPolar = os.path.join(xfoil_rundir,'Polar_p{}.txt'.format(pid))
+    xfoilFlnm     = os.path.join(xfoil_rundir,'xfoil_input_p{}.txt'.format(pid))
+    NUL_fname     = os.path.join(xfoil_rundir,'NUL_p{}'.format(pid))
 
     # if MPI_run:
     #     rank = MPI.COMM_WORLD.Get_rank()
@@ -58,21 +63,17 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
     #     saveFlnmPolar = 'Polar.txt' # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
     #     xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
     #     NUL_fname = 'NUL'
-
+    t0 = time.time()
     while runFlag:
         # Cleaning up old files to prevent replacement issues
         if os.path.exists(saveFlnmPolar):
             os.remove(saveFlnmPolar)
-            print('{} Exists, deleting it.'.format(saveFlnmPolar))
         if os.path.exists(xfoilFlnm):
             os.remove(xfoilFlnm)
-            print('{} Exists, deleting it.'.format(xfoilFlnm))
         if os.path.exists(LoadFlnmAF):
             os.remove(LoadFlnmAF)
-            print('{} Exists, deleting it.'.format(LoadFlnmAF))
         if os.path.exists(NUL_fname):
             os.remove(NUL_fname)
-            print('{} Exists, deleting it.'.format(NUL_fname))
             
         # Writing temporary airfoil coordinate file for use in xfoil
         dat=np.array([x,y])
@@ -155,7 +156,7 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
             a1 = 0
             dfdn = -0.25 # decrease AoA step size during initialization to try and get convergence in the next run
             dfnFlag = True # Set flag to run initialization AoA down to AoA_min
-            print('XFOIL convergence issues - p{}'.format(pid))
+            print('XFOIL convergence issues on p{}'.format(pid))
         else:
             plen = len(flap_polar[:,0]) # Number of AoA's in polar
             a0 = flap_polar[-1,0] # Maximum AoA in Polar
@@ -173,7 +174,7 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
             # AoA_min = -9
             # AoA_max = 25
             # if numNodes > 480:
-            if runNum > 2:
+            if runNum > 6:
                 # Warning('NO convergence in XFoil achieved!')
                 print('No convergence in XFOIL achieved on p{}!'.format(pid))
                 if not os.path.exists('xfoil_errorfiles'):
@@ -206,17 +207,16 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
     # Delete Xfoil run script file
     if os.path.exists(xfoilFlnm):
         os.remove(xfoilFlnm)
-        print('Deleting {}. END.'.format(xfoilFlnm))
     if os.path.exists(saveFlnmPolar): # bem: For now leave the files, but eventually we can get rid of them (remove # in front of commands) so that we don't have to store them
         os.remove(saveFlnmPolar)
-        print('Deleting {}. END.'.format(saveFlnmPolar))
     if os.path.exists(LoadFlnmAF):
         os.remove(LoadFlnmAF)
-        print('Deleting {}. END.'.format(LoadFlnmAF))
     if os.path.exists(NUL_fname):
         os.remove(NUL_fname)
-        print('Deleting {}. END.'.format(NUL_fname))
+    if os.path.exists(xfoil_rundir):
+        os.rmdir(xfoil_rundir)
 
+    print('Xfoil calls on p{} completed in {} seconds'.format(pid, time.time()-t0))
 
     return flap_polar
 
@@ -570,7 +570,7 @@ class RunXFOIL(ExplicitComponent):
 
 
                 # Run XFoil as multiple processors with MPI
-                if MPI and self.options['opt_options']['driver']['optimization']['flag']:
+                if MPI and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
                     run_xfoil_params['run_MPI'] = True
                     # mpi comm management
                     comm = MPI.COMM_WORLD
@@ -607,7 +607,7 @@ class RunXFOIL(ExplicitComponent):
                     #     # re-structure outputs
                         
                 # Multiple processors, but not MPI
-                elif self.cores > 1 and self.options['opt_options']['driver']['optimization']['flag']:
+                elif self.cores > 1 and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
                     run_xfoil_params['run_multi'] = True
 
                     # separate airfoil sections w/ and w/o flaps
