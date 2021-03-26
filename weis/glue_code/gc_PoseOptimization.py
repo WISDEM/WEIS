@@ -107,6 +107,31 @@ class PoseOptimizationWEIS(PoseOptimization):
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
+        if blade_constr["strains_spar_cap_ss"]["flag"]:
+            # Remove generic WISDEM one
+            name = 'rs.constr.constr_max_strainU_spar'
+            if name in wt_opt.model._responses:
+                wt_opt.model._responses.pop( name )
+            if name in wt_opt.model._static_responses:
+                wt_opt.model._static_responses.pop( name )
+            if blade_opt["structure"]["spar_cap_ss"]["flag"]:
+                indices_strains_spar_cap_ss = range(blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"])
+                wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainU_spar", indices = indices_strains_spar_cap_ss, upper=1.0)
+
+        if blade_constr["strains_spar_cap_ps"]["flag"]:
+            if (
+                blade_opt["structure"]["spar_cap_ps"]["flag"]
+                or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
+            ):
+                # Remove generic WISDEM one
+                name = 'rs.constr.constr_max_strainL_spar'
+                if name in wt_opt.model._responses:
+                    wt_opt.model._responses.pop( name )
+                if name in wt_opt.model._static_responses:
+                    wt_opt.model._static_responses.pop( name )
+                indices_strains_spar_cap_ps = range(blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"])
+                wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
+
         control_constraints = self.opt['constraints']['control']
         if control_constraints['flap_control']['flag']:
             if self.modeling['Level3']['flag'] != True:
