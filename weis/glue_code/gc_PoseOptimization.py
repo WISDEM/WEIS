@@ -1,4 +1,5 @@
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
+import numpy as np
 
 class PoseOptimizationWEIS(PoseOptimization):
         
@@ -153,5 +154,17 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = 0.0)
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki', 
                 upper = 0.0)    
+
+        return wt_opt
+
+
+    def set_initial_weis(self, wt_opt):
+
+        if self.modeling["flags"]["blade"]:
+            blade_constr = self.opt["constraints"]["blade"]
+            wt_opt["rlds_post.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
+            wt_opt["rlds_post.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
+            wt_opt["stall_check_of.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
+            wt_opt["tcons_post.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
         return wt_opt
