@@ -307,6 +307,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
+        self.add_output('max_TipDxc',  val=0.0,            units='m',    desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
         self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
@@ -964,6 +965,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
+        channels_out += ["RtVAvgxh", "RtVAvgyh", "RtVAvgzh"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
         channels_out += ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx", "B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
@@ -1214,7 +1216,8 @@ class FASTLoadCases(ExplicitComponent):
             blade_chans_Fy = ["B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
             tip_max_chan   = "TipDxc3"
             bld_pitch_chan = "BldPitch3"
-            
+
+        outputs["max_TipDxc"] = np.max(sum_stats[tip_max_chan]['max'])
         # Return spanwise forces at instance of largest deflection
         Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
         Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]

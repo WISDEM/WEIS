@@ -21,7 +21,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimizationWEIS(modeling_options, opt_options)
 
-    if MPI and opt_options['driver']['optimization']['flag']:
+    if MPI:
         n_DV = myopt.get_number_design_variables()
         
         # Extract the number of cores available
@@ -80,11 +80,19 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_OF_runs_parallel = 1
         
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
-        n_FD = max([n_FD, 1])
-        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
-        rank    = MPI.COMM_WORLD.Get_rank()
-        color_i = color_map[rank]
-        comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+        if opt_options['driver']['design_of_experiments']['flag']:
+            n_FD = MPI.COMM_WORLD.Get_size()
+            n_OF_runs_parallel = 1
+            rank    = MPI.COMM_WORLD.Get_rank()
+            comm_map_up = comm_map_down = [[r] for r in np.arange(0,MPI.COMM_WORLD.Get_size())]
+            color_i = 0
+        else:
+            n_FD = max([n_FD, 1])
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
+            rank    = MPI.COMM_WORLD.Get_rank()
+            color_i = color_map[rank]
+            comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+
     else:
         color_i = 0
         rank = 0
@@ -103,9 +111,17 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Parallel settings for OpenMDAO
             wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
             wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
+        elif MPI and opt_options['driver']['design_of_experiments']['flag']:
+            # Sequential finite differencing and openfast simulations
+            modeling_options['openfast']['analysis_settings']['mpi_run'] = True
+            modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
+            # modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+            modeling_options['openfast']['analysis_settings']['cores']   = 1
+            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
         else:
             # Sequential finite differencing and openfast simulations
-            modeling_options['openfast']['analysis_settings']['cores'] = 1
+            modeling_options['openfast']['analysis_settings']['mpi_run'] = False
+            modeling_options['openfast']['analysis_settings']['cores']   = 1
             wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
