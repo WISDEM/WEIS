@@ -102,22 +102,23 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
-        if MPI and opt_options['driver']['optimization']['flag']:
+        # if MPI and opt_options['driver']['optimization']['flag']:
+        if MPI:
             if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['openfast']['analysis_settings']['mpi_run']           = True
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
-                modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+                if opt_options['driver']['design_of_experiments']['flag']:
+                    modeling_options['openfast']['analysis_settings']['cores']   = 1
+                else:
+                    modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+            
             # Parallel settings for OpenMDAO
-            wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
-            wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-        elif MPI and opt_options['driver']['design_of_experiments']['flag']:
-            # Sequential finite differencing and openfast simulations
-            modeling_options['openfast']['analysis_settings']['mpi_run'] = True
-            modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
-            # modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
-            modeling_options['openfast']['analysis_settings']['cores']   = 1
-            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+            if opt_options['driver']['design_of_experiments']['flag']:  
+                wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+            else:
+                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+                wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
             modeling_options['openfast']['analysis_settings']['mpi_run'] = False
