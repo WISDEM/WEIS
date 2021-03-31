@@ -85,7 +85,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_OF_runs_parallel = 1
             rank    = MPI.COMM_WORLD.Get_rank()
             comm_map_up = comm_map_down = {}
-            for r in np.arange(0,MPI.COMM_WORLD.Get_size()):
+            for r in range(MPI.COMM_WORLD.Get_size()):
                 comm_map_up[r] = [r]
             color_i = 0
         else:
