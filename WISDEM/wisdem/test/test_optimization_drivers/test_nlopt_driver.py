@@ -1,23 +1,20 @@
 """ Unit tests for the NLOpt Driver."""
 
-import copy
 import sys
+import copy
 import unittest
 
 import numpy as np
 
 import openmdao.api as om
-from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense
-from openmdao.test_suite.components.paraboloid import Paraboloid
-from openmdao.test_suite.components.sellar import (
-    SellarDerivativesGrouped,
-    SellarDerivatives,
-)
-from openmdao.test_suite.components.simple_comps import NonSquareArrayComp
-from openmdao.test_suite.groups.sin_fitter import SineFitter
 from openmdao.utils.assert_utils import assert_near_equal
 from openmdao.utils.general_utils import run_driver
-from weis.optimization_drivers.nlopt_driver import NLoptDriver
+from openmdao.test_suite.components.sellar import SellarDerivatives, SellarDerivativesGrouped
+from openmdao.test_suite.groups.sin_fitter import SineFitter
+from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
+from openmdao.test_suite.components.paraboloid import Paraboloid
+from openmdao.test_suite.components.simple_comps import NonSquareArrayComp
+from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense
 
 try:
     import nlopt
@@ -105,18 +102,14 @@ class TestNLoptDriver(unittest.TestCase):
 
         failed = prob.run_driver()
 
-        derivs = prob.compute_totals(
-            of=["comp.y1"], wrt=["px.x"], return_format="array"
-        )
+        derivs = prob.compute_totals(of=["comp.y1"], wrt=["px.x"], return_format="array")
 
         J = comp.JJ[0:3, 0:2]
         assert_near_equal(J, derivs, 1.0e-3)
 
         # Support for a name to be in 'of' and 'wrt'
 
-        derivs = prob.compute_totals(
-            of=["comp.y2", "px.x", "comp.y1"], wrt=["px.x"], return_format="array"
-        )
+        derivs = prob.compute_totals(of=["comp.y2", "px.x", "comp.y1"], wrt=["px.x"], return_format="array")
 
         assert_near_equal(J, derivs[3:, :], 1.0e-3)
         assert_near_equal(comp.JJ[3:4, 0:2], derivs[0:1, :], 1.0e-3)
@@ -138,9 +131,7 @@ class TestNLoptDriver(unittest.TestCase):
 
         # Support for a name to be in 'of' and 'wrt'
 
-        J = prob.driver._compute_totals(
-            of=["px.x"], wrt=["px.x"], return_format="array"
-        )
+        J = prob.driver._compute_totals(of=["px.x"], wrt=["px.x"], return_format="array")
 
         assert_near_equal(J, np.eye(2), 1.0e-3)
 
@@ -390,9 +381,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"]
-        )
+        model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
         model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
         model.add_subsystem(
             "con",
@@ -427,9 +416,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"]
-        )
+        model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
         model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
         model.add_subsystem(
             "obj",
@@ -459,9 +446,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"]
-        )
+        model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
         model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
         model.add_subsystem(
             "obj",
@@ -495,9 +480,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"]
-        )
+        model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
         model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
         model.add_subsystem(
             "obj",
@@ -527,9 +510,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"]
-        )
+        model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
         model.add_subsystem("comp", TestExplCompArrayDense(), promotes=["*"])
         model.add_subsystem(
             "con",
@@ -548,9 +529,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob.driver.options["optimizer"] = "LD_SLSQP"
         prob.driver.options["tol"] = 1e-9
 
-        model.add_design_var(
-            "widths", lower=-50.0 * np.ones((2, 2)), upper=50.0 * np.ones((2, 2))
-        )
+        model.add_design_var("widths", lower=-50.0 * np.ones((2, 2)), upper=50.0 * np.ones((2, 2)))
         model.add_objective("o")
         model.add_constraint("c", equals=0.0)
 
@@ -707,9 +686,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob.driver.options["optimizer"] = "LD_SLSQP"
         prob.driver.options["tol"] = 1e-9
 
-        model.add_design_var(
-            "z", lower=np.array([-10.0, 0.0]), upper=np.array([10.0, 10.0])
-        )
+        model.add_design_var("z", lower=np.array([-10.0, 0.0]), upper=np.array([10.0, 10.0]))
         model.add_design_var("x", lower=0.0, upper=10.0)
         model.add_objective("obj")
         model.add_constraint("con1", upper=0.0)
@@ -772,9 +749,7 @@ class TestNLoptDriver(unittest.TestCase):
         indeps.add_output("a", 0.5)
         indeps.add_output("Vu", 10.0, units="m/s")
 
-        prob.model.add_subsystem(
-            "a_disk", ReducedActuatorDisc(), promotes_inputs=["a", "Vu"]
-        )
+        prob.model.add_subsystem("a_disk", ReducedActuatorDisc(), promotes_inputs=["a", "Vu"])
 
         # setup the optimization
         prob.driver = NLoptDriver()
@@ -832,9 +807,7 @@ class TestNLoptDriver(unittest.TestCase):
 
         prob.set_solver_print(level=0)
 
-        model.add_design_var(
-            "z", lower=np.array([-10.0, 0.0]), upper=np.array([10.0, 10.0])
-        )
+        model.add_design_var("z", lower=np.array([-10.0, 0.0]), upper=np.array([10.0, 10.0]))
         model.add_design_var("x", lower=0.0, upper=10.0)
         model.add_objective("obj")
         model.add_constraint("con1", upper=0.0)
@@ -908,8 +881,6 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 7.16667, 1e-6)
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
-
-
     def test_debug_print_option(self):
 
         prob = om.Problem()
@@ -982,9 +953,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob.driver.options["optimizer"] = "LD_SLSQP"
         prob.driver.options["tol"] = 1e-3
 
-        model.add_design_var(
-            "z", lower=np.array([-10.0, 0.0]), upper=np.array([10.0, 10.0])
-        )
+        model.add_design_var("z", lower=np.array([-10.0, 0.0]), upper=np.array([10.0, 10.0]))
         model.add_design_var("x", lower=0.0, upper=10.0)
         model.add_objective("obj")
         model.add_constraint("con1", upper=0.0)
@@ -1032,9 +1001,7 @@ class TestNLoptDriver(unittest.TestCase):
         with self.assertRaises(RuntimeError) as cm:
             totals = prob.check_totals(method="fd", out_stream=False)
 
-        expected_msg = (
-            "Problem: run_model must be called before total derivatives can be checked."
-        )
+        expected_msg = "Problem: run_model must be called before total derivatives can be checked."
 
         self.assertEqual(expected_msg, str(cm.exception))
 
@@ -1058,12 +1025,8 @@ class TestNLoptDriver(unittest.TestCase):
         prob.driver.options["optimizer"] = "LN_COBYLA"
 
         prob.model.add_constraint("const.g", lower=0, upper=10.0)
-        prob.model.add_design_var(
-            "indeps.x", **{"ref0": 0, "ref": 2, "lower": -50, "upper": 50}
-        )
-        prob.model.add_design_var(
-            "indeps.y", **{"ref0": 0, "ref": 2, "lower": -50, "upper": 50}
-        )
+        prob.model.add_design_var("indeps.x", **{"ref0": 0, "ref": 2, "lower": -50, "upper": 50})
+        prob.model.add_design_var("indeps.y", **{"ref0": 0, "ref": 2, "lower": -50, "upper": 50})
         prob.model.add_objective("parab.f_xy", scaler=4.0)
         prob.setup()
         prob.run_driver()
@@ -1117,27 +1080,21 @@ class TestNLoptDriver(unittest.TestCase):
                 self.add_input("x", 0.5 * np.ones(size))
                 self.add_output("f", 0.5)
 
-            def compute(
-                self, inputs, outputs, discrete_inputs=None, discrete_outputs=None
-            ):
+            def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"]
-        )
+        model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
         model.add_subsystem("rastrigin", Rastrigin(), promotes=["*"])
 
         prob.driver = driver = NLoptDriver()
         driver.options["optimizer"] = "GN_DIRECT"
         driver.options["maxiter"] = 1000
 
-        model.add_design_var(
-            "x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size)
-        )
+        model.add_design_var("x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size))
         model.add_objective("f")
         prob.setup()
         prob.run_driver()
@@ -1156,27 +1113,21 @@ class TestNLoptDriver(unittest.TestCase):
                 self.add_input("x", 0.5 * np.ones(size))
                 self.add_output("f", 0.5)
 
-            def compute(
-                self, inputs, outputs, discrete_inputs=None, discrete_outputs=None
-            ):
+            def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"]
-        )
+        model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
         model.add_subsystem("rastrigin", Rastrigin(), promotes=["*"])
 
         prob.driver = driver = NLoptDriver()
         driver.options["optimizer"] = "GN_DIRECT_L"
         driver.options["maxiter"] = 500
 
-        model.add_design_var(
-            "x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size)
-        )
+        model.add_design_var("x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size))
         model.add_objective("f")
         prob.setup()
         prob.run_driver()
@@ -1195,27 +1146,21 @@ class TestNLoptDriver(unittest.TestCase):
                 self.add_input("x", 0.5 * np.ones(size))
                 self.add_output("f", 0.5)
 
-            def compute(
-                self, inputs, outputs, discrete_inputs=None, discrete_outputs=None
-            ):
+            def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"]
-        )
+        model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
         model.add_subsystem("rastrigin", Rastrigin(), promotes=["*"])
 
         prob.driver = driver = NLoptDriver()
         driver.options["optimizer"] = "GN_DIRECT_L_NOSCAL"
         driver.options["maxiter"] = 500
 
-        model.add_design_var(
-            "x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size)
-        )
+        model.add_design_var("x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size))
         model.add_objective("f")
         prob.setup()
         prob.run_driver()
@@ -1234,27 +1179,21 @@ class TestNLoptDriver(unittest.TestCase):
                 self.add_input("x", 0.5 * np.ones(size))
                 self.add_output("f", 0.5)
 
-            def compute(
-                self, inputs, outputs, discrete_inputs=None, discrete_outputs=None
-            ):
+            def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"]
-        )
+        model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
         model.add_subsystem("rastrigin", Rastrigin(), promotes=["*"])
 
         prob.driver = driver = NLoptDriver()
         driver.options["optimizer"] = "GN_ORIG_DIRECT"
         driver.options["maxiter"] = 1000
 
-        model.add_design_var(
-            "x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size)
-        )
+        model.add_design_var("x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size))
         model.add_objective("f")
         prob.setup()
         prob.run_driver()
@@ -1273,27 +1212,21 @@ class TestNLoptDriver(unittest.TestCase):
                 self.add_input("x", 0.5 * np.ones(size))
                 self.add_output("f", 0.5)
 
-            def compute(
-                self, inputs, outputs, discrete_inputs=None, discrete_outputs=None
-            ):
+            def compute(self, inputs, outputs, discrete_inputs=None, discrete_outputs=None):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
         prob = om.Problem()
         model = prob.model
 
-        model.add_subsystem(
-            "indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"]
-        )
+        model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
         model.add_subsystem("rastrigin", Rastrigin(), promotes=["*"])
 
         prob.driver = driver = NLoptDriver()
         driver.options["optimizer"] = "GN_ORIG_DIRECT_L"
         driver.options["maxiter"] = 500
 
-        model.add_design_var(
-            "x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size)
-        )
+        model.add_design_var("x", lower=-5.12 * np.ones(size), upper=5.12 * np.ones(size))
         model.add_objective("f")
         prob.setup()
         prob.run_driver()
@@ -1355,37 +1288,6 @@ class TestNLoptDriver(unittest.TestCase):
 
         assert_near_equal(prob["x"], 7.1666666, 1e-6)
         assert_near_equal(prob["y"], -7.83333333, 1e-6)
-
-    def test_simple_paraboloid_upper_GN_ISRES(self):
-
-        prob = om.Problem()
-        model = prob.model
-
-        model.add_subsystem("p1", om.IndepVarComp("x", 25.0), promotes=["*"])
-        model.add_subsystem("p2", om.IndepVarComp("y", 25.0), promotes=["*"])
-        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
-
-        prob.set_solver_print(level=0)
-
-        prob.driver = NLoptDriver()
-        prob.driver.options["optimizer"] = "GN_ISRES"
-        prob.driver.options["tol"] = 1e-12
-
-        prob.driver.options["maxiter"] = 10000
-
-        model.add_design_var("x", lower=-50.0, upper=50.0)
-        model.add_design_var("y", lower=-50.0, upper=50.0)
-        model.add_objective("f_xy")
-        model.add_constraint("c", upper=-15.0)
-
-        prob.setup()
-
-        failed = prob.run_driver()
-
-        # Just get pretty close to the optimum
-        assert_near_equal(prob["x"], 7.1666666, 1e-2)
-        assert_near_equal(prob["y"], -7.83333333, 1e-2)
 
     def test_simple_paraboloid_upper_GN_ORIG_DIRECT(self):
 
@@ -1496,7 +1398,7 @@ class TestNLoptDriver(unittest.TestCase):
         prob.driver.options["optimizer"] = "GN_ISRES"
         prob.driver.options["tol"] = 1e-6
 
-        prob.driver.options["maxiter"] = 20000
+        prob.driver.options["maxiter"] = 10000
 
         model.add_design_var("x", lower=7.0, upper=7.5)
         model.add_design_var("y", lower=-8.0, upper=-7.5)
@@ -1509,8 +1411,8 @@ class TestNLoptDriver(unittest.TestCase):
 
         # Minimum should be at (7.166667, -7.833334)
         # Loose tolerance
-        assert_near_equal(prob["x"], 7.16667, 1e-2)
-        assert_near_equal(prob["y"], -7.833334, 1e-2)
+        assert_near_equal(prob["x"], 7.16667, 0.05)
+        assert_near_equal(prob["y"], -7.833334, 0.05)
 
     def test_simple_paraboloid_equality_failure_MMA(self):
 
@@ -1760,7 +1662,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_basic(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
-        from weis.optimization_drivers.nlopt_driver import NLoptDriver
+        from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
         model = prob.model
@@ -1787,7 +1689,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_optimizer(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
-        from weis.optimization_drivers.nlopt_driver import NLoptDriver
+        from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
         model = prob.model
@@ -1812,7 +1714,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_maxiter(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
-        from weis.optimization_drivers.nlopt_driver import NLoptDriver
+        from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
         model = prob.model
@@ -1838,7 +1740,7 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_tol(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
-        from weis.optimization_drivers.nlopt_driver import NLoptDriver
+        from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         prob = om.Problem()
         model = prob.model
@@ -1860,20 +1762,19 @@ class TestNLoptDriverFeatures(unittest.TestCase):
 
         assert_near_equal(prob["x"], 6.66666667, 1e-6)
         assert_near_equal(prob["y"], -7.3333333, 1e-6)
-        
+
+
 @unittest.skipUnless(nlopt is None, "only run if NLopt is NOT installed.")
 class TestNotInstalled(unittest.TestCase):
-
     def test_nlopt_not_installed(self):
         # the import should not fail
-        from weis.optimization_drivers.nlopt_driver import NLoptDriver
+        from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
         # but we get a RuntimeError if we try to instantiate
         with self.assertRaises(RuntimeError) as ctx:
             NLoptDriver()
 
-        self.assertEqual(str(ctx.exception),
-                         'NLoptDriver is not available, NLopt is not installed.')
+        self.assertEqual(str(ctx.exception), "NLoptDriver is not available, NLopt is not installed.")
 
 
 if __name__ == "__main__":

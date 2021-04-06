@@ -1,15 +1,14 @@
-import copy
 import os
-import platform
 import sys
+import copy
+import platform
 import unittest
 
 import numpy as np
-from mpi4py import MPI
 
 import openmdao.api as om
 from openmdao.utils.assert_utils import assert_near_equal
-from weis.optimization_drivers.intermittent_component import IntermittentComponent
+from wisdem.optimization_drivers.intermittent_component import IntermittentComponent
 
 rosenbrock_size = 4
 num_procs = 1
@@ -79,9 +78,7 @@ class TestIntermittentComponent(unittest.TestCase):
             Rosenbrock2(num_iterations_between_calls=1, multiplier=100.0),
             promotes=["*"],
         )
-        prob.model.add_subsystem(
-            "objective_comp", om.ExecComp("f = f1 + f2"), promotes=["*"]
-        )
+        prob.model.add_subsystem("objective_comp", om.ExecComp("f = f1 + f2"), promotes=["*"])
 
         # setup the optimization
         prob.driver = om.ScipyOptimizeDriver()
@@ -93,9 +90,6 @@ class TestIntermittentComponent(unittest.TestCase):
 
         prob.setup()
         prob.run_driver()
-
-        comm = MPI.COMM_WORLD
-        rank = comm.Get_rank()
 
         assert_near_equal(prob["f"][0], 0.0, tolerance=1e-2)
         assert_near_equal(prob["x"], np.ones(4), tolerance=1e-1)

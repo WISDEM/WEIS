@@ -85,7 +85,7 @@ properties:
                                         description: First index of the array of design variables/constraints that is optimized/constrained
                                     index_end: &index_end
                                         type: integer
-                                        default: 0
+                                        default: 8
                                         minimum: 0
                                         unit: none
                                         description: Last index of the array of design variables/constraints that is optimized/constrained
@@ -1077,7 +1077,7 @@ properties:
                         type: string
                         description: Optimization driver.
                         default: SLSQP
-                        enum: [SLSQP, CONMIN, COBYLA, SNOPT, Nelder-Mead, GA]
+                        enum: [SLSQP, CONMIN, COBYLA, SNOPT, Nelder-Mead, GA, GN_DIRECT, GN_DIRECT_L, GN_DIRECT_L_NOSCAL, GN_ORIG_DIRECT, GN_ORIG_DIRECT_L, GN_AGS, GN_ISRES, LN_COBYLA, LD_MMA, LD_CCSAQ, LD_SLSQP, NSGA2]
                     step_size:
                         type: number
                         description: Maximum step size for finite difference approximation
@@ -1174,12 +1174,3 @@ properties:
                 type: string
                 description: OpenMDAO recorder output SQL database file
                 default: log_opt.sql
-            includes:
-                type: array
-                description: List of variables to include in the system recording.
-                default: []
-            excludes:
-                type: array
-                description: List of variables to exclude in the system recording.
-                default: []
-            

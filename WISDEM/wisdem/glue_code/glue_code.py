@@ -35,10 +35,10 @@ class WT_RNTA(om.Group):
         if modeling_options["flags"]["blade"] and modeling_options["flags"]["nacelle"]:
             self.linear_solver = lbgs = om.LinearBlockGS()
             self.nonlinear_solver = nlbgs = om.NonlinearBlockGS()
-            nlbgs.options["maxiter"] = 10
+            nlbgs.options["maxiter"] = 5
             nlbgs.options["atol"] = 1e-2
             nlbgs.options["rtol"] = 1e-8
-            nlbgs.options["iprint"] = 2
+            nlbgs.options["iprint"] = 0
 
         # Analysis components
         self.add_subsystem(
@@ -563,6 +563,7 @@ class WT_RNTA(om.Group):
                     "ring_stiffener_web_thickness",
                     "ring_stiffener_flange_width",
                     "ring_stiffener_flange_thickness",
+                    "ring_stiffener_spacing",
                     "axial_stiffener_web_height",
                     "axial_stiffener_web_thickness",
                     "axial_stiffener_flange_width",

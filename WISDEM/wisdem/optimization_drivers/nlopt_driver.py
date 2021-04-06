@@ -6,16 +6,17 @@ More info at https://nlopt.readthedocs.io/
 
 
 import numpy as np
-try:
-    import nlopt
-except ImportError:
-    nlopt = None
 
 import openmdao
 import openmdao.utils.coloring as coloring_mod
 from openmdao.core.driver import Driver, RecordingDebugging
-from openmdao.utils.general_utils import simple_warning
 from openmdao.utils.class_util import weak_method_wrapper
+from openmdao.utils.general_utils import simple_warning
+
+try:
+    import nlopt
+except ImportError:
+    nlopt = None
 
 
 # All optimizers in NLopt that we support and their corresponding package name.
@@ -116,7 +117,7 @@ class NLoptDriver(Driver):
             Keyword arguments that will be mapped into the Driver options.
         """
         if nlopt is None:
-            raise RuntimeError('NLoptDriver is not available, NLopt is not installed.')
+            raise RuntimeError("NLoptDriver is not available, NLopt is not installed.")
 
         super(NLoptDriver, self).__init__(**kwargs)
 
@@ -149,9 +150,7 @@ class NLoptDriver(Driver):
         """
         Declare options before kwargs are processed in the init method.
         """
-        self.options.declare(
-            "optimizer", "LD_SLSQP", values=_optimizers, desc="Name of optimizer to use"
-        )
+        self.options.declare("optimizer", "LD_SLSQP", values=_optimizers, desc="Name of optimizer to use")
         self.options.declare(
             "tol",
             1.0e-6,
@@ -160,27 +159,22 @@ class NLoptDriver(Driver):
             + "relative function value change. Uses the "
             + "method `set_ftol_rel()` from NLOpt.",
         )
-        self.options.declare(
-            "maxiter", 200, lower=0, desc="Maximum number of iterations."
-        )
-        self.options.declare(
-            "numgen", 10, lower=0, desc="Maximum number of iterations."
-        )
+        self.options.declare("maxiter", 200, lower=0, desc="Maximum number of iterations.")
+        self.options.declare("numgen", 10000, lower=0, desc="Maximum number of iterations.")
         self.options.declare(
             "maxtime",
-            0.0,
+            1.0e10,
             lower=0.0,
             desc="Maximum time in seconds to perform optimization.",
         )
         self.options.declare(
             "xtol",
-            1.0e-3,
+            1.0e-12,
             lower=0.0,
             desc="Tolerance for termination. Based on "
             + "relative function value change. Uses the "
             + "method `set_xtol_rel()` from NLOpt.",
         )
-        
 
     def _get_name(self):
         """
@@ -191,7 +185,7 @@ class NLoptDriver(Driver):
         str
             The name of the current optimizer.
         """
-        return "NLopt" + self.options["optimizer"]
+        return "NLopt_" + self.options["optimizer"]
 
     def _setup_driver(self, problem):
         """
@@ -260,7 +254,7 @@ class NLoptDriver(Driver):
         # Loop through all OpenMDAO design variables and process their bounds
         for name, meta in self._designvars.items():
             size = meta["size"]
-            x_init[i: i + size] = desvar_vals[name]
+            x_init[i : i + size] = desvar_vals[name]
             i += size
 
             # Bounds if our optimizer supports them
@@ -322,26 +316,20 @@ class NLoptDriver(Driver):
                         args = [name, False, j]
                         try:
                             opt_prob.add_equality_constraint(
-                                signature_extender(
-                                    weak_method_wrapper(self, "_confunc"), args
-                                )
+                                signature_extender(weak_method_wrapper(self, "_confunc"), args)
                             )
                         except ValueError:
                             msg = (
                                 "The selected optimizer, {}, does not support"
                                 + " equality constraints. Select from {}."
                             )
-                            raise NotImplementedError(
-                                msg.format(opt, _eq_constraint_optimizers)
-                            )
+                            raise NotImplementedError(msg.format(opt, _eq_constraint_optimizers))
 
                     else:
                         # Double-sided constraints are accepted by the algorithm
                         args = [name, False, j]
                         opt_prob.add_inequality_constraint(
-                            signature_extender(
-                                weak_method_wrapper(self, "_confunc"), args
-                            )
+                            signature_extender(weak_method_wrapper(self, "_confunc"), args)
                         )
 
                         if isinstance(upper, np.ndarray):
@@ -350,36 +338,25 @@ class NLoptDriver(Driver):
                         if isinstance(lower, np.ndarray):
                             lower = lower[j]
 
-                        dblcon = (upper < openmdao.INF_BOUND) and (
-                            lower > -openmdao.INF_BOUND
-                        )
+                        dblcon = (upper < openmdao.INF_BOUND) and (lower > -openmdao.INF_BOUND)
 
                         # Add extra constraint if double-sided
                         if dblcon:
                             args = [name, True, j]
                             opt_prob.add_inequality_constraint(
-                                signature_extender(
-                                    weak_method_wrapper(self, "_confunc"), args
-                                )
+                                signature_extender(weak_method_wrapper(self, "_confunc"), args)
                             )
 
             # precalculate gradients of linear constraints
             if lincons:
-                self._lincongrad_cache = self._compute_totals(
-                    of=lincons, wrt=self._dvlist, return_format="array"
-                )
+                self._lincongrad_cache = self._compute_totals(of=lincons, wrt=self._dvlist, return_format="array")
             else:
                 self._lincongrad_cache = None
 
         # compute dynamic simul deriv coloring if option is set
         if coloring_mod._use_total_sparsity:
-            if (
-                self._coloring_info["coloring"] is None
-                and self._coloring_info["dynamic"]
-            ):
-                coloring_mod.dynamic_total_coloring(
-                    self, run_model=False, fname=self._get_total_coloring_fname()
-                )
+            if self._coloring_info["coloring"] is None and self._coloring_info["dynamic"]:
+                coloring_mod.dynamic_total_coloring(self, run_model=False, fname=self._get_total_coloring_fname())
 
                 # if the improvement wasn't large enough, turn coloring off
                 info = self._coloring_info
@@ -389,8 +366,7 @@ class NLoptDriver(Driver):
                         info["coloring"] = info["static"] = None
                         simple_warning(
                             "%s: Coloring was deactivated.  Improvement of %.1f%% was "
-                            "less than min allowed (%.1f%%)."
-                            % (self.msginfo, pct, info["min_improve_pct"])
+                            "less than min allowed (%.1f%%)." % (self.msginfo, pct, info["min_improve_pct"])
                         )
 
         # Finalize the optimization problem setup and actually perform optimization
@@ -401,7 +377,7 @@ class NLoptDriver(Driver):
                 opt_prob.set_xtol_rel(self.options["xtol"])
                 opt_prob.set_maxeval(int(self.options["maxiter"]))
                 opt_prob.set_maxtime(self.options["maxtime"])
-                opt_prob.set_population(int(self.options["maxiter"]/self.options["numgen"]))
+                opt_prob.set_population(int(self.options["maxiter"] / self.options["numgen"]))
                 opt_prob.optimize(x_init)
                 self.result = opt_prob.last_optimize_result()
 
@@ -446,7 +422,7 @@ class NLoptDriver(Driver):
             i = 0
             for name, meta in self._designvars.items():
                 size = meta["size"]
-                self.set_design_var(name, x_new[i: i + size])
+                self.set_design_var(name, x_new[i : i + size])
                 i += size
 
             with RecordingDebugging(self._get_name(), self.iter_count, self) as rec:
@@ -570,6 +546,7 @@ def signature_extender(fcn, extra_args):
     callable
         The function with the signature expected by the driver.
     """
+
     def closure(x, grad, *args):
         return fcn(x, grad, *extra_args)
 

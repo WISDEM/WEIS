@@ -10,7 +10,7 @@ It includes `methods for both local and global optimization <https://nlopt.readt
 
 Depending on your optimization problem formulation, one method might be more advantageous to use over others.
 In general, there is no single best optimization algorithm.
-Please see the NLopt documentation for more information on how the methods are implemented and best used. 
+Please see the NLopt documentation for more information on how the methods are implemented and best used.
 
 .. note::
     The NLopt package does not come included with the OpenMDAO installation. It is a separate optional package that can be installed via `pip install nlopt`.
@@ -72,7 +72,7 @@ NLoptDriver Option Examples
       openmdao.drivers.tests.test_nlopt_driver.TestNLoptDriverFeatures.test_feature_tol
       :layout: interleave
 
-      
+
 .. tags:: Driver, Optimizer, Optimization
 
 .. _mdolab: https://github.com/mdolab/pyoptsparse
