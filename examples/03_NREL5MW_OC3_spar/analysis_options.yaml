@@ -1,5 +1,5 @@
 general:
-    folder_output: /Users/dzalkind/Tools/WEIS-4/optimizations/outputs_opt_both_debug4
+    folder_output: output
     fname_output: refturb_output
 design_variables:
   blade:
