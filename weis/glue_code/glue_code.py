@@ -304,7 +304,7 @@ class WindPark(om.Group):
             self.connect('rotorse.rhoA',                    'aeroelastic.beam:rhoA')
             self.connect('rotorse.EIxx',                    'aeroelastic.beam:EIxx')
             self.connect('rotorse.EIyy',                    'aeroelastic.beam:EIyy')
-           #self.connect('rotorse.Tw_iner',                 'aeroelastic.beam:Tw_iner')
+            self.connect('rotorse.re.Tw_iner',              'aeroelastic.beam:Tw_iner')
             self.connect('rotorse.rs.frame.flap_mode_shapes',       'aeroelastic.flap_mode_shapes')
             self.connect('rotorse.rs.frame.edge_mode_shapes',       'aeroelastic.edge_mode_shapes')
             self.connect('rotorse.rp.powercurve.V',                'aeroelastic.U_init')
