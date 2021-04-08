@@ -9,7 +9,7 @@ import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 import numpy as np
 from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
-from weis.optimization_drivers.nlopt_driver import NLoptDriver
+from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
 from scipy.interpolate import Rbf
 from numpy.random import Generator, PCG64
@@ -46,10 +46,13 @@ class WT_DOE(om.ExplicitComponent):
 
     def setup(self):
         # Load DOE results
-        folder_output   = '/Users/dzalkind/Tools/WEIS-4/DOE/outputs_both'
-        data_out        = load_yaml(os.path.join(folder_output,'doe_results.yaml'))
-        omega           = data_out['rec_out']['tune_rosco_ivc.PC_omega']
+        folder_output   = '/Users/dzalkind/Tools/WEIS-4/optimizations/03_ballast_DOE/03_ballast_DOE/'
+        data_out        = load_yaml(os.path.join(folder_output,'doe_summary.yaml'))
+        omega           = np.array(data_out['rec_out']['tune_rosco_ivc.PC_omega'])
         vol_b           = np.array(data_out['rec_out']['floating.memgrp0.ballast_volume'])/1000
+
+        # Filter Data
+        use_ind = np.bitwise_and(np.array(vol_b) > .75, np.array(vol_b) < 1.5)
 
         self.sigma           = {}
         self.sigma['rotor_overspeed']   = 1e-4 #1e-3
@@ -58,19 +61,19 @@ class WT_DOE(om.ExplicitComponent):
         
 
         # Extract the data.
-        x = omega
-        y = vol_b
-        z = data_out['rec_out']['aeroelastic.rotor_overspeed']
+        x = omega[use_ind]
+        y = vol_b[use_ind]
+        z = np.array(data_out['rec_out']['aeroelastic.rotor_overspeed'])[use_ind]
 
         # Make an n-dimensional interpolator.
         self.rbfi_overspeed = Rbf(x, y, z)
 
-        z = data_out['rec_out']['floatingse.platform_mass']
+        z = np.array(data_out['rec_out']['floatingse.platform_mass'])[use_ind]
 
         # Make an n-dimensional interpolator.
         self.rbfi_mass = Rbf(x, y, z)
 
-        z = data_out['rec_out']['aeroelastic.Max_PtfmPitch']
+        z = np.array(data_out['rec_out']['aeroelastic.Max_PtfmPitch'])[use_ind]
 
         # Make an n-dimensional interpolator.
         self.rbfi_max_pitch = Rbf(x, y, z)
@@ -136,7 +139,7 @@ prob.model.add_subsystem('wt', WT_DOE(), promotes_inputs=['pc_omega', 'vol_b'])
 # # Design variables 'x' and 'y' span components, so we need to provide a common initial
 # # value for them.
 
-optimizer = 'SLSQP'
+optimizer = 'LN_COBYLA'
 record = True
 plot_record = True
 warm_start = False
@@ -169,9 +172,9 @@ if optimizer == 'SLSQP':
     prob.model.approx_totals(method="fd", step=step_size, form='forward')
 
 
-    prob.model.set_input_defaults('pc_omega', .25)
+    prob.model.set_input_defaults('pc_omega', .35)
     # prob.model.set_input_defaults('vol_b', 7500)
-    prob.model.set_input_defaults('vol_b', 5.75)    
+    prob.model.set_input_defaults('vol_b', 1.1)    
 elif optimizer == 'GA':
     prob.driver = om.SimpleGADriver()
     prob.driver.options['bits'] = {'pc_omega':3,'vol_b':3}
@@ -244,12 +247,12 @@ elif optimizer == 'CCSAQ':
 
 prob.model.add_design_var('pc_omega', lower=0.1, upper=0.5)
 # prob.model.add_design_var('vol_b', lower=5.5, upper=9)
-prob.model.add_design_var('vol_b', lower=5.5e3, upper=9e3,ref=1e3)
+prob.model.add_design_var('vol_b', lower=0.75e3, upper=1.5e3,ref=1e3)
 prob.model.add_objective('wt.ptfm_mass',ref=1e3)
 
 # # to add the constraint to the model
 prob.model.add_constraint('wt.max_ptfm_pitch', upper=5.5)
-prob.model.add_constraint('wt.overspeed', lower=0, upper=.25)
+prob.model.add_constraint('wt.overspeed', lower=0, upper=.2)
 
 # add debug
 if print_debug:
@@ -272,11 +275,11 @@ if record:
 # prob.set_val('pc_omega',0.35)
 # prob.set_val('vol_b',6.5)
 prob.set_val('pc_omega',0.35)
-prob.set_val('vol_b',6500)
+prob.set_val('vol_b',1100)
 
 if warm_start:
     prob.set_val('pc_omega',0.21234841)
-    prob.set_val('vol_b',6029.34064149)  
+    prob.set_val('vol_b',1100)  
 
 # prob.model.approx_totals(method='fd')
 prob.run_driver()
