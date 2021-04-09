@@ -76,7 +76,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 openfast:
     file_management:
         FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
-        FAST_runDirectory: /Users/dzalkind/Tools/WEIS-4/optimizations/outputs_opt_both_debug4         # Path to folder with the OpenFAST output files
+        FAST_runDirectory: fast_outputs         # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True
