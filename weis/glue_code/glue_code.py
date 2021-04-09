@@ -639,7 +639,7 @@ class WindPark(om.Group):
             # Connections to turbine constraints
             if modeling_options['WISDEM']['TowerSE']['flag']:
                 self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
-                self.connect('rlds_post.tip_pos.tip_deflection',     'tcons_post.tip_deflection')
+                self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
                 self.connect('assembly.rotor_radius',           'tcons_post.Rtip')
                 self.connect('blade.outer_shape_bem.ref_axis',  'tcons_post.ref_axis_blade')
                 self.connect('hub.cone',                        'tcons_post.precone')
