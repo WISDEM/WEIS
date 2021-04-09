@@ -718,11 +718,11 @@ class InputReader_OpenFAST(InputReader_Common):
         # ---------------------- SIMULATION CONTROL --------------------------------------
         self.fst_vt['BeamDyn']['Echo']             = bool_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['QuasiStaticInit']  = bool_read(f.readline().split()[0])
-        self.fst_vt['BeamDyn']['rhoinf']           = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['rhoinf']           = float_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['quadrature']       = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['refine']           = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['n_fact']           = int_read(f.readline().split()[0])
-        self.fst_vt['BeamDyn']['DTBeam']            = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['DTBeam']           = float_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['load_retries']     = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['NRMax']            = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['stop_tol']         = float_read(f.readline().split()[0])
@@ -769,7 +769,7 @@ class InputReader_OpenFAST(InputReader_Common):
         #---------------------- OUTPUTS -------------------------------------------------
         f.readline()
         self.fst_vt['BeamDyn']['SumPrint']    = bool_read(f.readline().split()[0])
-        self.fst_vt['BeamDyn']['OutFmt']      = f.readline().split()[0]
+        self.fst_vt['BeamDyn']['OutFmt']      = f.readline().split()[0][1:-1]
         self.fst_vt['BeamDyn']['NNodeOuts']   = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['OutNd']       = [idx.strip() for idx in f.readline().split('NNodeOuts')[0].split(',')]
         # BeamDyn Outlist
@@ -1177,7 +1177,7 @@ class InputReader_OpenFAST(InputReader_Common):
             polar = {}
 
             polar['InterpOrd']      = int_read(readline_filterComments(f).split()[0])
-            polar['NonDimArea']     = int_read(readline_filterComments(f).split()[0])
+            polar['NonDimArea']     = float_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
             polar['BL_file']        = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
