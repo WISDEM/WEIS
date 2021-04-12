@@ -43,9 +43,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
         # OpenFAST simulation summary
         if self.options['modeling_options']['Level3']['flag']: 
             # Print optimization variables
-            if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['flag']:
+            if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
-            if self.options['opt_options']['design_variables']['control']['servo']['torque_control']['flag']:
+            if self.options['opt_options']['design_variables']['control']['servo']['torque_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
             if self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flag']:
                 print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))

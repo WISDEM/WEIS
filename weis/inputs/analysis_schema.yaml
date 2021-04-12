@@ -98,6 +98,50 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
+                                    omega: &control_omega
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.1
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: rad/s
+                                            max:
+                                                type: number
+                                                default: 0.7
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: rad/s
+                                    zeta: &control_zeta
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.7
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 1.5
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: rad/s
+                            torque_control:
+                                type: object
+                                default: {}
+                                properties:
+                                    omega: *control_omega
+                                    zeta: *control_zeta
+                            flap_control:
+                                type: object
+                                default: {}
+                                properties:
                                     flag: *flag
                                     omega_min: &omega_min
                                         type: number
@@ -123,33 +167,11 @@ properties:
                                         minimum: 0.0
                                         maximum: 10.0
                                         unit: none
-                            torque_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    omega_min: *omega_min
-                                    omega_max: *omega_max
-                                    zeta_min: *zeta_min
-                                    zeta_max: *zeta_max
-                            flap_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    flag: *flag
-                                    omega_min: *omega_min
-                                    omega_max: *omega_max
-                                    zeta_min: *zeta_min
-                                    zeta_max: *zeta_max
                             ipc_control:
                                 type: object
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    omega_min: *omega_min
-                                    omega_max: *omega_max
-                                    zeta_min: *zeta_min
-                                    zeta_max: *zeta_max
 
     constraints:
         # GB: These all need gammas or safety factors

@@ -7,10 +7,14 @@ class PoseOptimizationWEIS(PoseOptimization):
         n_DV = super(PoseOptimizationWEIS, self).get_number_design_variables()
 
         n_add = 0
-        if self.opt['design_variables']['control']['servo']['pitch_control']['flag']:
-            n_add += 2
-        if self.opt['design_variables']['control']['servo']['torque_control']['flag']:
-            n_add += 2
+        if self.opt['design_variables']['control']['servo']['pitch_control']['omega']['flag']:
+            n_add += 1
+        if self.opt['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
+            n_add += 1
+        if self.opt['design_variables']['control']['servo']['torque_control']['omega']['flag']:
+            n_add += 1
+        if self.opt['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
+            n_add += 1
         if self.opt['design_variables']['control']['servo']['flap_control']['flag']:
             n_add += 2
         if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
@@ -62,15 +66,17 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         # -- Control --
         control_opt = self.opt['design_variables']['control']
-        if control_opt['servo']['pitch_control']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=control_opt['servo']['pitch_control']['omega_min'], 
-                                                            upper=control_opt['servo']['pitch_control']['omega_max'])
-            # wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt['servo']['pitch_control']['zeta_min'], 
-            #                                                upper=control_opt['servo']['pitch_control']['zeta_max'])
-        if control_opt['servo']['torque_control']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.VS_omega', lower=control_opt['servo']['torque_control']['omega_min'], 
-                                                            upper=control_opt['servo']['torque_control']['omega_max'])
-            wt_opt.model.add_design_var('tune_rosco_ivc.VS_zeta', lower=control_opt['servo']['torque_control']['zeta_min'], 
+        if control_opt['servo']['pitch_control']['omega']['flag']:
+            wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=control_opt['servo']['pitch_control']['omega']['min'], 
+                                                            upper=control_opt['servo']['pitch_control']['omega']['max'])
+        if control_opt['servo']['pitch_control']['zeta']['flag']:                            
+            wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt['servo']['pitch_control']['zeta']['min'], 
+                                                           upper=control_opt['servo']['pitch_control']['zeta']['max'])
+        if control_opt['servo']['torque_control']['omega']['flag']:
+            wt_opt.model.add_design_var('tune_rosco_ivc.VS_omega', lower=control_opt['servo']['torque_control']['omega']['min'], 
+                                                            upper=control_opt['servo']['torque_control']['omega']['max'])
+        if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
+            wt_opt.model.add_design_var('tune_rosco_ivc.VS_zeta', lower=control_opt['servo']['torque_control']['zeta']['min'], 
                                                            upper=control_opt['servo']['torque_control']['zeta_max'])
         if control_opt['servo']['ipc_control']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt['servo']['ipc_control']['Ki_min'],
