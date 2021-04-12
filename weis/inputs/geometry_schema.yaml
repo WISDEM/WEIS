@@ -221,6 +221,7 @@ properties:
                     fl_feedback:
                         type: object
                         description: Platform velocity feedback using nacelle IMU
+                        default: {}
                         properties:
                             gain:
                                 type: number
