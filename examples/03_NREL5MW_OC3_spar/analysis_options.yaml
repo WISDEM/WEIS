@@ -1,5 +1,5 @@
 general:
-    folder_output: /Users/dzalkind/Tools/WEIS-4/optimizations/outputs_LN_COBYLA_0
+    folder_output: output
     fname_output: refturb_output
 design_variables:
   control:
@@ -219,11 +219,11 @@ driver:
   optimization:
     flag: True
     tol: 1.e-3            # Optimality tolerance
-    xtol: 1.e-2            # Optimality tolerance
+    xtol: 1.e-2           # Optimality tolerance for design variables
     max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-    max_iter: 100         # Maximum number of iterations (SLSQP)
-    solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    max_iter: 2           # Maximum number of iterations (SLSQP)
+    solver: LN_COBYLA     # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
   design_of_experiments:
