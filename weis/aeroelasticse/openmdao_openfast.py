@@ -347,7 +347,11 @@ class FASTLoadCases(ExplicitComponent):
             FAST_Output, case_list, dlc_list, case_name_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
             if self.options['modeling_options']['Level2']['flag']:
-                LinearTurbine = LinearTurbineModel(self.FAST_runDirectory,case_name_list,nlin=12)      # hard-code number of linearization points for meow, will be modelling input soon
+                LinearTurbine = LinearTurbineModel(
+                self.FAST_runDirectory,
+                case_name_list,
+                nlin=self.options['modeling_options']['Level2']['linearization']['NLinTimes']
+                )
 
                 # DZ->JJ: the info you seek is in LinearTurbine
                 # LinearTurbine.omega_rpm has the rotor speed at each linearization point
