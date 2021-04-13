@@ -73,7 +73,7 @@ properties:
                         default: ['GenDOF','TwFADOF1']
                         items:
                             type: string
-                            enum: ['FlapDOF1','FlapDOF2','EdgeDOF','TeetDOF','DrTrDOF','GenDOF','YawDOF','TwFADOF1','TwFADOF2','TwSSDOF1','TwSSDOF1','PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmYDOF']
+                            enum: ['FlapDOF1','FlapDOF2','EdgeDOF','TeetDOF','DrTrDOF','GenDOF','YawDOF','TwFADOF1','TwFADOF2','TwSSDOF1','TwSSDOF2','PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmYDOF']
                     # DZ: I would assume Linearize = True if we were running Level 2 WEIS
                     # Linearize:
                     #     type: boolean
