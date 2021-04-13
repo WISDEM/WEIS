@@ -2,7 +2,7 @@ import os
 from weis.glue_code.runWEIS     import run_weis
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-fname_wt_input         = mydir + os.sep + "nrel5mw-semi_oc4.yaml"
+fname_wt_input         = mydir + os.sep + "IEA-15-floating.yaml"
 fname_modeling_options = mydir + os.sep + "modeling_options_doe.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options_doe.yaml"
 
