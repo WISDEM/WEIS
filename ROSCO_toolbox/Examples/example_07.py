@@ -19,6 +19,9 @@ from ROSCO_toolbox import turbine as ROSCO_turbine
 from ROSCO_toolbox import sim as ROSCO_sim
 
 this_dir = os.path.dirname(__file__)
+example_out_dir = os.path.join(this_dir,'examples_out')
+if not os.path.isdir(example_out_dir):
+  os.makedirs(example_out_dir)
 
 # Load yaml file 
 parameter_filename = os.path.join(this_dir,'NREL5MW_example.yaml')
@@ -42,9 +45,14 @@ turbine.load_from_fast(path_params['FAST_InputFile'],path_params['FAST_directory
 controller.tune_controller(turbine)
 
 # Plot minimum pitch schedule
-plt.plot(controller.v, controller.pitch_op,label='Steady State Operation')
-plt.plot(controller.v, controller.ps_min_bld_pitch, label='Minimum Pitch Schedule')
-plt.legend()
-plt.xlabel('Wind speed (m/s)')
-plt.ylabel('Blade pitch (rad)')
-plt.show()
+fig, ax = plt.subplots(1,1)
+ax.plot(controller.v, controller.pitch_op,label='Steady State Operation')
+ax.plot(controller.v, controller.ps_min_bld_pitch, label='Minimum Pitch Schedule')
+ax.legend()
+ax.set_xlabel('Wind speed (m/s)')
+ax.set_ylabel('Blade pitch (rad)')
+
+if False:
+  plt.show()
+else:
+  plt.savefig(os.path.join(example_out_dir,'07_MinPitch.png'))
