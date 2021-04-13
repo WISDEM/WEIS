@@ -111,6 +111,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}        # potential modelling input, but only Trim solution supported for now
         case_inputs[("Fst","TrimGain")] = {'vals':[self.TrimGain], 'group':0}  
         case_inputs[("Fst","TrimTol")] = {'vals':[self.TrimTol], 'group':0}  
+        case_inputs[("Fst","OutFmt")] = {'vals':['ES20.11E3'], 'group':0} 
 
         # HydroStates: if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
         if any([d in ['PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmyDOF'] for d in self.DOFs]):
