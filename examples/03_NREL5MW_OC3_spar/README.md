@@ -10,7 +10,7 @@ To run the full optimization, make sure that you install the NLOpt solvers in yo
 conda install nlopt
 ```
 
-and set the following inputs in the `modeling_options.yaml` input:
+Change the following entries in the `modeling_options.yaml` input:
 
 ```
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
@@ -18,4 +18,12 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     simulation:
         TMax: 720.0
         TStart: 120.0
+```
+
+Change the following entries in the `analysis_options.yaml` input:
+
+```
+driver:
+  optimization:
+    max_iter: 40           # Maximum number of iterations (SLSQP)
 ```
