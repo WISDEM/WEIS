@@ -13,8 +13,14 @@ import matplotlib.pyplot as plt
 import re
 from itertools import chain
 from scipy.io import loadmat
+from ROSCO_toolbox.control_interface import ControllerInterface as ROSCO_ControllerInterface
 
 import os
+
+# Some useful constants
+deg2rad = np.deg2rad(1)
+rad2deg = np.rad2deg(1)
+rpm2RadSec = 2.0*(np.pi)/60.0
 
 
 class LinearTurbineModel(object):
@@ -269,8 +275,8 @@ class LinearTurbineModel(object):
             y_op    = self.y_ops[:,0]
             x_op    = self.x_ops[:,0]            
 
-        # form state space model  TODO: generalize using linear description strings
-        P_op                = co.StateSpace(A,B,C,D)
+        # NOTE: co.StateSpace() will remove states sometimes! This kwarg may be changed, was different here: https://github.com/python-control/python-control/blob/master/control/statesp.py
+        P_op                = co.StateSpace(A,B,C,D,remove_useless=False)
         if reduce_states:
             P_op            = co.minreal(P_op,tol=1e-7,verbose=False)
         P_op.InputName      = self.DescCntrlInpt
@@ -309,15 +315,14 @@ class LinearTurbineModel(object):
         return P_cl
 
 
-    def solve(self,disturbance,Plot=False,open_loop=True,controller={},reduce_states=False):
+    def solve(self,disturbance,Plot=False,controller=None,reduce_states=False):
         ''' 
         Run linear simulation of open-loop turbine model
         inputs: disturbance: dict containing
                     Time - vector of time indices
                     Wind - vector of wind speeds (usually rotor avg wind speed)
                 Plot - plot solution?
-                open_loop - (logical) run linearization in open loop or add closed-loop linear controllers
-                controller (optional) - linear controller to add if open_loop = False
+                controller (optional) - linear controller to add, either a LinearControlModel or ROSCO_ControllerInterface
 
         outputs: OutList - list of output channels, mimicking nonlinear OpenFAST
                  OutData - array of output channels, mimicking nonlinear OpenFAST
@@ -329,32 +334,105 @@ class LinearTurbineModel(object):
         # Get plant operating point
         self.ops, self.P_op        = self.get_plant_op(u_h,reduce_states)
 
-        
-
-        if not open_loop:
-            if isinstance(controller,LinearControlModel):
-                P_op = self.add_control(controller)
-            else:
-                print('WARNING: controller not LinearControlModel() object')
+        if not controller or isinstance(controller,ROSCO_ControllerInterface):      
+            P_op = self.P_op                        # keep open loop model
+        elif isinstance(controller,LinearControlModel):
+            P_op = self.add_control(controller)     # add linear control to make closed loop model
+        else:
+            raise Exception('WARNING: controller not LinearControlModel() or ROSCO ControllerInterface object')            
 
         # linearize input (remove wind_speed_op)
-        u_lin       = np.zeros((len(self.DescCntrlInpt),len(tt)))
+        u_lin           = np.zeros((len(self.DescCntrlInpt),len(tt)))
 
-        indWind     = self.DescCntrlInpt.index('IfW Extended input: horizontal wind speed (steady/uniform wind), m/s')
-        u_lin[indWind,:]  = u_h - self.ops['uh']
+        indWind         = P_op.InputName.index('IfW Extended input: horizontal wind speed (steady/uniform wind), m/s')
+        indBldPitch     = P_op.InputName.index('ED Extended input: collective blade-pitch command, rad')
+        indGenTq        = P_op.InputName.index('ED Generator torque, Nm')
+        indGenSpeed     = P_op.OutputName.index('ED GenSpeed, (rpm)')
+        indRotSpeed     = P_op.OutputName.index('ED RotSpeed, (rpm)')
+        indBldPitch_out = P_op.OutputName.index('ED BldPitch1, (deg)')
+        indNacIMU       = P_op.OutputName.index('ED NcIMURAys, (deg/s^2)')
 
-        # linear solve
-        _,y_lin,xx = co.forced_response(P_op,T=tt,U=u_lin)
+        # linearize wind 
+        lin_wind        = u_h - self.ops['uh']
 
+        if isinstance(controller,ROSCO_ControllerInterface):   
+
+            # Set simulation params
+            rotor_rpm_init  = 10.
+            GBRatio         = 1.
+                    
+
+            # Upsample time and wind arrays
+            dt      = 1/80
+            t_array = np.arange(tt[0],tt[-1],dt)
+            lin_wind    = np.interp(t_array,tt,lin_wind)
+            u_h     = np.interp(t_array,tt,u_h)
+
+            # Declare output arrays
+            bld_pitch = np.ones_like(t_array) * self.ops['u'][indBldPitch] 
+            rot_speed = np.ones_like(t_array) * self.ops['y'][indRotSpeed] * rpm2RadSec # represent rot speed in rad / s
+            gen_speed = np.ones_like(t_array) * self.ops['y'][indGenSpeed] * rpm2RadSec # represent gen speed in rad/s
+            gen_torque = np.ones_like(t_array) * self.ops['u'][indGenTq] / 1000
+            gen_torque = np.zeros_like(t_array) * self.ops['u'][indGenTq] 
+            nac_accel   = np.ones_like(t_array) * self.ops['y'][indNacIMU] * deg2rad(1)
+
+            # Convert continuous system to discrete
+            P_d = co.c2d(P_op,dt)   
+            x_k = np.zeros((P_op.states,1))
+            y_lin = np.zeros((P_op.outputs,len(t_array)))
+
+
+            # Loop through time
+            for k, t in enumerate(t_array):
+                if k == 0:
+                    continue # Skip the first run
+                
+                # Call the controller
+                gen_torque[k], bld_pitch[k] = controller.call_controller(t,dt,bld_pitch[k-1],gen_torque[k-1],gen_speed[k-1],0.95,rot_speed[k-1],u_h[k-1],nac_accel[k-1])
+
+                # Set inputs:
+                # Wind
+                u               = np.zeros((P_op.inputs,1))
+                u[indWind]      = lin_wind[k]
+
+                # Blade Pitch
+                u[indBldPitch]  = bld_pitch[k] - self.ops['u'][indBldPitch] 
+
+                # GenTq
+                u[indGenTq]     = 50 * ( gen_torque[k] - self.ops['u'][indGenTq] )
+
+                # Update States and Outputs                
+                x_k1    = P_d.A @ x_k + P_d.B @ u
+                y   = P_d.C @ x_k + P_d.D @ u
+                x_k    = x_k1
+
+                y_lin[:,k] = np.squeeze(y)
+
+                # Pull out nonlinear outputs
+                gen_speed[k] = (y[indGenSpeed] + self.ops['y'][indGenSpeed]) * rpm2RadSec
+                rot_speed[k] = (y[indRotSpeed] + self.ops['y'][indRotSpeed]) * rpm2RadSec
+                nac_accel[k] = (y[indNacIMU] + self.ops['y'][indNacIMU]) * deg2rad(1)
+                # print('here')
+
+            tt = t_array
+
+            controller.kill_discon()
+
+                
+
+        else:
+            # use control toolbox linear solve
+            u_lin[indWind,:]  = u_h - self.ops['uh']
+
+            _,y_lin,xx = co.forced_response(P_op,T=tt,U=u_lin)
 
         # Add back in operating points
-        # Note that bld pitch was an input operating point that we are moving to the output operating point
-        # TODO: designate CONTROL inputs that become outputs in closed-loop simulations
         y_op = self.ops['y']   #TODO: make blade pitch operationg point in radians
         u_op = self.ops['u']
 
         y   = y_op.reshape(-1,1) + y_lin
         u   = u_op[0].reshape(-1,1) + u_lin
+        
 
         # plot, for debugging 
         if Plot:
