@@ -16,6 +16,8 @@ from weis.aeroelasticse.FAST_post           import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_General, CaseGen_IEC
 from weis.aeroelasticse.LinearFAST          import LinearFAST
 from weis.control.LinearModel               import LinearTurbineModel, LinearControlModel
+from weis.aeroelasticse.Util                import FileTools
+
 
 from pCrunch import Analysis, pdTools, Processing
 import fatpack
@@ -372,6 +374,21 @@ class FASTLoadCases(ExplicitComponent):
                 
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
+
+                print('Saving Operating Points...')
+                
+                # Shorten output names from linearization output to one like level3 openfast output
+                # This depends on how openfast sets up the linearization output names and may break if that is changed
+                OutList     = [out_name.split()[1][:-1] for out_name in LinearTurbine.DescOutput]
+                OutOps      = {}
+                for i_out, out in enumerate(OutList):
+                    OutOps[out] = LinearTurbine.y_ops[i_out,:]
+
+                # save to yaml, might want in analysis outputs
+                FileTools.save_yaml(
+                    self.options['modeling_options']['openfast']['file_management']['FAST_runDirectory'],
+                    'OutOps.yaml',OutOps)
+
                     
             self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
