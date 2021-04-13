@@ -26,7 +26,7 @@ rpm2RadSec = 2.0*(np.pi)/60.0
 class LinearTurbineModel(object):
 
 
-    def __init__(self,lin_file_dir,lin_file_names,nlin=12,reduceStates=False,fromMat=False):
+    def __init__(self,lin_file_dir,lin_file_names,nlin=12,reduceStates=False,fromMat=False,remove_azimuth=True):
         '''
             inputs:    
                 lin_file_dir (string) - directory of linear file outputs from OpenFAST
@@ -71,12 +71,21 @@ class LinearTurbineModel(object):
                 indInps = np.arange(0,matData['NumInputs']).reshape(-1,1)
                 indOuts = np.arange(0,matData['NumOutputs']).reshape(-1,1)
 
-                # remove azimuth state
-                AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
-                indAz           = matData['DescStates'].index(AzDesc)
-
+                # start with all states
                 indStates       = np.arange(0,matData['NumStates'])
-                indStates       = np.delete(indStates,indAz)
+
+                # remove azimuth state
+                if remove_azimuth:
+                    AzDesc          = 'ED Variable speed generator DOF (internal DOF index = DOF_GeAz), rad'
+                    indAz           = [desc_state == AzDesc for desc_state in matData['DescStates']]
+                    indStates       = np.delete(indStates,indAz)
+
+                    # change deriv order to 1 if removed
+                    if any(indAz):
+                        order = np.array(matData['StateDerivOrder'])
+                        order[np.array(indAz)] = 1
+                        matData['StateDerivOrder'] = order.tolist()
+
                 indStates       = indStates.reshape(-1,1)
 
                 if not iCase:

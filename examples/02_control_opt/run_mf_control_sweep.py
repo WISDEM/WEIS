@@ -309,7 +309,9 @@ class MF_Turbine(object):
             self.FAST_level2_directory,
             lin_fast.case_name_list,
             lin_fast.NLinTimes,
-            reduceStates=False)
+            reduceStates=False,
+            remove_azimuth=True
+            )
 
     def run_level2(self,controller,disturbance):
         controller.tune_controller(self.turbine)
@@ -486,17 +488,17 @@ if __name__ == '__main__':
         )
 
     # # mf_turb.compare(dofs=['GenDOF','TwFADOF1'])
-    mf_turb.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF'])
+    mf_turb.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
 
 
     print('here')
 
-    # mf_turb2 = MF_Turbine(
-    #     level2_wind_speeds=np.arange(4,26,2).tolist(),
-    #     level3_wind_speeds=np.arange(6,24,2).tolist(),
-    #     n_cores = 4,
-    #     ROSCO_Interface = True
-    #     )
+    mf_turb2 = MF_Turbine(
+        level2_wind_speeds=np.arange(4,26,2).tolist(),
+        level3_wind_speeds=np.arange(6,24,2).tolist(),
+        n_cores = 4,
+        ROSCO_Interface = True
+        )
         
 
     # mf_turb2.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF'])
