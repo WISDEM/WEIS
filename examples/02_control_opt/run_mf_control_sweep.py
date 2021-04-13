@@ -331,6 +331,7 @@ class MF_Turbine(object):
 
 
     def run_level3(self,controller):
+        controller.tune_controller(self.turbine)
         # Run FAST cases
         fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
         
