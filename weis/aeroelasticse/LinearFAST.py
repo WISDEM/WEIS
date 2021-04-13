@@ -155,9 +155,9 @@ class LinearFAST(runFAST_pywrapper_batch):
                 inputs['pitch_init'],
                 left=inputs['pitch_init'][0],
                 right=inputs['pitch_init'][-1])
-            case_inputs[('ElastoDyn','BlPitch1')] = {'vals': pitch_init, 'group': 0}
-            case_inputs[('ElastoDyn','BlPitch2')] = {'vals': pitch_init, 'group': 0}
-            case_inputs[('ElastoDyn','BlPitch3')] = {'vals': pitch_init, 'group': 0}
+            case_inputs[('ElastoDyn','BlPitch1')] = {'vals': pitch_init.tolist(), 'group': 1}
+            case_inputs[('ElastoDyn','BlPitch2')] = {'vals': pitch_init.tolist(), 'group': 1}
+            case_inputs[('ElastoDyn','BlPitch3')] = {'vals': pitch_init.tolist(), 'group': 1}
         else:       # set initial pitch to 0 (may be problematic at high wind speeds)
             case_inputs[('ElastoDyn','BlPitch1')] = {'vals': [0], 'group': 0}
             case_inputs[('ElastoDyn','BlPitch2')] = {'vals': [0], 'group': 0}
