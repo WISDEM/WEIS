@@ -90,13 +90,15 @@ Level2:
         TMax: 1600.
         DT: 0.01
         TrimGain: 1e-4
-        TrimTol: 1e-5
-        wind_speeds: [14,16,18]
+        TrimTol: 1e-3
+        wind_speeds: [16]
         DOFs: ['GenDOF','TwFADOF1']
-        NLinTimes: 12    
+        NLinTimes: 4    
 
     
 openfast:
+    analysis_settings:
+        cores: 4
     file_management:
         FAST_namingOut:    lin         # Name of the OpenFAST output files
         FAST_runDirectory: outputs/weis_mono_lin/             # Path to folder with the OpenFAST output files
