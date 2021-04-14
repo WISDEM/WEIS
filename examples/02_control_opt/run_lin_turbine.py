@@ -32,8 +32,8 @@ if __name__ == '__main__':
     
     lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
-    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
-    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
+    lin_fast.FAST_runDirectory        = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
+    lin_fast.FAST_exe                 = '/Users/dzalkind/Tools/WEIS-2/local/bin/openfast'
     lin_fast.debug_level              = 2
     lin_fast.dev_branch               = True
     lin_fast.write_yaml               = True
@@ -51,7 +51,7 @@ if __name__ == '__main__':
     lin_fast.cores            = 1
 
     # overwrite steady & linearizations
-    lin_fast.overwrite        = False
+    lin_fast.overwrite        = True
 
     lin_fast.gen_linear_model()
 
