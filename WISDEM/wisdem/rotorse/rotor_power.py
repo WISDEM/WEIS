@@ -14,7 +14,7 @@ from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 from wisdem.commonse.utilities import smooth_abs, smooth_min, linspace_with_deriv
 from wisdem.commonse.distribution import RayleighCDF, WeibullWithMeanCDF
 
-TOL = 1e-3
+TOL = 1e-5
 
 
 class RotorPower(Group):

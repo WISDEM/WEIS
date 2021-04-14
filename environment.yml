@@ -17,6 +17,7 @@ dependencies:
   - openmdao
   - openpyxl
   - pandas
+  - pip
   - pyside2
   - pytest
   - pytest-cov
