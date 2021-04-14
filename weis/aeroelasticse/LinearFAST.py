@@ -36,7 +36,7 @@ class LinearFAST(runFAST_pywrapper_batch):
     def __init__(self, **kwargs):
 
         self.FAST_ver           = 'OpenFAST'
-        # self.FAST_exe           = None
+        self.FAST_exe           = None
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None

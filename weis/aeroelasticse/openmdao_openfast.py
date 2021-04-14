@@ -370,12 +370,8 @@ class FASTLoadCases(ExplicitComponent):
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
 
-            # LEVEL 3
-            #summary_stats, extreme_table, DELs, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-            #self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
-
-            FAST_Output, case_list, dlc_list, case_name_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-
+            summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+           
             if self.options['modeling_options']['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(
                 self.FAST_runDirectory,
@@ -424,7 +420,7 @@ class FASTLoadCases(ExplicitComponent):
                     'OutOps.yaml',OutOps)
 
                     
-            self.post_process(FAST_Output, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
+            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
             
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
@@ -1055,10 +1051,13 @@ class FASTLoadCases(ExplicitComponent):
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization 
         if self.options['modeling_options']['Level2']['flag']:
-            linearization_options   = self.options['modeling_options']['Level2']['linearization']
-            fastBatch               = LinearFAST(**linearization_options)
-            fastBatch.fst_vt        = fst_vt
-            fastBatch.cores         = self.cores
+            linearization_options               = self.options['modeling_options']['Level2']['linearization']
+            
+            # Use openfast binary until library works
+            linearization_options['FAST_exe']   = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/bin/openfast')
+            fastBatch                           = LinearFAST(**linearization_options)
+            fastBatch.fst_vt                    = fst_vt
+            fastBatch.cores                     = self.cores
 
             case_list, case_name_list = fastBatch.gen_linear_cases(inputs)
         else:
@@ -1095,7 +1094,7 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
-        return summary_stats, extreme_table, DELs, case_list, dlc_list
+        return summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list
 
     def DLC_creation_IEC(self, inputs, discrete_inputs, fst_vt, powercurve=False):
 
