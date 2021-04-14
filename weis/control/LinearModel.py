@@ -138,10 +138,7 @@ class LinearTurbineModel(object):
 
             # Input, Output, State Descriptions
             self.DescCntrlInpt      = matData['DescCntrlInpt']
-            self.DescStates         = np.array(matData['DescStates'])[indStates].squeeze().tolist()         # remove Azimuth state here
-            for state in self.DescStates:
-                if 'DOF_GeAz' in state:
-                    self.DescStates.remove(state)
+            self.DescStates         = np.array(matData['DescStates'])[indStates].squeeze().tolist()         # removing Azimuth state from Descriptions
             self.DescOutput         = matData['DescOutput']
             self.StateDerivOrder    = matData['StateDerivOrder']
             self.omega_rpm          = omega
