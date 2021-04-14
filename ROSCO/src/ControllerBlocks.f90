@@ -106,6 +106,7 @@ CONTAINS
     !       WE_Mode = 0, Filter hub height wind speed as passed from servodyn using first order low pass filter with 1Hz cornering frequency
     !       WE_Mode = 1, Use Inversion and Inveriance filter as defined by Ortege et. al. 
         USE ROSCO_Types, ONLY : LocalVariables, ControlParameters, ObjectInstances, PerformanceData, DebugVariables
+        use ieee_arithmetic
         IMPLICIT NONE
     
         ! Inputs
@@ -176,8 +177,16 @@ CONTAINS
                 xh = RESHAPE((/om_r, v_t, v_m/),(/3,1/))
                 P = RESHAPE((/0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0/),(/3,3/))
                 K = RESHAPE((/0.0,0.0,0.0/),(/3,1/))
+                Cp_op   = 0.25  ! initialize so debug output doesn't give *****
                 
             ELSE
+                IF (ieee_is_nan(v_h)) THEN
+                   om_r = LocalVar%RotSpeedF
+                   v_t = 0.0
+                   v_m = LocalVar%HorWindV
+                   v_h = LocalVar%HorWindV
+                ENDIF
+                
                 ! Find estimated operating Cp and system pole
                 A_op = interp1d(CntrPar%WE_FOPoles_v,CntrPar%WE_FOPoles,v_h)
 
@@ -254,7 +263,7 @@ CONTAINS
         ! ------ Setpoint Smoothing ------
         IF ( CntrPar%SS_Mode == 1) THEN
             ! Find setpoint shift amount
-            DelOmega = ((LocalVar%PC_PitComT - CntrPar%PC_MinPit)/0.524) * CntrPar%SS_VSGain - ((CntrPar%VS_RtTq - LocalVar%VS_LastGenTrq))/CntrPar%VS_RtTq * CntrPar%SS_PCGain ! Normalize to 30 degrees for now
+            DelOmega = ((LocalVar%PC_PitComT - CntrPar%PC_MinPit)/0.524) * CntrPar%SS_VSGain - ((LocalVar%VS_GenPwr - LocalVar%VS_LastGenTrq))/CntrPar%VS_RtPwr * CntrPar%SS_PCGain ! Normalize to 30 degrees for now
             DelOmega = DelOmega * CntrPar%PC_RefSpd
             ! Filter
             LocalVar%SS_DelOmegaF = LPFilter(DelOmega, LocalVar%DT, CntrPar%F_SSCornerFreq, LocalVar%iStatus, .FALSE., objInst%instLPF) 

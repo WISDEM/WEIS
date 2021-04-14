@@ -1,92 +1,104 @@
-'''
-A script to post process a batch run and generate stats and load rankings
-'''
+__author__ = ["Nikhar Abbas", "Jake Nunemaker"]
+__copyright__ = "Copyright 2020, National Renewable Energy Laboratory"
+__maintainer__ = ["Nikhar Abbas", "Jake Nunemaker"]
+__email__ = ["nikhar.abbas@nrel.gov", "jake.nunemaker@nrel.gov"]
 
-# Python Modules and instantiation
-import numpy as np
-import matplotlib.pyplot as plt 
-import pandas as pd
-import time
+
 import os
-import pathlib
-# ROSCO toolbox modules 
-# from ROSCO_toolbox import utilities as ROSCO_utilites
-# from ofTools.fast_io
-# fast_io = ROSCO_utilites.FAST_IO()
-# fast_pl = ROSCO_utilites.FAST_Plots()
-# WEIS modules
-from weis.aeroelasticse.Util import FileTools
-from ROSCO_toolbox.ofTools.fast_io.output_processing import output_processing
-# Batch Analysis
-from pCrunch import pdTools
-from pCrunch import Processing, Analysis
+from fnmatch import fnmatch
 
-if __name__ == '__main__':
-    # Define input files paths
-    output_dir      = '/Users/dzalkind/Tools/WEIS-2/outputs/iea15mw/PC_sweep_play'
-    results_dir     = 'results'
-    save_results    = True
+import numpy as np
+import pandas as pd
+import ruamel.yaml as ry
+
+from pCrunch import LoadsAnalysis, PowerProduction
+from pCrunch.io import load_FAST_out
+from pCrunch.utility import save_yaml, get_windspeeds, convert_summary_stats
 
 
-    # Load case matrix into dataframe
-    fname_case_matrix = os.path.join(output_dir,'case_matrix.yaml')
-    case_matrix = FileTools.load_yaml(fname_case_matrix, package=1)
-    cm = pd.DataFrame(case_matrix)
-
-    # Find all outfiles
-    outfiles = []
-    for file in os.listdir(output_dir):
-        if file.endswith('.outb'):
-            outfiles.append(os.path.join(output_dir,file))
-        elif file.endswith('.out') and not file.endswith('.MD.out'):
-            outfiles.append(os.path.join(output_dir,file))
+def valid_extension(fp):
+    return any([fnmatch(fp, ext) for ext in ["*.outb", "*.out"]])
 
 
-    # Initialize processing classes
-    fp = Processing.FAST_Processing()
-    fa = Analysis.Loads_Analysis()
+# Define input files paths
+output_dir = "/Users/jnunemak/Projects/pCrunch/BAR10/rank_0/"
+results_dir = os.path.join(output_dir, "results")
+save_results = True
 
 
-    # Set some processing parameters
-    fp.OpenFAST_outfile_list = outfiles
-    fp.t0 = 0
-    fp.parallel_analysis = False
-    fp.results_dir = os.path.join(output_dir, 'stats')
-    fp.verbose=True
+# Find outfiles
+outfiles = [
+    os.path.join(output_dir, f)
+    for f in os.listdir(output_dir)
+    if valid_extension(f)
+]
 
-    if save_results:
-        fp.save_LoadRanking = True
-        fp.save_SummaryStats = True
+# Configure pCrunch
+magnitude_channels = {
+    "RootMc1": ["RootMxc1", "RootMyc1", "RootMzc1"],
+    "RootMc2": ["RootMxc2", "RootMyc2", "RootMzc2"],
+    "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
+}
 
-    # Load and save statistics and load rankings
-    stats, load_rankings = fp.batch_processing()
+fatigue_channels = {"RootMc1": 10, "RootMc2": 10, "RootMc3": 10}
 
-    
-    
+channel_extremes = [
+    "RotSpeed",
+    "RotThrust",
+    "RotTorq",
+    "RootMc1",
+    "RootMc2",
+    "RootMc3",
+]
 
-    # Get wind speeds for processed runs
-    windspeeds, seed, IECtype, cm_wind = Processing.get_windspeeds(cm, return_df=True)
-    stats_df = pdTools.dict2df(stats)
+# Run pCrunch
+la = LoadsAnalysis(
+    outfiles,
+    magnitude_channels=magnitude_channels,
+    fatigue_channels=fatigue_channels,
+    extreme_channels=channel_extremes,
+    trim_data=(0,),
+)
+la.process_outputs(cores=4)
 
-    print('here')
+if save_results:
+    save_yaml(
+        results_dir,
+        "summary_stats.yaml",
+        convert_summary_stats(la.summary_stats),
+    )
 
+# Load case matrix into dataframe
+fname_case_matrix = os.path.join(output_dir, "case_matrix.yaml")
+with open(fname_case_matrix, "r") as f:
+    case_matrix = ry.load(f, Loader=ry.Loader)
+cm = pd.DataFrame(case_matrix)
 
-# # Get AEP
-# pp = Analysis.Power_Production()
-# Vavg = 10   # Average wind speed of cite
-# Vrange = [2,26] # Range of wind speeds being considered
-# # bnums = int(len(set(windspeeds))/len(fp.namebase)) # Number of wind speeds per dataset for binning data
-# bnums = len(fp.OpenFAST_outfile_list)
-# pp.windspeeds = list(set(windspeeds))
-# p = pp.gen_windPDF(Vavg, bnums, Vrange)
-# AEP = pp.AEP(stats)
-# print('AEP = {}'.format(AEP))
+# Get wind speeds for processed runs
+windspeeds, seed, IECtype, cm_wind = get_windspeeds(cm, return_df=True)
 
+# Get AEP
+turbine_class = 1
+pp = PowerProduction(turbine_class)
+AEP, perf_data = pp.AEP(
+    la.summary_stats,
+    windspeeds,
+    ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"],
+)
+print(f"AEP: {AEP}")
+
+# # ========== Plotting ==========
+# an_plts = Analysis.wsPlotting()
+# #  --- Time domain analysis ---
+# filenames = [outfiles[0][2], outfiles[1][2]] # select the 2nd run from each dataset
+# cases = {'Baseline': ['Wind1VelX', 'GenPwr', 'BldPitch1', 'GenTq', 'RotSpeed']}
+# fast_dict = fast_io.load_FAST_out(filenames, tmin=30)
+# fast_pl.plot_fast_out(cases, fast_dict)
 
 # # Plot some spectral cases
 # spec_cases = [('RootMyb1', 0), ('TwrBsFyt', 0)]
 # twrfreq = .0716
-# fig,ax = fast_pl.plot_spectral(fast_dict, spec_cases, show_RtSpeed=True, 
+# fig,ax = fast_pl.plot_spectral(fast_dict, spec_cases, show_RtSpeed=True,
 #                         add_freqs=[twrfreq], add_freq_labels=['Tower'],
 #                         averaging='Welch')
 # ax.set_title('DLC1.1')
@@ -104,6 +116,3 @@ if __name__ == '__main__':
 # fig,ax = an_plts.stat_curve(windspeeds, stats, 'GenPwr', 'line', stat_idx=0, names=['DLC1.1'])
 
 # plt.show()
-
-
-

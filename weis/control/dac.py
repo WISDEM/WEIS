@@ -186,7 +186,7 @@ class RunXFOIL(ExplicitComponent):
         self.options.declare('opt_options')
         
     def setup(self):
-        rotorse_options = self.options['modeling_options']['RotorSE']
+        rotorse_options = self.options['modeling_options']['WISDEM']['RotorSE']
         self.n_span        = n_span     = rotorse_options['n_span']
         self.n_te_flaps    = n_te_flaps = rotorse_options['n_te_flaps']
         self.n_tab         = rotorse_options['n_tab']
@@ -208,7 +208,7 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI and self.options['modeling_options']['Level3']['flag']:
+        if MPI and self.options['modeling_options']['Level3']['flag'] and self.options['opt_options']['driver']['optimization']['flag']:
             self.mpi_comm_map_down = FASTpref['analysis_settings']['mpi_comm_map_down']
 
         # Inputs blade outer shape
@@ -529,7 +529,7 @@ class RunXFOIL(ExplicitComponent):
 
 
                 # Run XFoil as multiple processors with MPI
-                if MPI:
+                if MPI and self.options['opt_options']['driver']['optimization']['flag']:
                     run_xfoil_params['run_MPI'] = True
                     # mpi comm management
                     comm = MPI.COMM_WORLD

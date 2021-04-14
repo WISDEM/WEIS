@@ -49,7 +49,7 @@ class TowerModes(om.ExplicitComponent):
             desc="constraint on tower frequency such that ratio of 1P/f is above or below gamma with constraint <= 0",
         )
 
-        # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
+        # self.declare_partials("*", "*", method="fd", form="central", step=1e-6)
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         freq_struct = inputs["tower_freq"]
@@ -116,8 +116,8 @@ class TipDeflectionConstraint(om.ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options["modeling_options"]
-        n_span = modeling_options["RotorSE"]["n_span"]
-        n_height_tow = modeling_options["TowerSE"]["n_height_tower"]
+        n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+        n_height_tow = modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
 
         self.add_discrete_input("rotor_orientation", val="upwind")
         self.add_input("tip_deflection", val=0.0, units="m")
@@ -185,7 +185,6 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         outputs["blade_tip_tower_clearance"] = parked_margin
         outputs["tip_deflection_ratio"] = delta * inputs["max_allowable_td_ratio"] / parked_margin
 
-
 class TurbineConstraints(om.Group):
     def initialize(self):
         self.options.declare("modeling_options")
@@ -193,5 +192,7 @@ class TurbineConstraints(om.Group):
     def setup(self):
         modeling_options = self.options["modeling_options"]
 
-        self.add_subsystem("modes", TowerModes(gamma=modeling_options["TowerSE"]["gamma_freq"]), promotes=["*"])
+        self.add_subsystem(
+            "modes", TowerModes(gamma=modeling_options["WISDEM"]["TowerSE"]["gamma_freq"]), promotes=["*"]
+        )
         self.add_subsystem("tipd", TipDeflectionConstraint(modeling_options=modeling_options), promotes=["*"])

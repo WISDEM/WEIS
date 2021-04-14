@@ -1,0 +1,59 @@
+general:
+    folder_output: newOF1
+    fname_output: BAR_0_output
+design_variables:
+  blade:
+    aero_shape:
+      twist:
+        flag: False  # Flag to optimize the twist
+        inverse: False # Flag to determine twist from the user-defined desired margin to stall (defined in constraints)
+        n_opt: 20     # Number of control points along blade span
+        max_decrease: 0.1 # Maximum decrease for the twist in [rad] at the n_opt locations
+        max_increase: 0.1 # Maximum increase for the twist in [rad] at the n_opt locations
+        index_start: 4 # Lock the first four DVs from blade root
+        index_end: 20 # All DVs close to blade tip are active
+      chord:
+        flag: False     # Flag to optimize the chord
+        n_opt: 20        # Number of control points along blade span
+        min_gain: 0.2   # Nondimensional lower bound at the n_opt locations
+        max_gain: 5.0   # Nondimensional upper bound at the n_opt locations
+        index_start: 4 # Lock the first four DVs from blade root
+        index_end: 20 # All DVs close to blade tip are active
+
+merit_figure: Cp  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+constraints:
+  blade:
+    strains_spar_cap_ss:
+      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
+      max:  3500.e-6  # Value of maximum strains [-]
+      index_start: 4  # Do not check strains at the first four n_opt locations
+      index_end: 20   # Check strains all the way to the tip
+    strains_spar_cap_ps:
+      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
+      max:  3500.e-6  # Value of maximum strains [-]
+      index_start: 4  # Do not check strains at the first four n_opt locations
+      index_end: 20   # Check strains all the way to the tip
+    tip_deflection:
+      flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
+    stall:
+      flag: False     # Constraint on minimum stall margin
+      margin: 0.05233 # Value of minimum stall margin in [rad]
+    chord:
+      flag: False # Constraint on maximum chord
+      max: 4.75   # Value of maximum chord in [m]
+
+driver:
+    optimization:
+      flag: False
+      tol: 1.e-3            # Optimality tolerance
+      max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
+      max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+      max_iter: 20          # Maximum number of iterations (SLSQP)
+      solver: SNOPT         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+      step_size: 1.e-3      # Step size for finite differencing
+      form: central         # Finite differencing mode, either forward or central
+
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

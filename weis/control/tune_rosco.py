@@ -341,7 +341,7 @@ class TuneROSCO(ExplicitComponent):
         outputs['Flp_Kp']   = controller.Kp_flap[-1]
         outputs['Flp_Ki']   = controller.Ki_flap[-1]
         outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
-        outputs['PC_Ki']   = controller.pc_gain_schedule.Kp[0]
+        outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
 
 
         # outputs['PC_GS_angles'] = controller.pitch_op_pc
@@ -361,7 +361,7 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        rotorse_options  = modeling_options['RotorSE']
+        rotorse_options  = modeling_options['WISDEM']['RotorSE']
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
         self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
