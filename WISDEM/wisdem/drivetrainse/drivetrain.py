@@ -1,6 +1,5 @@
 import numpy as np
 import openmdao.api as om
-
 import wisdem.drivetrainse.layout as lay
 import wisdem.drivetrainse.drive_structure as ds
 import wisdem.drivetrainse.drive_components as dc
@@ -122,11 +121,11 @@ class DrivetrainSE(om.Group):
         self.options.declare("n_dlcs")
 
     def setup(self):
-        opt = self.options["modeling_options"]["DriveSE"]
+        opt = self.options["modeling_options"]["WISDEM"]["DriveSE"]
         n_dlcs = self.options["n_dlcs"]
         direct = opt["direct"]
         dogen = self.options["modeling_options"]["flags"]["generator"]
-        n_pc = self.options["modeling_options"]["RotorSE"]["n_pc"]
+        n_pc = self.options["modeling_options"]["WISDEM"]["RotorSE"]["n_pc"]
 
         self.set_input_defaults("machine_rating", units="kW")
         self.set_input_defaults("planet_numbers", [3, 3, 0])
@@ -165,7 +164,7 @@ class DrivetrainSE(om.Group):
         # Generator
         self.add_subsystem("rpm", dc.RPM_Input(n_pc=n_pc), promotes=["*"])
         if dogen:
-            gentype = self.options["modeling_options"]["GeneratorSE"]["type"]
+            gentype = self.options["modeling_options"]["WISDEM"]["GeneratorSE"]["type"]
             self.add_subsystem(
                 "generator",
                 Generator(design=gentype, n_pc=n_pc),
@@ -187,7 +186,7 @@ class DrivetrainSE(om.Group):
 
         # Final tallying
         self.add_subsystem("misc", dc.MiscNacelleComponents(), promotes=["*"])
-        self.add_subsystem("nac", dc.NacelleSystemAdder(), promotes=["*"])
+        self.add_subsystem("nac", dc.NacelleSystemAdder(direct_drive=direct), promotes=["*"])
         self.add_subsystem("rna", dc.RNA_Adder(), promotes=["*"])
 
         # Structural analysis
@@ -201,6 +200,9 @@ class DrivetrainSE(om.Group):
         else:
             self.add_subsystem("hss", ds.HSS_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
             self.add_subsystem("bed", ds.Bedplate_IBeam_Frame(modeling_options=opt, n_dlcs=n_dlcs), promotes=["*"])
+
+        # Dynamics
+        self.add_subsystem("dyn", dc.DriveDynamics(), promotes=["*"])
 
         # Output-to-input connections
         self.connect("bedplate_rho", ["pitch_system.rho", "spinner.metal_rho"])

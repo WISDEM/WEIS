@@ -20,235 +20,6 @@ properties:
         type: object
         default: {}
         properties:
-            floating:
-                type: object
-                default: {}
-                properties:
-                    joints:
-                        type: object
-                        default: {}
-                        properties:
-                            z_coordinate:
-                                description: This opens up the z-coordinate of the joints as a DV to change the draft or freeboard of a member
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: &joint_link
-                                        description: Joints that are listed together in a single entry will share the same coordinate. Can have multiple groups, each with their own shared value &
-                                        type: array
-                                        default: []
-                                        items:
-                                            type: object
-                                            properties:
-                                                names:
-                                                    type: array
-                                                    default: []
-                                                    description: Names of the joints that are linked
-                                                    items:
-                                                        type: string
-                                                flag: &flag
-                                                    type: boolean
-                                                    default: False
-                                                    description: Activates as a design variable or constraint
-                                                lower_bound: &lb_m
-                                                    type: number
-                                                    unit: meter
-                                                    description: Lower bound on design variable
-                                                upper_bound: &ub_m
-                                                    type: number
-                                                    unit: meter
-                                                    description: Upper bound on design variable
-                                    independent: &joint_indep
-                                        description: Joints that are listed here will have independent and separate z-coordinate.
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            names:
-                                                type: array
-                                                default: []
-                                                description: Names of the joints that are linked
-                                                items:
-                                                    type: string
-                                            flag: *flag
-                                            lower_bound: *lb_m
-                                            upper_bound: *ub_m
-                            x_coordinate:
-                                description: This opens up the x-coordinate of the joints as a DV to change the x-value of the columns if using a polyonal column layout
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                            y_coordinate:
-                                description: This opens up the y-coordinate of the joints as a DV to change the y-value of the columns if using a polyonal column layout
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                            r_coordinate:
-                                description: This opens up the r-coordinate of the joints as a DV to change the radial spacing of the columns or fairlead attachments. Joints will be placed in cylindrical coordinates
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                    members:
-                        type: object
-                        default: {}
-                        properties:
-                            diameter:
-                                description: Adjustment of the diameter or side lengths schedule along the member(s). Similar to the joints, can link member geometry together for symmetry
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                            layer_thickness:
-                                description: Adjustment of the thickness schedule along the member(s). Similar to the joints, can link member geometry together for symmetry
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                            ballast:
-                                description: Adjustment of the permanent and variable ballast volume the member(s). Similar to the joints, can link members together for symmetry
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                            axial_joints:
-                                description: Adjust the non-dimensional axis coordinate of the joint location(s).  Similar to the joints, can link members together for symmetry
-                                type: object
-                                default: {}
-                                properties:
-                                    linked:
-                                        description: Joints that are listed together in a single entry will share the same coordinate. Can have multiple groups, each with their own shared value &
-                                        type: array
-                                        default: []
-                                        items:
-                                            type: object
-                                            properties:
-                                                names:
-                                                    type: array
-                                                    default: []
-                                                    description: Names of the joints that are linked
-                                                    items:
-                                                        type: string
-                                                flag: *flag
-                                                lower_bound: &lb_s
-                                                    type: number
-                                                    unit: none
-                                                    description: Lower bound on design variable
-                                                    default: 0.0
-                                                    minimum: 0.0
-                                                    maximum: 1.0
-                                                upper_bound: &ub_s
-                                                    type: number
-                                                    unit: none
-                                                    description: Upper bound on design variable
-                                                    default: 1.0
-                                                    minimum: 0.0
-                                                    maximum: 1.0
-                                    independent:
-                                        description: Joints that are listed here will have independent and separate coordinates.
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            names:
-                                                type: array
-                                                default: []
-                                                description: Names of the joints that are linked
-                                                items:
-                                                    type: string
-                                            flag: *flag
-                                            lower_bound: *lb_s
-                                            upper_bound: *ub_s
-                            stiffeners:
-                                type: object
-                                default: {}
-                                properties:
-                                    ring:
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            size: &stiff_size
-                                                description: Applies a scalar multiplier to stiffener dimensions (web height, web thickness, flange height, flange thickness)
-                                                flag: *flag
-                                                min_gain:  &mingain
-                                                    type: number
-                                                    default: 0.5
-                                                    unit: none
-                                                    description: Lower bound on scalar multiplier that will be applied to value at control points
-                                                max_gain: &maxgain
-                                                    type: number
-                                                    default: 1.5
-                                                    unit: none
-                                                    description: Upper bound on scalar multiplier that will be applied to value at control points
-                                            spacing:
-                                                description: Adjust the spacing of the ring stiffeners in non-dimensional coordinates along the member axis
-                                                flag: *flag
-                                                lower_bound:
-                                                    type: number
-                                                    unit: none
-                                                    description: Lower bound on design variable
-                                                    default: 0.1
-                                                    minimum: 0.01
-                                                    maximum: 1.0
-                                                upper_bound:
-                                                    type: number
-                                                    unit: none
-                                                    description: Upper bound on design variable
-                                                    default: 1.0
-                                                    minimum: 0.01
-                                                    maximum: 1.0
-                                    longitudal:
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            size: *stiff_size
-                                            spacing:
-                                                description: Adjust the spacing of the longitudal stiffeners in angle
-                                                flag: *flag
-                                                lower_bound:
-                                                    type: number
-                                                    unit: radians
-                                                    description: Lower bound on design variable
-                                                    default: 0.7853981633974483 # 45 deg
-                                                    minimum: 0.08726646259971647 # 5 deg
-                                                    maximum: 6.283185307179586 # 360 deg
-                                                upper_bound:
-                                                    type: number
-                                                    unit: radians
-                                                    description: Upper bound on design variable
-                                                    default: 1.5707963267948966 # 90 deg
-                                                    minimum: 0.08726646259971647 # 5 deg
-                                                    maximum: 6.283185307179586 # 360 deg
-
-                    mooring:
-                        type: object
-                        default: {}
-                        properties:
-                            anchor_radius:
-                                flag: *flag
-                                description: Adjust the radial distance of the anchors relative to the platform centerline
-                                lower_bound: *lb_m
-                                upper_bound: *ub_m
-                            line_length:
-                                description: Adjust the unstretched length of the mooring lines.  Can link lines together.
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
-                            line_diameter:
-                                description: Adjust the unstretched length of the mooring lines.  Can link lines together.
-                                type: object
-                                default: {}
-                                properties:
-                                    linked: *joint_link
-                                    independent: *joint_indep
             control:
                 type: object
                 default: {}
@@ -261,8 +32,11 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    flag: *flag
-                                    minimum: 
+                                    flag: &flag
+                                        type: boolean
+                                        default: False
+                                        description: Activates as a design variable or constraint
+                                    minimum:
                                         type: number
                                         maximum: 1.0
                                         minimum: 0.1
@@ -277,7 +51,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    minimum: 
+                                    minimum:
                                         type: number
                                         maximum: 1.0
                                         minimum: 0.0
@@ -292,8 +66,16 @@ properties:
                         default: {}
                         properties:
                             flag: *flag
-                            min_gain: *mingain
-                            max_gain: *maxgain
+                            min_gain:  &mingain
+                                type: number
+                                default: 0.5
+                                unit: none
+                                description: Lower bound on scalar multiplier that will be applied to value at control points
+                            max_gain: &maxgain
+                                type: number
+                                default: 1.5
+                                unit: none
+                                description: Upper bound on scalar multiplier that will be applied to value at control points
                     ps_percent:
                         type: object
                         default: {}
@@ -388,7 +170,7 @@ properties:
                                 type: number
                                 default: 0.05
                                 minimum: 0.0
-                                maximum: 1.0
+                                maximum: 1.e+6
                             max: *flapminmax
                     rotor_overspeed:
                         type: object
@@ -407,4 +189,4 @@ properties:
         type: string
         description: Objective function / merit figure for optimization
         default: LCOE
-        enum: [LCOE, AEP, Cp, blade_mass, tower_mass, tower_cost, monopile_mass, monopile_cost, structural_mass, structural_cost, blade_tip_deflection, My_std, flp1_std, DEL_RootMyb, DEL_TwrBsMyt, rotor_overspeed]
+

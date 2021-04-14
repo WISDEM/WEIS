@@ -27,7 +27,10 @@ Using Git subtrees
 The WEIS repo contains copies of other codes created by using the :code:`git subtree` commands.
 Below are some details about how to add external codes and update them.
 
-To add an external code, using OpenFAST as an example, type:
+Adding a subtree for the first time
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To add an external code for the first time, using OpenFAST as an example, type:
 
 .. code-block:: bash
 
@@ -37,6 +40,9 @@ To add an external code, using OpenFAST as an example, type:
 
 
 The :code:`--squash` is important so WEIS doesn't get filled up with commits from the subtree repos.
+
+Updating a subtree
+~~~~~~~~~~~~~~~~~~
 
 Once a subtree code exists in this repo, we can update it like this.
 This first two lines are needed only if you don't have the remote for the particular subtree yet.
@@ -52,9 +58,17 @@ Changes to these subtree codes **should only be made to their original repos**, 
 Once those individual repos have been updated, use the previous :code:`git subtree pull` command to pull in those updates to the WEIS repo.
 Once the upstream repos have your code changes, those changes have been pulled into your branch, you can then submit a PR for WEIS.
 
+Troubleshooting subtree updates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 If you run into trouble using :code:`git subtree`, specifically if you see :code:`git: 'subtree' is not a git command.`, try using your system git instead of any conda-installed git.
 Specifically, try using :code:`/usr/bin/git subtree` for any subtree commands.
 If that doesn't work for you, please open an issue on this repo so we can track it.
+
+Sometimes when updating a subtree, you might get an error that contains :code:`could not rev-parse split hash`, which suggests that the subtree and the more recent branch have diverged in some way.
+To fix this, manually remove the entire folder created by the subtree command (e.g. :code:`rm -rf ROSCO`.)
+Then, follow the steps to add a repo subtree for the first time.
+By deleting then re-adding the subtree repo, you ensure that all the changes are correctly added to the WEIS repo.
 
 Testing
 -------
@@ -103,7 +117,11 @@ To understand how WEIS is tested, we use a tool called `Coveralls <https://cover
 This lets WEIS developers know which functions and methods are tested, as well as where to add tests in the future.
 
 When you push a commit to WEIS, all of the unit and regression tests are ran.
-Then, the coverage from those tests is reported to Coveralls automatically. 
+Then, the coverage from those tests is reported to Coveralls automatically.
+
+There may be some files that you specifically do not want Coveralls to report on, such as plotting scripts or helper scripts that aren't part of the main WEIS repo.
+To not include certain files, add them to the `omit` section of the `.coverageac` file at the root repo level.
+For example, we currently do not report coverage on the `schema2rest.py` file, which is listed in the `omit` section.
 
 
 Pull requests

@@ -39,7 +39,7 @@ def write_geometry_yaml(instance, foutput):
 def get_modeling_schema():
     wisdem_schema = load_yaml(fschema_model_wisdem)
     weis_schema   = load_yaml(fschema_model)
-    weis_schema['properties']['WISDEM'] = wisdem_schema
+    weis_schema['properties']['WISDEM'].update( wisdem_schema['properties']['WISDEM'] )
     return weis_schema
 
 def load_modeling_yaml(finput):

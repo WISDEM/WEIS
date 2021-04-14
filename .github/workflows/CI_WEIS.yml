@@ -1,89 +1,93 @@
-# This is a workflow to test the installation of WEIS and the examples that come with it
-
 name: CI_WEIS
 
-# We run CI on push commits and pull requests on master and develop branches
-on:
-  push:
-    branches: [ master, develop ]
-  pull_request:
-    branches: [ master, develop ]
+# We run CI on push commits on all branches
+on: [push, pull_request]
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single build
   build:
-    name: Compile and run examples
-    # We run the script on a matrix of operating systems and python versions
+    name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
-      # Fail-fast set to false lets the jobs across platforms continue even if one fails
-      fail-fast: false
+      fail-fast: true
       matrix:
-        # Operating systems
-        os: [ubuntu-latest, macOS-latest]
-        # Python versions
-        python-version: [3.8]
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+        os: ["ubuntu-latest"] #, "macOS-latest"]
+        python-version: ["3.8"]
+        
     steps:
-      # Checks-out the repository under $GITHUB_WORKSPACE, so that the job can access it
       - uses: actions/checkout@v2
-      # GitHub Actions sintax to setup a conda environment (do not change)
-      - name: Setup conda
-        uses: s-weigand/setup-conda@v1
+
+      # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
+      #- uses: conda-incubator/setup-miniconda@v2
+      #  # https://github.com/marketplace/actions/setup-miniconda
+      #  with:
+      #    #miniconda-version: "latest"
+      #    channels: conda-forge
+      #    auto-update-conda: true
+      #    python-version: 3.8
+      #    environment-file: environment.yml
+        
+      # This is a less official, but more lightweight way to do miniconda
+      - uses: s-weigand/setup-conda@v1
+        # https://github.com/marketplace/actions/setup-conda
         with:
           update-conda: true
-          python-version: ${{ matrix.python-version }}
-          conda-channels: anaconda, conda-forge
-      - run: conda --version
-      - run: which python
-      
-      # Install dependencies of WEIS common across platforms
-      - name: Install dependencies
-        run: |
-          conda install -y cmake cython geopy git jsonschema make matplotlib-base numpy numpydoc openmdao openpyxl pandas pip pytest pyyaml ruamel_yaml scipy setuptools shapely six sympy swig xlrd
-          pip install simpy marmot-agents
-      
-      # Install dependencies of WEIS specific to macOS
-      - name: Add dependendencies macOS specific
-        if: contains( matrix.os, 'macOS')
-        run: |
-          conda install -y petsc4py mpi4py compilers
+          python-version: 3.8
+          conda-channels: conda-forge
+          activate-conda: true
+      - run: conda env update -n base --file environment.yml
+
+      #- name: Show custom environment
+      #  shell: bash
+      #  run: |
+      #      cat $GITHUB_ENV
+      #      printenv
       
       # Install dependencies of WEIS specific to ubuntu
-      - name: Add dependendencies ubuntu specific
-        if: contains( matrix.os, 'ubuntu')
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+        shell: bash 
+        # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
+        # Mpi only seems to work with the shell command though, so instead rely on system compilers
         run: |
-          conda install -y petsc4py mpi4py compilers
-      
-      # Install dependencies of WEIS specific to windows
-      - name: Add dependendencies windows specific
+          conda install -y petsc4py mpi4py openmpi
+          python -c "import platform; print(platform.node())"
+
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
-      
-      # Install WEIS
+          
+      # Install WISDEM
       - name: Install WEIS
+        shell: bash
         run: |
           python setup.py develop
-      
-      # Run scripts within aeroelasticse folder
-      - name: Run examples aeroelasticse
+          
+      # List the collected tests for debugging purposes
+      - name: List tests
+        shell: bash
         run: |
-          cd examples/aeroelasticse
-          python run_DLC.py
-          python run_general.py
-      
-      # Run scripts within rotor_opt folder, with and without MPI
-      - name: Run examples rotor optimization
+          pytest weis --collect-only
+        
+      # Run all tests within WEIS, but not computationally expensive examples
+      - name: Run tests within WEIS
+        shell: bash
         run: |
-          cd examples/rotor_opt
-          python weis_driver.py
-          mpirun -np 4 python weis_driver.py
+          pytest weis --cov-config=.coverageac --cov=weis
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
       
-      # Run scripts within dac folder
-      # - name: Run examples distributed aerodynamic control
-      #  run: |
-      #    cd examples/dac_flaps
-      #    python dac_driver.py
+      # Run coveralls
+      - name: Run coveralls
+        if: contains( matrix.os, 'ubuntu')
+        # This also works, https://github.com/AndreMiras/coveralls-python-action
+        #uses: AndreMiras/coveralls-python-action@develop
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls --service=github

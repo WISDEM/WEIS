@@ -1,37 +1,11 @@
 WEIS Installation
------------------
+=================
 
-The recommended method for installing WEIS is with `Anaconda <https://www.anaconda.com>`_.
-This streamlines the installation of dependencies and creates self-contained environments suitable for testing and analysis.
-WEIS requires `Anaconda 64-bit <https://www.anaconda.com/distribution/>`_.
+To install WEIS, please follow the up-to-date instructions contained in the README.md at the root level of this repo, or on the `WEIS GitHub page <https://github.com/WISDEM/WEIS/>`_.
 
-Configure Anaconda Environment
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
-
-The installation instructions below use the environment name, "weis-env," but any name is acceptable.
-
-.. code-block:: bash
-
-    conda config --add channels conda-forge
-    conda create -y --name weis-env python=3.7
-    conda activate weis-env
-
-Note that older versions of anaconda on MacOS and Linux may instead require `source activate weis-env`
-
-.. _install:
-
-Install WEIS
-^^^^^^^^^^^^
-
-For all systems:
-
-.. code-block:: bash
-
-    git clone https://github.com/WEIS/WEIS.git
-    cd WEIS
-    python setup.py develop
-
-
-TODO : add to this as needed
+Installing SNOPT for use within WEIS
+------------------------------------
+SNOPT is available for purchase `here 
+<http://www.sbsi-sol-optimize.com/asp/sol_snopt.htm>`_. Upon purchase, you should receive a zip file. Within the zip file, there is a folder called ``src``. To use SNOPT within WEIS, paste all files from ``src`` except snopth.f into ``WEIS/pyoptsparse/pyoptsparse/pySNOPT/source``.
+If you do this step before you install WEIS, SNOPT will be automatically compiled within pyOptSparse and should be usable.
+Otherwise, you can simply re-install WEIS following the same installation instructions after removing all ``build`` directories from the WEIS, WISDEM, and pyOptSparse directories.

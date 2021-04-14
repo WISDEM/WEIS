@@ -21,7 +21,7 @@ def execute_script(fscript):
     print("NOW RUNNING:", fscript)
     print()
     fullpath = os.path.join(examples_dir, fscript + ".py")
-    basepath = os.path.join(examples_dir, fscript.split("/")[0])
+    basepath = os.path.dirname(os.path.realpath(fullpath))
     os.chdir(basepath)
 
     # Get script/module name
@@ -78,9 +78,9 @@ def compare_regression_values(
                 truth_value = truth_dict[key]
 
                 try:
-                    assert_near_equal(output_dict[key], truth_dict[key], tolerance=tol)
+                    assert_near_equal(testing_value, truth_value, tolerance=tol)
                 except Exception as e:
                     print()
-                    print(f"Error: Comparison values not equal for {key}.")
+                    print(f"Error: Comparison values not equal for {key}: Tested={testing_value}\tTruth={truth_value}.")
                     print()
-                    raise
+                    raise e

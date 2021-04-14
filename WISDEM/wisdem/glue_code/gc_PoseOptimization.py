@@ -19,36 +19,61 @@ class PoseOptimization(object):
         mono_opt = self.opt["design_variables"]["monopile"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
+        float_opt = self.opt["design_variables"]["floating"]
+        mooring_opt = self.opt["design_variables"]["mooring"]
 
         if rotorD_opt["flag"]:
             n_DV += 1
         if blade_opt["aero_shape"]["twist"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["twist"]["n_opt"] - 2
+            if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
+                blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
+            n_DV += blade_opt["aero_shape"]["twist"]["index_end"] - blade_opt["aero_shape"]["twist"]["index_start"]
         if blade_opt["aero_shape"]["chord"]["flag"]:
-            n_DV += blade_opt["aero_shape"]["chord"]["n_opt"] - 3
+            if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
+                blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
+            n_DV += blade_opt["aero_shape"]["chord"]["index_end"] - blade_opt["aero_shape"]["chord"]["index_start"]
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
-            n_DV += self.modeling["RotorSE"]["n_af_span"] - blade_opt["aero_shape"]["af_positions"]["af_start"] - 1
+            n_DV += (
+                self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
+                - blade_opt["aero_shape"]["af_positions"]["af_start"]
+                - 1
+            )
         if blade_opt["structure"]["spar_cap_ss"]["flag"]:
-            n_DV += blade_opt["structure"]["spar_cap_ss"]["n_opt"] - 2
+            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+            n_DV += blade_opt["structure"]["spar_cap_ss"]["index_end"] - blade_opt["structure"]["spar_cap_ss"]["index_start"]
         if (
             blade_opt["structure"]["spar_cap_ps"]["flag"]
             and not blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
         ):
-            n_DV += blade_opt["structure"]["spar_cap_ps"]["n_opt"] - 2
+            if blade_opt["structure"]["spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ps"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ps"]["index_end"] = blade_opt["structure"]["spar_cap_ps"]["n_opt"]
+            n_DV += blade_opt["structure"]["spar_cap_ps"]["index_end"] - blade_opt["structure"]["spar_cap_ps"]["index_start"]
         if self.opt["design_variables"]["control"]["tsr"]["flag"]:
             n_DV += 1
-        # if self.opt["design_variables"]["control"]["servo"]["pitch_control"]["flag"]:
-        #    n_DV += 2
-        # if self.opt["design_variables"]["control"]["servo"]["torque_control"]["flag"]:
-        #    n_DV += 2
+
         if tower_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["TowerSE"]["n_height_tower"]
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
         if tower_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["TowerSE"]["n_height_tower"] - 1) * self.modeling["TowerSE"]["n_layers_tower"]
+            n_DV += (
+                self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
+                * self.modeling["WISDEM"]["TowerSE"]["n_layers_tower"]
+            )
         if mono_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["TowerSE"]["n_height_monopile"]
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
         if mono_opt["layer_thickness"]["flag"]:
-            n_DV += (self.modeling["TowerSE"]["n_height_monopile"] - 1) * self.modeling["TowerSE"]["n_layers_monopile"]
+            n_DV += (
+                self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
+                * self.modeling["WISDEM"]["TowerSE"]["n_layers_monopile"]
+            )
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:
@@ -80,6 +105,43 @@ class PoseOptimization(object):
                 n_DV += 2
         if drive_opt["bedplate_wall_thickness"]["flag"]:
             n_DV += 4
+
+        if float_opt["joints"]["flag"]:
+            n_DV += len(float_opt["joints"]["z_coordinate"]) + len(float_opt["joints"]["r_coordinate"])
+
+        if float_opt["members"]["flag"]:
+            for k, kgrp in enumerate(float_opt["members"]["groups"]):
+                memname = kgrp["names"][0]
+                memidx = self.modeling["floating"]["members"]["name"].index(memname)
+                n_grid = len(self.modeling["floating"]["members"]["grid_member_" + memname])
+                n_layers = self.modeling["floating"]["members"]["n_layers"][memidx]
+                if "diameter" in kgrp:
+                    n_DV += n_grid
+                if "thickness" in kgrp:
+                    n_DV += n_grid * n_layers
+                if "ballast" in kgrp:
+                    n_DV += self.modeling["floating"]["members"]["ballast_flag_member_" + memname].count(False)
+                if "stiffeners" in kgrp:
+                    if "ring" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["ring"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["ring"]:
+                            n_DV += 1
+                    if "longitudinal" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["longitudinal"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["longitudinal"]:
+                            n_DV += 1
+                if "axial_joints" in kgrp:
+                    n_DV += len(kgrp["axial_joints"])
+        if self.modeling["flags"]["mooring"]:
+            n_design = 1 if self.modeling["mooring"]["symmetric"] else self.modeling["mooring"]["n_lines"]
+            if mooring_opt["line_length"]["flag"]:
+                n_DV += n_design
+            if mooring_opt["line_diameter"]["flag"]:
+                n_DV += n_design
+
+        # Wrap-up at end with multiplier for finite differencing
         if self.opt["driver"]["optimization"]["form"] == "central":
             n_DV *= 2
 
@@ -87,18 +149,20 @@ class PoseOptimization(object):
 
     def _get_step_size(self):
         # If a step size for the driver-level finite differencing is provided, use that step size. Otherwise use a default value.
-        return 1.0e-6 if not "step_size" in self.opt["driver"]["optimization"] else self.opt["driver"]["optimization"]["step_size"]
+        return (
+            1.0e-6
+            if not "step_size" in self.opt["driver"]["optimization"]
+            else self.opt["driver"]["optimization"]["step_size"]
+        )
 
     def set_driver(self, wt_opt):
         folder_output = self.opt["general"]["folder_output"]
 
-        if self.opt['driver']['optimization']['flag']:
+        if self.opt["driver"]["optimization"]["flag"]:
             step_size = self._get_step_size()
 
             # Solver has specific meaning in OpenMDAO
             wt_opt.model.approx_totals(method="fd", step=step_size, form=self.opt["driver"]["optimization"]["form"])
-            
-            print("should not be in here, WISDEM")
 
             # Set optimization solver and options. First, Scipy's SLSQP
             if self.opt["driver"]["optimization"]["solver"] == "SLSQP":
@@ -133,52 +197,70 @@ class PoseOptimization(object):
                     raise ImportError(
                         "You requested the optimization solver SNOPT, but you have not installed it within the pyOptSparseDriver. Please do so and rerun."
                     )
-                wt_opt.driver.opt_settings["Major optimality tolerance"] = float(self.opt["driver"]["optimization"]["tol"])
-                wt_opt.driver.opt_settings["Major iterations limit"] = int(self.opt["driver"]["optimization"]["max_major_iter"])
-                wt_opt.driver.opt_settings["Iterations limit"] = int(self.opt["driver"]["optimization"]["max_minor_iter"])
-                wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(self.opt["driver"]["optimization"]["tol"])
+                wt_opt.driver.opt_settings["Major optimality tolerance"] = float(
+                    self.opt["driver"]["optimization"]["tol"]
+                )
+                wt_opt.driver.opt_settings["Major iterations limit"] = int(
+                    self.opt["driver"]["optimization"]["max_major_iter"]
+                )
+                wt_opt.driver.opt_settings["Iterations limit"] = int(
+                    self.opt["driver"]["optimization"]["max_minor_iter"]
+                )
+                wt_opt.driver.opt_settings["Major feasibility tolerance"] = float(
+                    self.opt["driver"]["optimization"]["tol"]
+                )
                 wt_opt.driver.opt_settings["Summary file"] = os.path.join(folder_output, "SNOPT_Summary_file.txt")
                 wt_opt.driver.opt_settings["Print file"] = os.path.join(folder_output, "SNOPT_Print_file.txt")
                 if "hist_file_name" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.hist_file = self.opt["driver"]["optimization"]["hist_file_name"]
                 if "verify_level" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.opt_settings["Verify level"] = self.opt["driver"]["optimization"]["verify_level"]
+                else:
+                    wt_opt.driver.opt_settings["Verify level"] = -1
                 # wt_opt.driver.declare_coloring()
                 if "hotstart_file" in self.opt["driver"]["optimization"]:
                     wt_opt.driver.hotstart_file = self.opt["driver"]["optimization"]["hotstart_file"]
 
             else:
-                raise ValueError("The optimizer " + self.opt["driver"]["optimization"]["solver"] + "is not yet supported!")
+                raise ValueError(
+                    "The optimizer " + self.opt["driver"]["optimization"]["solver"] + "is not yet supported!"
+                )
 
-        elif self.opt['driver']['design_of_experiments']['flag']:
-            if self.opt['driver']['design_of_experiments']['generator'].lower() == 'uniform':
+        elif self.opt["driver"]["design_of_experiments"]["flag"]:
+            if self.opt["driver"]["design_of_experiments"]["generator"].lower() == "uniform":
                 generator = om.UniformGenerator(
-                    num_samples = int(self.opt['driver']['design_of_experiments']['num_samples']),
-                    seed = self.opt['driver']['design_of_experiments']['seed'])
-            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'fullfact':
-                generator = om.FullFactorialGenerator(
-                    levels = int(self.opt['driver']['design_of_experiments']['num_samples']))
-            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'plackettburman':
+                    num_samples=self.opt["driver"]["design_of_experiments"]["num_samples"],
+                    seed=self.opt["driver"]["design_of_experiments"]["seed"],
+                )
+            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "fullfact":
+                generator = om.FullFactorialGenerator(levels=self.opt["driver"]["design_of_experiments"]["num_samples"])
+            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "plackettburman":
                 generator = om.PlackettBurmanGenerator()
-            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'boxbehnken':
+            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "boxbehnken":
                 generator = om.BoxBehnkenGenerator()
-            elif self.opt['driver']['design_of_experiments']['generator'].lower() == 'latinhypercube':
+            elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "latinhypercube":
                 generator = om.LatinHypercubeGenerator(
-                    samples = int(self.opt['driver']['design_of_experiments']['num_samples']),
-                    criterion = self.opt['driver']['design_of_experiments']['criterion'],
-                    seed = self.opt['driver']['design_of_experiments']['seed'])
+                    samples=self.opt["driver"]["design_of_experiments"]["num_samples"],
+                    criterion=self.opt["driver"]["design_of_experiments"]["criterion"],
+                    seed=self.opt["driver"]["design_of_experiments"]["seed"],
+                )
             else:
-                exit('The generator type {} is unsupported.'.format(
-                    self.opt['driver']['design_of_experiments']['generator']))
+                raise Exception(
+                    "The generator type {} is unsupported.".format(
+                        self.opt["driver"]["design_of_experiments"]["generator"]
+                    )
+                )
 
             # Initialize driver
             wt_opt.driver = om.DOEDriver(generator)
 
             # options
-            wt_opt.driver.options['run_parallel'] = self.opt['driver']['design_of_experiments']['run_parallel']
+            wt_opt.driver.options["run_parallel"] = self.opt["driver"]["design_of_experiments"]["run_parallel"]
 
         else:
-            raise ValueError("The optimizer " + self.opt["driver"]["solver"] + "is not yet supported!")
+            raise Exception(
+                "Design variables are set to be optimized or studied, but no driver is selected. Please enable a driver."
+            )
 
         return wt_opt
 
@@ -218,6 +300,18 @@ class PoseOptimization(object):
         elif self.opt["merit_figure"] == "nacelle_cost":
             wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
 
+        elif self.opt["merit_figure"] == "platform_mass":
+            wt_opt.model.add_objective("floatingse.platform_mass", ref=1e6)
+
+        elif self.opt["merit_figure"] == "platform_cost":
+            wt_opt.model.add_objective("floatingse.platform_cost", ref=1e6)
+
+        elif self.opt["merit_figure"] == "mooring_mass":
+            wt_opt.model.add_objective("floatingse.mooring_mass", ref=1e4)
+
+        elif self.opt["merit_figure"] == "mooring_cost":
+            wt_opt.model.add_objective("floatingse.mooring_cost", ref=1e4)
+
         elif self.opt["merit_figure"] == "Cp":
             if self.modeling["flags"]["blade"]:
                 wt_opt.model.add_objective("rp.powercurve.Cp_regII", ref=-1.0)
@@ -238,64 +332,118 @@ class PoseOptimization(object):
         control_opt = self.opt["design_variables"]["control"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
+        float_opt = self.opt["design_variables"]["floating"]
+        mooring_opt = self.opt["design_variables"]["mooring"]
 
+        # -- Rotor & Blade --
         if rotorD_opt["flag"]:
             wt_opt.model.add_design_var(
-                "configuration.rotor_diameter_user", lower=rotorD_opt["minimum"], upper=rotorD_opt["minimum"], ref=1.0e2
+                "configuration.rotor_diameter_user", lower=rotorD_opt["minimum"], upper=rotorD_opt["maximum"], ref=1.0e2
             )
 
-        if blade_opt["aero_shape"]["twist"]["flag"]:
-            indices = range(2, blade_opt["aero_shape"]["twist"]["n_opt"])
-            wt_opt.model.add_design_var("blade.opt_var.twist_opt_gain", indices=indices, lower=0.0, upper=1.0)
+        twist_options = blade_opt["aero_shape"]["twist"]
+        if twist_options["flag"]:
+            if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
+                blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
+            indices_twist = range(twist_options["index_start"], twist_options["index_end"])
+            s_opt_twist = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
+            init_twist_opt = np.interp(s_opt_twist,
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+            )
+            wt_opt.model.add_design_var("blade.opt_var.twist_opt", indices=indices_twist, 
+                lower=init_twist_opt[indices_twist] - blade_opt["aero_shape"]["twist"]["max_decrease"], 
+                upper=init_twist_opt[indices_twist] + blade_opt["aero_shape"]["twist"]["max_increase"])
 
         chord_options = blade_opt["aero_shape"]["chord"]
         if chord_options["flag"]:
-            indices = range(3, chord_options["n_opt"] - 1)
+            if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt")
+            elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
+                blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
+            indices_chord = range(chord_options["index_start"], chord_options["index_end"])
+            s_opt_chord = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
+            init_chord_opt = np.interp(s_opt_chord,
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"],
+            )
             wt_opt.model.add_design_var(
-                "blade.opt_var.chord_opt_gain",
-                indices=indices,
-                lower=chord_options["min_gain"],
-                upper=chord_options["max_gain"],
+                "blade.opt_var.chord_opt",
+                indices=indices_chord,
+                lower=init_chord_opt[indices_chord] * chord_options["max_decrease"],
+                upper=init_chord_opt[indices_chord] * chord_options["max_increase"],
             )
 
         if blade_opt["aero_shape"]["af_positions"]["flag"]:
-            n_af = self.modeling["RotorSE"]["n_af_span"]
-            indices = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
+            n_af = self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
+            indices_af = range(blade_opt["aero_shape"]["af_positions"]["af_start"], n_af - 1)
             af_pos_init = wt_init["components"]["blade"]["outer_shape_bem"]["airfoil_position"]["grid"]
             step_size = self._get_step_size()
             lb_af = np.zeros(n_af)
             ub_af = np.zeros(n_af)
-            for i in range(1, indices[0]):
+            for i in range(1, indices_af[0]):
                 lb_af[i] = ub_af[i] = af_pos_init[i]
-            for i in indices:
+            for i in indices_af:
                 lb_af[i] = 0.5 * (af_pos_init[i - 1] + af_pos_init[i]) + step_size
                 ub_af[i] = 0.5 * (af_pos_init[i + 1] + af_pos_init[i]) - step_size
             lb_af[-1] = ub_af[-1] = 1.0
             wt_opt.model.add_design_var(
-                "blade.opt_var.af_position", indices=indices, lower=lb_af[indices], upper=ub_af[indices]
+                "blade.opt_var.af_position", indices=indices_af, lower=lb_af[indices_af], upper=ub_af[indices_af]
             )
 
         spar_cap_ss_options = blade_opt["structure"]["spar_cap_ss"]
         if spar_cap_ss_options["flag"]:
-            indices = range(1, spar_cap_ss_options["n_opt"] - 1)
-            wt_opt.model.add_design_var(
-                "blade.opt_var.spar_cap_ss_opt_gain",
-                indices=indices,
-                lower=spar_cap_ss_options["min_gain"],
-                upper=spar_cap_ss_options["max_gain"],
+            if blade_opt["structure"]["spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ss is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ss"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ss"]["index_end"] = blade_opt["structure"]["spar_cap_ss"]["n_opt"]
+            indices_spar_cap_ss = range(
+                spar_cap_ss_options["index_start"], spar_cap_ss_options["index_end"]
             )
+            s_opt_spar_cap_ss = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
+            spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
+            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+            for i in range(n_layers):
+                if layer_name[i] == spar_cap_ss_name:
+                    init_spar_cap_ss_opt = np.interp(s_opt_spar_cap_ss,
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+            wt_opt.model.add_design_var(
+                "blade.opt_var.spar_cap_ss_opt",
+                indices=indices_spar_cap_ss,
+                lower=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_decrease"],
+                upper=init_spar_cap_ss_opt[indices_spar_cap_ss] * spar_cap_ss_options["max_increase"],
+                ref=1.e-2)
 
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
         if spar_cap_ps_options["flag"] and not spar_cap_ps_options["equal_to_suction"]:
-            indices = range(1, spar_cap_ps_options["n_opt"] - 1)
-            wt_opt.model.add_design_var(
-                "blade.opt_var.spar_cap_ps_opt_gain",
-                indices=indices,
-                lower=spar_cap_ps_options["min_gain"],
-                upper=spar_cap_ps_options["max_gain"],
+            if blade_opt["structure"]["spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
+                raise Exception("Check the analysis options yaml, index_end of the blade spar_cap_ps is higher than the number of DVs n_opt")
+            elif blade_opt["structure"]["spar_cap_ps"]["index_end"] == 0:
+                blade_opt["structure"]["spar_cap_ps"]["index_end"] = blade_opt["structure"]["spar_cap_ps"]["n_opt"]
+            indices_spar_cap_ps = range(
+                spar_cap_ps_options["index_start"], spar_cap_ps_options["index_end"]
             )
+            s_opt_spar_cap_ps = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"])
+            spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
+            layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+            n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+            for i in range(n_layers):
+                if layer_name[i] == spar_cap_ps_name:
+                    init_spar_cap_ps_opt = np.interp(s_opt_spar_cap_ps,
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                        wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+            wt_opt.model.add_design_var(
+                "blade.opt_var.spar_cap_ps_opt",
+                indices=indices_spar_cap_ps,
+                lower=init_spar_cap_ps_opt[indices_spar_cap_ps] * spar_cap_ps_options["max_decrease"],
+                upper=init_spar_cap_ps_opt[indices_spar_cap_ps] * spar_cap_ps_options["max_increase"],
+                ref=1.e-2)
 
         # -- Tower & Monopile --
         if tower_opt["outer_diameter"]["flag"]:
@@ -390,6 +538,122 @@ class PoseOptimization(object):
                     "nacelle." + k, lower=drive_opt[k]["lower_bound"], upper=drive_opt[k]["upper_bound"], ref=1e-2
                 )
 
+        # -- Floating --
+        if float_opt["joints"]["flag"]:
+            jointz = float_opt["joints"]["z_coordinate"]
+            jointr = float_opt["joints"]["r_coordinate"]
+
+            count = 0
+            for k in range(len(jointz)):
+                wt_opt.model.add_design_var(
+                    f"floating.jointdv_{count}",
+                    lower=jointz[k]["lower_bound"],
+                    upper=jointz[k]["upper_bound"],
+                )
+                count += 1
+
+            for k in range(len(jointr)):
+                wt_opt.model.add_design_var(
+                    f"floating.jointdv_{count}",
+                    lower=jointr[k]["lower_bound"],
+                    upper=jointr[k]["upper_bound"],
+                )
+                count += 1
+
+        if float_opt["members"]["flag"]:
+            for kgrp in float_opt["members"]["groups"]:
+                memname = kgrp["names"][0]
+                idx = self.modeling["floating"]["members"]["name2idx"][memname]
+                imem = self.modeling["floating"]["members"]["name"].index(memname)
+                istruct = wt_init["components"]["floating_platform"]["members"][imem]["internal_structure"]
+
+                if "diameter" in kgrp:
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.outer_diameter",
+                        lower=kgrp["diameter"]["lower_bound"],
+                        upper=kgrp["diameter"]["upper_bound"],
+                    )
+                if "thickness" in kgrp:
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.layer_thickness",
+                        lower=kgrp["thickness"]["lower_bound"],
+                        upper=kgrp["thickness"]["upper_bound"],
+                    )
+                if "ballast" in kgrp and len(istruct["ballasts"]) > 0:
+                    V_ballast = np.zeros(len(istruct["ballasts"]))
+                    for j in range(V_ballast.size):
+                        if "volume" in istruct["ballasts"][j]:
+                            V_ballast[j] = istruct["ballasts"][j]["volume"]
+                    iball = np.where(V_ballast > 0.0)[0]
+                    if iball.size > 0:
+                        wt_opt.model.add_design_var(
+                            f"floating.memgrp{idx}.ballast_volume",
+                            lower=kgrp["ballast"]["lower_bound"],
+                            upper=kgrp["ballast"]["upper_bound"],
+                            indices=iball,
+                            ref=1e3,
+                        )
+                if "stiffeners" in kgrp:
+                    if "ring" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["ring"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["ring"]:
+                            wt_opt.model.add_design_var(
+                                f"floating.memgrp{idx}.ring_stiffener_spacing",
+                                lower=kgrp["stiffeners"]["ring"]["spacing"]["lower_bound"],
+                                upper=kgrp["stiffeners"]["ring"]["spacing"]["upper_bound"],
+                            )
+                    if "longitudinal" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["longitudinal"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["longitudinal"]:
+                            wt_opt.model.add_design_var(
+                                f"floating.memgrp{idx}.axial_stiffener_spacing",
+                                lower=kgrp["stiffeners"]["longitudinal"]["spacing"]["lower_bound"],
+                                upper=kgrp["stiffeners"]["longitudinal"]["spacing"]["upper_bound"],
+                            )
+                if "axial_joints" in kgrp:
+                    aidx = []
+                    lower = []
+                    upper = []
+                    mem_axial_names = self.modeling["floating"]["members"]["axial_joint_name_member_" + memname]
+                    for agrp in kgrp["axial_joints"]:
+                        tryidx = None
+                        agrp_names = agrp["names"]
+                        lower.append(agrp["lower_bound"])
+                        upper.append(agrp["upper_bound"])
+                        for iname in agrp_names:
+                            try:
+                                tryidx = mem_axial_names.index(iname)
+                                aidx.append(tryidx)
+                                break
+                            except:
+                                continue
+                        if tryidx is None:
+                            raise ValueError(
+                                f"None of these axial joint names were found in member, {memname}:{agrp_names}"
+                            )
+                    wt_opt.model.add_design_var(
+                        f"floating.memgrp{idx}.grid_axial_joints", lower=lower, upper=upper, indices=aidx
+                    )
+
+        # -- Mooring --
+        if mooring_opt["line_length"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.unstretched_length_in",
+                lower=mooring_opt["line_length"]["lower_bound"],
+                upper=mooring_opt["line_length"]["upper_bound"],
+                ref=1e2,
+            )
+
+        if mooring_opt["line_diameter"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.line_diameter_in",
+                lower=mooring_opt["line_diameter"]["lower_bound"],
+                upper=mooring_opt["line_diameter"]["upper_bound"],
+                ref=1e-1,
+            )
+
         return wt_opt
 
     def set_constraints(self, wt_opt):
@@ -399,7 +663,10 @@ class PoseOptimization(object):
         blade_constr = self.opt["constraints"]["blade"]
         if blade_constr["strains_spar_cap_ss"]["flag"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"]:
-                wt_opt.model.add_constraint("rs.constr.constr_max_strainU_spar", upper=1.0)
+                if blade_constr["strains_spar_cap_ss"]["index_end"] > blade_opt["structure"]["spar_cap_ss"]["n_opt"]:
+                    raise Exception("Check the analysis options yaml, index_end of the blade strains_spar_cap_ss is higher than the number of DVs n_opt")
+                indices_strains_spar_cap_ss = range(blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"])
+                wt_opt.model.add_constraint("rs.constr.constr_max_strainU_spar", indices = indices_strains_spar_cap_ss, upper=1.0)
             else:
                 print(
                     "WARNING: the strains of the suction-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced."
@@ -410,7 +677,10 @@ class PoseOptimization(object):
                 blade_opt["structure"]["spar_cap_ps"]["flag"]
                 or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
             ):
-                wt_opt.model.add_constraint("rs.constr.constr_max_strainL_spar", upper=1.0)
+                if blade_constr["strains_spar_cap_ps"]["index_end"] > blade_opt["structure"]["spar_cap_ps"]["n_opt"]:
+                    raise Exception("Check the analysis options yaml, index_end of the blade strains_spar_cap_ps is higher than the number of DVs n_opt")
+                indices_strains_spar_cap_ps = range(blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"])
+                wt_opt.model.add_constraint("rs.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
             else:
                 print(
                     "WARNING: the strains of the pressure-side spar cap are set to be constrained, but spar cap thickness is not an active design variable. The constraint is not enforced."
@@ -438,6 +708,14 @@ class PoseOptimization(object):
             else:
                 print(
                     "WARNING: the max chord is set to be constrained, but chord is not an active design variable. The constraint is not enforced."
+                )
+
+        if blade_constr["root_circle_diameter"]["flag"]:
+            if blade_opt["aero_shape"]["chord"]["flag"] and blade_opt["aero_shape"]["chord"]["index_start"] == 0.:
+                wt_opt.model.add_constraint("rs.brs.ratio", upper=blade_constr["root_circle_diameter"]["max_ratio"])
+            else:
+                print(
+                    "WARNING: the blade root size is set to be constrained, but chord at blade root is not an active design variable. The constraint is not enforced."
                 )
 
         if blade_constr["frequency"]["flap_3P"]:
@@ -504,18 +782,18 @@ class PoseOptimization(object):
             )
 
         if tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".stress", upper=1.0)
 
         if tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".global_buckling", upper=1.0)
 
         if tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint("towerse.post" + kstr + ".shell_buckling", upper=1.0)
 
         if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
@@ -539,8 +817,8 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
         elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
-            for k in range(self.modeling["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["TowerSE"]["nLC"] == 0 else str(k + 1)
+            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
+                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
                 wt_opt.model.add_constraint(
                     "towerse.post" + kstr + ".structural_frequencies",
                     indices=[0],
@@ -563,6 +841,42 @@ class PoseOptimization(object):
         for k in ["length", "height", "access", "ecc"]:
             if drive_constr[k]["flag"]:
                 wt_opt.model.add_constraint("drivese.constr_" + k, lower=0.0)
+
+        # Floating platform and mooring constraints
+        float_constr = self.opt["constraints"]["floating"]
+
+        if float_constr["buoyancy"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.variable_ballast_mass", lower=0.0)
+
+        if float_constr["fixed_ballast_capacity"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_fixed_margin", upper=1.0)
+
+        if float_constr["variable_ballast_capacity"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_variable_margin", upper=1.0)
+
+        if float_constr["metacentric_height"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.metacentric_height", lower=0.0)
+
+        if float_constr["freeboard_margin"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_freeboard_heel_margin", upper=1.0)
+
+        if float_constr["draft_margin"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_draft_heel_margin", upper=1.0)
+
+        if float_constr["fairlead_depth"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_fairlead_wave", upper=1.0)
+
+        if float_constr["mooring_heel"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_heel", upper=1.0)
+
+        if float_constr["mooring_surge"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_surge", upper=1.0)
+
+        if float_constr["mooring_tension"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_axial_load", upper=1.0)
+
+        if float_constr["mooring_length"]["flag"]:
+            wt_opt.model.add_constraint("floatingse.constr_mooring_length", upper=1.0)
 
         return wt_opt
 
@@ -588,35 +902,59 @@ class PoseOptimization(object):
 
         if self.modeling["flags"]["blade"]:
             wt_opt["blade.opt_var.s_opt_twist"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["twist"]["n_opt"])
-            if blade_opt["aero_shape"]["twist"]["flag"]:
-                init_twist_opt = np.interp(
-                    wt_opt["blade.opt_var.s_opt_twist"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
-                    wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
-                )
-                lb_twist = np.array(blade_opt["aero_shape"]["twist"]["lower_bound"])
-                ub_twist = np.array(blade_opt["aero_shape"]["twist"]["upper_bound"])
-                wt_opt["blade.opt_var.twist_opt_gain"] = (init_twist_opt - lb_twist) / (ub_twist - lb_twist)
-                if (
-                    max(wt_opt["blade.opt_var.twist_opt_gain"]) > 1.0
-                    or min(wt_opt["blade.opt_var.twist_opt_gain"]) < 0.0
-                ):
-                    print(
-                        "Warning: the initial twist violates the upper or lower bounds of the twist design variables."
-                    )
-
-            blade_constr = self.opt["constraints"]["blade"]
+            init_twist_opt = np.interp(wt_opt["blade.opt_var.s_opt_twist"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["twist"]["values"],
+            )
+            wt_opt["blade.opt_var.twist_opt"] = init_twist_opt
             wt_opt["blade.opt_var.s_opt_chord"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["chord"]["n_opt"])
-            wt_opt["blade.ps.s_opt_spar_cap_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
-            wt_opt["blade.ps.s_opt_spar_cap_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"])
+            init_chord_opt = np.interp(wt_opt["blade.opt_var.s_opt_chord"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["chord"]["values"])
+            wt_opt["blade.opt_var.chord_opt"] = init_chord_opt
+            if blade_opt["structure"]["spar_cap_ss"]['flag'] or blade_opt["structure"]["spar_cap_ss"]['flag']:
+                wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"])
+                wt_opt["blade.opt_var.s_opt_spar_cap_ps"] = np.linspace(0.0, 1.0, blade_opt["structure"]["spar_cap_ps"]["n_opt"])
+                spar_cap_ss_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ss"]
+                spar_cap_ps_name = self.modeling["WISDEM"]["RotorSE"]["spar_cap_ps"]
+                layer_name = self.modeling["WISDEM"]["RotorSE"]["layer_name"]
+                n_layers = self.modeling["WISDEM"]["RotorSE"]["n_layers"]
+                ss_before_ps = False
+                for i in range(n_layers):
+                    if layer_name[i] == spar_cap_ss_name:
+                        init_spar_cap_ss_opt = np.interp(wt_opt["blade.opt_var.s_opt_spar_cap_ss"],
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                            wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                        ss_before_ps = True
+                    elif layer_name[i] == spar_cap_ps_name:
+                        if (
+                            self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
+                            == False
+                        ) or ss_before_ps == False:
+                            init_spar_cap_ps_opt = np.interp(wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["grid"],
+                                wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"]["values"])
+                        else:
+                            init_spar_cap_ps_opt = init_spar_cap_ss_opt
+                if not ss_before_ps:
+                    raise Exception("Please set the spar cap names for suction and pressure sides among the RotorSE modeling options")
+                wt_opt["blade.opt_var.spar_cap_ss_opt"] = init_spar_cap_ss_opt
+                wt_opt["blade.opt_var.spar_cap_ps_opt"] = init_spar_cap_ps_opt
+            blade_constr = self.opt["constraints"]["blade"]
             wt_opt["rs.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
             wt_opt["rs.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
             wt_opt["stall_check.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
             wt_opt["tcons.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
-        if self.modeling["flags"]["nacelle"] and self.modeling["DriveSE"]["direct"]:
+        if self.modeling["flags"]["nacelle"] and self.modeling["WISDEM"]["DriveSE"]["direct"]:
             drive_constr = self.opt["constraints"]["drivetrain"]
             wt_opt["drivese.access_diameter"] = drive_constr["access"]["lower_bound"]
+
+        if self.modeling["flags"]["floating"]:
+            float_constr = self.opt["constraints"]["floating"]
+            wt_opt["floatingse.max_surge_fraction"] = float_constr["max_surge"]["upper_bound"]
+            wt_opt.set_val("floatingse.operational_heel", float_constr["operational_heel"]["upper_bound"], units="rad")
+            wt_opt.set_val("floatingse.survival_heel", float_constr["survival_heel"]["upper_bound"], units="rad")
 
         return wt_opt
 
@@ -664,7 +1002,7 @@ class PoseOptimization(object):
 
                 # Special handling for blade twist as we only have the
                 # last few control points as design variables
-                if "twist_opt_gain" in key:
+                if "twist_opt" in key:
                     wt_opt[key][2:] = scaled_dv
                 else:
                     wt_opt[key][:] = scaled_dv

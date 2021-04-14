@@ -35,6 +35,7 @@ import matplotlib.pyplot as plt
 from ROSCO_toolbox import utilities as ROSCO_utilities
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
+from ROSCO_toolbox import control_interface as ROSCO_ci
 from ROSCO_toolbox.ofTools.fast_io.output_processing import output_processing
 fast_io = output_processing()
 
@@ -59,25 +60,40 @@ class MF_Turbine(object):
 
     '''
 
-    def __init__(self,level2_wind_speeds=[14,16,18],level3_wind_speeds=[16]):
-        # Turbine Model
+    def __init__(self,**kwargs):
+        # Set Inputs Parameters
+        
         # Select Turbine Model
-        model_dir               = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), '01_aeroelasticse/OpenFAST_models')
-        weis_dir                = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        model_dir                   = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), '01_aeroelasticse/OpenFAST_models')
+        weis_dir                    = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-        self.FAST_directory     = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
-        self.FAST_InputFile     = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+        self.FAST_directory         = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+        self.FAST_InputFile         = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
 
         # level 2 and 3 directories
         self.FAST_level2_directory  = os.path.join(weis_dir,'outputs','iea_semi','level2')
         self.FAST_level3_directory  = os.path.join(weis_dir,'outputs','iea_semi','level3')
 
+        # Level 2 and 3 Wind Speeds
+        self.level3_wind_speeds     = [14,16,18]
+        self.level2_wind_speeds     = [16]
+
+        # Use ROSCO interface
+        self.ROSCO_Interface        = False
+
         # Parallel Processing
-        self.n_cores            = 1
+        self.n_cores                = 1
+
+        # Process kwargs
+        for (k, w) in kwargs.items():
+            try:
+                setattr(self, k, w)
+            except:
+                pass
+
 
         # Set up common controller
         # Load controller from yaml file 
-        weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         parameter_filename  = os.path.join(weis_dir,'ROSCO_toolbox/Tune_Cases/IEA15MW.yaml')
         inps = yaml.safe_load(open(parameter_filename))
         path_params         = inps['path_params']
@@ -140,12 +156,12 @@ class MF_Turbine(object):
         # DLC inputs
         iec.dlc_inputs = {}
 
-        if not isinstance(level3_wind_speeds,list):
-            level3_wind_speeds = [level3_wind_speeds]
+        if not isinstance(self.level3_wind_speeds,list):
+            self.level3_wind_speeds = [self.level3_wind_speeds]
 
         iec.dlc_inputs['DLC']   = [1.1]
         iec.dlc_inputs['Seeds'] = [[25]]
-        iec.dlc_inputs['U']     = [level3_wind_speeds]
+        iec.dlc_inputs['U']     = [self.level3_wind_speeds]
         
         iec.dlc_inputs['Yaw']   = [[]]
         iec.PC_MaxRat           = 2.
@@ -221,8 +237,7 @@ class MF_Turbine(object):
         # Save shared info to MF_Turbine
         self.iec                    = iec
         self.channels               = channels
-        self.level3_wind_speeds     = level3_wind_speeds
-        self.level2_wind_speeds     = level2_wind_speeds
+
 
     def compare(self,dofs):
         ''' 
@@ -248,34 +263,7 @@ class MF_Turbine(object):
 
         # comparison plot, used to be in Level 2, not sure if information is here
         if True:
-            comp_channels = ['RtVAvgxh','GenSpeed','BldPitch1','TwrBsMyt','PtfmPitch']
-            fig = [None] * len(self.level3_out)
-            ax = [None] * len(comp_channels)
-            
-            for iFig, (l2_out, l3_out) in enumerate(zip(self.level2_out,self.level3_out)):
-                fig[iFig] = plt.figure()
-
-                for iPlot, chan in enumerate(comp_channels):
-                    ax[iPlot] = plt.subplot(len(comp_channels),1,iPlot+1)
-                    # level 3 output
-                    try:
-                        ax[iPlot].plot(l3_out['Time'],l3_out[chan])
-                    except:
-                        print(chan + ' is not in OpenFAST OutList')
-
-                    # level 2 output
-                    try:
-                        ax[iPlot].plot(l2_out['Time'],l2_out[chan])
-                    except:
-                        print(chan + ' is not in Linearization OutList')
-                    ax[iPlot].set_ylabel(chan)
-                    ax[iPlot].grid(True)
-                    if not iPlot == (len(comp_channels) - 1):
-                        ax[iPlot].set_xticklabels([])
-
-                fig[iFig].legend(('Level 3','Level 2'),ncol=2,loc=9)
-
-            plt.show()
+            plot_comp([self.level2_out,self.level3_out])
 
 
     def gen_level2_model(self,dofs):
@@ -298,7 +286,7 @@ class MF_Turbine(object):
         lin_fast.write_yaml               = True
         
         lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
-        lin_fast.WindSpeeds                 = self.level2_wind_speeds
+        lin_fast.wind_speeds                = self.level2_wind_speeds
         lin_fast.DOFs                       = dofs  # enable with 
         lin_fast.TMax                       = 1600   # should be 1000-2000 sec or more with hydrodynamic states
         lin_fast.NLinTimes                  = 12
@@ -309,6 +297,8 @@ class MF_Turbine(object):
         # simulation setup
         lin_fast.cores                      = self.n_cores
 
+        lin_fast.TrimTol                    = 5e-2
+
         # overwrite steady & linearizations
         # lin_fast.overwrite        = False           # for debugging only
         
@@ -316,18 +306,44 @@ class MF_Turbine(object):
         lin_fast.gen_linear_model()
 
         self.LinearTurbine = lin_mod.LinearTurbineModel(
-            mf_turb.FAST_level2_directory,
+            self.FAST_level2_directory,
             lin_fast.case_name_list,
             lin_fast.NLinTimes,
-            reduceStates=False)
+            reduceStates=False,
+            remove_azimuth=True
+            )
 
     def run_level2(self,controller,disturbance):
         controller.tune_controller(self.turbine)
-        linCont             = lin_mod.LinearControlModel(controller)
         self.level2_out     = []
-        for dist in disturbance:
-            l2_out, _, P_cl = self.LinearTurbine.solve(dist,Plot=False,open_loop=False,controller=linCont)
-            self.level2_out.append(l2_out)
+        controller.WE_Mode  = 0
+
+        if self.ROSCO_Interface:
+            Level2_DISCON   = os.path.join(self.FAST_level2_directory,'Level2_DISCON.IN')
+            Level2_Perf     = os.path.join(self.FAST_level2_directory,'Level2.Cp_Ct_Cq.txt')
+
+            ROSCO_utilities.write_rotor_performance(self.turbine,txt_filename=Level2_Perf)
+            ROSCO_utilities.write_DISCON(self.turbine,controller,Level2_DISCON,txt_filename=Level2_Perf)
+        
+            lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon.dylib')
+            
+            controller_int = [None] * len(disturbance)
+            for i_dist, dist in enumerate(disturbance):
+                controller_int[i_dist] = ROSCO_ci.ControllerInterface(
+                    lib_name,
+                    param_filename=Level2_DISCON,
+                    DT=1/80,
+                    sim_name = os.path.join(self.FAST_level2_directory,'l2_dist_{}'.format(i_dist))
+                    )
+
+                l2_out, _, P_op = self.LinearTurbine.solve(dist,Plot=False,controller=controller_int[i_dist])
+                self.level2_out.append(l2_out)
+
+        else:
+            linCont             = lin_mod.LinearControlModel(controller)
+            for dist in disturbance:
+                l2_out, _, P_op = self.LinearTurbine.solve(dist,Plot=False,controller=linCont)
+                self.level2_out.append(l2_out)
 
 
     def run_level3(self,controller):
@@ -373,8 +389,8 @@ class Level3_Turbine(object):
 
 class Level2_Turbine(object):
 
-    def __init__(self,mf_turb):
-        self.setup(mf_turb)
+    def __init__(self,mf_turb,dofs):
+        self.setup(mf_turb,dofs)
 
     def setup(self,mf_turb,dofs):
         
@@ -432,41 +448,89 @@ def compute_outputs(levelX_out):
 
     return outputs
 
+def plot_comp(OutDatas,comp_channels=[]):
+    # input is array of OutData
+
+    if not comp_channels:
+        comp_channels = ['RtVAvgxh','GenSpeed','GenTq','GenPwr','BldPitch1','TwrBsMyt','PtfmPitch']
+
+    if not all([len(out) == len(OutDatas[0]) for out in OutDatas]):  # all outdata lengths the same
+        print('WARNING: the number of simulations being plotted are not equal!')
+
+    fig = [None] * len(OutDatas[0])
+    ax =  [None] * len(OutDatas[0])
+    for iFig in range(0,len(OutDatas[0])):
+        fig[iFig], ax[iFig] = plt.subplots(len(comp_channels),1)
+        
+        for iPlot, chan in enumerate(comp_channels):
+            for i_out, OutData in enumerate(OutDatas):
+                try:
+                    ax[iFig][iPlot].plot(OutData[iFig]['Time'],OutData[iFig][chan])
+                except:
+                    print(chan + ' is not in OpenFAST OutList[{}]'.format(i_out))
+
+                ax[iFig][iPlot].set_ylabel(chan)
+                ax[iFig][iPlot].grid(True)
+                if not iPlot == (len(comp_channels) - 1):
+                    ax[iFig][iPlot].set_xticklabels([])
+
+    plt.show()
+
 if __name__ == '__main__':
     # 0. Set up Model, using default input files
     import time
     s = time.time()
 
-    mf_turb = MF_Turbine()
-    mf_turb.n_cores = 4
 
-    # mf_turb.compare(dofs=['GenDOF','TwFADOF1'])
+    mf_turb = MF_Turbine(
+        level2_wind_speeds=np.arange(14,20,2).tolist(),
+        level3_wind_speeds=[16],
+        n_cores = 4
+        )
+
+    # # mf_turb.compare(dofs=['GenDOF','TwFADOF1'])
     mf_turb.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
 
-    l2_turb = Level2_Turbine(mf_turb)
-    # l3_turb = Level3_Turbine(mf_turb)
-    
-    print(time.time() - s)
-    s = time.time()
-    
-    l2_outs = l2_turb.compute(.15)
+
+    print('here')
+
+    mf_turb2 = MF_Turbine(
+        level2_wind_speeds=np.arange(4,26,2).tolist(),
+        level3_wind_speeds=np.arange(6,24,2).tolist(),
+        n_cores = 4,
+        ROSCO_Interface = True
+        )
+        
+
+    # mf_turb2.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF'])
+
+    # print('here')
+
+
+    # l2_turb = Level2_Turbine(mf_turb,dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
+    # # l3_turb = Level3_Turbine(mf_turb)
     
     # print(time.time() - s)
     # s = time.time()
-    # l3_outs = l3_turb.compute(.15)
     
-    print(time.time() - s)
-    s = time.time()
+    # l2_outs = l2_turb.compute(.15)
+    
+    # # print(time.time() - s)
+    # # s = time.time()
+    # # l3_outs = l3_turb.compute(.15)
+    
+    # print(time.time() - s)
+    # s = time.time()
 
-    print('l2_outs')
-    print(l2_outs)
+    # print('l2_outs')
+    # print(l2_outs)
     
-    print()
+    # print()
     
-    l2_outs = l2_turb.compute(.16)
+    # l2_outs = l2_turb.compute(.16)
 
-    print('l2_outs changed')
-    print(l2_outs)
+    # print('l2_outs changed')
+    # print(l2_outs)
 
 
     

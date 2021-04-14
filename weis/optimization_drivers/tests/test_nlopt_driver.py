@@ -908,69 +908,7 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["x"], 7.16667, 1e-6)
         assert_near_equal(prob["y"], -7.833334, 1e-6)
 
-    def test_debug_print_option_totals(self):
 
-        prob = om.Problem()
-        model = prob.model
-
-        model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
-        model.add_subsystem("p2", om.IndepVarComp("y", 50.0), promotes=["*"])
-        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
-
-        prob.set_solver_print(level=0)
-
-        prob.driver = NLoptDriver()
-        prob.driver.options["optimizer"] = "LD_SLSQP"
-        prob.driver.options["tol"] = 1e-9
-
-        prob.driver.options["debug_print"] = ["totals"]
-
-        model.add_design_var("x", lower=-50.0, upper=50.0)
-        model.add_design_var("y", lower=-50.0, upper=50.0)
-        model.add_objective("f_xy")
-        model.add_constraint("c", upper=-15.0)
-
-        prob.setup(check=False, mode="rev")
-
-        failed, output = run_driver(prob)
-
-        self.assertTrue(
-            "In mode: rev, Solving variable(s) using simul coloring:" in output
-        )
-        self.assertTrue("('comp.f_xy', [0])" in output)
-        self.assertTrue("Elapsed Time:" in output)
-
-        prob = om.Problem()
-        model = prob.model
-
-        model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
-        model.add_subsystem("p2", om.IndepVarComp("y", 50.0), promotes=["*"])
-        model.add_subsystem("comp", Paraboloid(), promotes=["*"])
-        model.add_subsystem("con", om.ExecComp("c = - x + y"), promotes=["*"])
-
-        prob.set_solver_print(level=0)
-
-        prob.driver = NLoptDriver()
-        prob.driver.options["optimizer"] = "LD_SLSQP"
-        prob.driver.options["tol"] = 1e-9
-
-        prob.driver.options["debug_print"] = ["totals"]
-
-        model.add_design_var("x", lower=-50.0, upper=50.0)
-        model.add_design_var("y", lower=-50.0, upper=50.0)
-        model.add_objective("f_xy")
-        model.add_constraint("c", upper=-15.0)
-
-        prob.setup(check=False, mode="fwd")
-
-        failed, output = run_driver(prob)
-
-        self.assertTrue(
-            "In mode: fwd, Solving variable(s) using simul coloring:" in output
-        )
-        self.assertTrue("('p1.x', [0])" in output)
-        self.assertTrue("Elapsed Time:" in output)
 
     def test_debug_print_option(self):
 

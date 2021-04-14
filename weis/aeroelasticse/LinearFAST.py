@@ -20,11 +20,6 @@ from ROSCO_toolbox import utilities as ROSCO_utilities
 # WISDEM modules
 from weis.aeroelasticse.Util import FileTools
 
-# Batch Analysis
-from pCrunch import pdTools
-from pCrunch import Processing, Analysis
-
-
 import numpy as np
 import sys, os, platform
 
@@ -111,6 +106,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}        # potential modelling input, but only Trim solution supported for now
         case_inputs[("Fst","TrimGain")] = {'vals':[self.TrimGain], 'group':0}  
         case_inputs[("Fst","TrimTol")] = {'vals':[self.TrimTol], 'group':0}  
+        case_inputs[("Fst","OutFmt")] = {'vals':['ES20.11E3'], 'group':0} 
 
         # HydroStates: if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
         if any([d in ['PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmyDOF'] for d in self.DOFs]):
@@ -155,9 +151,9 @@ class LinearFAST(runFAST_pywrapper_batch):
                 inputs['pitch_init'],
                 left=inputs['pitch_init'][0],
                 right=inputs['pitch_init'][-1])
-            case_inputs[('ElastoDyn','BlPitch1')] = {'vals': pitch_init, 'group': 0}
-            case_inputs[('ElastoDyn','BlPitch2')] = {'vals': pitch_init, 'group': 0}
-            case_inputs[('ElastoDyn','BlPitch3')] = {'vals': pitch_init, 'group': 0}
+            case_inputs[('ElastoDyn','BlPitch1')] = {'vals': pitch_init.tolist(), 'group': 1}
+            case_inputs[('ElastoDyn','BlPitch2')] = {'vals': pitch_init.tolist(), 'group': 1}
+            case_inputs[('ElastoDyn','BlPitch3')] = {'vals': pitch_init.tolist(), 'group': 1}
         else:       # set initial pitch to 0 (may be problematic at high wind speeds)
             case_inputs[('ElastoDyn','BlPitch1')] = {'vals': [0], 'group': 0}
             case_inputs[('ElastoDyn','BlPitch2')] = {'vals': [0], 'group': 0}
