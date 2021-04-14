@@ -28,12 +28,12 @@ if __name__ == '__main__':
     lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
 
     # fast info
-    lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( __file__ ) ) ) + os.sep
+    lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( os.path.abspath(__file__) ) ) ) + os.sep
     
     lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
     lin_fast.FAST_runDirectory        = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
-    lin_fast.FAST_exe                 = '/Users/dzalkind/Tools/WEIS-2/local/bin/openfast'
+    lin_fast.FAST_exe                 = '/mnt/c/Users/jjasa/git/WEIS/local/bin/openfast'
     lin_fast.debug_level              = 2
     lin_fast.dev_branch               = True
     lin_fast.write_yaml               = True

@@ -43,7 +43,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompServo: 0
         CompHydro: 0
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
     linearization:
         Linearize: False
@@ -66,6 +66,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
+    MoorDyn: {Echo: True, dtM: 0.001, kbot: 3000000.0, cbot: 300000.0, dtIC: 1.0, TmaxIC: 60.0, CdScaleIC: 4.0, threshIC: 0.001}
     ROSCO:
         flag: True
     

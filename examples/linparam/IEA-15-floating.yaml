@@ -685,17 +685,17 @@ components:
         nodes:
             - name: line1_anchor
               node_type: fixed
-              location: [837.6, 0.0, -200.0]
+              location: [837.8, 0.0, -200.0]
               joint: anchor1
               anchor_type: drag_embedment
             - name: line2_anchor
               node_type: fixed
               joint: anchor2
-              location: [418.8, 725.383, -200.0]
+              location: [837.8, 2.0943951023931953, -200.0] # 120deg
               anchor_type: drag_embedment
             - name: line3_anchor
               node_type: fixed
-              location: [418.8, -725.383, -200.0]
+              location: [837.8, 4.1887902047863905, -200.0] # 240deg
               joint: anchor3
               anchor_type: drag_embedment
 
