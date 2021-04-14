@@ -27,3 +27,15 @@ driver:
   optimization:
     max_iter: 40           # Maximum number of iterations (SLSQP)
 ```
+
+
+# Design of Experiments (DOE)
+To run a DOE, or parameter sweep, change the following entries in the `analysis_options.yaml` input:
+
+```
+driver:
+  optimization:
+    flag: False
+  design_of_experiments:
+    flag: True           # Flag to enable design of experiments
+```
