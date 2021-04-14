@@ -20,11 +20,6 @@ from ROSCO_toolbox import utilities as ROSCO_utilities
 # WISDEM modules
 from weis.aeroelasticse.Util import FileTools
 
-# Batch Analysis
-from pCrunch import pdTools
-from pCrunch import Processing, Analysis
-
-
 import numpy as np
 import sys, os, platform
 
