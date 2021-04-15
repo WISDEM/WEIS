@@ -88,6 +88,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
         self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
         self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
+        self.add_input('platform_displacement', val=1.0,               desc='Volumetric platform displacement', units='m**3')
 
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
@@ -545,6 +546,11 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
+
+        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_center_of_mass"][2]))
+        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+
         # TODO: There is some confusion on PtfmRefzt
         if modeling_options['flags']['floating']:
             fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"])
@@ -554,6 +560,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
+            fst_vt['ElastoDyn']['PtfmRefzt'] = 0. # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+
         else:
             # Ptfm* can capture the transition piece for fixed-bottom, but we are doing that in subdyn, so only worry about getting height right
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
@@ -563,15 +571,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
+            fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
         # Drivetrain inputs
         fst_vt['ElastoDyn']['DTTorSpr'] = float(inputs['drivetrain_spring_constant'])
         fst_vt['ElastoDyn']['DTTorDmp'] = float(inputs['drivetrain_damping_coefficient'])
-
-        tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
-        fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
-        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
-        fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # Update Inflowwind
         fst_vt['InflowWind']['RefHt'] = float(inputs['hub_height'])
@@ -911,6 +915,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
             fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
             fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
+
             fst_vt['HydroDyn']['SimplCd'] = 1.0
             fst_vt['HydroDyn']['SimplCdMG'] = 1.0
             fst_vt['HydroDyn']['SimplCa'] = 1.0
@@ -934,6 +939,36 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
+
+            # HARDCODED for IEA-15MW
+            fst_vt['HydroDyn']['NJoints'] = 2
+            fst_vt['HydroDyn']['JointID'] = np.array([1,2])
+            fst_vt['HydroDyn']['Jointxi'] = np.array([0.0,0.0])
+            fst_vt['HydroDyn']['Jointyi'] = np.array([0.0,0.0])
+            fst_vt['HydroDyn']['Jointzi'] = np.array([-13.18,-14.18])
+
+            fst_vt['HydroDyn']['NPropSets'] = 1
+            fst_vt['HydroDyn']['PropSetID'] = np.array([1])
+            fst_vt['HydroDyn']['PropD']     = np.array([1e-5])
+            fst_vt['HydroDyn']['PropThck']  = np.array([1e-6])
+
+            fst_vt['HydroDyn']['NMembers']      = 1
+            fst_vt['HydroDyn']['MemberID']      = np.array([1])
+            fst_vt['HydroDyn']['MJointID1']     = np.array([1])
+            fst_vt['HydroDyn']['MJointID2']     = np.array([2])
+            fst_vt['HydroDyn']['MPropSetID1']   = np.array([1])
+            fst_vt['HydroDyn']['MPropSetID2']   = np.array([1])
+            fst_vt['HydroDyn']['MDivSize']      = np.array([1.0])
+            fst_vt['HydroDyn']['MCoefMod']      = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
+
+            # set PotFile directory relative to WEIS
+            # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
+            weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            if fst_vt['HydroDyn']['PotFile']:
+                fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
+
+            fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
             
         # Moordyn inputs
         if modeling_options["flags"]["mooring"]:

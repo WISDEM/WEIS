@@ -4,12 +4,26 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 10
-        n_tsr_perf_surfaces: 10
-        spar_cap_ss: Spar_cap_ss
-        spar_cap_ps: Spar_cap_ps
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        n_span: 60
     TowerSE:
         flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        soil_springs: True
+        gravity_foundation: False
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
     DriveSE:
         flag: True
     FloatingSE:
@@ -17,20 +31,6 @@ WISDEM:
     BOS:
         flag: True
         
-        
-Level2:
-    flag: True
-    simulation:         # could these be included in openfast options?
-        TMax: 700.      # run simulations using IEC standards, could share that info
-    linearization:
-        TMax: 1600.
-        DT: 0.01
-        TrimGain: 1e-4
-        TrimTol: 1e-5
-        wind_speeds: [16]
-        DOFs: ['GenDOF','TwFADOF1']
-        NLinTimes: 4    
-
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     OutFileFmt: 3
@@ -40,8 +40,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompElast: 1
         CompInflow: 1
         CompAero: 2
-        CompServo: 0
-        CompHydro: 0
+        CompServo: 1
+        CompHydro: 1
         CompSub: 0
         CompMooring: 3
         CompIce: 0
@@ -66,16 +66,47 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-    MoorDyn: {Echo: True, dtM: 0.001, kbot: 3000000.0, cbot: 300000.0, dtIC: 1.0, TmaxIC: 60.0, CdScaleIC: 4.0, threshIC: 0.001}
+        ElastoDynBlade:
+        BldFlDmp1: 3.0
+        BldFlDmp2: 3.0
+        BldEdDmp1: 3.0
+    ServoDyn:
+        YawSpr: 4.6273E+10
+        YawDamp: 3.9088E+07
+    HydroDyn:
+        WaveTMax: 1 #3630
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WvLowCOffD: 0.0
+        WvHiCOffD: 3.04292
+        WaveSeed1: 123456789
+        AddBQuad1: [923000.0,   0.0,        0.0,        0.0,            -8920000.0,     0.0]
+        AddBQuad2: [0.0,        923000.0,   0.0,        8920000.0,      0.0,            0.0]
+        AddBQuad3: [0.0,        0.0,        2300000.0,  0.0,            0.0,            0.0]
+        AddBQuad4: [0.0,        8920000.0,  0.0,        16800000000.0,  0.0,            0.0]
+        AddBQuad5: [-8920000.0, 0.0,        0.0,        0.0,            16800000000.0,  0.0]
+        AddBQuad6: [0.0,        0.0,        0.0,        0.0,            0.0,            48000000000.0]
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
     ROSCO:
         flag: True
+Level2:
+    flag: True
+    simulation:         # could these be included in openfast options?
+        TMax: 700.      # run simulations using IEC standards, could share that info
+    linearization:
+        TMax: 1600.
+        DT: 0.01
+        TrimGain: 1e-4
+        TrimTol: 1e-3
+        wind_speeds: [16]
+        DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
+        NLinTimes: 4    
+
     
 openfast:
-    linearization: True  # JJ->DZ: This is the actual flag for level 2 linearization
-    lin_wind_speeds: [14]  #  ,16,18]  # DZ: let's make this a Level 2 modelling option
     file_management:
-        FAST_namingOut:    IEA15         # Name of the OpenFAST output files
-        FAST_runDirectory: temp             # Path to folder with the OpenFAST output files
+        FAST_namingOut:    lin         # Name of the OpenFAST output files
+        FAST_runDirectory: lin_test/semi_lin             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           False

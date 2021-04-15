@@ -273,6 +273,7 @@ class WindPark(om.Group):
                 self.connect("floatingse.platform_mass", "aeroelastic.platform_mass")
                 self.connect("floatingse.platform_center_of_mass", "aeroelastic.platform_center_of_mass")
                 self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
+                self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
                 self.connect("floating.transition_node", "aeroelastic.transition_node")
                 if modeling_options["flags"]["tower"]:
                     self.connect('floatingse.tower.mass_den',                'aeroelastic.mass_den')

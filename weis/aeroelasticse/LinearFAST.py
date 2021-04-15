@@ -107,6 +107,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","TrimGain")] = {'vals':[self.TrimGain], 'group':0}  
         case_inputs[("Fst","TrimTol")] = {'vals':[self.TrimTol], 'group':0}  
         case_inputs[("Fst","OutFmt")] = {'vals':['ES20.11E3'], 'group':0} 
+        case_inputs[("Fst","OutFileFmt")] = {'vals':[3], 'group':0} 
 
         # HydroStates: if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
         if any([d in ['PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmyDOF'] for d in self.DOFs]):
@@ -164,11 +165,14 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
         # Need to be this for linearization
-        case_inputs[("HydroDyn","WaveMod")] = {'vals':[0], 'group':0}
-        case_inputs[("HydroDyn","ExctnMod")] = {'vals':[2], 'group':0}
-        case_inputs[("HydroDyn","RdtnMod")] = {'vals':[2], 'group':0}
-        case_inputs[("HydroDyn","DiffQTF")] = {'vals':[0], 'group':0}
-        case_inputs[("HydroDyn","WvDiffQTF")] = {'vals':['False'], 'group':0}
+        case_inputs[("HydroDyn","WaveMod")]     = {'vals':[0], 'group':0}
+        case_inputs[("HydroDyn","ExctnMod")]    = {'vals':[2], 'group':0}
+        case_inputs[("HydroDyn","RdtnMod")]     = {'vals':[2], 'group':0}
+        case_inputs[("HydroDyn","DiffQTF")]     = {'vals':[0], 'group':0}
+        case_inputs[("HydroDyn","WvDiffQTF")]   = {'vals':['False'], 'group':0}
+        case_inputs[("HydroDyn","WvSumQTF")]    = {'vals':['False'], 'group':0}
+        case_inputs[("HydroDyn","PotMod")]      = {'vals':[1], 'group':0}
+        case_inputs[("HydroDyn","RdtnDT")]      = {'vals':['default'], 'group':0}
         
         # Degrees-of-freedom: set all to False & enable those defined in modelling inputs
         case_inputs[("ElastoDyn","FlapDOF1")] = {'vals':['False'], 'group':0}
