@@ -21,7 +21,7 @@ if eagle_flag:
     os.environ["CC"] = "icc"
     os.environ["CXX"] = "icpc"
     os.environ["LDSHARED"] = "icc -pthread -shared"
-
+    
 # For the CMake Extensions
 class CMakeExtension(Extension):
 
