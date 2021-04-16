@@ -23,6 +23,10 @@ from weis.aeroelasticse.Util import FileTools
 import numpy as np
 import sys, os, platform
 
+import weis
+weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
+
+
 class LinearFAST(runFAST_pywrapper_batch):
     ''' 
         Class for 
@@ -36,7 +40,7 @@ class LinearFAST(runFAST_pywrapper_batch):
     def __init__(self, **kwargs):
 
         self.FAST_ver           = 'OpenFAST'
-        self.FAST_exe           = None
+        self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable, linearization doesn't work with library
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
@@ -140,9 +144,16 @@ class LinearFAST(runFAST_pywrapper_batch):
             rosco_inputs = self.fst_vt['DISCON_in']
 
         # TODO: check this in below rated wind_speeds
-        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[rosco_inputs['PC_RefSpd'] * 30 / np.pi * 0.5], 'group':0}  # convert to rpm and use 95% of rated
+        k_opt           = rosco_inputs['VS_Rgn2K']/ (30 / np.pi)**2  # openfast units
+        omega_rated_rpm = rosco_inputs['PC_RefSpd'] * 30 / np.pi * .9  # rpm, include slip percent
+
+        if k_opt * omega_rated_rpm ** 2 > rosco_inputs['VS_RtTq']:
+            print('LinearFAST WARNING: need to rescale VS_Rgn2K to be legal in openfast')
+            k_opt = rosco_inputs['VS_RtTq'] / omega_rated_rpm ** 2
+
+        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[omega_rated_rpm], 'group':0}  # convert to rpm and use 95% of rated
         case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[rosco_inputs['VS_RtTq']], 'group':0}
-        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[rosco_inputs['VS_Rgn2K']/ (30 / np.pi)**2] , 'group':0}  # reduce so k\omega^2 < VS_RtTq
+        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[k_opt] , 'group':0}  # reduce so k\omega^2 < VS_RtTq
         case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
 
         # set initial pitch to fine pitch
@@ -284,11 +295,10 @@ if __name__ == '__main__':
     lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
 
     # fast info
-    lin_fast.weis_dir                 = os.path.dirname( os.path.dirname ( os.path.dirname( os.path.abspath(__file__ ) ) ) ) + os.sep
     
     lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-    lin_fast.FAST_directory           = os.path.join(lin_fast.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
-    lin_fast.FAST_runDirectory        = os.path.join(lin_fast.weis_dir,'outputs','iea_mono_lin')
+    lin_fast.FAST_directory           = os.path.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+    lin_fast.FAST_runDirectory        = os.path.join(weis_dir,'outputs','iea_mono_lin')
     lin_fast.debug_level              = 2
     lin_fast.dev_branch               = True
     lin_fast.write_yaml               = True

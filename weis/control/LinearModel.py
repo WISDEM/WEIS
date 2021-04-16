@@ -408,7 +408,7 @@ class LinearTurbineModel(object):
                 u[indBldPitch]  = bld_pitch[k] - self.ops['u'][indBldPitch] 
 
                 # GenTq
-                u[indGenTq]     = 50 * ( gen_torque[k] - self.ops['u'][indGenTq] )
+                u[indGenTq]     = ( gen_torque[k] - self.ops['u'][indGenTq] )
 
                 # Update States and Outputs                
                 x_k1    = P_d.A @ x_k + P_d.B @ u
