@@ -370,7 +370,7 @@ class MF_Turbine(object):
             out = fastBatch.run_multi(cores=self.n_cores)
 
         self.level3_batch   = fastBatch
-        self.level3_out     = out[5]
+        self.level3_out     = out[3]
 
 
 class Level3_Turbine(object):
