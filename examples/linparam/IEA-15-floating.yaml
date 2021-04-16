@@ -684,33 +684,33 @@ components:
     mooring:
         nodes:
             - name: line1_anchor
-              node_type: fixed
-              location: [837.8, 0.0, -200.0]
+              node_type: fix
+              location: [-837.8, 0.0, -200.0]
               joint: anchor1
               anchor_type: drag_embedment
-            - name: line2_anchor
-              node_type: fixed
-              joint: anchor2
-              location: [837.8, 2.0943951023931953, -200.0] # 120deg
-              anchor_type: drag_embedment
-            - name: line3_anchor
-              node_type: fixed
-              location: [837.8, 4.1887902047863905, -200.0] # 240deg
-              joint: anchor3
-              anchor_type: drag_embedment
+            # - name: line2_anchor
+            #   node_type: fixed
+            #   joint: anchor2
+            #   location: [-837.8, 2.0943951023931953, -200.0] # 120deg
+            #   anchor_type: drag_embedment
+            # - name: line3_anchor
+            #   node_type: fixed
+            #   location: [-837.8, 4.1887902047863905, -200.0] # 240deg
+            #   joint: anchor3
+            #   anchor_type: drag_embedment
 
             - name: line1_vessel
               node_type: vessel
               joint: col1_fairlead
               fairlead_type: rigid
-            - name: line2_vessel
-              node_type: vessel
-              joint: col2_fairlead
-              fairlead_type: rigid
-            - name: line3_vessel
-              joint: col3_fairlead
-              node_type: vessel
-              fairlead_type: rigid
+            # - name: line2_vessel
+            #   node_type: vessel
+            #   joint: col2_fairlead
+            #   fairlead_type: rigid
+            # - name: line3_vessel
+            #   joint: col3_fairlead
+            #   node_type: vessel
+            #   fairlead_type: rigid
 
         lines:
             - name: line1
@@ -718,20 +718,20 @@ components:
               node2: line1_vessel
               line_type: main
               unstretched_length: 850.0
-            - name: line2
-              node1: line2_anchor
-              node2: line2_vessel
-              line_type: main
-              unstretched_length: 850.0
-            - name: line3
-              node1: line3_anchor
-              node2: line3_vessel
-              line_type: main
-              unstretched_length: 850.0
+            # - name: line2
+            #   node1: line2_anchor
+            #   node2: line2_vessel
+            #   line_type: main
+            #   unstretched_length: 850.0
+            # - name: line3
+            #   node1: line3_anchor
+            #   node2: line3_vessel
+            #   line_type: main
+            #   unstretched_length: 850.0
 
         line_types:
             - name: main
-              diameter: 0.185
+              diameter: 0.333
               mass_density: 685.0
               stiffness: 3270e6
               breaking_load: 1e8

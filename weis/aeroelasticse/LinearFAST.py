@@ -115,7 +115,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         else:
             self.HydroStates      = False 
 
-        case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}  # moordyn linearization is not supported yet
+        case_inputs[("Fst","CompMooring")] = {'vals':[self.fst_vt['Fst']['CompMooring']], 'group':0}  # moordyn linearization is not supported yet
         case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}  # modeling inputs, but not yet
         case_inputs[("Fst","CompSub")] = {'vals':[0], 'group':0}  # SubDyn can't be linearized with this version of OpenFAST, maybe in future
         

@@ -1657,6 +1657,7 @@ properties:
                                     type: string
                                     enum:
                                         - fixed
+                                        - fix
                                         - connection
                                         - vessel
                                 location:

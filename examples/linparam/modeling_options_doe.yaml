@@ -43,7 +43,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompServo: 1
         CompHydro: 1
         CompSub: 0
-        CompMooring: 3
+        CompMooring: 1
         CompIce: 0
     linearization:
         Linearize: False
@@ -93,6 +93,7 @@ Level2:
     flag: True
     simulation:         # could these be included in openfast options?
         TMax: 700.      # run simulations using IEC standards, could share that info
+        CompMooring: 1
     linearization:
         TMax: 1600.
         DT: 0.01
