@@ -20,7 +20,7 @@ from weis.aeroelasticse.FAST_reader import InputReader_Common, InputReader_OpenF
 from weis.aeroelasticse.Util.FileTools import save_yaml, load_yaml
 from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
-from pCrunch.Analysis import Loads_Analysis
+# from pCrunch.Analysis import Loads_Analysis
 from weis.aeroelasticse.Turbsim_mdao.turbsim_file import TurbSimFile
 
 
@@ -42,13 +42,10 @@ fast_io = output_processing()
 # WISDEM modules
 from weis.aeroelasticse.Util import FileTools
 
-# Batch Analysis
-from pCrunch import pdTools
-from pCrunch import Processing, Analysis
-
-
 import numpy as np
 import sys, os, platform, yaml
+
+weis_dir                    = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 class MF_Turbine(object):
     '''
@@ -65,7 +62,6 @@ class MF_Turbine(object):
         
         # Select Turbine Model
         model_dir                   = os.path.join(os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ), '01_aeroelasticse/OpenFAST_models')
-        weis_dir                    = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
         self.FAST_directory         = os.path.join(model_dir, 'IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
         self.FAST_InputFile         = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
@@ -291,7 +287,7 @@ class MF_Turbine(object):
         lin_fast.TMax                       = 1600   # should be 1000-2000 sec or more with hydrodynamic states
         lin_fast.NLinTimes                  = 12
 
-        # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast-dev/install/bin/openfast'
+        lin_fast.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast') 
         # lin_fast.overwrite_outfiles       = True
 
         # simulation setup
@@ -300,7 +296,7 @@ class MF_Turbine(object):
         lin_fast.TrimTol                    = 5e-2
 
         # overwrite steady & linearizations
-        # lin_fast.overwrite        = False           # for debugging only
+        lin_fast.overwrite        = False           # for debugging only
         
         # run OpenFAST linearizations
         lin_fast.gen_linear_model()
@@ -356,7 +352,7 @@ class MF_Turbine(object):
         fastBatch.FAST_InputFile    = self.FAST_InputFile  # FAST input file (ext=.fst)
 
         fastBatch.debug_level       = 2
-        # fastBatch.overwrite_outfiles = False        # for debugging purposes
+        fastBatch.overwrite_outfiles = False        # for debugging purposes
 
         
         fastBatch.case_list         = self.case_list
@@ -365,13 +361,16 @@ class MF_Turbine(object):
         fastBatch.FAST_runDirectory = self.FAST_level3_directory
         fastBatch.post              = FAST_IO_timeseries
 
+        fastBatch.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast') 
+
+
         if self.n_cores == 1:
             out = fastBatch.run_serial()
         else:
             out = fastBatch.run_multi(cores=self.n_cores)
 
         self.level3_batch   = fastBatch
-        self.level3_out     = out
+        self.level3_out     = out[5]
 
 
 class Level3_Turbine(object):
@@ -482,14 +481,14 @@ if __name__ == '__main__':
     s = time.time()
 
 
-    mf_turb = MF_Turbine(
-        level2_wind_speeds=np.arange(14,20,2).tolist(),
-        level3_wind_speeds=[16],
-        n_cores = 4
-        )
+    # mf_turb = MF_Turbine(
+    #     level2_wind_speeds=np.arange(14,20,2).tolist(),
+    #     level3_wind_speeds=[16],
+    #     n_cores = 4
+    #     )
 
-    # # mf_turb.compare(dofs=['GenDOF','TwFADOF1'])
-    mf_turb.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
+    # # # mf_turb.compare(dofs=['GenDOF','TwFADOF1'])
+    # mf_turb.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
 
 
     print('here')
@@ -497,10 +496,12 @@ if __name__ == '__main__':
     mf_turb2 = MF_Turbine(
         level2_wind_speeds=np.arange(4,26,2).tolist(),
         level3_wind_speeds=np.arange(6,24,2).tolist(),
-        n_cores = 4,
+        n_cores = 1,
         ROSCO_Interface = True
         )
         
+    mf_turb2.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF'])
+
 
     # mf_turb2.compare(dofs=['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF'])
 

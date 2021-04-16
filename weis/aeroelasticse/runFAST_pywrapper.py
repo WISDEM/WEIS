@@ -208,7 +208,7 @@ class runFAST_pywrapper(object):
             # Make output dict
             output_dict = {}
             for i, channel in enumerate(output.channels):
-                output_dict[channel] = output.df[channel]
+                output_dict[channel] = output.df[channel].to_numpy()
 
 
         # Trim Data
@@ -224,7 +224,7 @@ class runFAST_pywrapper_batch(object):
     def __init__(self, **kwargs):
 
         self.FAST_ver           = 'OpenFAST'
-        self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
+        self.FAST_exe           = None # os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
         self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
         self.FAST_InputFile     = None
         self.FAST_directory     = None
