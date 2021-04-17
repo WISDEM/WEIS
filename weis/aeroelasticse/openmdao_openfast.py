@@ -1129,8 +1129,9 @@ class FASTLoadCases(ExplicitComponent):
             linearization_options               = self.options['modeling_options']['Level2']['linearization']
             
             # Use openfast binary until library works
-            linearization_options['FAST_exe']   = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/bin/openfast')
             fastBatch                           = LinearFAST(**linearization_options)
+            fastBatch.FAST_lib                  = None      # linearization not working with library
+            fastBatch.FAST_exe                  = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/bin/openfast')
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
 
