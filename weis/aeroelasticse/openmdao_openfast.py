@@ -358,13 +358,36 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['modeling_options']['Level2']['flag']:
             self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
             ABCD_list = []
+            self.sim_idx = -1
             with open(self.lin_pkl_file_name, 'wb') as handle:
                 pickle.dump(ABCD_list, handle)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
-
+        self.sim_idx += 1
+        ABCD = {
+            'sim_idx' : self.sim_idx,
+            'A' : None,
+            'B' : None,
+            'C' : None,
+            'D' : None,
+            'omega_rpm' : None,
+            'DescCntrlInpt' : None,
+            'DescStates' : None,
+            'DescOutput' : None,
+            'StateDerivOrder' : None,
+            'ind_fast_inps' : None,
+            'ind_fast_outs' : None,
+            }
+        with open(self.lin_pkl_file_name, 'rb') as handle:
+            ABCD_list = pickle.load(handle)
+            
+        ABCD_list.append(ABCD)
+        
+        with open(self.lin_pkl_file_name, 'wb') as handle:
+            pickle.dump(ABCD_list, handle)
+        
         fst_vt = self.init_FAST_model()
         fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         
@@ -386,6 +409,7 @@ class FASTLoadCases(ExplicitComponent):
                 # DZ TODO: post process operating points, do Level2 simulation, etc.
                 print('Saving ABCD matrices!')
                 ABCD = {
+                    'sim_idx' : self.sim_idx,
                     'A' : LinearTurbine.A_ops,
                     'B' : LinearTurbine.B_ops,
                     'C' : LinearTurbine.C_ops,
@@ -401,7 +425,7 @@ class FASTLoadCases(ExplicitComponent):
                 with open(self.lin_pkl_file_name, 'rb') as handle:
                     ABCD_list = pickle.load(handle)
                     
-                ABCD_list.append(ABCD)
+                ABCD_list[self.sim_idx] = ABCD
                 
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
@@ -1019,7 +1043,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Cdn'] = 0
             fst_vt['MoorDyn']['Cdt'] = 0
             fst_vt['MoorDyn']['B'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['Option'] = ["help", "outer_tol 1e-5", "repeat 120 240"]
+            fst_vt['MoorDyn']['Option'] = ["outer_tol 1e-5", "repeat 120 240"]
             
             
             

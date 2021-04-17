@@ -19,7 +19,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
-    myopt = PoseOptimizationWEIS(modeling_options, opt_options)
+    myopt = PoseOptimizationWEIS(wt_init, modeling_options, opt_options)
 
     if MPI and opt_options['driver']['optimization']['flag']:
         n_DV = myopt.get_number_design_variables()

@@ -5,7 +5,8 @@ import openmdao.api as om
 
 
 class PoseOptimization(object):
-    def __init__(self, modeling_options, analysis_options):
+    def __init__(self, wt_init, modeling_options, analysis_options):
+        self.wt_init = wt_init
         self.modeling = modeling_options
         self.opt = analysis_options
 
@@ -229,18 +230,18 @@ class PoseOptimization(object):
         elif self.opt["driver"]["design_of_experiments"]["flag"]:
             if self.opt["driver"]["design_of_experiments"]["generator"].lower() == "uniform":
                 generator = om.UniformGenerator(
-                    num_samples=self.opt["driver"]["design_of_experiments"]["num_samples"],
+                    num_samples=int(self.opt["driver"]["design_of_experiments"]["num_samples"]),
                     seed=self.opt["driver"]["design_of_experiments"]["seed"],
                 )
             elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "fullfact":
-                generator = om.FullFactorialGenerator(levels=self.opt["driver"]["design_of_experiments"]["num_samples"])
+                generator = om.FullFactorialGenerator(levels=int(self.opt["driver"]["design_of_experiments"]["num_samples"]))
             elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "plackettburman":
                 generator = om.PlackettBurmanGenerator()
             elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "boxbehnken":
                 generator = om.BoxBehnkenGenerator()
             elif self.opt["driver"]["design_of_experiments"]["generator"].lower() == "latinhypercube":
                 generator = om.LatinHypercubeGenerator(
-                    samples=self.opt["driver"]["design_of_experiments"]["num_samples"],
+                    samples=int(self.opt["driver"]["design_of_experiments"]["num_samples"]),
                     criterion=self.opt["driver"]["design_of_experiments"]["criterion"],
                     seed=self.opt["driver"]["design_of_experiments"]["seed"],
                 )
@@ -477,6 +478,27 @@ class PoseOptimization(object):
                 upper=monopile_opt["layer_thickness"]["upper_bound"],
                 ref=1e-2,
             )
+            
+        if tower_opt["E"]["flag"]:
+            wt_opt.model.add_design_var(
+                "towerse_post.E_user",
+                lower=tower_opt["E"]["lower_bound"],
+                upper=tower_opt["E"]["upper_bound"],
+                ref=1e9,
+            )
+
+        for idx, material in enumerate(wt_init["materials"]):
+            if material['name'] == 'steel':
+                tower_material_index = idx
+
+        if tower_opt["rho"]["flag"]:
+            wt_opt.model.add_design_var(
+                "materials.rho",
+                lower=tower_opt["rho"]["lower_bound"],
+                upper=tower_opt["rho"]["upper_bound"],
+                ref=1e3,
+                indices=[tower_material_index],
+            )
 
         # -- Control --
         if control_opt["tsr"]["flag"]:
@@ -652,6 +674,20 @@ class PoseOptimization(object):
                 lower=mooring_opt["line_diameter"]["lower_bound"],
                 upper=mooring_opt["line_diameter"]["upper_bound"],
                 ref=1e-1,
+            )
+
+        if mooring_opt["line_mass_density_coeff"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.line_mass_density_coeff",
+                lower=mooring_opt["line_mass_density_coeff"]["lower_bound"],
+                upper=mooring_opt["line_mass_density_coeff"]["upper_bound"],
+            )
+
+        if mooring_opt["line_stiffness_coeff"]["flag"]:
+            wt_opt.model.add_design_var(
+                "mooring.line_stiffness_coeff",
+                lower=mooring_opt["line_stiffness_coeff"]["lower_bound"],
+                upper=mooring_opt["line_stiffness_coeff"]["upper_bound"],
             )
 
         return wt_opt

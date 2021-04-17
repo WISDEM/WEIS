@@ -20,6 +20,7 @@ A_plot = []
 DVs = []
 for idx, case in enumerate(driver_cases):
     print('===================')
+    print('Simulation index:', ABCD_list[idx]['sim_idx'])
     dvs = case.get_design_vars(scaled=False)
     for key in dvs.keys():
         print(key)
@@ -32,15 +33,15 @@ for idx, case in enumerate(driver_cases):
     A_plot.append(ABCD_list[idx]['A'][1, 1])
     DVs.append(dvs[key])
     
-import matplotlib.pyplot as plt
-
-A_plot = np.array(A_plot)
-DVs = np.array(DVs)
-
-plt.scatter(DVs, A_plot[:])
-
-plt.xlabel("Tower Young's Modulus, Pa")
-plt.ylabel('A[1, 1]')
-plt.tight_layout()
-
-plt.show()
+# import matplotlib.pyplot as plt
+# 
+# A_plot = np.array(A_plot)
+# DVs = np.array(DVs)
+# 
+# plt.scatter(DVs, A_plot[:])
+# 
+# plt.xlabel("Tower Young's Modulus, Pa")
+# plt.ylabel('A[1, 1]')
+# plt.tight_layout()
+# 
+# plt.show()
