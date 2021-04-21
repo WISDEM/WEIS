@@ -1031,8 +1031,6 @@ class FASTLoadCases(ExplicitComponent):
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
             fastBatch.FAST_lib          = self.FAST_lib
-        if not os.path.isdir(self.FAST_runDirectory):
-            os.makedirs(self.FAST_runDirectory)
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
