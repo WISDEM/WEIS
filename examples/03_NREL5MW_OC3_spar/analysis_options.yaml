@@ -24,7 +24,7 @@ merit_figure: platform_mass  # Merit figure of the optimization problem. The opt
 constraints:
   control:
     rotor_overspeed:
-      flag: True # True
+      flag: True
       min: 0.0
       max: 0.2
     Max_PtfmPitch:
@@ -45,11 +45,6 @@ driver:
     solver: LN_COBYLA     # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
     form: central         # Finite differencing mode, either forward or central
-  design_of_experiments:
-    flag: False           # Flag to enable design of experiments
-    run_parallel: True    # Flag to run using parallel processing
-    generator: FullFact    # Type of input generator. (Uniform)
-    num_samples: 12            # number of samples for (Uniform only)
     
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder
