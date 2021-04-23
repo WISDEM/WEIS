@@ -78,6 +78,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
         self.add_input('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
         self.add_input('generator_efficiency', val=1.0,                  desc='Generator efficiency')
+        self.add_input('TowerHt',           val=1.0,        units='m',              desc='Tower height')
         # 
         self.add_input('max_pitch',         val=0.0,        units='rad',            desc='')
         self.add_input('min_pitch',         val=0.0,        units='rad',            desc='')
@@ -136,6 +137,8 @@ class TuneROSCO(ExplicitComponent):
         # Controller Tuning Parameters
         self.add_input('PC_zeta',           val=0.0,                                            desc='Pitch controller damping ratio')
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
+        self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
+        self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
         if rosco_init_options['Flp_Mode'] > 0:
@@ -204,6 +207,11 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.max_pitch_rate   = float(inputs['max_pitch_rate'])
         WISDEM_turbine.TSR_operational  = float(inputs['tsr_operational'])
         WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'])
+        WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
+        
+        # Floating Feedback Filters
+        WISDEM_turbine.twr_freq         = float(inputs['twr_freq'])
+        WISDEM_turbine.ptfm_freq        = float(inputs['ptfm_freq'])
 
         # Load Cp tables
         self.Cp_table       = inputs['Cp_table']
@@ -315,8 +323,8 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['v_rated'] = float(inputs['v_rated'])
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_FlpCornerFreq']  = [float(inputs['flap_freq']) * 2 * np.pi / 3., 0.7]
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_LPFCornerFreq']  = float(inputs['edge_freq']) * 2 * np.pi / 4.
-        self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_NotchCornerFreq'] = 0.0    # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
-        self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_FlCornerFreq'] = [0.0, 0.0] # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
+        self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_NotchCornerFreq'] = WISDEM_turbine.twr_freq    # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
+        self.modeling_options['openfast']['fst_vt']['DISCON_in']['F_FlCornerFreq'] = [WISDEM_turbine.ptfm_freq, 0.707] # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['VS_MaxRat'] = WISDEM_turbine.max_torque_rate

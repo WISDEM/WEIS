@@ -1701,7 +1701,7 @@ properties:
                     PotFile:
                         type: string
                         default: ''
-                        description: Root name of potential-flow model data; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
+                        description: Root name of potential-flow model data (relative to WEIS dir); WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
                     WAMITULEN:
                         type: number
                         minimum: 0.0
@@ -1715,6 +1715,12 @@ properties:
                         minimum: 0.0
                         units: m^3
                         description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    PtfmMass_Init:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: kg
+                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass. 
                     PtfmCOBxt:
                         type: number
                         default: 0.0
@@ -2597,6 +2603,14 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to compute blade fatigue with FAST
+                    unique_wind_seeds:
+                        type: boolean
+                        default: False
+                        description: Run different wind seeds for each wind speed
+                    unique_wave_seeds:
+                        type: boolean
+                        default: False
+                        description: Run different wave seeds for each wind speed
                     IEC:
                         type: array
                         default: [{}]
