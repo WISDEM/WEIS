@@ -146,10 +146,12 @@ class TuneROSCO(ExplicitComponent):
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
         self.add_input('IPC_Ki1p',          val=0.0,            units='rad/(N*m)',  desc='Individual pitch controller 1p gain')
         # Outputs for constraints and optimizations
-        self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
-        self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
+        self.add_output('flptune_coeff1',           val=0.0,            units='rad/s',        desc='First coefficient in denominator of flap controller tuning model')
+        self.add_output('flptune_coeff2',           val=0.0,            units='(rad/s)**2',        desc='Second coefficient in denominator of flap controller tuning model')
         self.add_output('PC_Kp',           val=0.0,            units='rad',        desc='Pitch control proportional gain')
         self.add_output('PC_Ki',           val=0.0,            units='rad',        desc='Pitch control integral gain')
+        self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
+        self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
 
         # self.add_output('PC_GS_angles', val=np.zeros(n_pitch+1), units='rad', desc='Gain-schedule table: pitch angles')
         # self.add_output('PC_GS_KP',     val=np.zeros(n_pitch+1),              desc='Gain-schedule table: pitch controller kp gains')
@@ -268,7 +270,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
             WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
-            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['Level3']['ElastoDynBlade']['BldFlDmp1']/100 * 0.7
+            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['Level3']['ROSCO']['Bld_FlpDamp']
 
         # Tune Controller!
         controller = ROSCO_controller.Controller(rosco_init_options)
@@ -346,10 +348,13 @@ class TuneROSCO(ExplicitComponent):
         self.modeling_options['openfast']['fst_vt']['DISCON_in']['Cq'] = WISDEM_turbine.Cq
 
         # Outputs 
-        outputs['Flp_Kp']   = controller.Kp_flap[-1]
-        outputs['Flp_Ki']   = controller.Ki_flap[-1]
+        if rosco_init_options['Flp_Mode'] >= 1:
+            outputs['flptune_coeff1']   = 2*WISDEM_turbine.bld_flapwise_damp*WISDEM_turbine.bld_flapwise_freq + controller.kappa[-1]*WISDEM_turbine.bld_flapwise_freq**2*controller.Kp_flap[-1]
+            outputs['flptune_coeff2']   = WISDEM_turbine.bld_flapwise_freq**2*(controller.Ki_flap[-1]*controller.kappa[-1] + 1)
         outputs['PC_Kp']   = controller.pc_gain_schedule.Kp[0]
         outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
+        outputs['Flp_Kp']  = controller.Kp_flap[-1]
+        outputs['Flp_Ki']  = controller.Ki_flap[-1]
 
 
         # outputs['PC_GS_angles'] = controller.pitch_op_pc

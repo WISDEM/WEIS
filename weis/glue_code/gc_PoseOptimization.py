@@ -1,4 +1,5 @@
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
+import numpy as np
 
 class PoseOptimizationWEIS(PoseOptimization):
         
@@ -82,6 +83,12 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt['servo']['ipc_control']['Ki_min'],
                                                             upper=control_opt['servo']['ipc_control']['Ki_max'],
                                                             ref=1.e-7)
+        if control_opt['flaps']['te_flap_end']['flag']:
+            wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=control_opt['flaps']['te_flap_end']['min_end'],
+                                                            upper=control_opt['flaps']['te_flap_end']['max_end'])
+        if control_opt['flaps']['te_flap_ext']['flag']:
+            wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=control_opt['flaps']['te_flap_ext']['minimum'],
+                                                            upper=control_opt['flaps']['te_flap_ext']['maximum'])
         if 'flap_control' in control_opt['servo']:
             if control_opt['servo']['flap_control']['flag']:
                 wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', 
@@ -117,14 +124,39 @@ class PoseOptimizationWEIS(PoseOptimization):
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
 
+        if blade_constr["strains_spar_cap_ss"]["flag"]:
+            # Remove generic WISDEM one
+            name = 'rs.constr.constr_max_strainU_spar'
+            if name in wt_opt.model._responses:
+                wt_opt.model._responses.pop( name )
+            if name in wt_opt.model._static_responses:
+                wt_opt.model._static_responses.pop( name )
+            if blade_opt["structure"]["spar_cap_ss"]["flag"]:
+                indices_strains_spar_cap_ss = range(blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"])
+                wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainU_spar", indices = indices_strains_spar_cap_ss, upper=1.0)
+
+        if blade_constr["strains_spar_cap_ps"]["flag"]:
+            if (
+                blade_opt["structure"]["spar_cap_ps"]["flag"]
+                or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
+            ):
+                # Remove generic WISDEM one
+                name = 'rs.constr.constr_max_strainL_spar'
+                if name in wt_opt.model._responses:
+                    wt_opt.model._responses.pop( name )
+                if name in wt_opt.model._static_responses:
+                    wt_opt.model._static_responses.pop( name )
+                indices_strains_spar_cap_ps = range(blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"])
+                wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
+
         control_constraints = self.opt['constraints']['control']
         if control_constraints['flap_control']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 exit('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Kp',
+            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff1',
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.Flp_Ki', 
+            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2', 
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])    
         if control_constraints['rotor_overspeed']['flag']:
@@ -148,5 +180,17 @@ class PoseOptimizationWEIS(PoseOptimization):
                 exit('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
+
+        return wt_opt
+
+
+    def set_initial_weis(self, wt_opt):
+
+        if self.modeling["flags"]["blade"]:
+            blade_constr = self.opt["constraints"]["blade"]
+            wt_opt["rlds_post.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
+            wt_opt["rlds_post.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
+            wt_opt["stall_check_of.stall_margin"] = blade_constr["stall"]["margin"] * 180.0 / np.pi
+            wt_opt["tcons_post.max_allowable_td_ratio"] = blade_constr["tip_deflection"]["margin"]
 
         return wt_opt
