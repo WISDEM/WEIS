@@ -429,6 +429,10 @@ class FASTLoadCases(ExplicitComponent):
             
         for key in modeling_options['Level3']['MoorDyn']:
             fst_vt['MoorDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
+        
+        for key1 in modeling_options['Level3']['outlist']:
+                for key2 in modeling_options['Level3']['outlist'][key1]:
+                    fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
 
         fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['openfast']['file_management']['path2dll']
 
