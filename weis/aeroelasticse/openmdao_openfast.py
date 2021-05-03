@@ -303,50 +303,54 @@ class FASTLoadCases(ExplicitComponent):
             if self.mpi_run:
                 self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
         
+        # Rotor power outputs
+        self.add_output('V_out', val=np.zeros(n_OF), units='m/s', desc='wind speed vector from the OF simulations')
+        self.add_output('P_out', val=np.zeros(n_OF), units='W', desc='rotor electrical power')
+        self.add_output('Cp_out', val=np.zeros(n_OF), desc='rotor aero power coefficient')
+        self.add_output('Omega_out', val=np.zeros(n_OF), units='rpm', desc='rotation speeds to run')
+        self.add_output('pitch_out', val=np.zeros(n_OF), units='deg', desc='pitch angles to run')
+        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
-        self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
-        self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
-        self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
-        self.add_output('Std_PtfmPitch',val=0.0,            units='deg',  desc='standard deviation of platform pitch angle')
-        self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
-        self.add_output('max_TipDxc',  val=0.0,            units='m',    desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
-
-        self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
-        self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
-        self.add_output('Cp_out',      val=np.zeros(n_OF),               desc='rotor aero power coefficient')
-        self.add_output('Omega_out',   val=np.zeros(n_OF), units='rpm',  desc='rotation speeds to run')
-        self.add_output('pitch_out',   val=np.zeros(n_OF), units='deg',  desc='pitch angles to run')
-
-        self.add_output('rated_V',     val=0.0,            units='m/s',  desc='rated wind speed')
-        self.add_output('rated_Omega', val=0.0,            units='rpm',  desc='rotor rotation speed at rated')
-        self.add_output('rated_pitch', val=0.0,            units='deg',  desc='pitch setting at rated')
-        self.add_output('rated_T',     val=0.0,            units='N',    desc='rotor aerodynamic thrust at rated')
-        self.add_output('rated_Q',     val=0.0,            units='N*m',  desc='rotor aerodynamic torque at rated')
-        self.add_output('AEP',         val=0.0,            units='kW*h', desc='annual energy production')
-
-        self.add_output('loads_r',      val=np.zeros(n_span), units='m', desc='radial positions along blade going toward tip')
-        self.add_output('loads_Px',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned x-direction')
-        self.add_output('loads_Py',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned y-direction')
-        self.add_output('loads_Pz',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned z-direction')
-        self.add_output('loads_Omega',  val=0.0, units='rpm', desc='rotor rotation speed')
-        self.add_output('loads_pitch',  val=0.0, units='deg', desc='pitch angle')
-        self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
+        # Control outputs
+        self.add_output('rotor_overspeed', val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')  # is this over a set of sims?
         
-        self.add_output('Fxyz',        val=np.zeros(3),    units='kN',   desc = 'Maximum hub forces in the non rotating frame')
-        self.add_output('Mxyz',        val=np.zeros(3),    units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
-        self.add_output('max_RootMyb', val=0.0,            units='kN*m', desc = 'Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root flapwise moment')
-        self.add_output('max_RootMyc', val=0.0,            units='kN*m', desc = 'Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root out of plane moment')
+        # Blade outputs
+        self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
+        self.add_output('max_RootMyb', val=0.0, units='kN*m', desc='Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root flapwise moment')
+        self.add_output('max_RootMyc', val=0.0, units='kN*m', desc='Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root out of plane moment')
+        self.add_output('DEL_RootMyb', val=0.0, units='N*m', desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
+        self.add_output('max_aoa', val=np.zeros(n_span), units='deg', desc='maxima of the angles of attack distributed along blade span')
+        self.add_output('std_aoa', val=np.zeros(n_span), units='deg', desc='standard deviation of the angles of attack distributed along blade span')
+        self.add_output('mean_aoa', val=np.zeros(n_span), units='deg', desc='mean of the angles of attack distributed along blade span')
+        # Blade loads corresponding to maximum blade tip deflection
+        self.add_output('blade_maxTD_Mx', val=np.zeros(n_span), units='N*m/m', desc='distributed moment around blade-aligned x-axis corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_My', val=np.zeros(n_span), units='N*m/m', desc='distributed moment around blade-aligned y-axis corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_Fz', val=np.zeros(n_span), units='N/m', desc='distributed force in blade-aligned z-direction corresponding to maximum blade tip deflection')
+        
+        # Hub outputs
+        self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
+        self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
 
-        self.add_output('C_miners_SC_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, suction side")
-        self.add_output('C_miners_SC_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Spar Cap, pressure side")
-        # self.add_output('C_miners_TE_SS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, suction side")
-        # self.add_output('C_miners_TE_PS',           val=np.zeros((n_span, n_mat, 2)),    desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, pressure side")
-        self.add_output('max_aoa',    val=np.zeros(n_span), units='deg', desc='distributed angles of attack - max')
-        self.add_output('std_aoa',    val=np.zeros(n_span), units='deg', desc='distributed angles of attack - std')
-        self.add_output('mean_aoa',   val=np.zeros(n_span), units='deg', desc='distributed angles of attack - mean')
+        # Tower outputs
+        self.add_output('max_TwrBsMyt',val=0.0, units='N*m', desc='maximum of tower base bending moment in fore-aft direction')
+        self.add_output('DEL_TwrBsMyt',val=0.0, units='N*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
+        self.add_output('tower_maxMy_Fx', val=np.zeros(n_height), units='N/m', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fy', val=np.zeros(n_height), units='N/m', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fz', val=np.zeros(n_height), units='N/m', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mx', val=np.zeros(n_height), units='N*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_My', val=np.zeros(n_height), units='N*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mz', val=np.zeros(n_height), units='N*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
-        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')  # is this over a set of sims?
-        self.add_output('Max_PtfmPitch',  val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
+
+        # Floating outputs
+        self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
+        self.add_output('Std_PtfmPitch', val=0.0, units='deg', desc='standard deviation of platform pitch angle')
+
+        # self.add_output('C_miners_SC_SS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Spar Cap, suction side")
+        # self.add_output('C_miners_SC_PS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Spar Cap, pressure side")
+        # self.add_output('C_miners_TE_SS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, suction side")
+        # self.add_output('C_miners_TE_PS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, pressure side")
+
         self.add_discrete_output('fst_vt_out', val={})
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
@@ -372,7 +376,7 @@ class FASTLoadCases(ExplicitComponent):
             # Write FAST files, do not run
             self.write_FAST(fst_vt, discrete_outputs)
 
-        discrete_outputs['fst_vt_out'] = fst_vt
+        # discrete_outputs['fst_vt_out'] = fst_vt
 
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
@@ -724,31 +728,35 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['rthick'][i]         = inputs['rthick'][i]
             fst_vt['AeroDyn15']['ac'][i]             = inputs['ac'][i]
                 
-        # AeroDyn spanwise output positions
-        r = r/r[-1]
+        # # AeroDyn blade spanwise output positions
         r_out_target  = [0.1, 0.20, 0.30, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+        r = r/r[-1]
         idx_out       = [np.argmin(abs(r-ri)) for ri in r_out_target]
         self.R_out_AD = [fst_vt['AeroDynBlade']['BlSpn'][i] for i in idx_out]
-
         if len(self.R_out_AD) != len(np.unique(self.R_out_AD)):
             raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
-        
         fst_vt['AeroDyn15']['BlOutNd']  = [str(idx+1) for idx in idx_out]
         fst_vt['AeroDyn15']['NBlOuts']  = len(idx_out)
 
+        # ElastoDyn blade spanwise output positions
         nBldNodes     = fst_vt['ElastoDyn']['BldNodes']
         bld_fract     = np.arange(1./nBldNodes/2., 1, 1./nBldNodes)
         idx_out       = [np.argmin(abs(bld_fract-ri)) for ri in r_out_target]
         r_nodes       = bld_fract*(fst_vt['ElastoDyn']['TipRad']-fst_vt['ElastoDyn']['HubRad'])
-        self.R_out_ED = [r_nodes[i] for i in idx_out]
-        if len(self.R_out_ED) != len(np.unique(self.R_out_ED)):
+        self.R_out_ED_bl = np.hstack((fst_vt['ElastoDyn']['HubRad'], [r_nodes[i] for i in idx_out]))
+        if len(self.R_out_ED_bl) != len(np.unique(self.R_out_ED_bl)):
             raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
         fst_vt['ElastoDyn']['BldGagNd'] = [idx+1 for idx in idx_out]
         fst_vt['ElastoDyn']['NBlGages'] = len(idx_out)
 
-        fst_vt['ElastoDyn']['NTwGages'] = 0
-        fst_vt['ElastoDyn']['TwrGagNd'] = 0
-        fst_vt['AeroDyn15']['NTwOuts']  = 0
+        # ElastoDyn tower output positions along height
+        fst_vt['ElastoDyn']['NTwGages'] = 9
+        nTwrNodes = fst_vt['ElastoDyn']['TwrNodes']
+        twr_fract = np.arange(1./nTwrNodes/2., 1, 1./nTwrNodes)
+        idx_out = [np.argmin(abs(twr_fract-ri)) for ri in r_out_target]
+        fst_vt['ElastoDyn']['TwrGagNd'] = [idx+1 for idx in idx_out]
+        fst_vt['AeroDyn15']['NTwOuts'] = 0
+        self.Z_out_ED_twr = np.hstack((0., [twr_fract[i] for i in idx_out], 1.))
 
         # SubDyn inputs- monopile and floating
         if modeling_options['flags']['monopile']:
@@ -998,23 +1006,34 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RootMxb1", "RootMyb1", "RootMzb1", "RootMxb2", "RootMyb2", "RootMzb2"]
         channels_out += ["RootFxc1", "RootFyc1", "RootFzc1", "RootFxc2", "RootFyc2", "RootFzc2"]
         channels_out += ["RootFxb1", "RootFyb1", "RootFzb1", "RootFxb2", "RootFyb2", "RootFzb2"]
+        channels_out += ["Spn1FLzb1", "Spn2FLzb1", "Spn3FLzb1", "Spn4FLzb1", "Spn5FLzb1", "Spn6FLzb1", "Spn7FLzb1", "Spn8FLzb1", "Spn9FLzb1"]
+        channels_out += ["Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
+        channels_out += ["Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
+        channels_out += ["Spn1FLzb2", "Spn2FLzb2", "Spn3FLzb2", "Spn4FLzb2", "Spn5FLzb2", "Spn6FLzb2", "Spn7FLzb2", "Spn8FLzb2", "Spn9FLzb2"]
+        channels_out += ["Spn1MLxb2", "Spn2MLxb2", "Spn3MLxb2", "Spn4MLxb2", "Spn5MLxb2", "Spn6MLxb2", "Spn7MLxb2", "Spn8MLxb2", "Spn9MLxb2"]
+        channels_out += ["Spn1MLyb2", "Spn2MLyb2", "Spn3MLyb2", "Spn4MLyb2", "Spn5MLyb2", "Spn6MLyb2", "Spn7MLyb2", "Spn8MLyb2", "Spn9MLyb2"]
+        channels_out += ["Spn1FLzb3", "Spn2FLzb3", "Spn3FLzb3", "Spn4FLzb3", "Spn5FLzb3", "Spn6FLzb3", "Spn7FLzb3", "Spn8FLzb3", "Spn9FLzb3"]
+        channels_out += ["Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
+        channels_out += ["Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
         channels_out += ["RtAeroCp", "RtAeroCt"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["RtVAvgxh", "RtVAvgyh", "RtVAvgzh"]
-        channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
-        channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
-        channels_out += ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx", "B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
-        channels_out += ["Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
-        channels_out += ["Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
+        channels_out += ["TwrBsFxt",  "TwrBsFyt", "TwrBsFzt", "TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
+        channels_out += ["YawBrFxp", "YawBrFyp", "YawBrFzp", "YawBrMxp", "YawBrMyp", "YawBrMzp"]
+        channels_out += ["TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt"]
+        channels_out += ["TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt"]
+        channels_out += ["TwHt1FLzt", "TwHt2FLzt", "TwHt3FLzt", "TwHt4FLzt", "TwHt5FLzt", "TwHt6FLzt", "TwHt7FLzt", "TwHt8FLzt", "TwHt9FLzt"]
+        channels_out += ["TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt"]
+        channels_out += ["TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt"]
+        channels_out += ["TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt"]
         channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
         channels_out += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
-        if self.n_blades > 2:
+        if self.n_blades == 3:
             channels_out += ["TipDxc3", "TipDyc3", "TipDzc3", "RootMxc3", "RootMyc3", "RootMzc3", "TipDxb3", "TipDyb3", "TipDzb3", "RootMxb3",
                              "RootMyb3", "RootMzb3", "RootFxc3", "RootFyc3", "RootFzc3", "RootFxb3", "RootFyb3", "RootFzb3", "BldPitch3"]
-            channels_out += ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx", "B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
             channels_out += ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
 
 
@@ -1219,7 +1238,8 @@ class FASTLoadCases(ExplicitComponent):
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
 
         # Analysis
-        outputs, discrete_outputs = self.get_spanwise_forces(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if self.FASTpref['dlc_settings']['run_IEC']:
@@ -1230,10 +1250,9 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['modeling_options']['flags']['floating']:
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
 
-
-    def get_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
+    def get_blade_loading(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
-        Find the spanwise forces on the blades.
+        Find the spanwise loading along the blade span.
 
         Parameters
         ----------
@@ -1247,49 +1266,52 @@ class FASTLoadCases(ExplicitComponent):
         else:
             defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max']), max(sum_stats['TipDxc3']['max'])]
 
+        # Select channels for the blade identified above
         if np.argmax(defl_mag) == 0:
-            blade_chans_Fx = ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx"]
-            blade_chans_Fy = ["B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
+            blade_chans_Fz = ["RootFzb1", "Spn1FLzb1", "Spn2FLzb1", "Spn3FLzb1", "Spn4FLzb1", "Spn5FLzb1", "Spn6FLzb1", "Spn7FLzb1", "Spn8FLzb1", "Spn9FLzb1"]
+            blade_chans_Mx = ["RootMxb1", "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
+            blade_chans_My = ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
             tip_max_chan   = "TipDxc1"
-            bld_pitch_chan = "BldPitch1"
 
         if np.argmax(defl_mag) == 1:
-            blade_chans_Fx = ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx"]
-            blade_chans_Fy = ["B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
+            blade_chans_Fz = ["RootFzb2", "Spn1FLzb2", "Spn2FLzb2", "Spn3FLzb2", "Spn4FLzb2", "Spn5FLzb2", "Spn6FLzb2", "Spn7FLzb2", "Spn8FLzb2", "Spn9FLzb2"]
+            blade_chans_Mx = ["RootMxb2", "Spn1MLxb2", "Spn2MLxb2", "Spn3MLxb2", "Spn4MLxb2", "Spn5MLxb2", "Spn6MLxb2", "Spn7MLxb2", "Spn8MLxb2", "Spn9MLxb2"]
+            blade_chans_My = ["RootMyb2", "Spn1MLyb2", "Spn2MLyb2", "Spn3MLyb2", "Spn4MLyb2", "Spn5MLyb2", "Spn6MLyb2", "Spn7MLyb2", "Spn8MLyb2", "Spn9MLyb2"]
             tip_max_chan   = "TipDxc2"
-            bld_pitch_chan = "BldPitch2"
 
         if np.argmax(defl_mag) == 2:            
-            blade_chans_Fx = ["B3N1Fx", "B3N2Fx", "B3N3Fx", "B3N4Fx", "B3N5Fx", "B3N6Fx", "B3N7Fx", "B3N8Fx", "B3N9Fx"]
-            blade_chans_Fy = ["B3N1Fy", "B3N2Fy", "B3N3Fy", "B3N4Fy", "B3N5Fy", "B3N6Fy", "B3N7Fy", "B3N8Fy", "B3N9Fy"]
+            blade_chans_Fz = ["RootFzb3", "Spn1FLzb3", "Spn2FLzb3", "Spn3FLzb3", "Spn4FLzb3", "Spn5FLzb3", "Spn6FLzb3", "Spn7FLzb3", "Spn8FLzb3", "Spn9FLzb3"]
+            blade_chans_Mx = ["RootMxb3", "Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
+            blade_chans_My = ["RootMyb3", "Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
             tip_max_chan   = "TipDxc3"
-            bld_pitch_chan = "BldPitch3"
 
+        # Get the maximum out of plane blade deflection
         outputs["max_TipDxc"] = np.max(sum_stats[tip_max_chan]['max'])
-        # Return spanwise forces at instance of largest deflection
-        Fx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fx]
-        Fy = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fy]
-        if np.any(np.isnan(Fx)):
-            print('WARNING: nans found in Fx extremes')
-            Fx[np.isnan(Fx)] = 0.0
-        if np.any(np.isnan(Fy)):
-            print('WARNING: nans found in Fy extremes')
-            Fy[np.isnan(Fy)] = 0.0
-        spline_Fx = PchipInterpolator(self.R_out_ED, Fx)
-        spline_Fy = PchipInterpolator(self.R_out_ED, Fy)
+        # Return moments around x and y and axial force along blade span at instance of largest out of plane blade tip deflection
+        Fz = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fz]
+        Mx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Mx]
+        My = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_My]
+        if np.any(np.isnan(Fz)):
+            print('WARNING: nans found in Fz extremes')
+            Fz[np.isnan(Fz)] = 0.0
+        if np.any(np.isnan(Mx)):
+            print('WARNING: nans found in Mx extremes')
+            Mx[np.isnan(Mx)] = 0.0
+        if np.any(np.isnan(My)):
+            print('WARNING: nans found in My extremes')
+            My[np.isnan(My)] = 0.0
+        spline_Fz = PchipInterpolator(self.R_out_ED_bl, Fz)
+        spline_Mx = PchipInterpolator(self.R_out_ED_bl, Mx)
+        spline_My = PchipInterpolator(self.R_out_ED_bl, My)
 
         r = inputs['r']-inputs['Rhub']
-        Fx_out = spline_Fx(r).flatten()
-        Fy_out = spline_Fy(r).flatten()
-        Fz_out = np.zeros_like(Fx_out)
+        Fz_out = spline_Fz(r).flatten()
+        Mx_out = spline_Mx(r).flatten()
+        My_out = spline_My(r).flatten()
 
-        outputs['loads_r']       = r
-        outputs['loads_Px']      = Fx_out
-        outputs['loads_Py']      = Fy_out*-1.
-        outputs['loads_Pz']      = Fz_out
-        outputs['loads_Omega']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['RotSpeed']
-        outputs['loads_pitch']   = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['BldPitch1']
-        outputs['loads_azimuth'] = extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])]['Azimuth']
+        outputs['blade_maxTD_Mx'] = Mx_out
+        outputs['blade_maxTD_My'] = My_out*-1.
+        outputs['blade_maxTD_Fz'] = Fz_out
 
         # Determine maximum root moment
         if self.n_blades == 2:
@@ -1301,11 +1323,11 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_RootMyb'] = blade_root_flap_moment
         outputs['max_RootMyc'] = blade_root_oop_moment
 
-        ## Get hub momements and forces in the non-rotating frame
-        outputs['Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
+        ## Get hub moments and forces in the non-rotating frame
+        outputs['hub_Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
                                     extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFys'],
                                     extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['LSShftFzs']])*1.e3
-        outputs['Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
+        outputs['hub_Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
 
@@ -1339,6 +1361,56 @@ class FASTLoadCases(ExplicitComponent):
         outputs['mean_aoa'] = spline_aoa_mean(r)
 
         return outputs, discrete_outputs
+
+
+    def get_tower_loading(self, sum_stats, extreme_table, inputs, outputs):
+        """
+        Find the loading along the tower height.
+
+        Parameters
+        ----------
+        sum_stats : pd.DataFrame
+        extreme_table : dict
+        """
+
+        tower_chans_Fx = ["TwrBsFxt", "TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt", "YawBrFxp"]
+        tower_chans_Fy = ["TwrBsFyt", "TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt", "YawBrFyp"]
+        tower_chans_Fz = ["TwrBsFzt", "TwHt1FLzt", "TwHt2FLzt", "TwHt3FLzt", "TwHt4FLzt", "TwHt5FLzt", "TwHt6FLzt", "TwHt7FLzt", "TwHt8FLzt", "TwHt9FLzt", "YawBrFzp"]
+        tower_chans_Mx = ["TwrBsMxt", "TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt", "YawBrMxp"]
+        tower_chans_My = ["TwrBsMyt", "TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt", "YawBrMyp"]
+        tower_chans_Mz = ["TwrBsMzt", "TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt", "YawBrMzp"]
+
+
+        fatb_max_chan   = "TwrBsMyt"
+
+        # Get the maximum fore-aft moment at tower base
+        outputs["max_TwrBsMyt"] = np.max(sum_stats[fatb_max_chan]['max'])
+        # Return forces and moments along tower height at instance of largest fore-aft tower base moment
+        Fx = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fx]
+        Fy = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fy]
+        Fz = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fz]
+        Mx = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Mx]
+        My = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_My]
+        Mz = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Mz]
+
+        # Spline results on tower basic grid
+        spline_Fx      = PchipInterpolator(self.Z_out_ED_twr, Fx)
+        spline_Fy      = PchipInterpolator(self.Z_out_ED_twr, Fy)
+        spline_Fz      = PchipInterpolator(self.Z_out_ED_twr, Fz)
+        spline_Mx      = PchipInterpolator(self.Z_out_ED_twr, Mx)
+        spline_My      = PchipInterpolator(self.Z_out_ED_twr, My)
+        spline_Mz      = PchipInterpolator(self.Z_out_ED_twr, Mz)
+
+        z = (inputs['tower_monopile_z'] - inputs['tower_monopile_z'][0]) / (inputs['tower_monopile_z'][-1] - inputs['tower_monopile_z'][0])
+
+        outputs['tower_maxMy_Fx'] = spline_Fx(z)
+        outputs['tower_maxMy_Fy'] = spline_Fy(z)
+        outputs['tower_maxMy_Fz'] = spline_Fz(z)
+        outputs['tower_maxMy_Mx'] = spline_Mx(z)
+        outputs['tower_maxMy_My'] = spline_My(z)
+        outputs['tower_maxMy_Mz'] = spline_Mz(z)
+
+        return outputs
 
     def calculate_AEP(self, sum_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
         """
@@ -1438,10 +1510,6 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
                                                 np.sum(ws_prob*DELs['RootMyb2']),
                                                 np.sum(ws_prob*DELs['RootMyb3'])])
-            if self.n_blades == 2:
-                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std'])])
-            else:
-                outputs['My_std']       = np.max([np.max(sum_stats['RootMyb1']['std']), np.max(sum_stats['RootMyb2']['std']), np.max(sum_stats['RootMyb3']['std'])])
 
         if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
             outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsMyt'])
@@ -1605,7 +1673,7 @@ class FASTLoadCases(ExplicitComponent):
     #     U       = list(rainflow.keys())
     #     Seeds   = list(rainflow[U[0]].keys())
     #     chans   = list(rainflow[U[0]][Seeds[0]].keys())
-    #     r_gage  = np.r_[0., self.R_out_ED]
+    #     r_gage  = np.r_[0., self.R_out_ED_bl]
     #     r_gage /= r_gage[-1]
     #     simtime = self.simtime
     #     n_seeds = float(len(Seeds))

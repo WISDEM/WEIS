@@ -373,12 +373,9 @@ class WindPark(om.Group):
                 # self.connect('gamma_f',     'rlds_post.gamma_f') # TODO
 
             # Connections to rotor load analysis
-            self.connect('aeroelastic.loads_Px',      'rlds_post.tot_loads_gust.aeroloads_Px')
-            self.connect('aeroelastic.loads_Py',      'rlds_post.tot_loads_gust.aeroloads_Py')
-            self.connect('aeroelastic.loads_Pz',      'rlds_post.tot_loads_gust.aeroloads_Pz')
-            self.connect('aeroelastic.loads_Omega',   'rlds_post.tot_loads_gust.aeroloads_Omega')
-            self.connect('aeroelastic.loads_pitch',   'rlds_post.tot_loads_gust.aeroloads_pitch')
-            self.connect('aeroelastic.loads_azimuth', 'rlds_post.tot_loads_gust.aeroloads_azimuth')
+            # self.connect('aeroelastic.blade_maxTD_Mx',      'rlds_post.tot_loads_gust.aeroloads_Mx')
+            # self.connect('aeroelastic.blade_maxTD_My',      'rlds_post.tot_loads_gust.aeroloads_My')
+            # self.connect('aeroelastic.blade_maxTD_Fz',      'rlds_post.tot_loads_gust.aeroloads_Fz')
             self.connect('assembly.r_blade',          'rlds_post.r')
             self.connect('hub.cone',                  'rlds_post.precone')
             self.connect('nacelle.uptilt',            'rlds_post.tilt')
@@ -424,8 +421,8 @@ class WindPark(om.Group):
                 self.connect('rotorse.rp.powercurve.rated_Q',      'drivese_post.rated_torque')
                 self.connect('configuration.rated_power',  'drivese_post.machine_rating')    
                 self.connect('tower.diameter',             'drivese_post.D_top', src_indices=[-1])
-                self.connect('aeroelastic.Fxyz',           'drivese_post.F_hub')
-                self.connect('aeroelastic.Mxyz',           'drivese_post.M_hub')
+                self.connect('aeroelastic.hub_Fxyz',       'drivese_post.F_hub')
+                self.connect('aeroelastic.hub_Mxyz',       'drivese_post.M_hub')
                 self.connect('rlds_post.frame.root_M',     'drivese_post.pitch_system.BRFM', src_indices=[1])
                 self.connect('blade.pa.chord_param',         'drivese_post.blade_root_diameter', src_indices=[0])
                 self.connect('rotorse.re.precomp.blade_mass',        'drivese_post.blade_mass')
