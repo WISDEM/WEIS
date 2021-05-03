@@ -768,7 +768,7 @@ HydroDyn['PtfmCOBxt']        = 0.
 HydroDyn['PtfmCOByt']        = 0.
 HydroDyn['RdtnMod']          = 0
 HydroDyn['RdtnTMax']         = 0.
-HydroDyn['RdtnDT']           = 0.
+HydroDyn['RdtnDT']           = "DEFAULT"
 
 # 2ND-ORDER FLOATING PLATFORM FORCES
 HydroDyn['MnDrift']          = 0.

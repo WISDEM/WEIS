@@ -1,17 +1,18 @@
 import numpy as np
-import os, sys
+import os, sys, subprocess
 import copy
 from openmdao.api import ExplicitComponent
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
 from wisdem.ccblade.Polar import Polar
 import csv  # for exporting airfoil polar tables
 import matplotlib.pyplot as plt
+import time
 
 import multiprocessing as mp
 from functools import partial
 from wisdem.commonse.mpi_tools import MPI
 
-def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0, multi_run=False, MPI_run=False):
+def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, multi_run=False, MPI_run=False):
     #This function is used to create and run xfoil simulations for a given set of airfoil coordinates
 
     # Set initial parameters needed in xfoil
@@ -34,31 +35,36 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
     #XB2 = 0.85 # Defining right boundary of bunching region on bottom surface (should be after flap)
     XB2 = 0.9 #This is the current value that I am using (!bem)
     # XB2 = 1.0
-    runFlag = 1 # Flag used in error handling
+    runFlag = True # Flag used in error handling
     dfdn = -0.5 # Change in angle of attack during initialization runs down to AoA_min
     runNum = 0 # Initialized run number
-    dfnFlag = -10 # This flag is used to determine if xfoil needs to be re-run if the simulation fails due to convergence issues at low angles of attack
+    dfnFlag = False # This flag is used to determine if xfoil needs to be re-run if the simulation fails due to convergence issues at low angles of attack
 
     # Set filenames 
-    if multi_run or MPI_run:
-        pid = mp.current_process().pid
-        LoadFlnmAF = 'airfoil_p{}.txt'.format(pid)
-        saveFlnmPolar = 'Polar_p{}.txt'.format(pid)
-        xfoilFlnm  = 'xfoil_input_p{}.txt'.format(pid)
-        NUL_fname = 'NUL_{}'.format(pid)
+    # if multi_run or MPI_run:
+    pid = mp.current_process().pid
+    print('Running xfoil on PID = {}'.format(pid))
+
+    xfoil_rundir = 'xfoil_run_p{}'.format(pid)
+    if not os.path.exists(xfoil_rundir):
+        os.makedirs(xfoil_rundir)
+    LoadFlnmAF    = os.path.join(xfoil_rundir,'airfoil_p{}.txt'.format(pid))
+    saveFlnmPolar = os.path.join(xfoil_rundir,'Polar_p{}.txt'.format(pid))
+    xfoilFlnm     = os.path.join(xfoil_rundir,'xfoil_input_p{}.txt'.format(pid))
+    NUL_fname     = os.path.join(xfoil_rundir,'NUL_p{}'.format(pid))
 
     # if MPI_run:
     #     rank = MPI.COMM_WORLD.Get_rank()
     #     LoadFlnmAF = 'airfoil_r{}.txt'.format(rank) # This is a temporary file that will be deleted after it is no longer needed
     #     saveFlnmPolar = 'Polar_r{}.txt'.format(rank) # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
     #     xfoilFlnm  = 'xfoil_input_r{}.txt'.format(rank) # Xfoil run script that will be deleted after it is no longer needed
-    else:
-        LoadFlnmAF = 'airfoil.txt' # This is a temporary file that will be deleted after it is no longer needed
-        saveFlnmPolar = 'Polar.txt' # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
-        xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
-        NUL_fname = 'NUL'
-
-    while numNodes < 480 and runFlag > 0:
+    # else:
+    #     LoadFlnmAF = 'airfoil.txt' # This is a temporary file that will be deleted after it is no longer needed
+    #     saveFlnmPolar = 'Polar.txt' # file name of outpur xfoil polar (can be useful to look at during debugging...can also delete at end if you don't want it stored)
+    #     xfoilFlnm  = 'xfoil_input.txt' # Xfoil run script that will be deleted after it is no longer needed
+    #     NUL_fname = 'NUL'
+    t0 = time.time()
+    while runFlag:
         # Cleaning up old files to prevent replacement issues
         if os.path.exists(saveFlnmPolar):
             os.remove(saveFlnmPolar)
@@ -112,12 +118,12 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
 
         # Run simulations for range of AoA
 
-        if dfnFlag > 0: # bem: This if statement is for the case when there are issues getting convergence at AoA_min.  It runs a preliminary set of AoA's down to AoA_min (does not save them)
+        if dfnFlag: # bem: This if statement is for the case when there are issues getting convergence at AoA_min.  It runs a preliminary set of AoA's down to AoA_min (does not save them)
             for ii in range(int((0.0-AoA_min)/AoA_inc+1)):
                 fid.write("ALFA "+ str(0.0-ii*float(AoA_inc)) +"\n")
 
         fid.write("PACC\n\n\n") #Toggle saving polar on
-        #fid.write("ASEQ 0 " + str(AoA_min) + " " + str(dfdn) + "\n") # The preliminary runs are just to get an initialize airfoil solution at min AoA so that the actual runs will not become unstable
+        # fid.write("ASEQ 0 " + str(AoA_min) + " " + str(dfdn) + "\n") # The preliminary runs are just to get an initialize airfoil solution at min AoA so that the actual runs will not become unstable
 
         for ii in range(int((AoA_max-AoA_min)/AoA_inc+1)): # bem: run each AoA seperately (makes polar generation more convergence error tolerant)
             fid.write("ALFA "+ str(AoA_min+ii*float(AoA_inc)) +"\n")
@@ -130,10 +136,15 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
         fid.close()
 
         # Run the XFoil calling command
-        os.system(xfoil_path + " < " + xfoilFlnm + " > " + NUL_fname) # <<< runs XFoil !
-
         try:
+            subprocess.run([xfoil_path], stdin=open(xfoilFlnm,'r'), stdout=open(NUL_fname, 'w'), timeout=300)
             flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12)
+        except subprocess.TimeoutExpired:
+            print('XFOIL timeout on p{}'.format(pid)) 
+            try: 
+                flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12) # Sometimes xfoil will hang up but still generate a good set of polars
+            except:
+                flap_polar = []  # in case no convergence was achieved
         except:
             flap_polar = []  # in case no convergence was achieved
 
@@ -144,25 +155,52 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
             a0 = 0
             a1 = 0
             dfdn = -0.25 # decrease AoA step size during initialization to try and get convergence in the next run
-            dfnFlag = 1 # Set flag to run initialization AoA down to AoA_min
-            print('XFOIL convergence issues')
+            dfnFlag = True # Set flag to run initialization AoA down to AoA_min
+            print('XFOIL convergence issues on p{}'.format(pid))
         else:
             plen = len(flap_polar[:,0]) # Number of AoA's in polar
             a0 = flap_polar[-1,0] # Maximum AoA in Polar
             a1 = flap_polar[0,0] # Minimum AoA in Polar
-            dfnFlag = -10 # Set flag so that you don't need to run initialization sequence
+            dfnFlag = False # Set flag so that you don't need to run initialization sequence
 
         if a0 > 19. and plen >= 40 and a1 < -12.5: # The a0 > 19 is to check to make sure polar entered into stall regiem plen >= 40 makes sure there are enough AoA's in polar for interpolation and a1 < -15 makes sure polar contains negative stall.
-            runFlag = -10 # No need ro re-run polar
+            runFlag = False # No need ro re-run polar
+            if numNodes > 310:
+                print('Xfoil completed after {} attempts on run on p{}.'.format(runNum+1, pid))
         else:
             numNodes += 50 # Re-run with additional panels
+            # AoA_inc *= 0.5
             runNum += 1 # Update run number
-            if numNodes > 480:
-                Warning('NO convergence in XFoil achieved!')
+            # AoA_min = -9
+            # AoA_max = 25
+            # if numNodes > 480:
+            if runNum > 6:
+                # Warning('NO convergence in XFoil achieved!')
+                print('No convergence in XFOIL achieved on p{}!'.format(pid))
+                if not os.path.exists('xfoil_errorfiles'):
+                    os.makedirs('xfoil_errorfiles')
+                try:
+                    os.rename(xfoilFlnm, os.path.join('xfoil_errorfiles', xfoilFlnm))
+                except:
+                    pass
+                try:
+                    os.rename(saveFlnmPolar, os.path.join('xfoil_errorfiles', saveFlnmPolar))
+                except:
+                    pass
+                try:
+                    os.rename(LoadFlnmAF, os.path.join('xfoil_errorfiles', LoadFlnmAF))
+                except:
+                    pass
+                try:
+                    os.rename(NUL_fname, os.path.join('xfoil_errorfiles', NUL_fname))
+                except:
+                    pass
+                
+                break
             print('Refining paneling to ' + str(numNodes) + ' nodes')
 
     # Load back in polar data to be saved in instance variables
-    #flap_polar = np.loadtxt(saveFlnmPolar,skiprows=12) # (note, we are assuming raw Xfoil polars when skipping the first 12 lines)
+    #flap_polar = np.loadtxt(LoadFlnmAF,skiprows=12) # (note, we are assuming raw Xfoil polars when skipping the first 12 lines)
     # self.af_flap_polar = flap_polar
     # self.flap_polar_flnm = saveFlnmPolar # Not really needed unless you keep the files and want to load them later
 
@@ -175,7 +213,10 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma = 0.0
         os.remove(LoadFlnmAF)
     if os.path.exists(NUL_fname):
         os.remove(NUL_fname)
+    if os.path.exists(xfoil_rundir):
+        os.rmdir(xfoil_rundir)
 
+    print('Xfoil calls on p{} completed in {} seconds'.format(pid, time.time()-t0))
 
     return flap_polar
 
@@ -512,7 +553,7 @@ class RunXFOIL(ExplicitComponent):
                 run_xfoil_params['n_span'] = self.n_span
                 run_xfoil_params['n_Re'] = self.n_Re
                 run_xfoil_params['n_tab'] = self.n_tab
-                run_xfoil_params['flap_profiles'] = self.flap_profiles
+                run_xfoil_params['flap_profiles'] = copy.copy(self.flap_profiles)
                 run_xfoil_params['R'] = self.R
                 run_xfoil_params['tsr'] = self.tsr
                 run_xfoil_params['maxTS'] = self.maxTS
@@ -529,7 +570,7 @@ class RunXFOIL(ExplicitComponent):
 
 
                 # Run XFoil as multiple processors with MPI
-                if MPI and self.options['opt_options']['driver']['optimization']['flag']:
+                if MPI and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
                     run_xfoil_params['run_MPI'] = True
                     # mpi comm management
                     comm = MPI.COMM_WORLD
@@ -566,7 +607,7 @@ class RunXFOIL(ExplicitComponent):
                     #     # re-structure outputs
                         
                 # Multiple processors, but not MPI
-                elif self.cores > 1:
+                elif self.cores > 1 and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
                     run_xfoil_params['run_multi'] = True
 
                     # separate airfoil sections w/ and w/o flaps
@@ -690,106 +731,98 @@ def get_flap_polars(run_xfoil_params, afi):
     Ma_loc_af: 2D array
         Mach number table
     '''
-    cl_interp_flaps_af = run_xfoil_params['cl_interp'][afi]
-    cd_interp_flaps_af = run_xfoil_params['cd_interp'][afi]
-    cm_interp_flaps_af = run_xfoil_params['cm_interp'][afi]
-    fa_control_af = np.zeros((run_xfoil_params['n_Re'], run_xfoil_params['n_tab']))
-    Re_loc_af = np.zeros((run_xfoil_params['n_Re'], run_xfoil_params['n_tab']))
-    Ma_loc_af = np.zeros((run_xfoil_params['n_Re'], run_xfoil_params['n_tab']))
+    cl_interp_flaps_af  = copy.deepcopy(run_xfoil_params['cl_interp'][afi])
+    cd_interp_flaps_af  = copy.deepcopy(run_xfoil_params['cd_interp'][afi])
+    cm_interp_flaps_af  = copy.deepcopy(run_xfoil_params['cm_interp'][afi])
+    fa_control_af       = copy.deepcopy(np.zeros((run_xfoil_params['n_Re'], run_xfoil_params['n_tab'])))
+    Re_loc_af           = copy.deepcopy(np.zeros((run_xfoil_params['n_Re'], run_xfoil_params['n_tab'])))
+    Ma_loc_af           = copy.deepcopy(np.zeros((run_xfoil_params['n_Re'], run_xfoil_params['n_tab'])))
+    n_tab               = copy.deepcopy(run_xfoil_params['n_tab'])
+    flap_profiles       = copy.deepcopy(run_xfoil_params['flap_profiles'])
+    chord               = copy.deepcopy(run_xfoil_params['chord'])
+    span                = copy.deepcopy(run_xfoil_params['s'])
+    rad_loc             = copy.deepcopy(run_xfoil_params['r'])
+    R                   = copy.deepcopy(run_xfoil_params['R'])
+    KinVisc             = copy.deepcopy(run_xfoil_params['KinVisc'])
+    maxTS               = copy.deepcopy(run_xfoil_params['maxTS'])
+    SpdSound            = copy.deepcopy(run_xfoil_params['SpdSound'])
+    xfoil_path          = copy.deepcopy(run_xfoil_params['xfoil_path'])
+    aoa                 = copy.deepcopy(run_xfoil_params['aoa'])
 
-    if 'coords' in run_xfoil_params['flap_profiles'][afi]: # check if 'coords' is an element of 'run_xfoil_params['flap_profiles']', i.e. if we have various flap angles
+    if 'coords' in flap_profiles[afi]: # check if 'coords' is an element of 'flap_profiles', i.e. if we have various flap angles
         # for j in range(n_Re): # ToDo incorporade variable Re capability
-        for ind in range(run_xfoil_params['n_tab']):
-            #fa = run_xfoil_params['flap_profiles'][afi]['flap_angles'][ind] # value of respective flap angle
-            fa_control_af[:,ind] = run_xfoil_params['flap_profiles'][afi]['flap_angles'][ind] # flap angle vector of distributed aerodynamics control
+        for ind in range(n_tab):
+            #fa = flap_profiles[afi]['flap_angles'][ind] # value of respective flap angle
+            fa_control_af[:,ind] = flap_profiles[afi]['flap_angles'][ind] # flap angle vector of distributed aerodynamics control
             # eta = (blade['pf']['r'][afi]/blade['pf']['r'][-1])
             # eta = blade['outer_shape_bem']['chord']['grid'][afi]
-            c   = run_xfoil_params['chord'][afi]  # blade chord length at cross section
-            s   = run_xfoil_params['s'][afi]
-            rR  = run_xfoil_params['r'][afi] / run_xfoil_params['r'][-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
-            Re_loc_af[:,ind] = c* run_xfoil_params['maxTS'] * rR / run_xfoil_params['KinVisc']
-            Ma_loc_af[:,ind] = run_xfoil_params['maxTS'] * rR / run_xfoil_params['SpdSound']
-
+            c   = chord[afi]  # blade chord length at cross section
+            s   = span[afi]
+            rR  = rad_loc[afi] / rad_loc[-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
+            Re_loc_af[:,ind] = c* maxTS * rR / KinVisc
+            Ma_loc_af[:,ind] = maxTS * rR / SpdSound
             print('Run xfoil for nondimensional blade span section s = ' + str(s) + ' with ' + str(fa_control_af[0,ind]) + ' deg flap deflection angle; Re equal to ' + str(Re_loc_af[0,ind]) + '; Ma equal to ' + str(Ma_loc_af[0,ind]))
-            # if  rR > 0.88:  # reduce AoAmin for (thinner) airfoil at the blade tip due to convergence reasons in XFoil
-            #     data = run_xfoil_params['runXfoil'](run_xfoil_params['flap_profiles'][afi]['coords'][:, 0, ind],run_xfoil_params['flap_profiles'][afi]['coords'][:, 1, ind],Re_loc_af[afi, j, ind], -13.5, 25., 0.5, Ma_loc_af[afi, j, ind])
-            # else:  # normal case
 
             xfoil_kw = {'AoA_min': -20,
                         'AoA_max': 25,
-                        'AoA_inc': 0.5,
+                        'AoA_inc': 0.25,
                         'Ma':  Ma_loc_af[0, ind],
                         }
 
-            if MPI:
-                xfoil_kw['MPI_run'] = True
-            elif run_xfoil_params['cores'] > 1:
-                xfoil_kw['multi_run'] = True
+            data = runXfoil(xfoil_path, flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc_af[0, ind], **xfoil_kw)
 
-            data = runXfoil(run_xfoil_params['xfoil_path'], run_xfoil_params['flap_profiles'][afi]['coords'][:, 0, ind],run_xfoil_params['flap_profiles'][afi]['coords'][:, 1, ind],Re_loc_af[0, ind], **xfoil_kw)
-
-
-            # data = run_xfoil_params['runXfoil'](run_xfoil_params['flap_profiles'][afi]['coords'][:,0,ind], run_xfoil_params['flap_profiles'][afi]['coords'][:,1,ind], Re[j])
-            # data[data[:,0].argsort()] # To sort data by increasing aoa
-            # Apply corrections to airfoil polars
-            # oldpolar= Polar(Re[j], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
-            oldpolar= Polar(Re_loc_af[0,ind], data[:,0],data[:,1],data[:,2],data[:,4]) # p[:,0] is alpha, p[:,1] is Cl, p[:,2] is Cd, p[:,4] is Cm
-
-            polar3d = oldpolar.correction3D(rR,c/run_xfoil_params['R'],run_xfoil_params['tsr']) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
+            oldpolar= Polar(Re_loc_af[0,ind], data[:,0],data[:,1],data[:,2],data[:,4]) # data[:,0] is alpha, data[:,1] is Cl, data[:,2] is Cd, data[:,4] is Cm
+            polar3d = oldpolar.correction3D(rR,c/R,run_xfoil_params['tsr']) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
             cdmax   = 1.5
             polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
 
             for j in range(run_xfoil_params['n_Re']):
-                cl_interp_flaps_af[:,j,ind] = np.interp(np.degrees(run_xfoil_params['aoa']), polar.alpha, polar.cl)
-                cd_interp_flaps_af[:,j,ind] = np.interp(np.degrees(run_xfoil_params['aoa']), polar.alpha, polar.cd)
-                cm_interp_flaps_af[:,j,ind] = np.interp(np.degrees(run_xfoil_params['aoa']), polar.alpha, polar.cm)
+                cl_interp_flaps_af[:,j,ind] = np.interp(np.degrees(aoa), polar.alpha, polar.cl)
+                cd_interp_flaps_af[:,j,ind] = np.interp(np.degrees(aoa), polar.alpha, polar.cd)
+                cm_interp_flaps_af[:,j,ind] = np.interp(np.degrees(aoa), polar.alpha, polar.cm)
 
         # # ** The code below will plot the three cl polars
-        # import matplotlib.pyplot as plt
-        # font = {'family': 'Times New Roman',
-        #         'weight': 'normal',
-        #         'size': 18}
-        # plt.rc('font', **font)
-        # plt.figure
-        # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
-        # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,0],'r', label='$\\delta_{flap}$ = -10 deg')  # -10
-        # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,1],'k', label='$\\delta_{flap}$ = 0 deg')  # 0
-        # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,2],'b', label='$\\delta_{flap}$ = +10 deg')  # +10
-        # # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,0],'r')  # -10
-        # # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,1],'k')  # 0
-        # # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,2],'b')  # +10
-        # plt.xlim(xmin=-15, xmax=15)
-        # plt.ylim(ymin=-1.7, ymax=2.2)
-        # plt.grid(True)
-        # # autoscale_y(ax)
-        # plt.xlabel('Angles of attack, deg')
-        # plt.ylabel('Lift coefficient')
-        # plt.legend(loc='lower right')
-        # plt.tight_layout()
-        # plt.show()
-        # # # # plt.savefig('airfoil_polars_check/r_R_1_0_cl_flaps.png', dpi=300)
-        # # # # plt.savefig('airfoil_polars_check/NACA63-618_cl_flaps.png', dpi=300)
-        # # # # plt.savefig('airfoil_polars_check/FFA-W3-211_cl_flaps.png', dpi=300)
-        # # # # plt.savefig('airfoil_polars_check/FFA-W3-241_cl_flaps.png', dpi=300)
-        # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
+            # import matplotlib.pyplot as plt
+            # font = {'family': 'Times New Roman',
+            #         'weight': 'normal',
+            #         'size': 18}
+            # plt.rc('font', **font)
+            # plt.figure
+            # fig, ax = plt.subplots(1, 1, figsize=(8, 5))
+            # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,0],'r', label='$\\delta_{flap}$ = -10 deg')  # -10
+            # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,1],'k', label='$\\delta_{flap}$ = 0 deg')  # 0
+            # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,2],'b', label='$\\delta_{flap}$ = +10 deg')  # +10
+            # # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,0],'r')  # -10
+            # # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,1],'k')  # 0
+            # # plt.plot(np.degrees(run_xfoil_params['aoa']), cl_interp_flaps_af[afi,:,0,2],'b')  # +10
+            # plt.xlim(xmin=-15, xmax=15)
+            # plt.ylim(ymin=-1.7, ymax=2.2)
+            # plt.grid(True)
+            # # autoscale_y(ax)
+            # plt.xlabel('Angles of attack, deg')
+            # plt.ylabel('Lift coefficient')
+            # plt.legend(loc='lower right')
+            # plt.tight_layout()
+            # plt.show()
+            # # # # plt.savefig('airfoil_polars_check/r_R_1_0_cl_flaps.png', dpi=300)
+            # # # # plt.savefig('airfoil_polars_check/NACA63-618_cl_flaps.png', dpi=300)
+            # # # # plt.savefig('airfoil_polars_check/FFA-W3-211_cl_flaps.png', dpi=300)
+            # # # # plt.savefig('airfoil_polars_check/FFA-W3-241_cl_flaps.png', dpi=300)
+            # # # # plt.savefig('airfoil_polars_check/FFA-W3-301_cl_flaps.png', dpi=300)
 
 
 
     else:  # no flap at specific radial location (but in general 'aerodynamic_control' is defined in blade from yaml)
-        for ind in range(run_xfoil_params['n_tab']):  # fill all run_xfoil_params['n_tab'] slots even though no flaps exist at current radial position
-            c = run_xfoil_params['chord'][afi]  # blade chord length at cross section
-            rR = run_xfoil_params['r'][afi] / run_xfoil_params['r'][-1]  # non-dimensional blade radial station at cross section
-            Re_loc_af[:, ind] = c * run_xfoil_params['maxTS'] * rR / run_xfoil_params['KinVisc']
-            Ma_loc_af[:, ind] = run_xfoil_params['maxTS'] * rR / run_xfoil_params['SpdSound']
-            for j in range(run_xfoil_params['n_Re']):
-                cl_interp_flaps_af[:,j,ind] = run_xfoil_params['cl_interp'][afi,:,j,0]
-                cd_interp_flaps_af[:,j,ind] = run_xfoil_params['cd_interp'][afi,:,j,0]
-                cm_interp_flaps_af[:,j,ind] = run_xfoil_params['cm_interp'][afi,:,j,0]
+        for ind in range(n_tab):  # fill all run_xfoil_params['n_tab'] slots even though no flaps exist at current radial position
+            c = chord[afi]  # blade chord length at cross section
+            rR = rad_loc[afi] / rad_loc[-1]  # non-dimensional blade radial station at cross section
+            Re_loc_af[:, ind] = c * maxTS * rR / KinVisc
+            Ma_loc_af[:, ind] = maxTS * rR / SpdSound            
 
             for j in range(run_xfoil_params['n_Re']):
-                cl_interp_flaps_af[:, j, ind] = cl_interp_flaps_af[:, j, 0]
-                cd_interp_flaps_af[:, j, ind] = cd_interp_flaps_af[:, j, 0]
-                cm_interp_flaps_af[:, j, ind] = cm_interp_flaps_af[:, j, 0]
+                cl_interp_flaps_af[:, j, ind] = copy.deepcopy(cl_interp_flaps_af[:, j, 0])
+                cd_interp_flaps_af[:, j, ind] = copy.deepcopy(cd_interp_flaps_af[:, j, 0])
+                cm_interp_flaps_af[:, j, ind] = copy.deepcopy(cm_interp_flaps_af[:, j, 0])
     
     return cl_interp_flaps_af, cd_interp_flaps_af, cm_interp_flaps_af, fa_control_af, Re_loc_af, Ma_loc_af
 

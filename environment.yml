@@ -11,12 +11,14 @@ dependencies:
   - git
   - jsonschema
   - make
+  - pip
   - matplotlib-base
   - nlopt
   - numpy
   - openmdao
   - openpyxl
   - pandas
+  - pip
   - pyside2
   - pytest
   - pytest-cov

@@ -84,6 +84,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
         self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
         self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
+        self.add_input('platform_displacement', val=1.0,               desc='Volumetric platform displacement', units='m**3')
 
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
@@ -227,7 +228,7 @@ class FASTLoadCases(ExplicitComponent):
         # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
         # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
         self.layer_name = rotorse_options['layer_name']
-
+        
         # MoorDyn inputs
         mooropt = self.options['modeling_options']["mooring"]
         if self.options["modeling_options"]["flags"]["mooring"]:
@@ -306,6 +307,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
         self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
+        self.add_output('Std_PtfmPitch',val=0.0,            units='deg',  desc='standard deviation of platform pitch angle')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
         self.add_output('max_TipDxc',  val=0.0,            units='m',    desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
 
@@ -343,7 +345,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('std_aoa',    val=np.zeros(n_span), units='deg', desc='distributed angles of attack - std')
         self.add_output('mean_aoa',   val=np.zeros(n_span), units='deg', desc='distributed angles of attack - mean')
 
-        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')
+        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')  # is this over a set of sims?
+        self.add_output('Max_PtfmPitch',  val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
         self.add_discrete_output('fst_vt_out', val={})
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
@@ -426,6 +429,10 @@ class FASTLoadCases(ExplicitComponent):
             
         for key in modeling_options['Level3']['MoorDyn']:
             fst_vt['MoorDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
+        
+        for key1 in modeling_options['Level3']['outlist']:
+                for key2 in modeling_options['Level3']['outlist'][key1]:
+                    fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
 
         fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['openfast']['file_management']['path2dll']
 
@@ -485,7 +492,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TipMass(1)'] = 0.
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
+
+        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_center_of_mass"][2]))
+        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+
+
         # TODO: There is some confusion on PtfmRefzt
+        # DZ: based on the openfast r-tests:
+        #   if this is floating, the z ref. point is 0.  Is this the reference that platform_center_of_mass is relative to?
+        #   if fixed bottom, it's the tower base height.  
         if modeling_options['flags']['floating']:
             fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"])
             fst_vt['ElastoDyn']['PtfmRIner'] = float(inputs["platform_I_total"][0])
@@ -494,6 +510,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
+            fst_vt['ElastoDyn']['PtfmRefzt'] = 0. # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
+
         else:
             # Ptfm* can capture the transition piece for fixed-bottom, but we are doing that in subdyn, so only worry about getting height right
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
@@ -503,16 +521,13 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
+            fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
         # Drivetrain inputs
         fst_vt['ElastoDyn']['DTTorSpr'] = float(inputs['drivetrain_spring_constant'])
         fst_vt['ElastoDyn']['DTTorDmp'] = float(inputs['drivetrain_damping_coefficient'])
 
-        tower_base_height = max(float(inputs['tower_base_height']), fst_vt['ElastoDyn']['PtfmCMzt'])
-        fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
-        fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
-        fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
-
+        
         # Update Inflowwind
         fst_vt['InflowWind']['RefHt'] = float(inputs['hub_height'])
         fst_vt['InflowWind']['RefHt_Uni'] = float(inputs['hub_height'])
@@ -874,7 +889,29 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
-            
+
+            # If we're using the potential model, need these settings that aren't default
+            if fst_vt['HydroDyn']['PotMod']:
+                fst_vt['HydroDyn']['ExctnMod'] = 1
+                fst_vt['HydroDyn']['RdtnMod'] = 1
+                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+                fst_vt['HydroDyn']['PropPot'] = ['True']* fst_vt['HydroDyn']['NMembers']
+                
+                # set PotFile directory relative to WEIS
+                # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
+                weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                if fst_vt['HydroDyn']['PotFile']:
+                    fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
+                else:
+                    raise Exception('If PotMod=1, PotFile must be specified in modeling options')
+                
+                # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
+                if fst_vt['HydroDyn']['PtfmMass_Init']:
+                    fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
+                else:
+                    fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
+
+
         # Moordyn inputs
         if modeling_options["flags"]["mooring"]:
             mooropt = modeling_options["mooring"]
@@ -965,6 +1002,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
+        channels_out += ["RtVAvgxh", "RtVAvgyh", "RtVAvgzh"]
         channels_out += ["TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
         channels_out += ["B1N1Fx", "B1N2Fx", "B1N3Fx", "B1N4Fx", "B1N5Fx", "B1N6Fx", "B1N7Fx", "B1N8Fx", "B1N9Fx", "B1N1Fy", "B1N2Fy", "B1N3Fy", "B1N4Fy", "B1N5Fy", "B1N6Fy", "B1N7Fy", "B1N8Fy", "B1N9Fy"]
         channels_out += ["B2N1Fx", "B2N2Fx", "B2N3Fx", "B2N4Fx", "B2N5Fx", "B2N6Fx", "B2N7Fx", "B2N8Fx", "B2N9Fx", "B2N1Fy", "B2N2Fy", "B2N3Fy", "B2N4Fy", "B2N5Fy", "B2N6Fy", "B2N7Fy", "B2N8Fy", "B2N9Fy"]
@@ -982,6 +1020,10 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.n_tab > 1:
             channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+
+        # Floating output channels
+        if self.options['modeling_options']['flags']['floating']:
+            channels_out += ["PtfmPitch", "PtfmRoll", "PtfmYaw", "PtfmSurge", "PtfmSway", "PtfmHeave"]
             
         channels = {}
         for var in channels_out:
@@ -1060,7 +1102,8 @@ class FASTLoadCases(ExplicitComponent):
         iec.dlc_inputs['U']     = []
         iec.dlc_inputs['Seeds'] = []
         iec.dlc_inputs['Yaw']   = []
-        iec.uniqueSeeds         = True
+        iec.uniqueSeeds         = self.FASTpref['dlc_settings']['unique_wind_seeds']
+        iec.uniqueWaveSeeds     = self.FASTpref['dlc_settings']['unique_wave_seeds']
         
         if powercurve:
             # running turbulent power curve
@@ -1181,6 +1224,12 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.FASTpref['dlc_settings']['run_IEC']:
             outputs, discrete_outputs = self.get_weighted_DELs(summary_stats, DELs, inputs, discrete_inputs, outputs, discrete_outputs)  
+
+        outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+
+        if self.options['modeling_options']['flags']['floating']:
+            outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+
 
     def get_spanwise_forces(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
@@ -1375,15 +1424,9 @@ class FASTLoadCases(ExplicitComponent):
                 U_all       = [U_set]*num_seeds
                 U_dlc = [u for uset in U_all for u in uset]
             U.extend(U_dlc)
-            U.sort()
-
-        # elif self.FASTpref['dlc_settings']['run_power_curve']:
-        #     U_set           = self.FASTpref['dlc_settings']['Power_Curve']['U']
-        #     num_seeds       = len(self.FASTpref['dlc_settings']['Power_Curve']['seeds'])
-        #     U_all           = [U_set]*num_seeds
-        #     U = [u for uset in U_all for u in uset]
-        #     U.sort()
-
+            U.sort()          
+            
+        
         pp = PowerProduction(discrete_inputs['turbine_class'])
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
 
@@ -1403,11 +1446,52 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
             outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsMyt'])
 
+        return outputs, discrete_outputs
+
+    def get_control_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+        ''' 
+        calculate control measures:
+            - rotor_overspeed
+
+        given:
+            - sum_stats : pd.DataFrame
+        '''
+
         if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
             outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
         return outputs, discrete_outputs
 
+    def get_floating_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+        '''
+        calculate floating measures:
+            - Std_PtfmPitch (max over all dlcs if constraint, mean otheriwse)
+            - Max_PtfmPitch
+
+        given:
+            - sum_stats : pd.DataFrame
+        '''
+        
+        if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+            # Let's just average the standard deviation of PtfmPitch for now
+            # TODO: weight based on WS distribution, or something else
+            print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            print(sum_stats['PtfmPitch']['std'])   # for debugging
+            outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
+
+        if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
+            print("sum_stats['PtfmPitch']['max']:")  # for debugging
+            print(sum_stats['PtfmPitch']['max'])  # for debugging
+            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+
+        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+            print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            print(sum_stats['PtfmPitch']['std'])   # for debugging
+            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+
+        return outputs, discrete_outputs
+
+    
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
         writer.fst_vt            = fst_vt
