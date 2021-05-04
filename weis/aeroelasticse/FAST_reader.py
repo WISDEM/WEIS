@@ -676,14 +676,13 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['ElastoDyn']['TStart']   = float_read(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['DecFact']  = int(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['NTwGages'] = int(f.readline().split()[0])
-        twrg = f.readline().split(',')
         if self.fst_vt['ElastoDyn']['NTwGages'] != 0: #loop over elements if there are gauges to be added, otherwise assign directly
-            for i in range(self.fst_vt['ElastoDyn']['NTwGages']):
-                self.fst_vt['ElastoDyn']['TwrGagNd'].append(twrg[i])
-            self.fst_vt['ElastoDyn']['TwrGagNd'][-1]  = self.fst_vt['ElastoDyn']['TwrGagNd'][-1][:-1]   #remove last (newline) character
+            self.fst_vt['ElastoDyn']['TwrGagNd'] = f.readline().strip().split()[:self.fst_vt['ElastoDyn']['NTwGages']]
+            for i, bldgag in enumerate(self.fst_vt['ElastoDyn']['TwrGagNd']):
+                self.fst_vt['ElastoDyn']['TwrGagNd'][i] = int(bldgag.strip(','))
         else:
-            self.fst_vt['ElastoDyn']['TwrGagNd'] = twrg
-            self.fst_vt['ElastoDyn']['TwrGagNd'][-1]  = self.fst_vt['ElastoDyn']['TwrGagNd'][-1][:-1]
+            self.fst_vt['ElastoDyn']['TwrGagNd'] = 0
+            f.readline()
         self.fst_vt['ElastoDyn']['NBlGages'] = int(f.readline().split()[0])
         if self.fst_vt['ElastoDyn']['NBlGages'] != 0:
             self.fst_vt['ElastoDyn']['BldGagNd'] = f.readline().strip().split()[:self.fst_vt['ElastoDyn']['NBlGages']]
