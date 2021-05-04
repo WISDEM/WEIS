@@ -480,12 +480,20 @@ class PoseOptimization(object):
             )
             
         if tower_opt["E"]["flag"]:
-            wt_opt.model.add_design_var(
-                "towerse_post.E_user",
-                lower=tower_opt["E"]["lower_bound"],
-                upper=tower_opt["E"]["upper_bound"],
-                ref=1e9,
-            )
+            if self.modeling["flags"]["floating"]:
+                wt_opt.model.add_design_var(
+                    "floatingse.tower.E_user",
+                    lower=tower_opt["E"]["lower_bound"],
+                    upper=tower_opt["E"]["upper_bound"],
+                    ref=1e9,
+                )
+            else:
+                wt_opt.model.add_design_var(
+                    "towerse_post.E_user",
+                    lower=tower_opt["E"]["lower_bound"],
+                    upper=tower_opt["E"]["upper_bound"],
+                    ref=1e9,
+                )
 
         for idx, material in enumerate(wt_init["materials"]):
             if material['name'] == 'steel':
