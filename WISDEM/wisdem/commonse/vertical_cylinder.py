@@ -534,7 +534,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
         E = inputs["E"]
         G = inputs["G"]
         rho = inputs["rho"]
-
+        
         elements = pyframe3dd.ElementData(element, N1, N2, Az, Asx, Asy, Jz, Ixx, Iyy, E, G, roll, rho)
         # -----------------------------------
 

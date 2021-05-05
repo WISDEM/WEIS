@@ -480,21 +480,19 @@ class PoseOptimization(object):
             )
             
         if tower_opt["E"]["flag"]:
+            ivc = wt_opt.model.add_subsystem("E_ivc", om.IndepVarComp(), promotes=[])
+            ivc.add_output('E_user', val=10., units='Pa')
+            wt_opt.model.add_design_var(
+                "E_ivc.E_user",
+                lower=tower_opt["E"]["lower_bound"],
+                upper=tower_opt["E"]["upper_bound"],
+                ref=1e9,
+            )
+            wt_opt.model.connect('E_ivc.E_user', "towerse_post.E_user")
+            
             if self.modeling["flags"]["floating"]:
-                wt_opt.model.add_design_var(
-                    "floatingse.tower.E_user",
-                    lower=tower_opt["E"]["lower_bound"],
-                    upper=tower_opt["E"]["upper_bound"],
-                    ref=1e9,
-                )
-            else:
-                wt_opt.model.add_design_var(
-                    "towerse_post.E_user",
-                    lower=tower_opt["E"]["lower_bound"],
-                    upper=tower_opt["E"]["upper_bound"],
-                    ref=1e9,
-                )
-
+                wt_opt.model.connect('E_ivc.E_user', "floatingse.tower.E_user")
+            
         for idx, material in enumerate(wt_init["materials"]):
             if material['name'] == 'steel':
                 tower_material_index = idx
@@ -507,7 +505,7 @@ class PoseOptimization(object):
                 ref=1e3,
                 indices=[tower_material_index],
             )
-
+            
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(
