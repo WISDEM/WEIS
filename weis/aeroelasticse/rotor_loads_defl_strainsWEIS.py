@@ -77,7 +77,7 @@ class MtoPrincipalAxes(ExplicitComponent):
             y2 = -x * sa + y * ca
             return x2, y2
         
-        M1, M2 = rotate(My, Mx)
+        M1, M2 = rotate(-My, -Mx)
 
         outputs['M1'] = M1
         outputs['M2'] = M2

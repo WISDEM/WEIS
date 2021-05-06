@@ -743,7 +743,7 @@ class FASTLoadCases(ExplicitComponent):
         nBldNodes     = fst_vt['ElastoDyn']['BldNodes']
         bld_fract     = np.arange(1./nBldNodes/2., 1, 1./nBldNodes)
         idx_out       = [np.argmin(abs(bld_fract-ri)) for ri in r_out_target]
-        r_nodes       = bld_fract*(fst_vt['ElastoDyn']['TipRad']-fst_vt['ElastoDyn']['HubRad'])
+        r_nodes       = bld_fract*(fst_vt['ElastoDyn']['TipRad']-fst_vt['ElastoDyn']['HubRad']) + fst_vt['ElastoDyn']['HubRad']
         self.R_out_ED_bl = np.hstack((fst_vt['ElastoDyn']['HubRad'], [r_nodes[i] for i in idx_out]))
         if len(self.R_out_ED_bl) != len(np.unique(self.R_out_ED_bl)):
             raise Exception('ERROR: the spanwise resolution is too coarse and does not support 9 channels along blade span. Please increase it in the modeling_options.yaml.')
@@ -1301,17 +1301,17 @@ class FASTLoadCases(ExplicitComponent):
         if np.any(np.isnan(My)):
             print('WARNING: nans found in My extremes')
             My[np.isnan(My)] = 0.0
-        spline_Fz = PchipInterpolator(self.R_out_ED_bl, Fz)
-        spline_Mx = PchipInterpolator(self.R_out_ED_bl, Mx)
-        spline_My = PchipInterpolator(self.R_out_ED_bl, My)
+        spline_Fz = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((Fz, 0.)))
+        spline_Mx = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((Mx, 0.)))
+        spline_My = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((My, 0.)))
 
-        r = inputs['r']-inputs['Rhub']
+        r = inputs['r']
         Fz_out = spline_Fz(r).flatten()
         Mx_out = spline_Mx(r).flatten()
         My_out = spline_My(r).flatten()
 
         outputs['blade_maxTD_Mx'] = Mx_out
-        outputs['blade_maxTD_My'] = My_out*-1.
+        outputs['blade_maxTD_My'] = My_out
         outputs['blade_maxTD_Fz'] = Fz_out
 
         # Determine maximum root moment
