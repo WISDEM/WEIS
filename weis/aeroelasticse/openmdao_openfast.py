@@ -318,28 +318,29 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
         self.add_output('max_RootMyb', val=0.0, units='kN*m', desc='Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root flapwise moment')
         self.add_output('max_RootMyc', val=0.0, units='kN*m', desc='Maximum of the signals RootMyb1, RootMyb2, ... across all n blades representing the maximum blade root out of plane moment')
-        self.add_output('DEL_RootMyb', val=0.0, units='N*m', desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
+        self.add_output('max_RootMzb', val=0.0, units='kN*m', desc='Maximum of the signals RootMzb1, RootMzb2, ... across all n blades representing the maximum blade root torsional moment')
+        self.add_output('DEL_RootMyb', val=0.0, units='kN*m', desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
         self.add_output('max_aoa', val=np.zeros(n_span), units='deg', desc='maxima of the angles of attack distributed along blade span')
         self.add_output('std_aoa', val=np.zeros(n_span), units='deg', desc='standard deviation of the angles of attack distributed along blade span')
         self.add_output('mean_aoa', val=np.zeros(n_span), units='deg', desc='mean of the angles of attack distributed along blade span')
         # Blade loads corresponding to maximum blade tip deflection
-        self.add_output('blade_maxTD_Mx', val=np.zeros(n_span), units='N*m/m', desc='distributed moment around blade-aligned x-axis corresponding to maximum blade tip deflection')
-        self.add_output('blade_maxTD_My', val=np.zeros(n_span), units='N*m/m', desc='distributed moment around blade-aligned y-axis corresponding to maximum blade tip deflection')
-        self.add_output('blade_maxTD_Fz', val=np.zeros(n_span), units='N/m', desc='distributed force in blade-aligned z-direction corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_Mx', val=np.zeros(n_span), units='kN*m/m', desc='distributed moment around blade-aligned x-axis corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_My', val=np.zeros(n_span), units='kN*m/m', desc='distributed moment around blade-aligned y-axis corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_Fz', val=np.zeros(n_span), units='kN/m', desc='distributed force in blade-aligned z-direction corresponding to maximum blade tip deflection')
         
         # Hub outputs
         self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
 
         # Tower outputs
-        self.add_output('max_TwrBsMyt',val=0.0, units='N*m', desc='maximum of tower base bending moment in fore-aft direction')
-        self.add_output('DEL_TwrBsMyt',val=0.0, units='N*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
-        self.add_output('tower_maxMy_Fx', val=np.zeros(n_height), units='N/m', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fy', val=np.zeros(n_height), units='N/m', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fz', val=np.zeros(n_height), units='N/m', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mx', val=np.zeros(n_height), units='N*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_My', val=np.zeros(n_height), units='N*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mz', val=np.zeros(n_height), units='N*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
+        self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
+        self.add_output('tower_maxMy_Fx', val=np.zeros(n_height), units='kN/m', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fy', val=np.zeros(n_height), units='kN/m', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fz', val=np.zeros(n_height), units='kN/m', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mx', val=np.zeros(n_height), units='kN*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_My', val=np.zeros(n_height), units='kN*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mz', val=np.zeros(n_height), units='kN*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
 
         # Floating outputs
@@ -1317,11 +1318,14 @@ class FASTLoadCases(ExplicitComponent):
         if self.n_blades == 2:
             blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max'])])
             blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max'])])
+            blade_root_tors_moment  = max([max(sum_stats['RootMzb1']['max']), max(sum_stats['RootMzb2']['max'])])
         else:
             blade_root_flap_moment = max([max(sum_stats['RootMyb1']['max']), max(sum_stats['RootMyb2']['max']), max(sum_stats['RootMyb3']['max'])])
             blade_root_oop_moment  = max([max(sum_stats['RootMyc1']['max']), max(sum_stats['RootMyc2']['max']), max(sum_stats['RootMyc3']['max'])])
+            blade_root_tors_moment  = max([max(sum_stats['RootMzb1']['max']), max(sum_stats['RootMzb2']['max']), max(sum_stats['RootMzb3']['max'])])
         outputs['max_RootMyb'] = blade_root_flap_moment
         outputs['max_RootMyc'] = blade_root_oop_moment
+        outputs['max_RootMzb'] = blade_root_tors_moment
 
         ## Get hub moments and forces in the non-rotating frame
         outputs['hub_Fxyz'] = np.array([extreme_table['LSShftF'][np.argmax(sum_stats['LSShftF']['max'])]['RotThrust'],
