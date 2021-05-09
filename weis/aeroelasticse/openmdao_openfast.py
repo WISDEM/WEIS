@@ -4,7 +4,7 @@ import copy
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
-from wisdem.commonse.vertical_cylinder      import NFREQ
+from wisdem.towerse      import NFREQ
 import wisdem.commonse.utilities              as util
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
