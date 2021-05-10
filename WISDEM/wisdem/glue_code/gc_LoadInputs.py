@@ -229,7 +229,9 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["TowerSE"]["n_layers_tower"] = len(
                 self.wt_init["components"]["tower"]["internal_structure_2d_fem"]["layers"]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = self.modeling_options["WISDEM"]["TowerSE"]["n_height_tower"]
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = self.modeling_options["WISDEM"]["TowerSE"][
+                "n_height_tower"
+            ]
             self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] = 0
             self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = 0
 
@@ -241,7 +243,9 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["WISDEM"]["TowerSE"]["n_layers_monopile"] = len(
                 self.wt_init["components"]["monopile"]["internal_structure_2d_fem"]["layers"]
             )
-            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] += self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] - 1
+            self.modeling_options["WISDEM"]["TowerSE"]["n_height"] += (
+                self.modeling_options["WISDEM"]["TowerSE"]["n_height_monopile"] - 1
+            )
 
         # Floating platform
         self.modeling_options["floating"] = {}
