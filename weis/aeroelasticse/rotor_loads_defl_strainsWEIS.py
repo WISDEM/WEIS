@@ -39,26 +39,26 @@ class MtoPrincipalAxes(ExplicitComponent):
         self.add_input(
             "Mx",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of edgewise bending moment",
         )
         self.add_input(
             "My",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of flapwise bending moment",
         )
 
         self.add_output(
             "M1",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 1",
         )
         self.add_output(
             "M2",
             val=np.zeros(n_span),
-            units="N*m/m",
+            units="N*m",
             desc="distribution along blade span of bending moment w.r.t principal axis 2",
         )
 
