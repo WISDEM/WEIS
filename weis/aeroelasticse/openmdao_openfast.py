@@ -324,9 +324,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('std_aoa', val=np.zeros(n_span), units='deg', desc='standard deviation of the angles of attack distributed along blade span')
         self.add_output('mean_aoa', val=np.zeros(n_span), units='deg', desc='mean of the angles of attack distributed along blade span')
         # Blade loads corresponding to maximum blade tip deflection
-        self.add_output('blade_maxTD_Mx', val=np.zeros(n_span), units='kN*m/m', desc='distributed moment around blade-aligned x-axis corresponding to maximum blade tip deflection')
-        self.add_output('blade_maxTD_My', val=np.zeros(n_span), units='kN*m/m', desc='distributed moment around blade-aligned y-axis corresponding to maximum blade tip deflection')
-        self.add_output('blade_maxTD_Fz', val=np.zeros(n_span), units='kN/m', desc='distributed force in blade-aligned z-direction corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_Mx', val=np.zeros(n_span), units='kN*m', desc='distributed moment around blade-aligned x-axis corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_My', val=np.zeros(n_span), units='kN*m', desc='distributed moment around blade-aligned y-axis corresponding to maximum blade tip deflection')
+        self.add_output('blade_maxTD_Fz', val=np.zeros(n_span), units='kN', desc='distributed force in blade-aligned z-direction corresponding to maximum blade tip deflection')
         
         # Hub outputs
         self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
@@ -335,12 +335,12 @@ class FASTLoadCases(ExplicitComponent):
         # Tower outputs
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
-        self.add_output('tower_maxMy_Fx', val=np.zeros(n_height), units='kN/m', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fy', val=np.zeros(n_height), units='kN/m', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fz', val=np.zeros(n_height), units='kN/m', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mx', val=np.zeros(n_height), units='kN*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_My', val=np.zeros(n_height), units='kN*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mz', val=np.zeros(n_height), units='kN*m/m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fx', val=np.zeros(n_height), units='kN', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fy', val=np.zeros(n_height), units='kN', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fz', val=np.zeros(n_height), units='kN', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mx', val=np.zeros(n_height), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_My', val=np.zeros(n_height), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mz', val=np.zeros(n_height), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
 
         # Floating outputs
