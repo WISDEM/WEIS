@@ -254,6 +254,7 @@ class WindPark(om.Group):
                 self.connect('towerse.tower_section_height',    'aeroelastic.tower_section_height')
                 self.connect('towerse.tower_outer_diameter',    'aeroelastic.tower_outer_diameter')
                 self.connect('towerse.z_param',                 'aeroelastic.tower_monopile_z')
+                self.connect('towerse.z_full',                  'aeroelastic.tower_monopile_z_full')
                 self.connect('tower.cd',                        'aeroelastic.tower_cd')
                 self.connect('tower_grid.height',               'aeroelastic.tower_height')
                 self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
@@ -575,8 +576,8 @@ class WindPark(om.Group):
                 self.connect("towerse.wind.qdyn", "towerse_post.qdyn")
 
                 self.connect("aeroelastic.tower_maxMy_Fz", "towerse_post.tower_Fz")
-                self.connect("aeroelastic.tower_maxMy_Mx", "towerse_post.tower_Vx")
-                self.connect("aeroelastic.tower_maxMy_My", "towerse_post.tower_Vy")
+                self.connect("aeroelastic.tower_maxMy_Fx", "towerse_post.tower_Vx")
+                self.connect("aeroelastic.tower_maxMy_Fy", "towerse_post.tower_Vy")
                 self.connect("aeroelastic.tower_maxMy_Mx", "towerse_post.tower_Mxx")
                 self.connect("aeroelastic.tower_maxMy_My", "towerse_post.tower_Myy")
                 self.connect("aeroelastic.tower_maxMy_Mz", "towerse_post.tower_Mzz")

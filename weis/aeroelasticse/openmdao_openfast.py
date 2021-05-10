@@ -4,7 +4,7 @@ import copy
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
-from wisdem.towerse      import NFREQ
+from wisdem.towerse      import NFREQ, get_nfull
 import wisdem.commonse.utilities              as util
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
@@ -57,10 +57,11 @@ class FASTLoadCases(ExplicitComponent):
         self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
         self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
 
-        monopile     = self.options['modeling_options']['flags']['monopile']
+        #monopile     = self.options['modeling_options']['flags']['monopile']
         n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_tower']
-        n_height_mon = 0 if not monopile else self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
-        n_height     = n_height_tow if n_height_mon==0 else n_height_tow + n_height_mon - 1 # Should have one overlapping point
+        #n_height_mon = 0 if not monopile else self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
+        n_height     = self.options['modeling_options']['WISDEM']['TowerSE']['n_height']
+        n_full       = get_nfull(n_height)
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(rotorse_options['n_freq']/2)
         n_pc         = int(rotorse_options['n_pc'])
@@ -101,6 +102,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
         self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
         self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+        self.add_input('tower_monopile_z_full', val=np.zeros(n_full),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
         self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
         self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
         self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
@@ -335,12 +337,12 @@ class FASTLoadCases(ExplicitComponent):
         # Tower outputs
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
-        self.add_output('tower_maxMy_Fx', val=np.zeros(n_height), units='kN', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fy', val=np.zeros(n_height), units='kN', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fz', val=np.zeros(n_height), units='kN', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mx', val=np.zeros(n_height), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_My', val=np.zeros(n_height), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mz', val=np.zeros(n_height), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+        self.add_output('tower_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
 
         # Floating outputs
@@ -558,7 +560,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
 
         z_tow = twr_elev[twr_index:]
-        z_sec = 0.5 * (z_tow[:-1] + z_tow[1:])
+        z_sec, _ = util.nodal2sectional(z_tow)
         sec_loc = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
         fst_vt['ElastoDynTower']['NTwInpSt'] = len(sec_loc)
         fst_vt['ElastoDynTower']['HtFract']  = sec_loc
@@ -571,8 +573,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
 
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
-        monopile     = self.options['modeling_options']['flags']['monopile']
-        n_height_mon = 0 if not monopile else self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
+        n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
         k_tow_tor = inputs['tor_stff'][n_height_mon:] / np.diff(inputs['tower_monopile_z'][n_height_mon:])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
         # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the
@@ -1405,7 +1406,9 @@ class FASTLoadCases(ExplicitComponent):
         spline_My      = PchipInterpolator(self.Z_out_ED_twr, My)
         spline_Mz      = PchipInterpolator(self.Z_out_ED_twr, Mz)
 
-        z = (inputs['tower_monopile_z'] - inputs['tower_monopile_z'][0]) / (inputs['tower_monopile_z'][-1] - inputs['tower_monopile_z'][0])
+        z_full = inputs['tower_monopile_z_full']
+        z_sec, _ = util.nodal2sectional(z_full)
+        z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
 
         outputs['tower_maxMy_Fx'] = spline_Fx(z)
         outputs['tower_maxMy_Fy'] = spline_Fy(z)
