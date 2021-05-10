@@ -230,7 +230,7 @@ class WindPark(om.Group):
             self.connect('drivese.rna_I_TT',                'aeroelastic.rna_I_TT')
             self.connect('drivese.above_yaw_I_TT',          'aeroelastic.nacelle_I_TT')
             self.connect('drivese.above_yaw_cm',            'aeroelastic.nacelle_cm')
-            self.connect('drivese.generator_I',             'aeroelastic.GenIner', src_indices=[0])
+            self.connect('drivese.generator_rotor_I',       'aeroelastic.GenIner', src_indices=[0])
             self.connect('nacelle.gear_ratio',              'aeroelastic.gearbox_ratio')
             self.connect('rotorse.rp.powercurve.rated_efficiency',  'aeroelastic.generator_efficiency')
             self.connect('control.max_pitch_rate' ,         'aeroelastic.max_pitch_rate')
