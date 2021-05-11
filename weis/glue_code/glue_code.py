@@ -575,12 +575,12 @@ class WindPark(om.Group):
                     self.connect(f'towerse.{k}', f'towerse_post.{k}')
                 self.connect("towerse.wind.qdyn", "towerse_post.qdyn")
 
-                self.connect("aeroelastic.tower_maxMy_Fz", "towerse_post.tower_Fz")
-                self.connect("aeroelastic.tower_maxMy_Fx", "towerse_post.tower_Vx")
-                self.connect("aeroelastic.tower_maxMy_Fy", "towerse_post.tower_Vy")
-                self.connect("aeroelastic.tower_maxMy_Mx", "towerse_post.tower_Mxx")
-                self.connect("aeroelastic.tower_maxMy_My", "towerse_post.tower_Myy")
-                self.connect("aeroelastic.tower_maxMy_Mz", "towerse_post.tower_Mzz")
+                self.connect("aeroelastic.tower_monopile_maxMy_Fz", "towerse_post.tower_Fz")
+                self.connect("aeroelastic.tower_monopile_maxMy_Fx", "towerse_post.tower_Vx")
+                self.connect("aeroelastic.tower_monopile_maxMy_Fy", "towerse_post.tower_Vy")
+                self.connect("aeroelastic.tower_monopile_maxMy_Mx", "towerse_post.tower_Mxx")
+                self.connect("aeroelastic.tower_monopile_maxMy_My", "towerse_post.tower_Myy")
+                self.connect("aeroelastic.tower_monopile_maxMy_Mz", "towerse_post.tower_Mzz")
 
             #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
             #self.connect('max_taper_ratio',         'max_taper') # TODO- 
