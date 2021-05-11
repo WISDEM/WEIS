@@ -90,6 +90,12 @@ channel_extremes = [
     "TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt",
     "TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt",
     "TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt",
+    "M1N1FMxe", "M1N2FMxe", "M1N3FMxe", "M1N4FMxe", "M1N5FMxe", "M1N6FMxe", "M1N7FMxe", "M1N8FMxe", "M1N9FMxe",
+    "M1N1FMye", "M1N2FMye", "M1N3FMye", "M1N4FMye", "M1N5FMye", "M1N6FMye", "M1N7FMye", "M1N8FMye", "M1N9FMye",
+    "M1N1FMze", "M1N2FMze", "M1N3FMze", "M1N4FMze", "M1N5FMze", "M1N6FMze", "M1N7FMze", "M1N8FMze", "M1N9FMze",
+    "M1N1MMxe", "M1N2MMxe", "M1N3MMxe", "M1N4MMxe", "M1N5MMxe", "M1N6MMxe", "M1N7MMxe", "M1N8MMxe", "M1N9MMxe",
+    "M1N1MMye", "M1N2MMye", "M1N3MMye", "M1N4MMye", "M1N5MMye", "M1N6MMye", "M1N7MMye", "M1N8MMye", "M1N9MMye",
+    "M1N1MMze", "M1N2MMze", "M1N3MMze", "M1N4MMze", "M1N5MMze", "M1N6MMze", "M1N7MMze", "M1N8MMze", "M1N9MMze",
     ]
 
 la = LoadsAnalysis(

@@ -344,6 +344,14 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('tower_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
         self.add_output('tower_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
+        # Monopile outputs
+        self.add_output('PLACEHOLDER',val=0.0, units='kN*m', desc='maximum of <<PLACEHOLDER>>')
+        self.add_output('monopile_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to <<PLACEHOLDER>>')
+        self.add_output('monopile_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to <<PLACEHOLDER>>')
+        self.add_output('monopile_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to <<PLACEHOLDER>>')
+        self.add_output('monopile_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to <<PLACEHOLDER>>')
+        self.add_output('monopile_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to <<PLACEHOLDER>>')
+        self.add_output('monopile_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to <<PLACEHOLDER>>')
 
         # Floating outputs
         self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
@@ -781,6 +789,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
             fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
             fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
+            fst_vt['SubDyn']['NMOutputs'] = 1
+            fst_vt['SubDyn']['MemberID_out'] = [1]
+            fst_vt['SubDyn']['NOutCnt'] = [1]
+            fst_vt['SubDyn']['NodeCnt'] = [1]
                 
         elif modeling_options['flags']['floating']:
             joints_xyz = inputs["platform_nodes"]
@@ -1038,9 +1050,18 @@ class FASTLoadCases(ExplicitComponent):
                              "RootMyb3", "RootMzb3", "RootFxc3", "RootFyc3", "RootFzc3", "RootFxb3", "RootFyb3", "RootFzb3", "BldPitch3"]
             channels_out += ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
 
-
+        # Channels for distributed aerodynamic control
         if self.n_tab > 1:
             channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+
+        # Channels for monopile-based structure
+        if self.options['modeling_options']['flags']['monopile']:
+            channels_out += ["M1N1FMxe", "M1N2FMxe", "M1N3FMxe", "M1N4FMxe", "M1N5FMxe", "M1N6FMxe", "M1N7FMxe", "M1N8FMxe", "M1N9FMxe"]
+            channels_out += ["M1N1FMye", "M1N2FMye", "M1N3FMye", "M1N4FMye", "M1N5FMye", "M1N6FMye", "M1N7FMye", "M1N8FMye", "M1N9FMye"]
+            channels_out += ["M1N1FMze", "M1N2FMze", "M1N3FMze", "M1N4FMze", "M1N5FMze", "M1N6FMze", "M1N7FMze", "M1N8FMze", "M1N9FMze"]
+            channels_out += ["M1N1MMxe", "M1N2MMxe", "M1N3MMxe", "M1N4MMxe", "M1N5MMxe", "M1N6MMxe", "M1N7MMxe", "M1N8MMxe", "M1N9MMxe"]
+            channels_out += ["M1N1MMye", "M1N2MMye", "M1N3MMye", "M1N4MMye", "M1N5MMye", "M1N6MMye", "M1N7MMye", "M1N8MMye", "M1N9MMye"]
+            channels_out += ["M1N1MMze", "M1N2MMze", "M1N3MMze", "M1N4MMze", "M1N5MMze", "M1N6MMze", "M1N7MMze", "M1N8MMze", "M1N9MMze"]
 
         # Floating output channels
         if self.options['modeling_options']['flags']['floating']:
@@ -1242,6 +1263,8 @@ class FASTLoadCases(ExplicitComponent):
         # Analysis
         outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
+        if self.options['modeling_options']['flags']['monopile']:
+            outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if self.FASTpref['dlc_settings']['run_IEC']:
@@ -1367,6 +1390,56 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
+    def get_monopile_loading(self, sum_stats, extreme_table, inputs, outputs):
+        """
+        Find the loading along the monopile length.
+
+        Parameters
+        ----------
+        sum_stats : pd.DataFrame
+        extreme_table : dict
+        """
+
+        monopile_chans_Fx = ["M1N1FMxe", "M1N2FMxe", "M1N3FMxe", "M1N4FMxe", "M1N5FMxe", "M1N6FMxe", "M1N7FMxe", "M1N8FMxe", "M1N9FMxe"]
+        monopile_chans_Fy = ["M1N1FMye", "M1N2FMye", "M1N3FMye", "M1N4FMye", "M1N5FMye", "M1N6FMye", "M1N7FMye", "M1N8FMye", "M1N9FMye"]
+        monopile_chans_Fz = ["M1N1FMze", "M1N2FMze", "M1N3FMze", "M1N4FMze", "M1N5FMze", "M1N6FMze", "M1N7FMze", "M1N8FMze", "M1N9FMze"]
+        monopile_chans_Mx = ["M1N1MMxe", "M1N2MMxe", "M1N3MMxe", "M1N4MMxe", "M1N5MMxe", "M1N6MMxe", "M1N7MMxe", "M1N8MMxe", "M1N9MMxe"]
+        monopile_chans_My = ["M1N1MMye", "M1N2MMye", "M1N3MMye", "M1N4MMye", "M1N5MMye", "M1N6MMye", "M1N7MMye", "M1N8MMye", "M1N9MMye"]
+        monopile_chans_Mz = ["M1N1MMze", "M1N2MMze", "M1N3MMze", "M1N4MMze", "M1N5MMze", "M1N6MMze", "M1N7MMze", "M1N8MMze", "M1N9MMze"]
+
+
+        max_chan   = "M1N1MMye"
+
+        # Get the maximum of signal M1N1MMye
+        outputs["PLACEHOLDER"] = np.max(sum_stats[max_chan]['max'])
+        # Return forces and moments along tower height at instance of largest fore-aft tower base moment
+        Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
+        Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
+        Fz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fz]
+        Mx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mx]
+        My = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_My]
+        Mz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mz]
+
+        # Spline results on monopile basic grid
+        # spline_Fx      = PchipInterpolator(self.Z_out_ED_twr, Fx)
+        # spline_Fy      = PchipInterpolator(self.Z_out_ED_twr, Fy)
+        # spline_Fz      = PchipInterpolator(self.Z_out_ED_twr, Fz)
+        # spline_Mx      = PchipInterpolator(self.Z_out_ED_twr, Mx)
+        # spline_My      = PchipInterpolator(self.Z_out_ED_twr, My)
+        # spline_Mz      = PchipInterpolator(self.Z_out_ED_twr, Mz)
+
+        # z_full = inputs['tower_monopile_z_full']
+        # z_sec, _ = util.nodal2sectional(z_full)
+        # z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
+
+        # outputs['monopile_maxMy_Fx'] = spline_Fx(z)
+        # outputs['monopile_maxMy_Fy'] = spline_Fy(z)
+        # outputs['monopile_maxMy_Fz'] = spline_Fz(z)
+        # outputs['monopile_maxMy_Mx'] = spline_Mx(z)
+        # outputs['monopile_maxMy_My'] = spline_My(z)
+        # outputs['monopile_maxMy_Mz'] = spline_Mz(z)
+
+        return outputs
 
     def get_tower_loading(self, sum_stats, extreme_table, inputs, outputs):
         """
