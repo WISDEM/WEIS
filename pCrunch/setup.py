@@ -13,7 +13,7 @@ import os
 
 from setuptools import setup, find_packages
 
-import versioneer
+from . import versioneer
 
 REQUIRED = [
     "matplotlib",

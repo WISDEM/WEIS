@@ -26,11 +26,12 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
+  - seaborn
   - setuptools
   - smt
   - sortedcontainers
   - swig
-  - versioneer
+#  - versioneer
   - pip:
     - fatpack
     - jsonmerge
