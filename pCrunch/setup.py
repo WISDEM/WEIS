@@ -1,4 +1,4 @@
-# Copyright 2019 NREL
+# Copyright 2021 NREL
 
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 # this file except in compliance with the License. You may obtain a copy of the
@@ -9,140 +9,64 @@
 # CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 
-"""The setup script."""
-
-# This setup file was made to mimic the setup.py script for https://github.com/NREL/floris/
-# Accessed on January 9, 2020
-
-# Note: To use the 'upload' functionality of this file, you must:
-#   $ pip install twine
-
-import io
 import os
-import sys
-from shutil import rmtree
 
-from setuptools import Command, setup, find_packages
+from setuptools import setup, find_packages
 
-# Package meta-data.
-NAME = "pCrunch"
-DESCRIPTION = "Some tools for batch analysis of OpenFAST runs"
-URL = "https://github.com/NREL/pCrunch"
-EMAIL = ["Jake.Nunemaker@nrel.gov", "nikhar.abbas@nrel.gov"]
-AUTHOR = ["Jake Nunemaker", "Nikhar Abbas"]
-REQUIRES_PYTHON = ">=3.4"
-VERSION = "0.0.1"
+#import versioneer
 
-# These packages are required for all of the code to be executed.
-# - Maybe you can get away with older versions...
-REQUIRED = ["matplotlib", "numpy", "pytest", "scipy", "pyYAML", "seaborn"]
+REQUIRED = [
+    "matplotlib",
+    "numpy",
+    "pytest",
+    "scipy",
+    "pyYAML",
+    "seaborn",
+    "fatpack",
+]
 
-# Read the docs, one day, so we'll throw it in here!
-EXTRAS = {
-    "docs": {
-        "readthedocs-sphinx-ext>=0.5.15",
-        "Sphinx>=2.0",
-        "sphinxcontrib-napoleon>=0.7",
-    }
-}
+ROOT = os.path.abspath(os.path.dirname(__file__))
+with open("README.rst", "r") as fh:
+    long_description = fh.read()
 
-# The rest you shouldn't have to touch too much :)
-# ------------------------------------------------
-# Except, perhaps the License and Trove Classifiers!
-# If you do change the License, remember to change the Trove Classifier for that!
-
-here = os.path.abspath(os.path.dirname(__file__))
-
-# Import the README and use it as the long-description.
-try:
-    with io.open(os.path.join(here, "README.md"), encoding="utf-8") as f:
-        long_description = "\n" + f.read()
-except FileNotFoundError:
-    long_description = DESCRIPTION
-
-# Load the package's __version__.py module as a dictionary.
-about = {}
-if not VERSION:
-    project_slug = NAME.lower().replace("-", "_").replace(" ", "_")
-    with open(os.path.join(here, project_slug, "__version__.py")) as f:
-        exec(f.read(), about)
-else:
-    about["__version__"] = VERSION
-
-
-class UploadCommand(Command):
-    """Support setup.py upload."""
-
-    description = "Build and publish the package."
-    user_options = []
-
-    @staticmethod
-    def status(s):
-        """Prints things in bold."""
-        print("\033[1m{0}\033[0m".format(s))
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        try:
-            self.status("Removing previous builds...")
-            rmtree(os.path.join(here, "dist"))
-        except OSError:
-            pass
-
-        self.status("Building Source and Wheel (universal) distribution...")
-        os.system(
-            "{0} setup.py sdist bdist_wheel --universal".format(sys.executable)
-        )
-
-        self.status("Uploading the package to PyPI via Twine...")
-        os.system("twine upload dist/*")
-
-        self.status("Pushing git tags...")
-        os.system("git tag v{0}".format(about["__version__"]))
-        os.system("git push --tags")
-
-        sys.exit()
-
-
-# Where the magic happens:
 setup(
-    name=NAME,
-    version=about["__version__"],
-    description=DESCRIPTION,
+    name="pCrunch",
+    version='1.0.0',
+#    version=versioneer.get_version(),
+#    cmdclass=versioneer.get_cmdclass(),
+    description="IO and Post Processing Interface for OpenFAST Results.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    author=AUTHOR,
-    author_email=EMAIL,
-    python_requires=REQUIRES_PYTHON,
-    url=URL,
+    author=["Jake Nunemaker", "Nikhar Abbas"],
+    author_email=["Jake.Nunemaker@nrel.gov", "nikhar.abbas@nrel.gov"],
     packages=find_packages(
         exclude=["tests", "*.tests", "*.tests.*", "tests.*"]
     ),
-    # TODO: JN: Include package data for tests.
-    # If your package is a single module, use this instead of 'packages':
-    # py_modules=['mypackage'],
-    # entry_points={
-    #     'console_scripts': ['mycli=mymodule:cli'],
-    # },
-    install_requires=REQUIRED,
-    extras_require=EXTRAS,
-    include_package_data=True,
+    package_data={"": ["*.out", ".outb"]},
+    install_requires=[
+        "matplotlib",
+        "numpy",
+        "scipy",
+        "pyYAML",
+        "seaborn",
+        "fatpack",
+    ],
+    extras_require={
+        "dev": [
+            "pre-commit",
+            "pylint",
+            "flake8",
+            "black",
+            "isort",
+            "pytest",
+            "pytest-cov",
+            "sphinx",
+            "sphinx-rtd-theme",
+        ]
+    },
     license="Apache License, Version 2.0",
-    # classifiers=[
-    #     # Trove classifiers
-    #     # Full list: https://pypi.python.org/pypi?%3Aaction=list_classifiers
-    #     'License :: OSI Approved :: Apache Software License',
-    #     'Programming Language :: Python',
-    #     'Programming Language :: Python :: 3',
-    #     'Programming Language :: Python :: 3.6',
-    #     'Programming Language :: Python :: Implementation :: CPython',
-    #     'Programming Language :: Python :: Implementation :: PyPy'
-    # ],
-    # $ setup.py publish support.
-    cmdclass={"upload": UploadCommand},
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 3.7",
+    ],
 )
