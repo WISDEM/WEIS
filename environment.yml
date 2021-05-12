@@ -9,6 +9,7 @@ dependencies:
   - cython
   - dill
   - git
+  - Jinja2<3.0
   - jsonschema
   - make
   - pip
