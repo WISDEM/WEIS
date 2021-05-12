@@ -30,6 +30,7 @@ dependencies:
   - smt
   - sortedcontainers
   - swig
+  - versioneer
   - pip:
     - fatpack
     - jsonmerge

@@ -567,7 +567,7 @@ class WindPark(om.Group):
                     self.connect('generator.generator_efficiency_user', 'drivese_post.generator_efficiency_user')
 
             # Connections to TowerSE
-            if modeling_options['WISDEM']['TowerSE']['flag']:
+            if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
                 tow_params = ["z_full","d_full","t_full","suctionpile_depth",
                               "Az","Asx","Asy","Jz","Ixx","Iyy",
                               "E_full","G_full","rho_full","sigma_y_full"]
@@ -587,7 +587,7 @@ class WindPark(om.Group):
             #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
             
             # Connections to turbine constraints
-            if modeling_options['WISDEM']['TowerSE']['flag']:
+            if modeling_options["flags"]["tower"]:
                 self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
                 self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
                 self.connect('assembly.rotor_radius',           'tcons_post.Rtip')
