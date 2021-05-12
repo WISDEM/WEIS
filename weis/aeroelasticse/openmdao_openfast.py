@@ -1415,75 +1415,6 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
-    def get_monopile_loading(self, sum_stats, extreme_table, inputs, outputs):
-        """
-        Find the loading along the monopile length.
-
-        Parameters
-        ----------
-        sum_stats : pd.DataFrame
-        extreme_table : dict
-        """
-
-        n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
-        n_full_mon   = get_nfull(n_height_mon)
-
-        monopile_chans_Fx = []
-        monopile_chans_Fy = []
-        monopile_chans_Fz = []
-        monopile_chans_Mx = []
-        monopile_chans_My = []
-        monopile_chans_Mz = []
-        k=1
-        for i in range(len(self.Z_out_SD_mpl)):
-            if k==9:
-                Node=2
-            else:
-                Node=1
-            monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FMxe"]
-            monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FMye"]
-            monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FMze"]
-            monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MMxe"]
-            monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MMye"]
-            monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MMze"]
-            k+=1
-
-        max_chan   = "M1N1MMye"
-
-        # # Get the maximum of signal M1N1MMye
-        outputs["max_M1N1MMye"] = np.max(sum_stats[max_chan]['max'])
-        # # Return forces and moments along tower height at instance of largest fore-aft tower base moment
-        Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
-        Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
-        Fz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fz]
-        Mx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mx]
-        My = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_My]
-        Mz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mz]
-
-        # # Spline results on grid of channel locations along the monopile
-        spline_Fx      = PchipInterpolator(self.Z_out_SD_mpl, Fx)
-        spline_Fy      = PchipInterpolator(self.Z_out_SD_mpl, Fy)
-        spline_Fz      = PchipInterpolator(self.Z_out_SD_mpl, Fz)
-        spline_Mx      = PchipInterpolator(self.Z_out_SD_mpl, Mx)
-        spline_My      = PchipInterpolator(self.Z_out_SD_mpl, My)
-        spline_Mz      = PchipInterpolator(self.Z_out_SD_mpl, Mz)
-
-        # z_full = inputs['tower_monopile_z_full'][:n_full_mon]
-        # z_sec, _ = util.nodal2sectional(z_full)
-        # z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
-
-        # outputs['monopile_maxMy_Fx'] = spline_Fx(z)
-        # outputs['monopile_maxMy_Fy'] = spline_Fy(z)
-        # outputs['monopile_maxMy_Fz'] = spline_Fz(z)
-        # outputs['monopile_maxMy_Mx'] = spline_Mx(z)
-        # outputs['monopile_maxMy_My'] = spline_My(z)
-        # outputs['monopile_maxMy_Mz'] = spline_Mz(z)
-        
-        #for k in ['Fx','Fy','Fz','Mx','My','Mz']:
-        #    outputs[f'tower_monopile_maxMy_{k}'] = np.r_[outputs[f'monopile_maxMy_{k}'], outputs[f'tower_maxMy_{k}']]
-
-        return outputs
-
     def get_tower_loading(self, sum_stats, extreme_table, inputs, outputs):
         """
         Find the loading along the tower height.
@@ -1539,6 +1470,75 @@ class FASTLoadCases(ExplicitComponent):
         if not self.options['modeling_options']['flags']['monopile']:
             for k in ['Fx','Fy','Fz','Mx','My','Mz']:
                 outputs[f'tower_monopile_maxMy_{k}'] = outputs[f'tower_maxMy_{k}']
+
+        return outputs
+
+    def get_monopile_loading(self, sum_stats, extreme_table, inputs, outputs):
+        """
+        Find the loading along the monopile length.
+
+        Parameters
+        ----------
+        sum_stats : pd.DataFrame
+        extreme_table : dict
+        """
+
+        n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
+        n_full_mon   = get_nfull(n_height_mon)
+
+        monopile_chans_Fx = []
+        monopile_chans_Fy = []
+        monopile_chans_Fz = []
+        monopile_chans_Mx = []
+        monopile_chans_My = []
+        monopile_chans_Mz = []
+        k=1
+        for i in range(len(self.Z_out_SD_mpl)):
+            if k==9:
+                Node=2
+            else:
+                Node=1
+            monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FMxe"]
+            monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FMye"]
+            monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FMze"]
+            monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MMxe"]
+            monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MMye"]
+            monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MMze"]
+            k+=1
+
+        max_chan   = "M1N1MMye"
+
+        # # Get the maximum of signal M1N1MMye
+        outputs["max_M1N1MMye"] = np.max(sum_stats[max_chan]['max'])
+        # # Return forces and moments along tower height at instance of largest fore-aft tower base moment
+        Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
+        Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
+        Fz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fz]
+        Mx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mx]
+        My = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_My]
+        Mz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mz]
+
+        # # Spline results on grid of channel locations along the monopile
+        spline_Fx      = PchipInterpolator(self.Z_out_SD_mpl, Fx)
+        spline_Fy      = PchipInterpolator(self.Z_out_SD_mpl, Fy)
+        spline_Fz      = PchipInterpolator(self.Z_out_SD_mpl, Fz)
+        spline_Mx      = PchipInterpolator(self.Z_out_SD_mpl, Mx)
+        spline_My      = PchipInterpolator(self.Z_out_SD_mpl, My)
+        spline_Mz      = PchipInterpolator(self.Z_out_SD_mpl, Mz)
+
+        z_full = inputs['tower_monopile_z_full'][:n_full_mon]
+        z_sec, _ = util.nodal2sectional(z_full)
+        z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
+
+        outputs['monopile_maxMy_Fx'] = spline_Fx(z)
+        outputs['monopile_maxMy_Fy'] = spline_Fy(z)
+        outputs['monopile_maxMy_Fz'] = spline_Fz(z)
+        outputs['monopile_maxMy_Mx'] = spline_Mx(z)
+        outputs['monopile_maxMy_My'] = spline_My(z)
+        outputs['monopile_maxMy_Mz'] = spline_Mz(z)
+        
+        for k in ['Fx','Fy','Fz','Mx','My','Mz']:
+            outputs[f'tower_monopile_maxMy_{k}'] = np.r_[outputs[f'monopile_maxMy_{k}'], outputs[f'tower_maxMy_{k}']]
 
         return outputs
 
