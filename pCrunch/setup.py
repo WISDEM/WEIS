@@ -13,7 +13,7 @@ import os
 
 from setuptools import setup, find_packages
 
-from . import versioneer
+#import versioneer
 
 REQUIRED = [
     "matplotlib",
@@ -31,8 +31,9 @@ with open("README.rst", "r") as fh:
 
 setup(
     name="pCrunch",
-    version=versioneer.get_version(),
-    cmdclass=versioneer.get_cmdclass(),
+    version='1.0.0',
+#    version=versioneer.get_version(),
+#    cmdclass=versioneer.get_cmdclass(),
     description="IO and Post Processing Interface for OpenFAST Results.",
     long_description=long_description,
     long_description_content_type="text/markdown",
