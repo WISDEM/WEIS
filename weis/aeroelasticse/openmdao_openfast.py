@@ -346,21 +346,21 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('tower_maxMy_Mz', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
         # Monopile outputs
-        self.add_output('max_M1N1MMye',val=0.0, units='kN*m', desc='maximum of My moment of member 1 at node 1 (base of the monopile)')
+        self.add_output('max_M1N1MKye',val=0.0, units='kN*m', desc='maximum of My moment of member 1 at node 1 (base of the monopile)')
         monlen = max(0, n_full_mon-1)
-        self.add_output('monopile_maxMy_Fx', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MMye')
-        self.add_output('monopile_maxMy_Fy', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MMye')
-        self.add_output('monopile_maxMy_Fz', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MMye')
-        self.add_output('monopile_maxMy_Mx', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MMye')
-        self.add_output('monopile_maxMy_My', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MMye')
-        self.add_output('monopile_maxMy_Mz', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MMye')
+        self.add_output('monopile_maxMy_Fx', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
+        self.add_output('monopile_maxMy_Fy', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
+        self.add_output('monopile_maxMy_Fz', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
+        self.add_output('monopile_maxMy_Mx', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+        self.add_output('monopile_maxMy_My', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+        self.add_output('monopile_maxMy_Mz', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
 
-        self.add_output('tower_monopile_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MMye')
-        self.add_output('tower_monopile_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MMye')
-        self.add_output('tower_monopile_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MMye')
-        self.add_output('tower_monopile_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MMye')
-        self.add_output('tower_monopile_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MMye')
-        self.add_output('tower_monopile_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MMye')
+        self.add_output('tower_monopile_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
+        self.add_output('tower_monopile_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
+        self.add_output('tower_monopile_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
+        self.add_output('tower_monopile_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+        self.add_output('tower_monopile_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+        self.add_output('tower_monopile_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
         
         # Floating outputs
         self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
@@ -1508,10 +1508,10 @@ class FASTLoadCases(ExplicitComponent):
             monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MKze"]
             k+=1
 
-        max_chan   = "M1N1MMye"
+        max_chan   = "M1N1MKye"
 
-        # # Get the maximum of signal M1N1MMye
-        outputs["max_M1N1MMye"] = np.max(sum_stats[max_chan]['max'])
+        # # Get the maximum of signal M1N1MKye
+        outputs["max_M1N1MKye"] = np.max(sum_stats[max_chan]['max'])
         # # Return forces and moments along tower height at instance of largest fore-aft tower base moment
         Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
         Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
