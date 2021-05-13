@@ -1081,12 +1081,13 @@ class FASTLoadCases(ExplicitComponent):
                     Node=2
                 else:
                     Node=1
-                channels_out += ["M" + str(k) + "N" + str(Node) + "FMxe"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "FMye"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "FMze"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "MMxe"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "MMye"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "MMze"]
+                channels_out += ["M" + str(k) + "N" + str(Node) + "FKxe"]
+                channels_out += ["M" + str(k) + "N" + str(Node) + "FKye"]
+                channels_out += ["M" + str(k) + "N" + str(Node) + "FKze"]
+                channels_out += ["M" + str(k) + "N" + str(Node) + "MKxe"]
+                channels_out += ["M" + str(k) + "N" + str(Node) + "MKye"]
+                channels_out += ["M" + str(k) + "N" + str(Node) + "MKze"]
+                channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
                 k+=1
 
         # Floating output channels
@@ -1499,12 +1500,12 @@ class FASTLoadCases(ExplicitComponent):
                 Node=2
             else:
                 Node=1
-            monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FMxe"]
-            monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FMye"]
-            monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FMze"]
-            monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MMxe"]
-            monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MMye"]
-            monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MMze"]
+            monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FKxe"]
+            monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FKye"]
+            monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FKze"]
+            monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MKxe"]
+            monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MKye"]
+            monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MKze"]
             k+=1
 
         max_chan   = "M1N1MMye"
