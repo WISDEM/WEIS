@@ -1292,9 +1292,6 @@ class System():
             dX = np.linalg.solve(K, Y)   # calculate position adjustment according to Newton's method
             
             
-            if iter==196:
-                breakpoint() 
-            
             # but limit adjustment to keep things under control
             for i in range(n):             
                 if dX[i] > db[i]:
