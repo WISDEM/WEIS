@@ -145,6 +145,26 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/grid_nd"
+                            t/c:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                            L/D:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/nd"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             # coordinates:
@@ -343,7 +363,7 @@ properties:
                                 description: Rotor precone angle, defined positive for both upwind and downwind rotors.
                                 unit: rad
                                 minimum: 0
-                                maximum: 0.2
+                                maximum: 0.4
                             drag_coefficient:
                                 type: number
                                 description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
@@ -2379,22 +2399,6 @@ properties:
                         unit: none
                         minimum: 0
                         maximum: 1
-
-                    fl_feedback:
-                        type: object
-                        description: Platform velocity feedback using nacelle IMU
-                        required:
-                            - gain
-                        optional:
-                            - filter
-                        properties:
-                            gain:
-                                type: number
-                                description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                unit: seconds
-                            filter:
-                                $ref: "#/definitions/filter"
-                                description: Nacelle IMU filter, used to remove tower natural frequency.  Usually a LPF or Notch Filter
 
                     twr_feedback:
                         type: object

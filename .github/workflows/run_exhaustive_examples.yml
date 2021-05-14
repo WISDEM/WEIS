@@ -94,5 +94,5 @@ jobs:
         shell: bash
         run: |
           cd examples/09_design_of_experiments
-          mpirun -np 2 python DOE_openfast.py
+          mpirun -n 2 --bind-to core python DOE_openfast.py
           python postprocess_results.py

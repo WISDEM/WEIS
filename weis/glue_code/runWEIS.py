@@ -21,7 +21,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimizationWEIS(modeling_options, opt_options)
 
-    if MPI and opt_options['driver']['optimization']['flag']:
+    if MPI:
         n_DV = myopt.get_number_design_variables()
         
         # Extract the number of cores available
@@ -80,11 +80,21 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_OF_runs_parallel = 1
         
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
-        n_FD = max([n_FD, 1])
-        comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
-        rank    = MPI.COMM_WORLD.Get_rank()
-        color_i = color_map[rank]
-        comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+        if opt_options['driver']['design_of_experiments']['flag']:
+            n_FD = MPI.COMM_WORLD.Get_size()
+            n_OF_runs_parallel = 1
+            rank    = MPI.COMM_WORLD.Get_rank()
+            comm_map_up = comm_map_down = {}
+            for r in range(MPI.COMM_WORLD.Get_size()):
+                comm_map_up[r] = [r]
+            color_i = 0
+        else:
+            n_FD = max([n_FD, 1])
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
+            rank    = MPI.COMM_WORLD.Get_rank()
+            color_i = color_map[rank]
+            comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
+
     else:
         color_i = 0
         rank = 0
@@ -94,18 +104,27 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         os.mkdir(folder_output)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
-        if MPI and opt_options['driver']['optimization']['flag']:
+        # if MPI and opt_options['driver']['optimization']['flag']:
+        if MPI:
             if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['openfast']['analysis_settings']['mpi_run']           = True
                 modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
-                modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+                if opt_options['driver']['design_of_experiments']['flag']:
+                    modeling_options['openfast']['analysis_settings']['cores']   = 1
+                else:
+                    modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+            
             # Parallel settings for OpenMDAO
-            wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
-            wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
+            if opt_options['driver']['design_of_experiments']['flag']:  
+                wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+            else:
+                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+                wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
-            modeling_options['openfast']['analysis_settings']['cores'] = 1
+            modeling_options['openfast']['analysis_settings']['mpi_run'] = False
+            modeling_options['openfast']['analysis_settings']['cores']   = 1
             wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
@@ -114,11 +133,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             wt_opt = myopt.set_objective(wt_opt)
             wt_opt = myopt.set_design_variables(wt_opt, wt_init)
             wt_opt = myopt.set_constraints(wt_opt)
-            wt_opt = myopt.set_recorders(wt_opt)
 
             if opt_options['driver']['design_of_experiments']['flag']:
                 wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs']
                 wt_opt.driver.options['procs_per_model'] = 1 # n_OF_runs_parallel # int(max_cores / np.floor(max_cores/n_OF_runs))
+        
+        wt_opt = myopt.set_recorders(wt_opt)
+        wt_opt.driver.options['debug_print'] = ['desvars','ln_cons','nl_cons','objs','totals']
         
         # Setup openmdao problem
         if opt_options['opt_flag']:
@@ -132,6 +153,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = assign_ROSCO_values(wt_opt, modeling_options, wt_init['control'])
         wt_opt = myopt.set_initial(wt_opt, wt_init)
+        if modeling_options['Level3']['flag']:
+            wt_opt = myopt.set_initial_weis(wt_opt)
         
         # If the user provides values in this dict, they overwrite
         # whatever values have been set by the yaml files.
