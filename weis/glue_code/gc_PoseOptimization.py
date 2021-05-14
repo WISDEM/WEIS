@@ -36,17 +36,11 @@ class PoseOptimizationWEIS(PoseOptimization):
         if self.opt['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
             
-        elif self.opt['merit_figure'] == 'My_std':   # for DAC optimization on root-flap-bending moments
-            wt_opt.model.add_objective('aeroelastic.My_std', ref = 1.e6)
-            
         elif self.opt['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
             wt_opt.model.add_objective('aeroelastic.DEL_RootMyb', ref = 1.e3)
             
         elif self.opt['merit_figure'] == 'DEL_TwrBsMyt':   # for pitch controller optimization
             wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
-            
-        elif self.opt['merit_figure'] == 'flp1_std':   # for DAC optimization on flap angles - TORQUE 2020 paper (need to define time constant in ROSCO)
-            wt_opt.model.add_objective('aeroelastic.flp1_std')  #1.e-8)
             
         elif self.opt['merit_figure'] == 'rotor_overspeed':
             wt_opt.model.add_objective('aeroelastic.rotor_overspeed')

@@ -559,9 +559,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['DecFact'], 'DecFact', '- Decimation factor for tabular output {1: output every time step} (-) (currently unused)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['NTwGages'], 'NTwGages', '- Number of tower nodes that have strain gages for output [0 to 9] (-)\n'))  
         if self.fst_vt['ElastoDyn']['TwrGagNd'] != 0:
-            f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['ElastoDyn']['TwrGagNd']), 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
+            f.write('{:<22} {:<11} {:}'.format(', '.join(['%d'%i for i in self.fst_vt['ElastoDyn']['TwrGagNd']]), 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
         else:
-            f.write('{:<22} {:<11} {:}'.format(0, 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
+            f.write('{:<22} {:<11} {:}'.format('', 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['NBlGages'], 'NBlGages', '- Number of blade nodes that have strain gages for output [0 to 9] (-)\n'))
         if self.fst_vt['ElastoDyn']['BldGagNd'] != 0:
             f.write('{:<22} {:<11} {:}'.format(', '.join(['%d'%i for i in self.fst_vt['ElastoDyn']['BldGagNd']]), 'BldGagNd', '- List of blade nodes that have strain gages [1 to BldNodes] (-) [unused if NBlGages=0]\n'))
@@ -595,7 +595,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('---------------------- SIMULATION CONTROL --------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['Echo'], 'Echo', '- Echo input data to "<RootName>.ech" (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['QuasiStaticInit'], 'QuasiStaticInit', '- Use quasistatic pre-conditioning with centripetal accelerations in initialization (flag) [dynamic solve only]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['rhoinf'], 'rhoinf', '- Numerical damping parameter for generalized-alpha integrator\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['rhoinf'], 'rhoinf', '- Numerical damping parameter for generalized-alpha integrator\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['quadrature'], 'quadrature', '- Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['refine'], 'refine', '- Refinement factor for trapezoidal quadrature (-). DEFAULT = 1 [used only when quadrature=2]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['n_fact'], 'n_fact', '- Factorization frequency (-). DEFAULT = 5\n'))
@@ -637,7 +637,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['PitchC'], 'PitchC', '- Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]\n'))
         f.write('---------------------- OUTPUTS -------------------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['SumPrint'], 'SumPrint', '- Print summary data to "<RootName>.sum" (flag)\n'))
-        f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['OutFmt']+'"', 'OutFmt', '- Format used for text tabular output, excluding the time channel.\n'))
+        f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['BeamDyn']['OutFmt']+'"', 'OutFmt', '- Format used for text tabular output, excluding the time channel.\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['NNodeOuts'], 'NNodeOuts', '- Number of nodes to output to file [0 - 9] (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['BeamDyn']['OutNd']), 'OutNd', '- Nodes whose values will be output  (-)\n'))
         f.write('          OutList            - The next line(s) contains a list of output parameters. See OutListParameters.xlsx for a listing of available output channels, (-)\n')
@@ -1027,7 +1027,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('! line\n')
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
-            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
+            f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
             if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != 0:
                 f.write('@"{:}_AF{:02d}_Coords.txt"       {:<11} {:}'.format(self.FAST_namingOut, afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             else:

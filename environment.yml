@@ -9,6 +9,7 @@ dependencies:
   - cython
   - dill
   - git
+  - Jinja2<3.0
   - jsonschema
   - make
   - pip
@@ -26,10 +27,12 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
+  - seaborn
   - setuptools
   - smt
   - sortedcontainers
   - swig
+#  - versioneer
   - pip:
     - fatpack
     - jsonmerge
