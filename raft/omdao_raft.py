@@ -20,10 +20,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # unpack options
         modeling_opt = self.options['modeling_options']
         nfreq = modeling_opt['nfreq']
-        potModMaster = modeling_opt['potModMaster']
-        XiStart = modeling_opt['XiStart']
-        nIter = modeling_opt['nIter']
-        dlsMax = modeling_opt['dlsMax']
 
         turbine_opt = self.options['turbine_options']
         turbine_npts = turbine_opt['npts']
@@ -47,16 +43,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
         # frequency domain
         self.add_input('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
-        
-        # global inputs
-        if potModMaster:
-            self.add_input('potModMaster', val=0, desc='master switch for potMod variables')
-        if XiStart:
-            self.add_input('XiStart', val=0, desc='initial amplitude of each DOF for all frequencies')
-        if nIter:
-            self.add_input('nIter', val=0, desc='number of iterations to perform in Model.solveDynamics')
-        if dlsMax:
-            self.add_input('dlsMax', val=0.0, desc='maximum node splitting section amount. Cannot be 0')
 
         # turbine inputs
         self.add_input('turbine_mRNA', val=0.0, units='kg', desc='RNA mass')
@@ -231,25 +217,19 @@ class RAFT_OMDAO(om.ExplicitComponent):
         mooring_opt = self.options['mooring_options']
         members_opt = self.options['member_options']
         modeling_opt = self.options['modeling_options']
-        nfreq = modeling_opt['nfreq']
-        potModMaster = modeling_opt['potModMaster']
-        XiStart = modeling_opt['XiStart']
-        nIter = modeling_opt['nIter']
-        dlsMax = modeling_opt['dlsMax']
 
-        turbine_npts = turbine_opt['npts']
+        #turbine_npts = turbine_opt['npts']
 
         nmembers = members_opt['nmembers']
         member_npts = members_opt['npts']
         member_npts_lfill = members_opt['npts_lfill']
-        member_npts_rho_fill = members_opt['npts_rho_fill']
+        #member_npts_rho_fill = members_opt['npts_rho_fill']
         member_ncaps = members_opt['ncaps']
         member_nreps = members_opt['nreps']
         member_shapes = members_opt['shape']
         member_scalar_t = members_opt['scalar_thicknesses']
         member_scalar_d = members_opt['scalar_diameters']
         member_scalar_coeff = members_opt['scalar_coefficients']
-
         
         nlines = mooring_opt['nlines']
         nline_types = mooring_opt['nline_types']
@@ -261,14 +241,10 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['name'] = ['spiderfloat']
         design['comments'] = ['none']
         
-        if potModMaster:
-            design['potModMaster'] = int(inputs['potModMaster'])
-        if XiStart:
-            design['XiStart'] = float(inputs['XiStart'])
-        if nIter:
-            design['nIter'] = int(inputs['nIter'])
-        if dlsMax:
-            design['dlsMax'] = float(inputs['dlsMax'])
+        design['potModMaster'] = int(modeling_opt['potModMaster'])
+        design['XiStart'] = float(modeling_opt['XiStart'])
+        design['nIter'] = int(modeling_opt['nIter'])
+        design['dlsMax'] = float(modeling_opt['dlsMax'])
 
         # TODO: these float conversions are messy
         design['turbine'] = {}
