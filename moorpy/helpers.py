@@ -375,9 +375,6 @@ def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxI
             dX = step_func(X, args, Y, oths, Ytarget, err, tols, iter, maxIter)
         
 
-        #if display>2:
-        #    breakpoint()
-
         # Make sure we're not diverging by keeping things from reversing too much.
         # Track the previous step (dX_last) and if the current step reverses too much, stop it part way.
         # Stop it at a plane part way between the current X value and the previous X value (using golden ratio, why not).  
@@ -405,7 +402,6 @@ def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxI
                 dX_max = a_max*dX_last[i]                           # set the maximum permissible dx in each direction based an an acceleration limit
                 
                 if dX_max == 0.0:                                   # avoid a divide-by-zero case (if dX[i] was zero to start with)
-                    breakpoint()
                     dX[i] = 0.0                     
                 else:    
                     a_i = dX[i]/dX_max                              # calculate ratio of desired dx to max dx
@@ -423,8 +419,6 @@ def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxI
                             print(f"     now dX will be {dX}")
         
         dXlist[iter,:] = dX
-        if iter==196:
-            breakpoint() 
             
         # enforce bounds
         for i in range(N):
@@ -443,9 +437,6 @@ def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, maxI
                 print("Iteration converged after "+str(iter)+" iterations with error of "+str(err)+" and dX of "+str(dX))
                 print("Solution X is "+str(X))
             
-                #if abs(err) > 10:
-                #    breakpoint()
-                
                 if display > 0:
                     print("Total run time: {:8.2f} seconds = {:8.2f} minutes".format((time.time() - start_time),((time.time() - start_time)/60)))
 

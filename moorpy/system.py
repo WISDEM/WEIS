@@ -1174,9 +1174,6 @@ class System():
                 elif dX[i] < -db[i]:
                     dX[i] = -db[i]  
                     
-            #if iter == 6:
-            #    breakpoint()
-                
             X0 = X0 + 1.0*dX
             #print(X0)
             #print(self.mooringEq(X0))
@@ -1236,7 +1233,7 @@ class System():
         if rmsTol != 0.0:
             tols = np.zeros(len(X0)) + rmsTol
             print("WHAT IS PASSING rmsTol in to solveEquilibrium3?")
-            breakpoint()
+
         elif np.isscalar(tol):
             if tol < 0:
                 tols = -tol*db    # tolerances set relative to max step size
@@ -1350,7 +1347,6 @@ class System():
                 ax[-1,0].set_xlabel("iteration, X")
                 ax[-1,1].set_xlabel("iteration, Error")
             plt.show()
-            breakpoint()
             raise SolveError(f"solveEquilibrium3 failed to find equilibrium after {iter} iterations, with residual forces of {F}")
 
 
