@@ -15,6 +15,10 @@ class RAFT_WEIS(om.Group):
 
         raft_opt = {}
         raft_opt['nfreq'] = len(weis_opt['Level1']['frequencies'])
+        raft_opt['potModMaster'] = weis_opt['Level1']['potential_model_override']
+        raft_opt['XiStart'] = weis_opt['Level1']['xi_start']
+        raft_opt['nIter'] = weis_opt['Level1']['nIter']
+        raft_opt['dlsMax'] = weis_opt['Level1']['dls_max']
 
         turbine_opt = {}
         turbine_opt['npts'] = weis_opt['WISDEM']['TowerSE']['n_height_tower']
