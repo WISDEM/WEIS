@@ -284,6 +284,7 @@ def write_control_file(projectDir=None, waterDepth=50.0, iFType=3, oFType=3, num
     f.write(f'   #End Definition of Wave Headings\n\n')
     f.write(f'    Reference_body_center   {refBodyCenter[0]:.3f} {refBodyCenter[1]:.3f} {refBodyCenter[2]:.3f}\n')
     f.write(f'    Reference_body_length   {refBodyLen}D0\n')
+    f.write(f'    Wave-diffrac-solution   2\n')
     f.write(f'    If_remove_irr_freq      {irr}\n')
     f.write(f'    Number of threads       {numThreads}\n\n')
     f.write(f'   #Start Definition of Pressure and/or Elevation\n')
