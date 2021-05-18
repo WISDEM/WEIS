@@ -41,6 +41,11 @@ if __name__ == '__main__':
     doe_logs = glob.glob(os.path.join(output_dir,'log_opt.sql*'))
     if len(doe_logs) < 1:
         raise FileExistsError('No output logs to post process!')
+        
+    # Remove the 'meta' log
+    for idx, log in enumerate(doe_logs):
+        if 'meta' in log:
+            doe_logs.pop(idx)
 
     # run multiprocessing
     if post_multi:
