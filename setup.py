@@ -141,7 +141,7 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsp
 # Now install WEIS and the Fortran packages
 metadata = dict(
     name                          = 'WEIS',
-    version                       = '0.0.1',
+    version                       = '0.2',
     description                   = 'Wind Energy with Integrated Servo-control',
     long_description              = long_description,
     long_description_content_type = 'text/markdown',
