@@ -17,8 +17,10 @@ all_scripts = [
     # "02_control_opt/runOptimization",
     
     "03_NREL5MW_OC3_spar/weis_driver",
+    # "03_NREL5MW_OC3_spar/weis_freq_driver",
     
     "04_NREL5MW_OC4_semi/weis_driver",
+    "04_NREL5MW_OC4_semi/weis_freq_driver",
     
     "05_IEA-3.4-130-RWT/weis_driver",
     

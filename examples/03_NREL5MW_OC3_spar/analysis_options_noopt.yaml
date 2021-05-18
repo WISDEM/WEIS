@@ -1,0 +1,52 @@
+general:
+    folder_output: output
+    fname_output: refturb_output
+design_variables:
+  control:
+    servo:
+      pitch_control:
+        omega:
+          flag: False
+          min: 0.1
+          max: 0.5
+
+  floating:
+    members:
+        flag: False
+        groups:
+            - names: [spar]
+              ballast:
+                  lower_bound: 0.8e3
+                  upper_bound: 1.5e3
+    
+merit_figure: platform_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+constraints:
+  control:
+    rotor_overspeed:
+      flag: False
+      min: 0.0
+      max: 0.2
+    Max_PtfmPitch:
+      flag: False
+      max: 5.5
+    Std_PtfmPitch:
+      flag: False
+      max: 2.
+
+driver:
+  optimization:
+    flag: False
+    tol: 1.e-3            # Optimality tolerance
+    xtol: 1.e-2           # Optimality tolerance for design variables
+    max_major_iter: 10    # Maximum number of major design iterations (SNOPT)
+    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+    max_iter: 2           # Maximum number of iterations (SLSQP)
+    solver: LN_COBYLA     # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    step_size: 1.e-3      # Step size for finite differencing
+    form: central         # Finite differencing mode, either forward or central
+    
+recorder:
+    flag: False              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder
+    includes: ['floatingse.platform_mass']
