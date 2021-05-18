@@ -9,14 +9,17 @@ dependencies:
   - cython
   - dill
   - git
+  - Jinja2<3.0
   - jsonschema
   - make
+  - pip
   - matplotlib-base
   - nlopt
   - numpy
   - openmdao
   - openpyxl
   - pandas
+  - pip
   - pyside2
   - pytest
   - pytest-cov
@@ -24,14 +27,17 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
+  - seaborn
   - setuptools
   - smt
   - sortedcontainers
   - swig
+#  - versioneer
   - pip:
-    - simpy
-    - marmot-agents
+    - fatpack
     - jsonmerge
+    - marmot-agents
+    - simpy
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

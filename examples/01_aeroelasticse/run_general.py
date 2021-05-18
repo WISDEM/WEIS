@@ -24,11 +24,10 @@ if __name__ == '__main__':
 
     # User settings
     n_cores     = 3     # Number of available cores
-    TMax        = 400.  # Length of wind grids and OpenFAST simulations, suggested 720 s
+    TMax        = 200.  # Length of wind grids and OpenFAST simulations, suggested 720 s
     cut_in      = 3.    # Cut in wind speed
     cut_out     = 25.   # Cut out wind speed
-    n_ws        = 12    # Number of wind speed bins
-    wind_speeds = np.arange(cut_in, cut_out+1, 0.5) #np.linspace(cut_in, cut_out, int(n_ws)) # Wind speeds to run OpenFAST at
+    wind_speeds = np.arange(cut_in, cut_out+1, 4) #np.linspace(cut_in, cut_out, int(n_ws)) # Wind speeds to run OpenFAST at
     Ttrans      = max([0., TMax - 60.])  # Start of the transient for DLC with a transient, e.g. DLC 1.4
     TStart      = max([0., TMax - 300.]) # Start of the recording of the channels of OpenFAST
 

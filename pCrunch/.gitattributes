@@ -1,0 +1,6 @@
+*.ipynb linguist-vendored
+*.csv linguist-vendored
+*.txt linguist-vendored
+*.out linquist-vendored
+*.outb linquist-vendored
+pCrunch/_version.py export-subst

@@ -1,0 +1,90 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_cap_ss
+        spar_cap_ps: Spar_cap_ps
+        regulation_reg_III: True
+        n_span: 150
+    TowerSE:
+        flag: True
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    BOS:
+        flag: True
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.2
+        TMax: 10
+        TStart: 0
+        SttsTime: 1.
+    ElastoDyn:
+        flag: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: False
+        YawDOF: False  
+        TwFADOF1 : False
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
+        PtfmSgDOF: False
+        PtfmSwDOF: False
+        PtfmHvDOF: False
+        PtfmRDOF : False
+        PtfmPDOF : False
+        PtfmYDOF : False
+    ROSCO:
+        SD_Mode: 0
+    AeroDyn:
+        WakeMod: 3
+        AFAeroMod: 1
+        TwrShadow: 0
+        TwrAero: False
+        OLAF:
+            FullCircStart: 5.0     
+            nNWPanel: 120     
+            WakeLength: 600     
+            FreeWakeLength: 120     
+            RegDeterMethod: 1     
+            WakeRegMethod: 3       
+            WakeRegFactor: 0.25      
+            WingRegFactor: 0.25      
+            CoreSpreadEddyVisc: 1000    
+            ShearModel: 0       
+            VelocityMethod: 2       
+            TreeBranchFactor: 1.5     
+    
+openfast:
+    analysis_settings:
+        Analysis_Level:     2           # Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model
+    file_management:
+        FAST_namingOut:    BAR0         # Name of the OpenFAST output files
+        FAST_runDirectory: outputs/OLAF             # Path to folder with the OpenFAST output files
+    dlc_settings:
+        run_power_curve:   True
+        run_IEC:           False
+        run_blade_fatigue: False
+        IEC: # Currently supported: 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
+            #- DLC:   1.1
+            #  U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
+            #  Seeds: [1, 2]
+            - DLC:   1.1
+              U:     [5.,]
+              Seeds: [1]
+            # - DLC:   1.3
+            #   U:     [13.]
+            #   Seeds: [3]
+        Power_Curve:
+            turbulent_power_curve: False # False: Steady Wind, True: Turbulent Inflow
+            U:    [5] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
+            Seeds: [] # Used only when turbulent_power_curve=True

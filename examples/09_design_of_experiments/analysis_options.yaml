@@ -1,0 +1,54 @@
+general:
+    folder_output: outputs
+    fname_output: doe_output
+design_variables:
+  blade:
+    aero_shape:
+      chord:
+        flag: True     # Flag to optimize the chord
+        n_opt: 8        # Number of control points along blade span
+        max_decrease: 0.9   # Nondimensional max decrease of chord at the n_opt locations
+        max_increase: 1.1   # Nondimensional max increase of chord at the n_opt locations
+    structure:
+      spar_cap_ss:
+        flag: False     # Flag to optimize the spar cap thickness on the suction side
+        n_opt: 8        # Number of control points along blade span
+        max_decrease: 0.2   # Nondimensional maximum decrease at the n_opt locations
+        max_increase: 2.0   # Nondimensional maximum increase at the n_opt locations
+      spar_cap_ps:
+        flag: False     # Flag to optimize the spar cap thickness on the pressure side
+        equal_to_suction: True # Flag to impose the spar cap thickness on pressure and suction sides equal
+        n_opt: 8        # Number of control points along blade span
+        max_decrease: 0.2   # Nondimensional maximum decrease at the n_opt locations
+        max_increase: 2.0   # Nondimensional maximum increase at the n_opt locations
+
+merit_figure: 'AEP'  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+constraints:
+  blade:
+    strains_spar_cap_ss:
+      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade suction side
+      max:  3500.e-6  # Value of maximum strains [-]
+    strains_spar_cap_ps:
+      flag: False     # Flag to impose constraints on maximum strains (absolute value) in the spar cap on the blade pressure side
+      max:  3500.e-6  # Value of maximum strains [-]
+    tip_deflection:
+      flag: False     # Constraint that maximum tip deflection cannot exceed 70% of tower clearance. Only for upwind rotors
+      margin: 1.4175
+    stall:
+      flag: False     # Constraint on minimum stall margin
+      margin: 0.05233 # Value of minimum stall margin in [rad]
+    chord:
+      flag: False # Constraint on maximum chord
+      max: 4.75   # Value of maximum chord in [m]
+
+driver:
+  design_of_experiments:
+    flag: True            # Flag to enable design of experiments
+    run_parallel: True    # Flag to run using parallel processing
+    generator: Uniform    # Type of input generator. (Uniform)
+    num_samples: 2        # number of samples for (Uniform only)
+    
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

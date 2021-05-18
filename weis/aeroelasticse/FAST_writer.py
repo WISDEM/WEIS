@@ -559,9 +559,9 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['DecFact'], 'DecFact', '- Decimation factor for tabular output {1: output every time step} (-) (currently unused)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['NTwGages'], 'NTwGages', '- Number of tower nodes that have strain gages for output [0 to 9] (-)\n'))  
         if self.fst_vt['ElastoDyn']['TwrGagNd'] != 0:
-            f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['ElastoDyn']['TwrGagNd']), 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
+            f.write('{:<22} {:<11} {:}'.format(', '.join(['%d'%i for i in self.fst_vt['ElastoDyn']['TwrGagNd']]), 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
         else:
-            f.write('{:<22} {:<11} {:}'.format(0, 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
+            f.write('{:<22} {:<11} {:}'.format('', 'TwrGagNd', '- List of tower nodes that have strain gages [1 to TwrNodes] (-) [unused if NTwGages=0]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['NBlGages'], 'NBlGages', '- Number of blade nodes that have strain gages for output [0 to 9] (-)\n'))
         if self.fst_vt['ElastoDyn']['BldGagNd'] != 0:
             f.write('{:<22} {:<11} {:}'.format(', '.join(['%d'%i for i in self.fst_vt['ElastoDyn']['BldGagNd']]), 'BldGagNd', '- List of blade nodes that have strain gages [1 to BldNodes] (-) [unused if NBlGages=0]\n'))
@@ -595,7 +595,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('---------------------- SIMULATION CONTROL --------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['Echo'], 'Echo', '- Echo input data to "<RootName>.ech" (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['QuasiStaticInit'], 'QuasiStaticInit', '- Use quasistatic pre-conditioning with centripetal accelerations in initialization (flag) [dynamic solve only]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['rhoinf'], 'rhoinf', '- Numerical damping parameter for generalized-alpha integrator\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['rhoinf'], 'rhoinf', '- Numerical damping parameter for generalized-alpha integrator\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['quadrature'], 'quadrature', '- Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['refine'], 'refine', '- Refinement factor for trapezoidal quadrature (-). DEFAULT = 1 [used only when quadrature=2]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['n_fact'], 'n_fact', '- Factorization frequency (-). DEFAULT = 5\n'))
@@ -637,7 +637,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['PitchC'], 'PitchC', '- Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]\n'))
         f.write('---------------------- OUTPUTS -------------------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['SumPrint'], 'SumPrint', '- Print summary data to "<RootName>.sum" (flag)\n'))
-        f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['OutFmt']+'"', 'OutFmt', '- Format used for text tabular output, excluding the time channel.\n'))
+        f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['BeamDyn']['OutFmt']+'"', 'OutFmt', '- Format used for text tabular output, excluding the time channel.\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['NNodeOuts'], 'NNodeOuts', '- Number of nodes to output to file [0 - 9] (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(', '.join(self.fst_vt['BeamDyn']['OutNd']), 'OutNd', '- Nodes whose values will be output  (-)\n'))
         f.write('          OutList            - The next line(s) contains a list of output parameters. See OutListParameters.xlsx for a listing of available output channels, (-)\n')
@@ -1027,7 +1027,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('! line\n')
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
-            f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
+            f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
             if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != 0:
                 f.write('@"{:}_AF{:02d}_Coords.txt"       {:<11} {:}'.format(self.FAST_namingOut, afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             else:
@@ -1036,9 +1036,11 @@ class InputWriter_OpenFAST(InputWriter_Common):
             # f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'], 'NumTabs', '! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
 
 
-            # check if airfoils with multiple flaps exists.
+            # Check if we have multiple tables per airfoil
             # if yes, allocate the number of airfoils to the respective radial stations
-            if self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] > 1:
+            if self.fst_vt['AeroDyn15']['AFTabMod'] == 2:
+                num_tab = len(self.fst_vt['AeroDyn15']['af_data'][afi])
+            elif self.fst_vt['AeroDyn15']['AFTabMod'] == 3:
                 # for tab_orig in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] - 1):
                 if self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
                     num_tab = 1  # assume that all Ctrl angles of the flaps are identical if the first two are -> no flaps!
@@ -1049,12 +1051,12 @@ class InputWriter_OpenFAST(InputWriter_Common):
             # f.write('{:<22d}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'], 'NumTabs','! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
             f.write('{:<22d}   {:<11} {:}'.format(num_tab, 'NumTabs','! Number of airfoil tables in this file.  Each table must have lines for Re and Ctrl.\n'))
 
-            # for tab in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']): # For writting multiple tables (different Re or Ctrl values)
-            for tab in range(num_tab): # For writting multiple tables (different Re or Ctrl values)
+            # for tab in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']): # For writing multiple tables (different Re or Ctrl values)
+            for tab in range(num_tab): # For writing multiple tables (different Re or Ctrl values)
                 f.write('! ------------------------------------------------------------------------------\n')
                 f.write("! data for table %i \n" % (tab + 1))
                 f.write('! ------------------------------------------------------------------------------\n')
-                f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Re'], 'Re', '! Reynolds number in millions\n'))
+                f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Re']*1.e-6, 'Re', '! Reynolds number in millions\n'))
                 f.write('{:<22d}   {:<11} {:}'.format(int(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Ctrl']), 'Ctrl', '! Control setting (must be 0 for current AirfoilInfo)\n'))
                 f.write('{!s:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['InclUAdata'], 'InclUAdata', '! Is unsteady aerodynamics data included in this table? If TRUE, then include 30 UA coefficients below this line\n'))
                 f.write('!........................................\n')
@@ -1153,7 +1155,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
             f.write('! ......... x-y coordinates are next if NumCoords > 0 .............\n')
             f.write('! x-y coordinate of airfoil reference\n')
             f.write('!  x/c        y/c\n')
-            f.write('{: 5f}       0\n'.format(self.fst_vt['AeroDyn15']['rthick'][afi]))
+            f.write('{: 5f}       0\n'.format(self.fst_vt['AeroDyn15']['ac'][afi]))
             f.write('! coordinates of airfoil shape\n')
             f.write('! interpolation to 200 points\n')
             f.write('!  x/c        y/c\n')
@@ -1185,7 +1187,7 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nNWPanel'], 'nNWPanel','Number of near-wake panels [integer] (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeLength'], 'WakeLength','Total wake distance [integer] (number of time steps)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FreeWakeLength'], 'FreeWakeLength','Wake length that is free [integer] (number of time steps) {default: WakeLength}\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FWShedVorticity'], 'FWShedVorticity','Include shed vorticity in the far wake {default: false}\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FWShedVorticity'], 'FWShedVorticity','Include shed vorticity in the far wake {default: false}\n'))
         f.write('------------------- WAKE REGULARIZATIONS AND DIFFUSION -----------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DiffusionMethod'], 'DiffusionMethod','Diffusion method to account for viscous effects {0: None, 1: Core Spreading, "default": 0}\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','Method to determine the regularization parameters {0:  Manual, 1: Optimized, default: 0 }\n'))
@@ -1457,7 +1459,13 @@ class InputWriter_OpenFAST(InputWriter_Common):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveNDir'], 'WaveNDir', '- Number of wave directions                                           (-)       [only used when WaveMod=2,3, or 4 and WaveDirMod=1; odd number only]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveDirRange'], 'WaveDirRange', '- Range of wave directions (full range: WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveSeed1'], 'WaveSeed(1)', '- First  random seed of incident waves [-2147483648 to 2147483647]    (-)       [unused when WaveMod=0, 5, or 6]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveSeed2'], 'WaveSeed(2)', '- Second random seed of incident waves [-2147483648 to 2147483647]    (-)       [unused when WaveMod=0, 5, or 6]\n'))
+        
+        try:
+            seed2 = int(self.fst_vt['HydroDyn']['WaveSeed2'])
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveSeed2'], 'WaveSeed(2)', '- Second random seed of incident waves [-2147483648 to 2147483647]    (-)       [unused when WaveMod=0, 5, or 6]\n'))
+        except ValueError:
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveSeed2'], 'WaveSeed(2)', '- Second random seed of incident waves [-2147483648 to 2147483647]    (-)       [unused when WaveMod=0, 5, or 6] for intrinsic pRNG, or an alternative pRNG: "RanLux"\n'))
+            
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveNDAmp'], 'WaveNDAmp', '- Flag for normally distributed amplitudes                            (flag)    [only used when WaveMod=2, 3, or 4]\n'))
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['HydroDyn']['WvKinFile']+'"', 'WvKinFile', '- Root name of externally generated wave data file(s)        (quoted string)    [used only when WaveMod=5 or 6]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NWaveElev'], 'NWaveElev', '- Number of points where the incident wave elevations can be computed (-)       [maximum of 9 output locations]\n'))

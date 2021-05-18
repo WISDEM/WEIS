@@ -202,7 +202,6 @@ class CaseGen_IEC():
             else:
                 self.dlc_inputs['Yaw'][i] = [0.]
                 case_inputs_i[("ServoDyn","PCMode")]    = {'vals':[5], 'group':0}
-                case_inputs_i[("AeroDyn15","AFAeroMod")]= {'vals':[2], 'group':0}
                 case_inputs_i[("ElastoDyn","GenDOF")]   = {'vals':["True"], 'group':0}
 
 

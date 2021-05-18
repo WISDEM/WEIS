@@ -19,6 +19,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('lcoe',          val=0.0, units = 'USD/MW/h')
         self.add_input('DEL_RootMyb',   val=0.0, units = 'N*m')
         self.add_input('DEL_TwrBsMyt',  val=0.0, units = 'N*m')
+        self.add_input('Std_PtfmPitch', val=0.0, units = 'deg')
         self.add_input('PC_omega',      val=0.0, units = 'rad/s')
         self.add_input('PC_zeta',       val=0.0)
         self.add_input('VS_omega',      val=0.0, units='rad/s')
@@ -29,6 +30,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('tip_deflection',val=0.0, units='m')
         self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
         self.add_input('rotor_overspeed',val=0.0)
+        self.add_input('Max_PtfmPitch',val=0.0)
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -41,9 +43,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
         # OpenFAST simulation summary
         if self.options['modeling_options']['Level3']['flag']: 
             # Print optimization variables
-            if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['flag']:
+            if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
                 print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
-            if self.options['opt_options']['design_variables']['control']['servo']['torque_control']['flag']:
+            if self.options['opt_options']['design_variables']['control']['servo']['torque_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
                 print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
             if self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flag']:
                 print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
@@ -57,9 +59,15 @@ class Outputs_2_Screen(om.ExplicitComponent):
             if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
                 print('Max DEL(RootMyb): {:<8.10f} Nm'.format(inputs['DEL_RootMyb'][0]))
             if self.options['opt_options']['merit_figure'] == 'rotor_overspeed':
-                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
+                print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))
+            if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+                print('Std_PtfmPitch: {:<8.10f} deg.'.format(inputs['Std_PtfmPitch'][0]))
             # Print constraints
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-                print('rotor_overspeed: {:<8.10f} Nm'.format(inputs['rotor_overspeed'][0]))
+                print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))
+            if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
+                print('Max_PtfmPitch: {:<8.10f} deg.'.format(inputs['Max_PtfmPitch'][0]))
+            if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+                print('Std_PtfmPitch: {:<8.10f} deg.'.format(inputs['Std_PtfmPitch'][0]))
         
         print('########################################')

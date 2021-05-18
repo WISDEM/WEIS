@@ -30,7 +30,7 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
 
 class CMakeBuildExt(build_ext):
-    
+
     def copy_extensions_to_source(self):
         newext = []
         for ext in self.extensions:
@@ -38,7 +38,7 @@ class CMakeBuildExt(build_ext):
             newext.append( ext )
         self.extensions = newext
         super().copy_extensions_to_source()
-    
+
     def build_extension(self, ext):
         if isinstance(ext, CMakeExtension):
             # Ensure that CMake is present and working
@@ -49,52 +49,47 @@ class CMakeBuildExt(build_ext):
 
             localdir = os.path.join(this_directory, 'local')
 
-            # Custom tuning
-            tune = '-march=native -mtune=native'
-            mycompiler = self.compiler.compiler[0]
-            if (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
-                  mycompiler.find('icpc') >= 0):
-                tune = '-xHost'
-                
             # CMAKE profiles default for all
-            buildtype = 'Debug' if ci_flag else 'RelWithDebInfo'
+            buildtype = 'RelWithDebInfo' # Hydrodyn has issues with Debug
             cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
                           '-DDOUBLE_PRECISION:BOOL=OFF',
+                          '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
                           '-DCMAKE_INSTALL_PREFIX='+localdir,
                           '-DCMAKE_BUILD_TYPE='+buildtype]
             buildtype = buildtype.upper()
-            
-            if eagle_flag:
-                # On Eagle
+
+            # Custom tuning
+            mycompiler = self.compiler.compiler[0]
+            if ci_flag:
+                tune = '-O0 -g'  #-ffpe-trap=invalid,zero,overflow,underflow
+                
+            elif eagle_flag:
+                tune = '-xSKYLAKE-AVX512'
+                cmake_args += ['-DOPENMP=ON']
                 try:
                     self.spawn(['ifort', '--version'])
                 except OSError:
                     raise RuntimeError('Recommend loading intel compiler modules on Eagle (comp-intel, intel-mpi, mkl)')
+
+            elif (mycompiler.find('ifort') >= 0 or mycompiler.find('icc') >= 0 or
+                  mycompiler.find('icpc') >= 0):
+                tune = '-xHost'
                 
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
-                               '-DCMAKE_C_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'=-xSKYLAKE-AVX512',
-                               '-DOPENMP=ON']
-                
-            elif ci_flag:
-                # Github Actions builder- keep it simple
-                pass
-                              
             else:
-                cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
-                               '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
-                               '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
-                              
+                tune = '-march=native -mtune=native'
+
+            cmake_args += ['-DCMAKE_Fortran_FLAGS_'+buildtype+'='+tune,
+                           '-DCMAKE_C_FLAGS_'+buildtype+'='+tune,
+                           '-DCMAKE_CXX_FLAGS_'+buildtype+'='+tune]
 
             if platform.system() == 'Windows':
                 cmake_args += ['-DCMAKE_WINDOWS_EXPORT_ALL_SYMBOLS=TRUE']
-                
+
                 if self.compiler.compiler_type == 'msvc':
                     cmake_args += ['-DCMAKE_GENERATOR_PLATFORM=x64']
                 else:
                     cmake_args += ['-G', 'MinGW Makefiles']
 
-                    
             self.build_temp += '_'+ext.name
             os.makedirs(localdir, exist_ok=True)
             # Need fresh build directory for CMake
@@ -133,7 +128,7 @@ weis_pkgs       = find_packages()
 
 # Install the python sub-packages
 print(sys.argv)
-for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
+for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse']:
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially
@@ -146,13 +141,13 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
 # Now install WEIS and the Fortran packages
 metadata = dict(
     name                          = 'WEIS',
-    version                       = '0.0.1',
+    version                       = '0.2',
     description                   = 'Wind Energy with Integrated Servo-control',
     long_description              = long_description,
     long_description_content_type = 'text/markdown',
     author                        = 'NREL',
     url                           = 'https://github.com/WISDEM/WEIS',
-    install_requires              = ['openmdao>=3.4','numpy','scipy','nlopt','dill','smt','control','jsonmerge'],
+    install_requires              = ['openmdao>=3.4','numpy','scipy','nlopt','dill','smt','control','jsonmerge','fatpack'],
     classifiers                   = [_f for _f in CLASSIFIERS.split('\n') if _f],
     packages                      = weis_pkgs,
     package_data                  =  {'':['*.yaml','*.xlsx']},

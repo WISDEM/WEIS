@@ -676,14 +676,13 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['ElastoDyn']['TStart']   = float_read(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['DecFact']  = int(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['NTwGages'] = int(f.readline().split()[0])
-        twrg = f.readline().split(',')
         if self.fst_vt['ElastoDyn']['NTwGages'] != 0: #loop over elements if there are gauges to be added, otherwise assign directly
-            for i in range(self.fst_vt['ElastoDyn']['NTwGages']):
-                self.fst_vt['ElastoDyn']['TwrGagNd'].append(twrg[i])
-            self.fst_vt['ElastoDyn']['TwrGagNd'][-1]  = self.fst_vt['ElastoDyn']['TwrGagNd'][-1][:-1]   #remove last (newline) character
+            self.fst_vt['ElastoDyn']['TwrGagNd'] = f.readline().strip().split()[:self.fst_vt['ElastoDyn']['NTwGages']]
+            for i, bldgag in enumerate(self.fst_vt['ElastoDyn']['TwrGagNd']):
+                self.fst_vt['ElastoDyn']['TwrGagNd'][i] = int(bldgag.strip(','))
         else:
-            self.fst_vt['ElastoDyn']['TwrGagNd'] = twrg
-            self.fst_vt['ElastoDyn']['TwrGagNd'][-1]  = self.fst_vt['ElastoDyn']['TwrGagNd'][-1][:-1]
+            self.fst_vt['ElastoDyn']['TwrGagNd'] = 0
+            f.readline()
         self.fst_vt['ElastoDyn']['NBlGages'] = int(f.readline().split()[0])
         if self.fst_vt['ElastoDyn']['NBlGages'] != 0:
             self.fst_vt['ElastoDyn']['BldGagNd'] = f.readline().strip().split()[:self.fst_vt['ElastoDyn']['NBlGages']]
@@ -718,11 +717,11 @@ class InputReader_OpenFAST(InputReader_Common):
         # ---------------------- SIMULATION CONTROL --------------------------------------
         self.fst_vt['BeamDyn']['Echo']             = bool_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['QuasiStaticInit']  = bool_read(f.readline().split()[0])
-        self.fst_vt['BeamDyn']['rhoinf']           = int_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['rhoinf']           = float_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['quadrature']       = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['refine']           = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['n_fact']           = int_read(f.readline().split()[0])
-        self.fst_vt['BeamDyn']['DTBeam']            = float_read(f.readline().split()[0])
+        self.fst_vt['BeamDyn']['DTBeam']           = float_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['load_retries']     = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['NRMax']            = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['stop_tol']         = float_read(f.readline().split()[0])
@@ -769,7 +768,7 @@ class InputReader_OpenFAST(InputReader_Common):
         #---------------------- OUTPUTS -------------------------------------------------
         f.readline()
         self.fst_vt['BeamDyn']['SumPrint']    = bool_read(f.readline().split()[0])
-        self.fst_vt['BeamDyn']['OutFmt']      = f.readline().split()[0]
+        self.fst_vt['BeamDyn']['OutFmt']      = f.readline().split()[0][1:-1]
         self.fst_vt['BeamDyn']['NNodeOuts']   = int_read(f.readline().split()[0])
         self.fst_vt['BeamDyn']['OutNd']       = [idx.strip() for idx in f.readline().split('NNodeOuts')[0].split(',')]
         # BeamDyn Outlist
@@ -1006,6 +1005,8 @@ class InputReader_OpenFAST(InputReader_Common):
             self.fst_vt['AeroDynTower']['TwrRe'][i]  = data[0]
             self.fst_vt['AeroDynTower']['TwrCD'][i,:]  = data[1:]
 
+        f.close()
+                
     def read_AeroDyn15(self):
         # AeroDyn v15.03
 
@@ -1175,7 +1176,7 @@ class InputReader_OpenFAST(InputReader_Common):
             polar = {}
 
             polar['InterpOrd']      = int_read(readline_filterComments(f).split()[0])
-            polar['NonDimArea']     = int_read(readline_filterComments(f).split()[0])
+            polar['NonDimArea']     = float_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
             polar['BL_file']        = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
@@ -1248,7 +1249,7 @@ class InputReader_OpenFAST(InputReader_Common):
     def read_AeroDyn15Coord(self):
         
         self.fst_vt['AeroDyn15']['af_coord'] = []
-        self.fst_vt['AeroDyn15']['rthick']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
+        self.fst_vt['AeroDyn15']['ac']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
 
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
             self.fst_vt['AeroDyn15']['af_coord'].append({})
@@ -1261,7 +1262,7 @@ class InputReader_OpenFAST(InputReader_Common):
                 f.readline()
                 f.readline()
                 f.readline()
-                self.fst_vt['AeroDyn15']['rthick'][afi] = float(f.readline().split()[0])
+                self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
                 f.readline()
                 f.readline()
                 f.readline()
@@ -2079,6 +2080,10 @@ class InputReader_OpenFAST(InputReader_Common):
             channel_list = channels[1].split(',')
             self.set_outlist(self.fst_vt['outlist']['SubDyn'], channel_list)
             data = f.readline()
+            
+        f.close()
+
+        f.close()
 
     def read_MAP(self):
         # MAP++
@@ -2131,6 +2136,7 @@ class InputReader_OpenFAST(InputReader_Common):
         f.readline()
         f.readline()
         self.fst_vt['MAP']['Option']   = [str(val) for val in f.readline().strip().split()]
+        f.close()
 
     def read_MoorDyn(self):
 
@@ -2238,6 +2244,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.set_outlist(self.fst_vt['outlist']['MoorDyn'], channel_list)
             data = f.readline()
 
+        f.close()
 
 class InputReader_FAST7(InputReader_Common):
     """ FASTv7.02 input file reader """
@@ -2465,6 +2472,7 @@ class InputReader_FAST7(InputReader_Common):
             channel_list = channels[1].split(',')
             self.set_outlist(self.fst_vt['outlist7'], channel_list)
             data = f.readline()
+        f.close()
 
     def read_AeroDyn_FAST7(self):
 
