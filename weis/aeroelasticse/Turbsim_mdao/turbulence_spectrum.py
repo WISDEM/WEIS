@@ -2,6 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from weis.aeroelasticse.pyIECWind import pyIECWind_extreme
 
+from ROSCO_toolbox.ofTools.util import spectral
+from weis.aeroelasticse.Turbsim_mdao.turbsim_file import TurbSimFile
+
+
 def IECKaimal(f, V_ref, HH, Class, Categ, TurbMod):
     
     ###### Initialize IEC Wind parameters #######
@@ -54,22 +58,56 @@ if __name__=="__main__":
     # Average wind speed at hub height
     V_hub = 10.
     # Wind turbine hub height
-    HH = 100.
+    HH = 150.
     # IEC Turbine Wind Speed Class, can be I, II, or III
     Class = 'I'
     # IEC Turbine Wind Turbulence Category, can be A, B, or C
-    Categ = 'A'
+    Categ = 'B'
     # Wind turbulence model, it can be NTM = normal turbulence, ETM = extreme turbulence, or EWM = extreme wind
     TurbMod = 'NTM'
     # Frequency range
     f=np.arange(0.0015873015873015873015873015873, 20.00001, 0.0015873015873015873015873015873)
+    f=np.logspace(-2,1)
 
 
     U, V, W = IECKaimal(f, V_hub, HH, Class, Categ, TurbMod)
+
+
+
+
+    # load turbsim file and compute spectra of rot avg wind speed
+    # ts_file = TurbSimFile('/Users/dzalkind/Tools/WEIS-2/wind/IEA-15MW/level3_NTM_U12.000000_Seed600.0.bts')
+    ts_filename   = '/Users/dzalkind/Tools/WEIS-2/wind/IEA-15MW/level3_NTM_U10.000000_Seed602.0.bts'
+    ts_file = TurbSimFile(ts_filename)
+    ts_file.compute_rot_avg(120)
+
+    dist = {}
+    dist['Time'] = ts_file['t']
+    dist['Wind'] = ts_file['rot_avg'][0]
+    dist['HH'] = ts_file['u'][0,:,12,12]
+
+
+    # y,fq= op.plot_spectral([dist],[('Wind',0)],averaging='Welch',averaging_window='Hamming')
+    fq, y, _ = spectral.fft_wrap(
+                    dist['Time'], dist['Wind'], averaging='Welch', averaging_window='Hamming', output_type='psd')
+    print('here')
+
+    plt.plot(fq, (y), '-', label = 'U_TS')
 
     plt.plot(f, U, '-', label = 'U')
     plt.plot(f, V, '--', label = 'V')
     plt.plot(f, W, ':', label = 'W')
     plt.yscale('log')
+    plt.xscale('log')
+
+    plt.xlim([1e-2,10])
+    plt.grid('True')
+
+    plt.xlabel('Freq. (Hz)')
+    plt.ylabel('PSD')
+
+
+
+
     plt.legend()
     plt.show() 
