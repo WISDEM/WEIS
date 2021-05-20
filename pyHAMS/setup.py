@@ -35,10 +35,19 @@ f90src = ['WavDynMods.f90',
           ]
 root_dir = os.path.join('pyhams','src')
 
+if os.environ['FC'].lower() == 'ifort':
+    myargs = ['-mkl']
+    mylib = []
+    mylink = ['-mkl']
+else:
+    myargs = ['-fno-align-commons','-fdec-math']
+    mylib = ['lapack']
+    mylink = []
+
 pyhamsExt = Extension('pyhams.libhams', sources=[os.path.join(root_dir,m) for m in f90src],
-                      extra_f90_compile_args=['-O3','-m64','-fPIC','-fno-align-commons','-fdec-math'],
-                      libraries=['lapack'],
-                      extra_link_args=['-fopenmp'])
+                      extra_f90_compile_args=['-O3','-m64','-fPIC']+myargs,
+                      libraries=mylib,
+                      extra_link_args=['-fopenmp']+mylink)
 extlist = [] if platform.system() == 'Windows' else [pyhamsExt]
 
 setup(
