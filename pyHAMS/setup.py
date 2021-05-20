@@ -5,6 +5,8 @@ import setuptools #import setup
 from numpy.distutils.core import setup, Extension
 import os
 import platform
+import sys
+import sysconfig
 
 os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 
@@ -35,7 +37,20 @@ f90src = ['WavDynMods.f90',
           ]
 root_dir = os.path.join('pyhams','src')
 
-if os.environ['FC'].lower() == 'ifort':
+intel_flag = sysconfig.get_config_var('FC') == 'ifort'
+
+if not intel_flag:
+    for a in sys.argv:
+        intel_flag = intel_flag or a.find('intel')>=0
+
+if not intel_flag:
+    try:
+        if os.environ['FC'] == 'ifort':
+            intel_flag = True
+    except KeyError:
+        pass
+    
+if intel_flag:
     myargs = ['-mkl']
     mylib = []
     mylink = ['-mkl']
