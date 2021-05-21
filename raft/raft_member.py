@@ -453,7 +453,7 @@ class Member:
 
             # end of submember for loop
 
-
+        
         # END CAPS/BULKHEADS
         # --------- Add the inertia properties of any end caps ---------
         self.m_cap_list = []
@@ -607,7 +607,7 @@ class Member:
 
             # translate this submember's local inertia matrix to the PRP and add it to the total member's M_struc matrix
             self.M_struc += translateMatrix6to6DOF(center_cap, Mmat) # mass matrix of the member about the PRP
-
+        
 
 
         mass = self.M_struc[0,0]        # total mass of the entire member [kg]
@@ -768,12 +768,12 @@ class Member:
             r_center = r_centerV/V_UW    # calculate overall member center of buoyancy
         else:
             r_center = np.zeros(3)       # temporary fix for out-of-water members
-
+        
         return Fvec, Cmat, V_UW, r_center, AWP, IWP, xWP, yWP
 
 
-    def plot(self, ax):
-        '''Draws the member on the passed axes'''
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[]):
+        '''Draws the member on the passed axes, and optional platform offset and rotation matrix'''
 
         # --- get coordinates of member edges in member reference frame -------------------
 
@@ -809,14 +809,19 @@ class Member:
             coords = np.vstack([X, Y, Z])
 
 
-        # ----- rotate into global frame ------------------------------
-        newcoords = np.matmul(self.R, coords)
+        # ----- move to global frame ------------------------------
+        newcoords = np.matmul(self.R, coords)          # relative orientation in platform
 
-        # shift to end A location
-        Xs = newcoords[0,:] + self.rA[0]
-        Ys = newcoords[1,:] + self.rA[1]
-        Zs = newcoords[2,:] + self.rA[2]
+        newcoords = newcoords + self.rA[:,None]        # shift to end A location, still relative to platform
+        
+        if len(R_ptfm) > 0:
+            newcoords = np.matmul(R_ptfm, newcoords)   # account for offset platform orientation
 
+        # apply platform translational offset
+        Xs = newcoords[0,:] + r_ptfm[0]
+        Ys = newcoords[1,:] + r_ptfm[1]
+        Zs = newcoords[2,:] + r_ptfm[2]
+        
         # plot on the provided axes
         linebit = []  # make empty list to hold plotted lines, however many there are
         for i in range(n):  #range(int(len(Xs)/2-1)):

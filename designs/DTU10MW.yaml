@@ -41,9 +41,9 @@ turbine:
         rho_fill  :  0                         # [kg/m3]
         
         # --- handling of end caps or any internal structures if we need them ---
-        cap_stations :  [    ]                 # [m]  location along member of any inner structures (in same scaling as set by 'stations')
-        cap_t        :  [    ]                 # [m]  thickness of any internal structures
-        cap_d_in     :  [    ]                 # [m]  inner diameter of internal structures (0 for full cap/bulkhead, >0 for a ring shape)
+        #cap_stations :  [    ]                 # [m]  location along member of any inner structures (in same scaling as set by 'stations')
+        #cap_t        :  [    ]                 # [m]  thickness of any internal structures
+        #cap_d_in     :  [    ]                 # [m]  inner diameter of internal structures (0 for full cap/bulkhead, >0 for a ring shape)
 
 
 
@@ -87,64 +87,125 @@ mooring:
     points:
         - name: line1_anchor
           type: fixed
-          location: [656.139, 0.0, -600.0]
-          anchor_type: drag_embedment
+          location: [1385.64, -800.0, -600.0]
+          anchor_type: suction
+
+        - name: line1_connection
+          type: connection
+          location: [41.0814, -23.7184, -38.9497]
+
+        - name: line1_vessel_right
+          type: vessel
+          location: [6.82,     3.9375,     -21.0]
+        
+        - name: line1_vessel_left
+          type: vessel
+          location: [0.0,     -7.875,     -21.0]
 
         - name: line2_anchor
           type: fixed
-          location: [-328.0695, 568.233, -600.0]
-          anchor_type: drag_embedment
+          location: [0.0, 1600.0, -600.0]
+          anchor_type: suction
+        
+        - name: line2_connection
+          type: connection
+          location: [0.0, 47.4367, -38.9497]
+
+        - name: line2_vessel_right
+          type: vessel
+          location: [-6.82,     3.9375,     -21.0]
+        
+        - name: line2_vessel_left
+          type: vessel
+          location: [6.82,     3.9375,     -21.0]
 
         - name: line3_anchor
           type: fixed
-          location: [-328.0695, -568.233, -600.0]
-          anchor_type: drag_embedment
+          location: [-1385.64, -800.0, -600.0]
+          anchor_type: suction
 
-        - name: line1_vessel
-          type: vessel
-          location: [7.875,      0.0,     -21.0]
+        - name: line3_connection
+          type: connection
+          location: [-41.0814, -23.7184, -38.9497]
 
-        - name: line2_vessel
+        - name: line3_vessel_right
           type: vessel
-          location: [-3.9375,    6.81995, -21.0]
+          location: [0.0,    -7.875,     -21.0]
+        
+        - name: line3_vessel_left
+          type: vessel
+          location: [-6.82,   3.9375,     -21.0]
 
-        - name: line3_vessel
-          type: vessel
-          location: [-3.9375,   -6.81995, -21.0]
 
     lines:
         - name: line1
           endA: line1_anchor
-          endB: line1_vessel
-          type: main
-          length: 868.5
-
+          endB: line1_connection
+          type: polyester
+          length: 1599.897
+        
         - name: line2
-          endA: line2_anchor
-          endB: line2_vessel
-          type: main
-          length: 868.5
-
+          endA: line1_connection
+          endB: line1_vessel_right
+          type: polyester
+          length: 46.776
+        
         - name: line3
+          endA: line1_connection
+          endB: line1_vessel_left
+          type: polyester
+          length: 46.776
+        
+        - name: line4
+          endA: line2_anchor
+          endB: line2_connection
+          type: polyester
+          length: 1599.897
+
+        - name: line5
+          endA: line2_connection
+          endB: line2_vessel_right
+          type: polyester
+          length: 46.776
+
+        - name: line6
+          endA: line2_connection
+          endB: line2_vessel_left
+          type: polyester
+          length: 46.776
+        
+        - name: line7
           endA: line3_anchor
-          endB: line3_vessel
-          type: main
-          length: 868.5
+          endB: line3_connection
+          type: polyester
+          length: 1599.897
+
+        - name: line8
+          endA: line3_connection
+          endB: line3_vessel_right
+          type: polyester
+          length: 46.776
+
+        - name: line9
+          endA: line3_connection
+          endB: line3_vessel_left
+          type: polyester
+          length: 46.776
 
     line_types:
-        - name: main
+        - name: polyester
           diameter: 0.150
-          mass_density: 22.514245
-          stiffness: 384.243e6
-          breaking_load: 1e8
-          cost: 100.0
+          mass_density: 24.5126
+          stiffness: 33490507.5
+          breaking_load: 5237608.12
+          cost: 86.4926
           transverse_added_mass: 1.0
           tangential_added_mass: 0.0
           transverse_drag: 1.6
           tangential_drag: 0.1
 
     anchor_types:
-        - name: drag_embedment
+        - name: suction
           mass: 1e3
           cost: 1e4
           max_vertical_load: 0.0

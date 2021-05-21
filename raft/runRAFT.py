@@ -188,10 +188,10 @@ def runRAFTfromWEIS():
 if __name__ == "__main__":
     
     
-    model = runRAFT('../designs/OC3spar.yaml', 'env.yaml')
+    #model = runRAFT('../designs/OC3spar.yaml', 'env.yaml')
     #model = runRAFT('../designs/OC4semi.yaml', 'env.yaml')
     #model = runRAFT('../designs/VolturnUS-S.yaml', 'env.yaml')
-    #model = runRAFT('../designs/DTU10MW.yaml', 'env.yaml')
+    model = runRAFT('../designs/DTU10MW.yaml', 'env.yaml')
     fowt = model.fowtList[0]
     
     
