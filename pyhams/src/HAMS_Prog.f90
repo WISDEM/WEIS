@@ -197,6 +197,10 @@ contains
        CALL ReadHydroStatic
       
        CALL CalNormals(IRSP)
+
+        DO MD1=1,5
+           CLOSE(MD1)
+        ENDDO
       
        write(*,*) ' Number of geometrial symmetries:',ISYS
        write(*,*) ' Number of panels on the hull:   ',NELEM
@@ -324,7 +328,7 @@ contains
          ENDIF
  
          CALL EFORCE(WK,W1,TP,BETA,AMP,EXFC(KK,II,:))
-         CALL SolveMotion(W1,TP,OUFR,BETA,AMP,AMAS(KK,:,:),BDMP(KK,:,:),VDMP,EXFC(KK,II,:),DSPL(KK,II,:))
+         CALL SolveMotion(W1,TP,OUFR,BETA,AMP,AMAS(KK,:,:),BDMP(KK,:,:),BLNR,BQDR,EXFC(KK,II,:),DSPL(KK,II,:))
          CALL OutputPressureElevation_Diffraction(64)
          
         ENDDO
