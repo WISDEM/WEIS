@@ -347,8 +347,11 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 ring_spacing = inputs[m_name+'ring_spacing']
                 n_stiff = 0 if ring_spacing == 0.0 else int(np.floor(s_height / ring_spacing))
                 s_ring = (np.arange(1, n_stiff + 0.1) - 0.5) * (ring_spacing / s_height)
-                #d_ring = np.interp(s_ring, s_grid, inputs[m_name+'d'])
                 d_ring = np.interp(s_ring, s_grid, design['platform']['members'][i]['d'])
+                ''''if ring_spacing == 0.0:     # from Kirana's patch
+                    d_ring = []
+                else:
+                    d_ring = np.interp(s_ring, s_grid, inputs[m_name+'d'])'''
                 # Combine internal structures based on spacing and defined positions
                 s_cap = np.r_[s_ring, inputs[m_name+'cap_stations']]
                 t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), inputs[m_name+'cap_t']]

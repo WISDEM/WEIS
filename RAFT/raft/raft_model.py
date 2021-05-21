@@ -74,11 +74,6 @@ class Model():
 
         self.depth = depth
 
-        # If you're modeling OC3 spar, for example, import the manual yaw stiffness needed by the bridle config
-        if 'yaw stiffness' in design['turbine']:
-            self.yawstiff = design['turbine']['yaw stiffness']
-        else:
-            self.yawstiff = 0
 
         # analysis frequency array
         if len(w)==0:
@@ -98,8 +93,11 @@ class Model():
 
         self.ms.bodyList[0].type = -1  # need to make sure it's set to a coupled type
 
-        self.ms.initialize()  # reinitialize the mooring system to ensure all things are tallied properly etc.
-
+        try:
+            self.ms.initialize()  # reinitialize the mooring system to ensure all things are tallied properly etc.
+        except Exception as e:
+            raise RuntimeError('An error occured when initializing the mooring system: '+e.message)
+        
         self.results = {}     # dictionary to hold all results from the model
         
 
@@ -136,9 +134,12 @@ class Model():
             fowt.calcHydroConstants()
             #fowt.calcDynamicConstants()
 
-        ## First get mooring system characteristics about undisplaced platform position (useful for baseline and verification)
-        self.C_moor0 = self.ms.getCoupledStiffness(lines_only=True)                             # this method accounts for eqiuilibrium of free objects in the system
-        self.F_moor0 = self.ms.getForces(DOFtype="coupled", lines_only=True)
+        # First get mooring system characteristics about undisplaced platform position (useful for baseline and verification)
+        try: 
+            self.C_moor0 = self.ms.getCoupledStiffness(lines_only=True)                             # this method accounts for eqiuilibrium of free objects in the system
+            self.F_moor0 = self.ms.getForces(DOFtype="coupled", lines_only=True)
+        except Exception as e:
+            raise RuntimeError('An error occured when getting linearized mooring properties in undisplaced state: '+e.message)
 
         self.results['properties'] = {}   # signal this data is available by adding a section to the results dictionary
         
@@ -154,14 +155,14 @@ class Model():
         # (This assumes some loads have been applied)
         #self.ms.display=2
 
-        self.ms.solveEquilibrium3(DOFtype="both", tol=-0.01) #, rmsTol=1.0E-5)     # get the system to its equilibrium
-        
+        try:
+            self.ms.solveEquilibrium3(DOFtype="both", tol=-0.01) #, rmsTol=1.0E-5)     # get the system to its equilibrium
+        except Exception as e:     #mp.MoorPyError
+            print('An error occured when solving system equilibrium: '+e.message)
+            #raise RuntimeError('An error occured when solving unloaded equilibrium: '+error.message)
+            
         # ::: a loop could be added here for an array :::
         fowt = self.fowtList[0]
-
-        # range of DOFs for the current turbine
-        i1 = 0
-        i2 = 6
         
         print("Equilibrium'3' platform positions/rotations:")
         printVec(self.ms.bodyList[0].r6)
@@ -173,11 +174,14 @@ class Model():
         print("Surge: {:.2f}".format(r6eq[0]))
         print("Pitch: {:.2f}".format(r6eq[4]*180/np.pi))
 
-        C_moor = self.ms.getCoupledStiffness(lines_only=True)
-        F_moor = self.ms.getForces(DOFtype="coupled", lines_only=True)    # get net forces and moments from mooring lines on Body
-
-        # manually add yaw spring stiffness as compensation until bridle (crow foot) configuration is added
-        C_moor[5,5] += self.yawstiff
+        try:
+            C_moor = self.ms.getCoupledStiffness(lines_only=True)
+            F_moor = self.ms.getForces(DOFtype="coupled", lines_only=True)    # get net forces and moments from mooring lines on Body
+        except Exception as e:
+            raise RuntimeError('An error occured when getting linearized mooring properties in offset state: '+e.message)
+            
+        # add any additional yaw stiffness that isn't included in the MoorPy model (e.g. if a bridle isn't modeled)
+        C_moor[5,5] += fowt.yawstiff
 
         self.C_moor = C_moor
         self.F_moor = F_moor
@@ -199,23 +203,35 @@ class Model():
         M_tot = np.zeros([self.nDOF,self.nDOF])       # total mass and added mass matrix [kg, kg-m, kg-m^2]
         C_tot = np.zeros([self.nDOF,self.nDOF])       # total stiffness matrix [N/m, N, N-m]
 
-
         # add in mooring stiffness from MoorPy system
-        C_tot = np.array(self.C_moor0)
+        C_tot += np.array(self.C_moor0)
 
         # ::: a loop could be added here for an array :::
         fowt = self.fowtList[0]
 
-        # range of DOFs for the current turbine
-        i1 = 0
-        i2 = 6
+        # add any additional yaw stiffness that isn't included in the MoorPy model (e.g. if a bridle isn't modeled)
+        C_tot[5,5] += fowt.yawstiff
 
         # add fowt's terms to system matrices (BEM arrays are not yet included here)
-        M_tot[i1:i2] += fowt.M_struc + fowt.A_hydro_morison   # mass
-        C_tot[i1:i2] += fowt.C_struc + fowt.C_hydro           # stiffness
+        M_tot += fowt.M_struc + fowt.A_hydro_morison   # mass
+        C_tot += fowt.C_struc + fowt.C_hydro           # stiffness
+
+        # check viability of matrices
+        message=''
+        for i in range(self.nDOF):
+            if M_tot[i,i] < 1.0:
+                message += f'Diagonal entry {i} of system mass matrix is less than 1 ({M_tot[i,i]}). '
+            if C_tot[i,i] < 1.0:
+                message += f'Diagonal entry {i} of system stiffness matrix is less than 1 ({C_tot[i,i]}). '
+                
+        if len(message) > 0:
+            raise RuntimeError('System matrices computed by RAFT have one or more small or negative diagonals: '+message)
 
         # calculate natural frequencies (using eigen analysis to get proper values for pitch and roll - otherwise would need to base about CG if using diagonal entries only)
         eigenvals, eigenvectors = np.linalg.eig(np.matmul(np.linalg.inv(M_tot), C_tot))   # <<< need to sort this out so it gives desired modes, some are currently a bit messy
+
+        if any(eigenvals <= 0.0):
+            raise RuntimeError("Error: zero or negative system eigenvalues detected.")
 
         # sort to normal DOF order based on which DOF is largest in each eigenvector
         ind_list = []
@@ -540,8 +556,8 @@ class Model():
         '''plots the whole model, including FOWTs and mooring system...'''
 
         # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
-        self.ms.bodyList[0].setPosition(np.zeros(6))
-        self.ms.initialize()
+        #self.ms.bodyList[0].setPosition(np.zeros(6))
+        #self.ms.initialize()
         fig, ax = self.ms.plot()
         #fig = plt.figure(figsize=(20/2.54,12/2.54))
         #ax = Axes3D(fig)
