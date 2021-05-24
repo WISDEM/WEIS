@@ -38,11 +38,13 @@ class TestIECWind(unittest.TestCase):
         Categ = 'A'
         # Wind turbulence model, it can be NTM = normal turbulence, ETM = extreme turbulence, or EWM = extreme wind
         TurbMod = 'NTM'
+        # Rotor radius, used to calculate rotor average wind spectrum
+        R = 60.
         # Frequency range
         f=np.linspace(0.001, 20., 10)
 
 
-        U, V, W = IECKaimal(f, V_hub, HH, Class, Categ, TurbMod)
+        U, V, W, Rot = IECKaimal(f, V_hub, HH, Class, Categ, TurbMod, R)
         np.testing.assert_array_almost_equal(U , np.array([4.38659198e+02, 2.22282686e-02, 7.01694129e-03, 
                                                            3.57258290e-03, 2.21264170e-03, 1.52577475e-03, 
                                                            1.12612267e-03, 8.71070791e-04, 6.97323831e-04,
@@ -55,6 +57,11 @@ class TestIECWind(unittest.TestCase):
                                                            4.68723385e-03, 2.91293916e-03, 2.01281628e-03,
                                                            1.48763283e-03, 1.15183382e-03, 9.22764383e-04,
                                                            7.58773687e-04]), 5)
+        np.testing.assert_array_almost_equal(Rot , np.array([3.47567168e+02, 1.72828935e-06, 1.36729085e-07,
+                                                            np.nan,           np.nan,            np.nan,    
+                                                            np.nan,           np.nan,            np.nan,
+                                                            np.nan]), 5)
+                                                           
 
 if __name__ == "__main__":
     unittest.main()
