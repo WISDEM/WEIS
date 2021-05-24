@@ -55,9 +55,9 @@ class TestIECWind(unittest.TestCase):
                                                            1.48763283e-03, 1.15183382e-03, 9.22764383e-04,
                                                            7.58773687e-04]), 5)
         np.testing.assert_array_almost_equal(Rot , np.array([3.47567168e+02, 1.72828935e-06, 1.36729085e-07,
-                                                            np.nan,           np.nan,            np.nan,    
-                                                            np.nan,           np.nan,            np.nan,
-                                                            np.nan]), 5)
+                                                            0,           0,            0,    
+                                                            0,           0,            0,
+                                                            0]), 5)
                                                            
 
 if __name__ == "__main__":

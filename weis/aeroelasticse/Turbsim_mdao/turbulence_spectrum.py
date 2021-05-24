@@ -50,6 +50,9 @@ def IECKaimal(f, V_ref, HH, Class, Categ, TurbMod, R):
     Rot = (2*U / (R * kappa)**3) * \
         (modstruve(1,2*R*kappa) - iv(1,2*R*kappa) - 2/np.pi + \
             R*kappa * (-2 * modstruve(-2,2*R*kappa) + 2 * iv(2,2*R*kappa) + 1) )
+
+    # set NaNs to 0
+    Rot[np.isnan(Rot)] = 0
     
     # Formulas from Section 6.3 of IEC 61400-1-2019
     # S_1_f = 0.05 * sigma_1**2. * (L_1 / V_hub) ** (-2./3.) * f **(-5./3)
