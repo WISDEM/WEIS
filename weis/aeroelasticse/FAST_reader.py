@@ -429,7 +429,7 @@ class InputReader_OpenFAST(InputReader_Common):
             self.read_MoorDyn()
 
         bd_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['BDBldFile(1)'])
-        if os.path.exists(bd_file):
+        if os.path.isfile(bd_file):
             self.read_BeamDyn(bd_file)
 
     def read_MainInput(self):
@@ -1125,7 +1125,7 @@ class InputReader_OpenFAST(InputReader_Common):
         self.read_AeroDyn15Polar()
         self.read_AeroDyn15Coord()
         olaf_filename = os.path.join(self.FAST_directory, self.fst_vt['AeroDyn15']['OLAFInputFileName'])
-        if os.path.exists(olaf_filename):
+        if os.path.isfile(olaf_filename):
             self.read_AeroDyn15OLAF(olaf_filename)
 
     def read_AeroDyn15Blade(self):
