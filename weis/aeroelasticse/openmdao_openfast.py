@@ -628,7 +628,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Update OLAF
         if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
+            _, _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
             fst_vt['AeroDyn15']['OLAF']['nNWPanel'] = nNWPanel
             fst_vt['AeroDyn15']['OLAF']['nFWPanel'] = nFWPanel
             fst_vt['AeroDyn15']['OLAF']['nFWPanelFree'] = nFWPanelFree
@@ -1154,7 +1154,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Set DT according to OLAF guidelines
         if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            dt_wanted, _, _, _ = OLAFParams(inputs['Omega_init'])
+            dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
             iec.init_cond[("Fst","DT")]        = {'U':inputs['U_init']}
             iec.init_cond[("Fst","DT")]['val'] = dt_wanted
 
@@ -1273,7 +1273,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 # Set DT according to OLAF guidelines
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dt_wanted, _, _, _ = OLAFParams(inputs['Omega_init'])
+                    dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
                     case_inputs[("Fst","DT")]               = {'vals':dt_wanted, 'group':1}
 
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
