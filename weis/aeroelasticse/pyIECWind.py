@@ -432,6 +432,7 @@ class pyIECWind_turb():
         self.seed             = np.random.uniform(1, 1e8)
         self.Turbulence_Class = 'B'  # IEC Turbulance Class
         self.z_hub            = 90.  # wind turbine hub height (m)
+        self.z_grid_center    = 90   # height of grid center from the ground (m)
         self.D                = 126. # rotor diameter (m)
         self.PLExp            = 0.2
         self.AnalysisTime     = 720.
@@ -443,9 +444,9 @@ class pyIECWind_turb():
         turbsim_vt.runtime_options.RandSeed1  = self.seed
         turbsim_vt.runtime_options.WrADTWR    = False
         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
-        turbsim_vt.tmspecs.HubHt              = self.z_hub # wind grid centered at hub height
-        turbsim_vt.tmspecs.GridHeight         = (self.z_hub - 1.) * 2.0 # wind grid stops 1 meter above the ground
-        turbsim_vt.tmspecs.GridWidth          = (self.z_hub - 1.) * 2.0 # squared wind grid
+        turbsim_vt.tmspecs.HubHt              = self.z_grid_center # wind grid may be centered at hub height, but it may also go higher. RefHt stays at hub height
+        turbsim_vt.tmspecs.GridHeight         = (self.z_grid_center - 1.) * 2.0 # wind grid stops 1 meter above the ground
+        turbsim_vt.tmspecs.GridWidth          = (self.z_grid_center - 1.) * 2.0 # squared wind grid
         turbsim_vt.tmspecs.NumGrid_Z          = 25
         turbsim_vt.tmspecs.NumGrid_Y          = 25
         turbsim_vt.tmspecs.HFlowAng           = 0.0

@@ -134,6 +134,11 @@ class CaseGen_IEC():
             iecwind.dir_change       = self.transient_dir_change
             iecwind.shear_orient     = self.transient_shear_orientation
             iecwind.z_hub            = self.z_hub
+            # if running olaf, raise the center of the grid above hub height because the wake will expand
+            if case_inputs_i['AeroDyn15', 'WakeMod']['vals'][0] == 3:
+                iecwind.z_grid_center = iecwind.z_hub * 1.5
+            else:
+                iecwind.z_grid_center = iecwind.z_hub
             iecwind.D                = self.D
             iecwind.PLExp            = alpha
             
