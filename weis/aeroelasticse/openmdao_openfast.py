@@ -1152,11 +1152,14 @@ class FASTLoadCases(ExplicitComponent):
         iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
         iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
 
-        # Set DT according to OLAF guidelines
+        # If running OLAF...
         if fst_vt['AeroDyn15']['WakeMod'] == 3:
+            # Set DT according to OLAF guidelines
             dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
             iec.init_cond[("Fst","DT")]        = {'U':inputs['U_init']}
             iec.init_cond[("Fst","DT")]['val'] = dt_wanted
+            # Raise the center of the grid 50% above hub height because the wake will expand
+            iec.grid_center_over_hh = 1.5
 
         # Todo: need a way to handle Metocean conditions for Offshore
         # if offshore:
