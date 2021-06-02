@@ -25,6 +25,9 @@ class RAFT_WEIS(om.Group):
         turbine_opt['scalar_thicknesses'] = turbine_opt['scalar_diameters'] = turbine_opt['scalar_coefficients'] = False
         turbine_opt['shape'] = 'circ'
 
+        # Add control options to turbine_opt for now
+        turbine_opt['PC_GS_n'] = weis_opt['Level3']['ROSCO']['PC_GS_n']
+        
         members_opt = {}
         members_opt['nmembers'] = len(weis_opt["floating"]["members"]["name"])
         members_opt['npts'] = weis_opt["floating"]["members"]["n_height"]

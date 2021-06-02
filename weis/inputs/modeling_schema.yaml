@@ -2564,6 +2564,18 @@ properties:
                         minimum: 0.0
                         maximum: 2.0
                         description: Blade collective flapwise damping at rated wind speed, used for flap controller tuning
+                    PC_GS_n:
+                        type: number
+                        default: 29
+                        minimum: 1
+                        maximum: 100
+                        description: Number of blade pitch control gain scheduling breakpoints
+                    WS_GS_n:
+                        type: number
+                        default: 59
+                        minimum: 2
+                        maximum: 100
+                        description: Number of wind speed gain scheduling breakpoints
             outlist:
                 type: object
                 default: {}

@@ -83,6 +83,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
             self.add_input('turbine_tower_CaEnd', val=np.zeros(turbine_npts), desc='End axial added mass coefficient')
         self.add_input('turbine_tower_rho_shell', val=0.0, units='kg/m**3', desc='Material density')
 
+        # control inputs
+        self.add_input('rotor_PC_GS_angles',     val=np.zeros(turbine_opt['PC_GS_n']),   units='rad',        desc='Gain-schedule table: pitch angles')
+        self.add_input('rotor_PC_GS_Kp',         val=np.zeros(turbine_opt['PC_GS_n']),   units='s',          desc='Gain-schedule table: pitch controller kp gains')
+        self.add_input('rotor_PC_GS_Ki',         val=np.zeros(turbine_opt['PC_GS_n']),   units='s',          desc='Gain-schedule table: pitch controller ki gains')
+        self.add_input('rotor_Fl_Kp',            val=0.0,                        desc='Floating feedback gain')
+        self.add_input('rotor_inertia',          val=0.0,    units='kg*m**2',    desc='Rotor inertia')
+
         # member inputs
         for i in range(1, nmembers + 1):
 
@@ -282,6 +289,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['turbine']['tower']['CdEnd'] = inputs['turbine_tower_CdEnd']
             design['turbine']['tower']['CaEnd'] = inputs['turbine_tower_CaEnd']
         design['turbine']['tower']['rho_shell'] = float(inputs['turbine_tower_rho_shell'])
+
+        design['turbine']['control'] = {}
+        design['turbine']['control']['PC_GS_Angles']    = inputs['rotor_PC_GS_angles']
+        design['turbine']['control']['PC_GS_Kp']        = inputs['rotor_PC_GS_Kp']
+        design['turbine']['control']['PC_GS_Ki']        = inputs['rotor_PC_GS_Ki']
+        design['turbine']['control']['Fl_Kp']           = float(inputs['rotor_Fl_Kp'])
+        design['turbine']['control']['I_drivetrain']    = float(inputs['rotor_inertia'])
 
         design['platform'] = {}
         design['platform']['members'] = [dict() for i in range(nmembers)]
