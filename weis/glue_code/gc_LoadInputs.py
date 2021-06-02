@@ -34,7 +34,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         
         # Openfast
         if self.modeling_options['Level3']['flag']:
-            fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
+            fast = InputReader_OpenFAST()
             self.modeling_options['openfast']['fst_vt'] = {}
             self.modeling_options['openfast']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
