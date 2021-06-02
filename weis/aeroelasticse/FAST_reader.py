@@ -428,8 +428,9 @@ class InputReader_OpenFAST(InputReader_Common):
         if self.fst_vt['Fst']['CompMooring'] == 3: # MoorDyn implimented
             self.read_MoorDyn()
 
-        if self.fst_vt['Fst']['CompElast'] == 2: # BeamDyn read assumes all 3 blades are the same
-            self.read_BeamDyn()
+        bd_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['BDBldFile(1)'])
+        if os.path.isfile(bd_file):
+            self.read_BeamDyn(bd_file)
 
     def read_MainInput(self):
         # Main FAST v8.16-v8.17 Input File
@@ -705,12 +706,9 @@ class InputReader_OpenFAST(InputReader_Common):
 
         f.close()
 
-    def read_BeamDyn(self):
+    def read_BeamDyn(self, bd_file):
         # BeamDyn Input File
-
-        bd_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['BDBldFile(1)'])
         f = open(bd_file)
-
         f.readline()
         f.readline()
         f.readline()
@@ -1126,10 +1124,9 @@ class InputReader_OpenFAST(InputReader_Common):
         self.read_AeroDyn15Blade()
         self.read_AeroDyn15Polar()
         self.read_AeroDyn15Coord()
-        if self.fst_vt['AeroDyn15']['WakeMod'] == 3:
-            if self.fst_vt['AeroDyn15']['AFAeroMod'] == 2:
-                raise Exception('OLAF is called with unsteady airfoil aerodynamics, but OLAF currently only supports AFAeroMod == 1')
-            self.read_AeroDyn15OLAF()
+        olaf_filename = os.path.join(self.FAST_directory, self.fst_vt['AeroDyn15']['OLAFInputFileName'])
+        if os.path.isfile(olaf_filename):
+            self.read_AeroDyn15OLAF(olaf_filename)
 
     def read_AeroDyn15Blade(self):
         # AeroDyn v5.00 Blade Definition File
@@ -1274,10 +1271,9 @@ class InputReader_OpenFAST(InputReader_Common):
 
                 f.close()
 
-    def read_AeroDyn15OLAF(self):
+    def read_AeroDyn15OLAF(self, olaf_filename):
         
         self.fst_vt['AeroDyn15']['OLAF'] = {}
-        olaf_filename = os.path.join(self.FAST_directory, self.fst_vt['AeroDyn15']['OLAFInputFileName'])
         f = open(olaf_filename)
         f.readline()
         f.readline()
@@ -1322,7 +1318,6 @@ class InputReader_OpenFAST(InputReader_Common):
         self.fst_vt['AeroDyn15']['OLAF']['VTK_fps']     = float_read(f.readline().split()[0])
         f.readline()
         f.close()
-
 
     def read_ServoDyn(self):
         # ServoDyn v1.05 Input File

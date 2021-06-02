@@ -878,6 +878,8 @@ class InputWriter_OpenFAST(InputWriter_Common):
             self.write_AeroDyn15Coord()
         
         if self.fst_vt['AeroDyn15']['WakeMod'] == 3:
+            if self.fst_vt['AeroDyn15']['AFAeroMod'] == 2:
+                raise Exception('OLAF is called with unsteady airfoil aerodynamics, but OLAF currently only supports AFAeroMod == 1')
             self.write_OLAF()
 
         # Generate AeroDyn v15.03 input file
