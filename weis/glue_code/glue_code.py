@@ -75,8 +75,28 @@ class WindPark(om.Group):
         # Analysis components
         self.add_subsystem('wisdem',   wisdemPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
 
-        # Level independent subsystems
+        # XFOIL
         self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
+        # Connections to run xfoil for te flaps
+        self.connect('blade.pa.chord_param',                  'xf.chord')
+        self.connect('blade.outer_shape_bem.s',               'xf.s')
+        self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')
+        self.connect('airfoils.aoa',                          'xf.aoa')
+        self.connect('assembly.r_blade',                      'xf.r')
+        self.connect('dac_ivc.te_flap_end',                   'xf.span_end')
+        self.connect('dac_ivc.te_flap_ext',                   'xf.span_ext')
+        self.connect('dac_ivc.chord_start',                   'xf.chord_start')
+        self.connect('dac_ivc.delta_max_pos',                 'xf.delta_max_pos')
+        self.connect('dac_ivc.delta_max_neg',                 'xf.delta_max_neg')
+        self.connect('env.speed_sound_air',                   'xf.speed_sound_air')
+        self.connect('env.rho_air',                           'xf.rho_air')
+        self.connect('env.mu_air',                            'xf.mu_air')
+        self.connect('control.rated_TSR',                     'xf.rated_TSR')
+        if modeling_options['flags']['control']:
+            self.connect('control.max_TS',                        'xf.max_TS')
+        self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
+        self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
+        self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
 
         # ROSCO can be used at all levels
         if modeling_options['ROSCO']['flag']:
@@ -96,10 +116,9 @@ class WindPark(om.Group):
             self.connect('nacelle.uptilt',                 'sse_tune.tilt')
             self.connect('airfoils.aoa',                   'sse_tune.airfoils_aoa')
             self.connect('airfoils.Re',                    'sse_tune.airfoils_Re')
-            ## @PB, please check
-            self.connect('blade.interp_airfoils.cl_interp',       'sse_tune.airfoils_cl')
-            self.connect('blade.interp_airfoils.cd_interp',       'sse_tune.airfoils_cd')
-            self.connect('blade.interp_airfoils.cm_interp',       'sse_tune.airfoils_cm')
+            self.connect('xf.cl_interp_flaps',             'sse_tune.airfoils_cl')
+            self.connect('xf.cd_interp_flaps',             'sse_tune.airfoils_cd')
+            self.connect('xf.cm_interp_flaps',             'sse_tune.airfoils_cm')
             self.connect('configuration.n_blades',         'sse_tune.nBlades')
             self.connect('env.rho_air',                    'sse_tune.rho')
             self.connect('env.mu_air',                     'sse_tune.mu')
@@ -233,27 +252,6 @@ class WindPark(om.Group):
             # Connections from blade struct parametrization to rotor load anlysis
             self.connect('blade.opt_var.s_opt_spar_cap_ss',   'rlds_post.constr.s_opt_spar_cap_ss')
             self.connect('blade.opt_var.s_opt_spar_cap_ps',   'rlds_post.constr.s_opt_spar_cap_ps')
-            
-            # Connections to run xfoil for te flaps
-            self.connect('blade.pa.chord_param',                  'xf.chord')
-            self.connect('blade.outer_shape_bem.s',               'xf.s')
-            self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')
-            self.connect('airfoils.aoa',                          'xf.aoa')
-            self.connect('assembly.r_blade',                      'xf.r')
-            self.connect('dac_ivc.te_flap_end',                   'xf.span_end')
-            self.connect('dac_ivc.te_flap_ext',                   'xf.span_ext')
-            self.connect('dac_ivc.chord_start',                   'xf.chord_start')
-            self.connect('dac_ivc.delta_max_pos',                 'xf.delta_max_pos')
-            self.connect('dac_ivc.delta_max_neg',                 'xf.delta_max_neg')
-            self.connect('env.speed_sound_air',                   'xf.speed_sound_air')
-            self.connect('env.rho_air',                           'xf.rho_air')
-            self.connect('env.mu_air',                            'xf.mu_air')
-            self.connect('control.rated_TSR',                     'xf.rated_TSR')
-            if modeling_options['flags']['control']:
-                self.connect('control.max_TS',                        'xf.max_TS')
-            self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
-            self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
-            self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
 
             # Connections to the stall check 
             self.connect('blade.outer_shape_bem.s',        'stall_check_of.s')
