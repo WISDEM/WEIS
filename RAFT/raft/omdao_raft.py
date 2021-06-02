@@ -86,7 +86,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # control inputs
         self.add_input('rotor_PC_GS_angles',     val=np.zeros(turbine_opt['PC_GS_n']),   units='rad',        desc='Gain-schedule table: pitch angles')
         self.add_input('rotor_PC_GS_Kp',         val=np.zeros(turbine_opt['PC_GS_n']),   units='s',          desc='Gain-schedule table: pitch controller kp gains')
-        self.add_input('rotor_PC_GS_Ki',         val=np.zeros(turbine_opt['PC_GS_n']),   units='s',          desc='Gain-schedule table: pitch controller ki gains')
+        self.add_input('rotor_PC_GS_Ki',         val=np.zeros(turbine_opt['PC_GS_n']),                       desc='Gain-schedule table: pitch controller ki gains')
         self.add_input('rotor_Fl_Kp',            val=0.0,                        desc='Floating feedback gain')
         self.add_input('rotor_inertia',          val=0.0,    units='kg*m**2',    desc='Rotor inertia')
 

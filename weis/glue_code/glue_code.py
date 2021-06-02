@@ -79,7 +79,7 @@ class WindPark(om.Group):
         self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
 
         # ROSCO can be used at all levels
-        if modeling_options['Level3']['ROSCO']['flag']:
+        if modeling_options['ROSCO']['flag']:
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # ROSCO tuning
 
             self.connect('rotorse.rp.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
@@ -141,7 +141,7 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.ptfm_freq',        'sse_tune.tune_rosco.ptfm_freq')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
-            if modeling_options['Level3']['ROSCO']['Flp_Mode'] > 0:
+            if modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.connect('tune_rosco_ivc.Flp_omega',    'sse_tune.tune_rosco.Flp_omega')
                 self.connect('tune_rosco_ivc.Flp_zeta',     'sse_tune.tune_rosco.Flp_zeta')
 
@@ -263,7 +263,7 @@ class WindPark(om.Group):
             self.connect('xf.cm_interp_flaps',             'stall_check_of.airfoils_cm')
             self.connect('aeroelastic.max_aoa',            'stall_check_of.aoa_along_span')
 
-            if modeling_options['Level3']['ROSCO']['flag']==False:
+            if modeling_options['ROSCO']['flag']==False:
                 raise Exception("ERROR: WISDEM does not support openfast without the tuning of ROSCO")
 
             
@@ -668,7 +668,7 @@ class WindPark(om.Group):
             # Inputs to plantfinancese from wt group
             if modeling_options['openfast']['dlc_settings']['run_power_curve'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                 self.connect('aeroelastic.AEP',     'financese_post.turbine_aep')
-            elif modeling_options['Level3']['ROSCO']['flag']:
+            elif modeling_options['ROSCO']['flag']:
                 self.connect('rotorse.rp.AEP',             'financese_post.turbine_aep')
 
             self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
@@ -688,7 +688,7 @@ class WindPark(om.Group):
             self.connect('costs.fixed_charge_rate', 'financese_post.fixed_charge_rate')
 
             # Connections to outputs to screen
-            if modeling_options['Level3']['ROSCO']['flag']:
+            if modeling_options['ROSCO']['flag']:
                 if modeling_options['openfast']['dlc_settings']['run_power_curve'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
                     self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
                 else:

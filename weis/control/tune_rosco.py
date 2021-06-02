@@ -37,7 +37,7 @@ class TuneROSCO(ExplicitComponent):
 
     def setup(self):
         self.modeling_options = self.options['modeling_options']
-        rosco_init_options = self.modeling_options['Level3']['ROSCO']
+        rosco_init_options = self.modeling_options['ROSCO']
         rotorse_init_options = self.modeling_options['WISDEM']['RotorSE']
         n_pc     = rotorse_init_options['n_pc']
 
@@ -156,7 +156,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
 
         self.add_output('PC_GS_angles',     val=np.zeros(rosco_init_options['PC_GS_n']), units='rad', desc='Gain-schedule table: pitch angles')
-        self.add_output('PC_GS_Kp',         val=np.zeros(rosco_init_options['PC_GS_n']),              desc='Gain-schedule table: pitch controller kp gains')
+        self.add_output('PC_GS_Kp',         val=np.zeros(rosco_init_options['PC_GS_n']), units='s',   desc='Gain-schedule table: pitch controller kp gains')
         self.add_output('PC_GS_Ki',         val=np.zeros(rosco_init_options['PC_GS_n']),              desc='Gain-schedule table: pitch controller ki gains')
         self.add_output('Fl_Kp',            val=0.0,            desc='Flap control integral gain')
 
@@ -166,7 +166,7 @@ class TuneROSCO(ExplicitComponent):
         '''
         Call ROSCO toolbox to define controller
         '''
-        rosco_init_options   = self.modeling_options['Level3']['ROSCO']
+        rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
         rosco_init_options['omega_pc']    = inputs['PC_omega']
         rosco_init_options['zeta_pc']     = inputs['PC_zeta']
@@ -274,7 +274,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
             WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
-            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['Level3']['ROSCO']['Bld_FlpDamp']
+            WISDEM_turbine.bld_flapwise_damp = self.modeling_options['ROSCO']['Bld_FlpDamp']
 
         # Tune Controller!
         controller = ROSCO_controller.Controller(rosco_init_options)
@@ -352,7 +352,7 @@ class TuneROSCO(ExplicitComponent):
         self.ROSCO_input['Cq'] = WISDEM_turbine.Cq
 
         if self.modeling_options['Level3']['flag']:
-            self.modeling_options['openfast']['fst_vt']['DISCON_in'] = ROSCO_input  
+            self.modeling_options['openfast']['fst_vt']['DISCON_in'] = self.ROSCO_input  
         
 
         # Outputs 
