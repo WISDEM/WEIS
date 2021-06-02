@@ -182,7 +182,7 @@ def run_mass_sweep():
     #for var in var_out+[var_x]:
 
     # Run FAST cases
-    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+    fastBatch                   = runFAST_pywrapper_batch()
 
     # Monopile
     # fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)

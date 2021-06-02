@@ -6,7 +6,6 @@ import time
 class FastWrapper(object):
 
     def __init__(self, **kwargs):
-        self.FAST_ver = 'OPENFAST' #(FAST7, FAST8, OPENFAST)
 
         self.FAST_exe = None   # Path to executable
         self.FAST_InputFile = None   # FAST input file (ext=.fst)

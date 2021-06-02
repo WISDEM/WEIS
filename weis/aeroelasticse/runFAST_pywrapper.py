@@ -9,10 +9,8 @@ import sys
 import platform
 import multiprocessing as mp
 
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST, InputReader_FAST7
-from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST, InputWriter_FAST7
-from weis.aeroelasticse.FAST_wrapper import FastWrapper
-from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
+from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
+from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis
 
@@ -109,7 +107,6 @@ la = LoadsAnalysis(
 class runFAST_pywrapper(object):
 
     def __init__(self, **kwargs):
-        self.FAST_ver = 'OPENFAST' #(FAST7, FAST8, OPENFAST)
 
         self.FAST_exe           = None
         self.FAST_lib           = None
@@ -139,22 +136,14 @@ class runFAST_pywrapper(object):
     def execute(self):
 
         # FAST version specific initialization
-        if self.FAST_ver.lower() == 'fast7':
-            reader = InputReader_FAST7(FAST_ver=self.FAST_ver)
-            writer = InputWriter_FAST7(FAST_ver=self.FAST_ver)
-        elif self.FAST_ver.lower() in ['fast8','openfast']:
-            reader = InputReader_OpenFAST(FAST_ver=self.FAST_ver)
-            writer = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
+        reader = InputReader_OpenFAST()
+        writer = InputWriter_OpenFAST()
 
         # Read input model, FAST files or Yaml
         if self.fst_vt == {}:
-            if self.read_yaml:
-                reader.FAST_yamlfile = self.FAST_yamlfile_in
-                reader.read_yaml()
-            else:
-                reader.FAST_InputFile = self.FAST_InputFile
-                reader.FAST_directory = self.FAST_directory
-                reader.execute()
+            reader.FAST_InputFile = self.FAST_InputFile
+            reader.FAST_directory = self.FAST_directory
+            reader.execute()
         
             # Initialize writer variables with input model
             writer.fst_vt = self.fst_vt = reader.fst_vt
@@ -203,9 +192,8 @@ class runFAST_pywrapper(object):
 
 class runFAST_pywrapper_batch(object):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
 
-        self.FAST_ver           = 'OpenFAST'
         self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
         self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
         self.FAST_InputFile     = None
@@ -228,15 +216,6 @@ class runFAST_pywrapper_batch(object):
         
         self.post               = None
 
-        # Optional population of class attributes from key word arguments
-        for (k, w) in kwargs.items():
-            try:
-                setattr(self, k, w)
-            except:
-                pass
-
-        super(runFAST_pywrapper_batch, self).__init__()
-
     def create_case_data(self):
 
         case_data_all = []
@@ -244,7 +223,6 @@ class runFAST_pywrapper_batch(object):
             case_data = {}
             case_data['case'] = self.case_list[i]
             case_data['case_name'] = self.case_name_list[i]
-            case_data['FAST_ver'] = self.FAST_ver
             case_data['FAST_exe'] = self.FAST_exe
             case_data['FAST_lib'] = self.FAST_lib
             case_data['FAST_runDirectory'] = self.FAST_runDirectory
@@ -372,14 +350,14 @@ class runFAST_pywrapper_batch(object):
 def evaluate(indict):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
-    known_keys = ['case', 'case_name', 'FAST_ver', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
+    known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
                   'write_yaml', 'FAST_yamlfile_out', 'channels', 'debug_level', 'overwrite_outfiles', 'keep_time', 'post']
     for k in indict:
         if k in known_keys: continue
         print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
     
-    fast = runFAST_pywrapper(FAST_ver=indict['FAST_ver'])     # FAST_ver = "OpenFAST"
+    fast = runFAST_pywrapper()
     fast.FAST_exe           = indict['FAST_exe']              # Path to FAST
     fast.FAST_lib           = indict['FAST_lib']              # Path to FAST
     fast.FAST_InputFile     = indict['FAST_InputFile']        # Name of the fst - does not include full path
