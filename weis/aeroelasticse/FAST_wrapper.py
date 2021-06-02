@@ -5,21 +5,13 @@ import time
 
 class FastWrapper(object):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
 
         self.FAST_exe = None   # Path to executable
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
         self.debug_level = 0 #(0:quiet, 1:output task description, 2:full FAST stdout)
 
-        # Optional population class attributes from key word arguments
-        for k, w in kwargs.items():
-            try:
-                setattr(self, k, w)
-            except:
-                pass
-
-        super(FastWrapper, self).__init__()
 
     def execute(self):
 
@@ -61,7 +53,6 @@ if __name__=="__main__":
 
     fast = FastWrapper(debug_level=2)
 
-    fast.FAST_ver = 'OPENFAST'
 
     if fast.FAST_ver == 'FAST7':
         fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/FAST_v7.02.00d-bjj/FAST.exe'   # Path to executable
