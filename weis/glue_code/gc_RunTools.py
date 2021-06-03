@@ -1,5 +1,5 @@
-import os
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')
 import openmdao.api as om
 import numpy as np
 from wisdem.commonse.mpi_tools import MPI
