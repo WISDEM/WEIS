@@ -15,6 +15,7 @@ class TestOFutils(unittest.TestCase):
         self.fast.FAST_directory = os.path.join(examples_dir, 'examples', '01_aeroelasticse',
                                                      'OpenFAST_models', 'IEA-15-240-RWT',
                                                      'IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+        self.fast.execute()
 
     def testOFreader(self):
         # Test the OF reader
