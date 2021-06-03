@@ -1,12 +1,9 @@
 import numpy as np
 import os, sys
-# import matplotlib.pyplot as plt 
 
 from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
 from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
 from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
-
-# from AeroelasticSE.Turbsim_mdao.pyturbsim_wrapper import pyTurbsim_wrapper
 
 class pyIECWind_extreme():
 
@@ -54,7 +51,6 @@ class pyIECWind_extreme():
         else:
             self.Sigma_1 = 0.7*self.z_hub
             
-
     def NTM(self, V_hub):
         # Normal turbulence model: 6.3.1.3
         b = 5.6
@@ -130,8 +126,6 @@ class pyIECWind_extreme():
         self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
         self.fname_type.append(2)
 
-
-
     def EDC(self, V_hub_in):
         # Extreme direction change: 6.3.2.4
 
@@ -200,8 +194,7 @@ class pyIECWind_extreme():
             self.write_wnd(fname, data, hd)
             self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
             self.fname_type.append(2)
-
-         
+    
     def ECD(self, V_hub_in):
         # Extreme coherent gust with direction change: 6.3.2.5
 
@@ -274,7 +267,6 @@ class pyIECWind_extreme():
             self.write_wnd(fname, data, hd)
             self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
             self.fname_type.append(2)
-
 
     def EWS(self, V_hub_in):
         # Extreme wind shear: 6.3.2.6
@@ -485,10 +477,7 @@ class pyIECWind_turb():
 
         turbsim_vt = self.setup()
         writer = TurbsimBuilder()
-        if ver.lower() == 'turbsim':
-            wrapper = Turbsim_wrapper()
-        if ver.lower() =='pyturbsim':
-            wrapper = pyTurbsim_wrapper()
+        wrapper = Turbsim_wrapper()
 
         # if self.case_name[-3:] != '.in':
         #     self.case_name = self.case_name + '.in'
@@ -521,43 +510,3 @@ class pyIECWind_turb():
 
             return wind_file_out_abs, 3
 
-
-def example_ExtremeWind():
-
-    iec = pyIECWind_extreme()
-    iec.Turbine_Class = 'I'     # IEC Wind Turbine Class
-    iec.Turbulence_Class = 'A'  # IEC Turbulance Class
-    iec.dt = 0.05               # Transient wind time step (s)
-    iec.dir_change = 'both'     # '+','-','both': sign for transient events in EDC, EWS
-    iec.z_hub = 30.             # wind turbine hub height (m)
-    iec.D = 42.                 # rotor diameter (m)
-
-    iec.case_name = 'test'
-    iec.outdir = 'temp'
-
-    V_hub = 25
-    iec.execute('EWS', V_hub)
-
-def example_TurbulentWind():
-    iec = pyIECWind_turb()
-    
-    iec.Turbulence_Class = 'A'  # IEC Turbulance Class
-    iec.z_hub = 90.             # wind turbine hub height (m)
-    iec.D = 126.                 # rotor diameter (m)
-    iec.AnalysisTime = 30.
-
-    iec.outdir = 'temp'
-    iec.case_name = 'turbsim_testing'
-    iec.Turbsim_exe = 'C:/Users/egaertne/WT_Codes/Turbsim_v2.00.07/bin/TurbSim_x64.exe'
-    iec.debug_level = 1
-
-    IEC_WindType = 'NTM'
-    Uref = 10.
-
-    iec.execute(IEC_WindType, Uref)
-
-
-if __name__=="__main__":
-
-    example_ExtremeWind()
-    # example_TurbulentWind()

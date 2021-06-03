@@ -6,7 +6,9 @@ from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
-    # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM and adding the WEIS options, namely the paths to the WEIS submodules (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
+    # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
+    # and adding the WEIS options, namely the paths to the WEIS submodules 
+    # (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
     
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
