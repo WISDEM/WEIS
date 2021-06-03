@@ -4,7 +4,7 @@ Example script to run the DLCs in OpenFAST
 
 """
 
-from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
 import sys, os, platform

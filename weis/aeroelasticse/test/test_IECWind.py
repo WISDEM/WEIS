@@ -1,6 +1,7 @@
 import unittest
 from weis.aeroelasticse.pyIECWind import pyIECWind_extreme
 from weis.aeroelasticse.Turbsim_mdao.turbulence_spectrum import IECKaimal
+from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
 import numpy as np
 
 class TestIECWind(unittest.TestCase):
@@ -59,6 +60,12 @@ class TestIECWind(unittest.TestCase):
                                                             0,           0,            0,
                                                             0]), 5)
                                                            
+    def testTurbSimwriter(self):
+        s = TurbsimBuilder()
+        s.turbsim_vt.metboundconds.UserFile = 'tsim_user_turbulence_default.inp'
+        s.turbsim_vt.metboundconds.ProfileFile = 'default.profile'
+        s.execute()
+
 
 if __name__ == "__main__":
     unittest.main()

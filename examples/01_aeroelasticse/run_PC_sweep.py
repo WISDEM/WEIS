@@ -7,7 +7,7 @@ Example script to run the DLCs with different pitch control gains in OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
-import sys, os, platform, yaml
+import os, platform, yaml
 import numpy as np
 
 # ROSCO 

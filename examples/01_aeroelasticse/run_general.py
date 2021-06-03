@@ -3,14 +3,13 @@
 Example script to compute the steady-state performance in OpenFAST
 
 """
+import weis
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
+from weis.aeroelasticse.CaseGen_General import CaseGen_General
+import numpy as np
+import os, platform
 
 if __name__ == '__main__':
-
-    import weis
-    from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
-    from weis.aeroelasticse.CaseGen_General import CaseGen_General
-    import numpy as np
-    import os, platform
 
     # Paths calling the standard modules of WEIS
     fastBatch = runFAST_pywrapper_batch()

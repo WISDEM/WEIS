@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys, copy, itertools
+import os, copy, itertools
 import multiprocessing as mp
 
 from weis.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
