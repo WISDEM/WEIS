@@ -7,7 +7,6 @@ import numpy as np
 from functools import reduce
 
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.aeroelasticse.FAST_vars import FstModel
 
 try:
     from ROSCO_toolbox import utilities as ROSCO_utilities
@@ -50,7 +49,7 @@ class InputWriter_OpenFAST(object):
 
         self.FAST_namingOut = None    #Master FAST file
         self.FAST_runDirectory = None #Output directory
-        self.fst_vt = FstModel
+        # self.fst_vt = {}
         self.fst_update = {}
 
     def update(self, fst_update={}):

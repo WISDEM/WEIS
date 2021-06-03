@@ -2,8 +2,8 @@ import os, re, copy
 import numpy as np
 from functools import reduce
 import operator
+from weis.aeroelasticse.FAST_vars_out import FstOutput
 
-from weis.aeroelasticse.FAST_vars import FstModel
 try:
     from ROSCO_toolbox import utilities as ROSCO_utilities
     from ROSCO_toolbox import turbine as ROSCO_turbine
@@ -66,7 +66,25 @@ class InputReader_OpenFAST(object):
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
         self.path2dll       = None   # Path to dll file
-        self.fst_vt         = FstModel
+        self.fst_vt         = {}
+        self.fst_vt['Fst']  = {}
+        self.fst_vt['outlist']  = FstOutput
+        self.fst_vt['ElastoDyn'] = {}
+        self.fst_vt['ElastoDynBlade'] = {}
+        self.fst_vt['ElastoDynTower'] = {}
+        self.fst_vt['InflowWind'] = {}
+        self.fst_vt['AeroDyn15'] = {}
+        self.fst_vt['AeroDynBlade'] = {}
+        self.fst_vt['AeroDynTower'] = {}
+        self.fst_vt['AeroDynPolar'] = {}
+        self.fst_vt['ServoDyn'] = {}
+        self.fst_vt['DISCON_in'] = {}
+        self.fst_vt['HydroDyn'] = {}
+        self.fst_vt['MoorDyn'] = {}
+        self.fst_vt['SubDyn'] = {}
+        self.fst_vt['MAP'] = {}
+        self.fst_vt['BeamDyn'] = {}
+        self.fst_vt['BeamDynBlade'] = {}
 
     def set_outlist(self, vartree_head, channel_list):
         """ Loop through a list of output channel names, recursively set them to True in the nested outlist dict """
@@ -618,7 +636,7 @@ class InputReader_OpenFAST(object):
         # Inflow wind header parameters (inflow_wind)
         self.fst_vt['InflowWind']['Echo']           = bool_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindType']       = int(f.readline().split()[0])
-        self.fst_vt['InflowWind']['PropogationDir'] = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['PropagationDir'] = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['VFlowAng']       = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['NWindVel']       = int(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindVxiList']    = float_read(f.readline().split()[0])
