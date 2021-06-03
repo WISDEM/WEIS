@@ -69,10 +69,10 @@ class TestIECWind(unittest.TestCase):
                                                             0]), 5)
                                                            
     def testTurbSimwriter(self):
-        
         self.tsb.execute()
 
     def testTurbSimreader(self):
+        self.tsb.execute()
         reader = turbsimReader()
         reader.read_input_file(os.path.join(self.tsb.run_dir, self.tsb.tsim_input_file))
 
