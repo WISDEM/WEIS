@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys
+import os
 
 from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
 from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper

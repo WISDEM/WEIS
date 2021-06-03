@@ -13,12 +13,10 @@ from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 
-from pCrunch import LoadsAnalysis, PowerProduction
-import fatpack
+from pCrunch import PowerProduction
 
 if MPI:
     from mpi4py   import MPI
-    from petsc4py import PETSc
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
