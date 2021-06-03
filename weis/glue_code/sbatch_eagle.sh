@@ -20,4 +20,4 @@ module unload gcc
 
 source activate weis-env
 
-mpirun -np $nC python runWEIS.py
+mpiexec -n $nC --bind-to core python runWEIS.py
