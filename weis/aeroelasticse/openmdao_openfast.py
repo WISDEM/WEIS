@@ -1637,17 +1637,15 @@ class FASTLoadCases(ExplicitComponent):
         pp = PowerProduction(discrete_inputs['turbine_class'])
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
 
-        if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
-            if self.n_blades == 2:
-                outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
-                                                np.sum(ws_prob*DELs['RootMyb2'])])
-            else:
-                outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
-                                                np.sum(ws_prob*DELs['RootMyb2']),
-                                                np.sum(ws_prob*DELs['RootMyb3'])])
+        if self.n_blades == 2:
+            outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
+                                            np.sum(ws_prob*DELs['RootMyb2'])])
+        else:
+            outputs['DEL_RootMyb'] = np.max([np.sum(ws_prob*DELs['RootMyb1']), 
+                                            np.sum(ws_prob*DELs['RootMyb2']),
+                                            np.sum(ws_prob*DELs['RootMyb3'])])
 
-        if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
-            outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsMyt'])
+        outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsMyt'])
 
         return outputs, discrete_outputs
 
