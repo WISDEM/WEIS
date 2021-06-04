@@ -584,10 +584,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den'][twr_index:]
         fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff'][twr_index:]
         fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff'][twr_index:]
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / np.linalg.norm(inputs['fore_aft_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / np.linalg.norm(inputs['fore_aft_modes'][1, :])
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / np.linalg.norm(inputs['side_side_modes'][0, :])
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / np.linalg.norm(inputs['side_side_modes'][1, :])
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = np.abs(inputs['fore_aft_modes'][0, :])  / sum(np.abs(inputs['fore_aft_modes'][0, :]))
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = np.abs(inputs['fore_aft_modes'][1, :])  / sum(np.abs(inputs['fore_aft_modes'][1, :]))
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = np.abs(inputs['side_side_modes'][0, :]) / sum(np.abs(inputs['side_side_modes'][0, :]))
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = np.abs(inputs['side_side_modes'][1, :]) / sum(np.abs(inputs['side_side_modes'][1, :]))
 
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
