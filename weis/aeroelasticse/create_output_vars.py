@@ -5,7 +5,9 @@ import xlrd
 Script to generate the Output channel dictionaries.  Included so they can be easily updated
 for future FAST versions and additional FAST modules.
 
-by Evan Gaertner
+The script did not work for me with a xlsx worksheet, but it did with a legacy xls file
+
+by Evan Gaertner, maintained by Pietro Bortolotti @ NREL on June 2nd, 2021
 """
 
 
@@ -74,46 +76,16 @@ def GetOutlistParameters(fname_vars_out, xl_files_in, sheet_list, write_mode, fi
 
 if __name__=="__main__":
 
-    # # File Locations
-    # openfast_dir = 'C:/Users/egaertne/WT_Codes/openfast'
-    # outlist_fast_lib = os.path.join(openfast_dir, 'modules-local', 'fast-library', 'src' , 'OutListParameters.xlsx')
-    # outlist_inflow = os.path.join(openfast_dir, 'modules-local', 'inflowwind', 'src' , 'OutListParameters.xlsx')
-
-    # # Sheets to grab
-    # sheet_list_fast_lib = ['ElastoDyn', 'BeamDyn', 'ServoDyn', 'AeroDyn']
-    # xl_files_fast_lib = [outlist_fast_lib]*len(sheet_list_fast_lib)
-    # sheet_list_inflow = ['InflowWind']
-    # xl_files_inflow = [outlist_inflow]*len(sheet_list_inflow)
-    # xl_files_in = xl_files_fast_lib + xl_files_inflow
-    # sheet_list = sheet_list_fast_lib + sheet_list_inflow
-
-    # # Output naming
-    # fname_vars_out = 'FAST_vars_out.py'
-
-    # # Run
-    # GetOutlistParameters(fname_vars_out, xl_files_in, sheet_list, 'w', 'FstOutput')
-
-
-    # # Add FAST7
-    # xl_files_in_FAST7 = ['C:/Users/egaertne/WT_Codes/FAST_v7.02.00d-bjj/OutListParameters.xlsx']
-    # sheet_list_FAST7 = ['OutList']
-    # GetOutlistParameters(fname_vars_out, xl_files_in_FAST7, sheet_list_FAST7, 'a', 'Fst7Output')
-
-    ### adding hydro ####################
-
-    # File Locations
-    xl_files_in = ["C:/Users/egaertne/Documents/Projects/AeroelasticSE/Hydro_Outlist/Waves2OutListParameters.xlsx",
-                   "C:/Users/egaertne/Documents/Projects/AeroelasticSE/Hydro_Outlist/HydroDynOutListParameters.xlsx",
-                   "C:/Users/egaertne/Documents/Projects/AeroelasticSE/Hydro_Outlist/MorisonOutListParameters.xlsx",
-                   "C:/Users/egaertne/Documents/Projects/AeroelasticSE/Hydro_Outlist/WAMIT2OutListParameters.xlsx",
-                   "C:/Users/egaertne/Documents/Projects/AeroelasticSE/Hydro_Outlist/WAMITOutListParameters.xlsx",
-                   "C:/Users/egaertne/Documents/Projects/AeroelasticSE/Hydro_Outlist/SubDynOutListParameters.xlsx"]
-    
-    # Sheets to grab
-    sheet_list = ['WAMIT', 'HydroDyn', 'Morison', 'WAMIT', 'WAMIT', 'SubDyn']
-
-    # Output naming
-    fname_vars_out = 'FAST_vars_out.py'
-
-    # Run
-    GetOutlistParameters(fname_vars_out, xl_files_in, sheet_list, 'w', 'FstOutput')
+    try:
+        # File Location
+        weis_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
+        outlist_fast_lib = os.path.join(weis_dir, 'OpenFAST', 'docs', 'OtherSupporting' , 'OutListParameters.xlsx')
+        # Sheets to grab
+        sheet_list = ['ElastoDyn', 'BeamDyn', 'ServoDyn', 'AeroDyn', 'InflowWind', 'WAMIT', 'HydroDyn', 'Morison'] # 'SubDyn'
+        xl_files = [outlist_fast_lib]*len(sheet_list)
+        # Output naming
+        fname_vars_out = 'FAST_vars_out.py'
+        # Run
+        GetOutlistParameters(fname_vars_out, xl_files, sheet_list, 'w', 'FstOutput')
+    except:
+        raise Exception("Try saving the OpenFAST xlsx file into a legacy xls file")

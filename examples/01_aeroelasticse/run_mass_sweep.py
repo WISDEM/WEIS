@@ -4,7 +4,7 @@ Example script to run the DLCs in OpenFAST
 
 """
 
-from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
 import sys, os, platform
@@ -182,7 +182,7 @@ def run_mass_sweep():
     #for var in var_out+[var_x]:
 
     # Run FAST cases
-    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+    fastBatch                   = runFAST_pywrapper_batch()
 
     # Monopile
     # fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)

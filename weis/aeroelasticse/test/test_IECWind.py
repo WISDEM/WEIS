@@ -1,12 +1,21 @@
 import unittest
 from weis.aeroelasticse.pyIECWind import pyIECWind_extreme
 from weis.aeroelasticse.Turbsim_mdao.turbulence_spectrum import IECKaimal
+from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
+from weis.aeroelasticse.Turbsim_mdao.turbsim_reader import turbsimReader
 import numpy as np
+import os
 
 class TestIECWind(unittest.TestCase):
     def setUp(self):
         self.extreme_wind = pyIECWind_extreme()
         self.extreme_wind.setup()
+        
+        self.tsb = TurbsimBuilder()
+        self.tsb.turbsim_vt.metboundconds.UserFile = 'tsim_user_turbulence_default.inp'
+        self.tsb.turbsim_vt.metboundconds.ProfileFile = 'default.profile'
+        self.tsb.run_dir = 'wind'
+        self.tsb.tsim_input_file = 'test.inp'
 
     def test_NTM(self):
         sigma_1 = self.extreme_wind.NTM(10.0)
@@ -59,6 +68,14 @@ class TestIECWind(unittest.TestCase):
                                                             0,           0,            0,
                                                             0]), 5)
                                                            
+    def testTurbSimwriter(self):
+        self.tsb.execute()
+
+    def testTurbSimreader(self):
+        self.tsb.execute()
+        reader = turbsimReader()
+        reader.read_input_file(os.path.join(self.tsb.run_dir, self.tsb.tsim_input_file))
+
 
 if __name__ == "__main__":
     unittest.main()
