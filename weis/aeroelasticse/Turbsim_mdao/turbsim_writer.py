@@ -1,5 +1,4 @@
 from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
-from weis.aeroelasticse.Turbsim_mdao.wind_profile_writer import write_wind
 import os
 import numpy as np
 import random
@@ -23,7 +22,7 @@ class TurbsimBuilder(turbsiminputs):
 
          self.run_dir = 'run%d'%np.random.uniform(0,1e10)
 
-    def execute(self, write_profile=False):
+    def execute(self):
          if not os.path.exists(self.run_dir): 
             try:
                sleep(random.uniform(0, 1))
@@ -31,13 +30,6 @@ class TurbsimBuilder(turbsiminputs):
                   os.makedirs(self.run_dir)
             except:
                pass
-
-         # Write profile file
-         if write_profile:
-            self.turbsim_vt.metboundconds.ProfileFile = os.sep.join([self.run_dir, self.turbsim_vt.metboundconds.ProfileFile])
-            write_wind(V_ref=float(self.wind_speed), alpha=float(self.shear_exponent), Beta=float(self.veer), Z_hub=float(self.turbsim_vt.tmspecs.HubHt), filename=self.turbsim_vt.metboundconds.ProfileFile, template_file=self.profile_template)
-            self.turbsim_vt.metboundconds.ProfileFile = os.sep.join(['..', self.turbsim_vt.metboundconds.ProfileFile])
-            self.turbsim_vt.metboundconds.ProfileFile = os.sep.join(['..', self.run_dir, self.turbsim_vt.metboundconds.ProfileFile])
 
          tsinp = open(os.sep.join([self.run_dir, self.tsim_input_file]), 'w')
          tsinp.write("---------TurbSim v2.00.* Input File------------------------\n")

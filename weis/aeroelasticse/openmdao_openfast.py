@@ -13,12 +13,10 @@ from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 
-from pCrunch import LoadsAnalysis, PowerProduction
-import fatpack
+from pCrunch import PowerProduction
 
 if MPI:
     from mpi4py   import MPI
-    from petsc4py import PETSc
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
@@ -256,7 +254,6 @@ class FASTLoadCases(ExplicitComponent):
         self.FASTpref            = FASTpref 
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
         self.debug_level         = FASTpref['analysis_settings']['debug_level']
-        self.FAST_ver            = 'OpenFAST'
         if FASTpref['file_management']['FAST_exe'] != 'none':
             if os.path.isabs(FASTpref['file_management']['FAST_exe']):
                 self.FAST_exe = FASTpref['file_management']['FAST_exe']
@@ -628,7 +625,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Update OLAF
         if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
+            _, _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
             fst_vt['AeroDyn15']['OLAF']['nNWPanel'] = nNWPanel
             fst_vt['AeroDyn15']['OLAF']['nFWPanel'] = nFWPanel
             fst_vt['AeroDyn15']['OLAF']['nFWPanelFree'] = nFWPanelFree
@@ -1099,7 +1096,7 @@ class FASTLoadCases(ExplicitComponent):
             channels[var] = True
 
         # FAST wrapper setup
-        fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
+        fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
 
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
@@ -1152,11 +1149,14 @@ class FASTLoadCases(ExplicitComponent):
         iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
         iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
 
-        # Set DT according to OLAF guidelines
+        # If running OLAF...
         if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            dt_wanted, _, _, _ = OLAFParams(inputs['Omega_init'])
+            # Set DT according to OLAF guidelines
+            dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
             iec.init_cond[("Fst","DT")]        = {'U':inputs['U_init']}
             iec.init_cond[("Fst","DT")]['val'] = dt_wanted
+            # Raise the center of the grid 50% above hub height because the wake will expand
+            iec.grid_center_over_hh = 1.5
 
         # Todo: need a way to handle Metocean conditions for Offshore
         # if offshore:
@@ -1273,7 +1273,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 # Set DT according to OLAF guidelines
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dt_wanted, _, _, _ = OLAFParams(inputs['Omega_init'])
+                    dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
                     case_inputs[("Fst","DT")]               = {'vals':dt_wanted, 'group':1}
 
                 case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
@@ -1693,7 +1693,7 @@ class FASTLoadCases(ExplicitComponent):
 
     
     def write_FAST(self, fst_vt, discrete_outputs):
-        writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
+        writer                   = InputWriter_OpenFAST()
         writer.fst_vt            = fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
         writer.FAST_namingOut    = self.FAST_namingOut
@@ -1994,36 +1994,49 @@ class FASTLoadCases(ExplicitComponent):
 def RayleighCDF(x, xbar=10.):
     return 1.0 - np.exp(-np.pi/4.0*(x/xbar)**2)
 
-def OLAFParams(omega_rpm, deltaPsiDeg=6, nNWrot=2, nFWrot=10, nFWrotFree=3, nPerAzimuth=None):
+def OLAFParams(omega_rpm, deltaPsiDeg=6, nNWrot=2, nFWrot=10, nFWrotFree=3, nPerRot=None, totalRot=None, show=False):
     """
     Computes recommended time step and wake length based on the rotational speed in RPM
-
+ 
     INPUTS:
      - omega_rpm: rotational speed in RPM
      - deltaPsiDeg : azimuthal discretization in deg
      - nNWrot : number of near wake rotations
      - nFWrot : total number of far wake rotations
      - nFWrotFree : number of far wake rotations that are free
-
-        deltaPsiDeg  -  nPerAzimuth
-             5            72
-             6            60
-             7            51.5
-             8            45
+ 
+        deltaPsiDeg  -  nPerRot
+             5            72   
+             6            60   
+             7            51.5 
+             8            45   
     """
+    omega_rpm = np.asarray(omega_rpm)
     omega = omega_rpm*2*np.pi/60
     T = 2*np.pi/omega
-    if nPerAzimuth is not None:
-        dt_wanted    = np.around(T/nPerAzimuth,2)
+    if nPerRot is not None:
+        dt_wanted    = np.around(T/nPerRot,4)
     else:
-        dt_wanted    = np.around(deltaPsiDeg/(6*omega_rpm), 4)
-        nPerAzimuth = int(2*np.pi /(deltaPsiDeg*np.pi/180))
-
-    nNWPanel     = nNWrot*nPerAzimuth
-    nFWPanel     = nFWrot*nPerAzimuth
-    nFWPanelFree = nFWrotFree*nPerAzimuth
-
-    return dt_wanted, nNWPanel, nFWPanel, nFWPanelFree
+        dt_wanted    = np.around(deltaPsiDeg/(6*omega_rpm),4)
+        nPerRot = int(2*np.pi /(deltaPsiDeg*np.pi/180))
+ 
+    nNWPanel     = nNWrot*nPerRot
+    nFWPanel     = nFWrot*nPerRot
+    nFWPanelFree = nFWrotFree*nPerRot
+ 
+    if totalRot is None:
+        totalRot = (nNWrot + nFWrot)*3 # going three-times through the entire wake
+ 
+    tMax = dt_wanted*nPerRot*totalRot
+ 
+    if show:
+        print(dt_wanted              , '  dt')
+        print(int      (nNWPanel    ), '  nNWPanel          ({} rotations)'.format(nNWrot))
+        print(int      (nFWPanel    ), '  FarWakeLength     ({} rotations)'.format(nFWrot))
+        print(int      (nFWPanelFree), '  FreeFarWakeLength ({} rotations)'.format(nFWrotFree))
+        print(tMax              , '  Tmax ({} rotations)'.format(totalRot))
+ 
+    return dt_wanted, tMax, nNWPanel, nFWPanel, nFWPanelFree
 
 class ModesElastoDyn(ExplicitComponent):
     """

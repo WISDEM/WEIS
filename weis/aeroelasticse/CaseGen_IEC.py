@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys, copy, itertools
+import os, copy, itertools
 import multiprocessing as mp
 
 from weis.aeroelasticse.CaseGen_General import CaseGen_General, save_case_matrix, save_case_matrix_yaml
@@ -53,6 +53,7 @@ class CaseGen_IEC():
         self.TStart                      = 30.
         self.uniqueSeeds                 = False
         self.uniqueWaveSeeds             = False
+        self.grid_center_over_hh         = 1.      # Ratio between turbsim grid center and hub height
 
         self.debug_level                 = 2
         self.parallel_windfile_gen       = False
@@ -134,6 +135,7 @@ class CaseGen_IEC():
             iecwind.dir_change       = self.transient_dir_change
             iecwind.shear_orient     = self.transient_shear_orientation
             iecwind.z_hub            = self.z_hub
+            iecwind.z_grid_center    = self.grid_center_over_hh * iecwind.z_hub
             iecwind.D                = self.D
             iecwind.PLExp            = alpha
             
@@ -370,48 +372,4 @@ class CaseGen_IEC():
 
         save_case_matrix(matrix_out, change_vars, self.run_dir)
         save_case_matrix_yaml(matrix_out, change_vars, self.run_dir, case_names_all)
-
-
-
-if __name__=="__main__":
-    
-    iec = CaseGen_IEC()
-
-    # Turbine Data
-    iec.init_cond = {} # can leave as {} if data not available
-    iec.init_cond[("ElastoDyn","RotSpeed")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
-    iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = [6.972, 7.183, 7.506, 7.942, 8.469, 9.156, 10.296, 11.431, 11.89, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1, 12.1]
-    iec.init_cond[("ElastoDyn","BlPitch1")] = {'U':[3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16., 17., 18., 19., 20., 21., 22., 23., 24., 25]}
-    iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = [0., 0., 0., 0., 0., 0., 0., 0., 0., 3.823, 6.602, 8.668, 10.450, 12.055, 13.536, 14.920, 16.226, 17.473, 18.699, 19.941, 21.177, 22.347, 23.469]
-    iec.init_cond[("ElastoDyn","BlPitch2")] = iec.init_cond[("ElastoDyn","BlPitch1")]
-    iec.init_cond[("ElastoDyn","BlPitch3")] = iec.init_cond[("ElastoDyn","BlPitch1")]
-
-    iec.Turbine_Class = 'I' # I, II, III, IV
-    iec.Turbulence_Class = 'A'
-    iec.D = 126.
-    iec.z_hub = 90.
-
-    # DLC inputs
-    iec.dlc_inputs = {}
-    iec.dlc_inputs['DLC']   = [1.1, 1.5]
-    iec.dlc_inputs['U']     = [[8, 9, 10], [8]]
-    iec.dlc_inputs['Seeds'] = [[5, 6, 7], []]
-    iec.dlc_inputs['Yaw']   = [[], []]
-
-    iec.transient_dir_change        = 'both'  # '+','-','both': sign for transient events in EDC, EWS
-    iec.transient_shear_orientation = 'both'  # 'v','h','both': vertical or horizontal shear for EWS
-
-    # Naming, file management, etc
-    iec.wind_dir = 'temp/wind'
-    iec.case_name_base = 'testing'
-    iec.Turbsim_exe = 'C:/Users/egaertne/WT_Codes/Turbsim_v2.00.07/bin/TurbSim_x64.exe'
-    iec.debug_level = 1
-    iec.run_dir = 'temp'
-
-    iec.parallel_windfile_gen = True
-    iec.cores = 4
-
-    # Run
-    iec.execute()
-
     
