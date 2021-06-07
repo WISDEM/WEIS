@@ -43,8 +43,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-    ROSCO:
-        SD_Mode: 0
     AeroDyn:
         WakeMod: 3
         AFAeroMod: 1
@@ -63,6 +61,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
             ShearModel: 0       
             VelocityMethod: 2       
             TreeBranchFactor: 1.5     
+
+ROSCO:
+    SD_Mode: 0
     
 openfast:
     analysis_settings:
