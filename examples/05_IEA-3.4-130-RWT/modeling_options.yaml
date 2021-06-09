@@ -81,20 +81,17 @@ DLC_driver:
           wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
           Seeds: [22, 87, 65]
         - DLC: Custom
-          wind_speed: [10.]
+          wind_speed: [10., 12, 14]
+          wind_heading: [0., 0., 0.]
+          yaw_misalign: [0., 0., 0.]
           turbulent_wind:
-              flag: False
-          air_density: 1.225
-          air_dyn_viscosity: 1.81e-5
-          weib_shape_parameter: 2.
-          air_speed_sound: 340.
-          shear_exp: 0.12
-          water_density: 1025.0
-          water_dyn_viscosity: 1.3351e-3
-          soil_shear_modulus: 140.e+6
-          soil_poisson: 0.4
-          water_depth: 30.0
-          significant_wave_height: 4.52
-          significant_wave_period: 9.45
+              flag: True
+              IECturbc: [0.1, 0.1, 0.1]
+          turbine_status: ["operating", "idling", "parked"]
+          wave_spectrum: ["JONSWAP", "unit", "JONSWAP"]
+          wave_period: [8., 9., 10.]
+          wave_height: [2., 4., 6.]
+          wave_heading: [0., 0., 0.]
+
               
               
