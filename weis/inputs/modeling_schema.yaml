@@ -2656,111 +2656,72 @@ properties:
                                 unit: none
                                 minItems: 1
                                 uniqueItems: true
-                        gravity:
-                            type: number
-                            description: Gravitational acceleration
-                            unit: m/s/s
-                            minimum: 0
-                            maximum: 100.0
-                            default: 9.80665
-                        air_density:
-                            type: number
-                            description: Density of air.
-                            unit: kg/m3
-                            minimum: 0
-                            maximum: 1.5
-                            default: 1.225
-                        air_dyn_viscosity:
-                            type: number
-                            description: Dynamic viscosity of air.
-                            unit: kg/(ms)
-                            minimum: 0
-                            maximum: 2.e-5
-                            default: 1.81e-5
-                        air_pressure:
-                            type: number
-                            description: Atmospheric pressure of air
-                            unit: kg/(ms^2)
-                            minimum: 0
-                            maximum: 1.e+6
-                            default: 1.035e+5
-                        air_vapor_pressure:
-                            type: number
-                            description: Vapor pressure of fluid
-                            unit: kg/(ms^2)
-                            minimum: 0
-                            maximum: 1.e+6
-                            default: 1.7e+3
-                        weib_shape_parameter:
-                            type: number
-                            description: Shape factor of the Weibull wind distribution.
-                            unit: none
-                            minimum: 1
-                            maximum: 3
-                            default: 2.
-                        air_speed_sound:
-                            type: number
-                            description: Speed of sound in air.
-                            unit: m/s
-                            minimum: 330.
-                            maximum: 350.
-                            default: 340.
-                        shear_exp:
-                            type: number
-                            description: Shear exponent of the atmospheric boundary layer.
-                            unit: none
-                            minimum: 0
-                            maximum: 1
-                            default: 0.2
-                        water_density:
-                            type: number
-                            description: Density of water.
-                            unit: kg/m3
-                            minimum: 950
-                            maximum: 1100
-                            default: 1025.0
-                        water_dyn_viscosity:
-                            type: number
-                            description: Dynamic viscosity of water.
-                            unit: kg/(ms)
-                            minimum: 1.e-3
-                            maximum: 2.e-3
-                            default: 1.3351e-3
-                        water_depth:
-                            type: number
-                            description: Water depth for offshore environment.
-                            unit: m
-                            minimum: 0.0
-                            maximum: 1.e+4
-                            default: 0.0
-                        significant_wave_height: 
-                            type: number
-                            description: Significant wave height for offshore environment.
-                            unit: m
-                            minimum: 0.0
-                            maximum: 3.e+1
-                            default: 4.52
-                        significant_wave_period: 
-                            type: number
-                            description: Significant wave period for offshore environment.
-                            unit: s
-                            minimum: 0.0
-                            maximum: 1.e+2
-                            default: 9.45
-                        soil_shear_modulus:
-                            type: number
-                            description: Shear modulus of the soil.
-                            unit: Pa
-                            minimum: 100.e+6
-                            maximum: 200.e+6
-                            default: 140.e+6
-                        soil_poisson:
-                            type: number
-                            description: Poisson ratio of the soil.
-                            unit: none
-                            minimum: 0
-                            maximum: 0.6
-                            default: 0.4
+                        wind_heading:
+                            type: array
+                            description: Wind direction from north
+                            default: [0.]
+                            items:
+                                type: number
+                                unit: deg
+                                minItems: 1
+                                minimum: -1.8e+2
+                                maximum: 1.8e+2
+                        yaw_misalign:
+                            type: array
+                            description: Alignment of the nacelle with respect to north
+                            default: [0.]
+                            items:
+                                type: number
+                                unit: deg
+                                minItems: 1
+                                minimum: -1.8e+2
+                                maximum: 1.8e+2
+                        wave_spectrum:
+                            type: array
+                            description: Spectrum of the waves
+                            default: ["JONSWAP"]
+                            items:
+                                type: str
+                                enum: ["JONSWAP","unit"]
+                                minItems: 1
+                        turbine_status:
+                            type: array
+                            description: Status of the turbine, it can be either operating, idling, or parked
+                            default: ["operating"]
+                            items:
+                                type: str
+                                enum: ["operating","idling","parked"]
+                                minItems: 1
+                        wave_period:
+                            type: array
+                            description: Period between waves
+                            default: [1.e+1]
+                            items:
+                                type: number
+                                unit: s
+                                minItems: 1
+                                minimum: 0.0
+                                maximum: 1.e+2
+                        wave_height:
+                            type: array
+                            description: Height of the waves
+                            default: [1.e+1]
+                            items:
+                                type: number
+                                unit: m
+                                minItems: 1
+                                minimum: 0.0
+                                maximum: 1.e+2
+                        wave_heading:
+                            type: array
+                            description: Heading of the waves with respect to north
+                            default: [0.]
+                            items:
+                                type: number
+                                unit: deg
+                                minItems: 1
+                                minimum: -1.8e+2
+                                maximum: 1.8e+2
                         unique_wind_seeds:
                             type: boolean
                             default: False
