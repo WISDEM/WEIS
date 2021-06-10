@@ -42,9 +42,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-    ROSCO:
-        SD_Mode: 0
-        Flp_Mode: 2
+ROSCO:
+    SD_Mode: 0
+    Flp_Mode: 2
 
 openfast:
     analysis_settings:
