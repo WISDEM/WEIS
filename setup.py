@@ -21,7 +21,7 @@ if eagle_flag:
     os.environ["CC"] = "icc"
     os.environ["CXX"] = "icpc"
     os.environ["LDSHARED"] = "icc -pthread -shared"
-
+    
 # For the CMake Extensions
 class CMakeExtension(Extension):
 
@@ -128,7 +128,7 @@ weis_pkgs       = find_packages()
 
 # Install the python sub-packages
 print(sys.argv)
-for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
+for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse']:
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially
@@ -141,7 +141,7 @@ for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyoptsparse']:
 # Now install WEIS and the Fortran packages
 metadata = dict(
     name                          = 'WEIS',
-    version                       = '0.0.1',
+    version                       = '0.2',
     description                   = 'Wind Energy with Integrated Servo-control',
     long_description              = long_description,
     long_description_content_type = 'text/markdown',

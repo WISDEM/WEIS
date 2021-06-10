@@ -32,7 +32,7 @@ if mactype == "linux" or mactype == "linux2":
     libext = ".so"
 elif mactype == "darwin":
     libext = '.dylib'
-elif mactype == "win32":
+elif mactype == "win32" or mactype == "windows": #NOTE: platform.system()='Windows', sys.platform='win32'
     libext = '.dll'
 elif mactype == "cygwin":
     libext = ".dll"
@@ -61,37 +61,54 @@ fatigue_channels = {
     'TwrBsMyt': 10
 }
 
-channel_extremes = [
-    'RotSpeed',
-    'BldPitch1','BldPitch2','BldPitch3',
-    "RotThrust","LSShftFys","LSShftFzs","RotTorq","LSSTipMys","LSSTipMzs","LSShftF","LSShftM",
-    'Azimuth',
-    'TipDxc1',
-    'TipDxc2',
-    'TipDxc3',
-    "RootMxc1","RootMyc1","RootMzc1",
-    "RootMxc2","RootMyc2","RootMzc2",
-    "RootMxc3","RootMyc3","RootMzc3",
-    'B1N1Fx','B1N2Fx','B1N3Fx','B1N4Fx','B1N5Fx','B1N6Fx','B1N7Fx','B1N8Fx','B1N9Fx',
-    'B1N1Fy','B1N2Fy','B1N3Fy','B1N4Fy','B1N5Fy','B1N6Fy','B1N7Fy','B1N8Fy','B1N9Fy',
-    'B2N1Fx','B2N2Fx','B2N3Fx','B2N4Fx','B2N5Fx','B2N6Fx','B2N7Fx','B2N8Fx','B2N9Fx',
-    'B2N1Fy','B2N2Fy','B2N3Fy','B2N4Fy','B2N5Fy','B2N6Fy','B2N7Fy','B2N8Fy','B2N9Fy',
-    "B3N1Fx","B3N2Fx","B3N3Fx","B3N4Fx","B3N5Fx","B3N6Fx","B3N7Fx","B3N8Fx","B3N9Fx",
-    "B3N1Fy","B3N2Fy","B3N3Fy","B3N4Fy","B3N5Fy","B3N6Fy","B3N7Fy","B3N8Fy","B3N9Fy",
-]
+# channel_extremes = [
+#     'RotSpeed',
+#     'BldPitch1','BldPitch2','BldPitch3',
+#     "RotThrust","LSShftFys","LSShftFzs","RotTorq","LSSTipMys","LSSTipMzs","LSShftF","LSShftM",
+#     'Azimuth',
+#     'TipDxc1', 'TipDxc2', 'TipDxc3',
+#     "RootMxc1", "RootMyc1","RootMzc1",
+#     "RootMxc2", "RootMyc2","RootMzc2",
+#     "RootMxc3", "RootMyc3","RootMzc3",
+#     "RootFzb1", "RootFzb2", "RootFzb3",
+#     "RootMxb1", "RootMxb2", "RootMxb3",
+#     "RootMyb1", "RootMyb2", "RootMyb3",
+#     "Spn1FLzb1", "Spn2FLzb1", "Spn3FLzb1", "Spn4FLzb1", "Spn5FLzb1", "Spn6FLzb1", "Spn7FLzb1", "Spn8FLzb1", "Spn9FLzb1",
+#     "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1",
+#     "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1",
+#     "Spn1FLzb2", "Spn2FLzb2", "Spn3FLzb2", "Spn4FLzb2", "Spn5FLzb2", "Spn6FLzb2", "Spn7FLzb2", "Spn8FLzb2", "Spn9FLzb2",
+#     "Spn1MLxb2", "Spn2MLxb2", "Spn3MLxb2", "Spn4MLxb2", "Spn5MLxb2", "Spn6MLxb2", "Spn7MLxb2", "Spn8MLxb2", "Spn9MLxb2",
+#     "Spn1MLyb2", "Spn2MLyb2", "Spn3MLyb2", "Spn4MLyb2", "Spn5MLyb2", "Spn6MLyb2", "Spn7MLyb2", "Spn8MLyb2", "Spn9MLyb2",
+#     "Spn1FLzb3", "Spn2FLzb3", "Spn3FLzb3", "Spn4FLzb3", "Spn5FLzb3", "Spn6FLzb3", "Spn7FLzb3", "Spn8FLzb3", "Spn9FLzb3",
+#     "Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3",
+#     "Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3",
+#     "TwrBsFxt",  "TwrBsFyt", "TwrBsFzt", "TwrBsMxt",  "TwrBsMyt", "TwrBsMzt",
+#     "YawBrFxp", "YawBrFyp", "YawBrFzp", "YawBrMxp", "YawBrMyp", "YawBrMzp",
+#     "TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt",
+#     "TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt",
+#     "TwHt1FLzt", "TwHt2FLzt", "TwHt3FLzt", "TwHt4FLzt", "TwHt5FLzt", "TwHt6FLzt", "TwHt7FLzt", "TwHt8FLzt", "TwHt9FLzt",
+#     "TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt",
+#     "TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt",
+#     "TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt",
+#     "M1N1FMxe", "M4N1FMxe", "M6N1FMxe", "M8N1FMxe", "M10N1FMxe", "M13N1FMxe", "M15N1FMxe", "M17N1FMxe", "M18N2FMxe",
+#     "M1N1FMye", "M4N1FMye", "M6N1FMye", "M8N1FMye", "M10N1FMye", "M13N1FMye", "M15N1FMye", "M17N1FMye", "M18N2FMye",
+#     "M1N1FMze", "M4N1FMze", "M6N1FMze", "M8N1FMze", "M10N1FMze", "M13N1FMze", "M15N1FMze", "M17N1FMze", "M18N2FMze",
+#     "M1N1MMxe", "M4N1MMxe", "M6N1MMxe", "M8N1MMxe", "M10N1MMxe", "M13N1MMxe", "M15N1MMxe", "M17N1MMxe", "M18N2MMxe",
+#     "M1N1MMye", "M4N1MMye", "M6N1MMye", "M8N1MMye", "M10N1MMye", "M13N1MMye", "M15N1MMye", "M17N1MMye", "M18N2MMye",
+#     "M1N1MMze", "M4N1MMze", "M6N1MMze", "M8N1MMze", "M10N1MMze", "M13N1MMze", "M15N1MMze", "M17N1MMze", "M18N2MMze",
+#     ]
 
 la = LoadsAnalysis(
     outputs=[],
     magnitude_channels=magnitude_channels,
     fatigue_channels=fatigue_channels,
-    extreme_channels=channel_extremes,
+    #extreme_channels=channel_extremes,
 )
 
 
 class runFAST_pywrapper(object):
 
     def __init__(self, **kwargs):
-        self.FAST_ver = 'OPENFAST' #(FAST7, FAST8, OPENFAST)
 
         self.FAST_exe           = None
         self.FAST_lib           = None
@@ -121,22 +138,14 @@ class runFAST_pywrapper(object):
     def execute(self):
 
         # FAST version specific initialization
-        if self.FAST_ver.lower() == 'fast7':
-            reader = InputReader_FAST7(FAST_ver=self.FAST_ver)
-            writer = InputWriter_FAST7(FAST_ver=self.FAST_ver)
-        elif self.FAST_ver.lower() in ['fast8','openfast']:
-            reader = InputReader_OpenFAST(FAST_ver=self.FAST_ver)
-            writer = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
+        reader = InputReader_OpenFAST()
+        writer = InputWriter_OpenFAST()
 
         # Read input model, FAST files or Yaml
         if self.fst_vt == {}:
-            if self.read_yaml:
-                reader.FAST_yamlfile = self.FAST_yamlfile_in
-                reader.read_yaml()
-            else:
-                reader.FAST_InputFile = self.FAST_InputFile
-                reader.FAST_directory = self.FAST_directory
-                reader.execute()
+            reader.FAST_InputFile = self.FAST_InputFile
+            reader.FAST_directory = self.FAST_directory
+            reader.execute()
         
             # Initialize writer variables with input model
             writer.fst_vt = self.fst_vt = reader.fst_vt
@@ -221,10 +230,11 @@ class runFAST_pywrapper(object):
 
 class runFAST_pywrapper_batch(object):
 
-    def __init__(self, **kwargs):
+    def __init__(self):
 
         self.FAST_ver           = 'OpenFAST'
         self.FAST_exe           = None # os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
+        #         self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable # TODO : should it be this instead?
         self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
         self.FAST_InputFile     = None
         self.FAST_directory     = None
@@ -246,15 +256,6 @@ class runFAST_pywrapper_batch(object):
         
         self.post               = None
 
-        # Optional population of class attributes from key word arguments
-        for (k, w) in kwargs.items():
-            try:
-                setattr(self, k, w)
-            except:
-                pass
-
-        super(runFAST_pywrapper_batch, self).__init__()
-
     def create_case_data(self):
 
         case_data_all = []
@@ -262,7 +263,6 @@ class runFAST_pywrapper_batch(object):
             case_data = {}
             case_data['case'] = self.case_list[i]
             case_data['case_name'] = self.case_name_list[i]
-            case_data['FAST_ver'] = self.FAST_ver
             case_data['FAST_exe'] = self.FAST_exe
             case_data['FAST_lib'] = self.FAST_lib
             case_data['FAST_runDirectory'] = self.FAST_runDirectory
@@ -390,14 +390,14 @@ class runFAST_pywrapper_batch(object):
 def evaluate(indict):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
-    known_keys = ['case', 'case_name', 'FAST_ver', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
+    known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
                   'write_yaml', 'FAST_yamlfile_out', 'channels', 'debug_level', 'overwrite_outfiles', 'keep_time', 'post']
     for k in indict:
         if k in known_keys: continue
         print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
     
-    fast = runFAST_pywrapper(FAST_ver=indict['FAST_ver'])     # FAST_ver = "OpenFAST"
+    fast = runFAST_pywrapper()
     fast.FAST_exe           = indict['FAST_exe']              # Path to FAST
     fast.FAST_lib           = indict['FAST_lib']              # Path to FAST
     fast.FAST_InputFile     = indict['FAST_InputFile']        # Name of the fst - does not include full path

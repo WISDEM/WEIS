@@ -1,0 +1,37 @@
+*WEIS Design Variables*
+
+Substructure:
+x Member Draft
+x Member freeboard
+x Member length
+x Column spacing
+x Member diameter
+x Member thickness
+x Ballast volume per member
+x Fairlead radius
+x Fairlead depth
+Number of offset columns: DISCRETE
+Main column yes/no? (turbine on an offset column): DISCRETE
+
+Mooring:
+x Mooring line diameter
+x Mooring line length
+x Anchor radius
+Material selection for lines / members: DISCRETE
+Number of mooring lines: DISCRETE
+
+Stiffener:
+x Web height (using scalar multiplier on initial size)
+x Web thickness (using scalar multiplier on initial size)
+x Flange width (using scalar multiplier on initial size)
+x Flange thickness (using scalar multiplier on initial size)
+x Spacing
+
+*WEIS Controls Design Variables*
+Most ontology variables will be DVs
+Maybe some aggregation for user-defined filters
+
+TODO:
+Define these in yaml
+Enable copy / replica
+Enable coordinate dependency

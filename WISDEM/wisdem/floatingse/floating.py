@@ -1,7 +1,7 @@
 import openmdao.api as om
 from wisdem.floatingse.member import Member
+from wisdem.floatingse.mooring import Mooring
 from wisdem.floatingse.constraints import FloatingConstraints
-from wisdem.floatingse.map_mooring import MapMooring
 from wisdem.floatingse.floating_frame import FloatingFrame
 
 
@@ -60,7 +60,7 @@ class FloatingSE(om.Group):
 
         # Next run MapMooring
         self.add_subsystem(
-            "mm", MapMooring(options=opt["mooring"], gamma=opt["WISDEM"]["FloatingSE"]["gamma_f"]), promotes=["*"]
+            "mm", Mooring(options=opt["mooring"], gamma=opt["WISDEM"]["FloatingSE"]["gamma_f"]), promotes=["*"]
         )
 
         # Add in the connecting truss
@@ -84,6 +84,7 @@ class FloatingSE(om.Group):
             "section_rho",
             "section_E",
             "section_G",
+            "section_sigma_y",
             "idx_cb",
             "variable_ballast_capacity",
             "variable_ballast_Vpts",
@@ -101,6 +102,10 @@ class FloatingSE(om.Group):
             "Iwater",
             "added_mass",
             "waterline_centroid",
+            "Px",
+            "Py",
+            "Pz",
+            "qdyn",
         ]
         for k in range(n_member):
             for var in mem_vars:

@@ -1,4 +1,4 @@
-from turbsim_vartrees import turbsiminputs
+from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 
 class turbsimReader(object):
     def __init__(self):

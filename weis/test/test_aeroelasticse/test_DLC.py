@@ -224,9 +224,8 @@ class TestDLC(unittest.TestCase):
         # for var in var_out+[var_x]:
 
         # Run FAST cases
-        fastBatch = runFAST_pywrapper_batch(
-            FAST_ver="OpenFAST", dev_branch=True, post=FAST_IO_timeseries
-        )
+        fastBatch = runFAST_pywrapper_batch()
+        fastBatch.post=FAST_IO_timeseries
 
         # Monopile
         fastBatch.FAST_InputFile = (

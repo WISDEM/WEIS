@@ -145,6 +145,26 @@ properties:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
                                         $ref: "#/definitions/distributed_data/grid_nd"
+                            t/c:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                            L/D:
+                                type: object
+                                required:
+                                    - grid
+                                    - values
+                                properties:
+                                    grid:
+                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                    values:
+                                        $ref: "#/definitions/distributed_data/nd"
                             reference_axis:
                                 $ref: "#/definitions/distributed_data/axis_coordinates"
                             # coordinates:
@@ -343,7 +363,7 @@ properties:
                                 description: Rotor precone angle, defined positive for both upwind and downwind rotors.
                                 unit: rad
                                 minimum: 0
-                                maximum: 0.2
+                                maximum: 0.4
                             drag_coefficient:
                                 type: number
                                 description: Equivalent drag coefficient to compute the aerodynamic forces generated on the hub.
@@ -1531,30 +1551,20 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 1.0
                                                 description: Non-dimensional value along member axis
-                                hydrodynamic_approach: &hydro
-                                    # TODO: Move these to the modeling file?
-                                    description: How should this member be modeled?
-                                    type: string
-                                    default: strip
-                                    enum:
-                                        - strip
-                                        - potential
-                                        - both
                                 Ca: &ca
-                                    # TODO: Move these to the modeling file?
-                                    description: Added mass coefficient
+                                    description: User-defined added mass coefficient
                                     type: number
                                     default: 0.0
+                                    minimum: 0.0
                                 Cp: &cp
-                                    # TODO: Move these to the modeling file?
-                                    description: Pressure coefficient
+                                    description: User-defined pressure coefficient
                                     type: number
                                     default: 0.0
                                 Cd: &cd
-                                    # TODO: Move these to the modeling file?
-                                    description: Drag coefficient
+                                    description: User-defined drag coefficient
                                     type: number
                                     default: 0.0
+                                    minimum: 0.0
                     rigid_bodies:
                         type: array
                         descriptions: Additional point masses at joints with user-customized properties
@@ -1600,7 +1610,6 @@ properties:
                                         maxItems: 3
                                         minItems: 3
                                         minimum: 0
-                                hydrodynamic_approach: *hydro
                                 Ca: *ca
                                 Cp: *cp
                                 Cd: *cd
@@ -2391,22 +2400,6 @@ properties:
                         unit: none
                         minimum: 0
                         maximum: 1
-
-                    fl_feedback:
-                        type: object
-                        description: Platform velocity feedback using nacelle IMU
-                        required:
-                            - gain
-                        optional:
-                            - filter
-                        properties:
-                            gain:
-                                type: number
-                                description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
-                                unit: seconds
-                            filter:
-                                $ref: "#/definitions/filter"
-                                description: Nacelle IMU filter, used to remove tower natural frequency.  Usually a LPF or Notch Filter
 
                     twr_feedback:
                         type: object

@@ -10,6 +10,7 @@ all_scripts = [
     "01_aeroelasticse/run_general",
     # "01_aeroelasticse/run_mass_sweep",
     "01_aeroelasticse/run_OLAF",
+    "01_aeroelasticse/run_iec_turbsim",
     # "01_aeroelasticse/run_PC_sweep",
     # "01_aeroelasticse/run_stability_analysis",
     
@@ -17,8 +18,10 @@ all_scripts = [
     # "02_control_opt/runOptimization",
     
     "03_NREL5MW_OC3_spar/weis_driver",
+    # "03_NREL5MW_OC3_spar/weis_freq_driver",
     
     "04_NREL5MW_OC4_semi/weis_driver",
+    "04_NREL5MW_OC4_semi/weis_freq_driver",
     
     "05_IEA-3.4-130-RWT/weis_driver",
     

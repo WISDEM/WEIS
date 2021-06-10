@@ -19,17 +19,56 @@ properties:
     Level1:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 1 = frequency domain (WISDEM)
+        description: Options for WEIS fidelity level 1 = frequency domain (RAFT)
         properties:
             flag:
                 type: boolean
                 default: False
-                description: Whether or not to run WEIS fidelity level 1 = frequency domain (WISDEM)
+                description: Whether or not to run WEIS fidelity level 1 = frequency domain (RAFT)
+            frequencies:
+                type: array
+                description: List of frequencies [Hz] to evaluate the response of the platform and turbine
+                default: [0.1, 0.21544346900318834, 0.46415888336127786, 1.0, 2.1544346900318834, 4.6415888336127775, 10.0, 21.54434690031882, 46.41588833612777, 100.0] # logspace(-1,2,10)
+                items:
+                    type: number
+                    uniqueItems: True
+                    minimum: 0.0
+                    maximum: 1e3
+            potential_bem_members: &potbem
+                type: array
+                description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
+                default: []
+                items:
+                    type: string
+                    uniqueItems: True
+            potential_model_override:
+                type: integer
+                default: 0
+                enum: [0, 1, 2]
+                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list, 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory)
+            xi_start:
+                type: number
+                default: 0.1
+                minimum: 0.0
+                maximum: 1000.0
+                description: Initial amplitude of each DOF for all frequencies
+            nIter:
+                type: integer
+                default: 15
+                minimum: 1
+                maximum: 100
+                description: Number of iterations to solve dynamics
+            dls_max:
+                type: integer
+                default: 5
+                minimum: 1
+                maximum: 100
+                description: Maximum node splitting section amount
 
     Level2:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 1 = frequency domain (WISDEM)
+        description: Options for WEIS fidelity level 2 = linearized time domain (OpenFAST)
         properties:
             flag:
                 type: boolean
@@ -161,8 +200,9 @@ properties:
         properties:
             flag:
                 type: boolean
-                default: True
+                default: False
                 description: Whether or not to run WEIS fidelity level 3 = nonlinear time domain (Linearize OpenFAST)
+            potential_bem_members: *potbem
             simulation: # TODO: Should this also move to analysis settings?
                 type: object
                 default: {}
@@ -1820,7 +1860,7 @@ properties:
                     PotFile:
                         type: string
                         default: ''
-                        description: Root name of potential-flow model data; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
+                        description: Root name of potential-flow model data (relative to WEIS dir); WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
                     WAMITULEN:
                         type: number
                         minimum: 0.0
@@ -1834,6 +1874,12 @@ properties:
                         minimum: 0.0
                         units: m^3
                         description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    PtfmMass_Init:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        units: kg
+                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass. 
                     PtfmCOBxt:
                         type: number
                         default: 0.0
@@ -2006,8 +2052,7 @@ properties:
                     OutSFmt:
                         type: string
                         default: 'A11'
-                        description: Output format for header strings (quoted string) [not checked for validity]
-                        
+                        description: Output format for header strings (quoted string) [not checked for validity]             
             SubDyn:
                 type: object
                 default: {}
@@ -2095,8 +2140,7 @@ properties:
                         minimum: 0
                         maximum: 9
                         default: 0
-                        description: Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].
-                            
+                        description: Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].                         
             MoorDyn:
                 type: object
                 default: {}
@@ -2553,86 +2597,34 @@ properties:
                         maximum: 100000.0
                         unit: s
                         description: Time to begin tabular output (s) (currently unused)
-            ROSCO:
+            outlist:
                 type: object
                 default: {}
-                description: Options for WEIS fidelity level 3 = nonlinear time domain
                 properties:
-                    flag:
-                        type: boolean
-                        default: True
-                        description: Whether or not to tune and run ROSCO
-                    LoggingLevel:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 1
-                        description: 0, write no debug files, 1, write standard output .dbg-file, 2, write standard output .dbg-file and complete avrSWAP-array .dbg2-file
-                    F_LPFType:
-                        type: integer
-                        enum: [1, 2]
-                        default: 1
-                        description: Low pass filter type, {1, first-order low-pass filter, 2, second-order low-pass filter}
-                    F_NotchType:
-                        type: integer
-                        enum: [0, 1, 2, 3]
-                        default: 0
-                        description:  Notch filter on generator speed and/or tower fore-aft motion (for floating) {0, disable, 1, generator speed, 2, tower-top fore-aft motion, 3, generator speed and tower-top fore-aft motion}
-                    IPC_ControlMode:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 0
-                        description: Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0, off, 1, 1P reductions, 2, 1P+2P reductions}
-                    VS_ControlMode:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 2
-                        description: Generator torque control mode in above rated conditions {0, constant torque, 1, constant power, 2, TSR tracking PI control}
-                    PC_ControlMode:
-                        type: integer
-                        enum: [0, 1]
-                        default: 1
-                        description: Blade pitch control mode {0, No pitch, fix to fine pitch, 1, active PI blade pitch control}
-                    Y_ControlMode:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 0
-                        description: Yaw control mode {0, no yaw control, 1, yaw rate control, 2, yaw-by-IPC}
-                    SS_Mode:
-                        type: integer
-                        enum: [0, 1]
-                        default: 1
-                        description: Setpoint Smoother mode {0, no setpoint smoothing, 1, use setpoint smoothing}
-                    WE_Mode:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 2
-                        description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 1 = Immersion and Invariance Estimator, 2 = Extended Kalman Filter}
-                    PS_Mode:
-                        type: integer
-                        enum: [0, 1]
-                        default: 1
-                        description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving}
-                    SD_Mode:
-                        type: integer
-                        enum: [0, 1]
-                        default: 1
-                        description: Shutdown mode {0, no shutdown procedure, 1, pitch to max pitch at shutdown}
-                    Fl_Mode:
-                        type: integer
-                        enum: [0, 1]
-                        default: 0
-                        description: Floating specific feedback mode {0, no nacelle velocity feedback, 1, nacelle velocity feedback}
-                    Flp_Mode:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 0
-                        description: Flap control mode {0, no flap control, 1, steady state flap angle, 2, Proportional flap control}
-                    PwC_Mode:
-                        type: integer
-                        enum: [0, 1, 2]
-                        default: 0
-                        description: Power control mode {0 = no power control, 1 = constant power, 2 = open loop power from PwC_OpenLoop_Inp, 3 = open loop power vs. wind speed from PwC_OpenLoop_Inp}
-
+                    InflowWind:
+                        type: object
+                        default: {}
+                    AeroDyn:
+                        type: object
+                        default: {}
+                    ElastoDyn:
+                        type: object
+                        default: {}
+                    BeamDyn:
+                        type: object
+                        default: {}
+                    HydroDyn:
+                        type: object
+                        default: {}
+                    SubDyn:
+                        type: object
+                        default: {}
+                    MoorDyn:
+                        type: object
+                        default: {}
+                    ServoDyn:
+                        type: object
+                        default: {}
     openfast:
         type: object
         default: {}
@@ -2716,6 +2708,14 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to compute blade fatigue with FAST
+                    unique_wind_seeds:
+                        type: boolean
+                        default: False
+                        description: Run different wind seeds for each wind speed
+                    unique_wave_seeds:
+                        type: boolean
+                        default: False
+                        description: Run different wave seeds for each wind speed
                     IEC:
                         type: array
                         default: [{}]
@@ -2795,3 +2795,101 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run xfoil in parallel (requires mpi setup)
+
+    ROSCO:
+        type: object
+        default: {}
+        description: Options for WEIS fidelity level 3 = nonlinear time domain
+        properties:
+            flag:
+                type: boolean
+                default: True
+                description: Whether or not to tune and run ROSCO
+            LoggingLevel:
+                type: integer
+                enum: [0, 1, 2]
+                default: 1
+                description: 0, write no debug files, 1, write standard output .dbg-file, 2, write standard output .dbg-file and complete avrSWAP-array .dbg2-file
+            F_LPFType:
+                type: integer
+                enum: [1, 2]
+                default: 1
+                description: Low pass filter type, {1, first-order low-pass filter, 2, second-order low-pass filter}
+            F_NotchType:
+                type: integer
+                enum: [0, 1, 2, 3]
+                default: 0
+                description:  Notch filter on generator speed and/or tower fore-aft motion (for floating) {0, disable, 1, generator speed, 2, tower-top fore-aft motion, 3, generator speed and tower-top fore-aft motion}
+            IPC_ControlMode:
+                type: integer
+                enum: [0, 1, 2]
+                default: 0
+                description: Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0, off, 1, 1P reductions, 2, 1P+2P reductions}
+            VS_ControlMode:
+                type: integer
+                enum: [0, 1, 2]
+                default: 2
+                description: Generator torque control mode in above rated conditions {0, constant torque, 1, constant power, 2, TSR tracking PI control}
+            PC_ControlMode:
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description: Blade pitch control mode {0, No pitch, fix to fine pitch, 1, active PI blade pitch control}
+            Y_ControlMode:
+                type: integer
+                enum: [0, 1, 2]
+                default: 0
+                description: Yaw control mode {0, no yaw control, 1, yaw rate control, 2, yaw-by-IPC}
+            SS_Mode:
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description: Setpoint Smoother mode {0, no setpoint smoothing, 1, use setpoint smoothing}
+            WE_Mode:
+                type: integer
+                enum: [0, 1, 2]
+                default: 2
+                description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 1 = Immersion and Invariance Estimator, 2 = Extended Kalman Filter}
+            PS_Mode:
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving}
+            SD_Mode:
+                type: integer
+                enum: [0, 1]
+                default: 1
+                description: Shutdown mode {0, no shutdown procedure, 1, pitch to max pitch at shutdown}
+            Fl_Mode:
+                type: integer
+                enum: [0, 1]
+                default: 0
+                description: Floating specific feedback mode {0, no nacelle velocity feedback, 1, nacelle velocity feedback}
+            Flp_Mode:
+                type: integer
+                enum: [0, 1, 2]
+                default: 0
+                description: Flap control mode {0, no flap control, 1, steady state flap angle, 2, Proportional flap control}
+            PwC_Mode:
+                type: integer
+                enum: [0, 1, 2]
+                default: 0
+                description: Power control mode {0 = no power control, 1 = constant power, 2 = open loop power from PwC_OpenLoop_Inp, 3 = open loop power vs. wind speed from PwC_OpenLoop_Inp}
+            Bld_FlpDamp:
+                type: number
+                default: 0.7
+                minimum: 0.0
+                maximum: 2.0
+                description: Blade collective flapwise damping at rated wind speed, used for flap controller tuning
+            PC_GS_n:
+                type: number
+                default: 29
+                minimum: 1
+                maximum: 100
+                description: Number of blade pitch control gain scheduling breakpoints
+            WS_GS_n:
+                type: number
+                default: 59
+                minimum: 2
+                maximum: 100
+                description: Number of wind speed gain scheduling breakpoints

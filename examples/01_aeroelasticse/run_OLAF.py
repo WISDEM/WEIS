@@ -12,7 +12,7 @@ import numpy as np
 import os, platform
 
 # Paths calling the standard modules of WEIS
-fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
+fastBatch = runFAST_pywrapper_batch()
 run_dir1                    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
 run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
 fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-OLAF')   # Path to fst directory files
@@ -58,7 +58,7 @@ case_inputs[("ElastoDyn","RotSpeed")]   = {'vals': omega_init, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch1")]   = {'vals': pitch_init, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
 case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
-dt_wanted, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(omega_init)
+dt_wanted, tMax, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(omega_init)
 dt_olaf = np.zeros_like(dt_wanted)
 dt = case_inputs[("Fst","DT")]["vals"]
 n_dt = dt_wanted / dt

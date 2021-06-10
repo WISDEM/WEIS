@@ -48,7 +48,7 @@ class LoadsAnalysis:
         """Parses settings from input kwargs."""
 
         self._directory = kwargs.get("directory", None)
-        self._ec = kwargs.get("extreme_channels", [])
+        self._ec = kwargs.get("extreme_channels", True)
         self._mc = kwargs.get("magnitude_channels", {})
         self._fc = kwargs.get("fatigue_channels", {})
         self._td = kwargs.get("trim_data", ())
@@ -136,7 +136,13 @@ class LoadsAnalysis:
             output.trim_data(*self._td)
 
         stats = self.get_summary_stats(output, **kwargs)
-        extremes = output.extremes(self._ec)
+
+        if self._ec is True:
+            extremes = output.extremes(output.channels)
+
+        elif isinstance(self._ec, list):
+            extremes = output.extremes(self._ec)
+
         dels = self.get_DELs(output, **kwargs)
 
         return output.filename, stats, extremes, dels

@@ -13,24 +13,20 @@ import pandas as pd
 import multiprocessing as mp 
 
 import openmdao.api as om
+from weis.aeroelasticse import FileTools
 
 def load_OMsql(log):
     print('loading {}'.format(log))
     cr = om.CaseReader(log)
-    cases = cr.list_cases()
     rec_data = {}
-    iterations = []
-    for i, casei in enumerate(cases):
-        iterations.append(i)
-        it_data = cr.get_case(casei)
-
-        # parameters = it_data.get_responses()
-        for parameters in [it_data.get_responses(), it_data.get_design_vars()]:
-            for j, param in enumerate(parameters.keys()):
-                if i == 0:
-                    rec_data[param] = []
-                rec_data[param].append(parameters[param])
-                
+    driver_cases = cr.list_cases('driver')
+    cases = cr.get_cases('driver')
+    for case in cases:
+        for key in case.outputs.keys():
+            if key not in rec_data:
+                rec_data[key] = []
+            rec_data[key].append(case[key])
+        
     return rec_data
 
 
@@ -43,6 +39,13 @@ if __name__ == '__main__':
     run_dir = os.path.dirname(os.path.realpath(__file__))   
     output_dir = os.path.join(run_dir, "outputs")
     doe_logs = glob.glob(os.path.join(output_dir,'log_opt.sql*'))
+    if len(doe_logs) < 1:
+        raise FileExistsError('No output logs to post process!')
+        
+    # Remove the 'meta' log
+    for idx, log in enumerate(doe_logs):
+        if 'meta' in log:
+            doe_logs.pop(idx)
 
     # run multiprocessing
     if post_multi:
@@ -55,9 +58,8 @@ if __name__ == '__main__':
         pool.join()
     # no multiprocessing
     else:
-        outdata = [load_OMsql(doe_logs)]
+        outdata = [load_OMsql(log) for log in doe_logs]
 
-    # Collect and clean up output data
     collected_data = {}
     for data in outdata:
         for key in data.keys():
@@ -65,12 +67,22 @@ if __name__ == '__main__':
                 collected_data[key] = []
 
             for key_idx, _ in enumerate(data[key]):
-                collected_data[key].append(np.array(data[key][key_idx]))
+                if isinstance(data[key][key_idx], int):
+                    collected_data[key].append(np.array(data[key][key_idx]))
+                elif len(data[key][key_idx]) == 1:
+                    try:
+                        collected_data[key].append(np.array(data[key][key_idx][0]))
+                    except:
+                        collected_data[key].append(np.array(data[key][key_idx]))
+                else:
+                    collected_data[key].append(np.array(data[key][key_idx]))
 
     df = pd.DataFrame.from_dict(collected_data)
     
     # write to file
-    outdata_fname = 'doe_outdata.csv'
-    outdata_fpath = os.path.join(os.getcwd(),outdata_fname) 
-    df.to_csv(outdata_fpath, index=False)
+    outdata_fname = 'doe_outdata'
+    outdata_fpath = os.path.join(output_dir,outdata_fname) 
+    df.to_csv(outdata_fpath + '.csv', index=False)
+    print('Saved {}'.format(outdata_fpath + '.csv'))
+    # FileTools.save_yaml(output_dir, outdata_fname + '.yaml', collected_data, package=2)   
 
