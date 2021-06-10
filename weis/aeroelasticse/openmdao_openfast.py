@@ -1,20 +1,74 @@
 import numpy as np
-import os, shutil, sys
+import os, shutil, sys, platform
 import copy
-from scipy.interpolate                      import PchipInterpolator
-from openmdao.api                           import ExplicitComponent
-from wisdem.commonse.mpi_tools              import MPI
-from wisdem.commonse.vertical_cylinder      import NFREQ
-import wisdem.commonse.utilities              as util
-from wisdem.rotorse.rotor_power             import eval_unsteady
-from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
-from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
-from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
-from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
-from wisdem.floatingse.floating_frame       import NULL, NNODES_MAX, NELEM_MAX
-from weis.aeroelasticse.LinearFAST          import LinearFAST
-from weis.control.LinearModel               import LinearTurbineModel, LinearControlModel
-from weis.aeroelasticse.Util                import FileTools
+from scipy.interpolate                              import PchipInterpolator
+from openmdao.api                                   import ExplicitComponent
+from wisdem.commonse.mpi_tools                      import MPI
+from wisdem.commonse.vertical_cylinder              import NFREQ
+import wisdem.commonse.utilities                    as util
+from wisdem.rotorse.rotor_power                     import eval_unsteady
+from weis.aeroelasticse.FAST_writer                 import InputWriter_OpenFAST
+from weis.aeroelasticse.runFAST_pywrapper           import runFAST_pywrapper_batch
+from weis.aeroelasticse.FAST_post                   import FAST_IO_timeseries
+from weis.aeroelasticse.CaseGen_IEC                 import CaseGen_General, CaseGen_IEC
+from wisdem.floatingse.floating_frame               import NULL, NNODES_MAX, NELEM_MAX
+from weis.aeroelasticse.LinearFAST                  import LinearFAST
+from weis.control.LinearModel                       import LinearTurbineModel, LinearControlModel
+from weis.aeroelasticse.Util                        import FileTools
+from weis.aeroelasticse.Turbsim_mdao.turbsim_file   import TurbSimFile
+from ROSCO_toolbox                                  import control_interface as ROSCO_ci
+from pCrunch.io                                     import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
+from pCrunch                                        import LoadsAnalysis
+
+
+# It probably should be here, so the channels can match what we set to be output in openfast
+magnitude_channels = {
+    'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
+    'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
+    'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
+    'RootMc2': ["RootMxc2", "RootMyc2", "RootMzc2"],
+    'RootMc3': ["RootMxc3", "RootMyc3", "RootMzc3"],
+    # 'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
+    # 'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
+    # 'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'],
+}
+
+fatigue_channels = {
+    'RootMc1': 10,
+    'RootMc2': 10,
+    'RootMc3': 10,
+    'RootMyb1': 10,
+    'RootMyb2': 10,
+    'RootMyb3': 10,
+    'TwrBsMyt': 10
+}
+
+channel_extremes = [
+    'RotSpeed',
+    'BldPitch1','BldPitch2','BldPitch3',
+    "RotThrust","LSShftFys","LSShftFzs","RotTorq","LSSTipMys","LSSTipMzs","LSShftF","LSShftM",
+    'Azimuth',
+    'TipDxc1',
+    'TipDxc2',
+    'TipDxc3',
+    "RootMxc1","RootMyc1","RootMzc1",
+    "RootMxc2","RootMyc2","RootMzc2",
+    "RootMxc3","RootMyc3","RootMzc3",
+    'B1N1Fx','B1N2Fx','B1N3Fx','B1N4Fx','B1N5Fx','B1N6Fx','B1N7Fx','B1N8Fx','B1N9Fx',
+    'B1N1Fy','B1N2Fy','B1N3Fy','B1N4Fy','B1N5Fy','B1N6Fy','B1N7Fy','B1N8Fy','B1N9Fy',
+    'B2N1Fx','B2N2Fx','B2N3Fx','B2N4Fx','B2N5Fx','B2N6Fx','B2N7Fx','B2N8Fx','B2N9Fx',
+    'B2N1Fy','B2N2Fy','B2N3Fy','B2N4Fy','B2N5Fy','B2N6Fy','B2N7Fy','B2N8Fy','B2N9Fy',
+    "B3N1Fx","B3N2Fx","B3N3Fx","B3N4Fx","B3N5Fx","B3N6Fx","B3N7Fx","B3N8Fx","B3N9Fx",
+    "B3N1Fy","B3N2Fy","B3N3Fy","B3N4Fy","B3N5Fy","B3N6Fy","B3N7Fy","B3N8Fy","B3N9Fy",
+]
+
+la = LoadsAnalysis(
+    outputs=[],
+    magnitude_channels=magnitude_channels,
+    fatigue_channels=fatigue_channels,
+    extreme_channels=channel_extremes,
+)
+
 
 from pCrunch import LoadsAnalysis, PowerProduction
 import fatpack
@@ -23,6 +77,13 @@ import pickle
 if MPI:
     from mpi4py   import MPI
     from petsc4py import PETSc
+
+if platform.system() == 'Windows':
+    lib_ext = '.dll'
+elif platform.system() == 'Darwin':
+    lib_ext = '.dylib'
+else:
+    lib_ext = '.so'
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
@@ -444,6 +505,51 @@ class FASTLoadCases(ExplicitComponent):
                     self.options['modeling_options']['openfast']['file_management']['FAST_runDirectory'],
                     'OutOps.yaml',OutOps)
 
+                # Run linear simulation:
+
+                # Get case list, wind inputs should have already been generated
+                if self.FASTpref['dlc_settings']['run_IEC'] or self.FASTpref['dlc_settings']['run_blade_fatigue']:
+                    case_list, case_name_list, dlc_list = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt)
+
+                    # Extract disturbance(s)
+                    level2_disturbance = []
+                    for case in case_list:
+                        ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
+                        ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
+                        u_h         = ts_file['rot_avg'][0,:]
+                        tt          = ts_file['t']
+                        level2_disturbance.append({'Time':tt, 'Wind': u_h})
+
+                    # This is going to use the last discon_in file of the linearization set as the simulation file
+                    # Currently fine because openfast is executed (or not executed if overwrite=False) after the file writing
+                    discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
+
+                    lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
+        
+                    ss = {}
+                    et = {}
+                    dl = {}
+                    ct = []
+                    for i_dist, dist in enumerate(level2_disturbance):
+                        sim_name = 'l2_sim_{}'.format(i_dist)
+                        controller_int = ROSCO_ci.ControllerInterface(
+                            lib_name,
+                            param_filename=discon_in_file,
+                            DT=1/80,        # modelling input?
+                            sim_name = os.path.join(self.FAST_runDirectory,sim_name)
+                            )
+
+                        l2_out, _, P_op = LinearTurbine.solve(dist,Plot=False,controller=controller_int)
+
+                        output = OpenFASTOutput.from_dict(l2_out, sim_name, magnitude_channels=magnitude_channels)
+                    
+                        _name, _ss, _et, _dl = la._process_output(output)
+                        ss[_name] = _ss
+                        et[_name] = _et
+                        dl[_name] = _dl
+                        ct.append(l2_out)
+
+                        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
                     
             self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
             
@@ -1156,7 +1262,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.case_name_list    = case_name_list
         fastBatch.channels          = channels
 
-        # fastBatch.overwrite_outfiles = False  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
+        fastBatch.overwrite_outfiles = False  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
         if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
@@ -1254,7 +1360,13 @@ class FASTLoadCases(ExplicitComponent):
 
         iec.transient_dir_change        = '-'
         iec.transient_shear_orientation = 'v'
-        iec.TMax      = fst_vt['Fst']['TMax']
+        if self.options['modeling_options']['Level3']['flag']:
+            iec.TMax    = self.options['modeling_options']['Level3']['simulation']['TMax']
+        elif self.options['modeling_options']['Level2']['flag']:
+            iec.TMax    = self.options['modeling_options']['Level2']['simulation']['TMax']
+        else:
+            raise Exception('Not running Level2 or Level3, no IEC cases generated')
+
         T0            = np.max([0. , iec.TMax - 600.])
         iec.TStart    = (iec.TMax-T0)/2. + T0
         self.simtime  = iec.TMax - T0

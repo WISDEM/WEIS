@@ -196,7 +196,7 @@ class runFAST_pywrapper(object):
                 wrapper.execute()
             else:
                 if self.debug_level>0:
-                    print('OpenFAST not execute: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
+                    print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
             if os.path.exists(FAST_Output):
                 output = OpenFASTBinary(FAST_Output, magnitude_channels=magnitude_channels)  #TODO: add magnitude_channels
