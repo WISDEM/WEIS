@@ -42,7 +42,7 @@ class DLCGenerator(object):
         
         found = False
         for ilab in known_dlcs:
-            func_name = 'generate_'+str(ilab).repalce('.','p')
+            func_name = 'generate_'+str(ilab).replace('.','p')
             
             if label in [ilab, str(ilab)]: # Match either 1.1 or '1.1'
                 found = True
@@ -98,5 +98,5 @@ if __name__ == "__main__":
         DLCopt = DLCs[i_DLC]
         dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-    print(dlc_generator.cases[43])
+    print(dlc_generator.cases[43].wind_speed)
                 
