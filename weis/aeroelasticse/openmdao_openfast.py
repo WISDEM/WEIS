@@ -80,24 +80,14 @@ class FASTLoadCases(ExplicitComponent):
             self.FAST_runDirectory = FAST_directory
             self.FAST_namingOut  = self.FAST_InputFile
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
-        self.cores = OFmgmt['n_cores_multi']
+        self.cores = OFmgmt['cores']
         self.case = {}
         self.channels = {}
         self.mpi_run = False
-        # if 'mpi_run' in FASTpref['analysis_settings'].keys():
-        #     self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
-        #     if self.mpi_run:
-        #         self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
-
-
-
-
-
-
-
-
-
-
+        if 'mpi_run' in OFmgmt.keys():
+            self.mpi_run         = OFmgmt['mpi_run']
+            if self.mpi_run:
+                self.mpi_comm_map_down   = OFmgmt['mpi_comm_map_down']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -375,7 +365,7 @@ class FASTLoadCases(ExplicitComponent):
 
     def init_FAST_model(self):
 
-        fst_vt = self.options['modeling_options']['openfast']['fst_vt']
+        fst_vt = self.options['modeling_options']['DLC_driver']['openfast_file_management']['fst_vt']
         modeling_options = self.options['modeling_options']
         
         # Main .fst file`
@@ -426,7 +416,7 @@ class FASTLoadCases(ExplicitComponent):
                 for key2 in modeling_options['Level3']['outlist'][key1]:
                     fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
 
-        fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['openfast']['file_management']['path2dll']
+        fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['DLC_driver']['openfast_file_management']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
             fst_vt['AeroDyn15']['IndToler'] = 'default'

@@ -2626,10 +2626,6 @@ properties:
                         type: boolean
                         default: False
                         description: Flag to only generate an OpenFAST model and stop
-                    n_cores_multi:
-                        type: integer
-                        default: 1
-                        description: Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
             DLCs:
                 type: array
                 default: [{}]
