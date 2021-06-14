@@ -30,7 +30,6 @@ class FASTLoadCases(ExplicitComponent):
         self.n_blades      = self.options['modeling_options']['assembly']['number_of_blades']
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_pc          = n_pc      = rotorse_options['n_pc']
-        n_OF = self.options['modeling_options']['DLC_driver']['n_cases']
 
         self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
         self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
@@ -57,6 +56,66 @@ class FASTLoadCases(ExplicitComponent):
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(rotorse_options['n_freq']/2)
         n_pc         = int(rotorse_options['n_pc'])
+
+        # DLC options
+        n_OF = self.options['modeling_options']['DLC_driver']['n_cases']
+
+        # OpenFAST options
+        self.model_only = self.options['modeling_options']['DLC_driver']['openfast_file_management']['model_only']
+
+
+
+        # if FASTpref['file_management']['FAST_lib'] != 'none':
+        #     if os.path.isabs(FASTpref['file_management']['FAST_lib']):
+        #         self.FAST_lib = FASTpref['file_management']['FAST_lib']
+        #     else:
+        #         self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+        #                                      FASTpref['file_management']['FAST_lib'])
+
+        # if os.path.isabs(FASTpref['file_management']['FAST_directory']):
+        #     self.FAST_directory = FASTpref['file_management']['FAST_directory']
+        # else:
+        #     self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+        #                                        FASTpref['file_management']['FAST_directory'])
+        
+        # if FASTpref['file_management']['Turbsim_exe'] != 'none':
+        #     if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
+        #         self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
+        #     else:
+        #         self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+        #                                         FASTpref['file_management']['Turbsim_exe'])
+                
+        # self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
+        # if MPI:
+        #     rank    = MPI.COMM_WORLD.Get_rank()
+        #     self.FAST_runDirectory = os.path.join(FASTpref['file_management']['FAST_runDirectory'],'rank_%000d'%int(rank))
+        #     self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']+'_%000d'%int(rank)
+        # else:
+        #     self.FAST_runDirectory = FASTpref['file_management']['FAST_runDirectory']
+        #     self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']
+        # self.cores               = FASTpref['analysis_settings']['cores']
+        # self.case                = {}
+        # self.channels            = {}
+
+        # self.clean_FAST_directory = False
+        # if 'clean_FAST_directory' in FASTpref.keys():
+        #     self.clean_FAST_directory = FASTpref['clean_FAST_directory']
+
+        # self.mpi_run             = False
+        # if 'mpi_run' in FASTpref['analysis_settings'].keys():
+        #     self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
+        #     if self.mpi_run:
+        #         self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
+
+
+
+
+
+
+
+
+
+
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -239,60 +298,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
             self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
             self.add_discrete_input("node_names", val=[""] * n_nodes)
-        
-        # FAST run preferences
-        self.FASTpref            = FASTpref 
-        self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
-        self.debug_level         = FASTpref['analysis_settings']['debug_level']
-        if FASTpref['file_management']['FAST_exe'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['FAST_exe']):
-                self.FAST_exe = FASTpref['file_management']['FAST_exe']
-            else:
-                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             FASTpref['file_management']['FAST_exe'])
-
-        if FASTpref['file_management']['FAST_lib'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['FAST_lib']):
-                self.FAST_lib = FASTpref['file_management']['FAST_lib']
-            else:
-                self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             FASTpref['file_management']['FAST_lib'])
-
-        if os.path.isabs(FASTpref['file_management']['FAST_directory']):
-            self.FAST_directory = FASTpref['file_management']['FAST_directory']
-        else:
-            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                               FASTpref['file_management']['FAST_directory'])
-        
-        if FASTpref['file_management']['Turbsim_exe'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
-                self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
-            else:
-                self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                                FASTpref['file_management']['Turbsim_exe'])
-                
-        self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
-        if MPI:
-            rank    = MPI.COMM_WORLD.Get_rank()
-            self.FAST_runDirectory = os.path.join(FASTpref['file_management']['FAST_runDirectory'],'rank_%000d'%int(rank))
-            self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']+'_%000d'%int(rank)
-        else:
-            self.FAST_runDirectory = FASTpref['file_management']['FAST_runDirectory']
-            self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']
-        self.cores               = FASTpref['analysis_settings']['cores']
-        self.case                = {}
-        self.channels            = {}
-
-        self.clean_FAST_directory = False
-        if 'clean_FAST_directory' in FASTpref.keys():
-            self.clean_FAST_directory = FASTpref['clean_FAST_directory']
-
-        self.mpi_run             = False
-        if 'mpi_run' in FASTpref['analysis_settings'].keys():
-            self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
-            if self.mpi_run:
-                self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
-        
+               
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_OF), units='m/s', desc='wind speed vector from the OF simulations')
         self.add_output('P_out', val=np.zeros(n_OF), units='W', desc='rotor electrical power')
@@ -370,21 +376,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt = self.init_FAST_model()
         fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         
-        if self.Analysis_Level == 2:
-            # Run FAST with ElastoDyn
-
+        if self.model_only == True:
+            # Write input OF files, but do not run OF
+            self.write_FAST(fst_vt, discrete_outputs)
+        else:
+            # Write OF model and run
             summary_stats, extreme_table, DELs, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
             self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
-
-            # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
-            # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
-
-        elif self.Analysis_Level == 1:
-            # Write FAST files, do not run
-            self.write_FAST(fst_vt, discrete_outputs)
-
-        # discrete_outputs['fst_vt_out'] = fst_vt
-
+        
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
             try:
@@ -1095,7 +1094,6 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
-        fastBatch.debug_level       = self.debug_level
         fastBatch.fst_vt            = fst_vt
         fastBatch.keep_time         = False
         fastBatch.post              = FAST_IO_timeseries
@@ -1217,7 +1215,6 @@ class FASTLoadCases(ExplicitComponent):
         iec.wind_dir        = self.FAST_runDirectory
         if self.FASTpref['file_management']['Turbsim_exe'] != 'none':
             iec.Turbsim_exe     = self.Turbsim_exe
-        iec.debug_level     = self.debug_level
         iec.overwrite       = False # TODO: elevate these options to analysis input file
         iec.run_dir         = self.FAST_runDirectory
 
@@ -1688,10 +1685,6 @@ class FASTLoadCases(ExplicitComponent):
         writer.FAST_runDirectory = self.FAST_runDirectory
         writer.FAST_namingOut    = self.FAST_namingOut
         writer.execute()
-
-        if self.debug_level > 0:
-            print('RAN UPDATE: ', self.FAST_runDirectory, self.FAST_namingOut)
-
 
     def writeCpsurfaces(self, inputs):
         

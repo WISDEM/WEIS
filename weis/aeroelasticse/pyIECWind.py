@@ -428,7 +428,6 @@ class pyIECWind_turb():
         self.D                = 126. # rotor diameter (m)
         self.PLExp            = 0.2
         self.AnalysisTime     = 720.
-        self.debug_level      = 0
         self.overwrite        = True
 
     def setup(self):
@@ -505,7 +504,6 @@ class pyIECWind_turb():
             wrapper.turbsim_input = os.path.realpath(os.path.join(writer.run_dir, writer.tsim_input_file))
             wrapper.run_dir = writer.run_dir
             wrapper.turbsim_exe = self.Turbsim_exe
-            wrapper.debug_level = self.debug_level
             wrapper.execute()
 
             return wind_file_out_abs, 3

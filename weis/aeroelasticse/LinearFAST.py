@@ -45,7 +45,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
-        self.debug_level        = 0
         self.dev_branch         = True
 
         self.read_yaml          = False
@@ -408,7 +407,6 @@ def gen_linear_model(wind_speeds, Tmax=600.):
     linear.FAST_directory           = os.path.join(linear.weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
     linear.FAST_steadyDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_steady')
     linear.FAST_linearDirectory     = os.path.join(linear.weis_dir,'outputs','iea_semi_lin')
-    linear.debug_level              = 2
     linear.dev_branch               = True
     linear.write_yaml               = True
 
