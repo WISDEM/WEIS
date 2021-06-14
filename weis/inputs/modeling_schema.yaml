@@ -2626,7 +2626,7 @@ properties:
                         type: boolean
                         default: False
                         description: Flag to only generate an OpenFAST model and stop
-            cases:
+            DLCs:
                 type: array
                 default: [{}]
                 items:
@@ -2634,8 +2634,8 @@ properties:
                     properties:
                         DLC:
                             type: string
-                            enum: ['1.1', '1.3', '1.4', '1.5', '5.1', '6.1', '6.3', 'Custom']
-                            description: IEC DLC to run. Currently supported are 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', 'Custom']
+                            description: IEC DLC to run. Currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.2, 6.3, 6.4
                         wind_speed:
                             type: array
                             description: Wind speeds for this DLC
@@ -2679,7 +2679,7 @@ properties:
                         wave_spectrum:
                             type: array
                             description: Spectrum of the waves
-                            default: ["JONSWAP"]
+                            #default: ["JONSWAP"]
                             items:
                                 type: str
                                 enum: ["JONSWAP","unit"]
@@ -2687,7 +2687,7 @@ properties:
                         turbine_status:
                             type: array
                             description: Status of the turbine, it can be either operating, idling, or parked
-                            default: ["operating"]
+                            #default: ["operating"]
                             items:
                                 type: str
                                 enum: ["operating","idling","parked"]
