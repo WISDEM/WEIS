@@ -61,47 +61,29 @@ class FASTLoadCases(ExplicitComponent):
         n_OF = self.options['modeling_options']['DLC_driver']['n_cases']
 
         # OpenFAST options
-        self.model_only = self.options['modeling_options']['DLC_driver']['openfast_file_management']['model_only']
-
-
-
-        # if FASTpref['file_management']['FAST_lib'] != 'none':
-        #     if os.path.isabs(FASTpref['file_management']['FAST_lib']):
-        #         self.FAST_lib = FASTpref['file_management']['FAST_lib']
-        #     else:
-        #         self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-        #                                      FASTpref['file_management']['FAST_lib'])
-
-        # if os.path.isabs(FASTpref['file_management']['FAST_directory']):
-        #     self.FAST_directory = FASTpref['file_management']['FAST_directory']
-        # else:
-        #     self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-        #                                        FASTpref['file_management']['FAST_directory'])
-        
-        # if FASTpref['file_management']['Turbsim_exe'] != 'none':
-        #     if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
-        #         self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
-        #     else:
-        #         self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-        #                                         FASTpref['file_management']['Turbsim_exe'])
-                
-        # self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
-        # if MPI:
-        #     rank    = MPI.COMM_WORLD.Get_rank()
-        #     self.FAST_runDirectory = os.path.join(FASTpref['file_management']['FAST_runDirectory'],'rank_%000d'%int(rank))
-        #     self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']+'_%000d'%int(rank)
-        # else:
-        #     self.FAST_runDirectory = FASTpref['file_management']['FAST_runDirectory']
-        #     self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']
+        OFmgmt = self.options['modeling_options']['DLC_driver']['openfast_file_management']
+        self.model_only = OFmgmt['model_only']
+        FAST_directory = OFmgmt['OF_run_dir']
+        # Make FAST_directory an absolute path
+        if os.path.isabs(FAST_directory):
+            self.FAST_directory = FAST_directory
+        else:
+            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                               FAST_directory)
+        self.FAST_InputFile      = OFmgmt['OF_run_fst']
+        # File naming changes whether in MPI or not
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            self.FAST_runDirectory = os.path.join(FAST_directory,'rank_%000d'%int(rank))
+            self.FAST_namingOut  = self.FAST_InputFile+'_%000d'%int(rank)
+        else:
+            self.FAST_runDirectory = FAST_directory
+            self.FAST_namingOut  = self.FAST_InputFile
         # self.cores               = FASTpref['analysis_settings']['cores']
-        # self.case                = {}
-        # self.channels            = {}
+        self.case                = {}
+        self.channels            = {}
 
-        # self.clean_FAST_directory = False
-        # if 'clean_FAST_directory' in FASTpref.keys():
-        #     self.clean_FAST_directory = FASTpref['clean_FAST_directory']
-
-        # self.mpi_run             = False
+        self.mpi_run             = False
         # if 'mpi_run' in FASTpref['analysis_settings'].keys():
         #     self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
         #     if self.mpi_run:
