@@ -2507,6 +2507,18 @@ properties:
                     ServoDyn:
                         type: object
                         default: {}
+            from_openfast:
+                type: boolean
+                default: False
+                description: Whether we derive OpenFAST model from an existing model and ignore WISDEM
+            openfast_file: 
+                type: string
+                default: unused
+                description: Main (.fst) OpenFAST input file name. No directory.
+            openfast_dir: 
+                type: string
+                default: unused
+                description: OpenFAST input directory, containing .fst file
     openfast:
         type: object
         default: {}
@@ -2775,3 +2787,7 @@ properties:
                 minimum: 2
                 maximum: 100
                 description: Number of wind speed gain scheduling breakpoints
+            tuning_yaml:
+                type: string
+                default: unused
+                description: Path to ROSCO toolbox tuning input yaml

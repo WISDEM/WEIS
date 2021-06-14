@@ -8,6 +8,7 @@ from wisdem.towerse      import NFREQ, get_nfull
 import wisdem.commonse.utilities              as util
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
+from weis.aeroelasticse.FAST_reader       import InputReader_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
@@ -39,218 +40,225 @@ class FASTLoadCases(ExplicitComponent):
             if n_OF == 0:
                 raise ValueError('There is a problem with the initialization of the DLCs to compute the powercurve. Please check modeling_options.yaml')
 
-        self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
-        self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
-        self.n_U           = n_U       = rotorse_options['n_U_perf_surfaces']
-        self.n_mat         = n_mat    = mat_init_options['n_mat']
-        self.n_layers      = n_layers = rotorse_options['n_layers']
+        if not self.options['modeling_options']['Level3']['from_openfast']:
+            self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
+            self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
+            self.n_U           = n_U       = rotorse_options['n_U_perf_surfaces']
+            self.n_mat         = n_mat    = mat_init_options['n_mat']
+            self.n_layers      = n_layers = rotorse_options['n_layers']
 
-        self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
-        self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
-        self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+            self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
+            self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
+            self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
+            self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
+            
+            self.te_ss_var       = rotorse_options['te_ss']
+            self.te_ps_var       = rotorse_options['te_ps']
+            self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
+            self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
+
+            n_freq_blade = int(rotorse_options['n_freq']/2)
+            n_pc         = int(rotorse_options['n_pc'])
+
+            n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_tower']
+            n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
+            n_height     = self.options['modeling_options']['WISDEM']['TowerSE']['n_height']
+            n_full_tow   = get_nfull(n_height_tow)
+            n_full_mon   = get_nfull(n_height_mon)
+            n_full       = get_nfull(n_height)
+            n_freq_tower = int(NFREQ/2)
+
         
-        self.te_ss_var       = rotorse_options['te_ss']
-        self.te_ps_var       = rotorse_options['te_ps']
-        self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
-        self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
 
-        n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_tower']
-        n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
-        n_height     = self.options['modeling_options']['WISDEM']['TowerSE']['n_height']
-        n_full_tow   = get_nfull(n_height_tow)
-        n_full_mon   = get_nfull(n_height_mon)
-        n_full       = get_nfull(n_height)
-        n_freq_tower = int(NFREQ/2)
-        n_freq_blade = int(rotorse_options['n_freq']/2)
-        n_pc         = int(rotorse_options['n_pc'])
-
-        FASTpref = self.options['modeling_options']['openfast']
         # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
         
-        # ElastoDyn Inputs
-        # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-        self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
-            while r[-1] should be the blade tip. Any number \
-            of locations can be specified between these in ascending order.')
-        self.add_input('le_location',           val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-        self.add_input('beam:Tw_iner',          val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
-        self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
-        self.add_input('beam:EIyy',             val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-        self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-        self.add_input('x_tc',                  val=np.zeros(n_span), units='m',      desc='x-distance to the neutral axis (torsion center)')
-        self.add_input('y_tc',                  val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
-        self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
-        self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
-        self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
-        self.add_input('platform_displacement', val=1.0,               desc='Volumetric platform displacement', units='m**3')
+            # ElastoDyn Inputs
+            # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
+            self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
+                while r[-1] should be the blade tip. Any number \
+                of locations can be specified between these in ascending order.')
+            self.add_input('le_location',           val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
+            self.add_input('beam:Tw_iner',          val=np.zeros(n_span), units='m', desc='y-distance to elastic center from point about which above structural properties are computed')
+            self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
+            self.add_input('beam:EIyy',             val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+            self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+            self.add_input('x_tc',                  val=np.zeros(n_span), units='m',      desc='x-distance to the neutral axis (torsion center)')
+            self.add_input('y_tc',                  val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
+            self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
+            self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+            self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
+            self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
+            self.add_input('platform_displacement', val=1.0,               desc='Volumetric platform displacement', units='m**3')
 
-        # ServoDyn Inputs
-        self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
-        self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
+            # ServoDyn Inputs
+            self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
+            self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
 
-        # tower properties
-        self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
-        self.add_input('side_side_modes',  val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-        self.add_input('mass_den',         val=np.zeros(n_height-1),         units='kg/m',   desc='sectional mass per unit length')
-        self.add_input('foreaft_stff',     val=np.zeros(n_height-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
-        self.add_input('sideside_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
-        self.add_input('tor_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='torsional stiffness per unit length about the Y_E elastic axis')
-        self.add_input('tor_freq',    val=0.0,         units='Hz', desc='First tower torsional frequency')
-        self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
-        self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
-        self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
-        self.add_input('tower_monopile_z_full', val=np.zeros(n_full),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
-        self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
-        self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
-        self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
+            # tower properties
+            self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
+            self.add_input('side_side_modes',  val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+            self.add_input('mass_den',         val=np.zeros(n_height-1),         units='kg/m',   desc='sectional mass per unit length')
+            self.add_input('foreaft_stff',     val=np.zeros(n_height-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
+            self.add_input('sideside_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
+            self.add_input('tor_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='torsional stiffness per unit length about the Y_E elastic axis')
+            self.add_input('tor_freq',    val=0.0,         units='Hz', desc='First tower torsional frequency')
+            self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
+            self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
+            self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+            self.add_input('tower_monopile_z_full', val=np.zeros(n_full),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+            self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
+            self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
+            self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
+            
+            # These next ones are needed for SubDyn
+            self.add_input('tower_wall_thickness', val=np.zeros(n_height-1), units='m')
+            self.add_input('tower_E', val=np.zeros(n_height-1), units='Pa')
+            self.add_input('tower_G', val=np.zeros(n_height-1), units='Pa')
+            self.add_input('tower_rho', val=np.zeros(n_height-1), units='kg/m**3')
+            self.add_input('transition_piece_mass', val=0.0, units='kg')
+            self.add_input('transition_piece_I', val=np.zeros(3), units='kg*m**2')
+            self.add_input('gravity_foundation_mass', val=0.0, units='kg')
+            self.add_input('gravity_foundation_I', val=np.zeros(3), units='kg*m**2')
+
+            # DriveSE quantities
+            self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
+            self.add_input('hub_system_I',    val=np.zeros(6),             units='kg*m**2', desc='mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
+            self.add_input('hub_system_mass', val=0.0,                     units='kg', desc='mass of hub system')
+            self.add_input('above_yaw_mass',  val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
+            self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
+            self.add_input('rna_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the rna [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
+            self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
+            self.add_input('nacelle_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the nacelle [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
+            self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
+            self.add_input('twr2shaft',       val=0.0,         units='m',   desc='Vertical distance from tower top plane to shaft start')
+            self.add_input('GenIner',         val=0.0,         units='kg*m**2',   desc='Moments of inertia for the generator about high speed shaft')
+            self.add_input('drivetrain_spring_constant',         val=0.0,         units='N*m/rad',   desc='Moments of inertia for the generator about high speed shaft')
+            self.add_input("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad", desc='Equivalent damping coefficient for the drivetrain system')
+
+            # AeroDyn Inputs
+            self.add_input('ref_axis_blade',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
+            self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
+            self.add_input('theta',             val=np.zeros(n_span), units='deg', desc='twist at airfoil locations')
+            self.add_input('rthick',            val=np.zeros(n_span), desc='relative thickness of airfoil distribution')
+            self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
+            self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
+            self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
+            self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
+            self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
+            self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
+            self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
+            self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
+            self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
+            self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
+            
+            # Airfoil coordinates
+            self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
+
+            # Floating platform inputs
+            self.add_input("transition_node", np.zeros(3), units="m")
+            self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
+            self.add_input("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+            self.add_input("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
+            self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
+            self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
+            self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
+            self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
+            self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+            self.add_input("platform_center_of_mass", np.zeros(3), units="m")
+            self.add_input("platform_mass", 0.0, units="kg")
+            self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
+            
+            # Turbine level inputs
+            self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
+            
+            self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
+            self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
+            self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
+            self.add_input('cone',             val=0.0, units='deg',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
+            self.add_input('tilt',             val=0.0, units='deg',   desc='Nacelle uptilt angle. A standard machine has positive values.')
+            self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
+
+            # Initial conditions
+            self.add_input('U_init',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
+            self.add_input('Omega_init',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
+            self.add_input('pitch_init',    val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
+            self.add_input('V',             val=np.zeros(n_pc), units='m/s',  desc='wind vector')
+
+            # Cp-Ct-Cq surfaces
+            self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
+            self.add_input('Ct_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero thrust coefficient')
+            self.add_input('Cq_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero torque coefficient')
+            self.add_input('pitch_vector',  val=np.zeros(n_pitch), units='deg',  desc='Pitch vector used')
+            self.add_input('tsr_vector',    val=np.zeros(n_tsr),                 desc='TSR vector used')
+            self.add_input('U_vector',      val=np.zeros(n_U),     units='m/s',  desc='Wind speed vector used')
+
+            # Environmental conditions 
+            self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
+            self.add_input('V_R25',       val=0.0, units='m/s',      desc='region 2.5 transition wind speed')
+            self.add_input('Vgust',       val=0.0, units='m/s',      desc='gust wind speed')
+            self.add_input('V_extreme1',  val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 1-year retunr period')
+            self.add_input('V_extreme50', val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 50-year retunr period')
+            self.add_input('V_mean_iec',  val=0.0, units='m/s',      desc='IEC mean wind for turbulence class')
+            self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed (cut-out)')
+            self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
+            self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
+            self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+            self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
+            self.add_input(
+                    "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+                )
+            self.add_input('rho_water',   val=0.0, units='kg/m**3',  desc='density of water')
+            self.add_input('mu_water',    val=0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
+            self.add_input('beta_wave',    val=0.0, units='deg', desc='Incident wave propagation heading direction')
+            self.add_input('Hsig_wave',    val=0.0, units='m', desc='Significant wave height of incident waves')
+            self.add_input('Tsig_wave',    val=0.0, units='s', desc='Peak-spectral period of incident waves')
+
+            # Blade composite material properties (used for fatigue analysis)
+            self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
+            self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
+            self.add_input('E',            val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
+            self.add_input('Xt',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
+            self.add_input('Xc',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
+            self.add_input('m',            val=np.zeros([n_mat]),                desc='2D array of the S-N fatigue slope exponent for the materials') 
+
+            # Blade composit layup info (used for fatigue analysis)
+            self.add_input('sc_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+            self.add_input('sc_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+            self.add_input('te_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+            self.add_input('te_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
+            self.add_discrete_input('definition_layer', val=np.zeros(n_layers),  desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
+            # self.add_discrete_input('layer_name',       val=n_layers * [''],     desc='1D array of the names of the layers modeled in the blade structure.')
+            # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
+            # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
+            self.layer_name = rotorse_options['layer_name']
+            
+            # MoorDyn inputs
+            mooropt = self.options['modeling_options']["mooring"]
+            if self.options["modeling_options"]["flags"]["mooring"]:
+                n_nodes = mooropt["n_nodes"]
+                n_lines = mooropt["n_lines"]
+                self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
+                self.add_input("line_mass_density", val=np.zeros(n_lines), units="kg/m")
+                self.add_input("line_stiffness", val=np.zeros(n_lines), units="N")
+                self.add_input("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m")
+                self.add_input("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m")
+                self.add_input("line_transverse_drag", val=np.zeros(n_lines))
+                self.add_input("line_tangential_drag", val=np.zeros(n_lines))
+                self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
+                self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
+                self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
+                self.add_input("nodes_added_mass", val=np.zeros(n_nodes))
+                self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
+                self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
+                self.add_discrete_input("node_names", val=[""] * n_nodes)
         
-        # These next ones are needed for SubDyn
-        self.add_input('tower_wall_thickness', val=np.zeros(n_height-1), units='m')
-        self.add_input('tower_E', val=np.zeros(n_height-1), units='Pa')
-        self.add_input('tower_G', val=np.zeros(n_height-1), units='Pa')
-        self.add_input('tower_rho', val=np.zeros(n_height-1), units='kg/m**3')
-        self.add_input('transition_piece_mass', val=0.0, units='kg')
-        self.add_input('transition_piece_I', val=np.zeros(3), units='kg*m**2')
-        self.add_input('gravity_foundation_mass', val=0.0, units='kg')
-        self.add_input('gravity_foundation_I', val=np.zeros(3), units='kg*m**2')
-
-        # DriveSE quantities
-        self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
-        self.add_input('hub_system_I',    val=np.zeros(6),             units='kg*m**2', desc='mass moments of Inertia of hub [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] around its center of mass in yaw-aligned c.s.')
-        self.add_input('hub_system_mass', val=0.0,                     units='kg', desc='mass of hub system')
-        self.add_input('above_yaw_mass',  val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
-        self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
-        self.add_input('rna_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the rna [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
-        self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
-        self.add_input('nacelle_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the nacelle [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
-        self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
-        self.add_input('twr2shaft',       val=0.0,         units='m',   desc='Vertical distance from tower top plane to shaft start')
-        self.add_input('GenIner',         val=0.0,         units='kg*m**2',   desc='Moments of inertia for the generator about high speed shaft')
-        self.add_input('drivetrain_spring_constant',         val=0.0,         units='N*m/rad',   desc='Moments of inertia for the generator about high speed shaft')
-        self.add_input("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad", desc='Equivalent damping coefficient for the drivetrain system')
-
-        # AeroDyn Inputs
-        self.add_input('ref_axis_blade',    val=np.zeros((n_span,3)),units='m',   desc='2D array of the coordinates (x,y,z) of the blade reference axis, defined along blade span. The coordinate system is the one of BeamDyn: it is placed at blade root with x pointing the suction side of the blade, y pointing the trailing edge and z along the blade span. A standard configuration will have negative x values (prebend), if swept positive y values, and positive z values.')
-        self.add_input('chord',             val=np.zeros(n_span), units='m', desc='chord at airfoil locations')
-        self.add_input('theta',             val=np.zeros(n_span), units='deg', desc='twist at airfoil locations')
-        self.add_input('rthick',            val=np.zeros(n_span), desc='relative thickness of airfoil distribution')
-        self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
-        self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
-        self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
-        self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
-        self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
-        self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
-        self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
-        self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
-        self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
-        self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
-        
-        # Airfoil coordinates
-        self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
-
-        # Floating platform inputs
-        self.add_input("transition_node", np.zeros(3), units="m")
-        self.add_input("platform_nodes", NULL * np.ones((NNODES_MAX, 3)), units="m")
-        self.add_input("platform_elem_n1", NULL * np.ones(NELEM_MAX, dtype=np.int_))
-        self.add_input("platform_elem_n2", NULL * np.ones(NELEM_MAX, dtype=np.int_))
-        self.add_input("platform_elem_D", NULL * np.ones(NELEM_MAX), units="m")
-        self.add_input("platform_elem_t", NULL * np.ones(NELEM_MAX), units="m")
-        self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
-        self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
-        self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-        self.add_input("platform_center_of_mass", np.zeros(3), units="m")
-        self.add_input("platform_mass", 0.0, units="kg")
-        self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
-        
-        # Turbine level inputs
-        self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
+        # Still want these even if using only openfast model
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
-        self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
-        self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
-        self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
-        self.add_input('cone',             val=0.0, units='deg',   desc='Cone angle of the rotor. It defines the angle between the rotor plane and the blade pitch axis. A standard machine has positive values.')
-        self.add_input('tilt',             val=0.0, units='deg',   desc='Nacelle uptilt angle. A standard machine has positive values.')
-        self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
-        # Initial conditions
-        self.add_input('U_init',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
-        self.add_input('Omega_init',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
-        self.add_input('pitch_init',    val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
-        self.add_input('V',             val=np.zeros(n_pc), units='m/s',  desc='wind vector')
-
-        # Cp-Ct-Cq surfaces
-        self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
-        self.add_input('Ct_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero thrust coefficient')
-        self.add_input('Cq_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero torque coefficient')
-        self.add_input('pitch_vector',  val=np.zeros(n_pitch), units='deg',  desc='Pitch vector used')
-        self.add_input('tsr_vector',    val=np.zeros(n_tsr),                 desc='TSR vector used')
-        self.add_input('U_vector',      val=np.zeros(n_U),     units='m/s',  desc='Wind speed vector used')
-
-        # Environmental conditions 
-        self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
-        self.add_input('V_R25',       val=0.0, units='m/s',      desc='region 2.5 transition wind speed')
-        self.add_input('Vgust',       val=0.0, units='m/s',      desc='gust wind speed')
-        self.add_input('V_extreme1',  val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 1-year retunr period')
-        self.add_input('V_extreme50', val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 50-year retunr period')
-        self.add_input('V_mean_iec',  val=0.0, units='m/s',      desc='IEC mean wind for turbulence class')
-        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed (cut-out)')
-        self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
-        self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
-        self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
-        self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
-        self.add_input(
-                "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
-            )
-        self.add_input('rho_water',   val=0.0, units='kg/m**3',  desc='density of water')
-        self.add_input('mu_water',    val=0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
-        self.add_input('beta_wave',    val=0.0, units='deg', desc='Incident wave propagation heading direction')
-        self.add_input('Hsig_wave',    val=0.0, units='m', desc='Significant wave height of incident waves')
-        self.add_input('Tsig_wave',    val=0.0, units='s', desc='Peak-spectral period of incident waves')
-
-        # Blade composite material properties (used for fatigue analysis)
-        self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
-        self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
-        self.add_input('E',            val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
-        self.add_input('Xt',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
-        self.add_input('Xc',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')
-        self.add_input('m',            val=np.zeros([n_mat]),                desc='2D array of the S-N fatigue slope exponent for the materials') 
-
-        # Blade composit layup info (used for fatigue analysis)
-        self.add_input('sc_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
-        self.add_input('sc_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="spar cap, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
-        self.add_input('te_ss_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, suction side,  boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
-        self.add_input('te_ps_mats',   val=np.zeros((n_span, n_mat)),        desc="trailing edge reinforcement, pressure side, boolean of materials in each composite layer spanwise, passed as floats for differentiablity, used for Fatigue Analysis")
-        self.add_discrete_input('definition_layer', val=np.zeros(n_layers),  desc='1D array of flags identifying how layers are specified in the yaml. 1) all around (skin, paint, ) 2) offset+rotation twist+width (spar caps) 3) offset+user defined rotation+width 4) midpoint TE+width (TE reinf) 5) midpoint LE+width (LE reinf) 6) layer position fixed to other layer (core fillers) 7) start and width 8) end and width 9) start and end nd 10) web layer')
-        # self.add_discrete_input('layer_name',       val=n_layers * [''],     desc='1D array of the names of the layers modeled in the blade structure.')
-        # self.add_discrete_input('layer_web',        val=n_layers * [''],     desc='1D array of the names of the webs the layer is associated to. If the layer is on the outer profile this entry can simply stay empty.')
-        # self.add_discrete_input('layer_mat',        val=n_layers * [''],     desc='1D array of the names of the materials of each layer modeled in the blade structure.')
-        self.layer_name = rotorse_options['layer_name']
-        
-        # MoorDyn inputs
-        mooropt = self.options['modeling_options']["mooring"]
-        if self.options["modeling_options"]["flags"]["mooring"]:
-            n_nodes = mooropt["n_nodes"]
-            n_lines = mooropt["n_lines"]
-            self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
-            self.add_input("line_mass_density", val=np.zeros(n_lines), units="kg/m")
-            self.add_input("line_stiffness", val=np.zeros(n_lines), units="N")
-            self.add_input("line_transverse_added_mass", val=np.zeros(n_lines), units="kg/m")
-            self.add_input("line_tangential_added_mass", val=np.zeros(n_lines), units="kg/m")
-            self.add_input("line_transverse_drag", val=np.zeros(n_lines))
-            self.add_input("line_tangential_drag", val=np.zeros(n_lines))
-            self.add_input("nodes_location_full", val=np.zeros((n_nodes, 3)), units="m")
-            self.add_input("nodes_mass", val=np.zeros(n_nodes), units="kg")
-            self.add_input("nodes_volume", val=np.zeros(n_nodes), units="m**3")
-            self.add_input("nodes_added_mass", val=np.zeros(n_nodes))
-            self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
-            self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
-            self.add_discrete_input("node_names", val=[""] * n_nodes)
-        
         # FAST run preferences
+        FASTpref = self.options['modeling_options']['openfast']
         self.FASTpref            = FASTpref 
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
         self.debug_level         = FASTpref['analysis_settings']['debug_level']
@@ -332,32 +340,34 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
 
-        # Tower outputs
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
-        self.add_output('tower_maxMy_Fx', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fy', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Fz', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mx', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_My', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
-        self.add_output('tower_maxMy_Mz', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+            
+        # Tower outputs
+        if not self.options['modeling_options']['Level3']['from_openfast']:
+            self.add_output('tower_maxMy_Fx', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
+            self.add_output('tower_maxMy_Fy', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
+            self.add_output('tower_maxMy_Fz', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
+            self.add_output('tower_maxMy_Mx', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+            self.add_output('tower_maxMy_My', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
+            self.add_output('tower_maxMy_Mz', val=np.zeros(n_full_tow-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to maximum fore-aft moment at tower base')
 
-        # Monopile outputs
-        self.add_output('max_M1N1MKye',val=0.0, units='kN*m', desc='maximum of My moment of member 1 at node 1 (base of the monopile)')
-        monlen = max(0, n_full_mon-1)
-        self.add_output('monopile_maxMy_Fx', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
-        self.add_output('monopile_maxMy_Fy', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
-        self.add_output('monopile_maxMy_Fz', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
-        self.add_output('monopile_maxMy_Mx', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-        self.add_output('monopile_maxMy_My', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-        self.add_output('monopile_maxMy_Mz', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            # Monopile outputs
+            self.add_output('max_M1N1MKye',val=0.0, units='kN*m', desc='maximum of My moment of member 1 at node 1 (base of the monopile)')
+            monlen = max(0, n_full_mon-1)
+            self.add_output('monopile_maxMy_Fx', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Fy', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Fz', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Mx', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_My', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Mz', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
 
-        self.add_output('tower_monopile_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
-        self.add_output('tower_monopile_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
-        self.add_output('tower_monopile_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
-        self.add_output('tower_monopile_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-        self.add_output('tower_monopile_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-        self.add_output('tower_monopile_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('tower_monopile_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
+            self.add_output('tower_monopile_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
+            self.add_output('tower_monopile_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
+            self.add_output('tower_monopile_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('tower_monopile_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('tower_monopile_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
         
         # Floating outputs
         self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
@@ -378,7 +388,16 @@ class FASTLoadCases(ExplicitComponent):
         sys.stdout.flush()
 
         fst_vt = self.init_FAST_model()
-        fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
+        if not self.options['modeling_options']['Level3']['from_openfast']:
+            fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
+        else:
+            fast_reader = InputReader_OpenFAST()
+            fast_reader.FAST_InputFile = self.options['modeling_options']['Level3']['openfast_file']   # FAST input file (ext=.fst)
+            fast_reader.FAST_directory = self.options['modeling_options']['Level3']['openfast_dir']   # Path to fst directory files
+            fast_reader.path2dll      = self.options['modeling_options']['openfast']['file_management']['path2dll']   # Path to dll file
+            fast_reader.execute()
+            fst_vt = fast_reader.fst_vt
+            print('here')
         
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
@@ -1067,7 +1086,7 @@ class FASTLoadCases(ExplicitComponent):
             channels_out += ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
 
         # Channels for distributed aerodynamic control
-        if self.n_tab > 1:
+        if self.options['modeling_options']['ROSCO']['Flp_Mode']:   # we're doing flap control
             channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
 
         # Channels for monopile-based structure
@@ -1142,12 +1161,13 @@ class FASTLoadCases(ExplicitComponent):
 
         # Turbine initial conditions
         iec.init_cond = {} # can leave as {} if data not available
-        iec.init_cond[("ElastoDyn","RotSpeed")]        = {'U':inputs['U_init']}
-        iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = inputs['Omega_init']
-        iec.init_cond[("ElastoDyn","BlPitch1")]        = {'U':inputs['U_init']}
-        iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = inputs['pitch_init']
-        iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
-        iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
+        if not self.options['modeling_options']['Level3']['from_openfast']:
+            iec.init_cond[("ElastoDyn","RotSpeed")]        = {'U':inputs['U_init']}
+            iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = inputs['Omega_init']
+            iec.init_cond[("ElastoDyn","BlPitch1")]        = {'U':inputs['U_init']}
+            iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = inputs['pitch_init']
+            iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
+            iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
 
         # If running OLAF...
         if fst_vt['AeroDyn15']['WakeMod'] == 3:
@@ -1288,8 +1308,10 @@ class FASTLoadCases(ExplicitComponent):
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
 
         # Analysis
-        outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
-        outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
+        if self.options['modeling_options']['flags']['blade']:
+            outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
+        if self.options['modeling_options']['flags']['tower']:
+            outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
         if self.options['modeling_options']['flags']['monopile']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)

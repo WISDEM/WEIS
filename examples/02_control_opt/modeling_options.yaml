@@ -3,22 +3,25 @@ General:
 
 WISDEM:
     RotorSE:
-        flag: True
-        n_pitch_perf_surfaces: 15
-        n_tsr_perf_surfaces: 15
+        flag: False
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
     TowerSE:
-        flag: True
+        flag: False
     DriveSE:
-        flag: True
+        flag: False
     FloatingSE:
-        flag: True
+        flag: False
     BOS:
-        flag: True
+        flag: False
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
+    from_openfast: True
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: /Users/dzalkind/Tools/WEIS-1/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     simulation:
         TMax: 700.
         TStart: 60
@@ -58,10 +61,13 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         WaveSeed1: 123456789
         WaveSeed2: 1011121314
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
-    ROSCO:
-        flag: True
-        SD_Mode: 0
-        PS_Mode: 0 
+    
+ROSCO:
+    flag: True
+    SD_Mode: 0
+    PS_Mode: 0 
+    tuning_yaml: /Users/dzalkind/Tools/WEIS-1/ROSCO_toolbox/Tune_Cases/IEA15MW.yaml
+
 openfast:
     analysis_settings:
         Analysis_Level:     2           # Flag to set the call to OpenFAST. 1 - generate OpenFAST model, 2 - generate and run OpenFAST model

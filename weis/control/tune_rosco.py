@@ -11,6 +11,7 @@ from ROSCO_toolbox import utilities as ROSCO_utilities
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
+import yaml
 
 class ServoSE_ROSCO(Group):
     def initialize(self):
@@ -20,16 +21,19 @@ class ServoSE_ROSCO(Group):
     def setup(self):
         modeling_options = self.options['modeling_options']
 
-        self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
         self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'mu'])
 
-        # Connect ROSCO for Rotor Performance tables
-        self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
-        self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
-        self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
-        self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
-        self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
-        self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')
+        if not modeling_options['Level3']['from_openfast']:        #haven't already computed
+            self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
+            # Connect ROSCO for Rotor Performance tables
+            self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
+            self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
+            self.connect('aeroperf_tables.Cq',              'tune_rosco.Cq_table')
+            self.connect('aeroperf_tables.pitch_vector',    'tune_rosco.pitch_vector')
+            self.connect('aeroperf_tables.tsr_vector',      'tune_rosco.tsr_vector')
+            self.connect('aeroperf_tables.U_vector',        'tune_rosco.U_vector')        
+
+        
 
 class TuneROSCO(ExplicitComponent):
     def initialize(self):
@@ -89,12 +93,18 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('ss_pcgain',         val=0.0,                                desc='')
         self.add_input('ps_percent',        val=0.0,                                desc='')
         # Rotor Power
-        self.n_pitch    = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
-        self.n_tsr      = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
-        self.n_U        = n_U       = rotorse_init_options['n_U_perf_surfaces']
-        self.add_input('Cp_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero power coefficient')
-        self.add_input('Ct_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero thrust coefficient')
-        self.add_input('Cq_table',          val=np.zeros((n_tsr, n_pitch, n_U)),                desc='table of aero torque coefficient')
+        if self.modeling_options['WISDEM']['RotorSE']['flag']:
+            self.n_pitch    = n_pitch   = rotorse_init_options['n_pitch_perf_surfaces']
+            self.n_tsr      = n_tsr     = rotorse_init_options['n_tsr_perf_surfaces']
+            self.n_U        = n_U       = rotorse_init_options['n_U_perf_surfaces']
+        else:
+            self.n_pitch    = n_pitch   = self.modeling_options['ROSCO']['n_pitch']
+            self.n_tsr      = n_tsr     = self.modeling_options['ROSCO']['n_tsr']
+            self.n_U        = n_U       = self.modeling_options['ROSCO']['n_U']
+            
+        self.add_input('Cp_table',          val=np.zeros((n_tsr, n_pitch)),                desc='table of aero power coefficient')
+        self.add_input('Ct_table',          val=np.zeros((n_tsr, n_pitch)),                desc='table of aero thrust coefficient')
+        self.add_input('Cq_table',          val=np.zeros((n_tsr, n_pitch)),                desc='table of aero torque coefficient')
         self.add_input('pitch_vector',      val=np.zeros(n_pitch),              units='rad',    desc='Pitch vector used')
         self.add_input('tsr_vector',        val=np.zeros(n_tsr),                                desc='TSR vector used')
         self.add_input('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
@@ -220,14 +230,15 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.ptfm_freq        = float(inputs['ptfm_freq'])
 
         # Load Cp tables
-        self.Cp_table       = inputs['Cp_table']
-        self.Ct_table       = inputs['Ct_table']
-        self.Cq_table       = inputs['Cq_table']
+        self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
+        self.Ct_table       = WISDEM_turbine.Ct_table = np.squeeze(inputs['Ct_table'])
+        self.Cq_table       = WISDEM_turbine.Cq_table = np.squeeze(inputs['Cq_table'])
         self.pitch_vector   = WISDEM_turbine.pitch_initial_rad = inputs['pitch_vector']
         self.tsr_vector     = WISDEM_turbine.TSR_initial = inputs['tsr_vector']
-        self.Cp_table       = WISDEM_turbine.Cp_table = self.Cp_table.reshape(len(self.pitch_vector),len(self.tsr_vector))
-        self.Ct_table       = WISDEM_turbine.Ct_table = self.Ct_table.reshape(len(self.pitch_vector),len(self.tsr_vector))
-        self.Cq_table       = WISDEM_turbine.Cq_table = self.Cq_table.reshape(len(self.pitch_vector),len(self.tsr_vector))
+
+        # self.Cp_table       = WISDEM_turbine.Cp_table = self.Cp_table.reshape(len(self.pitch_vector),len(self.tsr_vector))
+        # self.Ct_table       = WISDEM_turbine.Ct_table = self.Ct_table.reshape(len(self.pitch_vector),len(self.tsr_vector))
+        # self.Cq_table       = WISDEM_turbine.Cq_table = self.Cq_table.reshape(len(self.pitch_vector),len(self.tsr_vector))
 
         RotorPerformance = ROSCO_turbine.RotorPerformance
         WISDEM_turbine.Cp   = RotorPerformance(self.Cp_table,self.pitch_vector,self.tsr_vector)
@@ -487,3 +498,103 @@ class Cp_Ct_Cq_Tables(ExplicitComponent):
                 Omega = tsr_vector[j] *  U_vector[i] / R * 30. / np.pi * np.ones(n_pitch)
                 myout, _  = self.ccblade.evaluate(U, Omega, pitch_vector, coefficients=True)
                 outputs['Cp'][j,:,i], outputs['Ct'][j,:,i], outputs['Cq'][j,:,i] = [myout[key] for key in ['CP','CT','CQ']]
+
+class ROSCO_Turbine(ExplicitComponent):
+    def initialize(self):
+        self.options.declare('modeling_options')
+        self.options.declare('opt_options')
+
+    def setup(self):
+        modeling_options = self.options['modeling_options']
+
+        # Load yaml file 
+        parameter_filename = modeling_options['ROSCO']['tuning_yaml']
+        inps = yaml.safe_load(open(parameter_filename))
+        self.turbine_params         = inps['turbine_params']
+        self.controller_params      = inps['controller_params']
+
+        FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
+        FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
+            
+
+        # Instantiate turbine, controller, and file processing classes
+        self.turbine         = ROSCO_turbine.Turbine(self.turbine_params)
+
+        # Load turbine data from OpenFAST and compute Cp surface here
+        self.turbine.load_from_fast(FAST_InputFile, FAST_directory, dev_branch=True)
+
+        self.add_output('rotor_inertia',     val=0.0,        units='kg*m**2',        desc='Rotor inertia')
+        self.add_output('rho',               val=0.0,        units='kg/m**3',        desc='Air Density')
+        self.add_output('R',                 val=0.0,        units='m',              desc='Rotor Radius')              
+        self.add_output('gear_ratio',        val=0.0,                                desc='Gearbox Ratio')        
+        self.add_output('rated_rotor_speed', val=0.0,        units='rad/s',          desc='Rated rotor speed')                    
+        self.add_output('rated_power',       val=0.0,        units='W',              desc='Rated power')            
+        self.add_output('rated_torque',      val=0.0,        units='N*m', desc='rotor aerodynamic torque at rated')        
+        self.add_output('v_rated',           val=0.0,        units='m/s',            desc='Rated wind speed')
+        self.add_output('v_min',             val=0.0,        units='m/s',            desc='Minimum wind speed (cut-in)')
+        self.add_output('v_max',             val=0.0,        units='m/s',            desc='Maximum wind speed (cut-out)')
+        self.add_output('max_pitch_rate',    val=0.0,        units='rad/s',          desc='Maximum allowed blade pitch rate')
+        self.add_output('max_torque_rate',   val=0.0,        units='N*m/s',          desc='Maximum allowed generator torque rate')
+        self.add_output('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
+        self.add_output('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
+        self.add_output('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
+        self.add_output('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
+        self.add_output('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
+        self.add_output('generator_efficiency', val=1.0,                  desc='Generator efficiency')
+        self.add_output('TowerHt',           val=1.0,        units='m',              desc='Tower height')
+
+        # 
+        self.add_output('max_pitch',         val=0.0,        units='rad',            desc='')
+        self.add_output('min_pitch',         val=0.0,        units='rad',            desc='')
+        self.add_output('vs_minspd',         val=0.0,        units='rad/s',          desc='') 
+        
+        # Rotor Performance
+        n_pitch    = len(self.turbine.Cp.pitch_initial_rad)
+        n_tsr      = len(self.turbine.Cp.TSR_initial)   
+        n_U        = 1
+        modeling_options['ROSCO']['n_pitch']    = n_pitch
+        modeling_options['ROSCO']['n_tsr']      = n_tsr
+        modeling_options['ROSCO']['n_U']        = n_U
+        self.add_output('Cp_table',          val=np.zeros((n_tsr, n_pitch)),                desc='table of aero power coefficient')
+        self.add_output('Ct_table',          val=np.zeros((n_tsr, n_pitch)),                desc='table of aero thrust coefficient')
+        self.add_output('Cq_table',          val=np.zeros((n_tsr, n_pitch)),                desc='table of aero torque coefficient')
+        self.add_output('pitch_vector',      val=np.zeros(n_pitch),              units='rad',    desc='Pitch vector used')
+        self.add_output('tsr_vector',        val=np.zeros(n_tsr),                                desc='TSR vector used')
+        self.add_output('U_vector',          val=np.zeros(n_U),                  units='m/s',    desc='Wind speed vector used')
+
+
+    def compute(self, inputs, outputs):
+        
+        outputs['rotor_inertia'          ] = self.turbine.rotor_inertia
+        outputs['rho'                    ] = self.turbine.rho
+        outputs['R'                      ] = self.turbine.rotor_radius
+        outputs['gear_ratio'             ] = self.turbine.Ng
+        outputs['rated_rotor_speed'      ] = self.turbine.rated_rotor_speed
+        outputs['rated_power'            ] = self.turbine.rated_power
+        outputs['rated_torque'           ] = self.turbine.rated_torque
+        outputs['v_rated'                ] = self.turbine.v_rated
+        outputs['v_min'                  ] = self.turbine.v_min
+        outputs['v_max'                  ] = self.turbine.v_max
+        outputs['max_pitch_rate'         ] = self.turbine.max_pitch_rate
+        outputs['max_torque_rate'        ] = self.turbine.max_torque_rate
+        outputs['tsr_operational'        ] = self.turbine.TSR_operational
+        # outputs['omega_min'              ] = self.turbine.dummy
+        outputs['flap_freq'              ] = self.turbine.bld_flapwise_freq
+        outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq
+        outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff
+        outputs['generator_efficiency'   ] = self.turbine.GenEff
+        outputs['TowerHt'                ] = self.turbine.TowerHt
+
+        # These are ROSCO 'controller' parameters, but should probably be turbine
+        outputs['max_pitch'              ] = self.controller_params['max_pitch'] 
+        outputs['min_pitch'              ] = self.controller_params['max_pitch'] 
+        outputs['vs_minspd'              ] = self.controller_params['vs_minspd'] 
+
+        # Rotor Performance
+        outputs['Cp_table'               ] = self.turbine.Cp.performance_table
+        outputs['Ct_table'               ] = self.turbine.Ct.performance_table
+        outputs['Cq_table'               ] = self.turbine.Cq.performance_table
+        outputs['pitch_vector'           ] = self.turbine.Cp.pitch_initial_rad
+        outputs['tsr_vector'             ] = self.turbine.Cp.TSR_initial
+        outputs['U_vector'               ] = np.array([5])
+
