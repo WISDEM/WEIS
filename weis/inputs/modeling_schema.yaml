@@ -2606,7 +2606,7 @@ properties:
         type: object
         default: {}
         properties:
-            file_management:
+            openfast_file_management:
                 type: object
                 default: {}
                 properties:

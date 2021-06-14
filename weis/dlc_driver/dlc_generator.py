@@ -56,8 +56,12 @@ class DLCGenerator(object):
     def generate_custom(self, options):
         pass
 
-    
     def generate_1p1(self, options):
+
+        self.NTM(options)
+
+    
+    def NTM(self, options):
         wind_speeds = np.arange(self.cut_in, self.cut_out+1.0, options['ws_bin_size'])
         if wind_speeds[-1] != self.cut_out:
             wind_speeds = np.append(wind_speeds, self.cut_out)
