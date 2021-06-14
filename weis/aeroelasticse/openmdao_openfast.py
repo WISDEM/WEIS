@@ -25,19 +25,12 @@ class FASTLoadCases(ExplicitComponent):
 
     def setup(self):
         rotorse_options = self.options['modeling_options']['WISDEM']['RotorSE']
-        openfast_init_options = self.options['modeling_options']['openfast']
         mat_init_options     = self.options['modeling_options']['materials']
 
         self.n_blades      = self.options['modeling_options']['assembly']['number_of_blades']
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_pc          = n_pc      = rotorse_options['n_pc']
-        n_OF     = len(openfast_init_options['dlc_settings']['Power_Curve']['U'])
-        if n_OF == 0 and openfast_init_options['dlc_settings']['run_power_curve']:
-            for i in range(len(openfast_init_options['dlc_settings']['IEC'])):
-                if openfast_init_options['dlc_settings']['IEC'][i]['DLC'] == 1.1:
-                    n_OF = len(openfast_init_options['dlc_settings']['IEC'][i]['U'])
-            if n_OF == 0:
-                raise ValueError('There is a problem with the initialization of the DLCs to compute the powercurve. Please check modeling_options.yaml')
+        n_OF = self.options['modeling_options']['DLC_driver']['n_cases']
 
         self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
         self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
@@ -64,9 +57,6 @@ class FASTLoadCases(ExplicitComponent):
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(rotorse_options['n_freq']/2)
         n_pc         = int(rotorse_options['n_pc'])
-
-        FASTpref = self.options['modeling_options']['openfast']
-        # self.FatigueFile   = self.options['modeling_options']['rotorse']['FatigueFile']
         
         # ElastoDyn Inputs
         # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522

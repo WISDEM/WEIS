@@ -3,7 +3,7 @@ import platform
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
-
+from weis.dlc_driver.dlc_generator    import DLCGenerator
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
@@ -40,16 +40,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt'] = {}
             self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
-            if self.modeling_options['DLC_driver']['openfast_file_management']['OF_run_dir'] != 'none':
-                # Load Input OpenFAST model variable values
-                fast.FAST_InputFile = self.modeling_options['DLC_driver']['openfast_file_management']['OF_run_fst']
-                if os.path.isabs(self.modeling_options['DLC_driver']['openfast_file_management']['OF_run_dir']):
-                    fast.FAST_directory = self.modeling_options['DLC_driver']['openfast_file_management']['OF_run_dir']
-                else:
-                    fast.FAST_directory = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']), 
-                    self.modeling_options['DLC_driver']['openfast_file_management']['OF_run_dir'])
-
-            # Find the controller
+            # Find the path to the WEIS controller
             run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
             if platform.system() == 'Windows':
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.dll')
@@ -57,15 +48,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.dylib')
             else:
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.so')
-            self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
-                
-            if os.path.isabs(self.modeling_options['DLC_driver']['openfast_file_management']['path2dll']) == False:
-                self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = os.path.join(os.path.dirname(self.modeling_options['fname_input_modeling']),
-                                                                                                self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'])
-            if self.modeling_options['DLC_driver']['openfast_file_management']['OF_run_dir'] != 'none':
-                fast.path2dll = self.modeling_options['DLC_driver']['openfast_file_management']['path2dll']
-                fast.execute()
-                    
+            self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll            
+
             # Activate model potential in Level3
             if self.modeling_options["flags"]["floating"]:
                 self.modeling_options["Level3"]["model_potential"] = [False] * self.modeling_options["floating"]["members"]["n_members"]
@@ -74,8 +58,20 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     self.modeling_options["Level3"]["model_potential"][idx] = True
                     
         # XFoil
-        if not os.path.isfile(self.modeling_options["xfoil"]["path"]) and self.modeling_options['Level3']['ROSCO']['Flp_Mode']:
+        if not os.path.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['Level3']['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
+
+        # Compute the number of DLCs that will be run
+        DLCs = self.modeling_options['DLC_driver']['DLCs']
+        # Initialize the DLC generator
+        cut_in = self.wt_init['control']['supervisory']['Vin']
+        cut_out = self.wt_init['control']['supervisory']['Vout']
+        dlc_generator = DLCGenerator(cut_in, cut_out)
+        # Generate cases from user inputs
+        for i_DLC in range(len(DLCs)):
+            DLCopt = DLCs[i_DLC]
+            dlc_generator.generate(DLCopt['DLC'], DLCopt)
+        self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
 
             
     def set_openmdao_vectors_control(self):

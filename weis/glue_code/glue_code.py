@@ -412,21 +412,21 @@ class WindPark(om.Group):
                 self.connect("mooring.unstretched_length", "aeroelastic.unstretched_length")
                 self.connect("mooring.node_names", "aeroelastic.node_names")
         
-            if modeling_options['openfast']['dlc_settings']['run_blade_fatigue']:
-                self.connect('rotorse.re.precomp.x_tc',                            'aeroelastic.x_tc')
-                self.connect('rotorse.re.precomp.y_tc',                            'aeroelastic.y_tc')
-                self.connect('materials.E',                                     'aeroelastic.E')
-                self.connect('materials.Xt',                                    'aeroelastic.Xt')
-                self.connect('materials.Xc',                                    'aeroelastic.Xc')
-                self.connect('blade.outer_shape_bem.pitch_axis',                'aeroelastic.pitch_axis')
-                self.connect('rotorse.re.sc_ss_mats',                              'aeroelastic.sc_ss_mats')
-                self.connect('rotorse.re.sc_ps_mats',                              'aeroelastic.sc_ps_mats')
-                self.connect('rotorse.re.te_ss_mats',                              'aeroelastic.te_ss_mats')
-                self.connect('rotorse.re.te_ps_mats',                              'aeroelastic.te_ps_mats')
-                # self.connect('blade.interp_airfoils.r_thick_interp',            'aeroelastic.rthick')
-                # self.connect('blade.internal_structure_2d_fem.layer_name',      'aeroelastic.layer_name')
-                # self.connect('blade.internal_structure_2d_fem.layer_mat',       'aeroelastic.layer_mat')
-                self.connect('blade.internal_structure_2d_fem.definition_layer','aeroelastic.definition_layer')
+            # if modeling_options['openfast']['dlc_settings']['run_blade_fatigue']:
+            #     self.connect('rotorse.re.precomp.x_tc', 'aeroelastic.x_tc')
+            #     self.connect('rotorse.re.precomp.y_tc', 'aeroelastic.y_tc')
+            #     self.connect('materials.E', 'aeroelastic.E')
+            #     self.connect('materials.Xt', 'aeroelastic.Xt')
+            #     self.connect('materials.Xc', 'aeroelastic.Xc')
+            #     self.connect('blade.outer_shape_bem.pitch_axis', 'aeroelastic.pitch_axis')
+            #     self.connect('rotorse.re.sc_ss_mats', 'aeroelastic.sc_ss_mats')
+            #     self.connect('rotorse.re.sc_ps_mats', 'aeroelastic.sc_ps_mats')
+            #     self.connect('rotorse.re.te_ss_mats', 'aeroelastic.te_ss_mats')
+            #     self.connect('rotorse.re.te_ps_mats', 'aeroelastic.te_ps_mats')
+            #     # self.connect('blade.interp_airfoils.r_thick_interp', 'aeroelastic.rthick')
+            #     # self.connect('blade.internal_structure_2d_fem.layer_name', 'aeroelastic.layer_name')
+            #     # self.connect('blade.internal_structure_2d_fem.layer_mat', 'aeroelastic.layer_mat')
+            #     self.connect('blade.internal_structure_2d_fem.definition_layer','aeroelastic.definition_layer')
 
             # Connections to rotor load analysis
             self.connect('aeroelastic.blade_maxTD_Mx', 'rlds_post.m2pa.Mx')
@@ -656,10 +656,7 @@ class WindPark(om.Group):
                 self.connect('tower.diameter',                  'tcons_post.d_full')
                 
             # Inputs to plantfinancese from wt group
-            if modeling_options['openfast']['dlc_settings']['run_power_curve'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-                self.connect('aeroelastic.AEP',     'financese_post.turbine_aep')
-            elif modeling_options['Level3']['ROSCO']['flag']:
-                self.connect('rotorse.rp.AEP',             'financese_post.turbine_aep')
+            self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
 
             self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
             if modeling_options['WISDEM']['BOS']['flag']:
@@ -679,16 +676,13 @@ class WindPark(om.Group):
 
             # Connections to outputs to screen
             if modeling_options['Level3']['ROSCO']['flag']:
-                if modeling_options['openfast']['dlc_settings']['run_power_curve'] and modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
-                    self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
-                else:
-                    self.connect('rotorse.rp.AEP',             'outputs_2_screen_weis.aep')
+                self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
                 
             self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
             self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
             
-            if modeling_options['openfast']['analysis_settings']['Analysis_Level'] == 2:
+            if modeling_options['DLC_driver']['openfast_file_management']['model_only'] == False:
                 self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen_weis.DEL_RootMyb')
                 self.connect('aeroelastic.DEL_TwrBsMyt',       'outputs_2_screen_weis.DEL_TwrBsMyt')
                 self.connect('aeroelastic.rotor_overspeed',    'outputs_2_screen_weis.rotor_overspeed')

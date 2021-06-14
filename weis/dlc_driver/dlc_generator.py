@@ -33,6 +33,7 @@ class DLCGenerator(object):
         self.rated = rated
         self.cases = []
         self.rng = np.random.default_rng()
+        self.n_cases = 0
 
     def to_dict(self):
         return [m.to_dict() for m in self.cases]
@@ -52,6 +53,7 @@ class DLCGenerator(object):
         if not found:
             raise ValueError(f'DLC {label} is not currently supported')
 
+        self.n_cases = len(self.cases)
         
     def generate_custom(self, options):
         pass
@@ -103,4 +105,5 @@ if __name__ == "__main__":
         dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
     print(dlc_generator.cases[43].wind_speed)
+    print(dlc_generator.n_cases)
                 
