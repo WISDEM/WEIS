@@ -79,11 +79,11 @@ class FASTLoadCases(ExplicitComponent):
         else:
             self.FAST_runDirectory = FAST_directory
             self.FAST_namingOut  = self.FAST_InputFile
-        # self.cores               = FASTpref['analysis_settings']['cores']
-        self.case                = {}
-        self.channels            = {}
-
-        self.mpi_run             = False
+        # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
+        self.cores = OFmgmt['n_cores_multi']
+        self.case = {}
+        self.channels = {}
+        self.mpi_run = False
         # if 'mpi_run' in FASTpref['analysis_settings'].keys():
         #     self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
         #     if self.mpi_run:
