@@ -166,6 +166,7 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.rotor_inertia',         'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
                 self.connect('rosco_turbine.flap_freq',             'sse_tune.tune_rosco.flap_freq', src_indices=[0])
                 self.connect('rosco_turbine.edge_freq',             'sse_tune.tune_rosco.edge_freq', src_indices=[0])
+                self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq', src_indices=[0])
                 self.connect('rosco_turbine.generator_efficiency',  'sse_tune.tune_rosco.generator_efficiency')                
                 self.connect('rosco_turbine.rho',                   'sse_tune.rho')
                 self.connect('rosco_turbine.R',                     'sse_tune.tune_rosco.R')
@@ -203,7 +204,7 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.VS_omega',         'sse_tune.tune_rosco.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',          'sse_tune.tune_rosco.VS_zeta')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
-            self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
+            # self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.ptfm_freq',        'sse_tune.tune_rosco.ptfm_freq')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:

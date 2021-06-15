@@ -704,16 +704,16 @@ control:
         maxTS: 95.
     pitch:
         PC_zeta: 0.7                      # Pitch controller desired damping ratio [-]
-        PC_omega: 0.35                     # Pitch controller desired natural frequency [rad/s]
-        ps_percent: 1.0                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+        PC_omega: 0.2                     # Pitch controller desired natural frequency [rad/s]
+        ps_percent: 0.9                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
         max_pitch: 1.57                     # Maximum pitch angle [rad], {default = 90 degrees}
         max_pitch_rate: 0.03490658503988659 # 2 deg/s
         min_pitch: 0.                     # Minimum pitch angle [rad], {default = 0 degrees}
     torque:
         control_type: tsr_tracking
         tsr: 9.0
-        VS_zeta: 1.0                      # Torque controller desired damping ratio [-]
-        VS_omega: 0.2                     # Torque controller desired natural frequency [rad/s]
+        VS_zeta: 0.85                     # Torque controller desired damping ratio [-]
+        VS_omega: 0.12                     # Torque controller desired natural frequency [rad/s]
         max_torque_rate: 1500000.
         VS_minspd: 0.52                   # Minimum rotor speed [rad/s], {default = 0 rad/s}
         VS_maxspd: 0.8                    # Minimum rotor speed [rad/s], {default = 0 rad/s}

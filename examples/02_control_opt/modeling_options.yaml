@@ -30,10 +30,11 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompInflow: 1
         CompAero: 2
         CompServo: 1
-        CompHydro: 0
+        CompHydro: 1
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
@@ -48,24 +49,38 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         TwFADOF2 : True
         TwSSDOF1 : True
         TwSSDOF2 : True
-        PtfmSgDOF: False
-        PtfmSwDOF: False
-        PtfmHvDOF: False
-        PtfmRDOF : False
-        PtfmPDOF : False
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
         PtfmYDOF : False
+        TwrNodes: 50
     HydroDyn:
-        WaveTMax: 1 #3630
-        WvLowCOff: 0.15708
-        WvHiCOff: 3.2
         WaveSeed1: 123456789
         WaveSeed2: 1011121314
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+        WaveMod: 2
+        WaveTMax: 850
+        WvLowCOff: 0.111527
+        WvHiCOff: 0.783827
+        WvSumQTF: True
+        RdtnMod: 1
+        PotMod: 1
+        DiffQTF: 0
+        PotFile: /Users/dzalkind/Tools/WEIS-1/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+
+    InflowWind:
+        RefHt: 150.0
     
 ROSCO:
     flag: True
     SD_Mode: 0
-    PS_Mode: 0 
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 2
+    Fl_Mode: 1 
     tuning_yaml: /Users/dzalkind/Tools/WEIS-1/ROSCO_toolbox/Tune_Cases/IEA15MW.yaml
 
 openfast:
@@ -74,7 +89,7 @@ openfast:
         debug_level:        1
     file_management:
         FAST_namingOut:    iea15mw         # Name of the OpenFAST output files
-        FAST_runDirectory: outputs            # Path to folder with the OpenFAST output files
+        FAST_runDirectory: outputs/control_opt            # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True

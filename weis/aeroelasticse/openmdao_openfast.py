@@ -397,7 +397,9 @@ class FASTLoadCases(ExplicitComponent):
             fast_reader.path2dll      = self.options['modeling_options']['openfast']['file_management']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
-            print('here')
+            fst_vt = self.load_FAST_model_opts(fst_vt)
+            if self.options['modeling_options']['ROSCO']['flag']:
+                fst_vt['DISCON_in'] = self.options['modeling_options']['openfast']['fst_vt']['DISCON_in']
         
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
@@ -439,6 +441,14 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['HydroDyn']          = {}
         fst_vt['MoorDyn']           = {}
         fst_vt['MAP']               = {}
+
+        fst_vt = self.load_FAST_model_opts(fst_vt)
+
+        return fst_vt
+
+    def load_FAST_model_opts(self,fst_vt):
+
+        modeling_options = self.options['modeling_options']
 
         for key in modeling_options['Level3']['simulation']:
             fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]

@@ -890,12 +890,6 @@ properties:
                         minimum: 0.
                         default: 5.000000000000000e-01
                         description: Water depth above mid-hub height (m) [used only when CavitCheck=True]
-                    TwrTI:
-                        type: number
-                        default: 0.1
-                        minimum: 0.
-                        maximum: 10.
-                        description: Turbulence intensity used in the Eames tower shadow model. Values of TwrTI between 0.05 and 0.4 are recommended.
                     SumPrint:
                         type: boolean
                         default: False
@@ -1556,7 +1550,9 @@ properties:
                         description: Time step for incident wave calculations     (sec) [unused when WaveMod=0; 0.1<=WaveDT<=1.0 recommended; determines WaveOmegaMax=Pi/WaveDT in the IFFT]
                     WavePkShp:
                         type: number
-                        default: -999.0
+                        default: 1.0
+                        minimum: 1
+                        maximum: 7
                         unit: none
                         description: Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]
                     WvLowCOff:
@@ -1599,10 +1595,10 @@ properties:
                         description: Number of wave directions [only used when WaveMod=2,3, or 4 and WaveDirMod=1; odd number only]
                     WaveDirRange:
                         type: number
-                        unit: rad
-                        default: 1.5707963267948966
+                        unit: deg
+                        default: 90
                         minimum: 0.0
-                        maximum: 6.283185307179586
+                        maximum: 360
                         description: Range of wave directions (full range = WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]
                     WaveSeed1:
                         type: integer
@@ -1629,21 +1625,21 @@ properties:
                         description: Number of points where the incident wave elevations can be computed (-) [maximum of 9 output locations]
                     WaveElevxi:
                         type: array
-                        default: [0.0]
+                        default: ['0.0']
                         description: List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
                         items:
-                            type: number
-                            default: 0.0
-                            unit: m
+                            type: string
+                            # default: 0.0
+                            # unit: m
                             maxItems: 9
                     WaveElevyi:
                         type: array
-                        default: [0.0]
+                        default: ['0.0']
                         description: List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
                         items:
-                            type: number
-                            default: 0.0
-                            unit: m
+                            type: string
+                            # default: 0.0
+                            # unit: m
                             maxItems: 9
                     WvDiffQTF:
                         type: boolean
@@ -1695,7 +1691,7 @@ properties:
                         description: Sub-surface current velocity at still water level  (m/s) [used only when CurrMod=1]
                     CurrSSDir:
                         type: number
-                        default: -999.0
+                        default: 0
                         maximum: 6.283185307179586
                         unit: rad
                         description: Sub-surface current heading direction (radians) or 0.0 for default [used only when CurrMod=1]
@@ -1750,12 +1746,12 @@ properties:
                         default: 1.0
                         unit: m
                         description: Characteristic body length scale used to redimensionalize Capytaine/NEMOH/WAMIT output (meters) [only used when PotMod=1]
-                    PtfmVol0:
-                        type: number
-                        default: 0.0
-                        minimum: 0.0
-                        units: m^3
-                        description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    # PtfmVol0:
+                    #     type: number
+                    #     default: 0.0
+                    #     minimum: 0.0
+                    #     units: m^3
+                    #     description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
                     PtfmMass_Init:
                         type: number
                         default: 0.0
@@ -1795,7 +1791,7 @@ properties:
                         type: number
                         minimum: 0.0
                         maximum: 1e3
-                        default: 0.0
+                        default: 0.0125
                         unit: s
                         description: Time step for wave radiation kernel calculations, use 0.0 for default (sec) [only used when PotMod=1; DT<=RdtnDT<=0.1 recommended; determines RdtnOmegaMax=Pi/RdtnDT in the cosine transform]
                     MnDrift:
@@ -2791,3 +2787,47 @@ properties:
                 type: string
                 default: unused
                 description: Path to ROSCO toolbox tuning input yaml
+            F_LPFCornerFreq:
+                type: number
+                default: 1.00810
+                minimum: 0.00001
+                description: Corner frequency (-3dB point) in the low-pass filters, [rad/s] (unused for now)
+            F_LPFDamping:
+                type: number
+                default: 1.00810
+                minimum: 0.00001
+                description: Damping coefficient [used only when F_FilterType = 2] (unused for now)
+            F_NotchCornerFreq:
+                type: number
+                default: 3.12000
+                minimum: 0.00001
+                description: Natural frequency of the notch filter, [rad/s] (unused for now)
+            F_NotchBetaNumDen:
+                type: array
+                default: [0.00000,   0.25000]
+                description: Two notch damping values (numerator and denominator, resp) - determines the width and depth of the notch, [-] (unused for now)
+                items:
+                    type: number
+                    minItems: 2
+                    maxItems: 2
+            F_SSCornerFreq:
+                type: number
+                default: 0.62832
+                minimum: 0.00001
+                description: Corner frequency (-3dB point) in the first order low pass filter for the setpoint smoother, [rad/s]. (unused for now)
+            F_FlCornerFreq:
+                type: array
+                default: [0.22600,   1.00000]
+                description: Natural frequency and damping in the second order low pass filter of the tower-top fore-aft motion for floating feedback control [rad/s, -]. (unused for now)
+                items:
+                    type: number
+                    minItems: 2
+                    maxItems: 2
+            F_FlpCornerFreq:
+                type: array
+                default: [1.16240,   1.00000]
+                description: Corner frequency and damping in the second order low pass filter of the blade root bending moment for flap control [rad/s, -]. (unused for now)
+                items:
+                    type: number
+                    minItems: 2
+                    maxItems: 2

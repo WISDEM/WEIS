@@ -539,9 +539,11 @@ class ROSCO_Turbine(ExplicitComponent):
         self.add_output('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_output('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_output('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
+        self.add_output('twr_freq',          val=0.0,        units='rad/s',             desc='Tower first natural frequency')
         self.add_output('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
-        self.add_output('generator_efficiency', val=1.0,                  desc='Generator efficiency')
+        self.add_output('generator_efficiency', val=1.0,                             desc='Generator efficiency')
         self.add_output('TowerHt',           val=1.0,        units='m',              desc='Tower height')
+        # self.add_output('twr_freq',          val=0.0,        units='rad/s',          desc='Tower natural frequency')
 
         # 
         self.add_output('max_pitch',         val=0.0,        units='rad',            desc='')
@@ -579,11 +581,12 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['max_torque_rate'        ] = self.turbine.max_torque_rate
         outputs['tsr_operational'        ] = self.turbine.TSR_operational
         # outputs['omega_min'              ] = self.turbine.dummy
-        outputs['flap_freq'              ] = self.turbine.bld_flapwise_freq
-        outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq
-        outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff
+        outputs['flap_freq'              ] = self.turbine.bld_flapwise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
+        outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
+        outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff / 100
         outputs['generator_efficiency'   ] = self.turbine.GenEff
         outputs['TowerHt'                ] = self.turbine.TowerHt
+        outputs['twr_freq'               ] = self.turbine.twr_freq #/ 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # These are ROSCO 'controller' parameters, but should probably be turbine
         outputs['max_pitch'              ] = self.controller_params['max_pitch'] 
