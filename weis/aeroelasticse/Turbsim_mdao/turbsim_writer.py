@@ -1,43 +1,23 @@
-from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 import os
 import numpy as np
 import random
 from time import sleep
-class TurbsimBuilder(turbsiminputs):
-    def __init__(self):
-         self.turbsim_vt = turbsiminputs()
-         self.tsim_input_file = 'turbsim_default.in'
-         self.tsim_turbulence_file = 'turbulence_default.in'
-         self.tsim_profile_file = 'default.shear'
- 
-         # Turbulence file parameters
-         self.wind_speed = 8.
-         self.turbulence_file_name = 'tsim_user_turbulence_default.inp'
-         
-         # profile file parameters
-         self.profile_template = 'TurbsimInputFiles/shear.profile'
-         self.shear_exponent = 0.7
-         self.veer = 12.5
-         self.turbsim_vt.metboundconds.ProfileFile = 'default.profile'
 
-         self.run_dir = 'run%d'%np.random.uniform(0,1e10)
+class TurbsimWriter(object):
 
-    def execute(self):
-         if not os.path.exists(self.run_dir): 
-            try:
-               sleep(random.uniform(0, 1))
-               if not os.path.exists(self.run_dir): 
-                  os.makedirs(self.run_dir)
-            except:
-               pass
+    def __init__(self, turbsiminputs):
 
-         tsinp = open(os.sep.join([self.run_dir, self.tsim_input_file]), 'w')
+        self.turbsiminputs = turbsiminputs
+        
+    def execute(self, turbsim_input_file):
+
+         tsinp = open(turbsim_input_file, 'w')
          tsinp.write("---------TurbSim v2.00.* Input File------------------------\n")
-         tsinp.write(" Turbsim input file for {}\n".format(self.turbulence_file_name))
+         tsinp.write(" Turbsim input file\n")
          tsinp.write("---------Runtime Options-----------------------------------\n")
 
          # runtime options
-         tsinp.write('{!s:<12}   Echo            - Echo input data to <RootName>.ech (flag)\n'.format(self.turbsim_vt.runtime_options.echo))
+         tsinp.write('{!s:<12}   Echo            - Echo input data to <RootName>.ech (flag)\n'.format(self.turbsiminputs.Echo))
          tsinp.write('{!s:<12}   RandSeed1       - First random seed  (-2147483648 to 2147483647)\n'.format(int(self.turbsim_vt.runtime_options.RandSeed1)))
          tsinp.write('{!s:<12}   RandSeed2       - Second random seed (-2147483648 to 2147483647) for intrinsic pRNG, or an alternative pRNG: "RanLux" or "RNSNLW"\n'.format(self.turbsim_vt.runtime_options.RandSeed2))
          tsinp.write('{!s:<12}   WrBHHTP         - Output hub-height turbulence parameters in binary form?  (Generates RootName.bin)\n'.format(self.turbsim_vt.runtime_options.WrBHHTP))
@@ -134,11 +114,3 @@ class TurbsimBuilder(turbsiminputs):
          tsinp.write('{!s:<12}   CTLy            - Fractional location of tower centerline from right [-] (looking downwind) to left side of the dataset. (Ignored when Randomize = true.)\n'.format(self.turbsim_vt.coherentTurbulence.CTLy))
          tsinp.write('{!s:<12}   CTLz            - Fractional location of hub height from the bottom of the dataset. [-] (Ignored when Randomize = true.)\n'.format(self.turbsim_vt.coherentTurbulence.CTLz))
          tsinp.write('{!s:<12}   CTStartTime     - Minimum start time for coherent structures in RootName.cts [seconds]\n'.format(self.turbsim_vt.coherentTurbulence.CTStartTime))
-
-
-
-if __name__=='__main__':
-    s = TurbsimBuilder()
-    s.turbsim_vt.metboundconds.UserFile = 'tsim_user_turbulence_default.inp'
-    s.turbsim_vt.metboundconds.ProfileFile = 'default.profile'
-    s.execute()

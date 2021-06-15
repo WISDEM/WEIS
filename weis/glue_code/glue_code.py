@@ -382,6 +382,7 @@ class WindPark(om.Group):
             self.connect('rotorse.wt_class.V_extreme1',             'aeroelastic.V_extreme1')
             self.connect('rotorse.wt_class.V_extreme50',            'aeroelastic.V_extreme50')
             self.connect('rotorse.wt_class.V_mean',                 'aeroelastic.V_mean_iec')
+            self.connect('control.V_in',                    'aeroelastic.V_cutin')
             self.connect('control.V_out',                   'aeroelastic.V_cutout')
             self.connect('configuration.rated_power',       'aeroelastic.control_ratedPower')
             self.connect('control.max_TS',                  'aeroelastic.control_maxTS')

@@ -6,14 +6,16 @@ class DLCInstance(object):
     
     def __init__(self):
         # Set default DLC with empty properties
-        self.wind_speed = 0.0
         self.wind_heading = 0.0
         self.yaw_misalign = 0.0
-        self.turbsim_seed = 0
-        self.turbine_status = '' # Could make this True/False?
+        self.turbine_status = ''
         self.wave_spectrum = ''
-        self.turbulent_wind = '' # Is this NTM/ETM/None?
+        self.turbulent_wind = False
         self.label = '' # For 1.1/Custom
+
+    def default_turbsim_props(self, options):
+        for key in options['turbulent_wind'].keys():
+            setattr(self, key, options['turbulent_wind'][key])
 
     def to_dict(self):
         out = {}
@@ -73,9 +75,11 @@ class DLCGenerator(object):
         for ws in wind_speeds:
             for seed in seeds:
                 idlc = DLCInstance()
-                idlc.wind_speed = ws
-                idlc.turbsim_seed = seed
-                idlc.turbulent_wind = 'NTM'
+                idlc.default_turbsim_props(options)
+                idlc.URef = ws
+                idlc.RandSeed1 = seed
+                idlc.IEC_WindType = 'NTM'
+                idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.1'
                 self.cases.append(idlc)

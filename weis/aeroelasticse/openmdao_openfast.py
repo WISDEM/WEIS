@@ -10,8 +10,10 @@ from wisdem.rotorse.rotor_power             import eval_unsteady
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
-from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
+# from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
+from weis.dlc_driver.dlc_generator    import DLCGenerator
+# from weis.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
 
 from pCrunch import PowerProduction
 
@@ -218,7 +220,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('V_extreme1',  val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 1-year retunr period')
         self.add_input('V_extreme50', val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 50-year retunr period')
         self.add_input('V_mean_iec',  val=0.0, units='m/s',      desc='IEC mean wind for turbulence class')
-        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed (cut-out)')
+        self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
+        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
         self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
         self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
@@ -643,7 +646,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 fst_vt['AeroDyn15']['af_data'][i][j]['InterpOrd'] = "DEFAULT"
                 fst_vt['AeroDyn15']['af_data'][i][j]['NonDimArea']= 1
-                if modeling_options['openfast']['analysis_settings']['generate_af_coords']:
+                if modeling_options['DLC_driver']['openfast_file_management']['generate_af_coords']:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
@@ -971,24 +974,7 @@ class FASTLoadCases(ExplicitComponent):
             
         return fst_vt
 
-    def run_FAST(self, inputs, discrete_inputs, fst_vt):
-
-        case_list      = []
-        case_name_list = []
-        dlc_list       = []
-
-        if self.FASTpref['dlc_settings']['run_IEC'] or self.FASTpref['dlc_settings']['run_blade_fatigue']:
-            case_list_IEC, case_name_list_IEC, dlc_list_IEC = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt)
-            case_list      += case_list_IEC
-            case_name_list += case_name_list_IEC
-            dlc_list       += dlc_list_IEC
-
-        if self.FASTpref['dlc_settings']['run_power_curve']:
-            case_list_pc, case_name_list_pc, dlc_list_pc = self.DLC_creation_powercurve(inputs, discrete_inputs, fst_vt)
-            case_list      += case_list_pc
-            case_name_list += case_name_list_pc
-            dlc_list       += dlc_list_pc
-
+    def output_channels(self):
         # Mandatory output channels to include 
         # TODO: what else is needed here?
         channels_out  = ["TipDxc1", "TipDyc1", "TipDzc1", "TipDxc2", "TipDyc2", "TipDzc2"]
@@ -1056,6 +1042,61 @@ class FASTLoadCases(ExplicitComponent):
         for var in channels_out:
             channels[var] = True
 
+        return channels
+
+    def run_FAST(self, inputs, discrete_inputs, fst_vt):
+
+        DLCs = self.options['modeling_options']['DLC_driver']['DLCs']
+        # Initialize the DLC generator
+        cut_in = inputs['V_cutin']
+        cut_out = inputs['V_cutout']
+        rated = inputs['Vrated']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated)
+        # Generate cases from user inputs
+        for i_DLC in range(len(DLCs)):
+            DLCopt = DLCs[i_DLC]
+            dlc_generator.generate(DLCopt['DLC'], DLCopt)
+
+        WindFile_type = np.zeros(dlc_generator.n_cases)
+        WindFile_name = '' * dlc_generator.n_cases
+
+        for i_case in range(dlc_generator.n_cases):
+            if dlc_generator.cases[i_case].turbulent_wind:
+                from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimWriter
+                turbsim_input_file = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
+                                        '_U%1.6f'%dlc_generator.cases[i_case].URef + 
+                                        '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1 + '.in')
+                WindFile_type[i_case] = 3
+                ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
+                ts_writer.execute(turbsim_input_file)
+                # IEC_WindType = dlc_generator.cases[i_case].IEC_WindType
+                # U = dlc_generator.cases[i_case].URef
+                # iecwind.case_name = self.FAST_namingOut
+                # iecwind.run_dir = self.FAST_runDirectory
+                # iecwind.outdir = self.FAST_runDirectory
+                # WindFile_name[i_case], WindFile_type[i_case] = iecwind.execute(IEC_WindType, U)
+            else:
+                raise Exception('Implement here')
+        
+        case_inputs = {}
+        case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
+        case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
+        case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
+        case_inputs[("InflowWind","RefLength")] = {'vals':[inputs['Rtip']*2.], 'group':0}
+        
+        # Append current DLC to full list of cases
+        case_list, case_name = CaseGen_General(case_inputs, self.FAST_directory, self.FAST_InputFile)
+
+        channels= self.output_channels()
+
+
+
+
+        
+
+
+
+
         # FAST wrapper setup
         fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
@@ -1078,12 +1119,12 @@ class FASTLoadCases(ExplicitComponent):
 
         # Run FAST
         if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
-            summary_stats, extreme_table, DELs, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
+            summary_stats, extreme_table, DELs, _ = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
-                summary_stats, extreme_table, DELs, chan_time = fastBatch.run_serial()
+                summary_stats, extreme_table, DELs, _ = fastBatch.run_serial()
             else:
-                summary_stats, extreme_table, DELs, chan_time = fastBatch.run_multi(self.cores)
+                summary_stats, extreme_table, DELs, _ = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
