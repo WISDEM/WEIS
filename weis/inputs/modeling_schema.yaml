@@ -2812,7 +2812,7 @@ properties:
                                     description: Time step [seconds]
                                 AnalysisTime:
                                     type: number
-                                    default: 630.
+                                    default: 720.
                                     minimum: 1.e-4
                                     maximum: 1.e+4
                                     unit: s

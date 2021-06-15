@@ -10,10 +10,12 @@ from wisdem.rotorse.rotor_power             import eval_unsteady
 from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
-# from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-# from weis.aeroelasticse.pyIECWind import pyIECWind_extreme, pyIECWind_turb
+from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
+from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimWriter
+from weis.aeroelasticse.CaseGen_General import CaseGen_General
+
 
 from pCrunch import PowerProduction
 
@@ -72,6 +74,9 @@ class FASTLoadCases(ExplicitComponent):
         else:
             self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
                                                FAST_directory)
+        if not os.path.exists(FAST_directory):
+            os.makedirs(FAST_directory)
+
         self.FAST_InputFile      = OFmgmt['OF_run_fst']
         # File naming changes whether in MPI or not
         if MPI:
@@ -1060,21 +1065,26 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_type = np.zeros(dlc_generator.n_cases)
         WindFile_name = '' * dlc_generator.n_cases
 
+        
+        wrapper = Turbsim_wrapper()
+        wrapper.run_dir = self.FAST_directory
+        run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+        wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
+
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
-                from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimWriter
-                turbsim_input_file = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
+                # Write out turbsim input file
+                turbsim_input_file_name = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                         '_U%1.6f'%dlc_generator.cases[i_case].URef + 
                                         '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1 + '.in')
+                turbsim_input_file_path = os.path.join(self.FAST_directory, turbsim_input_file_name)
                 WindFile_type[i_case] = 3
                 ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
-                ts_writer.execute(turbsim_input_file)
-                # IEC_WindType = dlc_generator.cases[i_case].IEC_WindType
-                # U = dlc_generator.cases[i_case].URef
-                # iecwind.case_name = self.FAST_namingOut
-                # iecwind.run_dir = self.FAST_runDirectory
-                # iecwind.outdir = self.FAST_runDirectory
-                # WindFile_name[i_case], WindFile_type[i_case] = iecwind.execute(IEC_WindType, U)
+                ts_writer.execute(turbsim_input_file_path)
+                
+                # Run TurbSim
+                wrapper.turbsim_input = turbsim_input_file_name
+                wrapper.execute()
             else:
                 raise Exception('Implement here')
         
