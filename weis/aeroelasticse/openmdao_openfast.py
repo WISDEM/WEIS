@@ -67,25 +67,18 @@ class FASTLoadCases(ExplicitComponent):
         # OpenFAST options
         OFmgmt = self.options['modeling_options']['DLC_driver']['openfast_file_management']
         self.model_only = OFmgmt['model_only']
-        FAST_directory = OFmgmt['OF_run_dir']
-        # Make FAST_directory an absolute path
-        if os.path.isabs(FAST_directory):
-            self.FAST_directory = FAST_directory
-        else:
-            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                               FAST_directory)
-        if not os.path.exists(FAST_directory):
-            os.makedirs(FAST_directory)
-
-        self.FAST_InputFile      = OFmgmt['OF_run_fst']
+        FAST_directory_base = OFmgmt['OF_run_dir']
+        self.FAST_InputFile = OFmgmt['OF_run_fst']
         # File naming changes whether in MPI or not
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
-            self.FAST_runDirectory = os.path.join(FAST_directory,'rank_%000d'%int(rank))
-            self.FAST_namingOut  = self.FAST_InputFile+'_%000d'%int(rank)
+            self.FAST_directory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
+            self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
         else:
-            self.FAST_runDirectory = FAST_directory
-            self.FAST_namingOut  = self.FAST_InputFile
+            self.FAST_directory = FAST_directory_base
+            self.FAST_namingOut = self.FAST_InputFile
+        if not os.path.exists(self.FAST_directory):
+            os.makedirs(self.FAST_directory)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
         self.cores = OFmgmt['cores']
         self.case = {}
@@ -1082,7 +1075,7 @@ class FASTLoadCases(ExplicitComponent):
                 ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
                 ts_writer.execute(turbsim_input_file_path)
                 
-                # Run TurbSim
+                # Run TurbSim in sequence
                 wrapper.turbsim_input = turbsim_input_file_name
                 wrapper.execute()
             else:
@@ -1099,22 +1092,10 @@ class FASTLoadCases(ExplicitComponent):
 
         channels= self.output_channels()
 
-
-
-
-        
-
-
-
-
         # FAST wrapper setup
         fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
-
-        if self.FASTpref['file_management']['FAST_exe'] != 'none':
-            fastBatch.FAST_exe          = self.FAST_exe
-            fastBatch.FAST_lib          = self.FAST_lib
-        fastBatch.FAST_runDirectory = self.FAST_runDirectory
+        fastBatch.FAST_runDirectory = self.FAST_directory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
         fastBatch.fst_vt            = fst_vt
@@ -1122,7 +1103,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.post              = FAST_IO_timeseries
 
         fastBatch.case_list         = case_list
-        fastBatch.case_name_list    = case_name_list
+        fastBatch.case_name_list    = case_name
         fastBatch.channels          = channels
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
@@ -1139,7 +1120,7 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
-        return summary_stats, extreme_table, DELs, case_list, dlc_list
+        return summary_stats, extreme_table, DELs, case_list
 
     def DLC_creation_IEC(self, inputs, discrete_inputs, fst_vt, powercurve=False):
 
