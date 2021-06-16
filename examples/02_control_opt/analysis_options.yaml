@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs_low_step
+    folder_output: outputs/control_opt
     fname_output: iea15mw
 design_variables:
   control:
@@ -35,5 +35,5 @@ driver:
     form: central         # Finite differencing mode, either forward or central
 
 recorder:
-    flag: False             # Flag to activate OpenMDAO recorder
+    flag: True             # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
