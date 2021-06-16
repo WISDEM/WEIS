@@ -202,10 +202,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
         # Initial conditions
-        self.add_input('U_init',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
-        self.add_input('Omega_init',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
-        self.add_input('pitch_init',    val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
-        self.add_input('V',             val=np.zeros(n_pc), units='m/s',  desc='wind vector')
+        self.add_input('U',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
+        self.add_input('Omega',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
+        self.add_input('pitch',    val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
 
         # Cp-Ct-Cq surfaces
         self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
@@ -1059,9 +1058,11 @@ class FASTLoadCases(ExplicitComponent):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
+        # Initialize parametric inputs
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
-
+        rot_speed_initial = np.zeros(dlc_generator.n_cases)
+        pitch_initial = np.zeros(dlc_generator.n_cases)
         
         wrapper = Turbsim_wrapper()
         wrapper.run_dir = self.FAST_directory
@@ -1086,14 +1087,24 @@ class FASTLoadCases(ExplicitComponent):
                 WindFile_type[i_case] = 3
                 turbsim_output_file_path = turbsim_input_file_path[:-3] + '.bts'
                 WindFile_name[i_case] = turbsim_output_file_path
+
+                # Set initial rotor speed and pitch
+                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
+                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
             else:
                 raise Exception('Implement here')
         
+        # Parameteric inputs
         case_inputs = {}
+        # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
-        case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[inputs['Rtip']*2.], 'group':0}
+        # Initial conditions for rotor speed and pitch
+        case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
+        case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
+        case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
+        case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
         
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_directory, self.FAST_InputFile)
