@@ -227,7 +227,7 @@ class WindPark(om.Group):
                     self.connect(f'mooring.line_{var}', f'raft.line_{var}')
 
                 
-        if modeling_options['Level3']['flag']:
+        if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
             self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
             self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options))

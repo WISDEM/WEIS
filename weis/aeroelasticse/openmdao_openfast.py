@@ -4,17 +4,17 @@ import copy
 from scipy.interpolate                              import PchipInterpolator
 from openmdao.api                                   import ExplicitComponent
 from wisdem.commonse.mpi_tools                      import MPI
-from wisdem.commonse.vertical_cylinder              import NFREQ
 import wisdem.commonse.utilities                    as util
 from wisdem.rotorse.rotor_power                     import eval_unsteady
 from weis.aeroelasticse.FAST_writer                 import InputWriter_OpenFAST
+from wisdem.towerse                                 import NFREQ, get_nfull
 from weis.aeroelasticse.runFAST_pywrapper           import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post                   import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC                 import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame               import NULL, NNODES_MAX, NELEM_MAX
 from weis.aeroelasticse.LinearFAST                  import LinearFAST
 from weis.control.LinearModel                       import LinearTurbineModel, LinearControlModel
-from weis.aeroelasticse.Util                        import FileTools
+from weis.aeroelasticse                             import FileTools
 from weis.aeroelasticse.Turbsim_mdao.turbsim_file   import TurbSimFile
 from ROSCO_toolbox                                  import control_interface as ROSCO_ci
 from pCrunch.io                                     import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
@@ -371,10 +371,7 @@ class FASTLoadCases(ExplicitComponent):
         
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
-        self.add_output('DEL_RootMyb', val=0.0,            units='N*m',  desc='damage equivalent load of blade root flap bending moment in out-of-plane direction')
-        self.add_output('DEL_TwrBsMyt',val=0.0,            units='N*m',  desc='damage equivalent load of tower base bending moment in fore-aft direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
-        self.add_output('max_TipDxc',  val=0.0,            units='m',    desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
 
         self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
         self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
@@ -592,6 +589,8 @@ class FASTLoadCases(ExplicitComponent):
                         et[_name] = _et
                         dl[_name] = _dl
                         ct.append(l2_out)
+
+                        output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
                     
