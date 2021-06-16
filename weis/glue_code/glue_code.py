@@ -684,7 +684,7 @@ class WindPark(om.Group):
             self.connect('costs.fixed_charge_rate', 'financese_post.fixed_charge_rate')
 
             # Connections to outputs to screen
-            if modeling_options['Level3']['ROSCO']['flag']:
+            if modeling_options['ROSCO']['flag']:
                 self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
                 
