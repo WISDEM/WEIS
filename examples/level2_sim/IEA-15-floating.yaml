@@ -527,12 +527,12 @@ components:
                       material: steel
                       thickness:
                         grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
+                        values: [0.125, 0.125]
                 bulkhead:
                     material: steel
                     thickness:
                         grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
+                        values: [0.125, 0.125]
               axial_joints:
                 - name: main_upper_pontoon
                   grid: 0.987
@@ -556,19 +556,19 @@ components:
                       material: steel
                       thickness:
                         grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
+                        values: [0.075, 0.075]
                 bulkhead:
                     material: steel
                     thickness:
                         grid: [0.0, 0.05, 0.2, 1.0]
-                        values: [0.05, 0.05, 0.05, 0.05]
+                        values: [0.075, 0.075, 0.075, 0.075]
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 169.33
+                      volume: 750
                       grid: [0.0, 0.05]
                     - variable_flag: True
-                      grid: [0.05, 0.2]
+                      grid: [0.05, 0.4]
               axial_joints:
                 - name: col1_upper_pontoon
                   grid: 0.987
@@ -684,33 +684,33 @@ components:
     mooring:
         nodes:
             - name: line1_anchor
-              node_type: fixed
-              location: [837.6, 0.0, -200.0]
+              node_type: fix
+              location: [-837.8, 0.0, -200.0]
               joint: anchor1
               anchor_type: drag_embedment
-            - name: line2_anchor
-              node_type: fixed
-              joint: anchor2
-              location: [418.8, 725.383, -200.0]
-              anchor_type: drag_embedment
-            - name: line3_anchor
-              node_type: fixed
-              location: [418.8, -725.383, -200.0]
-              joint: anchor3
-              anchor_type: drag_embedment
+            # - name: line2_anchor
+            #   node_type: fixed
+            #   joint: anchor2
+            #   location: [-837.8, 2.0943951023931953, -200.0] # 120deg
+            #   anchor_type: drag_embedment
+            # - name: line3_anchor
+            #   node_type: fixed
+            #   location: [-837.8, 4.1887902047863905, -200.0] # 240deg
+            #   joint: anchor3
+            #   anchor_type: drag_embedment
 
             - name: line1_vessel
               node_type: vessel
               joint: col1_fairlead
               fairlead_type: rigid
-            - name: line2_vessel
-              node_type: vessel
-              joint: col2_fairlead
-              fairlead_type: rigid
-            - name: line3_vessel
-              joint: col3_fairlead
-              node_type: vessel
-              fairlead_type: rigid
+            # - name: line2_vessel
+            #   node_type: vessel
+            #   joint: col2_fairlead
+            #   fairlead_type: rigid
+            # - name: line3_vessel
+            #   joint: col3_fairlead
+            #   node_type: vessel
+            #   fairlead_type: rigid
 
         lines:
             - name: line1
@@ -718,20 +718,20 @@ components:
               node2: line1_vessel
               line_type: main
               unstretched_length: 850.0
-            - name: line2
-              node1: line2_anchor
-              node2: line2_vessel
-              line_type: main
-              unstretched_length: 850.0
-            - name: line3
-              node1: line3_anchor
-              node2: line3_vessel
-              line_type: main
-              unstretched_length: 850.0
+            # - name: line2
+            #   node1: line2_anchor
+            #   node2: line2_vessel
+            #   line_type: main
+            #   unstretched_length: 850.0
+            # - name: line3
+            #   node1: line3_anchor
+            #   node2: line3_vessel
+            #   line_type: main
+            #   unstretched_length: 850.0
 
         line_types:
             - name: main
-              diameter: 0.185
+              diameter: 0.333
               mass_density: 685.0
               stiffness: 3270e6
               breaking_load: 1e8
