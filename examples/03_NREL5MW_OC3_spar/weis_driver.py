@@ -8,7 +8,7 @@ run_dir                 = os.path.dirname( os.path.realpath(__file__) )
 wisdem_examples         = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "WISDEM", "examples")
 fname_wt_input          = run_dir + os.sep + 'nrel5mw-spar_oc3.yaml'
 fname_modeling_options  = run_dir + os.sep + 'modeling_options.yaml'
-fname_analysis_options  = run_dir + os.sep + 'analysis_options.yaml'
+fname_analysis_options  = run_dir + os.sep + 'analysis_options_noopt.yaml'
 
 
 tt = time.time()
