@@ -43,30 +43,11 @@ fatigue_channels = {
     'TwrBsMyt': 10
 }
 
-channel_extremes = [
-    'RotSpeed',
-    'BldPitch1','BldPitch2','BldPitch3',
-    "RotThrust","LSShftFys","LSShftFzs","RotTorq","LSSTipMys","LSSTipMzs","LSShftF","LSShftM",
-    'Azimuth',
-    'TipDxc1',
-    'TipDxc2',
-    'TipDxc3',
-    "RootMxc1","RootMyc1","RootMzc1",
-    "RootMxc2","RootMyc2","RootMzc2",
-    "RootMxc3","RootMyc3","RootMzc3",
-    'B1N1Fx','B1N2Fx','B1N3Fx','B1N4Fx','B1N5Fx','B1N6Fx','B1N7Fx','B1N8Fx','B1N9Fx',
-    'B1N1Fy','B1N2Fy','B1N3Fy','B1N4Fy','B1N5Fy','B1N6Fy','B1N7Fy','B1N8Fy','B1N9Fy',
-    'B2N1Fx','B2N2Fx','B2N3Fx','B2N4Fx','B2N5Fx','B2N6Fx','B2N7Fx','B2N8Fx','B2N9Fx',
-    'B2N1Fy','B2N2Fy','B2N3Fy','B2N4Fy','B2N5Fy','B2N6Fy','B2N7Fy','B2N8Fy','B2N9Fy',
-    "B3N1Fx","B3N2Fx","B3N3Fx","B3N4Fx","B3N5Fx","B3N6Fx","B3N7Fx","B3N8Fx","B3N9Fx",
-    "B3N1Fy","B3N2Fy","B3N3Fy","B3N4Fy","B3N5Fy","B3N6Fy","B3N7Fy","B3N8Fy","B3N9Fy",
-]
 
 la = LoadsAnalysis(
     outputs=[],
     magnitude_channels=magnitude_channels,
     fatigue_channels=fatigue_channels,
-    extreme_channels=channel_extremes,
 )
 
 
