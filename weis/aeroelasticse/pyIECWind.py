@@ -5,7 +5,7 @@ from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
 from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
 from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 
-class pyIECWind_extreme():
+class IEC_CoherentGusts():
 
     def __init__(self):
 
@@ -21,60 +21,6 @@ class pyIECWind_extreme():
         
         self.T0               = 0.
         self.TF               = 630.
-
-    def setup(self):
-        # General turbulence parameters: 6.3
-        # Sigma_1: logitudinal turbulence scale parameter
-
-        # Setup
-        if self.Turbine_Class == 'I':
-            self.V_ref = 50.
-        elif self.Turbine_Class == 'II':
-            self.V_ref = 42.5
-        elif self.Turbine_Class == 'III':
-            self.V_ref = 37.5
-        elif self.Turbine_Class == 'IV':
-            self.V_ref = 30.
-        self.V_ave = self.V_ref*0.2
-
-        if self.Turbulence_Class == 'A+':
-            self.I_ref = 0.18
-        elif self.Turbulence_Class == 'A':
-            self.I_ref = 0.16
-        elif self.Turbulence_Class == 'B':
-            self.I_ref = 0.14
-        elif self.Turbulence_Class == 'C':
-            self.I_ref = 0.12
-
-        if self.z_hub > 60:
-            self.Sigma_1 = 42
-        else:
-            self.Sigma_1 = 0.7*self.z_hub
-            
-    def NTM(self, V_hub):
-        # Normal turbulence model: 6.3.1.3
-        b = 5.6
-        sigma_1 = self.I_ref*(0.75*V_hub + b)
-        return sigma_1
-
-    def ETM(self, V_hub):
-        # Extreme turbulence model: 6.3.2.3
-        c = 2
-        sigma_1 = c*self.I_ref*(0.072*(self.V_ave/c + 3)*(V_hub/c - 4) + 10)
-        return sigma_1
-
-    def EWM(self, V_hub):
-        # Extreme wind speed model: 6.3.2.1
-                
-        # Steady
-        V_e50 = 1.4*self.V_ref
-        V_e1 = 0.8*V_e50
-        # Turb
-        V_50 = self.V_ref
-        V_1 = 0.8*V_50
-        sigma_1 = 0.11*V_hub
-
-        return sigma_1, V_e50, V_e1, V_50, V_1
 
     def EOG(self, V_hub_in):
         # Extreme operating guest: 6.3.2.2
@@ -415,96 +361,3 @@ class pyIECWind_extreme():
 
         return self.fname_out, self.fname_type
         
-
-class pyIECWind_turb():
-
-    def __init__(self):
-
-        # Defaults
-        self.seed             = np.random.uniform(1, 1e8)
-        self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.z_hub            = 90.  # wind turbine hub height (m)
-        self.z_grid_center    = 90   # height of grid center from the ground (m)
-        self.D                = 126. # rotor diameter (m)
-        self.PLExp            = 0.2
-        self.AnalysisTime     = 720.
-        self.overwrite        = True
-
-    def setup(self):
-        turbsim_vt = turbsiminputs()
-        turbsim_vt.runtime_options.RandSeed1  = self.seed
-        turbsim_vt.runtime_options.WrADTWR    = False
-        turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
-        turbsim_vt.tmspecs.HubHt              = self.z_grid_center # wind grid may be centered at hub height, but it may also go higher. RefHt stays at hub height
-        turbsim_vt.tmspecs.GridHeight         = (self.z_grid_center - 1.) * 2.0 # wind grid stops 1 meter above the ground
-        turbsim_vt.tmspecs.GridWidth          = (self.z_grid_center - 1.) * 2.0 # squared wind grid
-        turbsim_vt.tmspecs.NumGrid_Z          = 25
-        turbsim_vt.tmspecs.NumGrid_Y          = 25
-        turbsim_vt.tmspecs.HFlowAng           = 0.0
-        turbsim_vt.tmspecs.VFlowAng           = 0.0
-        turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
-        turbsim_vt.metboundconds.UserFile     = '"unused"'
-        turbsim_vt.metboundconds.IECturbc     = self.Turbulence_Class
-        turbsim_vt.metboundconds.IEC_WindType = self.IEC_WindType
-        turbsim_vt.metboundconds.ETMc         = '"default"'
-        turbsim_vt.metboundconds.WindProfileType = '"PL"'
-        turbsim_vt.metboundconds.ProfileFile  = '"unused"'
-        turbsim_vt.metboundconds.RefHt        = self.z_hub
-        turbsim_vt.metboundconds.URef         = self.Uref
-        turbsim_vt.metboundconds.PLExp        = self.PLExp
-        
-        turbsim_vt.noniecboundconds.Latitude  = '"default"'
-        turbsim_vt.noniecboundconds.RICH_NO   = 0.05
-        turbsim_vt.noniecboundconds.UStar     = '"default"'
-        turbsim_vt.noniecboundconds.ZI        = '"default"'
-        turbsim_vt.noniecboundconds.PC_UW     = '"default"'
-        turbsim_vt.noniecboundconds.PC_UV     = '"default"'
-        turbsim_vt.noniecboundconds.PC_VW     = '"default"'
-
-        turbsim_vt.spatialcoherance.InCDec1   = '"default"'
-        turbsim_vt.spatialcoherance.InCDec2   = '"default"'
-        turbsim_vt.spatialcoherance.InCDec3   = '"default"'
-        turbsim_vt.spatialcoherance.CohExp    = '"default"'
-        
-        
-        
-        return turbsim_vt
-
-    def execute(self, IEC_WindType, Uref, ver='Turbsim'):
-        self.IEC_WindType = IEC_WindType
-        self.Uref = Uref
-
-        turbsim_vt = self.setup()
-        writer = TurbsimBuilder()
-        wrapper = Turbsim_wrapper()
-
-        # if self.case_name[-3:] != '.in':
-        #     self.case_name = self.case_name + '.in'
-        # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
-        # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
-
-        case_name = self.case_name + '_' + IEC_WindType + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
-        
-        tsim_input_file = case_name + '.in'
-        wind_file_out   = case_name + '.bts'
-        
-        wind_file_out_abs = os.path.realpath(os.path.normpath(os.path.join(self.outdir, wind_file_out)))
-
-        # If wind file already exists and overwriting is turned off, skip wind file write
-        if os.path.exists(os.path.join(self.outdir, wind_file_out)) and not self.overwrite:
-            return wind_file_out_abs, 3
-
-        # Run wind file generation
-        else:
-            writer.turbsim_vt = turbsim_vt
-            writer.run_dir = self.outdir
-            writer.tsim_input_file = tsim_input_file
-            writer.execute()
-
-            wrapper.turbsim_input = os.path.realpath(os.path.join(writer.run_dir, writer.tsim_input_file))
-            wrapper.run_dir = writer.run_dir
-            wrapper.turbsim_exe = self.Turbsim_exe
-            wrapper.execute()
-
-            return wind_file_out_abs, 3
-

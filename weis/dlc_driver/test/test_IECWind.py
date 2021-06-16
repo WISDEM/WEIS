@@ -1,32 +1,23 @@
 import unittest
-from weis.aeroelasticse.pyIECWind import pyIECWind_extreme
-from weis.aeroelasticse.Turbsim_mdao.turbulence_spectrum import IECKaimal
-from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
-from weis.aeroelasticse.Turbsim_mdao.turbsim_reader import turbsimReader
+from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
+from weis.dlc_driver.turbulence_spectrum import IECKaimal
 import numpy as np
-import os
 
 class TestIECWind(unittest.TestCase):
     def setUp(self):
-        self.extreme_wind = pyIECWind_extreme()
-        self.extreme_wind.setup()
-        
-        self.tsb = TurbsimBuilder()
-        self.tsb.turbsim_vt.metboundconds.UserFile = 'tsim_user_turbulence_default.inp'
-        self.tsb.turbsim_vt.metboundconds.ProfileFile = 'default.profile'
-        self.tsb.run_dir = 'wind'
-        self.tsb.tsim_input_file = 'test.inp'
+        self.IECturb = IEC_TurbulenceModels()
+        self.IECturb.setup()
 
     def test_NTM(self):
-        sigma_1 = self.extreme_wind.NTM(10.0)
+        sigma_1 = self.IECturb.NTM(10.0)
         np.testing.assert_almost_equal(sigma_1, 1.834)
 
     def test_ETM(self):
-        sigma_1 = self.extreme_wind.ETM(10.0)
+        sigma_1 = self.IECturb.ETM(10.0)
         np.testing.assert_almost_equal(sigma_1, 2.96128)
 
     def test_EWM(self):
-        sigma_1, V_e50, V_e1, V_50, V_1 = self.extreme_wind.EWM(10.0)
+        sigma_1, V_e50, V_e1, V_50, V_1 = self.IECturb.EWM(10.0)
         np.testing.assert_almost_equal(sigma_1, 1.1)
         np.testing.assert_almost_equal(V_e50, 70.0)
         np.testing.assert_almost_equal(V_e1, 56.0)
@@ -67,14 +58,6 @@ class TestIECWind(unittest.TestCase):
                                                             0,           0,            0,    
                                                             0,           0,            0,
                                                             0]), 5)
-                                                           
-    def testTurbSimwriter(self):
-        self.tsb.execute()
-
-    def testTurbSimreader(self):
-        self.tsb.execute()
-        reader = turbsimReader()
-        reader.read_input_file(os.path.join(self.tsb.run_dir, self.tsb.tsim_input_file))
 
 
 if __name__ == "__main__":

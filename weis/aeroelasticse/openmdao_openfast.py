@@ -12,8 +12,8 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
-from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimWriter
+from weis.aeroelasticse.turbsim_wrapper import Turbsim_wrapper
+from weis.aeroelasticse.turbsim_writer import TurbsimWriter
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 
 
