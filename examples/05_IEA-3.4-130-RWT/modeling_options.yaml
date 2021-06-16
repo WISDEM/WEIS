@@ -51,8 +51,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-    ROSCO:
-        flag: True
+ROSCO:
+    flag: True
     
 DLC_driver:
     openfast_file_management:
