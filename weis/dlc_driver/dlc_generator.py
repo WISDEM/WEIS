@@ -70,7 +70,7 @@ class DLCGenerator(object):
         if wind_speeds[-1] != self.cut_out:
             wind_speeds = np.append(wind_speeds, self.cut_out)
             
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'])
+        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
 
         for ws in wind_speeds:
             for seed in seeds:

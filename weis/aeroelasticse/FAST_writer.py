@@ -691,7 +691,7 @@ class InputWriter_OpenFAST(object):
         self.write_AeroDyn15Polar()
         
         # Generate AeroDyn v15 airfoil coordinates
-        if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != 0:
+        if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != '0':
             self.write_AeroDyn15Coord()
         
         if self.fst_vt['AeroDyn15']['WakeMod'] == 3:

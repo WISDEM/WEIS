@@ -68,6 +68,10 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = self.options['modeling_options']['DLC_driver']['openfast_file_management']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
+        # If the path is relative, make it an absolute path
+        if not os.path.isabs(FAST_directory_base):
+            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+
         self.FAST_InputFile = OFmgmt['OF_run_fst']
         # File naming changes whether in MPI or not
         if MPI:
@@ -647,7 +651,7 @@ class FASTLoadCases(ExplicitComponent):
                 if modeling_options['DLC_driver']['openfast_file_management']['generate_af_coords']:
                     fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '@"AF{:02d}_Coords.txt"'.format(i)
                 else:
-                    fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = 0
+                    fst_vt['AeroDyn15']['af_data'][i][j]['NumCoords'] = '0'
                 
                 fst_vt['AeroDyn15']['af_data'][i][j]['NumTabs']   = loop_index
                 if fst_vt['AeroDyn15']['AFTabMod'] == 3:
@@ -1055,8 +1059,8 @@ class FASTLoadCases(ExplicitComponent):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-        WindFile_type = np.zeros(dlc_generator.n_cases)
-        WindFile_name = '' * dlc_generator.n_cases
+        WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
+        WindFile_name = [''] * dlc_generator.n_cases
 
         
         wrapper = Turbsim_wrapper()
@@ -1069,15 +1073,19 @@ class FASTLoadCases(ExplicitComponent):
                 # Write out turbsim input file
                 turbsim_input_file_name = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                         '_U%1.6f'%dlc_generator.cases[i_case].URef + 
-                                        '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1 + '.in')
+                                        '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
                 turbsim_input_file_path = os.path.join(self.FAST_directory, turbsim_input_file_name)
-                WindFile_type[i_case] = 3
                 ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
                 ts_writer.execute(turbsim_input_file_path)
                 
                 # Run TurbSim in sequence
                 wrapper.turbsim_input = turbsim_input_file_name
                 wrapper.execute()
+
+                # Pass data to CaseGen_General to call OpenFAST
+                WindFile_type[i_case] = 3
+                turbsim_output_file_path = turbsim_input_file_path[:-3] + '.bts'
+                WindFile_name[i_case] = turbsim_output_file_path
             else:
                 raise Exception('Implement here')
         
