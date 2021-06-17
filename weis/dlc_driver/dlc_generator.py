@@ -93,6 +93,7 @@ class DLCGenerator(object):
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.1'
                 self.cases.append(idlc)
+        self.n_cases_dlc11 = len(wind_speeds)*len(seeds)
     
     def generate_1p2(self, options):
         wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])

@@ -72,6 +72,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
+        self.modeling_options['DLC_driver']['n_cases_dlc11'] = dlc_generator.n_cases_dlc11
 
             
     def set_openmdao_vectors_control(self):
