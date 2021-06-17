@@ -12,6 +12,7 @@ class TestIECWind(unittest.TestCase):
         cut_in = 4.
         cut_out = 25.
         rated = 10.
+        wind_class = 1
 
         # Load modeling options file
         weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
@@ -22,7 +23,7 @@ class TestIECWind(unittest.TestCase):
         DLCs = modeling_options['DLC_driver']['DLCs']
         
         # Initialize the generator
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated)
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, wind_class)
 
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
@@ -31,7 +32,7 @@ class TestIECWind(unittest.TestCase):
 
 
         np.testing.assert_equal(dlc_generator.cases[5].URef, 25)
-        np.testing.assert_equal(dlc_generator.n_cases, 6)
+        np.testing.assert_equal(dlc_generator.n_cases, 51)
 
 if __name__ == "__main__":
     unittest.main()

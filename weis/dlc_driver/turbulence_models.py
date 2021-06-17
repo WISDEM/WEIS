@@ -2,7 +2,7 @@ class IEC_TurbulenceModels():
 
     def __init__(self):
 
-        self.Turbine_Class    = 'I'    # IEC Wind Turbine Class
+        self.Turbine_Class    = 1      # IEC Wind Turbine Class
         self.Turbulence_Class = 'B'    # IEC Turbulance Class
         self.z_hub            = 90.    # wind turbine hub height (m)
 
@@ -11,14 +11,16 @@ class IEC_TurbulenceModels():
         # Sigma_1: logitudinal turbulence scale parameter
 
         # Setup
-        if self.Turbine_Class == 'I':
+        if self.Turbine_Class == 1:
             self.V_ref = 50.
-        elif self.Turbine_Class == 'II':
+        elif self.Turbine_Class == 2:
             self.V_ref = 42.5
-        elif self.Turbine_Class == 'III':
+        elif self.Turbine_Class == 3:
             self.V_ref = 37.5
-        elif self.Turbine_Class == 'IV':
+        elif self.Turbine_Class == 4:
             self.V_ref = 30.
+        else:
+            raise Exception('The wind turbine class is not defined properly')
         self.V_ave = self.V_ref*0.2
 
         if self.Turbulence_Class == 'A+':

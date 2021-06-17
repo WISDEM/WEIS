@@ -29,9 +29,9 @@ class TestIECWind(unittest.TestCase):
         V_hub = 10.
         # Wind turbine hub height
         HH = 100.
-        # IEC Turbine Wind Speed Class, can be I, II, or III
-        Class = 'I'
-        # IEC Turbine Wind Turbulence Category, can be A, B, or C
+        # IEC Turbine Wind Speed Class, can be 1, 2, 3, or 4
+        Class = 1
+        # IEC Turbine Wind Turbulence Category, can be A+, A, B, or C
         Categ = 'A'
         # Wind turbulence model, it can be NTM = normal turbulence, ETM = extreme turbulence, or EWM = extreme wind
         TurbMod = 'NTM'

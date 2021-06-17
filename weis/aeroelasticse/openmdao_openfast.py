@@ -1089,9 +1089,14 @@ class FASTLoadCases(ExplicitComponent):
                 turbsim_output_file_path = turbsim_input_file_path[:-3] + '.bts'
                 WindFile_name[i_case] = turbsim_output_file_path
 
-                # Set initial rotor speed and pitch
-                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
-                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
+                # Set initial rotor speed and pitch if the WT operates in this DLC,
+                # otherwise set pitch to 90 deg and rotor speed to 0 rpm
+                if dlc_generator.cases[i_case].turbine_status == 'operating':
+                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
+                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
+                else:
+                    rot_speed_initial[i_case] = 0.
+                    pitch_initial[i_case] = 90.
             else:
                 raise Exception('Implement here')
         
