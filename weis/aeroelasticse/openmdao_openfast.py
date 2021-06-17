@@ -1053,7 +1053,8 @@ class FASTLoadCases(ExplicitComponent):
         cut_in = inputs['V_cutin']
         cut_out = inputs['V_cutout']
         rated = inputs['Vrated']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated)
+        ws_class = discrete_inputs['turbine_class']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]

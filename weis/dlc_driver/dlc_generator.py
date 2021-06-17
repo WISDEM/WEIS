@@ -31,21 +31,23 @@ class DLCInstance(object):
         
 class DLCGenerator(object):
 
-    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_class = '1'):
+    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_class = 'I'):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
         self.wind_class = wind_class
+
         self.ws_rated = ws_rated
         self.cases = []
         self.rng = np.random.default_rng()
         self.n_cases = 0
     
-    def EWM(self):
+    def IECwind(self):
         IECturb = IEC_TurbulenceModels()
         IECturb.Turbine_Class = self.wind_class
         IECturb.setup()
         _, self.V_e50, self.V_e1, _, _ = IECturb.EWM(0.)
         self.V_ref = IECturb.V_ref
+        self.wind_class_num = IECturb.Turbine_Class_Num
 
     def to_dict(self):
         return [m.to_dict() for m in self.cases]
@@ -54,7 +56,7 @@ class DLCGenerator(object):
         known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4]
         
         # Get extreme wind speeds
-        self.EWM()
+        self.IECwind()
 
         found = False
         for ilab in known_dlcs:
@@ -124,7 +126,7 @@ class DLCGenerator(object):
                 idlc.default_turbsim_props(options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
-                idlc.IEC_WindType = str(self.wind_class) + 'ETM'
+                idlc.IEC_WindType = self.wind_class_num + 'ETM'
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.3'
@@ -141,7 +143,7 @@ class DLCGenerator(object):
                 idlc.URef = self.V_e50
                 idlc.yaw_misalign = yaw_ms
                 idlc.RandSeed1 = seed
-                idlc.IEC_WindType = str(self.wind_class) + 'EWM50'
+                idlc.IEC_WindType = self.wind_class_num + 'EWM50'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked'
@@ -160,7 +162,7 @@ class DLCGenerator(object):
                 idlc.URef = self.V_e1
                 idlc.yaw_misalign = yaw_ms
                 idlc.RandSeed1 = seed
-                idlc.IEC_WindType = str(self.wind_class) + 'EWM1'
+                idlc.IEC_WindType = self.wind_class_num + 'EWM1'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked'
@@ -193,7 +195,7 @@ if __name__ == "__main__":
     ws_cut_in = 4.
     ws_cut_out = 25.
     ws_rated = 10.
-    wind_class = 1
+    wind_class = 'I'
 
     # Load modeling options file
     weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep

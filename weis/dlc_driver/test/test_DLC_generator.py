@@ -12,7 +12,7 @@ class TestIECWind(unittest.TestCase):
         cut_in = 4.
         cut_out = 25.
         rated = 10.
-        wind_class = 1
+        wind_class = 'I'
 
         # Load modeling options file
         weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
