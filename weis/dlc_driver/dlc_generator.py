@@ -108,6 +108,6 @@ if __name__ == "__main__":
         DLCopt = DLCs[i_DLC]
         dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-    print(dlc_generator.cases[43].wind_speed)
+    print(dlc_generator.cases[5].URef)
     print(dlc_generator.n_cases)
                 
