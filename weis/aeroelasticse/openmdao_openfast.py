@@ -1057,6 +1057,8 @@ class FASTLoadCases(ExplicitComponent):
         cut_out = inputs['V_cutout']
         rated = inputs['Vrated']
         ws_class = discrete_inputs['turbine_class']
+        hub_height = inputs['hub_height']
+        rotorD = inputs['Rtip']*2.
         dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
@@ -1073,6 +1075,10 @@ class FASTLoadCases(ExplicitComponent):
         wrapper.run_dir = self.wind_directory
         run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
         wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
+
+        gusts = IEC_CoherentGusts()
+        gusts.D = rotorD
+        gusts.HH = hub_height
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1094,7 +1100,6 @@ class FASTLoadCases(ExplicitComponent):
                 WindFile_name[i_case] = turbsim_output_file_path
 
             else:
-                gusts = IEC_CoherentGusts()
                 wind_file_name = gusts.execute(self.wind_directory, self.FAST_namingOut, dlc_generator.cases[i_case])
                 WindFile_type[i_case] = 2
                 WindFile_name[i_case] = wind_file_name
@@ -1114,7 +1119,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
-        case_inputs[("InflowWind","RefLength")] = {'vals':[inputs['Rtip']*2.], 'group':0}
+        case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
         # Initial conditions for rotor speed and pitch
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}

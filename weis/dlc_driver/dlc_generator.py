@@ -13,7 +13,9 @@ class DLCInstance(object):
         self.turbine_status = ''
         self.wave_spectrum = ''
         self.turbulent_wind = False
-        self.direction = ''
+        self.direction_pn = '' # Positive (p) or negative (n), used for ECD
+        self.shear_hv = '' # Horizontal (h) or vertical (v), used for EWS
+        self.sigma1 = '' # Standard deviation of the wind
         self.label = '' # For 1.1/Custom
 
     def default_turbsim_props(self, options):
@@ -36,19 +38,18 @@ class DLCGenerator(object):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
         self.wind_class = wind_class
-
         self.ws_rated = ws_rated
         self.cases = []
         self.rng = np.random.default_rng()
         self.n_cases = 0
     
     def IECwind(self):
-        IECturb = IEC_TurbulenceModels()
-        IECturb.Turbine_Class = self.wind_class
-        IECturb.setup()
-        _, self.V_e50, self.V_e1, _, _ = IECturb.EWM(0.)
-        self.V_ref = IECturb.V_ref
-        self.wind_class_num = IECturb.Turbine_Class_Num
+        self.IECturb = IEC_TurbulenceModels()
+        self.IECturb.Turbine_Class = self.wind_class
+        self.IECturb.setup()
+        _, self.V_e50, self.V_e1, _, _ = self.IECturb.EWM(0.)
+        self.V_ref = self.IECturb.V_ref
+        self.wind_class_num = self.IECturb.Turbine_Class_Num
 
     def to_dict(self):
         return [m.to_dict() for m in self.cases]
@@ -78,7 +79,7 @@ class DLCGenerator(object):
     
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])
+        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
         if wind_speeds[-1] != self.ws_cut_out:
             wind_speeds = np.append(wind_speeds, self.ws_cut_out)
             
@@ -99,7 +100,7 @@ class DLCGenerator(object):
     
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])
+        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
         if wind_speeds[-1] != self.ws_cut_out:
             wind_speeds = np.append(wind_speeds, self.ws_cut_out)
             
@@ -119,7 +120,7 @@ class DLCGenerator(object):
     
     def generate_1p3(self, options):
         # Power production extreme turbulence model - ultimate loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])
+        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
         if wind_speeds[-1] != self.ws_cut_out:
             wind_speeds = np.append(wind_speeds, self.ws_cut_out)
             
@@ -139,7 +140,7 @@ class DLCGenerator(object):
 
     def generate_1p4(self, options):
         # Extreme coherent gust with direction change - ultimate loads
-        wind_speeds = np.array([self.ws_rated - 2., self.ws_rated, self.ws_rated + 2.])
+        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
         directions = ['n', 'p']
         for ws in wind_speeds:
             for direction in directions:
@@ -150,9 +151,30 @@ class DLCGenerator(object):
                 idlc.turbulent_wind = False
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.4'
-                idlc.direction = direction
+                idlc.direction_pn = direction
                 self.cases.append(idlc)
 
+    def generate_1p5(self, options):
+        # Extreme wind shear - ultimate loads
+        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
+        if wind_speeds[-1] != self.ws_cut_out:
+            wind_speeds = np.append(wind_speeds, self.ws_cut_out)
+        directions = ['p', 'n']
+        shears=['h', 'v']
+        for ws in wind_speeds:
+            for direction in directions:
+                for shear in shears:
+                    idlc = DLCInstance()
+                    idlc.default_turbsim_props(options)
+                    idlc.URef = ws
+                    idlc.IEC_WindType = 'EWS'
+                    idlc.turbulent_wind = False
+                    idlc.turbine_status = 'operating'
+                    idlc.label = '1.5'
+                    idlc.sigma1 = self.IECturb.NTM(ws)
+                    idlc.direction_pn = direction
+                    idlc.shear_hv = shear
+                    self.cases.append(idlc)
 
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads

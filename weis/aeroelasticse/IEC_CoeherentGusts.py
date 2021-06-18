@@ -5,18 +5,28 @@ class IEC_CoherentGusts():
 
     def __init__(self):
 
-        self.Vert_Slope       = 0      # Vertical slope of the wind inflow (deg)
-        self.T0               = 0.
-        self.TF               = 630.
-        self.TStart           = 30     # Time to start transient conditions (s)
-        self.dt               = 0.05   # Transient wind time step (s)
+        self.Vert_Slope = 0 # Vertical slope of the wind inflow (deg)
+        self.T0 = 0.
+        self.TF = 630.
+        self.TStart = 30 # Time to start transient conditions (s)
+        self.dt = 0.05 # Transient wind time step (s)
+        self.D = 90. # Rotor diameter (m)
+        self.HH = 100. # Hub height (m)        
 
     def execute(self, dir, base_name, dlc):
 
-        wind_file_name = os.path.join(dir, base_name + '_' + dlc.IEC_WindType + '_U%1.6f'%dlc.URef +  '_D%s'%dlc.direction + '.wnd')
+        if self.HH > 60:
+            self.Sigma_1 = 42
+        else:
+            self.Sigma_1 = 0.7*self.HH
+
+        wind_file_name = os.path.join(dir, base_name + '_' + dlc.IEC_WindType + '_U%1.6f'%dlc.URef +  '_D%s'%dlc.direction_pn + '_S%s'%dlc.shear_hv + '.wnd')
 
         if dlc.IEC_WindType == 'ECD':
             self.ECD(dlc, wind_file_name)
+        
+        if dlc.IEC_WindType == 'EWS':
+            self.EWS(dlc, wind_file_name)
 
         return wind_file_name
 
@@ -163,12 +173,12 @@ class IEC_CoherentGusts():
         else:
             Theta_cg = 720/V_hub
 
-        if dlc.direction == 'p':
+        if dlc.direction_pn == 'p':
             k=1.
-        elif dlc.direction == 'n':
+        elif dlc.direction_pn == 'n':
             k=-1.
         else:
-            raise Exception('The ECD gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction)
+            raise Exception('The ECD gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction_pn)
         Theta = np.zeros_like(t)
         V = np.zeros_like(t)
         for i, ti in enumerate(t):
@@ -181,13 +191,10 @@ class IEC_CoherentGusts():
       
         data = np.column_stack((t, V, Theta, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust, upflow))
         # Header
-        hd = '! ECD gust, wind speed = ' + str(dlc.URef) + ', direction ' + dlc.direction
+        hd = '! ECD gust, wind speed = ' + str(dlc.URef) + ', direction ' + dlc.direction_pn
         self.write_wnd(wind_file_name, data, hd)
 
-    def EWS(self, V_hub_in):
-        # Extreme wind shear: 6.3.2.6
-        self.setup()
-
+    def EWS(self, dlc, wind_file_name):
         T = 12
         t = np.linspace(0, T, num=(int(T/self.dt+1)))
 
@@ -196,80 +203,49 @@ class IEC_CoherentGusts():
         Beta = 6.4
 
         # Flow angle adjustments
-        V_hub = V_hub_in*np.cos(self.Vert_Slope*np.pi/180)
-        V_vert_mag = V_hub_in*np.sin(self.Vert_Slope*np.pi/180)
+        V_hub = dlc.URef*np.cos(self.Vert_Slope*np.pi/180)
+        V_vert_mag = dlc.URef*np.sin(self.Vert_Slope*np.pi/180)
 
-        sigma_1 = self.NTM(V_hub)
+        sigma_1 = dlc.sigma1
 
         # Contant variables
         V = np.zeros_like(t)+V_hub
         V_dir = np.zeros_like(t)
         V_vert = np.zeros_like(t)+V_vert_mag
-        # shear_horz = np.zeros_like(t)
         shear_vert = np.zeros_like(t)+alpha
         V_gust = np.zeros_like(t)
         upflow = np.zeros_like(t)
 
         # Transient
-        shear_lin_p = np.zeros_like(t)
-        shear_lin_n = np.zeros_like(t)
+        shear_lin = np.zeros_like(t)
+
+        if dlc.direction_pn == 'p':
+            k_dir=1.
+        elif dlc.direction_pn == 'n':
+            k_dir=-1.
+        else:
+            raise Exception('The EWS gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction_pn)
+
+        if dlc.shear_hv == 'v':
+            k_v=1.
+            k_h=0.
+        elif dlc.shear_hv == 'h':
+            k_v=0.
+            k_h=1.
+        else:
+            raise Exception('The EWS gust can only have vertical (v) or horizontal (h) shear, whereas the script receives '+ dlc.shear_hv)
 
         for i, ti in enumerate(t):
-            shear_lin_p[i] = (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
-            shear_lin_n[i] = -1*(2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
+            shear_lin[i] = k_dir * (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
 
-        # Write Files
-        self.fname_out = []
-        self.fname_type = []
-        if self.dir_change.lower() == 'both' or self.dir_change.lower() == '+':
-            if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'v':
-                ## Vert
-                fname = self.case_name + '_EWS_V_P_U%2.1f.wnd'%V_hub_in
-                data = np.column_stack((t, V, V_dir, V_vert, np.zeros_like(t), shear_vert, shear_lin_p, V_gust, upflow))
-                hd = []
-                hd.append('! Exteme Vertical Wind Shear, positive\n')
-                hd = self.heading_common(hd)
-                hd = self.heading_variable(hd, V_hub_in=V_hub_in)
-                self.write_wnd(fname, data, hd)
-                self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-                self.fname_type.append(2)
+        hd1 = ['Time', 'Wind', 'Wind', 'Vertical', 'Horiz.', 'Pwr. Law', 'Lin. Vert.', 'Gust', 'Upflow']
+        hd2 = ['',     'Speed', 'Dir', 'Speed',    'Shear', 'Vert. Shr', 'Shear',     'Speed', 'Angle']
 
-            if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'h':
-                # Horz
-                fname = self.case_name + '_EWS_H_P_U%2.1f.wnd'%V_hub_in
-                data = np.column_stack((t, V, V_dir, V_vert, shear_lin_p, shear_vert, np.zeros_like(t), V_gust, upflow))
-                hd = []
-                hd.append('! Exteme Horizontal Wind Shear, positive\n')
-                hd = self.heading_common(hd)
-                hd = self.heading_variable(hd, V_hub_in=V_hub_in)
-                self.write_wnd(fname, data, hd)
-                self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-                self.fname_type.append(2)
+        data = np.column_stack((t, V, V_dir, V_vert, k_h * shear_lin, shear_vert, k_v * shear_lin, V_gust, upflow))
 
-        if self.dir_change.lower() == 'both' or self.dir_change.lower() == '-':
-            if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'v':
-                ## Vert
-                fname = self.case_name + '_EWS_V_N_U%2.1f.wnd'%V_hub_in
-                data = np.column_stack((t, V, V_dir, V_vert, np.zeros_like(t), shear_vert, shear_lin_n, V_gust, upflow))
-                hd = []
-                hd.append('! Exteme Vertical Wind Shear, negative\n')
-                hd = self.heading_common(hd)
-                hd = self.heading_variable(hd, V_hub_in=V_hub_in)
-                self.write_wnd(fname, data, hd)
-                self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-                self.fname_type.append(2)
-
-            if self.shear_orient.lower() == 'both' or self.shear_orient.lower() == 'h':
-                # Horz
-                fname = self.case_name + '_EWS_H_N_U%2.1f.wnd'%V_hub_in
-                data = np.column_stack((t, V, V_dir, V_vert, shear_lin_n, shear_vert, np.zeros_like(t), V_gust, upflow))
-                hd = []
-                hd.append('! Exteme Horizontal Wind Shear, negative\n')
-                hd = self.heading_common(hd)
-                hd = self.heading_variable(hd, V_hub_in=V_hub_in)
-                self.write_wnd(fname, data, hd)
-                self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-                self.fname_type.append(2)
+        # Header
+        hd = '! EWS gust, wind speed = ' + str(dlc.URef) + ', direction ' + dlc.direction_pn + ', shear ' + dlc.shear_hv
+        self.write_wnd(wind_file_name, data, hd)
 
     def write_wnd(self, fname, data, hd):
 
