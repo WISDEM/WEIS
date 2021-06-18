@@ -22,29 +22,34 @@ class IEC_CoherentGusts():
 
         wind_file_name = os.path.join(dir, base_name + '_' + dlc.IEC_WindType + '_U%1.6f'%dlc.URef +  '_D%s'%dlc.direction_pn + '_S%s'%dlc.shear_hv + '.wnd')
 
-        if dlc.IEC_WindType == 'ECD':
+        if dlc.IEC_WindType == 'EOG':
+            self.EOG(dlc, wind_file_name)
+        elif dlc.IEC_WindType == 'EDC':
+            self.EDC(dlc, wind_file_name)
+        elif dlc.IEC_WindType == 'ECD':
             self.ECD(dlc, wind_file_name)
-        
-        if dlc.IEC_WindType == 'EWS':
+        elif dlc.IEC_WindType == 'EWS':
             self.EWS(dlc, wind_file_name)
+        else:
+            raise Exception('The gust ' + dlc.IEC_WindType + ' is not supported by WEIS')
 
         return wind_file_name
 
-    def EOG(self, V_hub_in):
-        # Extreme operating guest: 6.3.2.2
+    def EOG(self, dlc, wind_file_name):
+        # Extreme operating gust: 6.3.2.2
 
         T = 10.5
-        t = np.linspace(0., T, num=(T/self.dt+1))
+        t = np.linspace(0., T, num=int(T/self.dt+1))
 
         # constants from standard
         alpha = 0.2
 
         # Flow angle adjustments
-        V_hub = V_hub_in*np.cos(self.Vert_Slope*np.pi/180)
-        V_vert_mag = V_hub_in*np.sin(self.Vert_Slope*np.pi/180)
+        V_hub = dlc.URef*np.cos(self.Vert_Slope*np.pi/180)
+        V_vert_mag = dlc.URef*np.sin(self.Vert_Slope*np.pi/180)
 
-        sigma_1 = self.NTM(V_hub)
-        __, __, V_e1, __, __ = self.EWM(V_hub)
+        sigma_1 = dlc.sigma1
+        V_e1 = dlc.V_e1
 
         # Contant variables
         V = np.zeros_like(t)+V_hub
@@ -64,34 +69,26 @@ class IEC_CoherentGusts():
                 V_gust_t[i] = 0. - 0.37*V_gust*np.sin(3*np.pi*ti/T)*(1-np.cos(2*np.pi*ti/T))
             else:
                 V_gust_t[i] = 0.
-
-        # Write Files
-        self.fname_out = []
-        self.fname_type = []
-        fname = self.case_name + '_EOG_U%2.1f.wnd'%V_hub_in
+        
         data = np.column_stack((t, V, V_dir, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust_t, upflow))
-        hd = []
-        hd.append('! Extreme operating guest\n')
-        hd = self.heading_common(hd)
-        hd = self.heading_variable(hd, V_hub_in=V_hub_in, sigma_1=sigma_1)
-        self.write_wnd(fname, data, hd)
-        self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-        self.fname_type.append(2)
+        # Header
+        hd = '! EOG gust, wind speed = ' + str(dlc.URef)
+        self.write_wnd(wind_file_name, data, hd)
 
-    def EDC(self, V_hub_in):
+    def EDC(self, dlc, wind_file_name):
         # Extreme direction change: 6.3.2.4
         
         T = 6.
-        t = np.linspace(0., T, num=(T/self.dt+1))
+        t = np.linspace(0., T, num=int(T/self.dt+1))
 
         # constants from standard
         alpha = 0.2
 
         # Flow angle adjustments
-        V_hub = V_hub_in*np.cos(self.Vert_Slope*np.pi/180)
-        V_vert_mag = V_hub_in*np.sin(self.Vert_Slope*np.pi/180)
+        V_hub = dlc.URef*np.cos(self.Vert_Slope*np.pi/180)
+        V_vert_mag = dlc.URef*np.sin(self.Vert_Slope*np.pi/180)
 
-        sigma_1 = self.NTM(V_hub)
+        sigma_1 = dlc.sigma1
 
         # Contant variables
         V = np.zeros_like(t)+V_hub
@@ -107,49 +104,31 @@ class IEC_CoherentGusts():
         if Theta_e > 180.:
             Theta_e = 180.
 
-        Theta_p = np.zeros_like(t)
-        Theta_n = np.zeros_like(t)
+        if dlc.direction_pn == 'p':
+            k=1.
+        elif dlc.direction_pn == 'n':
+            k=-1.
+        else:
+            raise Exception('The EDC gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction_pn)
+
+        Theta = np.zeros_like(t)
         for i, ti in enumerate(t):
             if ti<T:
-                Theta_p[i] = 0.5*Theta_e*(1-np.cos(np.pi*ti/T))
-                Theta_n[i] = -1*0.5*Theta_e*(1-np.cos(np.pi*ti/T))
+                Theta[i] = k * 0.5*Theta_e*(1-np.cos(np.pi*ti/T))
             else:
-                Theta_p[i] = Theta_e
-                Theta_n[i] = -1*Theta_e
-
-        # Write Files
-        self.fname_out = []
-        self.fname_type = []
-        if self.dir_change.lower() == 'both' or self.dir_change.lower() == '+':
-            ## Vert
-            fname = self.case_name + '_EDC_P_U%2.1f.wnd'%V_hub_in
-            data = np.column_stack((t, V, Theta_p, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust, upflow))
-            hd = []
-            hd.append('! Exteme Vertical Wind Shear, positive\n')
-            hd = self.heading_common(hd)
-            hd = self.heading_variable(hd, V_hub_in=V_hub_in, sigma_1=sigma_1)
-            self.write_wnd(fname, data, hd)
-            self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-            self.fname_type.append(2)
+                Theta[i] = k * Theta_e
 
 
-        if self.dir_change.lower() == 'both' or self.dir_change.lower() == '-':
-            ## Vert
-            fname = self.case_name + '_EDC_N_U%2.1f.wnd'%V_hub_in
-            data = np.column_stack((t, V, Theta_n, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust, upflow))
-            hd = []
-            hd.append('! Exteme Vertical Wind Shear, negative\n')
-            hd = self.heading_common(hd)
-            hd = self.heading_variable(hd, V_hub_in=V_hub_in, sigma_1=sigma_1)
-            self.write_wnd(fname, data, hd)
-            self.fname_out.append(os.path.realpath(os.path.normpath(os.path.join(self.outdir, fname))))
-            self.fname_type.append(2)
+        data = np.column_stack((t, V, Theta, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust, upflow))
+        # Header
+        hd = '! EDC gust, wind speed = ' + str(dlc.URef) + ', direction ' + dlc.direction_pn
+        self.write_wnd(wind_file_name, data, hd)
     
     def ECD(self, dlc, wind_file_name):
         # Extreme coherent gust with direction change: 6.3.2.5
         
         T = 10.
-        t = np.linspace(0., T, num=int((T/self.dt+1)))
+        t = np.linspace(0., T, num=int(T/self.dt+1))
 
         # constants from standard
         alpha = 0.2
@@ -196,7 +175,7 @@ class IEC_CoherentGusts():
 
     def EWS(self, dlc, wind_file_name):
         T = 12
-        t = np.linspace(0, T, num=(int(T/self.dt+1)))
+        t = np.linspace(0., T, num=int(T/self.dt+1))
 
         # constants from standard
         alpha = 0.2
