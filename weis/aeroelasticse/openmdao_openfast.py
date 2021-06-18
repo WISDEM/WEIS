@@ -13,12 +13,10 @@ from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 
-from pCrunch import LoadsAnalysis, PowerProduction
-import fatpack
+from pCrunch import PowerProduction
 
 if MPI:
     from mpi4py   import MPI
-    from petsc4py import PETSc
 
 class FASTLoadCases(ExplicitComponent):
     def initialize(self):
@@ -256,7 +254,6 @@ class FASTLoadCases(ExplicitComponent):
         self.FASTpref            = FASTpref 
         self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
         self.debug_level         = FASTpref['analysis_settings']['debug_level']
-        self.FAST_ver            = 'OpenFAST'
         if FASTpref['file_management']['FAST_exe'] != 'none':
             if os.path.isabs(FASTpref['file_management']['FAST_exe']):
                 self.FAST_exe = FASTpref['file_management']['FAST_exe']
@@ -1099,7 +1096,7 @@ class FASTLoadCases(ExplicitComponent):
             channels[var] = True
 
         # FAST wrapper setup
-        fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
+        fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
 
         if self.FASTpref['file_management']['FAST_exe'] != 'none':
@@ -1694,7 +1691,7 @@ class FASTLoadCases(ExplicitComponent):
 
     
     def write_FAST(self, fst_vt, discrete_outputs):
-        writer                   = InputWriter_OpenFAST(FAST_ver=self.FAST_ver)
+        writer                   = InputWriter_OpenFAST()
         writer.fst_vt            = fst_vt
         writer.FAST_runDirectory = self.FAST_runDirectory
         writer.FAST_namingOut    = self.FAST_namingOut

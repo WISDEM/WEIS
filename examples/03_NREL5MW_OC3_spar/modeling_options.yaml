@@ -67,11 +67,11 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar        # relative to WEIS
         PtfmMass_Init: 7.462e6
-    ROSCO:
-        flag: True
-        SD_Mode: 0
-        PS_Mode: 1
-        Fl_Mode: 1
+ROSCO:
+    flag: True
+    SD_Mode: 0
+    PS_Mode: 1
+    Fl_Mode: 1
     
 openfast:
     file_management:

@@ -10,6 +10,7 @@ all_scripts = [
     "01_aeroelasticse/run_general",
     # "01_aeroelasticse/run_mass_sweep",
     "01_aeroelasticse/run_OLAF",
+    "01_aeroelasticse/run_iec_turbsim",
     # "01_aeroelasticse/run_PC_sweep",
     # "01_aeroelasticse/run_stability_analysis",
     

@@ -6,7 +6,9 @@ from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
-    # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM and adding the WEIS options, namely the paths to the WEIS submodules (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
+    # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
+    # and adding the WEIS options, namely the paths to the WEIS submodules 
+    # (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
     
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
@@ -34,7 +36,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         
         # Openfast
         if self.modeling_options['Level3']['flag']:
-            fast                = InputReader_OpenFAST(FAST_ver='OpenFAST')
+            fast = InputReader_OpenFAST()
             self.modeling_options['openfast']['fst_vt'] = {}
             self.modeling_options['openfast']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
@@ -74,7 +76,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     self.modeling_options["Level3"]["model_potential"][idx] = True
                     
         # XFoil
-        if not os.path.isfile(self.modeling_options["xfoil"]["path"]) and self.modeling_options['Level3']['ROSCO']['Flp_Mode']:
+        if not os.path.isfile(self.modeling_options["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
 
             
@@ -95,7 +97,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.wt_init['control']['pitch']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
             self.wt_init['control']['torque']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])
             self.wt_init['control']['torque']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
-            if self.modeling_options['Level3']['ROSCO']['Flp_Mode'] > 0:
+            if self.modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.wt_init['control']['dac']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
                 self.wt_init['control']['dac']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])
             if 'IPC' in self.wt_init['control'].keys():

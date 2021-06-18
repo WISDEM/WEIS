@@ -3,8 +3,7 @@ import subprocess
 class Turbsim_wrapper(object):
     def __init__(self):
         self.turbsim_exe = 'turbsim'
-        #self.turbsim_input = './turbsim_default.in'
-        self.turbsim_input = "/Users/pgraf/work/wese/turbsim_studies/pghacking/TurbSim.inp"
+        self.turbsim_input = ""
         self.run_dir = '.'
         self.debug_level = 2
 
@@ -30,7 +29,4 @@ class Turbsim_wrapper(object):
             print ("COMPLETE TurbSim")
 
         os.chdir(olddir)
-if __name__=='__main__':
-    wrapper = Turbsim_wrapper()
-    wrapper.turbsim_exe = '/Users/jquick/TurbSim/bin/TurbSim_glin64'
-    wrapper.execute()
+

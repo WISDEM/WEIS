@@ -3,17 +3,16 @@
 Example script to compute the steady-state performance in OpenFAST
 
 """
+import weis
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
+from weis.aeroelasticse.CaseGen_General import CaseGen_General
+import numpy as np
+import os, platform
 
 if __name__ == '__main__':
 
-    import weis
-    from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
-    from weis.aeroelasticse.CaseGen_General import CaseGen_General
-    import numpy as np
-    import os, platform
-
     # Paths calling the standard modules of WEIS
-    fastBatch = runFAST_pywrapper_batch(FAST_ver='OpenFAST', dev_branch=True)
+    fastBatch = runFAST_pywrapper_batch()
     run_dir1                    = os.path.dirname( os.path.dirname( os.path.realpath(weis.__file__) ) )
     fastBatch.FAST_exe          = os.path.join(run_dir1, 'local','bin','openfast')   # Path to executable
     run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
