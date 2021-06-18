@@ -13,6 +13,7 @@ class DLCInstance(object):
         self.turbine_status = ''
         self.wave_spectrum = ''
         self.turbulent_wind = False
+        self.direction = ''
         self.label = '' # For 1.1/Custom
 
     def default_turbsim_props(self, options):
@@ -76,6 +77,7 @@ class DLCGenerator(object):
         pass
     
     def generate_1p1(self, options):
+        # Power production normal turbulence model - ultimate loads
         wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])
         if wind_speeds[-1] != self.ws_cut_out:
             wind_speeds = np.append(wind_speeds, self.ws_cut_out)
@@ -96,6 +98,7 @@ class DLCGenerator(object):
         self.n_cases_dlc11 = len(wind_speeds)*len(seeds)
     
     def generate_1p2(self, options):
+        # Power production normal turbulence model - fatigue loads
         wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])
         if wind_speeds[-1] != self.ws_cut_out:
             wind_speeds = np.append(wind_speeds, self.ws_cut_out)
@@ -115,6 +118,7 @@ class DLCGenerator(object):
                 self.cases.append(idlc)
     
     def generate_1p3(self, options):
+        # Power production extreme turbulence model - ultimate loads
         wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+1.0, options['ws_bin_size'])
         if wind_speeds[-1] != self.ws_cut_out:
             wind_speeds = np.append(wind_speeds, self.ws_cut_out)
@@ -133,7 +137,25 @@ class DLCGenerator(object):
                 idlc.label = '1.3'
                 self.cases.append(idlc)
 
+    def generate_1p4(self, options):
+        # Extreme coherent gust with direction change - ultimate loads
+        wind_speeds = np.array([self.ws_rated - 2., self.ws_rated, self.ws_rated + 2.])
+        directions = ['n', 'p']
+        for ws in wind_speeds:
+            for direction in directions:
+                idlc = DLCInstance()
+                idlc.default_turbsim_props(options)
+                idlc.URef = ws
+                idlc.IEC_WindType = 'ECD'
+                idlc.turbulent_wind = False
+                idlc.turbine_status = 'operating'
+                idlc.label = '1.4'
+                idlc.direction = direction
+                self.cases.append(idlc)
+
+
     def generate_6p1(self, options):
+        # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
             
         seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
         yaw_misalign_deg = np.array([-8., 8.])
@@ -147,12 +169,13 @@ class DLCGenerator(object):
                 idlc.IEC_WindType = self.wind_class_num + 'EWM50'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
-                    idlc.turbine_status = 'parked'
+                    idlc.turbine_status = 'parked-still'
                 idlc.label = '6.1'
                 self.cases.append(idlc)
 
     def generate_6p3(self, options):
-            
+        # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
+
         seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
         yaw_misalign_deg = np.array([-20., 20.])
 
@@ -166,11 +189,13 @@ class DLCGenerator(object):
                 idlc.IEC_WindType = self.wind_class_num + 'EWM1'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
-                    idlc.turbine_status = 'parked'
+                    idlc.turbine_status = 'parked-still'
                 idlc.label = '6.3'
                 self.cases.append(idlc)
 
     def generate_6p4(self, options):
+        # Parked (standing still or idling) - normal turbulence model - fatigue loads
+
         wind_speeds = np.arange(self.ws_cut_in, 0.7 * self.V_ref, options['ws_bin_size'])
         if wind_speeds[-1] != self.V_ref:
             wind_speeds = np.append(wind_speeds, self.V_ref)
@@ -185,7 +210,7 @@ class DLCGenerator(object):
                 idlc.IEC_WindType = 'NTM'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
-                    idlc.turbine_status = 'parked'
+                    idlc.turbine_status = 'parked-still'
                 idlc.label = '6.4'
                 self.cases.append(idlc)
 

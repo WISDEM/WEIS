@@ -2614,13 +2614,10 @@ properties:
                                 enum: ["JONSWAP","unit"]
                                 minItems: 1
                         turbine_status:
-                            type: array
-                            description: Status of the turbine, it can be either operating, idling, or parked
-                            #default: ["operating"]
-                            items:
-                                type: str
-                                enum: ["operating","idling","parked"]
-                                minItems: 1
+                            type: string
+                            description: Status of the turbine, it can be either operating, parked-idling, or parked-still
+                            default: operating
+                            enum: ['operating','parked-idling','parked-still']
                         wave_period:
                             type: array
                             description: Period between waves
@@ -2659,6 +2656,11 @@ properties:
                             type: boolean
                             default: False
                             description: Run different wave seeds for each wind speed
+                        IEC_WindType:
+                            type: string
+                            default: NTM
+                            enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG']
+                            description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3), 'ECD'=extreme coherent gust with direction change, 'EDC'=extreme direction change, 'EOG'=extreme operating gust
                         turbulent_wind:
                             type: object
                             default: {}
@@ -2803,11 +2805,6 @@ properties:
                                     type: string
                                     default: A
                                     description: IEC turbulence characteristic ("A", "B", "C" or the turbulence intensity in percent) ("KHTEST" option with NWTCUP model, not used for other models)
-                                IEC_WindType:
-                                    type: string
-                                    default: NTM
-                                    enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50']
-                                    description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3)
                                 ETMc:
                                     type: string
                                     default: default

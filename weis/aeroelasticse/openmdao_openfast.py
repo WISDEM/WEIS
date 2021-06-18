@@ -15,7 +15,7 @@ from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.turbsim_wrapper import Turbsim_wrapper
 from weis.aeroelasticse.turbsim_writer import TurbsimWriter
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-
+from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
 
 from pCrunch import PowerProduction
 
@@ -82,8 +82,11 @@ class FASTLoadCases(ExplicitComponent):
         else:
             self.FAST_directory = FAST_directory_base
             self.FAST_namingOut = self.FAST_InputFile
+        self.wind_directory = os.path.join(self.FAST_directory, 'wind')
         if not os.path.exists(self.FAST_directory):
             os.makedirs(self.FAST_directory)
+        if not os.path.exists(self.wind_directory):
+            os.mkdir(self.wind_directory)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
         self.cores = OFmgmt['cores']
         self.case = {}
@@ -1067,7 +1070,7 @@ class FASTLoadCases(ExplicitComponent):
         pitch_initial = np.zeros(dlc_generator.n_cases)
         
         wrapper = Turbsim_wrapper()
-        wrapper.run_dir = self.FAST_directory
+        wrapper.run_dir = self.wind_directory
         run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
         wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
 
@@ -1077,7 +1080,7 @@ class FASTLoadCases(ExplicitComponent):
                 turbsim_input_file_name = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                         '_U%1.6f'%dlc_generator.cases[i_case].URef + 
                                         '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
-                turbsim_input_file_path = os.path.join(self.FAST_directory, turbsim_input_file_name)
+                turbsim_input_file_path = os.path.join(self.wind_directory, turbsim_input_file_name)
                 ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
                 ts_writer.execute(turbsim_input_file_path)
                 
@@ -1090,22 +1093,27 @@ class FASTLoadCases(ExplicitComponent):
                 turbsim_output_file_path = turbsim_input_file_path[:-3] + '.bts'
                 WindFile_name[i_case] = turbsim_output_file_path
 
-                # Set initial rotor speed and pitch if the WT operates in this DLC,
-                # otherwise set pitch to 90 deg and rotor speed to 0 rpm
-                if dlc_generator.cases[i_case].turbine_status == 'operating':
-                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
-                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
-                else:
-                    rot_speed_initial[i_case] = 0.
-                    pitch_initial[i_case] = 90.
             else:
-                raise Exception('Implement here')
+                gusts = IEC_CoherentGusts()
+                wind_file_name = gusts.execute(self.wind_directory, self.FAST_namingOut, dlc_generator.cases[i_case])
+                WindFile_type[i_case] = 2
+                WindFile_name[i_case] = wind_file_name
+
+            # Set initial rotor speed and pitch if the WT operates in this DLC,
+            # otherwise set pitch to 90 deg and rotor speed to 0 rpm
+            if dlc_generator.cases[i_case].turbine_status == 'operating':
+                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
+                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
+            else:
+                rot_speed_initial[i_case] = 0.
+                pitch_initial[i_case] = 90.
         
         # Parameteric inputs
         case_inputs = {}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
+        case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[inputs['Rtip']*2.], 'group':0}
         # Initial conditions for rotor speed and pitch
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
