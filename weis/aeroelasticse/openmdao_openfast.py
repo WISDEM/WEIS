@@ -584,10 +584,10 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den'][twr_index:]
         fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff'][twr_index:]
         fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff'][twr_index:]
-        fst_vt['ElastoDynTower']['TwFAM1Sh'] = np.abs(inputs['fore_aft_modes'][0, :])  / sum(np.abs(inputs['fore_aft_modes'][0, :]))
-        fst_vt['ElastoDynTower']['TwFAM2Sh'] = np.abs(inputs['fore_aft_modes'][1, :])  / sum(np.abs(inputs['fore_aft_modes'][1, :]))
-        fst_vt['ElastoDynTower']['TwSSM1Sh'] = np.abs(inputs['side_side_modes'][0, :]) / sum(np.abs(inputs['side_side_modes'][0, :]))
-        fst_vt['ElastoDynTower']['TwSSM2Sh'] = np.abs(inputs['side_side_modes'][1, :]) / sum(np.abs(inputs['side_side_modes'][1, :]))
+        fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :] 
+        fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :] 
+        fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :]
+        fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :]
 
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
@@ -617,9 +617,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['BldFl2Sh']   = np.zeros(5)
         fst_vt['ElastoDynBlade']['BldEdgSh']   = np.zeros(5)
         for i in range(5):
-            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
-            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
-            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i]
+            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i]
+            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i]
         
         # Update AeroDyn15
         fst_vt['AeroDyn15']['AirDens']   = float(inputs['rho'])
