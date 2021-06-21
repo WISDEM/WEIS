@@ -13,6 +13,7 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from weis.aeroelasticse.CaseGen_IEC       import CaseGen_General, CaseGen_IEC
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
+from pCrunch.io                                     import OpenFASTOutput
 
 from pCrunch import PowerProduction
 
@@ -404,8 +405,8 @@ class FASTLoadCases(ExplicitComponent):
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
 
-            summary_stats, extreme_table, DELs, case_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
+            summary_stats, extreme_table, DELs, case_list, dlc_list, chan_time  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
@@ -1136,7 +1137,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_directory    = self.FAST_directory
         fastBatch.debug_level       = self.debug_level
         fastBatch.fst_vt            = fst_vt
-        fastBatch.keep_time         = False
+        fastBatch.keep_time         = self.FASTpref['file_management']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
 
         fastBatch.case_list         = case_list
@@ -1157,7 +1158,7 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
-        return summary_stats, extreme_table, DELs, case_list, dlc_list
+        return summary_stats, extreme_table, DELs, case_list, dlc_list, chan_time
 
     def DLC_creation_IEC(self, inputs, discrete_inputs, fst_vt, powercurve=False):
 
@@ -1315,7 +1316,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             return [], [], []
 
-    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
+    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
 
         # Analysis
         if self.options['modeling_options']['flags']['blade']:
@@ -1333,6 +1334,13 @@ class FASTLoadCases(ExplicitComponent):
 
         if self.options['modeling_options']['flags']['floating']:
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+
+        # Save Data
+        if self.options['modeling_options']['openfast']['file_management']['save_timeseries']:
+            self.save_timeseries(chan_time)
+
+        if self.options['modeling_options']['openfast']['file_management']['save_iterations']:
+            self.save_iterations(summary_stats,DELs)
 
     def get_blade_loading(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
@@ -1789,6 +1797,37 @@ class FASTLoadCases(ExplicitComponent):
 
 
         return file_name
+
+    def save_timeseries(self,chan_time):
+        '''
+        Save ALL the timeseries: each iteration and openfast run thereof
+        '''
+
+        # Make iteration directory
+        save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber),'timeseries')
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # Save each timeseries as a pickled dataframe
+        for i_ts, timeseries in enumerate(chan_time):
+            output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
+            output.df.to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
+
+    def save_iterations(self,summ_stats,DELs):
+        '''
+        Save summary stats, DELs of each iteration
+        '''
+
+        # Make iteration directory
+        save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+
+        # Save dataframes as pickles
+        summ_stats.to_pickle(os.path.join(save_dir,'summary_stats.p'))
+        DELs.to_pickle(os.path.join(save_dir,'DELs.p'))
+
+        
 
 
     # def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
