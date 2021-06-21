@@ -90,6 +90,8 @@ openfast:
     file_management:
         FAST_namingOut:    iea15mw         # Name of the OpenFAST output files
         FAST_runDirectory: outputs/control_opt            # Path to folder with the OpenFAST output files
+        save_timeseries: True
+        save_iterations: True
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True

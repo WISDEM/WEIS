@@ -2582,6 +2582,14 @@ properties:
                         type: string
                         default: none
                         description: Path to yaml-based OpenFAST settings file
+                    save_timeseries:
+                        type: boolean
+                        default: False
+                        description: Save openfast output timeseries
+                    save_iterations:
+                        type: boolean
+                        default: False
+                        description: Save summary stats and other info for each openfast iteration.  Could bump this up to a more global post-processing input.
             dlc_settings: # TODO: Should this be in Analysis yaml?
                 type: object
                 default: {}
