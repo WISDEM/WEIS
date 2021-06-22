@@ -181,7 +181,7 @@ class TuneROSCO(ExplicitComponent):
         #
         rosco_init_options['max_pitch']   = float(inputs['max_pitch'])
         rosco_init_options['min_pitch']   = float(inputs['min_pitch'])
-        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'])
+        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd']) * float(inputs['gear_ratio'])
         rosco_init_options['ss_vsgain']   = float(inputs['ss_vsgain'])
         rosco_init_options['ss_pcgain']   = float(inputs['ss_pcgain'])
         rosco_init_options['ps_percent']  = float(inputs['ps_percent'])
