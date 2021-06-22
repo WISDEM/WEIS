@@ -2651,11 +2651,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    FAST_ver:
-                        type: string
-                        const: OpenFAST
-                        default: OpenFAST
-                        description: Which version of FAST is being used
                     FAST_exe:
                         type: string
                         default: none

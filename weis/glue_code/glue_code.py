@@ -75,29 +75,28 @@ class WindPark(om.Group):
         # Analysis components
         self.add_subsystem('wisdem',   wisdemPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         
-        if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
-            # XFOIL
-            self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
-            # Connections to run xfoil for te flaps
-            self.connect('blade.pa.chord_param',                  'xf.chord')
-            self.connect('blade.outer_shape_bem.s',               'xf.s')
-            self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')
-            self.connect('airfoils.aoa',                          'xf.aoa')
-            self.connect('assembly.r_blade',                      'xf.r')
-            self.connect('dac_ivc.te_flap_end',                   'xf.span_end')
-            self.connect('dac_ivc.te_flap_ext',                   'xf.span_ext')
-            self.connect('dac_ivc.chord_start',                   'xf.chord_start')
-            self.connect('dac_ivc.delta_max_pos',                 'xf.delta_max_pos')
-            self.connect('dac_ivc.delta_max_neg',                 'xf.delta_max_neg')
-            self.connect('env.speed_sound_air',                   'xf.speed_sound_air')
-            self.connect('env.rho_air',                           'xf.rho_air')
-            self.connect('env.mu_air',                            'xf.mu_air')
-            self.connect('control.rated_TSR',                     'xf.rated_TSR')
-            if modeling_options['flags']['control']:
-                self.connect('control.max_TS',                        'xf.max_TS')
-            self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
-            self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
-            self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
+        # XFOIL
+        self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
+        # Connections to run xfoil for te flaps
+        self.connect('blade.pa.chord_param',                  'xf.chord')
+        self.connect('blade.outer_shape_bem.s',               'xf.s')
+        self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')
+        self.connect('airfoils.aoa',                          'xf.aoa')
+        self.connect('assembly.r_blade',                      'xf.r')
+        self.connect('dac_ivc.te_flap_end',                   'xf.span_end')
+        self.connect('dac_ivc.te_flap_ext',                   'xf.span_ext')
+        self.connect('dac_ivc.chord_start',                   'xf.chord_start')
+        self.connect('dac_ivc.delta_max_pos',                 'xf.delta_max_pos')
+        self.connect('dac_ivc.delta_max_neg',                 'xf.delta_max_neg')
+        self.connect('env.speed_sound_air',                   'xf.speed_sound_air')
+        self.connect('env.rho_air',                           'xf.rho_air')
+        self.connect('env.mu_air',                            'xf.mu_air')
+        self.connect('control.rated_TSR',                     'xf.rated_TSR')
+        if modeling_options['flags']['control']:
+            self.connect('control.max_TS',                        'xf.max_TS')
+        self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
+        self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
+        self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
 
         # ROSCO can be used at all levels
         if modeling_options['ROSCO']['flag']:

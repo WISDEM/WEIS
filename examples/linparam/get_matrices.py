@@ -5,7 +5,7 @@ from weis.aeroelasticse.LinearFAST import LinearFAST
 
 
 def gen_level2_model(dofs=['GenDOF']):
-    lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True)
+    lin_fast = LinearFAST(dev_branch=True)
 
     # fast info
     lin_fast.weis_dir                 = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) + os.sep

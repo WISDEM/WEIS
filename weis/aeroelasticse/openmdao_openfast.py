@@ -437,39 +437,42 @@ class FASTLoadCases(ExplicitComponent):
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
+        self.sim_idx = -1
         
         if self.options['modeling_options']['Level2']['flag']:
             self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
             ABCD_list = []
-            self.sim_idx = -1
+            
             with open(self.lin_pkl_file_name, 'wb') as handle:
                 pickle.dump(ABCD_list, handle)
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
-        self.sim_idx += 1
-        ABCD = {
-            'sim_idx' : self.sim_idx,
-            'A' : None,
-            'B' : None,
-            'C' : None,
-            'D' : None,
-            'omega_rpm' : None,
-            'DescCntrlInpt' : None,
-            'DescStates' : None,
-            'DescOutput' : None,
-            'StateDerivOrder' : None,
-            'ind_fast_inps' : None,
-            'ind_fast_outs' : None,
-            }
-        with open(self.lin_pkl_file_name, 'rb') as handle:
-            ABCD_list = pickle.load(handle)
+
+        if self.options['modeling_options']['Level2']['flag']:
+            self.sim_idx += 1
+            ABCD = {
+                'sim_idx' : self.sim_idx,
+                'A' : None,
+                'B' : None,
+                'C' : None,
+                'D' : None,
+                'omega_rpm' : None,
+                'DescCntrlInpt' : None,
+                'DescStates' : None,
+                'DescOutput' : None,
+                'StateDerivOrder' : None,
+                'ind_fast_inps' : None,
+                'ind_fast_outs' : None,
+                }
+            with open(self.lin_pkl_file_name, 'rb') as handle:
+                ABCD_list = pickle.load(handle)
+                
+            ABCD_list.append(ABCD)
             
-        ABCD_list.append(ABCD)
-        
-        with open(self.lin_pkl_file_name, 'wb') as handle:
-            pickle.dump(ABCD_list, handle)
+            with open(self.lin_pkl_file_name, 'wb') as handle:
+                pickle.dump(ABCD_list, handle)
         
         fst_vt = self.init_FAST_model()
         fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
@@ -1324,7 +1327,7 @@ class FASTLoadCases(ExplicitComponent):
 
             case_list, case_name_list = fastBatch.gen_linear_cases(inputs)
         else:
-            fastBatch = runFAST_pywrapper_batch(FAST_ver=self.FAST_ver)
+            fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
 
         # JJ->DZ: we need to add the options and settings from `gen_linear_model` here

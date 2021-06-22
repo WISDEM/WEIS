@@ -39,7 +39,6 @@ class LinearFAST(runFAST_pywrapper_batch):
 
     def __init__(self, **kwargs):
 
-        self.FAST_ver           = 'OpenFAST'
         self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable, linearization doesn't work with library
         self.FAST_InputFile     = None
         self.FAST_directory     = None
@@ -266,7 +265,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         """
 
         # do a read to get gearbox ratio
-        fastRead = InputReader_OpenFAST(FAST_ver='OpenFAST', dev_branch=True)
+        fastRead = InputReader_OpenFAST
         fastRead.FAST_InputFile = self.FAST_InputFile   # FAST input file (ext=.fst)
         fastRead.FAST_directory = self.FAST_directory   # Path to fst directory files
 
@@ -292,7 +291,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
 if __name__ == '__main__':
 
-    lin_fast = LinearFAST(FAST_ver='OpenFAST', dev_branch=True);
+    lin_fast = LinearFAST()
 
     # fast info
     
