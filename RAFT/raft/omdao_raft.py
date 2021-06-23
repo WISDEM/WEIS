@@ -184,6 +184,32 @@ class RAFT_OMDAO(om.ExplicitComponent):
             self.add_input(lt_name+'transverse_drag', val=0.0, desc='Transverse drag')
             self.add_input(lt_name+'tangential_drag', val=0.0, desc='Tangential drag')
 
+        # turbine inputs to be added
+        # general
+        #  turbine['nBlades']         # number of blades
+        #  turbine['shaft_tilt'],     # (deg) shaft tilt...
+        #  turbine['precone'],          # (deg) hub precone angle
+        #  turbine['Zhub'],           # (m) hub height used for power-law wind profile.  U = Uref*(z/hubHt)**shearExp
+        #  turbine['Rhub'],           # (m) radius of hub
+        # blade inputs to be added
+        #  turbine['blade']['r'],                # (m) locations defining the blade along z-axis of blade coordinate system
+        #  turbine['blade']['chord'],            # (m) corresponding chord length at each section
+        #  turbine['blade']['theta'],            # (deg) corresponding :ref:`twist angle <blade_airfoil_coord>` at each section---positive twist decreases angle of attack.
+        #  turbine['blade']['Rtip'],             # (m) radius of tip
+        #  turbine['blade']['precurve'],         # (m) location of blade pitch axis in x-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
+        #  turbine['blade']['precurveTip'],      # (m) location of blade pitch axis in x-direction at the tip (analogous to Rtip)
+        #  turbine['blade']['presweep'],         # (m) location of blade pitch axis in y-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
+        #  turbine['blade']['presweepTip'],      # (m) location of blade pitch axis in y-direction at the tip (analogous to Rtip)
+        # airfoils data
+        #  turbine['airfoils']['Re'], 
+        #  turbine['airfoils']['cl_interp']
+        #  turbine['airfoils']['cd_interp']
+        #  turbine['airfoils']['cm_interp']
+        # Atmospheric boundary layer data
+        #  turbine['env']['rho'     ] = wt_init['environment']["air_density"] # [kg/m3] - density of air
+        #  turbine['env']['mu'      ] = wt_init['environment']["air_dyn_viscosity"] # [kg/(ms)] - dynamic viscosity of air
+        #  turbine['env']['shearExp'] = wt_init['environment']["shear_exp"] # [-] - shear exponent 
+
         # outputs
         # properties
         nballast = np.sum(member_npts_rho_fill)
