@@ -24,9 +24,14 @@ class RAFT_WEIS(om.Group):
         turbine_opt['npts'] = weis_opt['WISDEM']['TowerSE']['n_height_tower']
         turbine_opt['scalar_thicknesses'] = turbine_opt['scalar_diameters'] = turbine_opt['scalar_coefficients'] = False
         turbine_opt['shape'] = 'circ'
-
-        # Add control options to turbine_opt for now
         turbine_opt['PC_GS_n'] = weis_opt['ROSCO']['PC_GS_n']
+        turbine_opt['n_span'] = weis_opt['WISDEM']['RotorSE']['n_span']
+        turbine_opt['n_aoa'] = weis_opt['WISDEM']['RotorSE']['n_aoa']
+        turbine_opt['n_Re'] = weis_opt['WISDEM']['RotorSE']['n_Re']
+        turbine_opt['n_tab'] = weis_opt['WISDEM']['RotorSE']['n_tab']
+        turbine_opt['n_pc'] = weis_opt['WISDEM']['RotorSE']['n_pc']
+        turbine_opt['n_af'] = weis_opt['WISDEM']['RotorSE']['n_af']
+        turbine_opt['af_used_names'] = weis_opt['WISDEM']['RotorSE']['af_used']
 
         members_opt = {}
         members_opt['nmembers'] = len(weis_opt["floating"]["members"]["name"])
