@@ -83,6 +83,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
             self.add_input('turbine_tower_CaEnd', val=np.zeros(turbine_npts), desc='End axial added mass coefficient')
         self.add_input('turbine_tower_rho_shell', val=0.0, units='kg/m**3', desc='Material density')
 
+        # control inputs
+        self.add_input('rotor_PC_GS_angles',     val=np.zeros(turbine_opt['PC_GS_n']),   units='rad',        desc='Gain-schedule table: pitch angles')
+        self.add_input('rotor_PC_GS_Kp',         val=np.zeros(turbine_opt['PC_GS_n']),   units='s',          desc='Gain-schedule table: pitch controller kp gains')
+        self.add_input('rotor_PC_GS_Ki',         val=np.zeros(turbine_opt['PC_GS_n']),                       desc='Gain-schedule table: pitch controller ki gains')
+        self.add_input('rotor_Fl_Kp',            val=0.0,                        desc='Floating feedback gain')
+        self.add_input('rotor_inertia',          val=0.0,    units='kg*m**2',    desc='Rotor inertia')
+
         # member inputs
         for i in range(1, nmembers + 1):
 
@@ -176,6 +183,32 @@ class RAFT_OMDAO(om.ExplicitComponent):
             self.add_input(lt_name+'tangential_added_mass', val=0.0, desc='Tangential added mass')
             self.add_input(lt_name+'transverse_drag', val=0.0, desc='Transverse drag')
             self.add_input(lt_name+'tangential_drag', val=0.0, desc='Tangential drag')
+
+        # turbine inputs to be added
+        # general
+        #  turbine['nBlades']         # number of blades
+        #  turbine['shaft_tilt'],     # (deg) shaft tilt...
+        #  turbine['precone'],          # (deg) hub precone angle
+        #  turbine['Zhub'],           # (m) hub height used for power-law wind profile.  U = Uref*(z/hubHt)**shearExp
+        #  turbine['Rhub'],           # (m) radius of hub
+        # blade inputs to be added
+        #  turbine['blade']['r'],                # (m) locations defining the blade along z-axis of blade coordinate system
+        #  turbine['blade']['chord'],            # (m) corresponding chord length at each section
+        #  turbine['blade']['theta'],            # (deg) corresponding :ref:`twist angle <blade_airfoil_coord>` at each section---positive twist decreases angle of attack.
+        #  turbine['blade']['Rtip'],             # (m) radius of tip
+        #  turbine['blade']['precurve'],         # (m) location of blade pitch axis in x-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
+        #  turbine['blade']['precurveTip'],      # (m) location of blade pitch axis in x-direction at the tip (analogous to Rtip)
+        #  turbine['blade']['presweep'],         # (m) location of blade pitch axis in y-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
+        #  turbine['blade']['presweepTip'],      # (m) location of blade pitch axis in y-direction at the tip (analogous to Rtip)
+        # airfoils data
+        #  turbine['airfoils']['Re'], 
+        #  turbine['airfoils']['cl_interp']
+        #  turbine['airfoils']['cd_interp']
+        #  turbine['airfoils']['cm_interp']
+        # Atmospheric boundary layer data
+        #  turbine['env']['rho'     ] = wt_init['environment']["air_density"] # [kg/m3] - density of air
+        #  turbine['env']['mu'      ] = wt_init['environment']["air_dyn_viscosity"] # [kg/(ms)] - dynamic viscosity of air
+        #  turbine['env']['shearExp'] = wt_init['environment']["shear_exp"] # [-] - shear exponent 
 
         # outputs
         # properties
@@ -282,6 +315,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['turbine']['tower']['CdEnd'] = inputs['turbine_tower_CdEnd']
             design['turbine']['tower']['CaEnd'] = inputs['turbine_tower_CaEnd']
         design['turbine']['tower']['rho_shell'] = float(inputs['turbine_tower_rho_shell'])
+
+        design['turbine']['control'] = {}
+        design['turbine']['control']['PC_GS_Angles']    = inputs['rotor_PC_GS_angles']
+        design['turbine']['control']['PC_GS_Kp']        = inputs['rotor_PC_GS_Kp']
+        design['turbine']['control']['PC_GS_Ki']        = inputs['rotor_PC_GS_Ki']
+        design['turbine']['control']['Fl_Kp']           = float(inputs['rotor_Fl_Kp'])
+        design['turbine']['control']['I_drivetrain']    = float(inputs['rotor_inertia'])
 
         design['platform'] = {}
         design['platform']['members'] = [dict() for i in range(nmembers)]
