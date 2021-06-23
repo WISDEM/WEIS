@@ -25,13 +25,6 @@ class DLCInstance(object):
         for key in options['turbulent_wind'].keys():
             setattr(self, key, options['turbulent_wind'][key])
 
-    def to_dict(self):
-        out = {}
-        keys = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("__")]
-        for k in keys:
-            out[k] = getattr(self, k)
-        return out
-
 
         
 class DLCGenerator(object):
@@ -54,7 +47,7 @@ class DLCGenerator(object):
         self.wind_class_num = self.IECturb.Turbine_Class_Num
 
     def to_dict(self):
-        return [m.to_dict() for m in self.cases]
+        return [vars(m) for m in self.cases]
 
     def get_wind_speeds(self, options):
         if len(options['wind_speed']) > 0:
