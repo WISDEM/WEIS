@@ -2429,6 +2429,29 @@ properties:
                         minimum: 0
                         maximum: 1
 
+                    fl_feedback:
+                        type: object
+                        description: Platform velocity feedback using nacelle IMU
+                        default: {}
+                        properties:
+                            gain:
+                                type: number
+                                description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
+                                unit: seconds
+                            twr_freq:
+                                type: number
+                                description: Tower natural frequency / frequency of notch filter in fl_feedback ROSCO control module
+                                unit: rad/s
+                                default: 100.
+                            ptfm_freq:
+                                type: number
+                                description: Platform natural frequency / frequency of LPF in fl_feedback ROSCO control module
+                                unit: rad/s
+                                default: 0.2
+                            filter:
+                                $ref: "#/definitions/filter"
+                                description: Nacelle IMU filter, used to remove tower natural frequency.  Usually a LPF or Notch Filter
+
                     twr_feedback:
                         type: object
                         description: Tower velocity feedback using nacelle IMU
@@ -3017,6 +3040,12 @@ properties:
                 minimum: 0
                 maximum: 0.6
                 default: 0.4
+            V_mean:
+                type: number
+                default: 0.
+                minimum: 0.
+                maximum: 2.e+1
+                description: Average inflow wind speed. If different than 0, this will overwrite the V mean of the IEC wind class
     bos:
         type: object
         default: {}

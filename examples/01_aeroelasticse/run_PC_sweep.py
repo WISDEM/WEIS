@@ -4,10 +4,10 @@ Example script to run the DLCs with different pitch control gains in OpenFAST
 
 """
 
-from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper, runFAST_pywrapper_batch
+from weis.aeroelasticse.runFAST_pywrapper   import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_IEC         import CaseGen_IEC
 from wisdem.commonse.mpi_tools              import MPI
-import sys, os, platform, yaml
+import os, platform, yaml
 import numpy as np
 
 # ROSCO 
@@ -17,7 +17,7 @@ from ROSCO_toolbox import utilities as ROSCO_Utilities
 
 def run_PC_sweep(omega,zeta=1.0):
     # Set up OpenFAST model
-    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+    fastBatch                   = runFAST_pywrapper_batch()
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
     fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files

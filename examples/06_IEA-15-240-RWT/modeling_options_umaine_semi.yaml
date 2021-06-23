@@ -4,8 +4,10 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        spar_cap_ss: Spar_cap_SS
-        spar_cap_ps: Spar_cap_PS
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
     TowerSE:
         flag: True
     DriveSE:
@@ -24,14 +26,13 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompInflow: 1
         CompAero: 2
         CompServo: 1
-        CompHydro: 0
+        CompHydro: 1
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
     linearization:
         Linearize: False
     ElastoDyn:
-        flag: True
         FlapDOF1: True
         FlapDOF2: True
         EdgeDOF: True
@@ -39,23 +40,34 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
-        TwFADOF1 : False
-        TwFADOF2 : False
-        TwSSDOF1 : False
-        TwSSDOF2 : False
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
         PtfmSgDOF: False
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-ROSCO:
-    flag: True
+    HydroDyn:
+        WaveTMax: 1 #3630
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WaveSeed1: 123456789
+        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
+        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
+        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
+        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
+        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
+        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
+    ROSCO:
+        flag: True
     
 openfast:
     file_management:
-        FAST_namingOut:    IEA34         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/iea34             # Path to folder with the OpenFAST output files
+        FAST_namingOut:    VolturnUS-S_semi         # Name of the OpenFAST output files
+        FAST_runDirectory: temp/VolturnUS-S_semi             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   True
         run_IEC:           True
@@ -82,10 +94,3 @@ openfast:
             U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True
 
-yaml:
-    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
-    path2schema: windIO/windIO/turbine/IEAontology_schema.yaml   # Path to the yams schema to run the validation
-
-xfoil:
-    path       : Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
-    run_parallel: True
