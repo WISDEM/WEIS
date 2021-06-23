@@ -1,16 +1,14 @@
 # RAFT's rotor class
 
 import os
-import os.path as osp
-import sys, yaml
+import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 
 from scipy.interpolate import PchipInterpolator
 
-from helpers import deg2rad, rotationMatrix
+from raft.helpers import rotationMatrix
 
-import wisdem.inputs as sch
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
 '''
@@ -222,8 +220,8 @@ class Rotor:
         pitch_deg = np.interp(Uhub, self.Uhub, self.pitch_deg)  # blade pitch angle [deg]
         
         # adjust rotor angles based on provided info (I think this intervention in CCBlade should work...)
-        self.ccblade.tilt = deg2rad(self.shaft_tilt) + ptfm_pitch
-        self.ccblade.yaw  = deg2rad(yaw_misalign)
+        self.ccblade.tilt = np.deg2rad(self.shaft_tilt) + ptfm_pitch
+        self.ccblade.yaw  = np.deg2rad(yaw_misalign)
         
         # evaluate aero loads and derivatives with CCBlade
         loads, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch_deg, coefficients=True)
@@ -474,7 +472,7 @@ class Rotor:
         # (blade pitch would be a -rotation about local z)
         R_precone = rotationMatrix(0, -self.ccblade.precone, 0)  
         R_azimuth = [rotationMatrix(azimuth + azi, 0, 0) for azi in 2*np.pi/3.*np.arange(3)]
-        R_tilt    = rotationMatrix(0, deg2rad(self.shaft_tilt), 0)   # # define x as along shaft downwind, y is same as ptfm y
+        R_tilt    = rotationMatrix(0, np.deg2rad(self.shaft_tilt), 0)   # # define x as along shaft downwind, y is same as ptfm y
         
         # ----- transform coordinates -----
         for ib in range(3):
