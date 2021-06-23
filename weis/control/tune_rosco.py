@@ -352,8 +352,8 @@ class TuneROSCO(ExplicitComponent):
         self.ROSCO_input['Cq'] = WISDEM_turbine.Cq
 
         if self.modeling_options['Level3']['flag']:
-            self.modeling_options['openfast']['fst_vt']['DISCON_in'] = self.ROSCO_input  
-        
+            self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['DISCON_in'] = self.ROSCO_input  
+
 
         # Outputs 
         if rosco_init_options['Flp_Mode'] >= 1:
