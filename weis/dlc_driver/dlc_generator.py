@@ -6,7 +6,7 @@ from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 
 class DLCInstance(object):
     
-    def __init__(self):
+    def __init__(self, options=None):
         # Set default DLC with empty properties
         self.wind_heading = 0.0
         self.yaw_misalign = 0.0
@@ -18,14 +18,16 @@ class DLCInstance(object):
         self.sigma1 = '' # Standard deviation of the wind
         self.label = '' # For 1.1/Custom
 
+        if not options is None:
+            self.default_turbsim_props(options)
+
     def default_turbsim_props(self, options):
         for key in options['turbulent_wind'].keys():
             setattr(self, key, options['turbulent_wind'][key])
 
     def to_dict(self):
         out = {}
-        keys = ['wind_speed','wind_heading','yaw_misalign','turbsim_seed','turbine_status',
-                'wave_spectrum','turbulent_wind','label']
+        keys = [attr for attr in dir(self) if not callable(getattr(self, attr)) and not attr.startswith("__")]
         for k in keys:
             out[k] = getattr(self, k)
         return out
@@ -53,6 +55,16 @@ class DLCGenerator(object):
 
     def to_dict(self):
         return [m.to_dict() for m in self.cases]
+
+    def get_wind_speeds(self, options):
+        if len(options['wind_speed']) > 0:
+            wind_speeds = np.array( [float(m) for m in options['wind_speed']] )
+        else:
+            wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
+            if wind_speeds[-1] != self.ws_cut_out:
+                wind_speeds = np.append(wind_speeds, self.ws_cut_out)
+                
+        return wind_speeds
     
     def generate(self, label, options):
         known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4]
@@ -79,16 +91,12 @@ class DLCGenerator(object):
     
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
-        if wind_speeds[-1] != self.ws_cut_out:
-            wind_speeds = np.append(wind_speeds, self.ws_cut_out)
-            
+        wind_speeds = self.get_wind_speeds(options)
         seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
 
         for ws in wind_speeds:
             for seed in seeds:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
                 idlc.IEC_WindType = 'NTM'
@@ -100,16 +108,12 @@ class DLCGenerator(object):
     
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
-        if wind_speeds[-1] != self.ws_cut_out:
-            wind_speeds = np.append(wind_speeds, self.ws_cut_out)
-            
+        wind_speeds = self.get_wind_speeds(options)
         seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
 
         for ws in wind_speeds:
             for seed in seeds:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
                 idlc.IEC_WindType = 'NTM'
@@ -120,16 +124,12 @@ class DLCGenerator(object):
     
     def generate_1p3(self, options):
         # Power production extreme turbulence model - ultimate loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
-        if wind_speeds[-1] != self.ws_cut_out:
-            wind_speeds = np.append(wind_speeds, self.ws_cut_out)
-            
+        wind_speeds = self.get_wind_speeds(options)
         seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
 
         for ws in wind_speeds:
             for seed in seeds:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
                 idlc.IEC_WindType = self.wind_class_num + 'ETM'
@@ -140,12 +140,11 @@ class DLCGenerator(object):
 
     def generate_1p4(self, options):
         # Extreme coherent gust with direction change - ultimate loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
+        wind_speeds = self.get_wind_speeds(options)
         directions = ['n', 'p']
         for ws in wind_speeds:
             for direction in directions:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.IEC_WindType = 'ECD'
                 idlc.turbulent_wind = False
@@ -156,16 +155,13 @@ class DLCGenerator(object):
 
     def generate_1p5(self, options):
         # Extreme wind shear - ultimate loads
-        wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
-        if wind_speeds[-1] != self.ws_cut_out:
-            wind_speeds = np.append(wind_speeds, self.ws_cut_out)
+        wind_speeds = self.get_wind_speeds(options)
         directions = ['p', 'n']
         shears=['h', 'v']
         for ws in wind_speeds:
             for direction in directions:
                 for shear in shears:
-                    idlc = DLCInstance()
-                    idlc.default_turbsim_props(options)
+                    idlc = DLCInstance(options=options)
                     idlc.URef = ws
                     idlc.IEC_WindType = 'EWS'
                     idlc.turbulent_wind = False
@@ -183,8 +179,7 @@ class DLCGenerator(object):
         yaw_misalign_deg = np.array([-8., 8.])
         for yaw_ms in yaw_misalign_deg:
             for seed in seeds:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = self.V_e50
                 idlc.yaw_misalign = yaw_ms
                 idlc.RandSeed1 = seed
@@ -203,8 +198,7 @@ class DLCGenerator(object):
 
         for yaw_ms in yaw_misalign_deg:
             for seed in seeds:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = self.V_e1
                 idlc.yaw_misalign = yaw_ms
                 idlc.RandSeed1 = seed
@@ -217,7 +211,6 @@ class DLCGenerator(object):
 
     def generate_6p4(self, options):
         # Parked (standing still or idling) - normal turbulence model - fatigue loads
-
         wind_speeds = np.arange(self.ws_cut_in, 0.7 * self.V_ref, options['ws_bin_size'])
         if wind_speeds[-1] != self.V_ref:
             wind_speeds = np.append(wind_speeds, self.V_ref)
@@ -225,8 +218,7 @@ class DLCGenerator(object):
 
         for ws in wind_speeds:
             for seed in seeds:
-                idlc = DLCInstance()
-                idlc.default_turbsim_props(options)
+                idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
                 idlc.IEC_WindType = 'NTM'

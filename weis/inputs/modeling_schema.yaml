@@ -2555,7 +2555,7 @@ properties:
                         wind_speed:
                             type: array
                             description: Wind speeds for this DLC
-                            default: [10.]
+                            default: []
                             items:
                                 type: number
                                 unit: m/s
@@ -2566,9 +2566,9 @@ properties:
                         ws_bin_size:
                             type: number
                             default: 2
-                            minimum: 1.e-2
-                            maximum: 2.e+1
-                            unit: m /s 
+                            minimum: 0.01
+                            maximum: 20.0
+                            unit: m/s 
                             description: Size of the wind speed bin, usually set to 2 m/s
                         n_seeds:
                             type: integer
@@ -2593,8 +2593,8 @@ properties:
                                 type: number
                                 unit: deg
                                 minItems: 1
-                                minimum: -1.8e+2
-                                maximum: 1.8e+2
+                                minimum: -180.0
+                                maximum: 180.0
                         yaw_misalign:
                             type: array
                             description: Alignment of the nacelle with respect to north
@@ -2603,8 +2603,8 @@ properties:
                                 type: number
                                 unit: deg
                                 minItems: 1
-                                minimum: -1.8e+2
-                                maximum: 1.8e+2
+                                minimum: -180.0
+                                maximum: 180.0
                         wave_spectrum:
                             type: array
                             description: Spectrum of the waves
@@ -2627,7 +2627,7 @@ properties:
                                 unit: s
                                 minItems: 1
                                 minimum: 0.0
-                                maximum: 1.e+2
+                                maximum: 100.0
                         wave_height:
                             type: array
                             description: Height of the waves
@@ -2637,7 +2637,7 @@ properties:
                                 unit: m
                                 minItems: 1
                                 minimum: 0.0
-                                maximum: 1.e+2
+                                maximum: 100.0
                         wave_heading:
                             type: array
                             description: Heading of the waves with respect to north
@@ -2646,8 +2646,8 @@ properties:
                                 type: number
                                 unit: deg
                                 minItems: 1
-                                minimum: -1.8e+2
-                                maximum: 1.8e+2
+                                minimum: -180.0
+                                maximum: 180.0
                         unique_wind_seeds:
                             type: boolean
                             default: False
@@ -2678,8 +2678,7 @@ properties:
                                     default: 1
                                     description: First random seed  (-2147483648 to 2147483647)
                                 RandSeed2:
-                                    type: integer
-                                    default: 2
+                                    default: RANLUX
                                     description: Second random seed  (-2147483648 to 2147483647)
                                 WrBHHTP:
                                     type: boolean
