@@ -1,11 +1,5 @@
 import os
-import os.path as osp
-import sys
-import yaml
-import moorpy as mp
 import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib import cm
 import wisdem.inputs as sch    # used for loading turbine YAML and using WISDEM validation process
 from wisdem.commonse.utilities import arc_length
 
@@ -29,7 +23,7 @@ class Env:
 
 
 # ------------------------ misc helper functions -------------------------------
-
+# GB: If it helps, there are np.rad2deg and np.deg2rad functions
 def rad2deg(rad):
     return rad*57.29577951308232
 def deg2rad(deg):
