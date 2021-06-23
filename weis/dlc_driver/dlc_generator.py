@@ -53,7 +53,7 @@ class DLCGenerator(object):
         if len(options['wind_speed']) > 0:
             wind_speeds = np.array( [float(m) for m in options['wind_speed']] )
         else:
-            wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+options['ws_bin_size'], options['ws_bin_size'])
+            wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+0.5*options['ws_bin_size'], options['ws_bin_size'])
             if wind_speeds[-1] != self.ws_cut_out:
                 wind_speeds = np.append(wind_speeds, self.ws_cut_out)
                 
