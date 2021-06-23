@@ -191,6 +191,7 @@ class WindPark(om.Group):
                 self.connect("configuration.n_blades", "raft.nBlades")
                 self.connect("hub.cone", "raft.precone")
                 self.connect("nacelle.uptilt", "raft.tilt")
+                self.connect("nacelle.gear_ratio", "raft.gear_ratio")
                 self.connect("assembly.r_blade", "raft.blade_r")
                 self.connect("assembly.rotor_radius", "raft.blade_Rtip")
                 self.connect("hub.radius", "raft.hub_radius")
