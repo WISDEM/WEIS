@@ -20,6 +20,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # unpack options
         modeling_opt = self.options['modeling_options']
         nfreq = modeling_opt['nfreq']
+        n_cases = modeling_opt['n_cases']
 
         turbine_opt = self.options['turbine_options']
         turbine_npts = turbine_opt['npts']
@@ -130,6 +131,9 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
         self.add_input("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
         self.add_input("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+
+        # DLCs
+        self.add_discrete_input('raft_dlcs', val=[[]]*n_cases, desc='DLC case table for RAFT')
         
         # member inputs
         for i in range(1, nmembers + 1):
@@ -365,7 +369,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['turbine']['blade']['airfoils']    = list(zip(inputs['airfoils_position'], turbine_opt['af_used_names']))
         # airfoils data
         n_af = turbine_opt['n_af']
-        design['turbine']['airfoils'] = [{}]*n_af
+        design['turbine']['airfoils'] = [dict() for m in range(n_af)] #Note: doesn't work [{}]*n_af
         for i in range(n_af):
             design['turbine']['airfoils'][i]['name'] = discrete_inputs['airfoils_name'][i]
             design['turbine']['airfoils'][i]['relative_thickness'] = inputs['airfoils_r_thick'][i]
@@ -395,7 +399,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['platform'] = {}
         design['platform']['potModMaster'] = int(modeling_opt['potModMaster'])
         design['platform']['nIter'] = int(modeling_opt['nIter'])
-        design['platform']['members'] = [{}]*nmembers
+        design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):
             m_name = f'platform_member{i+1}_'
             m_shape = member_shapes[i]
@@ -474,15 +478,17 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 design['platform']['members'][i]['cap_d_in'] = di_cap[isort]
 
         design['mooring'] = {}
-        design['mooring']['water_depth'] = inputs['mooring_water_depth']
-        design['mooring']['points'] = [{}]*nconnections
+        design['mooring']['water_depth'] = float(inputs['mooring_water_depth'])
+        design['mooring']['points'] = [dict() for m in range(nconnections)] #Note: doesn't work [{}]*nconnections
         for i in range(0, nconnections):
             pt_name = f'mooring_point{i+1}_'
             design['mooring']['points'][i]['name'] = discrete_inputs[pt_name+'name']
             design['mooring']['points'][i]['type'] = discrete_inputs[pt_name+'type']
             design['mooring']['points'][i]['location'] = inputs[pt_name+'location']
+            if design['mooring']['points'][i]['type'].lower() == 'fixed':
+                design['mooring']['points'][i]['anchor_type'] = 'drag_embedment' #discrete_inputs[pt_name+'type']
 
-        design['mooring']['lines'] = [{}]*nlines
+        design['mooring']['lines'] = [dict() for m in range(nlines)] #Note: doesn't work [{}]*nlines
         for i in range(0, nlines):
             ml_name = f'mooring_line{i+1}_'
             design['mooring']['lines'][i]['name'] = f'line{i+1}'
@@ -490,7 +496,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['mooring']['lines'][i]['endB'] = discrete_inputs[ml_name+'endB']
             design['mooring']['lines'][i]['type'] = discrete_inputs[ml_name+'type']
             design['mooring']['lines'][i]['length'] = inputs[ml_name+'length']
-        design['mooring']['line_types'] = [{}]*nline_types
+        design['mooring']['line_types'] = [dict() for m in range(nline_types)] #Note: doesn't work [{}]*nline_types
         for i in range(0, nline_types):
             lt_name = f'mooring_line_type{i+1}_'
             design['mooring']['line_types'][i]['name'] = discrete_inputs[lt_name+'name']
@@ -503,6 +509,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['mooring']['line_types'][i]['tangential_added_mass'] = float(inputs[lt_name+'tangential_added_mass'])
             design['mooring']['line_types'][i]['transverse_drag'] = float(inputs[lt_name+'transverse_drag'])
             design['mooring']['line_types'][i]['tangential_drag'] = float(inputs[lt_name+'tangential_drag'])
+
+        # DLCs
+        design['cases'] = {}
+        design['cases']['keys'] = ['wind_speed', 'wind_heading', 'turbulence',
+                                   'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                   'wave_period', 'wave_height', 'wave_heading']
+        design['cases']['data'] = discrete_inputs['raft_dlcs']
 
         # create and run the model
         model = raft.Model(design)
