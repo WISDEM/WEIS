@@ -133,7 +133,11 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input("shear_exp", val=0.2, desc="Shear exponent of the wind.")
 
         # DLCs
-        self.add_discrete_input('raft_dlcs', val=[[]]*n_cases, desc='DLC case table for RAFT')
+        self.add_discrete_input('raft_dlcs', val=[[]]*n_cases, desc='DLC case table for RAFT with each row a new case and headings described by the keys')
+        self.add_discrete_input('raft_dlcs_keys', val=['wind_speed', 'wind_heading', 'turbulence',
+                                                       'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                                       'wave_period', 'wave_height', 'wave_heading'],
+                                desc='DLC case table column headings')
         
         # member inputs
         for i in range(1, nmembers + 1):
@@ -512,9 +516,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
         # DLCs
         design['cases'] = {}
-        design['cases']['keys'] = ['wind_speed', 'wind_heading', 'turbulence',
-                                   'turbine_status', 'yaw_misalign', 'wave_spectrum',
-                                   'wave_period', 'wave_height', 'wave_heading']
+        design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
         design['cases']['data'] = discrete_inputs['raft_dlcs']
 
         # create and run the model
