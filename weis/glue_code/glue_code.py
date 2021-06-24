@@ -168,6 +168,8 @@ class WindPark(om.Group):
             self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options))
 
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
+            self.connect('configuration.turb_class',        'raft.turbulence_class')
+            self.connect('configuration.ws_class' ,         'raft.turbine_class')
             self.connect('drivese.rna_mass', 'raft.turbine_mRNA')
             self.connect('drivese.rna_I_TT', 'raft.rna_I_TT')
             self.connect('drivese.rna_cm', 'raft.rna_cm')
@@ -187,6 +189,9 @@ class WindPark(om.Group):
             self.connect('sse_tune.tune_rosco.PC_GS_Ki',        'raft.rotor_PC_GS_Ki') 
             self.connect('sse_tune.tune_rosco.Fl_Kp',           'raft.rotor_Fl_Kp') 
             self.connect('rotorse.re.precomp.I_all_blades',     'raft.rotor_inertia', src_indices=[0])
+            self.connect('rotorse.rp.powercurve.rated_V',       'raft.Vrated')
+            self.connect('control.V_in',                    'raft.V_cutin')
+            self.connect('control.V_out',                   'raft.V_cutout')
             if modeling_options["flags"]["blade"]:
                 self.connect("configuration.n_blades", "raft.nBlades")
                 self.connect("hub.cone", "raft.precone")
