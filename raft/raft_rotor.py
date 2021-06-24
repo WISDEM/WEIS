@@ -147,7 +147,9 @@ class Rotor:
         # https://docs.scipy.org/doc/scipy/reference/generated/scipy.interpolate.PchipInterpolator.derivative.html#scipy.interpolate.PchipInterpolator.derivative
         spline = PchipInterpolator
         rthick_spline = spline(af_position, r_thick_used)
-        r_thick_interp = rthick_spline(grid[1:-1])
+        # GB: HAVE TO TALK TO PIETRO ABOUT THIS
+        #r_thick_interp = rthick_spline(grid[1:-1])
+        r_thick_interp = rthick_spline(grid)
 
         # Spanwise interpolation of the airfoil polars with a pchip
         r_thick_unique, indices = np.unique(r_thick_used, return_index=True)
@@ -168,12 +170,9 @@ class Rotor:
         blade_precurve  = geometry_table[:,3]
         blade_presweep  = geometry_table[:,4]
         
-        
-        
         af = []
         for i in range(self.cl_interp.shape[0]):
             af.append(CCAirfoil(self.aoa, [], self.cl_interp[i,:,:],self.cd_interp[i,:,:],self.cm_interp[i,:,:]))
-        
         
         self.ccblade = CCBlade(
             blade_r,                        # (m) locations defining the blade along z-axis of blade coordinate system
