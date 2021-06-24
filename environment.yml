@@ -9,7 +9,7 @@ dependencies:
   - cython
   - dill
   - git
-  - Jinja2<3.0
+  - Jinja2
   - jsonschema
   - make
   - pip
@@ -24,6 +24,7 @@ dependencies:
   - pytest
   - pytest-cov
   - python
+  - python-benedict
   - pyyaml
   - ruamel_yaml
   - scipy

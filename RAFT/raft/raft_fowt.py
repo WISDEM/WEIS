@@ -9,16 +9,11 @@ import matplotlib.pyplot as plt
 import pyhams.pyhams     as ph
 import raft.member2pnl as pnl
 from raft.helpers import *
-import raft.raft_member as mem
+from raft.raft_member import Member
+from raft.raft_rotor import Rotor
 
-from importlib import reload
-Member = reload(mem).Member
-
-try:
-    import ccblade         # clone ccblade
-except:
-    import wisdem.ccblade  # via conda install wisdem
-
+# deleted call to ccblade in this file, since it is called in raft_rotor
+# also ignoring changes to solveEquilibrium3 in raft_model and the re-addition of n=len(stations) in raft_member, based on raft_patch
 
 
 
@@ -39,21 +34,41 @@ class FOWT():
 
         # basic setup
         self.nDOF = 6
+        self.Xi0 = np.zeros(6)    # mean offsets of platform, initialized at zero  [m, rad]
 
         if len(w)==0:
             w = np.arange(.01, 3, 0.01)                              # angular frequencies tp analyze (rad/s)
 
+        self.depth = depth
+
         self.w = np.array(w)
         self.nw = len(w)                                             # number of frequencies
-        self.k = np.zeros(self.nw)                                   # wave number
+        
+        self.k = np.array( [ waveNumber(w, self.depth) for w in self.w] )  # wave number
 
-        self.depth = depth
+        
+        self.rho_water = getFromDict(design['site'], 'rho_water', default=1025.0)
+        self.g         = getFromDict(design['site'], 'g'        , default=9.81)
+             
+            
+        design['turbine']['tower']['dlsMax'] = getFromDict(design['turbine']['tower'], 'dlsMax', default=5.0)
              
         
         # member-based platform description
         self.memberList = []                                         # list of member objects
 
+        potModMaster = getFromDict(design['platform'], 'potModMaster', dtype=int, default=0)
+        dlsMax       = getFromDict(design['platform'], 'dlsMax', default=5.0)
+        
         for mi in design['platform']['members']:
+
+            if potModMaster==1:
+                mi['potMod'] = False
+            elif potModMaster==2:
+                mi['potMod'] = True
+                
+            mi['dlsMax'] = dlsMax
+
             headings = getFromDict(mi, 'heading', shape=-1, default=0.)
             if np.isscalar(headings):
                 mi['heading'] = headings
@@ -69,6 +84,17 @@ class FOWT():
         # mooring system connection
         self.body = mpb                                              # reference to Body in mooring system corresponding to this turbine
 
+        if 'yaw stiffness' in design['turbine']:
+            self.yawstiff = design['turbine']['yaw stiffness']       # If you're modeling OC3 spar, for example, import the manual yaw stiffness needed by the bridle config
+        else:
+            self.yawstiff = 0
+
+        # Turbine rotor
+        design['turbine']['rho_air' ] = design['site']['rho_air']
+        design['turbine']['mu_air'  ] = design['site']['mu_air']
+        design['turbine']['shearExp'] = design['site']['shearExp']
+        
+        self.rotor = Rotor(design['turbine'], self.w)        
 
         # turbine RNA description
         self.mRNA    = design['turbine']['mRNA']
@@ -77,6 +103,9 @@ class FOWT():
         self.xCG_RNA = design['turbine']['xCG_RNA']
         self.hHub    = design['turbine']['hHub']
 
+        # initialize mean force arrays to zero, so the model can work before we calculate excitation
+        self.F_aero0 = np.zeros(6)
+        # mean weight and hydro force arrays are set elsewhere. In future hydro could include current.
 
         # initialize BEM arrays, whether or not a BEM sovler is used
         self.A_BEM = np.zeros([6,6,self.nw], dtype=float)                 # hydrodynamic added mass matrix [kg, kg-m, kg-m^2]
@@ -84,9 +113,11 @@ class FOWT():
         self.F_BEM = np.zeros([6,  self.nw], dtype=complex)               # linaer wave excitation force/moment complex amplitudes vector [N, N-m]
 
 
-
+    """
     def setEnv(self, Hs=8, Tp=12, spectrum='unit', V=10, beta=0, Fthrust=0):
         '''For now, this is where the environmental conditions acting on the FOWT are set.'''
+
+        print(NoLongerUsed)
 
         # ------- Wind conditions
         #Fthrust = 800e3  # peak thrust force, [N]
@@ -117,15 +148,15 @@ class FOWT():
 
         # add thrust force and moment to mooring system body
         self.body.f6Ext = Fthrust*np.array([np.cos(beta),np.sin(beta),0,-self.hHub*np.sin(beta), self.hHub*np.cos(beta), 0])
-
+    """
 
 
     def calcStatics(self):
         '''Fills in the static quantities of the FOWT and its matrices.
         Also adds some dynamic parameters that are constant, e.g. BEM coefficients and steady thrust loads.'''
 
-        rho = self.env.rho
-        g   = self.env.g
+        rho = self.rho_water
+        g   = self.g
 
         # structure-related arrays
         self.M_struc = np.zeros([6,6])                # structure/static mass/inertia matrix [kg, kg-m, kg-m^2]
@@ -136,7 +167,7 @@ class FOWT():
 
         # hydrostatic arrays
         self.C_hydro = np.zeros([6,6])                # hydrostatic stiffness matrix [N/m, N, N-m]
-        self.W_hydro = np.zeros(6)                    # buoyancy force/moment vector [N, N-m]
+        self.W_hydro = np.zeros(6)                    # buoyancy force/moment vector [N, N-m]  <<<<< not used yet
 
 
         # --------------- add in linear hydrodynamic coefficients here if applicable --------------------
@@ -177,7 +208,7 @@ class FOWT():
 
 
             # Calculate the mass matrix of the FOWT about the PRP
-            self.W_struc += translateForce3to6DOF( center, np.array([0,0, -g*mass]) )  # weight vector
+            self.W_struc += translateForce3to6DOF( np.array([0,0, -g*mass]), center )  # weight vector
             self.M_struc += mem.M_struc     # mass/inertia matrix about the PRP
 
             Sum_M_center += center*mass     # product sum of the mass and center of mass to find the total center of mass [kg-m]
@@ -205,11 +236,11 @@ class FOWT():
 
             # -------------------- get each member's buoyancy/hydrostatic properties -----------------------
 
-            Fvec, Cmat, V_UW, r_CB, AWP, IWP, xWP, yWP = mem.getHydrostatics(self.env)  # call to Member method for hydrostatic calculations
-
+            Fvec, Cmat, V_UW, r_CB, AWP, IWP, xWP, yWP = mem.getHydrostatics(self.rho_water, self.g)  # call to Member method for hydrostatic calculations
+            
             # now convert everything to be about PRP (platform reference point) and add to global vectors/matrices <<<<< needs updating (already about PRP)
-            self.W_hydro += Fvec # translateForce3to6DOF( mem.rA, np.array([0,0, Fz]) )  # weight vector
-            self.C_hydro += Cmat # translateMatrix6to6DOF(mem.rA, Cmat)                       # hydrostatic stiffness matrix
+            self.W_hydro += Fvec # translateForce3to6DOF( np.array([0,0, Fz]), mem.rA )  # buoyancy vector
+            self.C_hydro += Cmat # translateMatrix6to6DOF(Cmat, mem.rA)                       # hydrostatic stiffness matrix
 
             VTOT    += V_UW    # add to total underwater volume of all members combined
             AWP_TOT += AWP
@@ -234,8 +265,8 @@ class FOWT():
         center = np.array([self.xCG_RNA, 0, self.hHub])                                 # RNA center of mass location
 
         # now convert everything to be about PRP (platform reference point) and add to global vectors/matrices
-        self.W_struc += translateForce3to6DOF( center, np.array([0,0, -g*self.mRNA]) )  # weight vector
-        self.M_struc += translateMatrix6to6DOF(center, Mmat)                       # mass/inertia matrix
+        self.W_struc += translateForce3to6DOF(np.array([0,0, -g*self.mRNA]), center )   # weight vector
+        self.M_struc += translateMatrix6to6DOF(Mmat, center)                            # mass/inertia matrix
         Sum_M_center += center*self.mRNA
 
 
@@ -247,7 +278,7 @@ class FOWT():
 
         self.rCG_sub = msubstruc_sum/self.msubstruc     # solve for just the substructure mass and CG
         
-        self.M_struc_subCM = translateMatrix6to6DOF(-self.rCG_sub, self.M_struc_subPRP) # the mass matrix of the substructure about the substruc's CM
+        self.M_struc_subCM = translateMatrix6to6DOF(self.M_struc_subPRP, -self.rCG_sub) # the mass matrix of the substructure about the substruc's CM
         # need to make rCG_sub negative here because tM6to6DOF takes a vector that goes from where you want the ref point to be (CM) to the currently ref point (PRP)
         
         '''
@@ -302,6 +333,7 @@ class FOWT():
         self.C_struc_sub[4,4] = -self.msubstruc*g*self.rCG_sub[2]
 
         # add relevant properties to this turbine's MoorPy Body
+        # >>> should double check proper handling of mean weight and buoyancy forces throughout model <<<
         self.body.m = mTOT
         self.body.v = VTOT
         self.body.rCG = rCG_TOT
@@ -315,8 +347,8 @@ class FOWT():
         '''This generates a mesh for the platform and runs a BEM analysis on it.
         The mesh is only for non-interesecting members flagged with potMod=1.'''
         
-        rho = self.env.rho
-        g   = self.env.g
+        rho = self.rho_water
+        g   = self.g
 
         # desired panel size (longitudinal and azimuthal)
         dz = 3
@@ -381,21 +413,73 @@ class FOWT():
             #fExMod, fExPhase, fExReal, fExImag = ph.read_wamit3('C:\\Code\\RAFT\\raft\\BEM\\Output\\Wamit_format\\Buoy.3')
             
             # copy results over to the FOWT's coefficient arrays
-            self.A_BEM = self.env.rho * addedMass
-            self.B_BEM = self.env.rho * damping
-            self.X_BEM = self.env.rho * self.env.g * (fExReal + 1j*fExImag)  # linear wave excitation coefficients
+            self.A_BEM = self.rho_water * addedMass
+            self.B_BEM = self.rho_water * damping
+            self.X_BEM = self.rho_water * self.g * (fExReal + 1j*fExImag)  # linear wave excitation coefficients
             self.F_BEM = self.X_BEM * self.zeta     # wave excitation force
             self.w_BEM = w_HAMS
 
             # >>> do we want to seperate out infinite-frequency added mass? <<<
             
-            
+    
+    def calcTurbineConstants(self, case, ptfm_pitch=0):
+        '''This computes turbine linear terms
+        
+        case
+            dictionary of case information
+        ptfm_pitch
+            mean pitch angle of the platform [rad]
+        
+        '''
+        
+        #self.rotor.runCCBlade(case['wind_speed'], ptfm_pitch=ptfm_pitch, yaw_misalign=case['yaw_misalign'])
+        
+        
+        #A_aero, B_aero, C_aero, F_aero0, F_aero = self.rotor.calcAeroContributions(case )
+        A_aero, B_aero, C_aero, F_aero0, F_aero, _, _ = self.rotor.calcAeroServoContributions(case, ptfm_pitch=ptfm_pitch)
+        
+        # hub reference frame relative to PRP <<<<<<<<<<<<<<<<<
+        rHub = np.array([0,0,100.])
+        rotMatHub = rotationMatrix(0, 0.01, 0)
+        
+        # convert matrices to platform reference frame
+        self.A_aero = np.zeros([6,6,self.nw])
+        self.B_aero = np.zeros([6,6,self.nw])
+        for i in range(self.nw):
+            self.A_aero[:,:,i] = translateMatrix6to6DOF( rotateMatrix6(A_aero[:,:,i], rotMatHub),  rHub)
+            self.B_aero[:,:,i] = translateMatrix6to6DOF( rotateMatrix6(B_aero[:,:,i], rotMatHub),  rHub)
+        self.C_aero = translateMatrix6to6DOF( rotateMatrix6(C_aero, rotMatHub),  rHub)
+        
+        # convert forces to platform reference frame
+        self.F_aero0 = transformForce(F_aero0, offset=rHub, orientation=rotMatHub)
+        self.F_aero  = np.zeros(F_aero.shape)
+        for iw in range(self.nw):
+            self.F_aero[:,iw] = transformForce(F_aero[:,iw], offset=rHub, orientation=rotMatHub)
+    
 
-    def calcHydroConstants(self):
-        '''This computes the linear strip-theory-hydrodynamics terms.'''
+    def calcHydroConstants(self, case):
+        '''This computes the linear strip-theory-hydrodynamics terms, including wave excitation for a specific case.'''
 
-        rho = self.env.rho
-        g   = self.env.g
+        # set up sea state
+        
+        self.beta = case['wave_heading']
+
+        # make wave spectrum
+        if case['wave_spectrum'] == 'unit':
+            self.zeta = np.tile(1, self.nw)
+        elif case['wave_spectrum'] == 'JONSWAP':
+            S = JONSWAP(self.w, case['wave_height'], case['wave_period'])        
+            self.zeta = np.sqrt(S)    # wave elevation amplitudes (these are easiest to use)
+        elif case['wave_spectrum'] in ['none','still']:
+            self.zeta = np.zeros(self.nw)        
+        else:
+            raise ValueError(f"Wave spectrum input '{case['wave_spectrum']}' not recognized.")
+        
+        rho = self.rho_water
+        g   = self.g
+
+        # >>> what about current? <<<
+        # >>> could we also calculate mean viscous drift force here?? <<<
 
         # --------------------- get constant hydrodynamic values along each member -----------------------------
 
@@ -414,7 +498,7 @@ class FOWT():
                 if mem.r[il,2] < 0:
 
                     # get wave kinematics spectra given a certain wave spectrum and location
-                    mem.u[il,:,:], mem.ud[il,:,:], mem.pDyn[il,:] = getWaveKin(self.zeta, self.w, self.k, self.depth, mem.r[il,:], self.nw)
+                    mem.u[il,:,:], mem.ud[il,:,:], mem.pDyn[il,:] = getWaveKin(self.zeta, self.beta, self.w, self.k, self.depth, mem.r[il,:], self.nw)
 
                     # only compute inertial loads and added mass for members that aren't modeled with potential flow
                     if mem.potMod==False:
@@ -440,7 +524,7 @@ class FOWT():
                         # added mass
                         Amat = rho*v_i *( Ca_q*mem.qMat + Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
 
-                        self.A_hydro_morison += translateMatrix3to6DOF(mem.r[il,:], Amat)    # add to global added mass matrix for Morison members
+                        self.A_hydro_morison += translateMatrix3to6DOF(Amat, mem.r[il,:])    # add to global added mass matrix for Morison members
                         
                         # inertial excitation - Froude-Krylov  (axial term explicitly excluded here - we aren't dealing with chains)
                         Imat = rho*v_i *(  (1.+Ca_p1)*mem.p1Mat + (1.+Ca_p2)*mem.p2Mat ) # local inertial excitation matrix
@@ -450,7 +534,7 @@ class FOWT():
 
                             mem.F_exc_iner[il,:,i] = np.matmul(Imat, mem.ud[il,:,i])         # add to global excitation vector (frequency dependent)
 
-                            self.F_hydro_iner[:,i] += translateForce3to6DOF( mem.r[il,:], mem.F_exc_iner[il,:,i])  # add to global excitation vector (frequency dependent)
+                            self.F_hydro_iner[:,i] += translateForce3to6DOF(mem.F_exc_iner[il,:,i], mem.r[il,:])  # add to global excitation vector (frequency dependent)
 
 
                         # ----- add axial/end effects for added mass, and excitation including dynamic pressure ------
@@ -467,7 +551,7 @@ class FOWT():
                         # added mass
                         AmatE = rho*v_i * Ca_End*mem.qMat                             # local added mass matrix
 
-                        self.A_hydro_morison += translateMatrix3to6DOF(mem.r[il,:],AmatE) # add to global added mass matrix for Morison members
+                        self.A_hydro_morison += translateMatrix3to6DOF(AmatE, mem.r[il,:]) # add to global added mass matrix for Morison members
                         
                         # inertial excitation
                         ImatE = rho*v_i * (1+Ca_End)*mem.qMat                         # local inertial excitation matrix
@@ -480,7 +564,7 @@ class FOWT():
 
                             mem.F_exc_iner[il,:,i] += F_exc_iner_temp                    # add to stored member force vector
 
-                            self.F_hydro_iner[:,i] += translateForce3to6DOF( mem.r[il,:], F_exc_iner_temp) # add to global excitation vector (frequency dependent)
+                            self.F_hydro_iner[:,i] += translateForce3to6DOF(F_exc_iner_temp, mem.r[il,:]) # add to global excitation vector (frequency dependent)
 
 
 
@@ -492,8 +576,8 @@ class FOWT():
 
         '''
 
-        rho = self.env.rho
-        g   = self.env.g
+        rho = self.rho_water
+        g   = self.g
 
         # The linearized coefficients to be calculated
 
@@ -551,13 +635,13 @@ class FOWT():
 
                     Bmat = Bprime_q*mem.qMat + Bprime_p1*mem.p1Mat + Bprime_p2*mem.p2Mat # damping matrix for the node based on linearized drag coefficients
 
-                    B_hydro_drag += translateMatrix3to6DOF(mem.r[il,:], Bmat)            # add to global damping matrix for Morison members
+                    B_hydro_drag += translateMatrix3to6DOF(Bmat, mem.r[il,:])            # add to global damping matrix for Morison members
 
                     for i in range(self.nw):
 
                         mem.F_exc_drag[il,:,i] = np.matmul(Bmat, mem.u[il,:,i])          # get local 3d drag excitation force complex amplitude for each frequency [3 x nw]
 
-                        F_hydro_drag[:,i] += translateForce3to6DOF( mem.r[il,:], mem.F_exc_drag[il,:,i])   # add to global excitation vector (frequency dependent)
+                        F_hydro_drag[:,i] += translateForce3to6DOF(mem.F_exc_drag[il,:,i], mem.r[il,:])   # add to global excitation vector (frequency dependent)
 
 
                     # ----- add end/axial effects for added mass, and excitation including dynamic pressure ------
@@ -573,7 +657,7 @@ class FOWT():
 
                     Bmat = Bprime_End*mem.qMat                                       #
 
-                    B_hydro_drag += translateMatrix3to6DOF(mem.r[il,:], Bmat)        # add to global damping matrix for Morison members
+                    B_hydro_drag += translateMatrix3to6DOF(Bmat, mem.r[il,:])        # add to global damping matrix for Morison members
 
                     for i in range(self.nw):                                         # for each wave frequency...
 
@@ -581,7 +665,7 @@ class FOWT():
 
                         mem.F_exc_drag[il,:,i] += F_exc_drag_temp                    # add to stored member force vector
 
-                        F_hydro_drag[:,i] += translateForce3to6DOF( mem.r[il,:], F_exc_drag_temp) # add to global excitation vector (frequency dependent)
+                        F_hydro_drag[:,i] += translateForce3to6DOF(F_exc_drag_temp, mem.r[il,:]) # add to global excitation vector (frequency dependent)
 
 
         # save the arrays internally in case there's ever a need for the FOWT to solve it's own latest dynamics
@@ -595,13 +679,14 @@ class FOWT():
     def plot(self, ax):
         '''plots the FOWT...'''
 
+        self.rotor.plot(ax, r_ptfm=self.body.r6[:3], R_ptfm=self.body.R)
 
         # loop through each member and plot it
         for mem in self.memberList:
 
             mem.calcOrientation()  # temporary
 
-            mem.plot(ax)
+            mem.plot(ax, r_ptfm=self.body.r6[:3], R_ptfm=self.body.R)
 
         # in future should consider ability to animate mode shapes and also to animate response at each frequency
         # including hydro excitation vectors stored in each member
