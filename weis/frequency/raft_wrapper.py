@@ -183,7 +183,11 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
-        self.add_discrete_output('raft_dlcs', val=[[]]*opt['DLC_driver']['n_cases'], desc='DLC case table for RAFT')
+        self.add_discrete_output('raft_dlcs', val=[[]]*opt['DLC_driver']['n_cases'], desc='DLC case table for RAFT with each row a new case and headings described by the keys')
+        self.add_discrete_output('raft_dlcs_keys', val=['wind_speed', 'wind_heading', 'turbulence',
+                                                        'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                                        'wave_period', 'wave_height', 'wave_heading'],
+                                 desc='DLC case table column headings')
 
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -298,4 +302,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                              max(1.0, icase.wave_height),
                              icase.wave_heading]
         discrete_outputs['raft_dlcs'] = raft_cases
+        discrete_outputs['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
+                                              'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                              'wave_period', 'wave_height', 'wave_heading']
         
