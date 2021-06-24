@@ -8,14 +8,19 @@ class DLCInstance(object):
     
     def __init__(self, options=None):
         # Set default DLC with empty properties
+        self.URef = 0.0
         self.wind_heading = 0.0
         self.yaw_misalign = 0.0
+        self.wave_height = 0.0
+        self.wave_period = 0.0
+        self.wave_heading = 0.0
         self.turbine_status = ''
         self.wave_spectrum = ''
         self.turbulent_wind = False
         self.direction_pn = '' # Positive (p) or negative (n), used for ECD
         self.shear_hv = '' # Horizontal (h) or vertical (v), used for EWS
         self.sigma1 = '' # Standard deviation of the wind
+        self.RandSeed1 = 0
         self.label = '' # For 1.1/Custom
 
         if not options is None:
