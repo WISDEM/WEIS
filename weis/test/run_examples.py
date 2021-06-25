@@ -6,19 +6,16 @@ from weis.test.utils import run_all_scripts
 
 # 02_ref turbines are regression tested in test_gluecode, no need to duplicate runtime
 all_scripts = [
-    "01_aeroelasticse/run_DLC",
     "01_aeroelasticse/run_general",
-    # "01_aeroelasticse/run_mass_sweep",
+    "01_aeroelasticse/run_mass_sweep",
+    "01_aeroelasticse/run_PC_sweep",
     "01_aeroelasticse/run_OLAF",
-    "01_aeroelasticse/run_iec_turbsim",
-    # "01_aeroelasticse/run_PC_sweep",
-    # "01_aeroelasticse/run_stability_analysis",
     
     # "02_control_opt/run_lin_turbine",
     # "02_control_opt/runOptimization",
     
     "03_NREL5MW_OC3_spar/weis_driver",
-    # "03_NREL5MW_OC3_spar/weis_freq_driver",
+    "03_NREL5MW_OC3_spar/weis_freq_driver",
     
     "04_NREL5MW_OC4_semi/weis_driver",
     "04_NREL5MW_OC4_semi/weis_freq_driver",
