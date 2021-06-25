@@ -1,0 +1,27 @@
+# Gitignore
+~$README.docx
+ControllerSchematic.pptx
+
+# Compiled code, unnecessary for git
+Source/Obj_win32
+Source/Obj_lin64
+*.mod
+Source/x64/
+Source/Release/
+*build*
+Makefile
+*install*
+
+# Archive
+Scripts/CompileDISCONHereCopyRun\.cmd
+\.vs/
+
+# Temp Files
+*~
+.DS_Store
+*.u2d
+*.i90
+*.swp
+
+# vs code
+.vscode
