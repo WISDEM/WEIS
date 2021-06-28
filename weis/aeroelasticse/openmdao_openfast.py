@@ -1193,22 +1193,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Outputs'] = ['-'] * n_lines
             fst_vt['MoorDyn']['CtrlChan'] = np.zeros(n_lines, dtype=np.int64)
             
-            # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
-            fst_vt['MoorDyn']['CB'] = 1.0
-            fst_vt['MoorDyn']['CIntDamp'] = 0
-            fst_vt['MoorDyn']['Ca'] = 0
-            fst_vt['MoorDyn']['Cdn'] = 0
-            fst_vt['MoorDyn']['Cdt'] = 0
-            fst_vt['MoorDyn']['B'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['Option'] = ["outer_tol 1e-5", "repeat 120 240"]
-            
-            
-            
             for k in range(n_lines):
                 id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
                 id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
                 if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
-                'fix' in fst_vt['MoorDyn']['Type'][id2].lower()):
+                    'fix' in fst_vt['MoorDyn']['Type'][id2].lower()):
                     fst_vt['MoorDyn']['NodeFair'][k] = id1+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
                 if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
@@ -1224,6 +1213,19 @@ class FASTLoadCases(ExplicitComponent):
                     print(mooropt["node1"][k], mooropt["node2"][k])
                     print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
                     raise ValueError('Mooring line seems to be between unknown endpoint types.')
+                    
+            for key in fst_vt['MoorDyn']:
+                print(key)
+                fst_vt['MAP'][key] = fst_vt['MoorDyn']
+            
+            # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
+            fst_vt['MoorDyn']['CB'] = 1.0
+            fst_vt['MoorDyn']['CIntDamp'] = 0
+            fst_vt['MoorDyn']['Ca'] = 0
+            fst_vt['MoorDyn']['Cdn'] = 0
+            fst_vt['MoorDyn']['Cdt'] = 0
+            fst_vt['MoorDyn']['B'] = np.zeros( n_nodes )
+            fst_vt['MoorDyn']['Option'] = ["outer_tol 1e-5", "repeat 120 240"]
             
         return fst_vt
 
