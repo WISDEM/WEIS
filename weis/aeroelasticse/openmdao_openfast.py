@@ -1208,22 +1208,22 @@ class FASTLoadCases(ExplicitComponent):
                 id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
                 id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
                 if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
+                'fix' in fst_vt['MoorDyn']['Type'][id2].lower()):
                     fst_vt['MoorDyn']['NodeFair'][k] = id1+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
                 if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
+                    'fix' in fst_vt['MoorDyn']['Type'][id1].lower()):
                     fst_vt['MoorDyn']['NodeFair'][k] = id2+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
                 if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
+                    'fix' in fst_vt['MoorDyn']['Type'][id1].lower()):
                     fst_vt['MoorDyn']['NodeFair'][k] = id2+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
                 else:
                     print(discrete_inputs['node_names'])
                     print(mooropt["node1"][k], mooropt["node2"][k])
                     print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
-                    raise ValueError('Mooring line seems to be between unknown endpoint types?')
+                    raise ValueError('Mooring line seems to be between unknown endpoint types.')
             
         return fst_vt
 
