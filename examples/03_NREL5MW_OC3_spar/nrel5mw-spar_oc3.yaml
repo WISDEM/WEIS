@@ -405,10 +405,7 @@ components:
         line_types:
             - name: main
               diameter: 0.09
-              mass_density: 77.7066
-              stiffness: 384.243e6
-              breaking_load: 1e8
-              cost: 100.0
+              type: chain
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
               transverse_drag: 1.6
@@ -416,10 +413,7 @@ components:
 
         anchor_types:
             - name: drag_embedment
-              mass: 1e3
-              cost: 1e4
-              max_vertical_load: 0.0
-              max_lateral_load: 1e5
+              type: drag_embedment
 
 airfoils:
    -  aerodynamic_center: 0.275
@@ -741,8 +735,8 @@ environment:
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
     water_depth: 320.0
-    significant_wave_height: 6
-    significant_wave_period: 10
+    significant_wave_height: 6.0
+    significant_wave_period: 10.0
     soil_shear_modulus: 140.e+6
     soil_poisson: 0.4
 
