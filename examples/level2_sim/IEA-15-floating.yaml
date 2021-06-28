@@ -743,6 +743,7 @@ components:
               stiffness: 3270e6
               breaking_load: 1e8
               cost: 100.0
+              type: custom
               transverse_added_mass: 1.0
               tangential_added_mass: 0.0
               transverse_drag: 1.6
@@ -752,6 +753,7 @@ components:
             - name: drag_embedment
               mass: 1e3
               cost: 1e4
+              type: drag_embedment
               max_vertical_load: 0.0
               max_lateral_load: 1e5
 
