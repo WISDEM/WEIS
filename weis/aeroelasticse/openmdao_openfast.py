@@ -1528,7 +1528,9 @@ class FASTLoadCases(ExplicitComponent):
         # Analysis
         outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
-        if self.options['modeling_options']['flags']['monopile']:
+
+        # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
+        if self.options['modeling_options']['flags']['monopile'] and self.options['modeling_options']['Level3']['flag']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
