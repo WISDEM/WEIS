@@ -1215,17 +1215,16 @@ class FASTLoadCases(ExplicitComponent):
                     raise ValueError('Mooring line seems to be between unknown endpoint types.')
                     
             for key in fst_vt['MoorDyn']:
-                print(key)
-                fst_vt['MAP'][key] = fst_vt['MoorDyn']
+                fst_vt['MAP'][key] = fst_vt['MoorDyn'][key]
             
             # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
-            fst_vt['MoorDyn']['CB'] = 1.0
-            fst_vt['MoorDyn']['CIntDamp'] = 0
-            fst_vt['MoorDyn']['Ca'] = 0
-            fst_vt['MoorDyn']['Cdn'] = 0
-            fst_vt['MoorDyn']['Cdt'] = 0
-            fst_vt['MoorDyn']['B'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['Option'] = ["outer_tol 1e-5", "repeat 120 240"]
+            fst_vt['MAP']['CB'] = 1.0
+            fst_vt['MAP']['CIntDamp'] = 0
+            fst_vt['MAP']['Ca'] = 0
+            fst_vt['MAP']['Cdn'] = 0
+            fst_vt['MAP']['Cdt'] = 0
+            fst_vt['MAP']['B'] = np.zeros( n_nodes )
+            fst_vt['MAP']['Option'] = ["outer_tol 1e-5", "repeat 120 240"]
             
         return fst_vt
 
