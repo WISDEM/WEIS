@@ -1215,7 +1215,7 @@ class FASTLoadCases(ExplicitComponent):
                     raise ValueError('Mooring line seems to be between unknown endpoint types.')
                     
             for key in fst_vt['MoorDyn']:
-                fst_vt['MAP'][key] = fst_vt['MoorDyn'][key]
+                fst_vt['MAP'][key] = copy.copy(fst_vt['MoorDyn'][key])
                 
             fst_vt['MAP']['LineType'] = ['main', 'main', 'main']
             
