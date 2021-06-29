@@ -5,11 +5,23 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 
-from scipy.interpolate import PchipInterpolator
+import pandas as pd
 
-from raft.helpers import rotationMatrix
+
+from raft.pyIECWind         import pyIECWind_extreme
+
+from scipy.interpolate      import PchipInterpolator
+from scipy.special          import modstruve, iv
+
+
+from helpers                import deg2rad, rotationMatrix
 
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
+
+import pickle
+
+if False:
+    thrust_psd = pickle.load( open( "/Users/dzalkind/Tools/RAFT/designs/rotors/thrust_psd.p", "rb" ) )
 
 '''
 try:
@@ -37,6 +49,7 @@ class Rotor:
         self.Zhub       = turbine['Zhub']           # [m]
         self.shaft_tilt = turbine['shaft_tilt']     # [deg]        
         self.overhang   = turbine['overhang'] 
+        self.R_rot      = turbine['blade']['Rtip']  # rotor radius [m]
         #yaw  = 0        
 
         # Set some turbine params, this can come from WEIS/WISDEM or an external input
@@ -390,6 +403,7 @@ class Rotor:
         C   = np.zeros_like(self.w,dtype=np.complex_)
         C2  = np.zeros_like(self.w,dtype=np.complex_)
         D   = np.zeros_like(self.w,dtype=np.complex_)
+        E   = np.zeros_like(self.w,dtype=np.complex_)
 
         # Roots of characteristic equation, helps w/ debugging
         p = np.array([-self.I_drivetrain, (dQ_dOm + kp_U * dQ_dPi - self.Ng * kp_tau), ki_U* dQ_dPi - self.Ng * ki_tau])
@@ -403,11 +417,14 @@ class Rotor:
             # control transfer function
             C[iw] = 1j * omega * (dQ_dU - self.k_float * dQ_dPi / self.Zhub) / D[iw]
 
+            # Thrust transfer function
+            E[iw] = ((dT_dOm + kp_U * dT_dPi) * 1j * omega + ki_U * dT_dPi )
+
             # alternative for debugging
             C2[iw] = C[iw] / (1j * omega)
 
             # Complex aero damping
-            T = 1j * omega * (dT_dU - self.k_float * dT_dPi / self.Zhub) - (((dT_dOm + kp_U * dT_dPi) * 1j * omega + ki_U * dT_dPi ) * C[iw])
+            T = 1j * omega * (dT_dU - self.k_float * dT_dPi / self.Zhub) - ( E[iw] * C[iw])
 
             # Aerodynamic coefficients
             a_aer[iw] = -(1/omega**2) * np.real(T)
@@ -427,9 +444,40 @@ class Rotor:
                 
         # calculate steady aero forces and moments
         F_aero0 = np.array([loads["T" ][0], loads["Y"  ][0], loads["Z"  ][0],
-                            loads["Q" ][0], loads["My" ][0], loads["Mz" ][0] ])
+                            loads["My" ][0], loads["Q" ][0], loads["Mz" ][0] ])
                             
         # calculate wind excitation force/moment spectra
+        _,_,_,S_rot = self.IECKaimal(case)
+
+        V_w = np.sqrt(S_rot)
+        T_0 = loads["T" ][0]
+        T_w1 = dT_dU * V_w
+        T_w2 = (E * C * V_w) / (1j * self.w)
+
+        T_ext = T_w1 + T_w2
+
+        # print('here')
+        if False:
+            plt.plot(self.w, V_w, label = 'S_rot')
+            plt.yscale('log')
+            plt.xscale('log')
+
+            plt.xlim([1e-2,10])
+            plt.grid('True')
+
+            plt.xlabel('Freq. (Hz)')
+            plt.ylabel('PSD')
+
+
+            plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)
+            plt.plot(self.w, np.abs(T_ext))
+            # plt.plot(self.w, abs(T_w2))
+
+            plt.show()
+
+
+
+
         #for i in range(nw):                             # loop through each frequency component
         #    F_aero[0,i] = U_amplitude[i]*dT_dU             # surge excitation
         #    F_aero[4,i] = U_amplitude[i]*dT_dU*Zhub        # pitch excitation
@@ -483,8 +531,8 @@ class Rotor:
             P2 = np.matmul(R_ptfm, P2) + np.array(r_ptfm)[:,None]
           
             # drawing airfoils                            
-            for ii in range(m-1):
-                ax.plot(P2[0, npts*ii:npts*(ii+1)], P2[1, npts*ii:npts*(ii+1)], P2[2, npts*ii:npts*(ii+1)])  
+            #for ii in range(m-1):
+            #    ax.plot(P2[0, npts*ii:npts*(ii+1)], P2[1, npts*ii:npts*(ii+1)], P2[2, npts*ii:npts*(ii+1)])  
             # draw outline
             ax.plot(P2[0, 0:-1:npts], P2[1, 0:-1:npts], P2[2, 0:-1:npts], 'k') # leading edge  
             ax.plot(P2[0, 2:-1:npts], P2[1, 2:-1:npts], P2[2, 2:-1:npts], 'k')  # trailing edge
@@ -495,6 +543,93 @@ class Rotor:
         #
         #return linebit
         
+    def IECKaimal(self, case):        # 
+        # Set inputs (f, V_ref, HH, Class, Categ, TurbMod, R)
+        f = self.w / 2 / np.pi    # frequency in Hz
+        HH = self.Zhub
+        R = self.R_rot
+        V_ref = case['wind_speed']
+        
+        ###### Initialize IEC Wind parameters #######
+        iec_wind = pyIECWind_extreme()
+        iec_wind.z_hub = HH
+        
+        if isinstance(case['turbulence'],str):
+            # If a string, the options are I, II, III, IV
+            Class = ''
+            for char in case['turbulence']:
+                if char == 'I' or char == 'V':
+                    Class += char
+                else:
+                    break
+            
+            if not Class:
+                raise Exception("Turbulence class must start with I, II, III, or IV, while you wrote " + case['turbulence'])
+            else:
+                Categ = char
+                iec_wind.Turbulence_Class = Categ
+
+            try:
+                TurbMod = case['turbulence'].split('_')[1]
+            except:
+                raise Exception("Error reading the turbulence model. You wrote " + case['turbulence'])
+
+            iec_wind.Turbine_Class = Class
+        
+        # set things up (use default values if not specified in the above)
+        iec_wind.setup()
+        
+        # Can set iec_wind.I_ref here if wanted, NTM used then
+        if isinstance(case['turbulence'],float):
+            iec_wind.I_ref = case['turbulence']    # this overwrites the value set in setup method
+            TurbMod = 'NTM'
+
+        # Compute wind turbulence standard deviation (invariant with height)
+        if TurbMod == 'NTM':
+            sigma_1 = iec_wind.NTM(V_ref)
+        elif TurbMod == 'ETM':
+            sigma_1 = iec_wind.ETM(V_ref)
+        elif TurbMod == 'EWM':
+            sigma_1 = iec_wind.EWM(V_ref)
+        else:
+            raise Exception("Wind model must be either NTM, ETM, or EWM. While you wrote " + TurbMod)
+
+        # Compute turbulence scale parameter Annex C3 of IEC 61400-1-2019
+        # Longitudinal
+        if HH <= 60:
+            L_1 = .7 * HH
+        else:
+            L_1 = 42.
+        sigma_u = sigma_1
+        L_u = 8.1 * L_1
+        # Lateral
+        sigma_v =  0.8 * sigma_1
+        L_v = 2.7 * L_1 
+        # Upward
+        sigma_w =  0.5 * sigma_1
+        L_w = 0.66 * L_1 
+
+        U = (4*L_u/V_ref)*sigma_u**2/((1+6*f*L_u/V_ref)**(5./3.))
+        V = (4*L_v/V_ref)*sigma_v**2/((1+6*f*L_v/V_ref)**(5./3.))
+        W = (4*L_w/V_ref)*sigma_w**2/((1+6*f*L_w/V_ref)**(5./3.))
+
+        kappa = 12 * np.sqrt((f/V_ref)**2 + (0.12 / L_u)**2)
+
+        Rot = (2*U / (R * kappa)**3) * \
+            (modstruve(1,2*R*kappa) - iv(1,2*R*kappa) - 2/np.pi + \
+                R*kappa * (-2 * modstruve(-2,2*R*kappa) + 2 * iv(2,2*R*kappa) + 1) )
+
+        # set NaNs to 0
+        Rot[np.isnan(Rot)] = 0
+        
+        # Formulas from Section 6.3 of IEC 61400-1-2019
+        # S_1_f = 0.05 * sigma_1**2. * (L_1 / V_hub) ** (-2./3.) * f **(-5./3)
+        # S_2_f = S_3_f = 4. / 3. * S_1_f
+        # sigma_k = np.sqrt(np.trapz(S_1_f, f))
+        # print(sigma_k)
+        # print(sigma_u)
+
+        return U, V, W, Rot
 
 if __name__=='__main__':
     fname_design = os.path.join(raft_dir,'designs/VolturnUS-S.yaml')
@@ -510,48 +645,68 @@ if __name__=='__main__':
     design['turbine']['mu_air'  ] = design['site']['mu_air']
     design['turbine']['shearExp'] = design['site']['shearExp']
 
+    # Set up thrust verification cases
+    print('here')
+    UU = [8,12,16]
+    for i_case in range(len(UU)):
+        design['cases']['data'][i_case][0] = UU[i_case]     # wind speed
+        design['cases']['data'][i_case][1] = 0   # wind heading
+        design['cases']['data'][i_case][2] = 'IB_NTM'    # turbulence
+        design['cases']['data'][i_case][3] = 'operating'    # turbulence
+        design['cases']['data'][i_case][4] = 0    # turbulence
+        design['cases']['data'][i_case][5] = 'JONSWAP'    # turbulence
+        design['cases']['data'][i_case][6] = 8    # turbulence
+        design['cases']['data'][i_case][7] = 2    # turbulence
+        design['cases']['data'][i_case][8] = 0    # turbulence
+
+
     rr = Rotor(design['turbine'],np.linspace(0.05,3)) #, old=True)
     # rr.runCCBlade()
     # rr.setControlGains(design['turbine'])  << now called in Rotor init
 
-    # loop through each case
-    nCases = len(design['cases']['data'])
-    for iCase in range(nCases):
-    
-        print("  Running case")
-        print(design['cases']['data'][iCase])
-    
-        # form dictionary of case parameters
-        case = dict(zip( design['cases']['keys'], design['cases']['data'][iCase]))   
 
-        rr.calcAeroServoContributions(case)
+    if True:
 
-    UU = np.linspace(14,24)
-    a_aer_U = np.zeros_like(UU)
-    b_aer_U = np.zeros_like(UU)
+        # loop through each case
+        nCases = len(design['cases']['data'])
+        for iCase in range(nCases):
+        
+            print("  Running case")
+            print(design['cases']['data'][iCase])
+        
+            # form dictionary of case parameters
+            case = dict(zip( design['cases']['keys'], design['cases']['data'][iCase]))   
 
-    for iU, Uinf in enumerate(UU):
-        # rr.V = Uinf
-        case['wind_speed'] = Uinf
-        _,_,_,_,_, a_aer, b_aer = rr.calcAeroServoContributions(case)
+            rr.calcAeroServoContributions(case)
 
-        a_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, a_aer)
-        b_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, b_aer)
+    if True:
+
+        UU = np.linspace(4,24)
+        a_aer_U = np.zeros_like(UU)
+        b_aer_U = np.zeros_like(UU)
+
+        for iU, Uinf in enumerate(UU):
+            # rr.V = Uinf
+            case['wind_speed'] = Uinf
+            _,_,_,_,_, a_aer, b_aer = rr.calcAeroServoContributions(case)
+
+            a_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, a_aer)
+            b_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, b_aer)
 
 
-    import matplotlib.pyplot as plt
-    fig1, ax1 = plt.subplots(2,1)
+        import matplotlib.pyplot as plt
+        fig1, ax1 = plt.subplots(2,1)
 
 
-    ax1[0].plot(UU,a_aer_U)
-    ax1[0].set_ylabel('a_aer @ 30 sec.')
-    ax1[0].grid(True)
+        ax1[0].plot(UU,a_aer_U)
+        ax1[0].set_ylabel('a_aer @ 30 sec.')
+        ax1[0].grid(True)
 
-    ax1[1].plot(UU,b_aer_U)
-    ax1[1].set_ylabel('b_aer @ 30 sec.')
-    ax1[1].grid(True)
+        ax1[1].plot(UU,b_aer_U)
+        ax1[1].set_ylabel('b_aer @ 30 sec.')
+        ax1[1].grid(True)
 
-    ax1[1].set_xlabel('U (m/s)')
+        ax1[1].set_xlabel('U (m/s)')
 
     plt.show()
 
