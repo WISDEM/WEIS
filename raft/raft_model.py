@@ -6,19 +6,10 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 import moorpy as mp
-import pyhams.pyhams     as ph
-import raft.member2pnl as pnl
 import raft.raft_fowt  as fowt
 from raft.helpers import *
 
 #import F6T1RNA as structural    # import turbine structural model functions
-
-# reload the libraries each time in case we make any changes
-from importlib import reload
-mp     = reload(mp)
-ph     = reload(ph)
-pnl    = reload(pnl)
-FOWT   = reload(fowt).FOWT
 
 raft_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -67,7 +58,7 @@ class Model():
             self.k[i] = waveNumber(self.w[i], self.depth)
         
         # set up the FOWT here  <<< only set for 1 FOWT for now <<<
-        self.fowtList.append(FOWT(design, w=self.w, mpb=self.ms.bodyList[0], depth=self.depth))
+        self.fowtList.append(fowt.FOWT(design, w=self.w, mpb=self.ms.bodyList[0], depth=self.depth))
         self.coords.append([0.0,0.0])
         self.nDOF += 6
 
@@ -528,7 +519,7 @@ class Model():
         if 'response' in self.results:
             
             RAOmag      = abs(self.Xi          /fowt.zeta)  # magnitudes of motion RAO
-            
+
             self.results['response']['frequencies'] = self.w/2/np.pi         # Hz
             self.results['response']['wave elevation'] = fowt.zeta
             self.results['response']['Xi'         ] = self.Xi
