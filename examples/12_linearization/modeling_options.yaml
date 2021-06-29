@@ -106,7 +106,7 @@ Level2:
 openfast:
     file_management:
         FAST_namingOut:    lin         # Name of the OpenFAST output files
-        FAST_runDirectory: IEA_level2             # Path to folder with the OpenFAST output files
+        FAST_runDirectory: outputs/IEA_level2             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   False
         run_IEC:           True
