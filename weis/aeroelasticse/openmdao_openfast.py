@@ -1216,15 +1216,21 @@ class FASTLoadCases(ExplicitComponent):
                     
             for key in fst_vt['MoorDyn']:
                 fst_vt['MAP'][key] = fst_vt['MoorDyn'][key]
+                
+            fst_vt['MAP']['LineType'] = ['main', 'main', 'main']
+            
+            for idx, node_type in enumerate(fst_vt['MAP']['Type']):
+                if node_type == 'fixed':
+                    fst_vt['MAP']['Type'][idx] = 'fix'
             
             # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
-            fst_vt['MAP']['CB'] = 1.0
-            fst_vt['MAP']['CIntDamp'] = 0
-            fst_vt['MAP']['Ca'] = 0
-            fst_vt['MAP']['Cdn'] = 0
-            fst_vt['MAP']['Cdt'] = 0
+            fst_vt['MAP']['CB'] = np.ones(n_lines)
+            fst_vt['MAP']['CIntDamp'] = np.zeros(n_lines)
+            fst_vt['MAP']['Ca'] = np.zeros(n_lines)
+            fst_vt['MAP']['Cdn'] = np.zeros(n_lines)
+            fst_vt['MAP']['Cdt'] = np.zeros(n_lines)
             fst_vt['MAP']['B'] = np.zeros( n_nodes )
-            fst_vt['MAP']['Option'] = ["outer_tol 1e-5", "repeat 120 240"]
+            fst_vt['MAP']['Option'] = ["outer_tol 1e-5"]
             
         return fst_vt
 

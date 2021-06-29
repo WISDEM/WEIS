@@ -1701,17 +1701,17 @@ class InputWriter_OpenFAST(object):
             ln.append('{:^11}'.format(self.fst_vt['MAP']['Diam'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MAP']['MassDen'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MAP']['EA'][i]))
-            ln.append('{:<11}'.format(self.fst_vt['MAP']['CB']))
-            ln.append('{:<11}'.format(self.fst_vt['MAP']['CIntDamp']))
-            ln.append('{:<11}'.format(self.fst_vt['MAP']['Ca']))
-            ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdn']))
-            ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdt']))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['CB'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['CIntDamp'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['Ca'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdn'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdt'][i]))
         f.write(" ".join(ln) + '\n')
         f.write('---------------------- NODE PROPERTIES ---------------------------------------\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['Node', 'Type', 'X', 'Y', 'Z', 'M', 'B', 'FX', 'FY', 'FZ']])+'\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(N)', '(N)', '(N)']])+'\n')
         for i, type in enumerate(self.fst_vt['MAP']['Type']):
-            ln =[]
+            ln = []
             ln.append('{:<11}'.format(self.fst_vt['MAP']['Node'][i]))
             ln.append('{:<11}'.format(self.fst_vt['MAP']['Type'][i]))
             ln.append('{:<11}'.format(self.fst_vt['MAP']['X'][i]))

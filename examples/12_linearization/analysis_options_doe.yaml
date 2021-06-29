@@ -23,7 +23,7 @@ design_variables:
       upper_bound: 29.4889e9
     line_length:  # unstretched length in meters
       flag: True
-      lower_bound: 800.
+      lower_bound: 875.
       upper_bound: 900.
 
 driver:
