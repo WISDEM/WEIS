@@ -118,10 +118,10 @@ def create_hams_dirs(baseDir=None):
         if osp.isdir(baseDir) is not True:
             os.makedirs(baseDir)
 
-    inputDir = osp.join(baseDir, f'Input')
-    outputDirHams = osp.join(baseDir, f'Output/Hams_format')
-    outputDirHydrostar = osp.join(baseDir, f'Output/Hydrostar_format')
-    outputDirWamit = osp.join(baseDir, f'Output/Wamit_format')
+    inputDir = osp.join(baseDir, 'Input')
+    outputDirHams = osp.join(baseDir, 'Output/Hams_format')
+    outputDirHydrostar = osp.join(baseDir, 'Output/Hydrostar_format')
+    outputDirWamit = osp.join(baseDir, 'Output/Wamit_format')
 
     if osp.isdir(inputDir) is not True:
         os.mkdir(inputDir)
@@ -133,8 +133,8 @@ def create_hams_dirs(baseDir=None):
         os.makedirs(outputDirWamit)
 
 def write_hydrostatic_file(projectDir=None, cog=np.zeros(3), mass=np.zeros((6,6)),
-                           damping=np.zeros((6,6)), kHydro=np.zeros((6,6)),
-                           kExt=np.zeros((6,6))):
+                           dampingLin=np.zeros((6,6)), dampingQuad=np.zeros((6,6)),
+                           kHydro=np.zeros((6,6)), kExt=np.zeros((6,6))):
     '''
     Writes Hydrostatic.in for HAMS
 
@@ -146,8 +146,10 @@ def write_hydrostatic_file(projectDir=None, cog=np.zeros(3), mass=np.zeros((6,6)
         3x1 array - body's CoG
     mass: array
         6x6 array - body's mass matrix
-    damping: array
-        6x6 array - body's external damping matrix (i.e. non-radiation damping)
+    dampingLin: array
+        6x6 array - body's external linear damping matrix (i.e. non-radiation damping)
+    dampingQuad: array
+        6x6 array - body's external quadratic damping matrix (i.e. non-radiation damping)
     kHydro: array
         6x6 array - body's hydrostatic stiffness matrix
     kExt: array
@@ -170,31 +172,36 @@ def write_hydrostatic_file(projectDir=None, cog=np.zeros(3), mass=np.zeros((6,6)
     if projectDir is None:
         raise ValueError(f'No directory has been passed for where to write Hydrostatic.in')
     else:
-        projectDir = osp.normpath(osp.join(projectDir, f'./Input'))
+        projectDir = osp.normpath(osp.join(projectDir, 'Input'))
 
     f = open(osp.join(projectDir, 'Hydrostatic.in'), 'w')
-    f.write(f' Center of Gravity:\n ')
+    f.write(' Center of Gravity:\n ')
     f.write(f'  {cog[0]:10.15E}  {cog[0]:10.15E}  {cog[0]:10.15E} \n')
-    f.write(f' Body Mass Matrix:\n')
+    f.write(' Body Mass Matrix:\n')
     for i in range(6):
         for j in range(6):
             f.write((f'   {mass[i,j]:10.5E}'))
-        f.write(f'\n')
-    f.write(f' External Damping Matrix:\n')
+        f.write('\n')
+    f.write(' External Linear Damping Matrix:\n')
     for i in range(6):
         for j in range(6):
-            f.write((f'   {damping[i,j]:10.5E}'))
-        f.write(f'\n')
-    f.write(f' Hydrostatic Restoring Matrix:\n')
+            f.write((f'   {dampingLin[i,j]:10.5E}'))
+        f.write('\n')
+    f.write(' External Quadratic Damping Matrix:\n')
+    for i in range(6):
+        for j in range(6):
+            f.write((f'   {dampingQuad[i,j]:10.5E}'))
+        f.write('\n')
+    f.write(' Hydrostatic Restoring Matrix:\n')
     for i in range(6):
         for j in range(6):
             f.write((f'   {kHydro[i,j]:10.5E}'))
-        f.write(f'\n')
-    f.write(f' External Restoring Matrix:\n')
+        f.write('\n')
+    f.write(' External Restoring Matrix:\n')
     for i in range(6):
         for j in range(6):
             f.write((f'   {kExt[i,j]:10.5E}'))
-        f.write(f'\n')
+        f.write('\n')
     f.close()
 
 def write_control_file(projectDir=None, waterDepth=50.0, iFType=3, oFType=3, numFreqs=-300,
