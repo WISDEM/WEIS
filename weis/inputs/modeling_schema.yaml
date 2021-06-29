@@ -25,16 +25,19 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run WEIS fidelity level 1 = frequency domain (RAFT)
-            frequencies:
-                type: array
-                description: List of frequencies [Hz] to evaluate the response of the platform and turbine
-                default: [0.1, 0.21544346900318834, 0.46415888336127786, 1.0, 2.1544346900318834, 4.6415888336127775, 10.0, 21.54434690031882, 46.41588833612777, 100.0] # logspace(-1,2,10)
-                items:
-                    type: number
-                    uniqueItems: True
-                    minimum: 0.0
-                    maximum: 1e3
-            potential_bem_members: &potbem
+            min_freq:
+                type: number
+                description: Minimum frequency to evaluate (frequencies will be min_freq:min_freq:max_freq)
+                default: 0.1
+                minimum: 0.0
+                maximum: 1e3
+            max_freq:
+                type: number
+                description: Maximum frequency to evaluate (frequencies will be min_freq:min_freq:max_freq)
+                default: 2.0
+                minimum: 0.0
+                maximum: 1e3
+            potential_bem_members:
                 type: array
                 description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
                 default: []
@@ -64,16 +67,7 @@ properties:
                 minimum: 1
                 maximum: 100
                 description: Maximum node splitting section amount
-    Level2:
-        type: object
-        default: {}
-        description: Options for WEIS fidelity level 2 = linearized time domain (OpenFAST)
-        properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to run WEIS fidelity level 2 = linearized OpenFAST     
-    Level3:
+    Level3: &ofmodopt
         type: object
         default: {}
         description: Options for WEIS fidelity level 3 = nonlinear time domain
@@ -82,8 +76,7 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run WEIS fidelity level 3 = nonlinear time domain (Linearize OpenFAST)
-            potential_bem_members: *potbem
-            simulation: # TODO: Should this also move to analysis settings?
+            simulation: &ofsimulation # TODO: Should this also move to analysis settings?
                 type: object
                 default: {}
                 properties:
@@ -353,7 +346,7 @@ properties:
                         default: 10.
                         minimum: 0.
                         description: Frame rate for VTK output (frames per second){will use closest integer multiple of DT} [used only if WrVTK=2]
-            InflowWind:
+            InflowWind: &ofinflowwind
                 type: object
                 default: {}
                 properties:
@@ -583,7 +576,7 @@ properties:
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
-            AeroDyn:
+            AeroDyn: &ofaerodyn
                 type: object
                 default: {}
                 properties:
@@ -712,13 +705,13 @@ properties:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
-                                unit: s 
+                                unit: s
                                 description:  Time when wake is free. (-) value = always free. {default 0.0} (s). Set it to 0. for default (same as main fst)
                             FullCircStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
-                                unit: s 
+                                unit: s
                                 description: Time at which full circulation is reached. {default 0.0} (s). Set it to 0. for default (same as main fst)
                             CircSolvingMethod:
                                 type: integer
@@ -778,7 +771,7 @@ properties:
                             WakeRegMethod:
                                 type: integer
                                 enumerate: [0, 1, 2, 3, 4]
-                                default: 1  
+                                default: 1
                                 description: Wake regularization method {1 Constant, 2 Stretching, 3 Age, default 1} (switch)
                             WakeRegFactor:
                                 type: number
@@ -791,7 +784,7 @@ properties:
                             CoreSpreadEddyVisc:
                                 type: number
                                 default: 100
-                                description: Eddy viscosity in core spreading methods, typical values 1-1000 
+                                description: Eddy viscosity in core spreading methods, typical values 1-1000
                             TwrShadowOnWake:
                                 type: boolean
                                 default: False
@@ -825,12 +818,12 @@ properties:
                                 type: integer
                                 default: 3
                                 enumerate: [0, 1, 2, 3, 4, 5, 6]
-                                description: Number of blades for which VTK files are exported {0 No VTK per blade, n VTK for blade 1 to n} (-) 
+                                description: Number of blades for which VTK files are exported {0 No VTK per blade, n VTK for blade 1 to n} (-)
                             VTKCoord:
                                 type: integer
                                 enumerate: [1, 2, 3]
                                 default: 1
-                                description: Coordinate system used for VTK export. {1 Global, 2 Hub, 3 Both, 'default' 1} 
+                                description: Coordinate system used for VTK export. {1 Global, 2 Hub, 3 Both, 'default' 1}
                             VTK_fps:
                                 type: number
                                 default: 1
@@ -898,7 +891,7 @@ properties:
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
-            ElastoDyn:
+            ElastoDyn: &ofelastodyn
                 type: object
                 default: {}
                 properties:
@@ -1260,7 +1253,7 @@ properties:
                         maximum: 100000.0
                         unit: s
                         description: Time to begin tabular output (s) (currently unused)
-            ElastoDynBlade:
+            ElastoDynBlade: &ofelastodynblade
                 type: object
                 default: {}
                 properties:
@@ -1320,7 +1313,7 @@ properties:
                         default: 1.0
                         unit: none
                         description: Factor to adjust blade edge stiffness (-)
-            ElastoDynTower:
+            ElastoDynTower: &ofelastodyntower
                 type: object
                 default: {}
                 properties:
@@ -1408,7 +1401,7 @@ properties:
                         default: 1.0
                         unit: none
                         description: Factor to adjust tower side-to-side stiffness (-)
-            BeamDyn:
+            BeamDyn: &ofbeamdyn
                 type: object
                 default: {}
                 properties:
@@ -1523,7 +1516,7 @@ properties:
                         default: 5e5
                         unit: kg*m^2/s
                         description: Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]
-            HydroDyn:
+            HydroDyn: &ofhydrodyn
                 type: object
                 default: {}
                 properties:
@@ -1739,7 +1732,7 @@ properties:
                         description: Potential-flow model {0 = none=no potential flow, 1 = frequency-to-time-domain transforms based on Capytaine/NEMOH/WAMIT output, 2 = fluid-impulse theory (FIT)} (switch)
                     PotFile:
                         type: string
-                        default: ''
+                        default: 'BEM/Output/Wamit_format/Buoy'
                         description: Root name of potential-flow model data (relative to WEIS dir); WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
                     WAMITULEN:
                         type: number
@@ -1759,7 +1752,7 @@ properties:
                         default: 0.0
                         minimum: 0.0
                         units: kg
-                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass. 
+                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass.
                     PtfmCOBxt:
                         type: number
                         default: 0.0
@@ -1932,8 +1925,8 @@ properties:
                     OutSFmt:
                         type: string
                         default: 'A11'
-                        description: Output format for header strings (quoted string) [not checked for validity]             
-            SubDyn:
+                        description: Output format for header strings (quoted string) [not checked for validity]
+            SubDyn: &ofsubdyn
                 type: object
                 default: {}
                 properties:
@@ -2020,8 +2013,8 @@ properties:
                         minimum: 0
                         maximum: 9
                         default: 0
-                        description: Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].                         
-            MoorDyn:
+                        description: Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].
+            MoorDyn: &ofmoordyn
                 type: object
                 default: {}
                 properties:
@@ -2075,7 +2068,7 @@ properties:
                         minimum: 0.0
                         maximum: 1.0
                         description: Threshold for IC convergence (-)
-            ServoDyn:
+            ServoDyn: &ofservodyn
                 type: object
                 default: {}
                 description: ServoDyn modelling options in OpenFAST
@@ -2477,7 +2470,7 @@ properties:
                         maximum: 100000.0
                         unit: s
                         description: Time to begin tabular output (s) (currently unused)
-            outlist:
+            outlist: &ofoutlist
                 type: object
                 default: {}
                 properties:
@@ -2517,6 +2510,27 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run xfoil in parallel (requires mpi setup)
+    Level2:
+        type: object
+        default: {}
+        description: Options for WEIS fidelity level 2 = linearized time domain (OpenFAST)
+        properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run WEIS fidelity level 2 = linearized OpenFAST
+            simulation: *ofsimulation
+            InflowWind: *ofinflowwind
+            AeroDyn: *ofaerodyn
+            ElastoDyn: *ofelastodyn
+            ElastoDynBlade: *ofelastodynblade
+            ElastoDynTower: *ofelastodyntower
+            BeamDyn: *ofbeamdyn
+            HydroDyn: *ofhydrodyn
+            SubDyn: *ofsubdyn
+            MoorDyn: *ofmoordyn
+            ServoDyn: *ofservodyn
+            outlist: *ofoutlist
     DLC_driver:
         type: object
         default: {}
@@ -2533,7 +2547,7 @@ properties:
                         type: string
                         default: none
                         description: Path to place FAST output files (e.g. /home/user/myturbines/output)
-                    generate_af_coords: 
+                    generate_af_coords:
                         type: boolean
                         default: False
                         description: Flag to write airfoil coordinates out or not
@@ -2568,7 +2582,7 @@ properties:
                             default: 2
                             minimum: 0.01
                             maximum: 20.0
-                            unit: m/s 
+                            unit: m/s
                             description: Size of the wind speed bin, usually set to 2 m/s
                         n_seeds:
                             type: integer

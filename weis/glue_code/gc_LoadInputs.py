@@ -24,18 +24,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.set_opt_flags()
     
     def set_weis_data(self):
-        # RAFT
-        if self.modeling_options['Level1']['flag']:
-            self.modeling_options['Level1']['n_freq'] = len(self.modeling_options['Level1']['frequencies'])
-            
-            if self.modeling_options["flags"]["floating"]:
-                self.modeling_options["Level1"]["model_potential"] = [False] * self.modeling_options["floating"]["members"]["n_members"]
-                for k in self.modeling_options["Level1"]["potential_bem_members"]:
-                    idx = self.modeling_options["floating"]["members"]["name"].index(k)
-                    self.modeling_options["Level1"]["model_potential"][idx] = True
-        
         # Openfast
-        if self.modeling_options['Level3']['flag']:
+        if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
             self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt'] = {}
             self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['outlist'] = fast.fst_vt['outlist']
@@ -50,13 +40,22 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.so')
             self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll            
 
-            # Activate model potential in Level3
+            # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["floating"]:
-                self.modeling_options["Level3"]["model_potential"] = [False] * self.modeling_options["floating"]["members"]["n_members"]
-                for k in self.modeling_options["Level3"]["potential_bem_members"]:
-                    idx = self.modeling_options["floating"]["members"]["name"].index(k)
-                    self.modeling_options["Level3"]["model_potential"][idx] = True
+                if ( (self.modeling_options["Level2"]["HydroDyn"]["PotMod"] == 1) or
+                     (self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1) ):
+                    self.modeling_options['Level1']['flag'] = True
+                    hams_out = os.path.join(os.getcwd(), 'BEM','Output','Wamit_format','Buoy')
+                    self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = hams_out
                     
+        # RAFT
+        if self.modeling_options['Level1']['flag']:
+            if self.modeling_options["flags"]["floating"]:
+                self.modeling_options["Level1"]["model_potential"] = [False] * self.modeling_options["floating"]["members"]["n_members"]
+                for k in self.modeling_options["Level1"]["potential_bem_members"]:
+                    idx = self.modeling_options["floating"]["members"]["name"].index(k)
+                    self.modeling_options["Level1"]["model_potential"][idx] = True
+        
         # XFoil
         if not os.path.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
