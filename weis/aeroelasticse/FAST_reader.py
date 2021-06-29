@@ -1108,12 +1108,16 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['YawManRat'] = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['NacYawF']   = float_read(f.readline().split()[0])
 
-        # Tuned Mass Damper (tuned_mass_damper)
+        # Structural Control
         f.readline()
-        self.fst_vt['ServoDyn']['CompNTMD'] = bool_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['NTMDfile'] = f.readline().split()[0][1:-1]
-        self.fst_vt['ServoDyn']['CompTTMD'] = bool_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['TTMDfile'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumBStC']  = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['BStCfiles'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumNStC']  = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['NStCfiles'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumTStC'] = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['TStCfiles'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumSStC'] = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['SStCfiles'] = f.readline().split()[0][1:-1]
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()
@@ -1276,15 +1280,21 @@ class InputReader_OpenFAST(object):
         # FLOATING PLATFORM
         f.readline()
         self.fst_vt['HydroDyn']['PotMod']        = int_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PotFile']       = os.path.normpath(os.path.join(os.path.split(hd_file)[0], f.readline().split()[0][1:-1]))
-        self.fst_vt['HydroDyn']['WAMITULEN']     = float_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmVol0']      = float_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmCOBxt']     = float_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmCOByt']     = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['ExctnMod']      = int_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnMod']       = int_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnTMax']      = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnDT']        = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['NBody']         = int_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['NBodyMod']      = int_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PotFile']       = os.path.normpath(os.path.join(os.path.split(hd_file)[0], f.readline().split()[0][1:-1]))
+        self.fst_vt['HydroDyn']['WAMITULEN']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefxt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefyt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefzt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefztRot'] = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmVol0']      = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmCOBxt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmCOByt']     = float_read(f.readline().split()[0])
 
         # 2ND-ORDER FLOATING PLATFORM FORCES
         f.readline()
@@ -1293,18 +1303,9 @@ class InputReader_OpenFAST(object):
         self.fst_vt['HydroDyn']['DiffQTF']       = int_read(f.readline().split()[0]) # ?
         self.fst_vt['HydroDyn']['SumQTF']        = int_read(f.readline().split()[0]) # ?
 
-        # FLOATING PLATFORM FORCE FLAGS
-        f.readline()
-        self.fst_vt['HydroDyn']['PtfmSgF']       = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmSwF']       = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmHvF']       = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmRF']        = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmPF']        = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmYF']        = bool_read(f.readline().split()[0])
-
         # PLATFORM ADDITIONAL STIFFNESS AND DAMPING
         f.readline()
-        self.fst_vt['HydroDyn']['AddF0']         = [float(idx) for idx in f.readline().strip().split()[:6]]
+        self.fst_vt['HydroDyn']['AddF0']         = np.array([[float(idx) for idx in f.readline().strip().split()[0]] for i in range(6)])
         self.fst_vt['HydroDyn']['AddCLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
         self.fst_vt['HydroDyn']['AddBLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
         self.fst_vt['HydroDyn']['AddBQuad']      = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
@@ -1370,10 +1371,12 @@ class InputReader_OpenFAST(object):
         self.fst_vt['HydroDyn']['SimplCaMG']   = float(ln[3])
         self.fst_vt['HydroDyn']['SimplCp']     = float(ln[4])
         self.fst_vt['HydroDyn']['SimplCpMG']   = float(ln[5])
-        self.fst_vt['HydroDyn']['SimplAxCa']   = float(ln[6])
-        self.fst_vt['HydroDyn']['SimplAxCaMG'] = float(ln[7])
-        self.fst_vt['HydroDyn']['SimplAxCp']   = float(ln[8])
-        self.fst_vt['HydroDyn']['SimplAxCpMG'] = float(ln[9])
+        self.fst_vt['HydroDyn']['SimplAxCd']   = float(ln[6])
+        self.fst_vt['HydroDyn']['SimplAxCdMG'] = float(ln[7])
+        self.fst_vt['HydroDyn']['SimplAxCa'] = float(ln[8])
+        self.fst_vt['HydroDyn']['SimplAxCaMG'] = float(ln[9])
+        self.fst_vt['HydroDyn']['SimplAxCp'] = float(ln[10])
+        self.fst_vt['HydroDyn']['SimplAxCpMG'] = float(ln[11])
 
         #DEPTH-BASED HYDRODYNAMIC COEFFICIENTS
         f.readline()
