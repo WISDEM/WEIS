@@ -1122,26 +1122,26 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
             # HARDCODED for IEA-15MW  # TODO : resolve these hardcodings
-            fst_vt['HydroDyn']['NJoints'] = 2
-            fst_vt['HydroDyn']['JointID'] = np.array([1,2])
-            fst_vt['HydroDyn']['Jointxi'] = np.array([0.0,0.0])
-            fst_vt['HydroDyn']['Jointyi'] = np.array([0.0,0.0])
-            fst_vt['HydroDyn']['Jointzi'] = np.array([-13.18,-14.18])
+            # fst_vt['HydroDyn']['NJoints'] = 2
+            # fst_vt['HydroDyn']['JointID'] = np.array([1,2])
+            # fst_vt['HydroDyn']['Jointxi'] = np.array([0.0,0.0])
+            # fst_vt['HydroDyn']['Jointyi'] = np.array([0.0,0.0])
+            # fst_vt['HydroDyn']['Jointzi'] = np.array([-13.18,-14.18])
 
-            fst_vt['HydroDyn']['NPropSets'] = 1
-            fst_vt['HydroDyn']['PropSetID'] = np.array([1])
-            fst_vt['HydroDyn']['PropD']     = np.array([1e-5])
-            fst_vt['HydroDyn']['PropThck']  = np.array([1e-6])
+            # fst_vt['HydroDyn']['NPropSets'] = 1
+            # fst_vt['HydroDyn']['PropSetID'] = np.array([1])
+            # fst_vt['HydroDyn']['PropD']     = np.array([1e-5])
+            # fst_vt['HydroDyn']['PropThck']  = np.array([1e-6])
 
-            fst_vt['HydroDyn']['NMembers']      = 1
-            fst_vt['HydroDyn']['MemberID']      = np.array([1])
-            fst_vt['HydroDyn']['MJointID1']     = np.array([1])
-            fst_vt['HydroDyn']['MJointID2']     = np.array([2])
-            fst_vt['HydroDyn']['MPropSetID1']   = np.array([1])
-            fst_vt['HydroDyn']['MPropSetID2']   = np.array([1])
-            fst_vt['HydroDyn']['MDivSize']      = np.array([1.0])
-            fst_vt['HydroDyn']['MCoefMod']      = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
+            # fst_vt['HydroDyn']['NMembers']      = 1
+            # fst_vt['HydroDyn']['MemberID']      = np.array([1])
+            # fst_vt['HydroDyn']['MJointID1']     = np.array([1])
+            # fst_vt['HydroDyn']['MJointID2']     = np.array([2])
+            # fst_vt['HydroDyn']['MPropSetID1']   = np.array([1])
+            # fst_vt['HydroDyn']['MPropSetID2']   = np.array([1])
+            # fst_vt['HydroDyn']['MDivSize']      = np.array([1.0])
+            # fst_vt['HydroDyn']['MCoefMod']      = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            # fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
 
             # set PotFile directory relative to WEIS
             # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
@@ -1296,20 +1296,23 @@ class FASTLoadCases(ExplicitComponent):
 
         # Channels for monopile-based structure
         if self.options['modeling_options']['flags']['monopile']:
-            k=1
-            for i in range(len(self.Z_out_SD_mpl)):
-                if k==9:
-                    Node=2
-                else:
-                    Node=1
-                channels_out += ["M" + str(k) + "N" + str(Node) + "FKxe"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "FKye"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "FKze"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "MKxe"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "MKye"]
-                channels_out += ["M" + str(k) + "N" + str(Node) + "MKze"]
-                channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
-                k+=1
+            if self.options['modeling_options']['Level3']['simulation']['CompSub']:
+                k=1
+                for i in range(len(self.Z_out_SD_mpl)):
+                    if k==9:
+                        Node=2
+                    else:
+                        Node=1
+                    channels_out += ["M" + str(k) + "N" + str(Node) + "FKxe"]
+                    channels_out += ["M" + str(k) + "N" + str(Node) + "FKye"]
+                    channels_out += ["M" + str(k) + "N" + str(Node) + "FKze"]
+                    channels_out += ["M" + str(k) + "N" + str(Node) + "MKxe"]
+                    channels_out += ["M" + str(k) + "N" + str(Node) + "MKye"]
+                    channels_out += ["M" + str(k) + "N" + str(Node) + "MKze"]
+                    channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
+                    k+=1
+            else:
+                raise Exception('CompSub must be 1 in the modeling options to run SubDyn and compute monopile loads')
 
         # Floating output channels
         if self.options['modeling_options']['flags']['floating']:
