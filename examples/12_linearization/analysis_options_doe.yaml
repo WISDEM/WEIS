@@ -1,5 +1,5 @@
 general:
-    folder_output: tower_doe
+    folder_output: outputs/tower_doe
     fname_output: iea15mw
     
 design_variables:
