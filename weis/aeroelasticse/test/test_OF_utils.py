@@ -2,10 +2,13 @@ import unittest
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from weis.aeroelasticse.LinearFAST import LinearFAST
 import numpy as np
 import os, platform
 
-examples_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
+examples_dir    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
+weis_dir        = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) ) ) # get path to this file
+
 
 mactype = platform.system().lower()
 if mactype == "linux" or mactype == "linux2":
@@ -57,6 +60,24 @@ class TestOFutils(unittest.TestCase):
         fast_wr.FAST_InputFile = 'iea15.fst'   # FAST input file (ext=.fst)
         fast_wr.FAST_directory = self.fast.FAST_runDirectory   # Path to fst directory files
         fast_wr.execute()
+
+    def testLinearFAST(self):
+
+        lin_fast = LinearFAST(debug_level=2)
+        lin_fast.FAST_exe = os.path.join(examples_dir,'local/bin/openfast')   # Path to executable
+        lin_fast.FAST_InputFile = 'iea15.fst'   # FAST input file (ext=.fst)
+        lin_fast.FAST_directory = self.fast.FAST_runDirectory   # Path to fst directory files
+
+        lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
+        lin_fast.FAST_directory           = os.path.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        lin_fast.FAST_runDirectory        = os.path.join(weis_dir,'outputs','iea_mono_lin')
+        
+        lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
+        lin_fast.wind_speeds                 = [16]
+        lin_fast.DOFs                       = ['GenDOF','TwFADOF1'] #,'PtfmPDOF']  # enable with 
+        lin_fast.TMax                       = 6   # should be 1000-2000 sec or more with hydrodynamic states
+
+        lin_fast.gen_linear_model()
 
 
 if __name__ == "__main__":

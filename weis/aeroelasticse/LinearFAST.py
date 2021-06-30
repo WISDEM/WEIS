@@ -118,7 +118,10 @@ class LinearFAST(runFAST_pywrapper_batch):
         else:
             self.HydroStates      = False 
 
-        case_inputs[("Fst","CompMooring")] = {'vals':[self.fst_vt['Fst']['CompMooring']], 'group':0}  # moordyn linearization is not supported yet
+        try:
+            case_inputs[("Fst","CompMooring")] = {'vals':[self.fst_vt['Fst']['CompMooring']], 'group':0}  # moordyn linearization is not supported yet
+        except:
+            case_inputs[("Fst","CompMooring")] = {'vals':[0], 'group':0}  # moordyn linearization is not supported yet
         case_inputs[("Fst","CompHydro")] = {'vals':[int(self.HydroStates)], 'group':0}  # modeling inputs, but not yet
         case_inputs[("Fst","CompSub")] = {'vals':[0], 'group':0}  # SubDyn can't be linearized with this version of OpenFAST, maybe in future
         
@@ -249,6 +252,8 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         # Generate Cases
         case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_runDirectory, namebase='lin')
+        self.case_list      = case_list
+        self.cast_name_list = case_name_list
 
         return case_list, case_name_list
 
@@ -265,7 +270,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         """
 
         # do a read to get gearbox ratio
-        fastRead = InputReader_OpenFAST
+        fastRead = InputReader_OpenFAST()
         fastRead.FAST_InputFile = self.FAST_InputFile   # FAST input file (ext=.fst)
         fastRead.FAST_directory = self.FAST_directory   # Path to fst directory files
 
@@ -286,34 +291,3 @@ class LinearFAST(runFAST_pywrapper_batch):
             self.run_multi(self.cores)
         else:
             self.run_serial()
-
-
-
-if __name__ == '__main__':
-
-    lin_fast = LinearFAST()
-
-    # fast info
-    
-    lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-    lin_fast.FAST_directory           = os.path.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
-    lin_fast.FAST_runDirectory        = os.path.join(weis_dir,'outputs','iea_mono_lin')
-    lin_fast.debug_level              = 2
-    lin_fast.dev_branch               = True
-    lin_fast.write_yaml               = True
-    
-    lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
-    lin_fast.wind_speeds                 = [14,16,18]
-    lin_fast.DOFs                       = ['GenDOF','TwFADOF1'] #,'PtfmPDOF']  # enable with 
-    lin_fast.TMax                       = 600   # should be 1000-2000 sec or more with hydrodynamic states
-    lin_fast.NLinTimes                  = 12
-
-    # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast/install/bin/openfast'
-
-    # simulation setup
-    lin_fast.cores            = 8
-
-    # overwrite steady & linearizations
-    lin_fast.overwrite        = True
-
-    lin_fast.gen_linear_model()
