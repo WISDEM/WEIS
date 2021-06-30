@@ -1121,27 +1121,30 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
-            # HARDCODED for IEA-15MW  # TODO : resolve these hardcodings
-            # fst_vt['HydroDyn']['NJoints'] = 2
-            # fst_vt['HydroDyn']['JointID'] = np.array([1,2])
-            # fst_vt['HydroDyn']['Jointxi'] = np.array([0.0,0.0])
-            # fst_vt['HydroDyn']['Jointyi'] = np.array([0.0,0.0])
-            # fst_vt['HydroDyn']['Jointzi'] = np.array([-13.18,-14.18])
+            # If we want to, use a simplified member approach, like the IEA-15MW semi-sub does
+            if modeling_options['Level3']['HydroDyn']['SimpMembers']: #fst_vt['HydroDyn']['PotMod']:
+                fst_vt['HydroDyn']['NJoints'] = 2
+                fst_vt['HydroDyn']['JointID'] = np.array([1,2])
+                fst_vt['HydroDyn']['Jointxi'] = np.array([0.0,0.0])
+                fst_vt['HydroDyn']['Jointyi'] = np.array([0.0,0.0])
+                fst_vt['HydroDyn']['Jointzi'] = np.array([0,fst_vt['HydroDyn']['Jointzi'].min()])
 
-            # fst_vt['HydroDyn']['NPropSets'] = 1
-            # fst_vt['HydroDyn']['PropSetID'] = np.array([1])
-            # fst_vt['HydroDyn']['PropD']     = np.array([1e-5])
-            # fst_vt['HydroDyn']['PropThck']  = np.array([1e-6])
+                fst_vt['HydroDyn']['NPropSets'] = 1
+                fst_vt['HydroDyn']['PropSetID'] = np.array([1])
+                fst_vt['HydroDyn']['PropD']     = np.array([1e-5])
+                fst_vt['HydroDyn']['PropThck']  = np.array([1e-6])
 
-            # fst_vt['HydroDyn']['NMembers']      = 1
-            # fst_vt['HydroDyn']['MemberID']      = np.array([1])
-            # fst_vt['HydroDyn']['MJointID1']     = np.array([1])
-            # fst_vt['HydroDyn']['MJointID2']     = np.array([2])
-            # fst_vt['HydroDyn']['MPropSetID1']   = np.array([1])
-            # fst_vt['HydroDyn']['MPropSetID2']   = np.array([1])
-            # fst_vt['HydroDyn']['MDivSize']      = np.array([1.0])
-            # fst_vt['HydroDyn']['MCoefMod']      = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            # fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
+                fst_vt['HydroDyn']['NMembers']      = 1
+                fst_vt['HydroDyn']['MemberID']      = np.array([1])
+                fst_vt['HydroDyn']['MJointID1']     = np.array([1])
+                fst_vt['HydroDyn']['MJointID2']     = np.array([2])
+                fst_vt['HydroDyn']['MPropSetID1']   = np.array([1])
+                fst_vt['HydroDyn']['MPropSetID2']   = np.array([1])
+                fst_vt['HydroDyn']['MDivSize']      = np.array([1.0])
+                fst_vt['HydroDyn']['MCoefMod']      = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+                
+            if fst_vt['HydroDyn']['PotMod']:
+                fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
 
             # set PotFile directory relative to WEIS
             # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
@@ -1293,6 +1296,11 @@ class FASTLoadCases(ExplicitComponent):
         # Channels for distributed aerodynamic control
         if self.n_tab > 1:
             channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+
+        # Channels for wave outputs
+        if self.options['modeling_options']['flags']['offshore']:
+            channels_out += ["Wave1Elev","WavesF1xi","WavesF1zi","WavesM1yi"]
+            channels_out += ["WavesF2xi","WavesF2yi","WavesF2zi","WavesM2xi","WavesM2yi","WavesM2zi"]
 
         # Channels for monopile-based structure
         if self.options['modeling_options']['flags']['monopile']:
