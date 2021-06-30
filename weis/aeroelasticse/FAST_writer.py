@@ -818,12 +818,12 @@ class InputWriter_OpenFAST(object):
 
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
             try:
-                os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+                os.makedirs(os.path.join(self.FAST_runDirectory,'Airfoils'))
             except:
                 try:
                     time.sleep(random.random())
                     if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
-                        os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+                        os.makedirs(os.path.join(self.FAST_runDirectory,'Airfoils'))
                 except:
                     print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'Airfoils'))
 
