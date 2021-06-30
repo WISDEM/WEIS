@@ -2691,6 +2691,10 @@ properties:
                         type: string
                         default: none
                         description: Path to yaml-based OpenFAST settings file
+                    use_exe:
+                        type: boolean
+                        default: False
+                        description: Use openfast executable instead of library
             dlc_settings: # TODO: Should this be in Analysis yaml?
                 type: object
                 default: {}
