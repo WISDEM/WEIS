@@ -1216,14 +1216,13 @@ class FASTLoadCases(ExplicitComponent):
                     
             for key in fst_vt['MoorDyn']:
                 fst_vt['MAP'][key] = copy.copy(fst_vt['MoorDyn'][key])
-                
-            fst_vt['MAP']['LineType'] = ['main', 'main', 'main']
             
             for idx, node_type in enumerate(fst_vt['MAP']['Type']):
                 if node_type == 'fixed':
                     fst_vt['MAP']['Type'][idx] = 'fix'
-            
+                    
             # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
+            fst_vt['MAP']['LineType'] = ['main', 'main', 'main']
             fst_vt['MAP']['CB'] = np.ones(n_lines)
             fst_vt['MAP']['CIntDamp'] = np.zeros(n_lines)
             fst_vt['MAP']['Ca'] = np.zeros(n_lines)

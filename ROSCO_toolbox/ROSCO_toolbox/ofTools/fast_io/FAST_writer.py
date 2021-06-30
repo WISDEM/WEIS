@@ -767,12 +767,12 @@ class InputWriter_OpenFAST(InputWriter_Common):
         # make directory for airfoil files
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
             try:
-                os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+                os.makedirs(os.path.join(self.FAST_runDirectory,'AeroData'))
             except:
                 try:
                     time.sleep(random.random())
                     if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
-                        os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+                        os.makedirs(os.path.join(self.FAST_runDirectory,'AeroData'))
                 except:
                     print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData'))
 
@@ -991,12 +991,12 @@ class InputWriter_OpenFAST(InputWriter_Common):
 
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
             try:
-                os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+                os.makedirs(os.path.join(self.FAST_runDirectory,'Airfoils'))
             except:
                 try:
                     time.sleep(random.random())
                     if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
-                        os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+                        os.makedirs(os.path.join(self.FAST_runDirectory,'Airfoils'))
                 except:
                     print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'Airfoils'))
 
@@ -2201,7 +2201,7 @@ class InputWriter_FAST7(InputWriter_Common):
 
     def write_AeroDyn_FAST7(self):
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
-            os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+            os.makedirs(os.path.join(self.FAST_runDirectory,'AeroData'))
 
         # create airfoil objects
         for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
