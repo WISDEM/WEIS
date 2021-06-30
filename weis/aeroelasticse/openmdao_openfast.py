@@ -1142,6 +1142,17 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['MPropSetID2']   = np.array([1])
                 fst_vt['HydroDyn']['MDivSize']      = np.array([1.0])
                 fst_vt['HydroDyn']['MCoefMod']      = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+
+                fst_vt['HydroDyn']['SimplCd']       = 0.0
+                fst_vt['HydroDyn']['SimplCdMG']     = 0.0
+                fst_vt['HydroDyn']['SimplCa']       = 0.0
+                fst_vt['HydroDyn']['SimplCaMG']     = 0.0
+                fst_vt['HydroDyn']['SimplCp']       = 0.0
+                fst_vt['HydroDyn']['SimplCpMG']     = 0.0
+                fst_vt['HydroDyn']['SimplAxCa']     = 0.0
+                fst_vt['HydroDyn']['SimplAxCaMG']   = 0.0
+                fst_vt['HydroDyn']['SimplAxCp']     = 0.0
+                fst_vt['HydroDyn']['SimplAxCpMG']   = 0.0
                 
             if fst_vt['HydroDyn']['PotMod']:
                 fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
