@@ -164,14 +164,11 @@ class runFAST_pywrapper(object):
             writer.write_yaml()
 
         FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
-        input_file_name = create_string_buffer(os.path.abspath(writer.FAST_InputFileOut).encode('utf-8'))
-        t_max = c_double(self.fst_vt['Fst']['TMax'])
 
         orig_dir = os.getcwd()
         os.chdir(FAST_directory)
         
-        openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.join(weis_dir,writer.FAST_InputFileOut)))
-        openfastlib.t_max = t_max
+        openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.basename(writer.FAST_InputFileOut)))
         openfastlib.fast_run()
 
         output_dict = {}
