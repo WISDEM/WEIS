@@ -47,8 +47,8 @@ properties:
             potential_model_override:
                 type: integer
                 default: 0
-                enum: [0, 1, 2]
-                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list, 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory)
+                enum: [0, 1, 2, 3]
+                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list, 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = potential BEM modeling for inviscid forces and strip theory for viscous forces
             xi_start:
                 type: number
                 default: 0.1
@@ -1732,8 +1732,8 @@ properties:
                         description: Potential-flow model {0 = none=no potential flow, 1 = frequency-to-time-domain transforms based on Capytaine/NEMOH/WAMIT output, 2 = fluid-impulse theory (FIT)} (switch)
                     PotFile:
                         type: string
-                        default: 'BEM/Output/Wamit_format/Buoy'
-                        description: Root name of potential-flow model data (relative to WEIS dir); WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS!]
+                        default: ''
+                        description: Will be automatically filled in with HAMS output unless a value here overrides it; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS]
                     WAMITULEN:
                         type: number
                         minimum: 0.0

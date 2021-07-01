@@ -42,19 +42,49 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["floating"]:
+                if self.modeling_options["Level1"]["potential_model_override"] in [2,3]:
+                    self.modeling_options["Level2"]["HydroDyn"]["PotMod"] = 1
+                    self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
+                elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
+                       (len(self.modeling_options["Level1"]["potential_bem_members"]) > 0) ):
+                    self.modeling_options["Level2"]["HydroDyn"]["PotMod"] = 1
+                    self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
+                elif self.modeling_options["Level1"]["potential_model_override"] == 1:
+                    self.modeling_options["Level2"]["HydroDyn"]["PotMod"] = 0
+                    self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 0
+                    
                 if ( (self.modeling_options["Level2"]["HydroDyn"]["PotMod"] == 1) or
                      (self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1) ):
                     self.modeling_options['Level1']['flag'] = True
-                    hams_out = os.path.join(os.getcwd(), 'BEM','Output','Wamit_format','Buoy')
-                    self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = hams_out
+
+                    cwd = os.getcwd()
+                    if len(self.modeling_options["Level2"]["HydroDyn"]["PotFile"]) > 0:
+                        hams_out = os.path.join(cwd, 'BEM','Output','Wamit_format','Buoy')
+                        self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = hams_out
+                    else:
+                        weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                        potpath = self.modeling_options["Level2"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
+                        if os.path.exists( potpath+'.1' ):
+                            pass
+                        elif os.path.exists( os.path.join(cwd, potpath+'.1') ):
+                            self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = os.path.join(cwd, potpath)
+                        elif os.path.exists( os.path.join(weis_dir, potpath+'.1') ):
+                            self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = os.path.join(weis_dir, potpath)
+                        else:
+                            raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
+                
+                        
                     
         # RAFT
         if self.modeling_options['Level1']['flag']:
             if self.modeling_options["flags"]["floating"]:
-                self.modeling_options["Level1"]["model_potential"] = [False] * self.modeling_options["floating"]["members"]["n_members"]
-                for k in self.modeling_options["Level1"]["potential_bem_members"]:
-                    idx = self.modeling_options["floating"]["members"]["name"].index(k)
-                    self.modeling_options["Level1"]["model_potential"][idx] = True
+                bool_init = True if self.modeling_options["Level1"]["potential_model_override"] in [2,3] else False
+                self.modeling_options["Level1"]["model_potential"] = [bool_init] * self.modeling_options["floating"]["members"]["n_members"]
+                
+                if self.modeling_options["Level1"]["potential_model_override"] == 0:
+                    for k in self.modeling_options["Level1"]["potential_bem_members"]:
+                        idx = self.modeling_options["floating"]["members"]["name"].index(k)
+                        self.modeling_options["Level1"]["model_potential"][idx] = True
         
         # XFoil
         if not os.path.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
