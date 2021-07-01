@@ -1818,36 +1818,6 @@ properties:
                         enum: [0, 10, 11, 12]
                         default: 0
                         description: Full summation -frequency 2nd-order forces computed with full QTF {0 = None; [10, 11, or 12] = WAMIT file to use}
-                    PtfmSgF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform horizontal surge translation force (flag) or DEFAULT
-                    PtfmSwF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform horizontal sway translation force (flag) or DEFAULT
-                    PtfmHvF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform vertical heave translation force (flag) or DEFAULT
-                    PtfmRF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform roll tilt rotation force (flag) or DEFAULT
-                    PtfmPF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform pitch tilt rotation force (flag) or DEFAULT
-                    PtfmYF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform yaw rotation force (flag) or DEFAULT
                     AddF0:
                         type: array
                         default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -1934,7 +1904,19 @@ properties:
                     OutSFmt:
                         type: string
                         default: 'A11'
-                        description: Output format for header strings (quoted string) [not checked for validity]             
+                        description: Output format for header strings (quoted string) [not checked for validity]    
+                    NBody:
+                        type: integer
+                        minimum: 1
+                        maximum: 9
+                        default: 1
+                        description: Number of WAMIT bodies to be used (-) [>=1; only used when PotMod=1. If NBodyMod=1, the WAMIT data contains a vector of size 6*NBody x 1 and matrices of size 6*NBody x 6*NBody; if NBodyMod>1, there are NBody sets of WAMIT data each with a vector of size 6 x 1 and matrices of size 6 x 6]
+                    NBodyMod:
+                        type: integer
+                        minimum: 1
+                        maximum: 3
+                        default: 1
+                        description: Body coupling model {1- include coupling terms between each body and NBody in HydroDyn equals NBODY in WAMIT, 2- neglect coupling terms between each body and NBODY=1 with XBODY=0 in WAMIT, 3- Neglect coupling terms between each body and NBODY=1 with XBODY=/0 in WAMIT} (switch) [only used when PotMod=1]
             SubDyn:
                 type: object
                 default: {}
