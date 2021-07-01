@@ -206,7 +206,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Level3']['flag'] and opt_options['driver']['optimization']['flag']:
+    if MPI and modeling_options['Level3']['flag'] and not opt_options['driver']['design_of_experiments']['flag']:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
