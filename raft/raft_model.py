@@ -4,6 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import yaml
 
 import moorpy as mp
 import raft.raft_fowt  as fowt
@@ -58,7 +59,7 @@ class Model():
             self.k[i] = waveNumber(self.w[i], self.depth)
         
         # set up the FOWT here  <<< only set for 1 FOWT for now <<<
-        self.fowtList.append(fowt.FOWT(design, w=self.w, mpb=self.ms.bodyList[0], depth=self.depth))
+        self.fowtList.append(fowt.FOWT(design, self.w, self.ms.bodyList[0], depth=self.depth))
         self.coords.append([0.0,0.0])
         self.nDOF += 6
 
@@ -596,6 +597,25 @@ class Model():
         return self.results
         
 
+    def preprocess_HAMS(self, FAST_outname, dw=0, wMax=0):
+        '''This generates a mesh for the platform, runs a BEM analysis on it
+        using pyHAMS, and writes .1 and .3 output files for use with OpenFAST.
+        The mesh is only made for non-interesecting members flagged with potMod=1.
+        
+        PARAMETERS
+        ----------
+        FAST_outname : string
+            The full path and file name (minus extension) for the .1 and .3 files to be written to.
+        dw : float
+            Optional specification of custom frequency increment (rad/s).
+        wMax : float
+            Optional specification of maximum frequency for BEM analysis (rad/s). Will only be
+            used if it is greater than the maximum frequency used in RAFT.
+        '''
+        
+        self.fowtList[0].calcBEM(FAST_outname=FAST_outname, dw=dw, wMax=wMax)
+
+
     def plot(self, hideGrid=False):
         '''plots the whole model, including FOWTs and mooring system...'''
 
@@ -639,7 +659,7 @@ def runRAFT(input_file, turbine_file=""):
     depth = float(design['mooring']['water_depth'])
     
     # for now, turn off potMod in the design dictionary to avoid BEM analysis
-    design['platform']['potModMaster'] = 1
+    #design['platform']['potModMaster'] = 1
     
     # read in turbine data and combine it in
     # if len(turbine_file) > 0:
@@ -656,6 +676,8 @@ def runRAFT(input_file, turbine_file=""):
     
     model.plot()
     
+    #model.preprocess_HAMS("testHAMSoutput", dw=0.1, wMax=10)
+    
     plt.show()
     
     return model
@@ -665,4 +687,5 @@ if __name__ == "__main__":
     import raft
     
     model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S.yaml'))
+    #model = runRAFT(os.path.join(raft_dir,'designs/OC3spar.yaml'))
     fowt = model.fowtList[0]
