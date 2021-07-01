@@ -168,7 +168,7 @@ class runFAST_pywrapper(object):
         orig_dir = os.getcwd()
         os.chdir(FAST_directory)
         
-        openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.join(weis_dir,writer.FAST_InputFileOut)))
+        openfastlib = FastLibAPI(self.FAST_lib, os.path.abspath(os.path.basename(writer.FAST_InputFileOut)))
         openfastlib.fast_run()
 
         output_dict = {}
