@@ -343,11 +343,12 @@ def read_wamit1B(pathWamit1, TFlag=0):
     # SO THAT THERE IS THE SAME NUMBER OF COLUMNS FOR EVERY ROW IN THE FILE >>>>>>>>>>>>>>>>
     # can add in functionality to make a hydrostatic matrix, but not needed yet
     
-    T = np.unique(wamit1[:,0])
     if TFlag:   # if TFlag=1, the first column values are periods
-        w = 2*np.pi/T
+        T = np.unique(wamit1[:,0])
+        w = 2*np.pi/np.flip(T)
     else:       # if TFlag=0, the first column values are frequencies
-        w = T
+        w = np.unique(wamit1[:,0])
+        
     addedMassCol = wamit1[:,3]
     dampingCol = wamit1[:,4]
     matRow = wamit1[:,1]
@@ -366,7 +367,7 @@ def read_wamit1B(pathWamit1, TFlag=0):
     # transpose(a,b,c) function switches the sizes in an order of k[a] to the 0 spot, k[b] to the 1 spot, and k[c] to the 2 spot
     A = addedMass.transpose(1,2,0) # transposes addedMass.shape = (100,6row,6col) to (6row,6col,100)
     B = damping.transpose(1,2,0)
-    
+        
     return A, B, w
 
 def read_wamit3(pathWamit3):
@@ -412,13 +413,15 @@ def read_wamit3B(pathWamit3, TFlag=0):
     
     pathWamit3 = osp.normpath(pathWamit3)
     wamit3 = np.loadtxt(pathWamit3)
-    T = np.unique(wamit3[:,0])
-    if TFlag:
-        w = 2*np.pi/T
-    else:
-        w = T
-    headings = np.unique(wamit3[:,1])
     
+    if TFlag:   # if TFlag=1, the first column values are periods
+        T = np.unique(wamit3[:,0])
+        w = 2*np.pi/np.flip(T)
+    else:       # if TFlag=0, the first column values are frequencies
+        w = np.unique(wamit3[:,0])
+        
+    headings = np.unique(wamit3[:,1])
+        
     modCol = wamit3[:,3]
     phaseCol = wamit3[:,4]
     realCol = wamit3[:,5]
