@@ -58,7 +58,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     self.modeling_options['Level1']['flag'] = True
 
                     cwd = os.getcwd()
-                    if len(self.modeling_options["Level2"]["HydroDyn"]["PotFile"]) > 0:
+                    if len(self.modeling_options["Level2"]["HydroDyn"]["PotFile"]) == 0:
                         hams_out = os.path.join(cwd, 'BEM','Output','Wamit_format','Buoy')
                         self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = hams_out
                     else:
