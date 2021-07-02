@@ -597,24 +597,6 @@ class Model():
         return self.results
         
 
-    def preprocess_HAMS(self, FAST_outname, dw=0, wMax=0):
-        '''This generates a mesh for the platform, runs a BEM analysis on it
-        using pyHAMS, and writes .1 and .3 output files for use with OpenFAST.
-        The mesh is only made for non-interesecting members flagged with potMod=1.
-        
-        PARAMETERS
-        ----------
-        FAST_outname : string
-            The full path and file name (minus extension) for the .1 and .3 files to be written to.
-        dw : float
-            Optional specification of custom frequency increment (rad/s).
-        wMax : float
-            Optional specification of maximum frequency for BEM analysis (rad/s). Will only be
-            used if it is greater than the maximum frequency used in RAFT.
-        '''
-        
-        self.fowtList[0].calcBEM(FAST_outname=FAST_outname, dw=dw, wMax=wMax)
-
 
     def plot(self, hideGrid=False):
         '''plots the whole model, including FOWTs and mooring system...'''
