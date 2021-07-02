@@ -14,7 +14,7 @@ from scipy.interpolate      import PchipInterpolator
 from scipy.special          import modstruve, iv
 
 
-from helpers                import deg2rad, rotationMatrix
+from raft.helpers                import rotationMatrix
 
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 

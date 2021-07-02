@@ -528,7 +528,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         #model.solveDynamics()
         results = model.calcOutputs()
         
-        outs = self.list_outputs(values=False, out_stream=None)
+        outs = self.list_outputs(val=False, out_stream=None)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
