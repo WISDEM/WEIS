@@ -204,7 +204,7 @@ def write_hydrostatic_file(projectDir=None, cog=np.zeros(3), mass=np.zeros((6,6)
         f.write('\n')
     f.close()
 
-def write_control_file(projectDir=None, waterDepth=50.0, iFType=3, oFType=3, numFreqs=-300,
+def write_control_file(projectDir=None, waterDepth=50.0, incFLim=1, iFType=3, oFType=3, numFreqs=-300,
                        minFreq=0.02, dFreq=0.02, freqList=None, numHeadings=1,
                        minHeading=0.0, dHeading=0.0,
                        refBodyCenter=[0.0, 0.0, 0.0], refBodyLen=1.0, irr=0,
@@ -218,6 +218,10 @@ def write_control_file(projectDir=None, waterDepth=50.0, iFType=3, oFType=3, num
         main HAMS project directory - ControlFile.in will be written in ./Input/
     waterDepth : float
         water depth (m)
+    incFLim: int
+        include 0 and infinite frequency limits
+            0: do not include
+            1: include
     iFType: int
         input frequency type
             1: deepwater wavenumber
@@ -278,6 +282,7 @@ def write_control_file(projectDir=None, waterDepth=50.0, iFType=3, oFType=3, num
     f.write(f'   --------------HAMS Control file---------------\n\n')
     f.write(f'   Waterdepth  {-waterDepth}D0\n\n')             # note: HAMS expects the depth to be given as negative
     f.write(f'   #Start Definition of Wave Frequencies\n')
+    f.write(f'    0_inf_frequency_limits  {incFLim}\n')
     f.write(f'    Input_frequency_type    {iFType}\n')
     f.write(f'    Output_frequency_type   {oFType}\n')
     f.write(f'    Number_of_frequencies   {numFreqs}\n') # -ve for min & step, +ve for list of frequencies (or periods)
