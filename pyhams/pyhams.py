@@ -62,24 +62,24 @@ def nemohmesh_to_pnl(nemohMeshPath, writeDir=None):
     numVertices = ixZeros[0] - numHeaders
     numPanels = ixZeros[1] - 1 - numVertices - numHeaders
 
-    oFilePath = osp.join(writeDir, f'HullMesh.pnl')
+    oFilePath = osp.join(writeDir, 'HullMesh.pnl')
 
     oFile = open(oFilePath, 'w')
-    oFile.write(f'    --------------Hull Mesh File---------------\n\n')
-    oFile.write(f'    # Number of Panels, Nodes, X-Symmetry and Y-Symmetry\n')
+    oFile.write('    --------------Hull Mesh File---------------\n\n')
+    oFile.write('    # Number of Panels, Nodes, X-Symmetry and Y-Symmetry\n')
     oFile.write(f'         {numPanels}         {numVertices}         0         {ySym}\n\n')
-    oFile.write(f'    #Start Definition of Node Coordinates     ! node_number   x   y   z\n')
+    oFile.write('    #Start Definition of Node Coordinates     ! node_number   x   y   z\n')
 
     for ix, line in enumerate(lines[numHeaders:]):
         if line.split()[0] == '0':
-            oFile.write(f'   #End Definition of Node Coordinates\n\n')
-            oFile.write(f'   #Start Definition of Node Relations   ! panel_number  number_of_vertices   Vertex1_ID   Vertex2_ID   Vertex3_ID   (Vertex4_ID)\n')
+            oFile.write('   #End Definition of Node Coordinates\n\n')
+            oFile.write('   #Start Definition of Node Relations   ! panel_number  number_of_vertices   Vertex1_ID   Vertex2_ID   Vertex3_ID   (Vertex4_ID)\n')
             break
         oFile.write(f'{line.split()[0]:>5}{line.split()[1]:>18}{line.split()[2]:>18}{line.split()[3]:>18}\n')
     for ix, line in enumerate(lines[(numVertices+2):]):
         if line.split()[0] == '0':
-            oFile.write(f'   #End Definition of Node Relations\n\n')
-            oFile.write(f'    --------------End Hull Mesh File---------------\n')
+            oFile.write('   #End Definition of Node Relations\n\n')
+            oFile.write('    --------------End Hull Mesh File---------------\n')
             break
         if line.split()[0] == line.split()[3]:
             numNodes = 3
@@ -170,7 +170,7 @@ def write_hydrostatic_file(projectDir=None, cog=np.zeros(3), mass=np.zeros((6,6)
     zeros if only the hydrodynamic coefficients are of interest.
     '''
     if projectDir is None:
-        raise ValueError(f'No directory has been passed for where to write Hydrostatic.in')
+        raise ValueError('No directory has been passed for where to write Hydrostatic.in')
     else:
         projectDir = osp.normpath(osp.join(projectDir, 'Input'))
 
@@ -272,37 +272,40 @@ def write_control_file(projectDir=None, waterDepth=50.0, incFLim=1, iFType=3, oF
 
     '''
     if projectDir is None:
-        raise ValueError(f'No directory has been passed for where to write Hydrostatic.in')
+        raise ValueError('No directory has been passed for where to write Hydrostatic.in')
     else:
-        projectDir = osp.normpath(osp.join(projectDir, f'./Input'))
+        projectDir = osp.normpath(osp.join(projectDir, './Input'))
 
-    oFileName = f'ControlFile.in'
+    oFileName = 'ControlFile.in'
 
     f = open(osp.join(projectDir, oFileName), 'w')
-    f.write(f'   --------------HAMS Control file---------------\n\n')
+    f.write('   --------------HAMS Control file---------------\n\n')
     f.write(f'   Waterdepth  {-waterDepth}D0\n\n')             # note: HAMS expects the depth to be given as negative
-    f.write(f'   #Start Definition of Wave Frequencies\n')
+    f.write('   #Start Definition of Wave Frequencies\n')
     f.write(f'    0_inf_frequency_limits  {incFLim}\n')
     f.write(f'    Input_frequency_type    {iFType}\n')
     f.write(f'    Output_frequency_type   {oFType}\n')
     f.write(f'    Number_of_frequencies   {numFreqs}\n') # -ve for min & step, +ve for list of frequencies (or periods)
-    f.write(f'    Minimum_frequency_Wmin  {minFreq}D0\n')
-    f.write(f'    Frequency_step          {dFreq}D0\n')
-    f.write(f'   #End Definition of Wave Frequencies\n\n')
-    f.write(f'   #Start Definition of Wave Headings\n')
+    if not freqList is None and numFreqs > 0:
+        f.write(str(np.array(freqList)).replace('[','').replace(']','').replace('\n','')+'\n') # -ve for min & step, +ve for list of frequencies (or periods)
+    else:
+        f.write(f'    Minimum_frequency_Wmin  {minFreq}D0\n')
+        f.write(f'    Frequency_step          {dFreq}D0\n')
+    f.write('   #End Definition of Wave Frequencies\n\n')
+    f.write('   #Start Definition of Wave Headings\n')
     f.write(f'    Number_of_headings      -{numHeadings}\n')
     f.write(f'    Minimum_heading         {minHeading}D0\n')
     f.write(f'    Heading_step            {dHeading}D0\n')
-    f.write(f'   #End Definition of Wave Headings\n\n')
+    f.write('   #End Definition of Wave Headings\n\n')
     f.write(f'    Reference_body_center   {refBodyCenter[0]:.3f} {refBodyCenter[1]:.3f} {refBodyCenter[2]:.3f}\n')
     f.write(f'    Reference_body_length   {refBodyLen}D0\n')
-    f.write(f'    Wave-diffrac-solution   2\n')
+    f.write('    Wave-diffrac-solution   2\n')
     f.write(f'    If_remove_irr_freq      {irr}\n')
     f.write(f'    Number of threads       {numThreads}\n\n')
-    f.write(f'   #Start Definition of Pressure and/or Elevation\n')
-    f.write(f'    Number_of_field_points  0 \n')
-    f.write(f'   #End Definition of Pressure and/or Elevation\n\n')
-    f.write(f'   ----------End HAMS Control file---------------\n')
+    f.write('   #Start Definition of Pressure and/or Elevation\n')
+    f.write('    Number_of_field_points  0 \n')
+    f.write('   #End Definition of Pressure and/or Elevation\n\n')
+    f.write('   ----------End HAMS Control file---------------\n')
     f.close()
 
 
@@ -343,21 +346,32 @@ def read_wamit1B(pathWamit1, TFlag=0):
     Read added mass and damping from .1 file (WAMIT format)
     '''
     pathWamit1 = osp.normpath(pathWamit1)
-    wamit1 = np.loadtxt(pathWamit1)
+    # Check if the file contains the infinite and zero frequency points
+    try:
+        freq_test = np.loadtxt(pathWamit1, usecols=(0,1,2,3), max_rows=72)
+        if np.array_equal(np.unique(freq_test[:,0]), np.array([-1.0, 0.0])):
+            other_freqs = np.loadtxt(pathWamit1, usecols=(0,1,2,3,4), skiprows=72)
+            freq_test = np.c_[freq_test, np.nan*np.ones(72)]
+            wamit1 = np.vstack((freq_test, other_freqs))
+        else:
+            wamit1 = np.loadtxt(pathWamit1)
+    except:
+        wamit1 = np.loadtxt(pathWamit1)
     # <<<<<< NEED TO MAKE SURE THAT YOU HAVE DELETED THE HYDROSTATIC PART OUT OF THE .1 FILE
     # SO THAT THERE IS THE SAME NUMBER OF COLUMNS FOR EVERY ROW IN THE FILE >>>>>>>>>>>>>>>>
     # can add in functionality to make a hydrostatic matrix, but not needed yet
     
     if TFlag:   # if TFlag=1, the first column values are periods
         T = np.unique(wamit1[:,0])
+        T[T==0.0] = np.inf
         w = 2*np.pi/np.flip(T)
     else:       # if TFlag=0, the first column values are frequencies
         w = np.unique(wamit1[:,0])
         
     addedMassCol = wamit1[:,3]
     dampingCol = wamit1[:,4]
-    matRow = wamit1[:,1]
-    matCol = wamit1[:,2]
+    matRow = np.int_(wamit1[:,1])
+    matCol = np.int_(wamit1[:,2])
     addedMass = np.zeros([len(w),6,6])
     damping = np.zeros([len(w),6,6])
     
@@ -366,8 +380,8 @@ def read_wamit1B(pathWamit1, TFlag=0):
     x = int(nA/nw)
     for j in range(len(w)):
         for i in range(x):
-            addedMass[j,int(matRow[i])-1,int(matCol[i])-1] = addedMassCol[i+x*j]
-            damping[j,int(matRow[i])-1,int(matCol[i])-1] = dampingCol[i+x*j]
+            addedMass[j,matRow[i]-1,matCol[i]-1] = addedMassCol[i+x*j]
+            damping[j,matRow[i]-1,matCol[i]-1] = dampingCol[i+x*j]
     
     # transpose(a,b,c) function switches the sizes in an order of k[a] to the 0 spot, k[b] to the 1 spot, and k[c] to the 2 spot
     A = addedMass.transpose(1,2,0) # transposes addedMass.shape = (100,6row,6col) to (6row,6col,100)
