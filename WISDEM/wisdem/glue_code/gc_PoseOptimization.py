@@ -1,8 +1,9 @@
 import os
 
 import numpy as np
-import openmdao.api as om
 from scipy.interpolate import PchipInterpolator
+
+import openmdao.api as om
 
 
 class PoseOptimization(object):
@@ -414,8 +415,8 @@ class PoseOptimization(object):
             else:
                 wt_opt.model.add_objective("floatingse.tower_mass", ref=1e6)
 
-        elif self.opt["merit_figure"] == "mononpile_mass":
-            wt_opt.model.add_objective("towerse.mononpile_mass", ref=1e6)
+        elif self.opt["merit_figure"] == "monopile_mass":
+            wt_opt.model.add_objective("towerse.monopile_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "structural_mass":
             if not self.modeling["flags"]["floating"]:
@@ -452,6 +453,10 @@ class PoseOptimization(object):
                 wt_opt.model.add_objective("rotorse.rp.powercurve.Cp_regII", ref=-1.0)
             else:
                 wt_opt.model.add_objective("rotorse.ccblade.CP", ref=-1.0)
+
+        elif self.opt["merit_figure"] == "inverse_design":
+            wt_opt.model.add_objective("inverse_design.objective")
+
         else:
             raise ValueError("The merit figure " + self.opt["merit_figure"] + " is unknown or not supported.")
 
@@ -938,6 +943,11 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("rotorse.ccblade.L_n_opt", lower=target_L - eps_L, upper=target_L + eps_L)
         if self.opt["constraints"]["blade"]["match_L_D"]["flag_D"]:
             wt_opt.model.add_constraint("rotorse.ccblade.D_n_opt", lower=target_D - eps_L, upper=target_D + eps_L)
+
+        if self.opt["constraints"]["blade"]["AEP"]["flag"]:
+            wt_opt.model.add_constraint(
+                "rotorse.rp.AEP", lower=self.opt["constraints"]["blade"]["AEP"]["min"], ref=-1.0e6
+            )
 
         # Tower and monopile contraints
         tower_constr = self.opt["constraints"]["tower"]
