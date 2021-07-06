@@ -636,9 +636,10 @@ class FASTLoadCases(ExplicitComponent):
         r[-1] = inputs['Rtip']-inputs['Rhub']
         fst_vt['AeroDynBlade']['NumBlNds'] = self.n_span
         fst_vt['AeroDynBlade']['BlSpn']    = r
-        fst_vt['AeroDynBlade']['BlCrvAC']  = inputs['ref_axis_blade'][:,0]
-        fst_vt['AeroDynBlade']['BlSwpAC']  = inputs['ref_axis_blade'][:,1]
-        fst_vt['AeroDynBlade']['BlCrvAng'] = np.degrees(np.arcsin(np.gradient(inputs['ref_axis_blade'][:,0])/np.gradient(r)))
+        BlCrvAC, BlSwpAC = self.get_ac_axis(inputs)
+        fst_vt['AeroDynBlade']['BlCrvAC']  = BlCrvAC
+        fst_vt['AeroDynBlade']['BlSwpAC']  = BlSwpAC
+        fst_vt['AeroDynBlade']['BlCrvAng'] = np.degrees(np.arcsin(np.gradient(BlCrvAC)/np.gradient(r)))
         fst_vt['AeroDynBlade']['BlTwist']  = inputs['theta']
         fst_vt['AeroDynBlade']['BlChord']  = inputs['chord']
         fst_vt['AeroDynBlade']['BlAFID']   = np.asarray(range(1,self.n_span+1))
@@ -1691,6 +1692,17 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
+    def get_ac_axis(self, inputs):
+        
+        # Get the absolute offset between pitch axis (rotation center) and aerodynamic center
+        ch_offset = inputs['chord'] * (inputs['ac'] - inputs['le_location'])
+        # Rotate it by the twist using the AD15 coordinate system
+        x , y = util.rotate(0., 0., 0., ch_offset, -np.deg2rad(inputs['theta']))
+        # Apply offset to determine the AC axis
+        BlCrvAC = inputs['ref_axis_blade'][:,0] + x
+        BlSwpAC = inputs['ref_axis_blade'][:,1] + y
+        
+        return BlCrvAC, BlSwpAC
     
     def write_FAST(self, fst_vt, discrete_outputs):
         writer                   = InputWriter_OpenFAST()
