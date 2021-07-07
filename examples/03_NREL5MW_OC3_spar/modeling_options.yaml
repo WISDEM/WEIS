@@ -80,9 +80,9 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [14.]
-          wave_height: [7.]
-          wave_period: [2.]
+          wind_speed: [14., 16.]
+          wave_height: [7., 8.]
+          wave_period: [1., 2.]
           n_seeds: 1
           turbulent_wind:
               HubHt: 90.0

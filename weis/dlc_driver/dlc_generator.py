@@ -92,10 +92,10 @@ class DLCGenerator(object):
         wave_Hs = self.get_wave_Hs(options)
         wave_Tp = self.get_wave_Tp(options)
 
-        if len(wave_Hs) > 1 and (len(wave_Hs) != len(wind_seeds) or len(wave_Hs) != len(wind_speeds)):
-            raise Exception("The vector of wave heights must have the same length of wind speeds and wind seeds")
-        if len(wave_Tp) > 1 and (len(wave_Tp) != len(wind_seeds) or len(wave_Tp) != len(wind_speeds)):
-            raise Exception("The vector of wave periods must have the same length of wind speeds and wind seeds")
+        if len(wave_Hs) > 1 and len(wave_Hs) != len(wind_speeds):
+            raise Exception("The vector of wave heights must have either length=1 or the same length of wind speeds")
+        if len(wave_Tp) > 1 and len(wave_Tp) != len(wind_speeds):
+            raise Exception("The vector of wave periods must have either length=1 or the same length of wind speeds")
 
         return wind_speeds, wind_seeds, wave_Hs, wave_Tp
 
@@ -125,76 +125,86 @@ class DLCGenerator(object):
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
         wind_speeds, wind_seeds, wave_Hs, wave_Tp = self.get_metocean(options)
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for ws in wind_speeds:
             for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = 'NTM'
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.1'
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
         self.n_cases_dlc11 = len(wind_speeds)*len(wind_seeds)
     
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
         wind_speeds, wind_seeds, wave_Hs, wave_Tp = self.get_metocean(options)
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for ws in wind_speeds:
             for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = 'NTM'
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.2'
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
     
     def generate_1p3(self, options):
         # Power production extreme turbulence model - ultimate loads
         wind_speeds, wind_seeds, wave_Hs, wave_Tp = self.get_metocean(options)
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for ws in wind_speeds:
             for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = self.wind_class_num + 'ETM'
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.3'
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
 
     def generate_1p4(self, options):
         # Extreme coherent gust with direction change - ultimate loads
         wind_speeds, _, wave_Hs, wave_Tp = self.get_metocean(options)
         directions = ['n', 'p']
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for ws in wind_speeds:
             for direction in directions:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = 'ECD'
                 idlc.turbulent_wind = False
                 idlc.turbine_status = 'operating'
@@ -202,22 +212,25 @@ class DLCGenerator(object):
                 idlc.direction_pn = direction
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
 
     def generate_1p5(self, options):
         # Extreme wind shear - ultimate loads
         wind_speeds, _, wave_Hs, wave_Tp = self.get_metocean(options)
         directions = ['p', 'n']
         shears=['h', 'v']
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for ws in wind_speeds:
             for direction in directions:
                 for shear in shears:
                     idlc = DLCInstance(options=options)
                     idlc.URef = ws
-                    idlc.wave_height = wave_Hs[i]
-                    idlc.wave_period = wave_Tp[i]
+                    idlc.wave_height = wave_Hs[i_Hs]
+                    idlc.wave_period = wave_Tp[i_Tp]
                     idlc.IEC_WindType = 'EWS'
                     idlc.turbulent_wind = False
                     idlc.turbine_status = 'operating'
@@ -227,23 +240,26 @@ class DLCGenerator(object):
                     idlc.shear_hv = shear
                     self.cases.append(idlc)
                     if len(wave_Hs)>1:
-                        i+=1
+                        i_Hs+=1
+                    if len(wave_Tp)>1:
+                        i_Tp+=1
 
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
             
         _, wind_seeds, wave_Hs, wave_Tp = self.get_metocean(options)
         yaw_misalign_deg = np.array([-8., 8.])
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for yaw_ms in yaw_misalign_deg:
             for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = self.V_e50
                 idlc.yaw_misalign = yaw_ms
                 idlc.RandSeed1 = seed
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = self.wind_class_num + 'EWM50'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
@@ -251,23 +267,26 @@ class DLCGenerator(object):
                 idlc.label = '6.1'
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
 
     def generate_6p3(self, options):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
 
         _, wind_seeds, wave_Hs, wave_Tp = self.get_metocean(options)
         yaw_misalign_deg = np.array([-20., 20.])
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for yaw_ms in yaw_misalign_deg:
             for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = self.V_e1
                 idlc.yaw_misalign = yaw_ms
                 idlc.RandSeed1 = seed
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = self.wind_class_num + 'EWM1'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
@@ -275,7 +294,9 @@ class DLCGenerator(object):
                 idlc.label = '6.3'
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
 
     def generate_6p4(self, options):
         # Parked (standing still or idling) - normal turbulence model - fatigue loads
@@ -283,15 +304,16 @@ class DLCGenerator(object):
         wind_speeds = np.arange(self.ws_cut_in, 0.7 * self.V_ref, options['ws_bin_size'])
         if wind_speeds[-1] != self.V_ref:
             wind_speeds = np.append(wind_speeds, self.V_ref)
-        # Counter for wave conditions
-        i=0
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
         for ws in wind_speeds:
             for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
-                idlc.wave_height = wave_Hs[i]
-                idlc.wave_period = wave_Tp[i]
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
                 idlc.IEC_WindType = 'NTM'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
@@ -299,7 +321,9 @@ class DLCGenerator(object):
                 idlc.label = '6.4'
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
-                    i+=1
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
 
 
 if __name__ == "__main__":
