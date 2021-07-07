@@ -496,6 +496,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
         fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
 
+        # Structural Control: these could be defaulted modeling options, but we will add them as DVs later, so we'll hard code them here for now
+        fst_vt['ServoDyn']['NumBStC']       = 0
+        fst_vt['ServoDyn']['BStCfiles']     = "unused"
+        fst_vt['ServoDyn']['NumNStC']       = 0
+        fst_vt['ServoDyn']['NStCfiles']     = "unused"
+        fst_vt['ServoDyn']['NumTStC']       = 0
+        fst_vt['ServoDyn']['TStCfiles']     = "unused"
+        fst_vt['ServoDyn']['NumSStC']       = 0
+        fst_vt['ServoDyn']['SStCfiles']     = "unused"
+
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
         fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
@@ -884,7 +894,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['WaveElevxi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevxi']]
             fst_vt['HydroDyn']['WaveElevyi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevyi']]
             fst_vt['HydroDyn']['CurrSSDir'] = "DEFAULT" if fst_vt['HydroDyn']['CurrSSDir']<=-999.0 else np.rad2deg(fst_vt['HydroDyn']['CurrSSDir']) 
-            fst_vt['HydroDyn']['AddF0'] = np.array( fst_vt['HydroDyn']['AddF0'] )
+            fst_vt['HydroDyn']['AddF0'] = np.array( fst_vt['HydroDyn']['AddF0'] ).reshape(-1,1)
             fst_vt['HydroDyn']['AddCLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddCLin'+str(m+1)] for m in range(6)]) )
             fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
             fst_vt['HydroDyn']['AddBQuad'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
@@ -914,6 +924,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
             fst_vt['HydroDyn']['SimplAxCp'] = 1.0
             fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCd'] = 0.0
+            fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
             fst_vt['HydroDyn']['NCoefDpth'] = 0
             fst_vt['HydroDyn']['NCoefMembers'] = 0
             fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
@@ -927,6 +939,15 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
+
+            if fst_vt['HydroDyn']['NBody'] > 1:
+                raise Exception('Multiple HydroDyn bodies (NBody > 1) is currently not supported in WEIS')
+
+            # Offset of body reference point 
+            fst_vt['HydroDyn']['PtfmRefxt']     = 0 
+            fst_vt['HydroDyn']['PtfmRefyt']     = 0 
+            fst_vt['HydroDyn']['PtfmRefzt']     = 0 
+            fst_vt['HydroDyn']['PtfmRefztRot']  = 0 
 
             # If we're using the potential model, need these settings that aren't default
             if fst_vt['HydroDyn']['PotMod']:
