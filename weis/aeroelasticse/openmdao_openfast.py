@@ -1117,7 +1117,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
-        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
+        if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
             summary_stats, extreme_table, DELs, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
@@ -1231,7 +1231,7 @@ class FASTLoadCases(ExplicitComponent):
         iec.overwrite       = False # TODO: elevate these options to analysis input file
         iec.run_dir         = self.FAST_runDirectory
 
-        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
+        if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
             iec.parallel_windfile_gen = True
             iec.mpi_run               = self.FASTpref['analysis_settings']['mpi_run']
             iec.comm_map_down         = self.FASTpref['analysis_settings']['mpi_comm_map_down']

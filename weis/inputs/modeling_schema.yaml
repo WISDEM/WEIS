@@ -2734,9 +2734,9 @@ properties:
                 description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 1 = Immersion and Invariance Estimator, 2 = Extended Kalman Filter}
             PS_Mode:
                 type: integer
-                enum: [0, 1]
+                enum: [0, 1, 2, 3]
                 default: 1
-                description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving}
+                description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving, 2 = Cp maximization at low wind speed, 3 = 1 + 2}
             SD_Mode:
                 type: integer
                 enum: [0, 1]
