@@ -1,10 +1,8 @@
 # RAFT's floating wind turbine class
 
 import os
-import os.path as osp
-import sys
 import numpy as np
-import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 import pyhams.pyhams     as ph
 import raft.member2pnl as pnl
@@ -20,7 +18,7 @@ from raft.raft_rotor import Rotor
 class FOWT():
     '''This class comprises the frequency domain model of a single floating wind turbine'''
 
-    def __init__(self, design, w=[], mpb=None, depth=600):
+    def __init__(self, design, w, mpb, depth=600):
         '''This initializes the FOWT object which contains everything for a single turbine's frequency-domain dynamics.
         The initializiation sets up the design description.
 
@@ -29,22 +27,24 @@ class FOWT():
         design : dict
             Dictionary of the design...
         w
-            Array of frequencies to be used in analysis
+            Array of frequencies to be used in analysis (rad/s)
+        mpb
+            A MoorPy Body object that represents this FOWT in MoorPy
+        depth
+            Water depth, positive-down. (m)
         '''
 
         # basic setup
         self.nDOF = 6
         self.Xi0 = np.zeros(6)    # mean offsets of platform, initialized at zero  [m, rad]
 
-        if len(w)==0:
-            w = np.arange(.01, 3, 0.01)                              # angular frequencies tp analyze (rad/s)
-
         self.depth = depth
 
         self.w = np.array(w)
-        self.nw = len(w)                                             # number of frequencies
+        self.nw = len(w)            # number of frequencies
+        self.dw = w[1]-w[0]         # frequency increment [rad/s]    
         
-        self.k = np.array( [ waveNumber(w, self.depth) for w in self.w] )  # wave number
+        self.k = np.array([waveNumber(w, self.depth) for w in self.w])  # wave number [m/rad]
 
         
         self.rho_water = getFromDict(design['site'], 'rho_water', default=1025.0)
@@ -53,13 +53,17 @@ class FOWT():
             
         design['turbine']['tower']['dlsMax'] = getFromDict(design['turbine']['tower'], 'dlsMax', default=5.0)
              
+             
+        potModMaster = getFromDict(design['platform'], 'potModMaster', dtype=int, default=0)
+        dlsMax       = getFromDict(design['platform'], 'dlsMax'      , default=5.0)
+        min_freq_BEM = getFromDict(design['platform'], 'min_freq_BEM', default=self.dw/2/np.pi)
+        self.dw_BEM  = 2.0*np.pi*min_freq_BEM
+        #self.pyHAMS_use_radps = getFromDict(design['platform'], 'pyHAMS_use_radps', dtype=bool, default=False)  # could support this option if needed
+        
         
         # member-based platform description
         self.memberList = []                                         # list of member objects
 
-        potModMaster = getFromDict(design['platform'], 'potModMaster', dtype=int, default=0)
-        dlsMax       = getFromDict(design['platform'], 'dlsMax', default=5.0)
-        
         for mi in design['platform']['members']:
 
             if potModMaster==1:
@@ -94,7 +98,7 @@ class FOWT():
         design['turbine']['mu_air'  ] = design['site']['mu_air']
         design['turbine']['shearExp'] = design['site']['shearExp']
         
-        self.rotor = Rotor(design['turbine'], self.w)        
+        self.rotor = Rotor(design['turbine'], self.w)
 
         # turbine RNA description
         self.mRNA    = design['turbine']['mRNA']
@@ -110,6 +114,7 @@ class FOWT():
         # initialize BEM arrays, whether or not a BEM sovler is used
         self.A_BEM = np.zeros([6,6,self.nw], dtype=float)                 # hydrodynamic added mass matrix [kg, kg-m, kg-m^2]
         self.B_BEM = np.zeros([6,6,self.nw], dtype=float)                 # wave radiation drag matrix [kg, kg-m, kg-m^2]
+        self.X_BEM = np.zeros([6,  self.nw], dtype=complex)               # linaer wave excitation force/moment coefficients vector [N, N-m]
         self.F_BEM = np.zeros([6,  self.nw], dtype=complex)               # linaer wave excitation force/moment complex amplitudes vector [N, N-m]
 
 
@@ -344,12 +349,12 @@ class FOWT():
 
 
     def calcBEM(self):
-        '''This generates a mesh for the platform and runs a BEM analysis on it.
-        The mesh is only for non-interesecting members flagged with potMod=1.'''
+        '''This generates a mesh for the platform and runs a BEM analysis on it
+        using pyHAMS. It can also write adjusted .1 and .3 output files suitable
+        for use with OpenFAST.
+        The mesh is only made for non-interesecting members flagged with potMod=1.
+        '''
         
-        rho = self.rho_water
-        g   = self.g
-
         # desired panel size (longitudinal and azimuthal)
         dz = 3
         da = 2
@@ -374,52 +379,41 @@ class FOWT():
         # only try to save a mesh and run HAMS if some members DO have potMod=True
         if len(panels) > 0:
 
-            meshDir = 'BEM'
+            meshDir = os.path.join(os.getcwd(), 'BEM')
             
-            pnl.writeMesh(nodes, panels, oDir=osp.join(meshDir,'Input')) # generate a mesh file in the HAMS .pnl format
+            pnl.writeMesh(nodes, panels, oDir=os.path.join(meshDir,'Input')) # generate a mesh file in the HAMS .pnl format
             
             pnl.writeMeshToGDF(vertices)                                # also a GDF for visualization
             
-            # TODO: maybe create a 'HAMS Project' class:
-            #     - methods:
-            #         - create HAMS project structure
-            #         - write HAMS input files
-            #         - call HAMS.exe
-            #     - attributes:
-            #         - addedMass, damping, fEx coefficients
-            ph.create_hams_dirs(meshDir)
+            ph.create_hams_dirs(meshDir)                #
             
-            ph.write_hydrostatic_file(meshDir)
+            ph.write_hydrostatic_file(meshDir)          # HAMS needs a hydrostatics file, but it's unused for .1 and .3, so write a blank one
             
-            ph.write_control_file(meshDir, waterDepth=self.depth,
-                                  numFreqs=-len(self.w), minFreq=self.w[0], dFreq=np.diff(self.w[:2])[0])
+            ph.write_control_file(meshDir, waterDepth=self.depth, incFLim=1, iFType=3, oFType=4,   # inputs are in rad/s, outputs in s
+                                  numFreqs=self.w.size, freqList=self.w)
             
-            ph.run_hams(meshDir) # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # execute the HAMS analysis
+            ph.run_hams(meshDir) 
             
-            data1 = osp.join(meshDir, f'Output/Wamit_format/Buoy.1')
-            data3 = osp.join(meshDir, f'Output/Wamit_format/Buoy.3')
+            # read the HAMS WAMIT-style output files
+            data1 = os.path.join(meshDir, 'Output','Wamit_format','Buoy.1')
+            data3 = os.path.join(meshDir, 'Output','Wamit_format','Buoy.3')
             
-            #raftDir = osp.dirname(__file__)
-            #addedMass, damping = ph.read_wamit1(osp.join(raftDir, data1))
-            addedMass, damping, w_HAMS = ph.read_wamit1B(data1)
-            fExMod, fExPhase, fExReal, fExImag = ph.read_wamit3(data3)
-                       
-            #addedMass, damping = ph.read_wamit1(data1)         # original
-            #addedMass, damping = ph.read_wamit1('C:\\Code\\RAFT\\raft\\data\\cylinder\\Output\\Wamit_format\\Buoy.1')
-            #addedMass, damping = ph.read_wamit1('C:\\Code\\RAFT\\raft\\BEM\\Output\\Wamit_format\\Buoy.1')
+            addedMass, damping, w1 = ph.read_wamit1B(data1, TFlag=True)
+            M, P, R, I, w3, headings = ph.read_wamit3B(data3, TFlag=True)            
             
-            #fExMod, fExPhase, fExReal, fExImag = ph.read_wamit3(data3)         # original
-            #fExMod, fExPhase, fExReal, fExImag = ph.read_wamit3('C:\\Code\\RAFT\\raft\\data\\cylinder\\Output\\Wamit_format\\Buoy.3')
-            #fExMod, fExPhase, fExReal, fExImag = ph.read_wamit3('C:\\Code\\RAFT\\raft\\BEM\\Output\\Wamit_format\\Buoy.3')
+            # interpole to the frequencies RAFT is using
+            addedMassInterp = interp1d(w1, addedMass, assume_sorted=False, axis=2)(self.w)
+            dampingInterp   = interp1d(w1,   damping, assume_sorted=False, axis=2)(self.w)
+            fExRealInterp   = interp1d(w3,   R      , assume_sorted=False        )(self.w)
+            fExImagInterp   = interp1d(w3,   I      , assume_sorted=False        )(self.w)
             
             # copy results over to the FOWT's coefficient arrays
-            self.A_BEM = self.rho_water * addedMass
-            self.B_BEM = self.rho_water * damping
-            self.X_BEM = self.rho_water * self.g * (fExReal + 1j*fExImag)  # linear wave excitation coefficients
-            self.F_BEM = self.X_BEM * self.zeta     # wave excitation force
-            self.w_BEM = w_HAMS
-
-            # >>> do we want to seperate out infinite-frequency added mass? <<<
+            self.A_BEM = self.rho_water * addedMassInterp
+            self.B_BEM = self.rho_water * dampingInterp                                 
+            self.X_BEM = self.rho_water * self.g * (fExRealInterp + 1j*fExImagInterp)
+            
+            # note: RAFT will only be using finite-frequency potential flow coefficients
             
     
     def calcTurbineConstants(self, case, ptfm_pitch=0):
@@ -481,6 +475,10 @@ class FOWT():
         # >>> what about current? <<<
         # >>> could we also calculate mean viscous drift force here?? <<<
 
+        # ----- calculate potential-flow wave excitation force -----
+
+        self.F_BEM = self.X_BEM * self.zeta     # wave excitation force (will be zero if HAMS wasn't run)
+            
         # --------------------- get constant hydrodynamic values along each member -----------------------------
 
         self.A_hydro_morison = np.zeros([6,6])                # hydrodynamic added mass matrix, from only Morison equation [kg, kg-m, kg-m^2]
