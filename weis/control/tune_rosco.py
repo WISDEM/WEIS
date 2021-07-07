@@ -190,12 +190,6 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['ps_percent']  = float(inputs['ps_percent'])
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'])
-        else:
-            rosco_init_options['flp_maxpit']  = None
-        #
-        rosco_init_options['ss_cornerfreq']   = None
-        rosco_init_options['sd_maxpit']       = None
-        rosco_init_options['sd_cornerfreq']   = None
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
@@ -219,8 +213,8 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
         
         # Floating Feedback Filters
-        WISDEM_turbine.twr_freq         = float(inputs['twr_freq'])
-        WISDEM_turbine.ptfm_freq        = float(inputs['ptfm_freq'])
+        rosco_init_options['twr_freq']      = float(inputs['twr_freq'])
+        rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
 
         # Load Cp tables
         self.Cp_table       = inputs['Cp_table']
@@ -332,8 +326,8 @@ class TuneROSCO(ExplicitComponent):
         self.ROSCO_input['v_rated'] = float(inputs['v_rated'])
         self.ROSCO_input['F_FlpCornerFreq']  = [float(inputs['flap_freq']) * 2 * np.pi / 3., 0.7]
         self.ROSCO_input['F_LPFCornerFreq']  = float(inputs['edge_freq']) * 2 * np.pi / 4.
-        self.ROSCO_input['F_NotchCornerFreq'] = WISDEM_turbine.twr_freq    # inputs(['twr_freq']) # zero for now, fix when floating introduced to WISDEM
-        self.ROSCO_input['F_FlCornerFreq'] = [WISDEM_turbine.ptfm_freq, 0.707] # inputs(['ptfm_freq']) # zero for now, fix when floating introduced to WISDEM
+        self.ROSCO_input['F_NotchCornerFreq'] = float(inputs['twr_freq'])
+        self.ROSCO_input['F_FlCornerFreq'] = [float(inputs['ptfm_freq']), 0.707] 
         self.ROSCO_input['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
         self.ROSCO_input['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
         self.ROSCO_input['VS_MaxRat'] = WISDEM_turbine.max_torque_rate

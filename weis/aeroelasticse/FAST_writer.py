@@ -1197,6 +1197,8 @@ class InputWriter_OpenFAST(object):
         controller.Ki_flap              = self.fst_vt['DISCON_in']['Flp_Ki']
         controller.flp_angle            = self.fst_vt['DISCON_in']['Flp_Angle']
         controller.flp_maxpit           = self.fst_vt['DISCON_in']['Flp_MaxPit']
+        controller.twr_freq             = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
+        controller.ptfm_freq            = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
 
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
@@ -1206,8 +1208,6 @@ class InputWriter_OpenFAST(object):
         turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
         turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0] * 3.
         turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
-        turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
-        turbine.ptfm_freq               = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
         turbine.max_pitch_rate          = self.fst_vt['DISCON_in']['PC_MaxRat']
         turbine.min_pitch_rate          = self.fst_vt['DISCON_in']['PC_MinRat']
         turbine.max_torque_rate         = self.fst_vt['DISCON_in']['VS_MaxRat']
