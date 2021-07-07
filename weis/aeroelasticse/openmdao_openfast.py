@@ -1116,8 +1116,8 @@ class FASTLoadCases(ExplicitComponent):
                 pitch_initial[i_case] = 90.
         
             # Wave inputs to HydroDyn
-            WaveHs = dlc_generator.cases[i_case].wave_height
-            WaveTp = dlc_generator.cases[i_case].wave_period
+            WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
+            WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
 
         # Parameteric inputs
         case_inputs = {}
