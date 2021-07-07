@@ -16,6 +16,7 @@ from weis.aeroelasticse.turbsim_wrapper import Turbsim_wrapper
 from weis.aeroelasticse.turbsim_writer import TurbsimWriter
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
+from functools import partial
 
 from pCrunch import PowerProduction
 
@@ -1075,15 +1076,6 @@ class FASTLoadCases(ExplicitComponent):
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
         
-        wrapper = Turbsim_wrapper()
-        wrapper.run_dir = self.wind_directory
-        run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-        wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
-
-        gusts = IEC_CoherentGusts()
-        gusts.D = rotorD
-        gusts.HH = hub_height
-
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
                 # Assign values common to all DLCs
@@ -1102,37 +1094,39 @@ class FASTLoadCases(ExplicitComponent):
                 dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
                 # Power law exponent of wind shear
                 dlc_generator.cases[i_case].PLExp = PLExp
-                # Write out turbsim input file
-                turbsim_input_file_name = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
-                                        '_U%1.6f'%dlc_generator.cases[i_case].URef + 
-                                        '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
-                turbsim_input_file_path = os.path.join(self.wind_directory, turbsim_input_file_name)
-                ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
-                ts_writer.execute(turbsim_input_file_path)
-                
-                # Run TurbSim in sequence
-                wrapper.turbsim_input = turbsim_input_file_name
-                wrapper.execute()
 
-                # Pass data to CaseGen_General to call OpenFAST
-                WindFile_type[i_case] = 3
-                turbsim_output_file_path = turbsim_input_file_path[:-3] + '.bts'
-                WindFile_name[i_case] = turbsim_output_file_path
+        # Generate wind files
+        if MPI and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
+            # mpi comm management
+            comm = MPI.COMM_WORLD
+            rank = comm.Get_rank()
+            sub_ranks = self.mpi_comm_map_down[rank]
+            size = len(sub_ranks)
+            
+            N_cases = dlc_generator.n_cases # total number of cases
+            N_loops = int(np.ceil(float(N_cases)/float(size)))  # number of times function calls need to "loop"
+            # iterate loops
+            for i in range(N_loops):
+                idx_s = i*size
+                idx_e = min((i+1)*size, N_cases)
 
-            else:
-                wind_file_name = gusts.execute(self.wind_directory, self.FAST_namingOut, dlc_generator.cases[i_case])
-                WindFile_type[i_case] = 2
-                WindFile_name[i_case] = wind_file_name
+                for idx, i_case in enumerate(np.arange(idx_s,idx_e)):
+                    data = [partial(self.generate_wind_files, dlc_generator), i_case]
+                    rank_j = sub_ranks[idx]
+                    comm.send(data, dest=rank_j, tag=0)
+        else:
+            for i_case in range(dlc_generator.n_cases):
+                WindFile_type[i_case] , WindFile_name[i_case] = self.generate_wind_files(dlc_generator, i_case)
 
-            # Set initial rotor speed and pitch if the WT operates in this DLC,
-            # otherwise set pitch to 90 deg and rotor speed to 0 rpm
+        # Set initial rotor speed and pitch if the WT operates in this DLC,
+        # otherwise set pitch to 90 deg and rotor speed to 0 rpm
+        for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbine_status == 'operating':
                 rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
                 pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
             else:
                 rot_speed_initial[i_case] = 0.
                 pitch_initial[i_case] = 90.
-        
             # Wave inputs to HydroDyn
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
             WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
@@ -1622,6 +1616,37 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
+    def generate_wind_files(self, dlc_generator, i_case ):
+        
+        if dlc_generator.cases[i_case].turbulent_wind:        
+            # Write out turbsim input file
+            turbsim_input_file_name = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
+                                    '_U%1.6f'%dlc_generator.cases[i_case].URef + 
+                                    '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
+            turbsim_input_file_path = os.path.join(self.wind_directory, turbsim_input_file_name)
+            ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
+            ts_writer.execute(turbsim_input_file_path)
+            
+            # Run TurbSim in sequence
+            wrapper = Turbsim_wrapper()
+            wrapper.run_dir = self.wind_directory
+            run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+            wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
+            wrapper.turbsim_input = turbsim_input_file_name
+            wrapper.execute()
+
+            # Pass data to CaseGen_General to call OpenFAST
+            wind_file_type = 3
+            wind_file_name = turbsim_input_file_path[:-3] + '.bts'
+
+        else:
+            gusts = IEC_CoherentGusts()
+            gusts.D = rotorD
+            gusts.HH = hub_height
+            wind_file_name = gusts.execute(self.wind_directory, self.FAST_namingOut, dlc_generator.cases[i_case])
+            wind_file_type = 2
+
+        return wind_file_type, wind_file_name
 
     # def BladeFatigue(self, FAST_Output, case_list, dlc_list, inputs, outputs, discrete_inputs, discrete_outputs):
 
