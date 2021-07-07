@@ -63,7 +63,15 @@ class DLCGenerator(object):
                 wind_speeds = np.append(wind_speeds, self.ws_cut_out)
                 
         return wind_speeds
-    
+
+    def get_wind_seeds(self, options):
+        if len(options['wind_seed']) > 0:
+            wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
+        else:
+            wind_seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+
+        return wind_seeds
+
     def generate(self, label, options):
         known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4]
         
@@ -90,10 +98,10 @@ class DLCGenerator(object):
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
         wind_speeds = self.get_wind_speeds(options)
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+        wind_seeds = self.get_wind_seeds(options)
 
         for ws in wind_speeds:
-            for seed in seeds:
+            for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
@@ -102,15 +110,15 @@ class DLCGenerator(object):
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.1'
                 self.cases.append(idlc)
-        self.n_cases_dlc11 = len(wind_speeds)*len(seeds)
+        self.n_cases_dlc11 = len(wind_speeds)*len(wind_seeds)
     
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
         wind_speeds = self.get_wind_speeds(options)
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+        wind_seeds = self.get_wind_seeds(options)
 
         for ws in wind_speeds:
-            for seed in seeds:
+            for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
@@ -123,10 +131,10 @@ class DLCGenerator(object):
     def generate_1p3(self, options):
         # Power production extreme turbulence model - ultimate loads
         wind_speeds = self.get_wind_speeds(options)
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+        wind_seeds = self.get_wind_seeds(options)
 
         for ws in wind_speeds:
-            for seed in seeds:
+            for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
@@ -173,10 +181,10 @@ class DLCGenerator(object):
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
             
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+        wind_seeds = self.get_wind_seeds(options)
         yaw_misalign_deg = np.array([-8., 8.])
         for yaw_ms in yaw_misalign_deg:
-            for seed in seeds:
+            for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = self.V_e50
                 idlc.yaw_misalign = yaw_ms
@@ -191,11 +199,11 @@ class DLCGenerator(object):
     def generate_6p3(self, options):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
 
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+        wind_seeds = self.get_wind_seeds(options)
         yaw_misalign_deg = np.array([-20., 20.])
 
         for yaw_ms in yaw_misalign_deg:
-            for seed in seeds:
+            for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = self.V_e1
                 idlc.yaw_misalign = yaw_ms
@@ -212,10 +220,10 @@ class DLCGenerator(object):
         wind_speeds = np.arange(self.ws_cut_in, 0.7 * self.V_ref, options['ws_bin_size'])
         if wind_speeds[-1] != self.V_ref:
             wind_speeds = np.append(wind_speeds, self.V_ref)
-        seeds = self.rng.integers(2147483648, size=options['n_seeds'], dtype=int)
+        wind_seeds = self.get_wind_seeds(options)
 
         for ws in wind_speeds:
-            for seed in seeds:
+            for seed in wind_seeds:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
                 idlc.RandSeed1 = seed
