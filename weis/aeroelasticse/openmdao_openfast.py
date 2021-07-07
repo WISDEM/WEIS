@@ -1184,7 +1184,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
-        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
+        if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
             summary_stats, extreme_table, DELs, _ = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
@@ -1195,6 +1195,7 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
+
         return summary_stats, extreme_table, DELs, case_list, dlc_generator
 
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
