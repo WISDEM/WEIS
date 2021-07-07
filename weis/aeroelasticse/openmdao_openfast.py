@@ -1153,6 +1153,12 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['SimplAxCaMG']   = 0.0
                 fst_vt['HydroDyn']['SimplAxCp']     = 0.0
                 fst_vt['HydroDyn']['SimplAxCpMG']   = 0.0
+
+            # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
+            if fst_vt['HydroDyn']['PtfmMass_Init']:
+                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
+            else:
+                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
                 
             if fst_vt['HydroDyn']['PotMod']:
                 fst_vt['HydroDyn']['PropPot']       = ['True']* fst_vt['HydroDyn']['NMembers']
@@ -1162,8 +1168,6 @@ class FASTLoadCases(ExplicitComponent):
             weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             if fst_vt['HydroDyn']['PotFile']:
                 fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
-
-            fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
             
         # Moordyn inputs
         if modeling_options["flags"]["mooring"]:
