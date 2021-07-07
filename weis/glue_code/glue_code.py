@@ -68,7 +68,7 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('twr_freq',         val=0.0, units='rad/s',     desc='Tower natural frequency')
-        tune_rosco_ivc.add_output('ptfm_freq',        val=0.0, units='rad/s',     desc='Platform natural frequency')
+        tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
 
         self.add_subsystem('tune_rosco_ivc',tune_rosco_ivc)
         
