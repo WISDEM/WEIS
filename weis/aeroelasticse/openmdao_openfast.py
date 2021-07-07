@@ -1070,6 +1070,8 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
+        WaveHs = np.zeros(dlc_generator.n_cases)
+        WaveTp = np.zeros(dlc_generator.n_cases)
         
         wrapper = Turbsim_wrapper()
         wrapper.run_dir = self.wind_directory
@@ -1113,6 +1115,10 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_initial[i_case] = 0.
                 pitch_initial[i_case] = 90.
         
+            # Wave inputs to HydroDyn
+            WaveHs = dlc_generator.cases[i_case].wave_height
+            WaveTp = dlc_generator.cases[i_case].wave_period
+
         # Parameteric inputs
         case_inputs = {}
         # Inflow wind
@@ -1125,6 +1131,9 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+        # Inputs to HydroDyn
+        case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
+        case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
         
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_directory, self.FAST_InputFile)

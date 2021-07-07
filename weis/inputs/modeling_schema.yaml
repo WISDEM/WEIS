@@ -2576,7 +2576,7 @@ properties:
                             minimum: 1
                             maximum: 100
                             description: Number of turbulent wind seeds
-                        Seeds:
+                        wind_seed:
                             type: array
                             default: [0]
                             description: Turbulent wind random number generator seeds
