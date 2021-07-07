@@ -1053,13 +1053,15 @@ class FASTLoadCases(ExplicitComponent):
 
         DLCs = self.options['modeling_options']['DLC_driver']['DLCs']
         # Initialize the DLC generator
-        cut_in = inputs['V_cutin']
-        cut_out = inputs['V_cutout']
-        rated = inputs['Vrated']
+        cut_in = float(inputs['V_cutin'])
+        cut_out = float(inputs['V_cutout'])
+        rated = float(inputs['Vrated'])
         ws_class = discrete_inputs['turbine_class']
-        hub_height = inputs['hub_height']
-        rotorD = inputs['Rtip']*2.
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class)
+        wt_class = discrete_inputs['turbulence_class']
+        hub_height = float(inputs['hub_height'])
+        rotorD = float(inputs['Rtip'])*2.
+        PLExp = float(inputs['shearExp'])
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
@@ -1084,6 +1086,22 @@ class FASTLoadCases(ExplicitComponent):
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
+                # Assign values common to all DLCs
+                # Wind turbulence class
+                dlc_generator.cases[i_case].IECturbc = wt_class
+                # Reference height for wind speed
+                dlc_generator.cases[i_case].RefHt = hub_height
+                # Center of wind grid (TurbSim confusingly calls it HubHt)
+                dlc_generator.cases[i_case].HubHt = hub_height
+                # If OLAF is called, make wind grid high and big
+                if fst_vt['AeroDyn15']['WakeMod'] == 3:
+                    dlc_generator.cases[i_case].HubHt *= 3
+                # Height of wind grid, it stops 1 mm above the ground
+                dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3 
+                # Width of wind grid, same of height
+                dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+                # Power law exponent of wind shear
+                dlc_generator.cases[i_case].PLExp = PLExp
                 # Write out turbsim input file
                 turbsim_input_file_name = self.FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                         '_U%1.6f'%dlc_generator.cases[i_case].URef + 

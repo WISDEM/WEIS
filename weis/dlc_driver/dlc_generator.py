@@ -34,10 +34,11 @@ class DLCInstance(object):
         
 class DLCGenerator(object):
 
-    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_class = 'I'):
+    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I', wind_turbulence_class = 'B'):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
-        self.wind_class = wind_class
+        self.wind_speed_class = wind_speed_class
+        self.wind_turbulence_class = wind_turbulence_class
         self.ws_rated = ws_rated
         self.cases = []
         self.rng = np.random.default_rng()
@@ -45,11 +46,12 @@ class DLCGenerator(object):
     
     def IECwind(self):
         self.IECturb = IEC_TurbulenceModels()
-        self.IECturb.Turbine_Class = self.wind_class
+        self.IECturb.Turbine_Class = self.wind_speed_class
+        self.IECturb.Turbulence_Class = self.wind_turbulence_class
         self.IECturb.setup()
         _, self.V_e50, self.V_e1, _, _ = self.IECturb.EWM(0.)
         self.V_ref = self.IECturb.V_ref
-        self.wind_class_num = self.IECturb.Turbine_Class_Num
+        self.wind_speed_class_num = self.IECturb.Turbine_Class_Num
 
     def to_dict(self):
         return [vars(m) for m in self.cases]
@@ -182,7 +184,7 @@ class DLCGenerator(object):
                 idlc.RandSeed1 = seed
                 idlc.wave_height = wave_Hs[i_Hs]
                 idlc.wave_period = wave_Tp[i_Tp]
-                idlc.IEC_WindType = self.wind_class_num + 'ETM'
+                idlc.IEC_WindType = self.wind_speed_class_num + 'ETM'
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.3'
@@ -260,7 +262,7 @@ class DLCGenerator(object):
                 idlc.RandSeed1 = seed
                 idlc.wave_height = wave_Hs[i_Hs]
                 idlc.wave_period = wave_Tp[i_Tp]
-                idlc.IEC_WindType = self.wind_class_num + 'EWM50'
+                idlc.IEC_WindType = self.wind_speed_class_num + 'EWM50'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked-still'
@@ -287,7 +289,7 @@ class DLCGenerator(object):
                 idlc.RandSeed1 = seed
                 idlc.wave_height = wave_Hs[i_Hs]
                 idlc.wave_period = wave_Tp[i_Tp]
-                idlc.IEC_WindType = self.wind_class_num + 'EWM1'
+                idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
                 idlc.turbulent_wind = True
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked-still'
@@ -332,7 +334,8 @@ if __name__ == "__main__":
     ws_cut_in = 4.
     ws_cut_out = 25.
     ws_rated = 10.
-    wind_class = 'I'
+    wind_speed_class = 'I'
+    wind_turbulence_class = 'B'
 
     # Load modeling options file
     weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
@@ -343,7 +346,7 @@ if __name__ == "__main__":
     DLCs = modeling_options['DLC_driver']['DLCs']
     
     # Initialize the generator
-    dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_class)
+    dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class)
 
     # Generate cases from user inputs
     for i_DLC in range(len(DLCs)):

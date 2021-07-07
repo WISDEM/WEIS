@@ -2800,10 +2800,6 @@ properties:
                                     default: 1-ED3
                                     enum: ['1-ED3', '1-ED2']
                                     description: Number of IEC 61400-x standard (x=1,2, or 3 with optional 61400-1 edition number (i.e. "1-Ed2") )
-                                IECturbc:
-                                    type: string
-                                    default: A
-                                    description: IEC turbulence characteristic ("A", "B", "C" or the turbulence intensity in percent) ("KHTEST" option with NWTCUP model, not used for other models)
                                 ETMc:
                                     type: string
                                     default: default

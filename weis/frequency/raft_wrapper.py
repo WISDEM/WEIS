@@ -281,7 +281,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         rated = inputs['Vrated']
         ws_class = discrete_inputs['turbine_class']
         turb_class = discrete_inputs['turbulence_class']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class)
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, turb_class)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
