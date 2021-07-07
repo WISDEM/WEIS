@@ -1937,6 +1937,10 @@ properties:
                         type: boolean
                         default: True
                         description: Solve dynamics about static equilibrium point
+                    GuyanLoadCorrection:
+                        type: boolean
+                        default: True
+                        description: Include extra moment from lever arm at interface and rotate FEM for floating.
                     FEMMod:
                         type: integer
                         enum: [1, 2, 3, 4]
@@ -1965,7 +1969,39 @@ properties:
                         items:
                             type: number
                             unit: none
-                    SSSum:
+                    GuyanDampMod:
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
+                        description: Guyan damping {0=none, 1=Rayleigh Damping, 2=user specified 6x6 matrix}
+                    RayleighDamp:
+                        type: array
+                        default: [0.0, 0.0]
+                        description: Mass and stiffness proportional damping  coefficients (Rayleigh Damping) [only if GuyanDampMod=1]
+                        items:
+                            type: number
+                            minItems: 2
+                            maxItems: 2
+                    GuyanDampSize:
+                        type: integer
+                        default: 6
+                        minimum: 0
+                        maximum: 6
+                        description: Guyan damping matrix (6x6) [only if GuyanDampMod=2]
+                    GuyanDamp1: &guyan_damp
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        description: Guyan damping matrix by row (6x6)
+                        items:
+                            type: number
+                            minItems: 6
+                            maxItems: 6
+                    GuyanDamp2: *guyan_damp
+                    GuyanDamp3: *guyan_damp
+                    GuyanDamp4: *guyan_damp
+                    GuyanDamp5: *guyan_damp
+                    GuyanDamp6: *guyan_damp
+                    SumPrint:
                         type: boolean
                         default: True
                         description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
