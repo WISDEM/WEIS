@@ -355,6 +355,10 @@ properties:
                         default: 10.
                         minimum: 0.
                         description: Frame rate for VTK output (frames per second){will use closest integer multiple of DT} [used only if WrVTK=2]
+                    nGridOut:
+                        type: integer
+                        default: 0
+                        description: (GB DEBUG 7/8) Number of grid points for VTK output
             InflowWind:
                 type: object
                 default: {}

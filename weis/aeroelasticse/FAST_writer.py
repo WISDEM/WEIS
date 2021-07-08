@@ -1025,6 +1025,10 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nVTKBlades'], 'nVTKBlades','Number of blades for which VTK files are exported {0: No VTK per blade, n: VTK for blade 1 to n} (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VTKCoord'], 'VTKCoord','Coordinate system used for VTK export. {1: Global, 2: Hub, "default": 1}\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VTK_fps'], 'VTK_fps','Frame rate for VTK output (frames per second) {"all" for all glue code timesteps, "default" for all OLAF timesteps} [used only if WrVTK=1]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nGridOut'], 'nGridOut','GB DEBUG 7/8: Number of grid points for VTK output\n'))
+        f.write('--GridOutHeaders--\n')
+        f.write('--GridOutUnits--\n')
+        f.write('1.0 1.0 1.0\n')
         f.write('------------------------------------------------------------------------------------------------\n')
 
         f.close()
