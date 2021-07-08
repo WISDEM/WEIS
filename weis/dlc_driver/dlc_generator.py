@@ -249,6 +249,30 @@ class DLCGenerator(object):
                     if len(wave_Tp)>1:
                         i_Tp+=1
 
+    def generate_1p6(self, options):
+        # Power production normal turbulence model - severe sea state
+        wind_speeds, wind_seeds, wave_Hs, wave_Tp = self.get_metocean(options)
+        # Counters for wave conditions
+        i_Hs=0
+        i_Tp=0
+        for ws in wind_speeds:
+            for seed in wind_seeds:
+                idlc = DLCInstance(options=options)
+                idlc.URef = ws
+                idlc.RandSeed1 = seed
+                idlc.wave_height = wave_Hs[i_Hs]
+                idlc.wave_period = wave_Tp[i_Tp]
+                idlc.IEC_WindType = 'NTM'
+                idlc.turbulent_wind = True
+                idlc.turbine_status = 'operating'
+                idlc.label = '1.6'
+                idlc.PSF = 1.35
+                self.cases.append(idlc)
+                if len(wave_Hs)>1:
+                    i_Hs+=1
+                if len(wave_Tp)>1:
+                    i_Tp+=1
+
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
             
