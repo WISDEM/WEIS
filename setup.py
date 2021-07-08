@@ -15,7 +15,7 @@ this_directory = os.path.abspath(os.path.dirname(__file__))
 # Eagle environment
 eagle_nodes = ['el'+str(m) for m in range(10)] + ['ed'+str(m) for m in range(10)]
 eagle_flag = platform.node() in eagle_nodes
-ci_flag    = platform.node().find('fv-az') >= 0
+ci_flag    = False #platform.node().find('fv-az') >= 0
 if eagle_flag:
     os.environ["FC"] = "ifort"
     os.environ["CC"] = "icc"
