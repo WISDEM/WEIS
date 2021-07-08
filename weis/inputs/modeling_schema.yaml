@@ -955,6 +955,10 @@ properties:
                                 type: number
                                 default: 1
                                 description: Frame rate for VTK output (frames per second) {"all" for all glue code timesteps, "default" for all OLAF timesteps} [used only if WrVTK=1]
+                            nGridOut:
+                                type: integer
+                                default: 0
+                                description: (GB DEBUG 7/8) Number of grid points for VTK output
                     UAMod:
                         type: integer
                         enum: [1,2,3]
