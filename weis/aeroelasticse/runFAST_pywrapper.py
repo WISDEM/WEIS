@@ -167,6 +167,8 @@ class runFAST_pywrapper(object):
 
         if self.FAST_exe is None: # Use library
 
+            FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
+            
             orig_dir = os.getcwd()
             os.chdir(FAST_directory)
         
