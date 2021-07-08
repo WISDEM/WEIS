@@ -8,10 +8,13 @@ January 2020
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
 from ROSCO_toolbox import utilities as ROSCO_utilities
+from ROSCO_toolbox.inputs.validation import load_rosco_yaml
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
-import yaml
+import yaml, os
+
+weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../..'))
 
 class ServoSE_ROSCO(Group):
     def initialize(self):
@@ -504,13 +507,19 @@ class ROSCO_Turbine(ExplicitComponent):
         modeling_options = self.options['modeling_options']
 
         # Load yaml file 
+        
         parameter_filename = modeling_options['ROSCO']['tuning_yaml']
-        inps = yaml.safe_load(open(parameter_filename))
+        if not os.path.isabs(parameter_filename):
+            parameter_filename = os.path.join(weis_dir,parameter_filename)
+
+        inps = load_rosco_yaml(parameter_filename)
         self.turbine_params         = inps['turbine_params']
         self.controller_params      = inps['controller_params']
 
         FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
         FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
+        if not os.path.isabs(FAST_directory):
+            FAST_directory = os.path.join(weis_dir,FAST_directory)
             
 
         # Instantiate turbine, controller, and file processing classes
@@ -535,11 +544,9 @@ class ROSCO_Turbine(ExplicitComponent):
         self.add_output('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_output('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
         self.add_output('edge_freq',         val=0.0,        units='Hz',             desc='Blade edgewise first natural frequency')
-        self.add_output('twr_freq',          val=0.0,        units='rad/s',             desc='Tower first natural frequency')
         self.add_output('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
         self.add_output('generator_efficiency', val=1.0,                             desc='Generator efficiency')
         self.add_output('TowerHt',           val=1.0,        units='m',              desc='Tower height')
-        # self.add_output('twr_freq',          val=0.0,        units='rad/s',          desc='Tower natural frequency')
 
         # 
         self.add_output('max_pitch',         val=0.0,        units='rad',            desc='')
@@ -582,7 +589,6 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff / 100
         outputs['generator_efficiency'   ] = self.turbine.GenEff
         outputs['TowerHt'                ] = self.turbine.TowerHt
-        outputs['twr_freq'               ] = self.turbine.twr_freq #/ 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # These are ROSCO 'controller' parameters, but should probably be turbine
         outputs['max_pitch'              ] = self.controller_params['max_pitch'] 

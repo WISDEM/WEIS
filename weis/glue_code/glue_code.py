@@ -67,7 +67,7 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
         tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
-        tune_rosco_ivc.add_output('twr_freq',         val=0.0, units='rad/s',     desc='Tower natural frequency')
+        tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rad/s',     desc='Tower natural frequency')
         tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
 
         self.add_subsystem('tune_rosco_ivc',tune_rosco_ivc)
@@ -166,7 +166,6 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.rotor_inertia',         'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
                 self.connect('rosco_turbine.flap_freq',             'sse_tune.tune_rosco.flap_freq', src_indices=[0])
                 self.connect('rosco_turbine.edge_freq',             'sse_tune.tune_rosco.edge_freq', src_indices=[0])
-                self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq', src_indices=[0])
                 self.connect('rosco_turbine.generator_efficiency',  'sse_tune.tune_rosco.generator_efficiency')                
                 self.connect('rosco_turbine.rho',                   'sse_tune.rho')
                 self.connect('rosco_turbine.R',                     'sse_tune.tune_rosco.R')
@@ -204,7 +203,7 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.VS_omega',         'sse_tune.tune_rosco.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',          'sse_tune.tune_rosco.VS_zeta')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
-            # self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
+            self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.ptfm_freq',        'sse_tune.tune_rosco.ptfm_freq')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:

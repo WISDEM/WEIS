@@ -501,7 +501,7 @@ class FASTLoadCases(ExplicitComponent):
         if self.Analysis_Level == 2:
             # Run FAST with ElastoDyn
 
-            summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list, chan_time  = self.run_FAST(inputs, discrete_inputs, fst_vt)
            
             if self.options['modeling_options']['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(
@@ -597,10 +597,11 @@ class FASTLoadCases(ExplicitComponent):
 
                         output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
-                        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
-           
-           # Post process         
-           self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+                        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)   
+                        
+                
+            # Regardless of level, post_process
+            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
             
             # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
             # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
@@ -1603,6 +1604,8 @@ class FASTLoadCases(ExplicitComponent):
             outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
         if self.options['modeling_options']['flags']['monopile'] and self.options['modeling_options']['Level3']['flag']:
+            outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
+            
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if self.FASTpref['dlc_settings']['run_IEC']:
