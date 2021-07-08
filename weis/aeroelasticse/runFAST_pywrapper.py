@@ -11,7 +11,9 @@ import multiprocessing as mp
 
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
-from pCrunch.io import OpenFASTOutput
+from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
+from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis
 
 import numpy as np
@@ -163,30 +165,66 @@ class runFAST_pywrapper(object):
             writer.FAST_yamlfile = self.FAST_yamlfile_out
             writer.write_yaml()
 
-        FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
-        input_file_name = create_string_buffer(os.path.abspath(writer.FAST_InputFileOut).encode('utf-8'))
-        t_max = c_double(self.fst_vt['Fst']['TMax'])
+        if self.FAST_exe is None: # Use library
 
-        orig_dir = os.getcwd()
-        os.chdir(FAST_directory)
-        
-        openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
-        openfastlib.fast_run()
+            FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
+            input_file_name = create_string_buffer(os.path.abspath(writer.FAST_InputFileOut).encode('utf-8'))
+            t_max = c_double(self.fst_vt['Fst']['TMax'])
 
-        output_dict = {}
-        for i, channel in enumerate(openfastlib.output_channel_names):
-            output_dict[channel] = openfastlib.output_values[:,i]
-        del(openfastlib)
-        
-        output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
+            orig_dir = os.getcwd()
+            os.chdir(FAST_directory)
+            
+            openfastlib = FastLibAPI(self.FAST_lib, input_file_name, t_max)
+            openfastlib.fast_run()
+
+            output_dict = {}
+            for i, channel in enumerate(openfastlib.output_channel_names):
+                output_dict[channel] = openfastlib.output_values[:,i]
+            del(openfastlib)
+            
+            output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
+
+            # if save_file: write_fast
+            os.chdir(orig_dir)
+
+            if not self.keep_time: output_dict = None
+
+        else: # use executable
+            wrapper = FAST_wrapper(debug_level=self.debug_level)
+
+            # Run FAST
+            wrapper.FAST_exe = self.FAST_exe
+            wrapper.FAST_InputFile = os.path.split(writer.FAST_InputFileOut)[1]
+            wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
+
+            FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
+            FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
+
+            #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
+            if self.overwrite_outfiles or (not self.overwrite_outfiles and not (os.path.exists(FAST_Output) or os.path.exists(FAST_Output_txt))):
+                wrapper.execute()
+            else:
+                if self.debug_level>0:
+                    print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
+
+            if os.path.exists(FAST_Output):
+                output = OpenFASTBinary(FAST_Output, magnitude_channels=magnitude_channels)  #TODO: add magnitude_channels
+            elif os.path.exists(FAST_Output_txt):
+                output = OpenFASTAscii(FAST_Output, magnitude_channels=magnitude_channels)
+                
+            output.read()
+
+            # Make output dict
+            output_dict = {}
+            for i, channel in enumerate(output.channels):
+                output_dict[channel] = output.df[channel].to_numpy()
+
+
+        # Trim Data
         if self.fst_vt['Fst']['TStart'] > 0.0:
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
         case_name, sum_stats, extremes, dels = la._process_output(output)
 
-        # if save_file: write_fast
-        os.chdir(orig_dir)
-
-        if not self.keep_time: output_dict = None
         return case_name, sum_stats, extremes, dels, output_dict
 
 

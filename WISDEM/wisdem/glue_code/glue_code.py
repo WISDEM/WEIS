@@ -134,6 +134,8 @@ class WT_RNTA(om.Group):
             # Connections from blade struct parametrization to rotor load anlysis
             self.connect("blade.opt_var.s_opt_spar_cap_ss", "rotorse.rs.constr.s_opt_spar_cap_ss")
             self.connect("blade.opt_var.s_opt_spar_cap_ps", "rotorse.rs.constr.s_opt_spar_cap_ps")
+            self.connect("blade.opt_var.s_opt_te_ss", "rotorse.rs.constr.s_opt_te_ss")
+            self.connect("blade.opt_var.s_opt_te_ps", "rotorse.rs.constr.s_opt_te_ps")
 
             # Connections to RotorPower
             self.connect("control.V_in", "rotorse.rp.v_min")
@@ -468,7 +470,10 @@ class WT_RNTA(om.Group):
                 "fairlead",
                 "fairlead_radius",
                 "anchor_radius",
+                "anchor_mass",
                 "anchor_cost",
+                "anchor_max_vertical_load",
+                "anchor_max_lateral_load",
                 "line_diameter",
                 "line_mass_density_coeff",
                 "line_stiffness_coeff",
@@ -576,8 +581,8 @@ class WindPark(om.Group):
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
             )
 
-        if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
-            self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
+        # if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
+        #     self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
 
         # BOS inputs
         if modeling_options["WISDEM"]["BOS"]["flag"]:

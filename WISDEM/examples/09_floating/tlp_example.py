@@ -41,6 +41,8 @@ opt["WISDEM"]["FloatingSE"]["run_modal"] = True  # Not used
 opt["mooring"] = {}
 opt["mooring"]["n_attach"] = 3
 opt["mooring"]["n_anchors"] = 3
+opt["mooring"]["line_anchor"] = ["custom"] * 3
+opt["mooring"]["line_material"] = ["custom"] * 3
 opt["materials"] = {}
 opt["materials"]["n_mat"] = 2
 
@@ -154,7 +156,7 @@ prob["rna_M"] = np.array([3963732.762, 896380.8464, -346781.682])
 
 # Use FD and run optimization
 prob.run_model()
-prob.model.list_outputs(values=True, units=True)
+prob.model.list_outputs(units=True)
 
 # Visualize with mayavi, which can be difficult to install
 if plot_flag:

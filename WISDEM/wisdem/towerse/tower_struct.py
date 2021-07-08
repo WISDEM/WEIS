@@ -5,9 +5,8 @@ import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_eurocode as util_euro
 import wisdem.commonse.utilization_constraints as util_con
-from wisdem.towerse import NFREQ, RIGID, NPTS_SOIL, gravity, get_nfull
+from wisdem.towerse import NFREQ, RIGID, NREFINE, NPTS_SOIL, gravity, get_nfull
 from wisdem.commonse.utilization_eurocode import hoopStressEurocode
-from wisdem.commonse.utilization_constraints import hoopStress
 
 
 class TowerPreFrame(om.ExplicitComponent):
@@ -103,10 +102,12 @@ class TowerPreFrame(om.ExplicitComponent):
         self.options.declare("monopile", default=False)
         self.options.declare("soil_springs", default=False)
         self.options.declare("gravity_foundation", default=False)
+        self.options.declare("n_refine", default=NREFINE)
 
     def setup(self):
         n_height = self.options["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
 
         self.add_input("z_full", np.zeros(nFull), units="m")
 
@@ -192,7 +193,8 @@ class TowerPreFrame(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         n_height = self.options["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
         z = inputs["z_full"]
 
         # Prepare RNA, transition piece, and gravity foundation (if any applicable) for "extra node mass"
@@ -645,7 +647,7 @@ class CylinderFrame3DD(om.ExplicitComponent):
         outputs["base_F"] = -np.r_[-forces.Vz[ic, ibase], forces.Vy[ic, ibase], forces.Nx[ic, ibase]]
         outputs["base_M"] = -np.r_[-forces.Mzz[ic, ibase], forces.Myy[ic, ibase], forces.Txx[ic, ibase]]
 
-        # shear and bending, one per element (convert from local to global c.s.)
+        # Forces and moments along the structure
         outputs["tower_Fz"] = forces.Nx[ic, 1::2]
         outputs["tower_Vx"] = -forces.Vz[ic, 1::2]
         outputs["tower_Vy"] = forces.Vy[ic, 1::2]
@@ -724,7 +726,8 @@ class TowerPostFrame(om.ExplicitComponent):
 
     def setup(self):
         n_height = self.options["modeling_options"]["n_height"]
-        nFull = get_nfull(n_height)
+        n_refine = self.options["modeling_options"]["n_refine"]
+        nFull = get_nfull(n_height, nref=n_refine)
 
         # effective geometry -- used for handbook methods to estimate hoop stress, buckling, fatigue
         self.add_input("z_full", np.zeros(nFull), units="m")
@@ -782,8 +785,8 @@ class TowerPostFrame(om.ExplicitComponent):
         z = inputs["z_full"]
         t = inputs["t_full"]
         d = inputs["d_full"]
+        h = np.diff(z)
         d_sec, _ = util.nodal2sectional(d)
-        z_sec, _ = util.nodal2sectional(z)
         r_sec = 0.5 * d_sec
 
         L_suction = float(inputs["suctionpile_depth"])
@@ -823,7 +826,7 @@ class TowerPostFrame(om.ExplicitComponent):
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
         outputs["axial_stress"] = axial_stress = Fz / Az + M * r_sec / Iyy
         outputs["shear_stress"] = shear_stress = np.abs(Mzz) / Jz * r_sec + V / Asx
-        outputs["hoop_stress"] = hoop_stress = hoopStress(d_sec, t, qdyn)
+        outputs["hoop_stress"] = hoop_stress = util_con.hoopStress(d_sec, t, qdyn)
         outputs["constr_stress"] = util_con.vonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigma_y
         )
@@ -844,7 +847,7 @@ class TowerPostFrame(om.ExplicitComponent):
         else:
             # Use DNV-GL CP202 Method
             check = util_dnvgl.CylinderBuckling(
-                z, d, t, E=E, G=G, sigma_y=sigma_y, gamma=gamma_f * gamma_b, mod_length=L_suction
+                h, d, t, E=E, G=G, sigma_y=sigma_y, gamma=gamma_f * gamma_b, mod_length=L_suction
             )
             results = check.run_buckling_checks(Fz, M, axial_stress, hoop_stress, shear_stress)
             shell_buckling = results["Shell"]

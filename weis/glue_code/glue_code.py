@@ -68,13 +68,13 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('twr_freq',         val=0.0, units='rad/s',     desc='Tower natural frequency')
-        tune_rosco_ivc.add_output('ptfm_freq',        val=0.0, units='rad/s',     desc='Platform natural frequency')
+        tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
 
         self.add_subsystem('tune_rosco_ivc',tune_rosco_ivc)
         
         # Analysis components
         self.add_subsystem('wisdem',   wisdemPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-
+        
         # XFOIL
         self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         # Connections to run xfoil for te flaps
@@ -273,7 +273,7 @@ class WindPark(om.Group):
                     self.connect(f'mooring.line_{var}', f'raft.line_{var}')
 
                 
-        if modeling_options['Level3']['flag']:
+        if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
             self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
             
@@ -304,8 +304,8 @@ class WindPark(om.Group):
             
             # Post-processing
             self.add_subsystem('outputs_2_screen_weis',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
-            if opt_options['opt_flag']:
-                self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
+            # if opt_options['opt_flag']:
+            #     self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
 
             if modeling_options['ROSCO']['Flp_Mode']:
                 # Connections to blade 

@@ -90,6 +90,10 @@ properties:
                         type: number
                         default: 1.0
                         description: Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True.
+                    fix_pitch_regI12:
+                        type: boolean
+                        default: False
+                        description: If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced.
                     spar_cap_ss:
                         type: string
                         default: 'none'
@@ -152,13 +156,13 @@ properties:
                         type: boolean
                         default: False
                         description: Flag switching on and off the inverted neural network for airfoil design
-                    inn_af_max_t/c: 
+                    inn_af_max_t/c:
                         type: number
                         default: 0.4
                         minimum: 0.
                         maximum: 1.
                         description: Maximum airfoil thickness supported by the INN for airfoil design
-                    inn_af_min_t/c: 
+                    inn_af_min_t/c:
                         type: number
                         default: 0.15
                         minimum: 0.
@@ -293,6 +297,10 @@ properties:
                         type: boolean
                         default: False
                         description: Model the monopile base as a gravity-based foundation with no pile embedment
+                    n_refine:
+                        type: integer
+                        default: 3
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
             BOS:
                 type: object
                 default: {}
@@ -309,8 +317,17 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run the floating design modules (FloatingSE)
+                    n_refine:
+                        type: integer
+                        default: 1
+                        description: Number of Frame3DD element refinements for every specified section along tower/member
                     frame3dd: *frame3dd
                     gamma_f: *gamma_f
+                    gamma_m: *gamma_m
+                    gamma_n: *gamma_n
+                    gamma_b: *gamma_b
+                    gamma_freq: *gamma_freq
+                    gamma_fatigue: *gamma_fatigue
                     symmetric_moorings:
                         type: boolean
                         default: True

@@ -74,7 +74,125 @@ properties:
                 type: boolean
                 default: False
                 description: Whether or not to run WEIS fidelity level 2 = linearized OpenFAST
-                
+            simulation: # this may be shared with Level3 IEC load cases in the future
+                type: object
+                default: {}
+                properties:
+                    TMax: &TMax
+                        type: number
+                        default: 720.0
+                        minimum: 0.0
+                        maximum: 100000.0
+                        unit: s
+                        description: Total run time (s)
+            linearization:      # Some of these options were in Level 3, but we wouldn't set them if running a Level 2 simulation
+                type: object
+                default: {}
+                properties:
+                    TMax: *TMax         # note that linearization could run for a different TMax than simulation
+                    DT:
+                        type: number
+                        default: 0.025
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: s
+                        description: Integration time step (s)
+                    wind_speeds:
+                        type: array
+                        description: List of wind speeds at which to linearize (m/s)
+                        default: [14.0, 16.0, 18.0]
+                        items:
+                            type: number
+                            uniqueItems: True
+                            minimum: 0.0
+                            maximum: 50.0
+                    DOFs:
+                        type: array
+                        description: List of degrees-of-freedom to linearize about
+                        default: ['GenDOF','TwFADOF1']
+                        items:
+                            type: string
+                            enum: ['FlapDOF1','FlapDOF2','EdgeDOF','TeetDOF','DrTrDOF','GenDOF','YawDOF','TwFADOF1','TwFADOF2','TwSSDOF1','TwSSDOF2','PtfmSgDOF','PtfmSwDOF','PtfmHvDOF','PtfmRDOF','PtfmPDOF','PtfmYDOF']
+                    # DZ: I would assume Linearize = True if we were running Level 2 WEIS
+                    # Linearize:
+                    #     type: boolean
+                    #     default: False
+                    #     description: Linearization analysis (flag)
+                    # DZ: For now, only CalcSteady = True is supported
+                    # CalcSteady:
+                    #     type: boolean
+                    #     default: False
+                    #     description: Calculate a steady-state periodic operating point before linearization? [unused if Linearize=False] (flag)
+                    # DZ: For now, we determine TrimCase this automatically based on whether wind_speeds > v_rated
+                    # TrimCase:
+                    #     type: string
+                    #     enum: ['1','2','3', yaw, Yaw, YAW, torque, Torque, TORQUE, pitch, Pitch, PITCH]
+                    #     default: '3'
+                    #     description: Controller parameter to be trimmed {1:yaw; 2:torque; 3:pitch} [used only if CalcSteady=True] (-)
+                    TrimTol:
+                        type: number
+                        default: 1.e-5
+                        minimum: 0.0
+                        maximum: 1.0
+                        unit: none
+                        description: Tolerance for the rotational speed convergence [used only if CalcSteady=True] (-)
+                    TrimGain:
+                        type: number
+                        default: 1.e-4
+                        minimum: 0.0
+                        maximum: 1.0
+                        unit: rad/(rad/s)
+                        description: Proportional gain for the rotational speed error (>0) [used only if CalcSteady=True] (rad/(rad/s) for yaw or pitch; Nm/(rad/s) for torque)
+                    Twr_Kdmp:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: kg/s
+                        description: Damping factor for the tower [used only if CalcSteady=True] (N/(m/s))
+                    Bld_Kdmp:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: kg/s
+                        description: Damping factor for the blades [used only if CalcSteady=True] (N/(m/s))
+                    NLinTimes:
+                        type: integer
+                        default: 12
+                        minimum: 0
+                        maximum: 120
+                        description: Number of times to linearize (-) [>=1] [unused if Linearize=False]
+                    LinTimes:
+                        type: array
+                        description: List of times at which to linearize (s) [1 to NLinTimes] [used only when Linearize=True and CalcSteady=False]
+                        default: [30.0, 60.0]
+                        items:
+                            type: number
+                            uniqueItems: True
+                            minimum: 0.0
+                            maximum: 1e4
+                    # DZ: I don't know if we should support these initially:
+                    # LinInputs:
+                    #     type: string
+                    #     enum: ['0','1','2', none, None, NONE, standard, Standard, STANDARD, all, All, ALL]
+                    #     default: '1'
+                    #     description: Inputs included in linearization (switch) {0=none; 1=standard; 2=all module inputs (debug)} [unused if Linearize=False]
+                    # LinOutputs:
+                    #     type: string
+                    #     enum: ['0','1','2', none, None, NONE, standard, Standard, STANDARD, all, All, ALL]
+                    #     default: '1'
+                    #     description: Outputs included in linearization (switch) {0=none; 1=from OutList(s); 2=all module outputs (debug)} [unused if Linearize=False]
+                    # LinOutJac:
+                    #     type: boolean
+                    #     default: False
+                    #     description: Include full Jacobians in linearization output (for debug) (flag) [unused if Linearize=False; used only if LinInputs=LinOutputs=2]
+                    # LinOutMod:
+                    #     type: boolean
+                    #     default: False
+                    #     description: Write module-level linearization output files in addition to output for full system? (flag) [unused if Linearize=False]
+
+
     Level3:
         type: object
         default: {}
@@ -1930,7 +2048,11 @@ properties:
                     OutSFmt:
                         type: string
                         default: 'A11'
-                        description: Output format for header strings (quoted string) [not checked for validity]             
+                        description: Output format for header strings (quoted string) [not checked for validity]      
+                    SimpMembers:
+                        type: boolean 
+                        default: False
+                        description: Simplify member-based hydrodynamic approach and rely on potential-flow model
             SubDyn:
                 type: object
                 default: {}
@@ -2541,11 +2663,6 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    FAST_ver:
-                        type: string
-                        const: OpenFAST
-                        default: OpenFAST
-                        description: Which version of FAST is being used
                     FAST_exe:
                         type: string
                         default: none
@@ -2582,6 +2699,10 @@ properties:
                         type: string
                         default: none
                         description: Path to yaml-based OpenFAST settings file
+                    use_exe:
+                        type: boolean
+                        default: False
+                        description: Use openfast executable instead of library
                     save_timeseries:
                         type: boolean
                         default: False
@@ -2750,9 +2871,9 @@ properties:
                 description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 1 = Immersion and Invariance Estimator, 2 = Extended Kalman Filter}
             PS_Mode:
                 type: integer
-                enum: [0, 1]
+                enum: [0, 1, 2, 3]
                 default: 1
-                description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving}
+                description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving, 2 = Cp maximization at low wind speed, 3 = 1 + 2}
             SD_Mode:
                 type: integer
                 enum: [0, 1]
