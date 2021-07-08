@@ -74,7 +74,7 @@ class WindPark(om.Group):
         
         # Analysis components
         self.add_subsystem('wisdem',   wisdemPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
-
+        
         # XFOIL
         self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         # Connections to run xfoil for te flaps
@@ -226,7 +226,7 @@ class WindPark(om.Group):
                     self.connect(f'mooring.line_{var}', f'raft.line_{var}')
 
                 
-        if modeling_options['Level3']['flag']:
+        if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
             self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
             self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options))
@@ -242,8 +242,8 @@ class WindPark(om.Group):
             
             # Post-processing
             self.add_subsystem('outputs_2_screen_weis',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
-            if opt_options['opt_flag']:
-                self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
+            # if opt_options['opt_flag']:
+            #     self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
 
             # Connections to blade 
             self.connect('dac_ivc.te_flap_end',             'blade.outer_shape_bem.span_end')

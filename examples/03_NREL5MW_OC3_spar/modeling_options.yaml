@@ -65,6 +65,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 13000000]
         AddCLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 98340000]
         PotMod: 1
+        ExctnMod: 1
+        RdtnMod: 1
+        RdtnDT: 0.0125
         PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar        # relative to WEIS
         PtfmMass_Init: 7.462e6
 ROSCO:

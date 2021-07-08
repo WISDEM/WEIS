@@ -124,7 +124,7 @@ def create_hams_dirs(baseDir=None):
     outputDirWamit = osp.join(baseDir, f'Output/Wamit_format')
 
     if osp.isdir(inputDir) is not True:
-        os.mkdir(inputDir)
+        os.makedirs(inputDir)
     if osp.isdir(outputDirHams) is not True:
         os.makedirs(outputDirHams)
     if osp.isdir(outputDirHydrostar) is not True:

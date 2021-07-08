@@ -34,7 +34,7 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 1.
+        TMax: 5.
         DT: 0.01
         CompElast: 1
         CompInflow: 1
@@ -46,10 +46,11 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompIce: 0
     linearization:
         Linearize: False
-    ElastoDyn:
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
+    ElastoDyn:      # DZ: taking level 2 DOFs from here now, let's set linearization DOFs in Level 2 modelling options next
+        flag: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
@@ -79,13 +80,26 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvHiCOffD: 3.04292
         WaveSeed1: 123456789
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
-ROSCO:
-    flag: True
+    ROSCO:
+        flag: True
+Level2:
+    flag: False
+    simulation:         # could these be included in openfast options?
+        TMax: 700.      # run simulations using IEC standards, could share that info
+    linearization:
+        TMax: 1600.
+        DT: 0.01
+        TrimGain: 1e-4
+        TrimTol: 1e-3
+        wind_speeds: [16]
+        DOFs: ['GenDOF','TwFADOF1']
+        NLinTimes: 4    
+
     
 openfast:
     file_management:
-        FAST_namingOut:    IEA15         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/IEA15             # Path to folder with the OpenFAST output files
+        FAST_namingOut:    iea15mw_mono         # Name of the OpenFAST output files
+        FAST_runDirectory: outputs/weis_mono/             # Path to folder with the OpenFAST output files
     dlc_settings:
         run_power_curve:   True
         run_IEC:           True
@@ -111,3 +125,11 @@ openfast:
             turbulent_power_curve: True # False: Steady Wind, True: Turbulent Inflow
             U:     [] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
             Seeds: [] # Used only when turbulent_power_curve=True
+
+yaml:
+    validate: False    # When set to True, the code runs a yam validation package. This checks whether the yams has the right formatting.
+    path2schema: windIO/windIO/turbine/IEAontology_schema.yaml   # Path to the yams schema to run the validation
+
+xfoil:
+    path       : Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
+    run_parallel: True

@@ -110,7 +110,7 @@ class TestDLC(unittest.TestCase):
         case_inputs[("Fst", "TMax")] = {"vals": [TMax], "group": 0}
         case_inputs[("Fst", "TStart")] = {"vals": [TStart], "group": 0}
         case_inputs[("Fst", "DT")] = {"vals": [0.005], "group": 0}
-        case_inputs[("Fst", "DT_Out")] = {"vals": [0.01], "group": 0}  # 0.005
+        case_inputs[("Fst", "DT_Out")] = {"vals": [0.005], "group": 0}  # 0.005
         case_inputs[("Fst", "OutFileFmt")] = {"vals": [2], "group": 0}
         case_inputs[("Fst", "CompHydro")] = {"vals": [1], "group": 0}
         case_inputs[("Fst", "CompSub")] = {"vals": [0], "group": 0}
@@ -268,7 +268,7 @@ class TestDLC(unittest.TestCase):
             out,
             "DLC_regression_values_1.pkl",
             directory=this_file_dir,
-            tol=1e-1,
+            tol=5e-1,
             train=train,
             keys_to_skip=keys_to_skip,
         )
@@ -287,7 +287,7 @@ class TestDLC(unittest.TestCase):
             out,
             "DLC_regression_values_2.pkl",
             directory=this_file_dir,
-            tol=1e-1,
+            tol=5e-1,
             train=train,
             keys_to_skip=keys_to_skip,
         )

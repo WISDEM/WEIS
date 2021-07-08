@@ -3,6 +3,7 @@ from scipy.interpolate import Rbf
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 import smt.surrogate_models as smt
+from scipy import interpolate
 
 
 class BaseMethod:
@@ -270,23 +271,45 @@ class BaseMethod:
                 # Create m_k = lofi + RBF
                 def approximation_function(x):
                     return self.model_low.run(x)[output_name] + e(*x)
-
-            elif interp_method == "smt":
-                # sm = smt.RMTB(
-                #     xlimits=self.bounds,
-                #     order=3,
-                #     num_ctrl_pts=5,
-                #     print_global=False,
-                # )
-                sm = smt.RBF(print_global=False,)
-
-                sm.set_training_values(self.design_vectors, differences)
-                sm.train()
+                    
+            if interp_method in ["linear", "quadratic", "cubic"]:
+                sm = interpolate.interp1d(np.squeeze(self.design_vectors), differences, kind=interp_method, fill_value="extrapolate")
 
                 def approximation_function(x, output_name=output_name, sm=sm):
-                    return self.model_low.run(x)[output_name] + sm.predict_values(
+                    return self.model_low.run(x)[output_name] + sm(
                         np.atleast_2d(x)
                     )
+
+            elif interp_method == "smt":
+                # If there's no difference between the high- and low-fidelity values,
+                # we don't need to construct a surrogate. This is useful for
+                # outputs that don't vary between fidelities, like geometric properties.
+                if np.all(differences == 0.):
+                    def approximation_function(x, output_name=output_name):
+                        return self.model_low.run(x)[output_name]
+                        
+                else:
+                    # sm = smt.RBF(print_global=False, d0=5)
+                    # sm = smt.IDW(print_global=False, p=2)
+                    # sm = smt.KRG(theta0=[1e-2], print_global=False)
+                    # sm = smt.RMTB(
+                    #     num_ctrl_pts=12,
+                    #     xlimits=self.bounds,
+                    #     nonlinear_maxiter=20,
+                    #     solver_tolerance=1e-16,
+                    #     energy_weight=1e-6,
+                    #     regularization_weight=0.0,
+                    #     print_global=False
+                    # )
+                    sm = smt.KPLS(print_global=False, theta0=[1e-1])
+
+                    sm.set_training_values(self.design_vectors, differences)
+                    sm.train()
+
+                    def approximation_function(x, output_name=output_name, sm=sm):
+                        return self.model_low.run(x)[output_name] + sm.predict_values(
+                            np.atleast_2d(x)
+                        )
 
             # Create m_k = lofi + RBF
             approximation_functions[output_name] = approximation_function
@@ -294,6 +317,10 @@ class BaseMethod:
         self.approximation_functions = approximation_functions
 
     def process_results(self):
+        """
+        Store results from the optimization into a dictionary and return those results.
+        """
+        
         results = {}
         results["optimal_design"] = self.design_vectors[-1, :]
         results["high_fidelity_func_value"] = self.model_high.run(
@@ -307,5 +334,5 @@ class BaseMethod:
         if self.disp:
             print()
             print(results)
-            
+
         return results
