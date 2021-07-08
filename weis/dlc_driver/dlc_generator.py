@@ -22,6 +22,7 @@ class DLCInstance(object):
         self.sigma1 = '' # Standard deviation of the wind
         self.RandSeed1 = 0
         self.label = '' # For 1.1/Custom
+        self.PSF = 1.35 # Partial Safety Factor
 
         if not options is None:
             self.default_turbsim_props(options)
@@ -141,6 +142,7 @@ class DLCGenerator(object):
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.1'
+                idlc.PSF = 1.2 * 1.25
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
                     i_Hs+=1
@@ -165,6 +167,7 @@ class DLCGenerator(object):
                 idlc.turbulent_wind = True
                 idlc.turbine_status = 'operating'
                 idlc.label = '1.2'
+                idlc.PSF = 1.
                 self.cases.append(idlc)
                 if len(wave_Hs)>1:
                     i_Hs+=1
