@@ -135,6 +135,7 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("outer_diameter_in", np.zeros(n_height), units="m")
         self.add_discrete_input("material_names", val=n_mat * [""])
         self.add_input("E_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("E_user", val=0.0, units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
@@ -255,7 +256,11 @@ class DiscretizationYAML(om.ExplicitComponent):
             cost_param += imass * cost[imat]
 
             # Store the value associated with this thickness
-            E_param[k, :] = E[imat]
+            if inputs['E_user'] > 1.:
+                E_param[k, :] = inputs['E_user']
+            else:
+                E_param[k, :] = E[imat]
+                
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
 

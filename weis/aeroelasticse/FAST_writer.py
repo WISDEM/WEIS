@@ -818,12 +818,12 @@ class InputWriter_OpenFAST(object):
 
         if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
             try:
-                os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+                os.makedirs(os.path.join(self.FAST_runDirectory,'Airfoils'))
             except:
                 try:
                     time.sleep(random.random())
                     if not os.path.isdir(os.path.join(self.FAST_runDirectory,'Airfoils')):
-                        os.mkdir(os.path.join(self.FAST_runDirectory,'Airfoils'))
+                        os.makedirs(os.path.join(self.FAST_runDirectory,'Airfoils'))
                 except:
                     print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'Airfoils'))
 
@@ -1201,6 +1201,8 @@ class InputWriter_OpenFAST(object):
         controller.Ki_flap              = self.fst_vt['DISCON_in']['Flp_Ki']
         controller.flp_angle            = self.fst_vt['DISCON_in']['Flp_Angle']
         controller.flp_maxpit           = self.fst_vt['DISCON_in']['Flp_MaxPit']
+        controller.twr_freq             = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
+        controller.ptfm_freq            = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
 
         turbine = type('', (), {})()
         turbine.Cp = type('', (), {})()
@@ -1210,10 +1212,6 @@ class InputWriter_OpenFAST(object):
         turbine.v_rated                 = self.fst_vt['DISCON_in']['v_rated']
         turbine.bld_flapwise_freq       = self.fst_vt['DISCON_in']['F_FlpCornerFreq'][0] * 3.
         turbine.bld_edgewise_freq       = self.fst_vt['DISCON_in']['F_LPFCornerFreq'] * 4.
-        turbine.twr_freq                = self.fst_vt['DISCON_in']['F_NotchCornerFreq'] 
-        turbine.ptfm_freq               = self.fst_vt['DISCON_in']['F_FlCornerFreq'][0]
-        if turbine.ptfm_freq == 0.0:
-            turbine.ptfm_freq = 0.2 # Reset to default to avoid ROSCO error
         turbine.max_pitch_rate          = self.fst_vt['DISCON_in']['PC_MaxRat']
         turbine.min_pitch_rate          = self.fst_vt['DISCON_in']['PC_MinRat']
         turbine.max_torque_rate         = self.fst_vt['DISCON_in']['VS_MaxRat']
@@ -1246,10 +1244,11 @@ class InputWriter_OpenFAST(object):
         self.fst_vt['ServoDyn']['DLL_InFile'] = self.FAST_namingOut + '_DISCON.IN'
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
         self.fst_vt['DISCON_in']['PerfFileName'] = self.FAST_namingOut + '_Cp_Ct_Cq.txt'
+        txt_filename = os.path.abspath(os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName']))
         
         # Write DISCON input files
-        ROSCO_utilities.write_rotor_performance(turbine, txt_filename=os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName']))
-        ROSCO_utilities.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
+        ROSCO_utilities.write_rotor_performance(turbine, txt_filename=txt_filename)
+        ROSCO_utilities.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=txt_filename)
 
     def write_HydroDyn(self):
 
@@ -1751,26 +1750,28 @@ class InputWriter_OpenFAST(object):
         self.fst_vt['Fst']['MooringFile'] = self.FAST_namingOut + '_MAP.dat'
         map_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['MooringFile'])
         f = open(map_file, 'w')
-
+        
         f.write('---------------------- LINE DICTIONARY ---------------------------------------\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['LineType', 'Diam', 'MassDenInAir', 'EA', 'CB', 'CIntDamp', 'Ca', 'Cdn', 'Cdt']])+'\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(-)', '(Pa-s)', '(-)', '(-)', '(-)']])+'\n')
         ln =[]
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['LineType']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['Diam']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['MassDenInAir']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['EA']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['CB']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['CIntDamp']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['Ca']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdn']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdt']))
+        for i in range(self.fst_vt['MAP']['NTypes']):
+            ln = []
+            ln.append('{:^11}'.format(self.fst_vt['MAP']['LineType'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MAP']['Diam'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MAP']['MassDen'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MAP']['EA'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['CB'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['CIntDamp'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['Ca'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdn'][i]))
+            ln.append('{:<11}'.format(self.fst_vt['MAP']['Cdt'][i]))
         f.write(" ".join(ln) + '\n')
         f.write('---------------------- NODE PROPERTIES ---------------------------------------\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['Node', 'Type', 'X', 'Y', 'Z', 'M', 'B', 'FX', 'FY', 'FZ']])+'\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(N)', '(N)', '(N)']])+'\n')
-        for i in range(2):
-            ln =[]
+        for i, type in enumerate(self.fst_vt['MAP']['Type']):
+            ln = []
             ln.append('{:<11}'.format(self.fst_vt['MAP']['Node'][i]))
             ln.append('{:<11}'.format(self.fst_vt['MAP']['Type'][i]))
             ln.append('{:<11}'.format(self.fst_vt['MAP']['X'][i]))
@@ -1785,18 +1786,22 @@ class InputWriter_OpenFAST(object):
         f.write('---------------------- LINE PROPERTIES ---------------------------------------\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NodeAnch', 'NodeFair', 'Flags']])+'\n')
         f.write(" ".join(['{:<11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(self.fst_vt['MAP']['NLines']):
+            ln = []
+            ln.append('{:^11d}'.format(self.fst_vt['MAP']['Line'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MAP']['LineType'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MAP']['UnstrLen'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MAP']['NodeAnch'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MAP']['NodeFair'][i]))
+            # ln.append('{:^11}'.format(self.fst_vt['MAP']['Outputs'][i]))
+            # ln.append('{:^11}'.format(self.fst_vt['MAP']['CtrlChan'][i]))
+            # ln.append('{:<11}'.format(" ".join(self.fst_vt['MAP']['Flags'])))
+            f.write(" ".join(ln) + '\n')
         ln =[]
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['Line']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['LineType']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['UnstrLen']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['NodeAnch']))
-        ln.append('{:<11}'.format(self.fst_vt['MAP']['NodeFair']))
-        ln.append('{:<11}'.format(" ".join(self.fst_vt['MAP']['Flags'])))
-        f.write(" ".join(ln) + '\n')
         f.write('---------------------- SOLVER OPTIONS-----------------------------------------\n')
         f.write('{:<11s}'.format('Option'+'\n'))
         f.write('{:<11s}'.format('(-)')+'\n')
-        f.write(" ".join(self.fst_vt['MAP']['Option']).strip() + '\n')
+        f.write("\n".join(self.fst_vt['MAP']['Option']).strip() + '\n')
 
         f.close()
 
