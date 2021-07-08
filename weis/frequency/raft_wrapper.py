@@ -287,7 +287,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         # Build case table for RAFT
         raft_cases = [[]]*dlc_generator.n_cases
         for i, icase in enumerate(dlc_generator.cases):
-            turbStr = f'{dlc_generator.wind_class}{turb_class}_{icase.IEC_WindType[-3:]}'
+            turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{icase.IEC_WindType[-3:]}'
             opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
             waveStr = 'JONSWAP' #icase.wave_spectrum
             raft_cases[i] = [icase.URef,
