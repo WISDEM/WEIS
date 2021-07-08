@@ -144,7 +144,25 @@ def run_PC_sweep(omega,zeta=1.0):
     # case_inputs[("ElastoDyn","PtfmYIner")] = {'vals':(2.3667E+10*np.array([.7,.8,.9,1,1.1,1.2,1.3])).tolist(), 'group':3}
 
 
-    # controller params
+    # Set up FAST batch so we can be sure to use same turbine
+    fastBatch                   = runFAST_pywrapper_batch(FAST_ver='OpenFAST',dev_branch = True)
+
+    # Monopile
+    # fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
+    # run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
+    # fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+    
+
+    # if MPI:
+    #     fastBatch.run_mpi(comm_map_down)
+    # else:
+    #     fastBatch.run_serial()
+
+    # U-Maine semi-sub
+    fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+    run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
+    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    fastBatch.FAST_runDirectory = iec.run_dir
 
     # load default params
     print('here')
@@ -185,6 +203,7 @@ def run_PC_sweep(omega,zeta=1.0):
             omega_zeta.append((o,z))
 
     # add control gains to case_list
+    case_inputs[('meta','omega')]          = {'vals': omega, 'group': 3}
     case_inputs[('DISCON_in', 'PC_GS_KP')] = {'vals': pc_kp, 'group': 3}
     case_inputs[('DISCON_in', 'PC_GS_KI')] = {'vals': pc_ki, 'group': 3}
 
@@ -194,26 +213,14 @@ def run_PC_sweep(omega,zeta=1.0):
     case_list, case_name_list, dlc_list = iec.execute(case_inputs=case_inputs)
 
     #for var in var_out+[var_x]:
-
-    
-
-    # Monopile
-    # fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-    # run_dir2                    = os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) + os.sep
-    # fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+    # Fast batch setup
     fastBatch.channels          = channels
     # fastBatch.FAST_runDirectory = iec.run_dir
     fastBatch.case_list         = case_list
     fastBatch.case_name_list    = case_name_list
     fastBatch.debug_level       = 2
 
-    # if MPI:
-    #     fastBatch.run_mpi(comm_map_down)
-    # else:
-    #     fastBatch.run_serial()
 
-    
-    fastBatch.FAST_runDirectory = iec.run_dir
     if True:
         fastBatch.run_multi(cores=4)
     else:
