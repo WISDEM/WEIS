@@ -1939,7 +1939,7 @@ properties:
                         description: Solve dynamics about static equilibrium point
                     GuyanLoadCorrection:
                         type: boolean
-                        default: True
+                        default: False
                         description: Include extra moment from lever arm at interface and rotate FEM for floating.
                     FEMMod:
                         type: integer

@@ -938,12 +938,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['SimplCaMG'] = 1.0
             fst_vt['HydroDyn']['SimplCp'] = 1.0
             fst_vt['HydroDyn']['SimplCpMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCd'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCdMG'] = 1.0
             fst_vt['HydroDyn']['SimplAxCa'] = 1.0
             fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
             fst_vt['HydroDyn']['SimplAxCp'] = 1.0
             fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCd'] = 0.0
-            fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
             fst_vt['HydroDyn']['NCoefDpth'] = 0
             fst_vt['HydroDyn']['NCoefMembers'] = 0
             fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
