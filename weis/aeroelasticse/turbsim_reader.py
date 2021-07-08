@@ -1,4 +1,4 @@
-class turbsimReader(object):
+class TurbsimReader(object):
 
     def read_input_file(self, input_file_name):
         inpf = open(input_file_name, 'r')
@@ -7,7 +7,7 @@ class turbsimReader(object):
         inpf.readline()
         inpf.readline()
         inpf.readline()
-        self.echo = inpf.readline().split()[0]
+        self.Echo = inpf.readline().split()[0]
         self.RandSeed1 = inpf.readline().split()[0]
         self.RandSeed2 = inpf.readline().split()[0]
         self.WrBHHTP = inpf.readline().split()[0]
@@ -70,9 +70,9 @@ class turbsimReader(object):
         self.SCMod1 = inpf.readline().split()[0]
         self.SCMod2 = inpf.readline().split()[0]
         self.SCMod3 = inpf.readline().split()[0]
-        self.InCDec1 = inpf.readline()[1:-2].split()
-        self.InCDec2 = inpf.readline()[1:-2].split()
-        self.InCDec3 = inpf.readline()[1:-2].split()
+        self.InCDec1 = inpf.readline().split()[0]
+        self.InCDec2 = inpf.readline().split()[0]
+        self.InCDec3 = inpf.readline().split()[0]
         self.CohExp = inpf.readline().split()[0]
 
         # Spatial Coherence Parameters

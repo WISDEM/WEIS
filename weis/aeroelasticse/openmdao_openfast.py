@@ -14,6 +14,7 @@ from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.turbsim_wrapper import Turbsim_wrapper
 from weis.aeroelasticse.turbsim_writer import TurbsimWriter
+from weis.aeroelasticse.turbsim_reader import TurbsimReader
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
 from functools import partial
@@ -1918,20 +1919,39 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef + 
                                 '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
         turbsim_input_file_path = os.path.join(wind_directory, turbsim_input_file_name)
-        ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
-        ts_writer.execute(turbsim_input_file_path)
-        
-        # Run TurbSim in sequence
-        wrapper = Turbsim_wrapper()
-        wrapper.run_dir = wind_directory
-        run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-        wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
-        wrapper.turbsim_input = turbsim_input_file_name
-        wrapper.execute()
+        wind_file_name = turbsim_input_file_path[:-3] + '.bts'
+
+
+        runTS = True
+        if os.path.exists(wind_file_name) and os.path.exists(turbsim_input_file_path):
+            runTS = False
+            ts_reader = TurbsimReader()
+            ts_reader.read_input_file(turbsim_input_file_path)
+            for key, value in ts_reader.__dict__.items():
+                if isinstance(value, float):
+                    if abs(value - dlc_generator.cases[i_case].__dict__[key]) > 1.e-6:
+                        runTS = True
+                        break
+                else:
+                    if str(value) != str(dlc_generator.cases[i_case].__dict__[key]):
+                        runTS = True
+                        break
+
+
+        if runTS:
+            ts_writer = TurbsimWriter(dlc_generator.cases[i_case])
+            ts_writer.execute(turbsim_input_file_path)
+            
+            # Run TurbSim in sequence
+            wrapper = Turbsim_wrapper()
+            wrapper.run_dir = wind_directory
+            run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+            wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
+            wrapper.turbsim_input = turbsim_input_file_name
+            wrapper.execute()
 
         # Pass data to CaseGen_General to call OpenFAST
         wind_file_type = 3
-        wind_file_name = turbsim_input_file_path[:-3] + '.bts'
 
     else:
         gusts = IEC_CoherentGusts()

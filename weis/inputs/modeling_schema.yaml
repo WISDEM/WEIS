@@ -2807,7 +2807,7 @@ properties:
                                     description: Turbulence model
                                 UserFile:
                                     type: string
-                                    default: ''
+                                    default: unused
                                     description: Name of the file that contains inputs for user-defined spectra or time series inputs (used only for "USRINP" and "TIMESR" models)
                                 IECstandard:
                                     type: string
@@ -2825,7 +2825,7 @@ properties:
                                     description: Velocity profile type ('LOG';'PL'=power law;'JET';'H2L'=Log law for TIDAL model;'API';'USR';'TS';'IEC'=PL on rotor disk, LOG elsewhere; or 'default')
                                 ProfileFile:
                                     type: string
-                                    default: ''
+                                    default: unused
                                     description: Name of the file that contains input profiles for WindProfileType='USR' and/or TurbModel='USRVKM' [-]
                                 RefHt:
                                     type: number
@@ -2909,7 +2909,7 @@ properties:
                                     description: Coherence exponent for general model [-] (or 'default')
                                 CTEventPath:
                                     type: string
-                                    default: ''
+                                    default: unused
                                     description: Name of the path where event data files are located
                                 CTEventFile:
                                     type: string
