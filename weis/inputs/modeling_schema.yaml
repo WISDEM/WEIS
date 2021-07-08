@@ -1809,36 +1809,6 @@ properties:
                         enum: [0, 10, 11, 12]
                         default: 0
                         description: Full summation -frequency 2nd-order forces computed with full QTF {0 = None; [10, 11, or 12] = WAMIT file to use}
-                    PtfmSgF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform horizontal surge translation force (flag) or DEFAULT
-                    PtfmSwF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform horizontal sway translation force (flag) or DEFAULT
-                    PtfmHvF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform vertical heave translation force (flag) or DEFAULT
-                    PtfmRF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform roll tilt rotation force (flag) or DEFAULT
-                    PtfmPF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform pitch tilt rotation force (flag) or DEFAULT
-                    PtfmYF:
-                        type: string
-                        default: 'True'
-                        enum: ['TRUE','True','true','FALSE','False','false','DEFAULT','Default','default']
-                        description: Platform yaw rotation force (flag) or DEFAULT
                     AddF0:
                         type: array
                         default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -1925,7 +1895,19 @@ properties:
                     OutSFmt:
                         type: string
                         default: 'A11'
-                        description: Output format for header strings (quoted string) [not checked for validity]
+                        description: Output format for header strings (quoted string) [not checked for validity]    
+                    NBody:
+                        type: integer
+                        minimum: 1
+                        maximum: 9
+                        default: 1
+                        description: Number of WAMIT bodies to be used (-) [>=1; only used when PotMod=1. If NBodyMod=1, the WAMIT data contains a vector of size 6*NBody x 1 and matrices of size 6*NBody x 6*NBody; if NBodyMod>1, there are NBody sets of WAMIT data each with a vector of size 6 x 1 and matrices of size 6 x 6]
+                    NBodyMod:
+                        type: integer
+                        minimum: 1
+                        maximum: 3
+                        default: 1
+                        description: Body coupling model {1- include coupling terms between each body and NBody in HydroDyn equals NBODY in WAMIT, 2- neglect coupling terms between each body and NBODY=1 with XBODY=0 in WAMIT, 3- Neglect coupling terms between each body and NBODY=1 with XBODY=/0 in WAMIT} (switch) [only used when PotMod=1]
             SubDyn: &ofsubdyn
                 type: object
                 default: {}
@@ -1946,6 +1928,10 @@ properties:
                         type: boolean
                         default: True
                         description: Solve dynamics about static equilibrium point
+                    GuyanLoadCorrection:
+                        type: boolean
+                        default: False
+                        description: Include extra moment from lever arm at interface and rotate FEM for floating.
                     FEMMod:
                         type: integer
                         enum: [1, 2, 3, 4]
@@ -1974,7 +1960,39 @@ properties:
                         items:
                             type: number
                             unit: none
-                    SSSum:
+                    GuyanDampMod:
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
+                        description: Guyan damping {0=none, 1=Rayleigh Damping, 2=user specified 6x6 matrix}
+                    RayleighDamp:
+                        type: array
+                        default: [0.0, 0.0]
+                        description: Mass and stiffness proportional damping  coefficients (Rayleigh Damping) [only if GuyanDampMod=1]
+                        items:
+                            type: number
+                            minItems: 2
+                            maxItems: 2
+                    GuyanDampSize:
+                        type: integer
+                        default: 6
+                        minimum: 0
+                        maximum: 6
+                        description: Guyan damping matrix (6x6) [only if GuyanDampMod=2]
+                    GuyanDamp1: &guyan_damp
+                        type: array
+                        default: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                        description: Guyan damping matrix by row (6x6)
+                        items:
+                            type: number
+                            minItems: 6
+                            maxItems: 6
+                    GuyanDamp2: *guyan_damp
+                    GuyanDamp3: *guyan_damp
+                    GuyanDamp4: *guyan_damp
+                    GuyanDamp5: *guyan_damp
+                    GuyanDamp6: *guyan_damp
+                    SumPrint:
                         type: boolean
                         default: True
                         description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
