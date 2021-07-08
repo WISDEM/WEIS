@@ -903,7 +903,7 @@ class FASTLoadCases(ExplicitComponent):
         if modeling_options['flags']['offshore']:
             fst_vt['HydroDyn']['WtrDens'] = float(inputs['rho_water'])
             fst_vt['HydroDyn']['WtrDpth'] = float(inputs['water_depth'])
-            fst_vt['HydroDyn']['MSL2SWL'] = 0
+            fst_vt['HydroDyn']['MSL2SWL'] = 0.0
             fst_vt['HydroDyn']['WaveHs'] = float(inputs['Hsig_wave'])
             fst_vt['HydroDyn']['WaveTp'] = float(inputs['Tsig_wave'])
             if fst_vt['HydroDyn']['WavePkShp']<=-999.0: fst_vt['HydroDyn']['WavePkShp'] = "DEFAULT"
@@ -925,7 +925,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
             fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
             fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
-            fst_vt['HydroDyn']['Jointzi'] = fst_vt['SubDyn']['JointZss']
+            # New OpenFAST v3 HydroDyn really doesn't like joints right at MSL
+            hd_joints = np.array(fst_vt['SubDyn']['JointZss']).copy()
+            hd_joints[hd_joints==0.0] = 1e-2
+            fst_vt['HydroDyn']['Jointzi'] = hd_joints
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
@@ -938,8 +941,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['SimplCaMG'] = 1.0
             fst_vt['HydroDyn']['SimplCp'] = 1.0
             fst_vt['HydroDyn']['SimplCpMG'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCd'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCdMG'] = 1.0
+            fst_vt['HydroDyn']['SimplAxCd'] = 0.0
+            fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
             fst_vt['HydroDyn']['SimplAxCa'] = 1.0
             fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
             fst_vt['HydroDyn']['SimplAxCp'] = 1.0
