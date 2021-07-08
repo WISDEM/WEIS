@@ -517,7 +517,7 @@ def convertIEAturbineYAML2RAFT(fname_turbine):
     Rhub = 0.5 * wt_init["components"]["hub"]["diameter"] # [m] - hub radius
     d['precone'] = np.rad2deg(wt_init["components"]["hub"]["cone_angle"]) # [deg] - rotor precone angle
     d['shaft_tilt'] = np.rad2deg(wt_init["components"]["nacelle"]["drivetrain"]["uptilt"]) # [deg] -  nacelle uptilt angle
-    d['overhang'] = np.rad2deg(wt_init["components"]["nacelle"]["drivetrain"]["overhang"]) # [m] - distance from tower centerline to blade root location?
+    d['overhang'] = wt_init["components"]["nacelle"]["drivetrain"]["overhang"] # [m] - distance from tower centerline to blade root location?
     d['nBlades'] = wt_init["assembly"]["number_of_blades"] # [-] - number of blades
 
     # Set discretization parameters
@@ -600,7 +600,7 @@ def convertIEAturbineYAML2RAFT(fname_turbine):
         outfile.write(f"    Zhub        : {d['Zhub']}        # hub height [m]\n")
         outfile.write(f"    Rhub        : {d['Rhub']}        # hub radius [m]\n")
         outfile.write(f"    precone     : {d['precone']}     # [rad]\n")
-        outfile.write(f"    shaft_tilt  : {d['shaft_tilt']}  # [rad]\n\n")
+        outfile.write(f"    shaft_tilt  : {d['shaft_tilt']}  # [rad]\n")
         outfile.write(f"    overhang    : {d['overhang']}  # [m]\n\n")
         outfile.write(f"    env: \n")
         outfile.write(f"        rho     : {d['env']['rho']}   # air density [kg/m^3]\n")
@@ -612,7 +612,6 @@ def convertIEAturbineYAML2RAFT(fname_turbine):
         outfile.write(f"        presweepTip : {d['blade']['presweepTip']}  # \n")
         outfile.write(f"        Rtip        : {d['blade']['Rtip']}         # rotor radius\n\n")
         
-        outfile.write(f"\n")
         outfile.write(f"        geometry: #  r     chord    theta  precurve  presweep\n")
         outfile.write(f"          #         (m)     (m)     (deg)     (m)      (m)\n")
         for i in range(len(d['blade']['r'])):

@@ -15,7 +15,12 @@ class RAFT_WEIS(om.Group):
         weis_opt = self.options['modeling_options']
 
         raft_opt = {}
-        raft_opt['nfreq'] = len(weis_opt['Level1']['frequencies'])
+
+        raft_opt['min_freq'] = min_freq = weis_opt['Level1']['min_freq']
+        raft_opt['max_freq'] = max_freq = weis_opt['Level1']['max_freq']
+        frequencies = np.arange(min_freq, max_freq+0.5*min_freq, min_freq)
+        raft_opt['nfreq'] = len(frequencies)
+
         raft_opt['potModMaster'] = weis_opt['Level1']['potential_model_override']
         raft_opt['XiStart'] = weis_opt['Level1']['xi_start']
         raft_opt['nIter'] = weis_opt['Level1']['nIter']
@@ -64,7 +69,6 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
     
     def setup(self):
         opt = self.options['modeling_options']
-        nfreq = len(opt['Level1']['frequencies'])
         
         n_nodes = opt['mooring']['n_nodes']
         n_lines = opt['mooring']['n_lines']
@@ -174,9 +178,6 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f'mooring_line_type{k+1}_transverse_drag', val=0.0, desc='Transverse drag')
             self.add_output(f'mooring_line_type{k+1}_tangential_drag', val=0.0, desc='Tangential drag') 
 
-        # Frequencies to calculate
-        self.add_output('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
-
         # DLC cases to run
         self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
         self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
@@ -192,9 +193,6 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         opt = self.options['modeling_options']
-
-        # Frequencies to calculate
-        outputs['frequency_range'] = np.array( opt['Level1']['frequencies'] )
 
         # Tower layer sections
         outputs['turbine_tower_t'] = inputs['tower_layer_thickness'].sum(axis=0)
@@ -289,7 +287,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         # Build case table for RAFT
         raft_cases = [[]]*dlc_generator.n_cases
         for i, icase in enumerate(dlc_generator.cases):
-            turbStr = f'{dlc_generator.wind_class_num}{turb_class}_{icase.IEC_WindType[-3:]}'
+            turbStr = f'{dlc_generator.wind_class}{turb_class}_{icase.IEC_WindType[-3:]}'
             opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
             waveStr = 'JONSWAP' #icase.wave_spectrum
             raft_cases[i] = [icase.URef,

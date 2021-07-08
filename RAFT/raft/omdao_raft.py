@@ -51,9 +51,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
         nline_types = mooring_opt['nline_types']
         nconnections = mooring_opt['nconnections']
 
-        # frequency domain
-        self.add_input('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
-
         # turbine inputs
         self.add_input('turbine_mRNA', val=0.0, units='kg', desc='RNA mass')
         self.add_input('turbine_IxRNA', val=0.0, units='kg*m**2', desc='RNA moment of inertia about local x axis')
@@ -300,8 +297,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['settings'] = {}
         design['settings']['XiStart'] = float(modeling_opt['XiStart'])
         design['settings']['dlsMax'] = float(modeling_opt['dlsMax'])
-        design['settings']['min_freq'] = float(inputs['frequency_range'][0])
-        design['settings']['max_freq'] = float(inputs['frequency_range'][-1])
+        design['settings']['min_freq'] = float(modeling_opt['min_freq'])
+        design['settings']['max_freq'] = float(modeling_opt['max_freq'])
 
         # Environment layer data
         design['site'] = {}
@@ -531,7 +528,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         #model.solveDynamics()
         results = model.calcOutputs()
         
-        outs = self.list_outputs(values=False, out_stream=None)
+        outs = self.list_outputs(val=False, out_stream=None)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]

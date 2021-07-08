@@ -856,44 +856,62 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AddF0'] = np.array( fst_vt['HydroDyn']['AddF0'] )
             fst_vt['HydroDyn']['AddCLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddCLin'+str(m+1)] for m in range(6)]) )
             fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
-            fst_vt['HydroDyn']['AddBQuad'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
+            fst_vt['HydroDyn']['AddBQuad'] = np.zeros((6,6)) # Will use user input only if not using strip theory- updated below
             fst_vt['HydroDyn']['NAxCoef'] = 1
             fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
             fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
-            fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
-            fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
-            fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
-            fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
-            fst_vt['HydroDyn']['Jointzi'] = fst_vt['SubDyn']['JointZss']
+            if modeling_options["Level1"]["potential_model_override"] in [1,3]:
+                # Only list members if using strip theory calculations.  Reminder:
+                # potential_model_override = 1: Strip theory only
+                # potential_model_override = 3: Strip theory for drag + BEM for inviscid
+                fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
+                fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
+                fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
+                fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
+                fst_vt['HydroDyn']['Jointzi'] = fst_vt['SubDyn']['JointZss']
+                fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
+                fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
+                fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
+                fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
+                fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
+                fst_vt['HydroDyn']['MemberID'] = fst_vt['SubDyn']['MemberID']
+                fst_vt['HydroDyn']['MJointID1'] = fst_vt['SubDyn']['MJointID1']
+                fst_vt['HydroDyn']['MJointID2'] = fst_vt['SubDyn']['MJointID2']
+                fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID1']
+                fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
+                fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
+                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 1.0
+                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 1.0
+                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 1.0
+                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
+                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
+            else:
+                # No strip theory- only potential flow
+                # Okay to add-in user-provided viscous drag terms
+                fst_vt['HydroDyn']['AddBQuad'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
+                fst_vt['HydroDyn']['NJoints'] = 0
+                fst_vt['HydroDyn']['JointID'] = []
+                fst_vt['HydroDyn']['Jointxi'] = fst_vt['HydroDyn']['Jointyi'] = fst_vt['HydroDyn']['Jointzi'] = []
+                fst_vt['HydroDyn']['NPropSets'] = 0
+                fst_vt['HydroDyn']['PropSetID'] = fst_vt['HydroDyn']['PropD'] = fst_vt['HydroDyn']['PropThck'] = []
+                fst_vt['HydroDyn']['NMembers'] = 0
+                fst_vt['HydroDyn']['MemberID'] = fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MJointID2'] = []
+                fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['HydroDyn']['MDivSize'] = []
+                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
+                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
+                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
+                
+            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
-            fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
-            fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
-            fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
-            fst_vt['HydroDyn']['SimplCd'] = 1.0
-            fst_vt['HydroDyn']['SimplCdMG'] = 1.0
-            fst_vt['HydroDyn']['SimplCa'] = 1.0
-            fst_vt['HydroDyn']['SimplCaMG'] = 1.0
-            fst_vt['HydroDyn']['SimplCp'] = 1.0
-            fst_vt['HydroDyn']['SimplCpMG'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCa'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCp'] = 1.0
-            fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
+            PropPotBool = modeling_options["Level1"]["potential_model_override"] == 3
+            fst_vt['HydroDyn']['PropPot'] = [str(PropPotBool)] * fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NCoefDpth'] = 0
             fst_vt['HydroDyn']['NCoefMembers'] = 0
-            fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
-            fst_vt['HydroDyn']['MemberID'] = fst_vt['SubDyn']['MemberID']
-            fst_vt['HydroDyn']['MJointID1'] = fst_vt['SubDyn']['MJointID1']
-            fst_vt['HydroDyn']['MJointID2'] = fst_vt['SubDyn']['MJointID2']
-            fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID1']
-            fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
-            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
-            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['PropPot'] = ['FALSE']* fst_vt['HydroDyn']['NMembers']
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
@@ -902,15 +920,6 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
-                fst_vt['HydroDyn']['PropPot'] = ['True']* fst_vt['HydroDyn']['NMembers']
-                
-                # set PotFile directory relative to WEIS
-                # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
-                weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                if fst_vt['HydroDyn']['PotFile']:
-                    fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
-                else:
-                    raise Exception('If PotMod=1, PotFile must be specified in modeling options')
                 
                 # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
                 if fst_vt['HydroDyn']['PtfmMass_Init']:
@@ -964,11 +973,11 @@ class FASTLoadCases(ExplicitComponent):
                 id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
                 id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
                 if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id2].lower() == 'fixed'):
+                    fst_vt['MoorDyn']['Type'][id2].lower().find('fix') >= 0):
                     fst_vt['MoorDyn']['NodeFair'][k] = id1+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
                 if (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id1].lower() == 'fixed'):
+                    fst_vt['MoorDyn']['Type'][id1].lower().find('fix') >= 0):
                     fst_vt['MoorDyn']['NodeFair'][k] = id2+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
                 else:
@@ -1175,7 +1184,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
-        if self.mpi_run and self.options['opt_options']['driver']['optimization']['flag']:
+        if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
             summary_stats, extreme_table, DELs, _ = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
@@ -1186,6 +1195,7 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
+
         return summary_stats, extreme_table, DELs, case_list, dlc_generator
 
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
