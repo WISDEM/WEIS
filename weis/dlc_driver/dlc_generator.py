@@ -16,6 +16,8 @@ class DLCInstance(object):
         self.wave_heading = 0.0
         self.wave_gamma = 0.0
         self.probability = 0.0
+        self.analysis_time = 600.
+        self.transient_time = 120.
         self.IEC_WindType = 'NTM'
         self.turbine_status = 'operating'
         self.wave_spectrum = 'JONSWAP'
@@ -172,7 +174,7 @@ class DLCGenerator(object):
     
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
-        wind_speeds, wind_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        wind_speeds, wind_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)        
         # Counters for wave conditions
         i_Hs=0
         i_Tp=0
@@ -191,6 +193,10 @@ class DLCGenerator(object):
                 idlc.wave_heading = wave_heading[i_WaH]
                 idlc.turbulent_wind = True
                 idlc.label = '1.1'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 idlc.PSF = 1.2 * 1.25
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
@@ -228,6 +234,10 @@ class DLCGenerator(object):
                 idlc.probability = probabilities[i_WaH]
                 idlc.turbulent_wind = True
                 idlc.label = '1.2'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 idlc.PSF = 1.
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
@@ -263,6 +273,10 @@ class DLCGenerator(object):
                 idlc.IEC_WindType = self.wind_speed_class_num + 'ETM'
                 idlc.turbulent_wind = True
                 idlc.label = '1.3'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
                     i_WiH+=1
@@ -297,6 +311,10 @@ class DLCGenerator(object):
                 idlc.IEC_WindType = 'ECD'
                 idlc.turbulent_wind = False
                 idlc.label = '1.4'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 idlc.direction_pn = direction
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
@@ -334,6 +352,10 @@ class DLCGenerator(object):
                     idlc.IEC_WindType = 'EWS'
                     idlc.turbulent_wind = False
                     idlc.label = '1.5'
+                    if options['analysis_time'] > 0:
+                        idlc.analysis_time = options['analysis_time']
+                    if options['transient_time'] > 0:
+                        idlc.transient_time = options['transient_time']
                     idlc.sigma1 = self.IECturb.NTM(ws)
                     idlc.direction_pn = direction
                     idlc.shear_hv = shear
@@ -370,7 +392,12 @@ class DLCGenerator(object):
                 idlc.wave_heading = wave_heading[i_WaH]
                 idlc.turbulent_wind = True
                 idlc.label = '1.6'
-                idlc.PSF = 1.35
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                else:
+                    idlc.analysis_time = 3600.
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
                     i_WiH+=1
@@ -410,6 +437,10 @@ class DLCGenerator(object):
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked-still'
                 idlc.label = '6.1'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
                     i_WiH+=1
@@ -449,6 +480,10 @@ class DLCGenerator(object):
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked-still'
                 idlc.label = '6.3'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
                     i_WiH+=1
@@ -487,6 +522,10 @@ class DLCGenerator(object):
                 if idlc.turbine_status == 'operating':
                     idlc.turbine_status = 'parked-still'
                 idlc.label = '6.4'
+                if options['analysis_time'] > 0:
+                    idlc.analysis_time = options['analysis_time']
+                if options['transient_time'] > 0:
+                    idlc.transient_time = options['transient_time']
                 self.cases.append(idlc)
                 if len(wind_heading)>1:
                     i_WiH+=1

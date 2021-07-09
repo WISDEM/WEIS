@@ -20,8 +20,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
-        TMax: 720
-        TStart: 120
         SttsTime: 100.
     ElastoDyn:
         flag: True
@@ -58,7 +56,6 @@ DLC_driver:
               HubHt: 140
               GridHeight: 240
               GridWidth: 240
-              AnalysisTime: 5.
 
 xfoil:
     path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 

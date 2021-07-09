@@ -89,13 +89,6 @@ properties:
                         enum: ['WARNING', 'SEVERE', 'FATAL']
                         default: 'FATAL'
                         description: Error level when simulation should abort (string) {'WARNING', 'SEVERE', 'FATAL'}
-                    TMax:
-                        type: number
-                        default: 720.0
-                        minimum: 0.0
-                        maximum: 100000.0
-                        unit: s
-                        description: Total run time (s)
                     DT:
                         type: number
                         default: 0.025
@@ -233,13 +226,6 @@ properties:
                         type: string
                         default: default
                         description: Time step for tabular output (s) (or 'default')
-                    TStart:
-                        type: number
-                        default: 0.
-                        minimum: 0.
-                        maximum: 10000.
-                        units: s
-                        description: Time to begin tabular output (s)
                     OutFileFmt:
                         type: integer
                         enum: [0,1,2,3]
@@ -2693,6 +2679,18 @@ properties:
                             default: NTM
                             enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG']
                             description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3), 'ECD'=extreme coherent gust with direction change, 'EDC'=extreme direction change, 'EOG'=extreme operating gust
+                        analysis_time:
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1.e+4
+                            default: 0.
+                        transient_time:
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1.e+4
+                            default: 120.
                         turbulent_wind:
                             type: object
                             default: {}
@@ -2772,13 +2770,6 @@ properties:
                                     maximum: 1.
                                     unit: s
                                     description: Time step [seconds]
-                                AnalysisTime:
-                                    type: number
-                                    default: 720.
-                                    minimum: 1.e-4
-                                    maximum: 1.e+4
-                                    unit: s
-                                    description: Length of analysis time series [seconds] (program will add time if necessary AnalysisTime = MAX(AnalysisTime, UsableTime+GridWidth/MeanHHWS) )
                                 UsableTime:
                                     type: string
                                     default: 'ALL'

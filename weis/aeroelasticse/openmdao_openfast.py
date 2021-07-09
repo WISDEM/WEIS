@@ -1088,6 +1088,8 @@ class FASTLoadCases(ExplicitComponent):
         WaveTp = np.zeros(dlc_generator.n_cases)
         WaveHd = np.zeros(dlc_generator.n_cases)
         WaveGamma = np.zeros(dlc_generator.n_cases)
+        TMax = np.zeros(dlc_generator.n_cases)
+        TStart = np.zeros(dlc_generator.n_cases)
         
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1107,6 +1109,8 @@ class FASTLoadCases(ExplicitComponent):
                 dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
                 # Power law exponent of wind shear
                 dlc_generator.cases[i_case].PLExp = PLExp
+                # Length of wind grids
+                dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time 
 
         # Generate wind files
         if MPI and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
@@ -1151,9 +1155,15 @@ class FASTLoadCases(ExplicitComponent):
             WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
+            TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time 
+            TStart[i_case] = dlc_generator.cases[i_case].transient_time 
+
 
         # Parameteric inputs
         case_inputs = {}
+        # Main fst
+        case_inputs[("Fst","TMax")] = {'vals':TMax, 'group':1}
+        case_inputs[("Fst","TStart")] = {'vals':TStart, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
