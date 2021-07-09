@@ -1,7 +1,6 @@
 import numpy as np
 import os, shutil, sys, platform
 import copy
-<<<<<<< HEAD
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
@@ -19,27 +18,14 @@ from weis.aeroelasticse.turbsim_reader import TurbsimReader
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
 from functools import partial
-
 from pCrunch import PowerProduction
-=======
-from scipy.interpolate                              import PchipInterpolator
-from openmdao.api                                   import ExplicitComponent
-from wisdem.commonse.mpi_tools                      import MPI
-import wisdem.commonse.utilities                    as util
-from wisdem.rotorse.rotor_power                     import eval_unsteady
-from weis.aeroelasticse.FAST_writer                 import InputWriter_OpenFAST
-from wisdem.towerse                                 import NFREQ, get_nfull
-from weis.aeroelasticse.runFAST_pywrapper           import runFAST_pywrapper_batch
-from weis.aeroelasticse.FAST_post                   import FAST_IO_timeseries
-from weis.aeroelasticse.CaseGen_IEC                 import CaseGen_General, CaseGen_IEC
-from wisdem.floatingse.floating_frame               import NULL, NNODES_MAX, NELEM_MAX
-from weis.aeroelasticse.LinearFAST                  import LinearFAST
-from weis.control.LinearModel                       import LinearTurbineModel, LinearControlModel
-from weis.aeroelasticse                             import FileTools
-from weis.aeroelasticse.Turbsim_mdao.turbsim_file   import TurbSimFile
-from ROSCO_toolbox                                  import control_interface as ROSCO_ci
-from pCrunch.io                                     import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
-from pCrunch                                        import LoadsAnalysis
+from weis.aeroelasticse.LinearFAST import LinearFAST
+from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
+from weis.aeroelasticse import FileTools
+from weis.aeroelasticse.turbsim_file   import TurbSimFile
+from ROSCO_toolbox import control_interface as ROSCO_ci
+from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
+from pCrunch import LoadsAnalysis, PowerProduction
 
 
 # It probably should be here, so the channels can match what we set to be output in openfast
@@ -71,11 +57,7 @@ la = LoadsAnalysis(
     fatigue_channels=fatigue_channels,
 )
 
-
-from pCrunch import LoadsAnalysis, PowerProduction
-import fatpack
 import pickle
->>>>>>> update_OF
 
 if MPI:
     from mpi4py   import MPI
@@ -343,7 +325,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
             self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
             self.add_discrete_input("node_names", val=[""] * n_nodes)
-<<<<<<< HEAD
                
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_OF_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
@@ -352,79 +333,15 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('Omega_out', val=np.zeros(n_OF_dlc11), units='rpm', desc='rotation speeds to run')
         self.add_output('pitch_out', val=np.zeros(n_OF_dlc11), units='deg', desc='pitch angles to run')
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
-=======
-        
-        # FAST run preferences
-        self.FASTpref            = FASTpref 
-        self.Analysis_Level      = FASTpref['analysis_settings']['Analysis_Level']
-        self.debug_level         = FASTpref['analysis_settings']['debug_level']
-        if FASTpref['file_management']['FAST_exe'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['FAST_exe']):
-                self.FAST_exe = FASTpref['file_management']['FAST_exe']
-            else:
-                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             FASTpref['file_management']['FAST_exe'])
-
-        if FASTpref['file_management']['FAST_lib'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['FAST_lib']):
-                self.FAST_lib = FASTpref['file_management']['FAST_lib']
-            else:
-                self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             FASTpref['file_management']['FAST_lib'])
-
-        if os.path.isabs(FASTpref['file_management']['FAST_directory']):
-            self.FAST_directory = FASTpref['file_management']['FAST_directory']
-        else:
-            self.FAST_directory = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                               FASTpref['file_management']['FAST_directory'])
-        
-        if FASTpref['file_management']['Turbsim_exe'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['Turbsim_exe']):
-                self.Turbsim_exe = FASTpref['file_management']['Turbsim_exe']
-            else:
-                self.Turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                                FASTpref['file_management']['Turbsim_exe'])
-                
-        self.FAST_InputFile      = FASTpref['file_management']['FAST_InputFile']
-        if MPI:
-            rank    = MPI.COMM_WORLD.Get_rank()
-            self.FAST_runDirectory = os.path.join(FASTpref['file_management']['FAST_runDirectory'],'rank_%000d'%int(rank))
-            self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']+'_%000d'%int(rank)
-        else:
-            self.FAST_runDirectory = FASTpref['file_management']['FAST_runDirectory']
-            self.FAST_namingOut  = FASTpref['file_management']['FAST_namingOut']
-        self.cores               = FASTpref['analysis_settings']['cores']
-        self.case                = {}
-        self.channels            = {}
-
-        self.clean_FAST_directory = False
-        if 'clean_FAST_directory' in FASTpref.keys():
-            self.clean_FAST_directory = FASTpref['clean_FAST_directory']
-
-        self.mpi_run             = False
-        if 'mpi_run' in FASTpref['analysis_settings'].keys():
-            self.mpi_run         = FASTpref['analysis_settings']['mpi_run']
-            if self.mpi_run:
-                self.mpi_comm_map_down   = FASTpref['analysis_settings']['mpi_comm_map_down']
-        
->>>>>>> update_OF
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
-
-        self.add_output('V_out',       val=np.zeros(n_OF), units='m/s',  desc='wind vector')
-        self.add_output('P_out',       val=np.zeros(n_OF), units='W',    desc='rotor electrical power')
-        self.add_output('P_aero_out',       val=np.zeros(n_OF), units='W',    desc='rotor aerodynamic power')
-        self.add_output('Cp_out',      val=np.zeros(n_OF),               desc='rotor aero power coefficient')
-        self.add_output('Omega_out',   val=np.zeros(n_OF), units='rpm',  desc='rotation speeds to run')
-        self.add_output('pitch_out',   val=np.zeros(n_OF), units='deg',  desc='pitch angles to run')
 
         self.add_output('rated_V',     val=0.0,            units='m/s',  desc='rated wind speed')
         self.add_output('rated_Omega', val=0.0,            units='rpm',  desc='rotor rotation speed at rated')
         self.add_output('rated_pitch', val=0.0,            units='deg',  desc='pitch setting at rated')
         self.add_output('rated_T',     val=0.0,            units='N',    desc='rotor aerodynamic thrust at rated')
         self.add_output('rated_Q',     val=0.0,            units='N*m',  desc='rotor aerodynamic torque at rated')
-        self.add_output('AEP',         val=0.0,            units='kW*h', desc='annual energy production')
 
         self.add_output('loads_r',      val=np.zeros(n_span), units='m', desc='radial positions along blade going toward tip')
         self.add_output('loads_Px',     val=np.zeros(n_span), units='N/m', desc='distributed loads in blade-aligned x-direction')
@@ -535,15 +452,13 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt = self.init_FAST_model()
         fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         
-<<<<<<< HEAD
         if self.model_only == True:
             # Write input OF files, but do not run OF
-=======
-        if self.Analysis_Level == 2:
-            # Run FAST with ElastoDyn
+            self.write_FAST(fst_vt, discrete_outputs)
+        else:
+            # Write OF model and run
+            summary_stats, extreme_table, DELs, case_list, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
-            summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-           
             if self.options['modeling_options']['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(
                 self.FAST_runDirectory,
@@ -639,19 +554,7 @@ class FASTLoadCases(ExplicitComponent):
                         output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
-                    
-            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs)
-            
-            # list_cases, list_casenames, required_channels, case_keys = self.DLC_creation(inputs, discrete_inputs, fst_vt)
-            # FAST_Output = self.run_FAST(fst_vt, list_cases, list_casenames, required_channels)
 
-        elif self.Analysis_Level == 1:
-            # Write FAST files, do not run
->>>>>>> update_OF
-            self.write_FAST(fst_vt, discrete_outputs)
-        else:
-            # Write OF model and run
-            summary_stats, extreme_table, DELs, case_list, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
             self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
         
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
@@ -1539,24 +1442,8 @@ class FASTLoadCases(ExplicitComponent):
         else:
             fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
-<<<<<<< HEAD
         fastBatch.FAST_runDirectory = self.FAST_directory
-=======
 
-        # JJ->DZ: we need to add the options and settings from `gen_linear_model` here
-        if self.FASTpref['file_management']['FAST_exe'] != 'none':
-            fastBatch.FAST_exe          = self.FAST_exe
-            fastBatch.FAST_lib          = self.FAST_lib
-
-        # Set FAST_lib to none in order to use exe in fastBatch (runFAST_pywrapper)
-        if self.FASTpref['file_management']['use_exe']:
-            fastBatch.FAST_lib                  = None
-        else:
-            fastBatch.FAST_exe                  = None
-        
-
-        fastBatch.FAST_runDirectory = self.FAST_runDirectory
->>>>>>> update_OF
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.FAST_directory    = self.FAST_directory
         fastBatch.fst_vt            = fst_vt
@@ -1581,177 +1468,10 @@ class FASTLoadCases(ExplicitComponent):
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
-<<<<<<< HEAD
-=======
-        return summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list
->>>>>>> update_OF
 
         return summary_stats, extreme_table, DELs, case_list, dlc_generator
 
-<<<<<<< HEAD
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
-=======
-        iec = CaseGen_IEC()
-
-        # Turbine Data
-        iec.Turbine_Class    = discrete_inputs['turbine_class']
-        iec.Turbulence_Class = discrete_inputs['turbulence_class']
-        iec.D                = fst_vt['ElastoDyn']['TipRad']*2. #np.min([fst_vt['InflowWind']['RefHt']*1.9 , fst_vt['ElastoDyn']['TipRad']*2.5])
-        iec.z_hub            = fst_vt['InflowWind']['RefHt']
-
-        # Turbine initial conditions
-        iec.init_cond = {} # can leave as {} if data not available
-        iec.init_cond[("ElastoDyn","RotSpeed")]        = {'U':inputs['U_init']}
-        iec.init_cond[("ElastoDyn","RotSpeed")]['val'] = inputs['Omega_init']
-        iec.init_cond[("ElastoDyn","BlPitch1")]        = {'U':inputs['U_init']}
-        iec.init_cond[("ElastoDyn","BlPitch1")]['val'] = inputs['pitch_init']
-        iec.init_cond[("ElastoDyn","BlPitch2")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
-        iec.init_cond[("ElastoDyn","BlPitch3")]        = iec.init_cond[("ElastoDyn","BlPitch1")]
-
-        # If running OLAF...
-        if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            # Set DT according to OLAF guidelines
-            dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
-            iec.init_cond[("Fst","DT")]        = {'U':inputs['U_init']}
-            iec.init_cond[("Fst","DT")]['val'] = dt_wanted
-            # Raise the center of the grid 50% above hub height because the wake will expand
-            iec.grid_center_over_hh = 1.5
-
-        # Todo: need a way to handle Metocean conditions for Offshore
-        # if offshore:
-        #     iec.init_cond[("HydroDyn","WaveHs")]        = {'U':[3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25, 40, 50]}
-        #     iec.init_cond[("HydroDyn","WaveHs")]['val'] = [1.101917033, 1.101917033, 1.179052649, 1.315715154, 1.536867124, 1.835816514, 2.187994638, 2.598127096, 3.061304068, 3.617035443, 4.027470219, 4.51580671, 4.51580671, 6.98, 10.7]
-        #     iec.init_cond[("HydroDyn","WaveTp")]        = {'U':[3, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 25, 40, 50]}
-        #     iec.init_cond[("HydroDyn","WaveTp")]['val'] = [8.515382435, 8.515382435, 8.310063688, 8.006300889, 7.6514231, 7.440581338, 7.460834063, 7.643300307, 8.046899942, 8.521314105, 8.987021024, 9.451641026, 9.451641026, 11.7, 14.2]
-
-        # Setup dlc settings
-        iec.dlc_inputs = {}
-        iec.dlc_inputs['DLC']   = []
-        iec.dlc_inputs['U']     = []
-        iec.dlc_inputs['Seeds'] = []
-        iec.dlc_inputs['Yaw']   = []
-        iec.uniqueSeeds         = self.FASTpref['dlc_settings']['unique_wind_seeds']
-        iec.uniqueWaveSeeds     = self.FASTpref['dlc_settings']['unique_wave_seeds']
-        
-        if powercurve:
-            # running turbulent power curve
-            iec.dlc_inputs['DLC'].append(1.1)
-            iec.dlc_inputs['U'].append(self.FASTpref['dlc_settings']['Power_Curve']['U'])
-            iec.dlc_inputs['Seeds'].append(self.FASTpref['dlc_settings']['Power_Curve']['Seeds'])
-            iec.dlc_inputs['Yaw'].append([])
-
-        else:
-
-            for dlc in self.FASTpref['dlc_settings']['IEC']:
-
-                if 'DLC' in dlc.keys():
-                    iec.dlc_inputs['DLC'].append(dlc['DLC'])
-                else:
-                    iec.dlc_inputs['DLC'].append([])
-
-                if 'U' in dlc.keys():
-                    iec.dlc_inputs['U'].append(dlc['U'])
-                else:
-                    if dlc['DLC'] == 1.4:
-                        iec.dlc_inputs['U'].append([float(inputs['Vrated'])-2., float(inputs['Vrated']), float(inputs['Vrated'])+2.])
-                    elif dlc['DLC'] == 5.1:
-                        iec.dlc_inputs['U'].append([float(inputs['Vrated'])-2., float(inputs['Vrated'])+2., float(inputs['V_cutout'])])
-                    elif dlc['DLC'] == 6.1:
-                        iec.dlc_inputs['U'].append([float(inputs['V_extreme50'])])
-                    elif dlc['DLC'] == 6.3:
-                        iec.dlc_inputs['U'].append([float(inputs['V_extreme1'])])
-                    else:
-                        iec.dlc_inputs['U'].append([])
-
-                if 'Seeds' in dlc.keys():
-                    iec.dlc_inputs['Seeds'].append(dlc['Seeds'])
-                else:
-                    iec.dlc_inputs['Seeds'].append([])
-
-                if 'Yaw' in dlc.keys():
-                    iec.dlc_inputs['Yaw'].append(dlc['Yaw'])
-                else:
-                    iec.dlc_inputs['Yaw'].append([])
-
-        iec.transient_dir_change        = '-'
-        iec.transient_shear_orientation = 'v'
-        if self.options['modeling_options']['Level3']['flag']:
-            iec.TMax    = self.options['modeling_options']['Level3']['simulation']['TMax']
-        elif self.options['modeling_options']['Level2']['flag']:
-            iec.TMax    = self.options['modeling_options']['Level2']['simulation']['TMax']
-        else:
-            raise Exception('Not running Level2 or Level3, no IEC cases generated')
-
-        T0            = np.max([0. , iec.TMax - 600.])
-        iec.TStart    = (iec.TMax-T0)/2. + T0
-        self.simtime  = iec.TMax - T0
-        self.TMax     = iec.TMax
-        self.T0       = T0
-
-        # path management
-        iec.wind_dir        = self.FAST_runDirectory
-        if self.FASTpref['file_management']['Turbsim_exe'] != 'none':
-            iec.Turbsim_exe     = self.Turbsim_exe
-        iec.debug_level     = self.debug_level
-        iec.overwrite       = False # TODO: elevate these options to analysis input file
-        iec.run_dir         = self.FAST_runDirectory
-
-        if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
-            iec.parallel_windfile_gen = True
-            iec.mpi_run               = self.FASTpref['analysis_settings']['mpi_run']
-            iec.comm_map_down         = self.FASTpref['analysis_settings']['mpi_comm_map_down']
-        else:
-            iec.parallel_windfile_gen = False
-
-        if powercurve:
-            iec.case_name_base  = self.FAST_namingOut + '_powercurve'
-        else:
-            iec.case_name_base  = self.FAST_namingOut + '_IEC'
-
-        # Run case setup, generate wind inputs
-        case_list, case_name_list, dlc_list = iec.execute()
-
-
-        return case_list, case_name_list, dlc_list
-
-    def DLC_creation_powercurve(self, inputs, discrete_inputs, fst_vt):
-
-        if len(self.FASTpref['dlc_settings']['Power_Curve']['U']) > 0: # todo: need a warning if no powercurve wind speeds are specified and DLC 1.1 is not set
-        
-            if self.FASTpref['dlc_settings']['Power_Curve']['turbulent_power_curve']:
-
-                case_list, case_name, dlc_list_IEC = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt, powercurve=True)
-
-            else:
-                U     = self.FASTpref['dlc_settings']['Power_Curve']['U']
-                omega = np.interp(U, inputs['U_init'], inputs['Omega_init'])
-                pitch = np.interp(U, inputs['U_init'], inputs['pitch_init'])
-
-                # wind speeds
-                case_inputs = {}
-                case_inputs[("InflowWind","WindType")]   = {'vals':[1], 'group':0}
-                case_inputs[("InflowWind","HWindSpeed")] = {'vals':U, 'group':1}
-                case_inputs[("ElastoDyn","RotSpeed")]    = {'vals':omega, 'group':1}
-                case_inputs[("ElastoDyn","BlPitch1")]    = {'vals':pitch, 'group':1}
-                case_inputs[("ElastoDyn","BlPitch2")]    = case_inputs[("ElastoDyn","BlPitch1")]
-                case_inputs[("ElastoDyn","BlPitch3")]    = case_inputs[("ElastoDyn","BlPitch1")]
-
-                # Set DT according to OLAF guidelines
-                if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dt_wanted, _, _, _, _ = OLAFParams(inputs['Omega_init'])
-                    case_inputs[("Fst","DT")]               = {'vals':dt_wanted, 'group':1}
-
-                case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_namingOut + '_powercurve')
-
-            dlc_list = [0.]*len(case_name)
-
-            return case_list, case_name, dlc_list
-
-        else:
-            return [], [], []
-
-    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_list, inputs, discrete_inputs, outputs, discrete_outputs):
->>>>>>> update_OF
 
         # Analysis
         outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
