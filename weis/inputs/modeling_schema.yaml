@@ -1012,6 +1012,12 @@ properties:
                         minimum: 0.
                         default: 5.000000000000000e-01
                         description: Water depth above mid-hub height (m) [used only when CavitCheck=True]
+                    TwrTI:
+                        type: number
+                        default: 0.1
+                        minimum: 0.
+                        maximum: 10.
+                        description: Turbulence intensity used in the Eames tower shadow model. Values of TwrTI between 0.05 and 0.4 are recommended.
                     SumPrint:
                         type: boolean
                         default: False
