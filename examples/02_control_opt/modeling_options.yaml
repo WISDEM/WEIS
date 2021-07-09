@@ -20,8 +20,6 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        TMax: 700.
-        TStart: 60
         DT: 0.0125
         CompElast: 1
         CompInflow: 1
@@ -71,6 +69,8 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 5
           n_seeds: 1
+          analysis_time: 700.
+          transient_time: 60.
           turbulent_wind:
               HubHt: 140
               GridHeight: 220
