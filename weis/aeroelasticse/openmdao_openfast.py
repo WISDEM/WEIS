@@ -1173,7 +1173,8 @@ class FASTLoadCases(ExplicitComponent):
                 # we're probably going to have to copy these files in aeroelasticse when we start changing them each iteration
                 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
                 if fst_vt['HydroDyn']['PotFile']:
-                    fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
+                    if not os.path.isabs(fst_vt['HydroDyn']['PotFile']):
+                        fst_vt['HydroDyn']['PotFile'] = os.path.join(weis_dir, fst_vt['HydroDyn']['PotFile'])
                 else:
                     raise Exception('If PotMod=1, PotFile must be specified in modeling options')
             
