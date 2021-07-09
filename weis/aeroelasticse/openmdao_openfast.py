@@ -1119,7 +1119,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
             # New OpenFAST v3 HydroDyn really doesn't like joints right at MSL
             hd_joints = np.array(fst_vt['SubDyn']['JointZss']).copy()
-            hd_joints[hd_joints==0.0] = 1e-2
+            idx = np.where(hd_joints==0.0)[0]
+            if len(idx) > 0:
+                hd_joints[idx[0]:] += 1e-2
             fst_vt['HydroDyn']['Jointzi'] = hd_joints
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
