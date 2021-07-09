@@ -223,7 +223,7 @@ properties:
                         description: Platform velocity feedback using nacelle IMU
                         default: {}
                         properties:
-                            gain:
+                            Kp_float:
                                 type: number
                                 description: Platform velocity feedback gain used by the ROSCO controller (https://github.com/NREL/ROSCO)
                                 unit: seconds

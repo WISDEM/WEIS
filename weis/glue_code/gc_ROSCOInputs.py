@@ -20,6 +20,8 @@ def assign_ROSCO_values(wt_opt, modeling_options, control):
     if 'fl_feedback' in control['pitch']:
         wt_opt['tune_rosco_ivc.twr_freq']      = control['pitch']['fl_feedback']['twr_freq']
         wt_opt['tune_rosco_ivc.ptfm_freq']     = control['pitch']['fl_feedback']['ptfm_freq']
+        if 'Kp_float' in control['pitch']['fl_feedback']:
+            wt_opt['tune_rosco_ivc.Kp_float']      = control['pitch']['fl_feedback']['Kp_float']
         
     # Check for proper Flp_Mode, print warning
     if modeling_options['WISDEM']['RotorSE']['n_tab'] > 1 and modeling_options['ROSCO']['Flp_Mode'] == 0:

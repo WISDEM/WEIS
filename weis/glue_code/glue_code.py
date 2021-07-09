@@ -69,6 +69,7 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rad/s',     desc='Tower natural frequency')
         tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
+        tune_rosco_ivc.add_output('Kp_float',         val=0.0, units='s',         desc='Floating feedback gain')
 
         self.add_subsystem('tune_rosco_ivc',tune_rosco_ivc)
         
@@ -205,6 +206,7 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.ptfm_freq',        'sse_tune.tune_rosco.ptfm_freq')
+            self.connect('tune_rosco_ivc.Kp_float',         'sse_tune.tune_rosco.Kp_float')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.connect('tune_rosco_ivc.Flp_omega',    'sse_tune.tune_rosco.Flp_omega')
@@ -765,6 +767,8 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.PC_zeta',         'outputs_2_screen_weis.PC_zeta')
             self.connect('tune_rosco_ivc.VS_omega',        'outputs_2_screen_weis.VS_omega')
             self.connect('tune_rosco_ivc.VS_zeta',         'outputs_2_screen_weis.VS_zeta')
+            self.connect('tune_rosco_ivc.Kp_float',        'outputs_2_screen_weis.Kp_float')
+            self.connect('tune_rosco_ivc.ptfm_freq',       'outputs_2_screen_weis.ptfm_freq')
             self.connect('tune_rosco_ivc.Flp_omega',       'outputs_2_screen_weis.Flp_omega')
             self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen_weis.Flp_zeta')
             self.connect('tune_rosco_ivc.IPC_Ki1p',        'outputs_2_screen_weis.IPC_Ki1p')

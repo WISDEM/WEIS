@@ -102,6 +102,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.wt_init['control']['pitch']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
             self.wt_init['control']['torque']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])
             self.wt_init['control']['torque']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
+            self.wt_init['control']['pitch']['Kp_float']  = float(wt_opt['tune_rosco_ivc.Kp_float'])
+            self.wt_init['control']['pitch']['ptfm_freq']  = float(wt_opt['tune_rosco_ivc.ptfm_freq'])
             if self.modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.wt_init['control']['dac']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
                 self.wt_init['control']['dac']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])

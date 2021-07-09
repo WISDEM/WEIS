@@ -157,6 +157,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
         self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
+        self.add_input('Kp_float',          val=0.0,        units='s',                          desc='Floating feedback gain')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
         if rosco_init_options['Flp_Mode'] > 0:

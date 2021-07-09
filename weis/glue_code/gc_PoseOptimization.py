@@ -96,6 +96,14 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_design_var('tune_rosco_ivc.ps_percent', lower=control_opt['ps_percent']['lower_bound'],
                                                             upper=control_opt['ps_percent']['upper_bound'])
 
+        if control_opt['servo']['pitch_control']['Kp_float']['flag']:
+            wt_opt.model.add_design_var('tune_rosco_ivc.Kp_float', lower=control_opt['servo']['pitch_control']['Kp_float']['min'], 
+                                                           upper=control_opt['servo']['pitch_control']['Kp_float']['max'])
+
+        if control_opt['servo']['pitch_control']['ptfm_freq']['flag']:
+            wt_opt.model.add_design_var('tune_rosco_ivc.ptfm_freq', lower=control_opt['servo']['pitch_control']['ptfm_freq']['min'], 
+                                                           upper=control_opt['servo']['pitch_control']['ptfm_freq']['max'])
+
         
         return wt_opt
 
