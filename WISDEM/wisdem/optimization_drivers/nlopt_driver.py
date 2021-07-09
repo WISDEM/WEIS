@@ -415,7 +415,8 @@ class NLoptDriver(Driver):
             Value of the objective function evaluated at the new design point.
         """
         model = self._problem().model
-
+        f_new = 1e10
+        
         try:
 
             # Pass in new parameters
