@@ -152,13 +152,13 @@ properties:
                                             flag: *flag
                                             min:
                                                 type: number
-                                                default: 0.000001
-                                                minimum: 0.000001
+                                                default: 0.00001
+                                                minimum: 0.00001
                                                 unit: rad/s
                                             max:
                                                 type: number
                                                 default: 1.5
-                                                minimum: 0.000001
+                                                minimum: 0.00001
                                                 unit: rad/s
                             torque_control:
                                 type: object

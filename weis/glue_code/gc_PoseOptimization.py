@@ -12,6 +12,10 @@ class PoseOptimizationWEIS(PoseOptimization):
             n_add += 1
         if self.opt['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
             n_add += 1
+        if self.opt['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
+            n_add += 1
+        if self.opt['design_variables']['control']['servo']['pitch_control']['ptfm_freq']['flag']:
+            n_add += 1
         if self.opt['design_variables']['control']['servo']['torque_control']['omega']['flag']:
             n_add += 1
         if self.opt['design_variables']['control']['servo']['torque_control']['zeta']['flag']:

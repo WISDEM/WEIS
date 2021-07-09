@@ -105,7 +105,7 @@ class WindPark(om.Group):
             if modeling_options['Level3']['from_openfast']:  # not using WISDEM turbine info
                 self.add_subsystem('rosco_turbine',          ROSCO_Turbine(modeling_options = modeling_options)) # ROSCO tuning
 
-            self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options)) # ROSCO tuning
+            self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options, opt_options = opt_options)) # ROSCO tuning
 
             if not modeling_options['Level3']['from_openfast']:     #from WISDEM models
                 self.connect('rotorse.rp.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
@@ -205,7 +205,10 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.VS_zeta',          'sse_tune.tune_rosco.VS_zeta')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
+
+            # Someday, if we want to get ptfm_freq from Level 1, we'd switch that here
             self.connect('tune_rosco_ivc.ptfm_freq',        'sse_tune.tune_rosco.ptfm_freq')
+
             self.connect('tune_rosco_ivc.Kp_float',         'sse_tune.tune_rosco.Kp_float')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:
@@ -305,8 +308,8 @@ class WindPark(om.Group):
             
             # Post-processing
             self.add_subsystem('outputs_2_screen_weis',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
-            # if opt_options['opt_flag']:
-            #     self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
+            if opt_options['opt_flag']:
+                self.add_subsystem('conv_plots_weis',    Convergence_Trends_Opt(opt_options = opt_options))
 
             if modeling_options['ROSCO']['Flp_Mode']:
                 # Connections to blade 

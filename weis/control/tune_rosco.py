@@ -23,8 +23,9 @@ class ServoSE_ROSCO(Group):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
+        opt_options      = self.options['opt_options']
 
-        self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'mu'])
+        self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options, opt_options=opt_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'mu'])
 
         if not modeling_options['Level3']['from_openfast']:        #haven't already computed
             self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
@@ -41,9 +42,11 @@ class ServoSE_ROSCO(Group):
 class TuneROSCO(ExplicitComponent):
     def initialize(self):
         self.options.declare('modeling_options')
+        self.options.declare('opt_options')
 
     def setup(self):
         self.modeling_options = self.options['modeling_options']
+        self.opt_options = self.options['opt_options']
         rosco_init_options = self.modeling_options['ROSCO']
         rotorse_init_options = self.modeling_options['WISDEM']['RotorSE']
         n_pc     = rotorse_init_options['n_pc']
@@ -185,8 +188,8 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
-        rosco_init_options['omega_pc']    = float(inputs['PC_omega'])
-        rosco_init_options['zeta_pc']     = float(inputs['PC_zeta'])
+        rosco_init_options['omega_pc']    = inputs['PC_omega'].tolist()
+        rosco_init_options['zeta_pc']     = inputs['PC_zeta'].tolist()
         rosco_init_options['omega_vs']    = float(inputs['VS_omega'])
         rosco_init_options['zeta_vs']     = float(inputs['VS_zeta'])
         if rosco_init_options['Flp_Mode'] > 0:
@@ -204,6 +207,11 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['ps_percent']  = float(inputs['ps_percent'])
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'])
+
+        # If Kp_float is a design variable, do not automatically tune it
+        if self.opt_options['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
+            rosco_init_options['Kp_float'] = float(inputs['Kp_float'])
+            rosco_init_options['tune_Fl'] = False
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
