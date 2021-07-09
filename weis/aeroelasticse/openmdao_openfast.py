@@ -1083,8 +1083,11 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
+        WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
+        WaveHd = np.zeros(dlc_generator.n_cases)
+        WaveGamma = np.zeros(dlc_generator.n_cases)
         
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1143,8 +1146,11 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_initial[i_case] = 0.
                 pitch_initial[i_case] = 90.
             # Wave inputs to HydroDyn
+            WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
             WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
+            WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
+            WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
 
         # Parameteric inputs
         case_inputs = {}
@@ -1153,6 +1159,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
+        case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
         # Initial conditions for rotor speed and pitch
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
@@ -1161,6 +1168,8 @@ class FASTLoadCases(ExplicitComponent):
         # Inputs to HydroDyn
         case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
         case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
+        case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
+        case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_directory, self.FAST_InputFile)
