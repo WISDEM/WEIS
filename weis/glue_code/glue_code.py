@@ -113,52 +113,45 @@ class WindPark(om.Group):
                 self.connect('rotorse.rp.powercurve.rated_Omega',     'sse_tune.tune_rosco.rated_rotor_speed')
                 #self.connect('rotorse.rp.powercurve.rated_pitch',     ['freq_rotor.pitch_load', 'freq_rotor.tot_loads_gust.aeroloads_pitch'])
                 self.connect('rotorse.rp.powercurve.rated_Q',          'sse_tune.tune_rosco.rated_torque')
-
-                self.connect('rotorse.re.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
-                self.connect('rotorse.rs.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
-                self.connect('rotorse.rs.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
-                self.connect('rotorse.rp.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
-
+                
+                self.connect('assembly.r_blade',               'sse_tune.r')
+                self.connect('assembly.rotor_radius',          'sse_tune.Rtip')
+                self.connect('hub.radius',                     'sse_tune.Rhub')
+                self.connect('assembly.hub_height',            'sse_tune.hub_height')
+                self.connect('hub.cone',                       'sse_tune.precone')
+                self.connect('nacelle.uptilt',                 'sse_tune.tilt')
                 self.connect('airfoils.aoa',                   'sse_tune.airfoils_aoa')
                 self.connect('airfoils.Re',                    'sse_tune.airfoils_Re')
-                
                 self.connect('xf.cl_interp_flaps',             'sse_tune.airfoils_cl')
                 self.connect('xf.cd_interp_flaps',             'sse_tune.airfoils_cd')
                 self.connect('xf.cm_interp_flaps',             'sse_tune.airfoils_cm')
-                self.connect('xf.flap_angles',                 'sse_tune.airfoils_Ctrl')
-                
-                
+                self.connect('configuration.n_blades',         'sse_tune.nBlades')
                 self.connect('env.rho_air',                    'sse_tune.rho')
                 self.connect('env.mu_air',                     'sse_tune.mu')
-                
+                self.connect('blade.pa.chord_param',           'sse_tune.chord')
+                self.connect('blade.pa.twist_param',           'sse_tune.theta')
+
+                self.connect('control.V_in' ,                   'sse_tune.v_min')
+                self.connect('control.V_out' ,                  'sse_tune.v_max')
                 self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.precurve', src_indices=om.slicer[:, 0])
                 self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.precurveTip', src_indices=[(-1, 0)])
                 self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.presweep', src_indices=om.slicer[:, 1])
                 self.connect('blade.outer_shape_bem.ref_axis',  'sse_tune.presweepTip', src_indices=[(-1, 1)])
-                self.connect('blade.pa.chord_param',           'sse_tune.chord')
-                self.connect('blade.pa.twist_param',           'sse_tune.theta')
-
-                self.connect('assembly.rotor_radius',           'sse_tune.tune_rosco.R')
-
-                self.connect('configuration.rated_power',       'sse_tune.rated_power')
-                self.connect('configuration.n_blades',          'sse_tune.nBlades')
-
-                self.connect('control.V_in' ,                   'sse_tune.v_min')
-                self.connect('control.V_out' ,                  'sse_tune.v_max')
-                self.connect('control.max_pitch_rate' ,         'sse_tune.tune_rosco.max_pitch_rate')
-                self.connect('control.max_torque_rate' ,        'sse_tune.tune_rosco.max_torque_rate')
+                self.connect('xf.flap_angles',                  'sse_tune.airfoils_Ctrl')
                 self.connect('control.minOmega',                'sse_tune.omega_min')
                 self.connect('control.rated_TSR',               'sse_tune.tsr_operational')
+                self.connect('configuration.rated_power',       'sse_tune.rated_power')
 
-                self.connect('hub.radius',                     'sse_tune.Rhub')
-                self.connect('hub.cone',                       'sse_tune.precone')
-                
-                self.connect('nacelle.uptilt',                 'sse_tune.tilt')
                 self.connect('nacelle.gear_ratio',              'sse_tune.tune_rosco.gear_ratio')
-                self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
-
+                self.connect('assembly.rotor_radius',           'sse_tune.tune_rosco.R')
+                self.connect('rotorse.re.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
+                self.connect('rotorse.rs.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
+                self.connect('rotorse.rs.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
+                self.connect('rotorse.rp.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
                 self.connect('tower_grid.height',               'sse_tune.tune_rosco.TowerHt')
-                self.connect('assembly.hub_height',             'sse_tune.hub_height')
+                self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
+                self.connect('control.max_pitch_rate' ,         'sse_tune.tune_rosco.max_pitch_rate')
+                self.connect('control.max_torque_rate' ,        'sse_tune.tune_rosco.max_torque_rate')
 
             else:       # reading openfast model using ROSCO toolbox via rosco_turbine
                 self.connect('rosco_turbine.v_rated'            ,   ['sse_tune.tune_rosco.v_rated'])
