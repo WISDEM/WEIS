@@ -46,31 +46,67 @@ all_scripts = [
 class TestExamples(unittest.TestCase):
     
     def test_aeroelasticse(self):
-        run_all_scripts("01_", all_scripts)
+        try:
+            run_all_scripts("01_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
                     
     def test_control_opt(self):
-        run_all_scripts("02_", all_scripts)
+        try:
+            run_all_scripts("02_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
                     
     def test_OC3(self):
-        run_all_scripts("03_", all_scripts)
+        try:
+            run_all_scripts("03_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
                     
     def test_IEA_3_4(self):
-        run_all_scripts("05_", all_scripts)
+        try:
+            run_all_scripts("05_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
                     
     def test_IEA_15(self):
-        run_all_scripts("06_", all_scripts)
+        try:
+            run_all_scripts("06_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
 
     def test_OLAF(self):
-        run_all_scripts("08_", all_scripts)
+        try:
+            run_all_scripts("08_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
 
     def test_DOE(self):
-        run_all_scripts("09_", all_scripts)
+        try:
+            run_all_scripts("09_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
 
     def test_override(self):
-        run_all_scripts("10_", all_scripts)
+        try:
+            run_all_scripts("10_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
 
     def test_linearization(self):
-        run_all_scripts("12_", all_scripts)
+        try:
+            run_all_scripts("12_", all_scripts)
+            self.assertTrue(True)
+        except:
+            self.assertTrue(False)
 
 
 def suite():
