@@ -7,22 +7,22 @@ from weis.dlc_driver.dlc_generator    import DLCGenerator
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
-    # and adding the WEIS options, namely the paths to the WEIS submodules 
+    # and adding the WEIS options, namely the paths to the WEIS submodules
     # (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
-    
+
     def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
-        
+
         self.set_run_flags()
         self.set_openmdao_vectors()
         self.set_openmdao_vectors_control()
         self.set_weis_data()
         self.set_opt_flags()
-    
+
     def set_weis_data(self):
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
@@ -38,57 +38,51 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.dylib')
             else:
                 path2dll = os.path.join(run_dir, 'local/lib/libdiscon.so')
-            self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll            
+            self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["floating"]:
                 if self.modeling_options["Level1"]["potential_model_override"] in [2,3]:
-                    self.modeling_options["Level2"]["HydroDyn"]["PotMod"] = 1
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
                        (len(self.modeling_options["Level1"]["potential_bem_members"]) > 0) ):
-                    self.modeling_options["Level2"]["HydroDyn"]["PotMod"] = 1
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif self.modeling_options["Level1"]["potential_model_override"] == 1:
-                    self.modeling_options["Level2"]["HydroDyn"]["PotMod"] = 0
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 0
-                    
-                if ( (self.modeling_options["Level2"]["HydroDyn"]["PotMod"] == 1) or
-                     (self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1) ):
-                    
+
+                if self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1:
+
                     self.modeling_options['Level1']['flag'] = True
                     if self.modeling_options["Level1"]["potential_model_override"] == 0:
                         self.modeling_options["Level1"]["potential_model_override"] = 2
-                        
+
                     cwd = os.getcwd()
-                    if len(self.modeling_options["Level2"]["HydroDyn"]["PotFile"]) == 0:
-                        hams_out = os.path.join(cwd, 'BEM','Output','Wamit_format','Buoy')
-                        self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = hams_out
+                    if len(self.modeling_options["Level3"]["HydroDyn"]["PotFile"]) == 0:
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(cwd, 'BEM','Output','Wamit_format','Buoy')
+                        
                     else:
                         weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                        potpath = self.modeling_options["Level2"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
+                        potpath = self.modeling_options["Level3"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
                         if os.path.exists( potpath+'.1' ):
                             pass
                         elif os.path.exists( os.path.join(cwd, potpath+'.1') ):
-                            self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = os.path.join(cwd, potpath)
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(cwd, potpath)
                         elif os.path.exists( os.path.join(weis_dir, potpath+'.1') ):
-                            self.modeling_options["Level2"]["HydroDyn"]["PotFile"] = os.path.join(weis_dir, potpath)
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(weis_dir, potpath)
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
-                
-                        
-                    
+
         # RAFT
         if self.modeling_options['Level1']['flag']:
             if self.modeling_options["flags"]["floating"]:
                 bool_init = True if self.modeling_options["Level1"]["potential_model_override"] in [2,3] else False
                 self.modeling_options["Level1"]["model_potential"] = [bool_init] * self.modeling_options["floating"]["members"]["n_members"]
-                
+
                 if self.modeling_options["Level1"]["potential_model_override"] == 0:
                     for k in self.modeling_options["Level1"]["potential_bem_members"]:
                         idx = self.modeling_options["floating"]["members"]["name"].index(k)
                         self.modeling_options["Level1"]["model_potential"][idx] = True
-        
+
         # XFoil
         if not os.path.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
@@ -106,7 +100,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
         self.modeling_options['DLC_driver']['n_cases_dlc11'] = dlc_generator.n_cases_dlc11
 
-            
+
     def set_openmdao_vectors_control(self):
         # Distributed aerodynamic control devices along blade
         self.modeling_options['WISDEM']['RotorSE']['n_te_flaps']      = 0
@@ -116,7 +110,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['WISDEM']['RotorSE']['n_tab']   = 3
             else:
                 raise Exception('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
-        
+
     def update_ontology_control(self, wt_opt):
         # Update controller
         if self.modeling_options['flags']['control']:
@@ -130,9 +124,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             if 'IPC' in self.wt_init['control'].keys():
                 self.wt_init['control']['IPC']['IPC_gain_1P'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])
 
-        
+
     def write_options(self, fname_output):
         # Override the WISDEM version to ensure that the WEIS options files are written instead
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)
-            

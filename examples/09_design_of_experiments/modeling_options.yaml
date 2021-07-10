@@ -4,8 +4,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 2
-        n_tsr_perf_surfaces: 2
+        n_pitch_perf_surfaces: 4
+        n_tsr_perf_surfaces: 4
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
     TowerSE:

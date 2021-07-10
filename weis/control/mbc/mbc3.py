@@ -137,7 +137,7 @@ def IdentifyModes(CampbellData):
                             if re.search(modesDesc[modeID][iExp],maxDesc[j-1],re.IGNORECASE)!=None:
                                 modesIdentified[i][m-1] = True;
                                 #print(' GGG1 ',i,j,m, modeID, iExp, tryNumber, maxDesc[j-1], len(maxDesc))
-                                modeID_table[modeID,i] = m-1
+                                modeID_table[modeID,i] = m # Using Matlab Indexing
                                 found = True;
                                 break;
                 tryNumber = tryNumber + 1;
@@ -193,9 +193,9 @@ def campbell_diagram_data(mbc_data, BladeLen, TowerLen):
 
     for i in range(nModes):
         CData={}
-        CData['NaturalFreq_Hz'] = mbc_data['eigSol']['NaturalFreqs_Hz'][SortedFreqIndx[i]]
-        CData['DampedFreq_Hz']  = mbc_data['eigSol']['DampedFreqs_Hz'][SortedFreqIndx[i]];
-        CData['DampingRatio']   = mbc_data['eigSol']['DampRatios'][SortedFreqIndx[i]];
+        CData['NaturalFreq_Hz'] = mbc_data['eigSol']['NaturalFreqs_Hz'][SortedFreqIndx[i]][0]
+        CData['DampedFreq_Hz']  = mbc_data['eigSol']['DampedFreqs_Hz'][SortedFreqIndx[i]][0];
+        CData['DampingRatio']   = mbc_data['eigSol']['DampRatios'][SortedFreqIndx[i]][0];
 
         
         #print(np.argsort(ModesMagnitude[:,SortedFreqIndx[0]])[::-1])
@@ -232,7 +232,7 @@ def campbell_diagram_data(mbc_data, BladeLen, TowerLen):
         CData['StateHasMaxAtThisMode']=tmp
                     
         #print(CData['StateHasMaxAtThisMode'])
-        print(CData['NaturalFreq_Hz'])
+        #print(CData['NaturalFreq_Hz'])
         CampbellData['Modes'].append(CData)
 
     #print(CampbellData[0]['MagnitudePhase'])
@@ -272,6 +272,56 @@ def campbell_diagram_data(mbc_data, BladeLen, TowerLen):
     #print(CampbellData['ModesTable'])
     return CampbellData
     
+
+
+def extractShortModeDescription(Mode):
+    """ 
+    Look at which modes have max, append these description, perform shortening substitution
+    The escription starts with noMax if no maximum exsits in this mode
+    """
+    Desc = np.array(Mode['DescStates'])[Mode['StateHasMaxAtThisMode']]
+    DescCat = ''
+    DescCatED = ''
+    if len(Desc) == 0:
+        DescCat = ''
+        DescCatED = 'NoMax -'
+        Desc = Mode['DescStates'][:5]
+    nBD = 0
+    for iD, s in enumerate(Desc):
+        s = replaceModeDescription(s)
+        if Desc[iD].startswith('BD'):
+            nBD = nBD + 1
+        elif Desc[iD].startswith('ED'):
+                DescCatED = s +' - '+DescCatED
+        else:
+            DescCat += ' - '+s
+    DescCat =DescCatED+DescCat
+    return DescCat
+
+
+def replaceModeDescription(s):
+    """ Perform substitutions to make the mode description shorter"""
+    s = s.replace('First time derivative of','d/dt of')
+    s = s.replace('fore-aft bending mode DOF, m','FA')
+    s = s.replace('side-to-side bending mode DOF, m','SS')
+    s = s.replace('bending-mode DOF of blade ','')
+    s = s.replace(' rotational-flexibility DOF, rad','-rot')
+    s = s.replace('rotational displacement in ','rot')
+    s = s.replace('translational displacement in ','trans')
+    s = s.replace(', rad','')
+    s = s.replace(', m','')
+    s = s.replace('finite element node ','N')
+    s = s.replace('cosine','cos')
+    s = s.replace('sine','sin')
+    s = s.replace('collective','coll.')
+    s = s.replace('Blade','Bld')
+    s = s.replace('rotZ','TORS-ROT')
+    s = s.replace('transX','FLAP-DISP')
+    s = s.replace('transY','EDGE-DISP')
+    s = s.replace('rotX','EDGE')
+    s = s.replace('rotY','FLAP')
+    return s
+
 
 def PrettyStateDescriptions(DescStates, ndof2, performedTransformation):
     idx=np.array(list(range(0,ndof2))+list(range(ndof2*2+1,len(DescStates))))    
@@ -435,9 +485,9 @@ def eiganalysis(A, ndof2, ndof1):
     
     return mbc,EigenVects_save[:,:,0]
 
-def fx_mbc3(FileNames):
+def fx_mbc3(FileNames, verbose=True):
     MBC={}
-    matData, FAST_linData = gm.get_Mats(FileNames)
+    matData, FAST_linData = gm.get_Mats(FileNames, verbose=verbose)
 
     # print('matData[Omega] ', matData['Omega'])
     # print('matData[OmegaDot] ', matData['OmegaDot'])
@@ -446,9 +496,7 @@ def fx_mbc3(FileNames):
     MBC['ndof2'] = matData['ndof2']
     MBC['ndof1'] = matData['ndof1']
     MBC['RotSpeed_rpm'] = np.mean(matData['Omega'])*(30/np.pi); #rad/s to rpm
-    
-    if 'WindSpeed' in matData:
-        MBC['WindSpeed'] = np.mean(matData['WindSpeed'])
+    MBC['WindSpeed'] = np.mean(matData['WindSpeed']) # NOTE: might be NaN for old files
         
     # print('RotSpeed_rpm ',MBC['RotSpeed_rpm'])
     # print('ndof1 ', MBC['ndof1'])
@@ -501,10 +549,17 @@ def fx_mbc3(FileNames):
             print('**ERROR: the size of OmegaDot vector must equal matData.NAzimStep, the num of azimuth steps');
 
 
-        MBC['A']=np.zeros(matData['A'].shape)
-        MBC['B']=np.zeros((len(new_seq_states),len(new_seq_inp),matData['NAzimStep']))
-        MBC['C']=np.zeros(matData['C'].shape)
-        MBC['D']=np.zeros(matData['D'].shape)
+        nLin = matData['A'].shape[-1]
+        MBC['A'] = np.zeros(matData['A'].shape)
+        MBC['B'] = np.zeros((len(new_seq_states),len(new_seq_inp),matData['NAzimStep']))
+        if 'C' in matData.keys():
+            MBC['C']=np.zeros(matData['C'].shape)
+        else:
+            MBC['C']=np.zeros((0,0,nLin))
+        if 'D' in matData.keys():
+            MBC['D']=np.zeros(matData['D'].shape)
+        else:
+            MBC['D']=np.zeros((0,0,nLin))
         
         # print('new_seq_inp ',new_seq_inp)
         # print('new_seq_out ',new_seq_out)
