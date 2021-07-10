@@ -10,13 +10,13 @@ skinny_scripts = [
 class TestSkinnyExamples(unittest.TestCase):
 
     def test_all_scripts(self):
-        for k in skinny_scripts:
-            with self.subTest(f"Running: {k}", i=k):
+        for ks,s in enumerate(skinny_scripts):
+            with self.subTest(f"Running: {s}", i=ks):
                 try:
-                    execute_script(k)
+                    execute_script(s)
                     self.assertTrue(True)
                 except:
-                    self.assertTrue(False)
+                    self.assertEqual(s, "Failed")
 
 def suite():
     suite = unittest.TestSuite()
