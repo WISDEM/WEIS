@@ -38,7 +38,7 @@ class FAST_wrapper(object):
         os.chdir(self.FAST_directory)
 
         start = time.time()
-        _ = subprocess.run(exec_str, stdout=subprocess.DEVNULL, check=True)
+        _ = subprocess.run(exec_str, check=True)
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
 
