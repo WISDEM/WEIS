@@ -348,17 +348,28 @@ class FOWT():
 
 
 
-    def calcBEM(self):
+    def calcBEM(self, dw=0, wMax=0, wInf=10.0, dz=3.0, da=2.0):
         '''This generates a mesh for the platform and runs a BEM analysis on it
         using pyHAMS. It can also write adjusted .1 and .3 output files suitable
         for use with OpenFAST.
         The mesh is only made for non-interesecting members flagged with potMod=1.
+        
+        PARAMETERS
+        ----------
+        dw : float
+            Optional specification of custom frequency increment (rad/s).
+        wMax : float
+            Optional specification of maximum frequency for BEM analysis (rad/s). Will only be
+            used if it is greater than the maximum frequency used in RAFT.
+        wInf : float
+            Optional specification of large frequency to use as approximation for infinite 
+            frequency in pyHAMS analysis (rad/s).
+        dz : float
+            desired longitudinal panel size for potential flow BEM analysis (m)
+        da : float
+            desired azimuthal panel size for potential flow BEM analysis (m)
         '''
-        
-        # desired panel size (longitudinal and azimuthal)
-        dz = 3
-        da = 2
-        
+                
         # go through members to be modeled with BEM and calculated their nodes and panels lists
         nodes = []
         panels = []
@@ -383,24 +394,31 @@ class FOWT():
             
             pnl.writeMesh(nodes, panels, oDir=os.path.join(meshDir,'Input')) # generate a mesh file in the HAMS .pnl format
             
-            pnl.writeMeshToGDF(vertices)                                # also a GDF for visualization
+            #pnl.writeMeshToGDF(vertices)                # also a GDF for visualization
             
             ph.create_hams_dirs(meshDir)                #
             
             ph.write_hydrostatic_file(meshDir)          # HAMS needs a hydrostatics file, but it's unused for .1 and .3, so write a blank one
             
+            # prepare frequency settings for HAMS
+            if dw == 0:
+                dw_HAMS = self.dw_BEM
+            else: 
+                dw_HAMS = dw                           # allow override of frequency increment if provided
+            
+            wMax_HAMS = max(wMax, max(self.w))         # make sure the HAMS runs includes both RAFT and export frequency extents
+            
+            nw_HAMS = int(np.ceil(wMax_HAMS/dw_HAMS))  # ensure the upper frequency of the HAMS analysis is large enough
+                
             ph.write_control_file(meshDir, waterDepth=self.depth, incFLim=1, iFType=3, oFType=4,   # inputs are in rad/s, outputs in s
-                                  numFreqs=self.w.size, freqList=self.w)
+                                  numFreqs=-nw_HAMS, minFreq=dw_HAMS, dFreq=dw_HAMS)
             
             # execute the HAMS analysis
             ph.run_hams(meshDir) 
             
             # read the HAMS WAMIT-style output files
-            data1 = os.path.join(meshDir, 'Output','Wamit_format','Buoy.1')
-            data3 = os.path.join(meshDir, 'Output','Wamit_format','Buoy.3')
-            
-            addedMass, damping, w1 = ph.read_wamit1B(data1, TFlag=True)
-            M, P, R, I, w3, headings = ph.read_wamit3B(data3, TFlag=True)            
+            addedMass, damping, w1 = ph.read_wamit1B(os.path.join(meshDir,'Output','Wamit_format','Buoy.1'), TFlag=True)
+            M, P, R, I, w3, heads  = ph.read_wamit3B(os.path.join(meshDir,'Output','Wamit_format','Buoy.3'), TFlag=True)   
             
             # interpole to the frequencies RAFT is using
             addedMassInterp = interp1d(w1, addedMass, assume_sorted=False, axis=2)(self.w)
@@ -413,6 +431,7 @@ class FOWT():
             self.B_BEM = self.rho_water * dampingInterp                                 
             self.X_BEM = self.rho_water * self.g * (fExRealInterp + 1j*fExImagInterp)
             
+            # TODO: add support for multiple wave headings <<<
             # note: RAFT will only be using finite-frequency potential flow coefficients
             
     
