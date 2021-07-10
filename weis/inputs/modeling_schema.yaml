@@ -3106,7 +3106,7 @@ properties:
         properties:
             flag:
                 type: boolean
-                default: True
+                default: False
                 description: Whether or not to tune and run ROSCO
             LoggingLevel:
                 type: integer

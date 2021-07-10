@@ -84,6 +84,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         idx = self.modeling_options["floating"]["members"]["name"].index(k)
                         self.modeling_options["Level1"]["model_potential"][idx] = True
 
+        # ROSCO
+        self.modeling_options['ROSCO']['flag'] = (self.modeling_options['Level1']['flag'] or
+                                                  self.modeling_options['Level2']['flag'] or
+                                                  self.modeling_options['Level3']['flag'])
+        
         # XFoil
         if not os.path.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")

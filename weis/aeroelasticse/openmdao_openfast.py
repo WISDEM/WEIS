@@ -1361,11 +1361,12 @@ class FASTLoadCases(ExplicitComponent):
                 dlc_generator.cases[i_case].RefHt = hub_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
                 dlc_generator.cases[i_case].HubHt = hub_height
-                # If OLAF is called, make wind grid high and big
-                if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dlc_generator.cases[i_case].HubHt *= 3
                 # Height of wind grid, it stops 1 mm above the ground
                 dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
+                # If OLAF is called, make wind grid high and big
+                if fst_vt['AeroDyn15']['WakeMod'] == 3:
+                    dlc_generator.cases[i_case].HubHt *= 3.
+                    dlc_generator.cases[i_case].GridHeight *= 3.
                 # Width of wind grid, same of height
                 dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
                 # Power law exponent of wind shear

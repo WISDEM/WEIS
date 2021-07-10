@@ -16,7 +16,7 @@ class TestSkinnyExamples(unittest.TestCase):
                     execute_script(s)
                     self.assertTrue(True)
                 except:
-                    self.assertEqual(s, "Failed")
+                    self.assertEqual(s, "Success")
 
 def suite():
     suite = unittest.TestSuite()

@@ -1,10 +1,6 @@
 import unittest
 from weis.test.utils import execute_script
 
-
-
-
-# 02_ref turbines are regression tested in test_gluecode, no need to duplicate runtime
 all_scripts = [
     "01_aeroelasticse/run_general",
     "01_aeroelasticse/run_mass_sweep",
@@ -33,7 +29,6 @@ all_scripts = [
     "10_override_example/weis_driver",
 
     "12_linearization/doe_driver",
-
     "12_linearization/weis_driver"
 ]
 
@@ -46,76 +41,7 @@ class TestExamples(unittest.TestCase):
                     execute_script(s)
                     self.assertTrue(True)
                 except:
-                    self.assertEqual(s, "Failed")
-
-    '''
-    def test_aeroelasticse(self):
-        try:
-            run_all_scripts("01_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-                    
-    def test_control_opt(self):
-        try:
-            run_all_scripts("02_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-                    
-    def test_OC3(self):
-        try:
-            run_all_scripts("03_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-                    
-    def test_IEA_3_4(self):
-        try:
-            run_all_scripts("05_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-                    
-    def test_IEA_15(self):
-        try:
-            run_all_scripts("06_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-
-    def test_OLAF(self):
-        try:
-            run_all_scripts("08_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-
-    def test_DOE(self):
-        try:
-            run_all_scripts("09_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-
-    def test_override(self):
-        try:
-            run_all_scripts("10_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-
-    def test_linearization(self):
-        try:
-            run_all_scripts("12_", all_scripts)
-            self.assertTrue(True)
-        except:
-            self.assertTrue(False)
-
-
-    def test_linearization(self):
-        run_all_scripts("12_", all_scripts)
-    '''
+                    self.assertEqual(s, "Success")
 
 
 def suite():
