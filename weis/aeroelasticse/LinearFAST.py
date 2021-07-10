@@ -183,7 +183,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("HydroDyn","DiffQTF")]     = {'vals':[0], 'group':0}
         case_inputs[("HydroDyn","WvDiffQTF")]   = {'vals':['False'], 'group':0}
         case_inputs[("HydroDyn","WvSumQTF")]    = {'vals':['False'], 'group':0}
-        case_inputs[("HydroDyn","PotMod")]      = {'vals':[1], 'group':0}
         case_inputs[("HydroDyn","RdtnDT")]      = {'vals':['default'], 'group':0}
         
         # Degrees-of-freedom: set all to False & enable those defined in modelling inputs

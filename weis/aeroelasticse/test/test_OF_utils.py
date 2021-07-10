@@ -3,11 +3,11 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.LinearFAST import LinearFAST
-import numpy as np
-import os, platform
+import os.path as osp
+import platform
 
-examples_dir    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
-weis_dir        = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) ) ) # get path to this file
+examples_dir    = osp.join( osp.dirname( osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) ) ), 'examples')
+weis_dir        = osp.dirname( osp.dirname( osp.dirname( osp.dirname(osp.realpath(__file__) ) ) ) ) # get path to this file
 
 
 mactype = platform.system().lower()
@@ -28,7 +28,7 @@ class TestOFutils(unittest.TestCase):
         # Initialize OF reader
         self.fast = InputReader_OpenFAST()
         self.fast.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-        self.fast.FAST_directory = os.path.join(examples_dir, 'examples', '01_aeroelasticse',
+        self.fast.FAST_directory = osp.join(examples_dir, '01_aeroelasticse',
                                                      'OpenFAST_models', 'IEA-15-240-RWT',
                                                      'IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
         self.fast.execute()
@@ -45,7 +45,7 @@ class TestOFutils(unittest.TestCase):
         fst_update = {}
         fst_update['Fst', 'TMax'] = 20.
         fst_update['AeroDyn15', 'TwrAero'] = False
-        fst_update['ServoDyn', 'DLL_FileName'] = '/Users/dzalkind/Tools/WEIS-4/local/lib/libdiscon.dylib'
+        fst_update['ServoDyn', 'DLL_FileName'] = osp.join(weis_dir, 'local', 'lib', f'libdiscon{libext}')
         fastout = InputWriter_OpenFAST()
         fastout.fst_vt = self.fast.fst_vt
         fastout.update(fst_update=fst_update)
@@ -56,7 +56,7 @@ class TestOFutils(unittest.TestCase):
     def testWrapper(self):
 
         fast_wr = FAST_wrapper(debug_level=2)
-        fast_wr.FAST_exe = os.path.join(examples_dir,'local/bin/openfast')   # Path to executable
+        fast_wr.FAST_exe = osp.join(weis_dir,'local','bin','openfast')   # Path to executable
         fast_wr.FAST_InputFile = 'iea15.fst'   # FAST input file (ext=.fst)
         fast_wr.FAST_directory = self.fast.FAST_runDirectory   # Path to fst directory files
         fast_wr.execute()
@@ -64,14 +64,14 @@ class TestOFutils(unittest.TestCase):
     def testLinearFAST(self):
 
         lin_fast = LinearFAST(debug_level=2)
-        lin_fast.FAST_exe = os.path.join(examples_dir,'local/bin/openfast')   # Path to executable
+        lin_fast.FAST_exe = osp.join(weis_dir,'local','bin','openfast')   # Path to executable
         lin_fast.FAST_InputFile = 'iea15.fst'   # FAST input file (ext=.fst)
         lin_fast.FAST_directory = self.fast.FAST_runDirectory   # Path to fst directory files
 
         lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-        lin_fast.FAST_directory           = os.path.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
-        lin_fast.FAST_runDirectory        = os.path.join(weis_dir,'outputs','iea_mono_lin')
-        
+        lin_fast.FAST_directory           = osp.join(examples_dir, '01_aeroelasticse','OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        lin_fast.FAST_runDirectory        = osp.join(weis_dir,'outputs','iea_mono_lin')
+
         lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
         lin_fast.wind_speeds                 = [16]
         lin_fast.DOFs                       = ['GenDOF','TwFADOF1'] #,'PtfmPDOF']  # enable with 

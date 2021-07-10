@@ -33,11 +33,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             # Find the path to the WEIS controller
             run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
             if platform.system() == 'Windows':
-                path2dll = os.path.join(run_dir, 'local/lib/libdiscon.dll')
+                path2dll = os.path.join(run_dir, 'local','lib','libdiscon.dll')
             elif platform.system() == 'Darwin':
-                path2dll = os.path.join(run_dir, 'local/lib/libdiscon.dylib')
+                path2dll = os.path.join(run_dir, 'local','lib','libdiscon.dylib')
             else:
-                path2dll = os.path.join(run_dir, 'local/lib/libdiscon.so')
+                path2dll = os.path.join(run_dir, 'local','lib','libdiscon.so')
             self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
 
             # Activate HAMS in Level1 if requested for Level 2 or 3

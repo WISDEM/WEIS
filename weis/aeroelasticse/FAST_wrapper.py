@@ -47,10 +47,9 @@ class FAST_wrapper(object):
 
         start = time.time()
         if self.debug_level > 1:
-            subprocess.call(exec_str)
+            _ = subprocess.run(exec_str, check=True)
         else:
-            FNULL = open(os.devnull, 'w')
-            subprocess.call(exec_str, stdout=FNULL, stderr=subprocess.STDOUT)
+            _ = subprocess.run(exec_str, stdout=subprocess.DEVNULL, check=True)
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
 

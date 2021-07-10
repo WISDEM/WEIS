@@ -41,6 +41,9 @@ class TuneROSCO(ExplicitComponent):
         rotorse_init_options = self.modeling_options['WISDEM']['RotorSE']
         n_pc     = rotorse_init_options['n_pc']
 
+        # Initialize DISCON_in var tree
+        self.modeling_options['openfast']['fst_vt']['DISCON_in'] = {}
+
         # Input parameters
         self.controller_params = {}
         # Controller Flags
@@ -345,8 +348,7 @@ class TuneROSCO(ExplicitComponent):
         self.ROSCO_input['Ct'] = WISDEM_turbine.Ct
         self.ROSCO_input['Cq'] = WISDEM_turbine.Cq
 
-        self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['DISCON_in'] = self.ROSCO_input  
-
+        self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['DISCON_in'] = self.ROSCO_input
         # Outputs 
         if rosco_init_options['Flp_Mode'] >= 1:
             outputs['flptune_coeff1']   = 2*WISDEM_turbine.bld_flapwise_damp*WISDEM_turbine.bld_flapwise_freq + controller.kappa[-1]*WISDEM_turbine.bld_flapwise_freq**2*controller.Kp_flap[-1]
