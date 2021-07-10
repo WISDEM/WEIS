@@ -41,7 +41,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
-            if self.modeling_options["flags"]["floating"]:
+            if self.modeling_options["flags"]["offshore"]:
                 if self.modeling_options["Level1"]["potential_model_override"] in [2,3]:
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
@@ -57,7 +57,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         self.modeling_options["Level1"]["potential_model_override"] = 2
 
                     cwd = os.getcwd()
-                    if len(self.modeling_options["Level3"]["HydroDyn"]["PotFile"]) == 0:
+                    if ( (len(self.modeling_options["Level3"]["HydroDyn"]["PotFile"]) == 0) or
+                         (self.modeling_options["Level3"]["HydroDyn"]["PotFile"].lower() in ['unused','default','none']) ):
                         self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(cwd, 'BEM','Output','Wamit_format','Buoy')
                         
                     else:
