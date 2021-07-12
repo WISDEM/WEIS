@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import platform
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
@@ -31,13 +32,13 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
             # Find the path to the WEIS controller
-            run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+            run_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
             if platform.system() == 'Windows':
-                path2dll = os.path.join(run_dir, 'local','lib','libdiscon.dll')
+                path2dll = osp.join(run_dir, 'local','lib','libdiscon.dll')
             elif platform.system() == 'Darwin':
-                path2dll = os.path.join(run_dir, 'local','lib','libdiscon.dylib')
+                path2dll = osp.join(run_dir, 'local','lib','libdiscon.dylib')
             else:
-                path2dll = os.path.join(run_dir, 'local','lib','libdiscon.so')
+                path2dll = osp.join(run_dir, 'local','lib','libdiscon.so')
             self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
@@ -52,24 +53,24 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
                 if self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1:
 
-                    self.modeling_options['Level1']['flag'] = True
-                    if self.modeling_options["Level1"]["potential_model_override"] == 0:
-                        self.modeling_options["Level1"]["potential_model_override"] = 2
-
                     cwd = os.getcwd()
-                    if ( (len(self.modeling_options["Level3"]["HydroDyn"]["PotFile"]) == 0) or
-                         (self.modeling_options["Level3"]["HydroDyn"]["PotFile"].lower() in ['unused','default','none']) ):
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(cwd, 'BEM','Output','Wamit_format','Buoy')
+                    weis_dir = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
+                    potpath = self.modeling_options["Level3"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
+                    if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
+                        
+                        self.modeling_options['Level1']['flag'] = True
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, 'BEM','Output','Wamit_format','Buoy')
+
+                        if self.modeling_options["Level1"]["potential_model_override"] == 0:
+                            self.modeling_options["Level1"]["potential_model_override"] = 2
                         
                     else:
-                        weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                        potpath = self.modeling_options["Level3"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
-                        if os.path.exists( potpath+'.1' ):
-                            pass
-                        elif os.path.exists( os.path.join(cwd, potpath+'.1') ):
-                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(cwd, potpath)
-                        elif os.path.exists( os.path.join(weis_dir, potpath+'.1') ):
-                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = os.path.join(weis_dir, potpath)
+                        if osp.exists( potpath+'.1' ):
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath(potpath)
+                        elif osp.exists( osp.join(cwd, potpath+'.1') ):
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(cwd, potpath) )
+                        elif osp.exists( osp.join(weis_dir, potpath+'.1') ):
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(weis_dir, potpath) )
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
@@ -90,7 +91,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                                                   self.modeling_options['Level3']['flag'])
         
         # XFoil
-        if not os.path.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
+        if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
 
         # Compute the number of DLCs that will be run

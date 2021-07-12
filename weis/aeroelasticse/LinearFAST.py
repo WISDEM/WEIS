@@ -64,6 +64,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.wind_speeds         = [15]
         self.DOFs               = ['GenDOF','TwFADOF1']
         self.TMax               = 2000.
+        self.TStart             = 0.
         self.DT                 = 0.01
         self.NLinTimes          = 12
         self.TrimGain           = 1.e-4
@@ -103,6 +104,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         ## Generate case list using General Case Generator
         ## Specify several variables that change independently or collectly
         case_inputs = {}
+        case_inputs[("Fst","TStart")] = {'vals':[self.TStart], 'group':0}
         case_inputs[("Fst","TMax")] = {'vals':[self.TMax], 'group':0}
         case_inputs[("Fst","Linearize")] = {'vals':['True'], 'group':0}
         case_inputs[("Fst","CalcSteady")] = {'vals':['True'], 'group':0}        # potential modelling input, but only Trim solution supported for now

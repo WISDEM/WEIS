@@ -64,7 +64,7 @@ DLC_driver:
         OF_run_dir: temp/NREL5MW_OC4_semi
     DLCs:
         - DLC: "1.1"
-          ws_bin_size: 5
+          ws_bin_size: 10
           n_seeds: 1
           analysis_time: 5.
           transient_time: 5.
@@ -72,4 +72,3 @@ DLC_driver:
               HubHt: 110
               GridHeight: 160
               GridWidth: 160
-              AnalysisTime: 5.

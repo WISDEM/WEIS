@@ -1445,9 +1445,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_directory, self.FAST_InputFile)
-
         channels= self.output_channels()
-
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization
         if self.options['modeling_options']['Level2']['flag']:
@@ -1460,7 +1458,7 @@ class FASTLoadCases(ExplicitComponent):
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
 
-            case_list, case_name_list = fastBatch.gen_linear_cases(inputs)
+            case_list, case_name = fastBatch.gen_linear_cases(inputs)
         else:
             fastBatch = runFAST_pywrapper_batch()
         fastBatch.channels = channels
