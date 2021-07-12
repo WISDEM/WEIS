@@ -3,8 +3,8 @@ from weis.test.utils import execute_script
 
 all_scripts = [
     "01_aeroelasticse/run_general",
-    "01_aeroelasticse/run_mass_sweep",
-    "01_aeroelasticse/run_PC_sweep",
+    #"01_aeroelasticse/run_mass_sweep",
+    #"01_aeroelasticse/run_PC_sweep",
     "01_aeroelasticse/run_OLAF",
     
     # "02_control_opt/run_lin_turbine",
