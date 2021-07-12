@@ -417,8 +417,8 @@ class FOWT():
             ph.run_hams(meshDir) 
             
             # read the HAMS WAMIT-style output files
-            addedMass, damping, w1 = ph.read_wamit1B(os.path.join(meshDir,'Output','Wamit_format','Buoy.1'), TFlag=True)
-            M, P, R, I, w3, heads  = ph.read_wamit3B(os.path.join(meshDir,'Output','Wamit_format','Buoy.3'), TFlag=True)   
+            addedMass, damping, w1 = ph.read_wamit1(os.path.join(meshDir,'Output','Wamit_format','Buoy.1'), TFlag=True)
+            M, P, R, I, w3, heads  = ph.read_wamit3(os.path.join(meshDir,'Output','Wamit_format','Buoy.3'), TFlag=True)   
             
             # interpole to the frequencies RAFT is using
             addedMassInterp = interp1d(w1, addedMass, assume_sorted=False, axis=2)(self.w)
