@@ -98,10 +98,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     def update_ontology_control(self, wt_opt):
         # Update controller
         if self.modeling_options['flags']['control']:
-            self.wt_init['control']['pitch']['PC_omega'] = float(wt_opt['tune_rosco_ivc.PC_omega'])
-            self.wt_init['control']['pitch']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
-            self.wt_init['control']['torque']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])
-            self.wt_init['control']['torque']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
+            self.wt_init['control']['pitch']['omega_pc'] = wt_opt['tune_rosco_ivc.omega_pc']
+            self.wt_init['control']['pitch']['zeta_pc']  = wt_opt['tune_rosco_ivc.zeta_pc']
+            self.wt_init['control']['torque']['omega_vs'] = float(wt_opt['tune_rosco_ivc.omega_vs'])
+            self.wt_init['control']['torque']['zeta_vs']  = float(wt_opt['tune_rosco_ivc.zeta_vs'])
             self.wt_init['control']['pitch']['Kp_float']  = float(wt_opt['tune_rosco_ivc.Kp_float'])
             self.wt_init['control']['pitch']['ptfm_freq']  = float(wt_opt['tune_rosco_ivc.ptfm_freq'])
             if self.modeling_options['ROSCO']['Flp_Mode'] > 0:

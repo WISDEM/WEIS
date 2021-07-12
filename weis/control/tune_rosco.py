@@ -159,13 +159,13 @@ class TuneROSCO(ExplicitComponent):
 
         # Controller Tuning Parameters
         n_PC = len(rosco_init_options['U_pc'])
-        self.add_input('PC_zeta',           val=np.zeros(n_PC),                                            desc='Pitch controller damping ratio')
-        self.add_input('PC_omega',          val=np.zeros(n_PC),        units='rad/s',                      desc='Pitch controller natural frequency')
+        self.add_input('zeta_pc',           val=np.zeros(n_PC),                                            desc='Pitch controller damping ratio')
+        self.add_input('omega_pc',          val=np.zeros(n_PC),        units='rad/s',                      desc='Pitch controller natural frequency')
         self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_input('Kp_float',          val=0.0,        units='s',                          desc='Floating feedback gain')
-        self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
-        self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
+        self.add_input('zeta_vs',           val=0.0,                                            desc='Generator torque controller damping ratio')
+        self.add_input('omega_vs',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
         if rosco_init_options['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
@@ -191,10 +191,10 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
-        rosco_init_options['omega_pc']    = inputs['PC_omega'].tolist()
-        rosco_init_options['zeta_pc']     = inputs['PC_zeta'].tolist()
-        rosco_init_options['omega_vs']    = float(inputs['VS_omega'])
-        rosco_init_options['zeta_vs']     = float(inputs['VS_zeta'])
+        rosco_init_options['omega_pc']    = inputs['omega_pc'].tolist()
+        rosco_init_options['zeta_pc']     = inputs['zeta_pc'].tolist()
+        rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
+        rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['omega_flp'] = inputs['Flp_omega']
             rosco_init_options['zeta_flp']  = inputs['Flp_zeta']

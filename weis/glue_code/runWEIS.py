@@ -151,7 +151,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
-        wt_opt = assign_ROSCO_values(wt_opt, modeling_options, wt_init['control'])
+        wt_opt = assign_ROSCO_values(wt_opt, modeling_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
@@ -197,7 +197,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
-            wt_initial.update_ontology_control(wt_opt)
             # Remove the fst_vt key from the dictionary and write out the modeling options
             modeling_options['openfast']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)

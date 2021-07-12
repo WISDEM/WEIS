@@ -75,6 +75,12 @@ ROSCO:
     SD_Mode: 0
     PS_Mode: 1
     Fl_Mode: 1
+    zeta_pc: [0.7]
+    omega_pc: [0.35]
+    twr_freq: 100                     # Frequency of notch in floating feedback (F_NotchCornerFreq)
+    ptfm_freq: .2                     # Frequency of LPF in floating feedback (F_FlCornerFreq)
+    zeta_vs: 0.7
+    omega_vs: 0.2
     
 openfast:
     file_management:

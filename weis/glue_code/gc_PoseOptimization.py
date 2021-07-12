@@ -66,16 +66,16 @@ class PoseOptimizationWEIS(PoseOptimization):
         # -- Control --
         control_opt = self.opt['design_variables']['control']
         if control_opt['servo']['pitch_control']['omega']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.PC_omega', lower=control_opt['servo']['pitch_control']['omega']['min'], 
+            wt_opt.model.add_design_var('tune_rosco_ivc.omega_pc', lower=control_opt['servo']['pitch_control']['omega']['min'], 
                                                             upper=control_opt['servo']['pitch_control']['omega']['max'])
         if control_opt['servo']['pitch_control']['zeta']['flag']:                            
-            wt_opt.model.add_design_var('tune_rosco_ivc.PC_zeta', lower=control_opt['servo']['pitch_control']['zeta']['min'], 
+            wt_opt.model.add_design_var('tune_rosco_ivc.zeta_pc', lower=control_opt['servo']['pitch_control']['zeta']['min'], 
                                                            upper=control_opt['servo']['pitch_control']['zeta']['max'])
         if control_opt['servo']['torque_control']['omega']['flag']:
-            wt_opt.model.add_design_var('tune_rosco_ivc.VS_omega', lower=control_opt['servo']['torque_control']['omega']['min'], 
+            wt_opt.model.add_design_var('tune_rosco_ivc.omega_vs', lower=control_opt['servo']['torque_control']['omega']['min'], 
                                                             upper=control_opt['servo']['torque_control']['omega']['max'])
         if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
-            wt_opt.model.add_design_var('tune_rosco_ivc.VS_zeta', lower=control_opt['servo']['torque_control']['zeta']['min'], 
+            wt_opt.model.add_design_var('tune_rosco_ivc.zeta_vs', lower=control_opt['servo']['torque_control']['zeta']['min'], 
                                                            upper=control_opt['servo']['torque_control']['zeta_max'])
         if control_opt['servo']['ipc_control']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt['servo']['ipc_control']['Ki_min'],

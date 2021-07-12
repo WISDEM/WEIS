@@ -21,12 +21,12 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('DEL_TwrBsMyt',  val=0.0, units = 'N*m')
         self.add_input('Std_PtfmPitch', val=0.0, units = 'deg')
         n_PC = len(modeling_options['ROSCO']['U_pc'])
-        self.add_input('PC_omega',      val=np.zeros(n_PC), units = 'rad/s')
-        self.add_input('PC_zeta',       val=np.zeros(n_PC))
+        self.add_input('omega_pc',      val=np.zeros(n_PC), units = 'rad/s')
+        self.add_input('zeta_pc',       val=np.zeros(n_PC))
         self.add_input('Kp_float',      val=0.0, units = 's')
         self.add_input('ptfm_freq',     val=0.0, units = 'rad/s')
-        self.add_input('VS_omega',      val=0.0, units='rad/s')
-        self.add_input('VS_zeta',       val=0.0)
+        self.add_input('omega_vs',      val=0.0, units='rad/s')
+        self.add_input('zeta_vs',       val=0.0)
         self.add_input('Flp_omega',     val=0.0, units='rad/s')
         self.add_input('Flp_zeta',      val=0.0)
         self.add_input('IPC_Ki1p',      val=0.0, units='rad/(N*m)')
@@ -49,11 +49,11 @@ class Outputs_2_Screen(om.ExplicitComponent):
             
             # Pitch control params
             if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
-                print('Pitch PI gain inputs: pc_omega = {:2.3f}, pc_zeta = {:2.3f}'.format(inputs['PC_omega'][0], inputs['PC_zeta'][0]))
+                print('Pitch PI gain inputs: omega_pc[0] = {:2.3f}, zeta_pc[0] = {:2.3f}'.format(inputs['omega_pc'][0], inputs['zeta_pc'][0]))
             
             # Torque control params
             if self.options['opt_options']['design_variables']['control']['servo']['torque_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
-                print('Torque PI gain inputs: vs_omega = {:2.3f}, vs_zeta = {:2.3f}'.format(inputs['VS_omega'][0], inputs['VS_zeta'][0]))
+                print('Torque PI gain inputs: omega_vs = {:2.3f}, zeta_vs = {:2.3f}'.format(inputs['omega_vs'][0], inputs['zeta_vs'][0]))
             
             # Floating feedback
             if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['ptfm_freq']['flag'] :
