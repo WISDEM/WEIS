@@ -495,6 +495,14 @@ class FASTLoadCases(ExplicitComponent):
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
             fst_vt = self.load_FAST_model_opts(fst_vt)
+
+            # Fix TwrTI: WEIS modeling options have it as a single value...
+            if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
+                fst_vt['AeroDyn15']['TwrTI'] = [fst_vt['AeroDyn15']['TwrTI']] * len(fst_vt['AeroDyn15']['TwrElev'])
+
+            # Fix AddF0: Should be a n x 1 array (list of lists):
+            fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
+
             if self.options['modeling_options']['ROSCO']['flag']:
                 fst_vt['DISCON_in'] = self.options['modeling_options']['openfast']['fst_vt']['DISCON_in']
         

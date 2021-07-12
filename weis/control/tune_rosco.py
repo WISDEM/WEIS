@@ -158,8 +158,9 @@ class TuneROSCO(ExplicitComponent):
         self.add_discrete_input('usecd',        val=True,                                       desc='use drag coefficient in computing induction factors')
 
         # Controller Tuning Parameters
-        self.add_input('PC_zeta',           val=0.0,                                            desc='Pitch controller damping ratio')
-        self.add_input('PC_omega',          val=0.0,        units='rad/s',                      desc='Pitch controller natural frequency')
+        n_PC = len(rosco_init_options['U_pc'])
+        self.add_input('PC_zeta',           val=np.zeros(n_PC),                                            desc='Pitch controller damping ratio')
+        self.add_input('PC_omega',          val=np.zeros(n_PC),        units='rad/s',                      desc='Pitch controller natural frequency')
         self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_input('Kp_float',          val=0.0,        units='s',                          desc='Floating feedback gain')

@@ -48,8 +48,9 @@ class WindPark(om.Group):
         self.add_subsystem('dac_ivc',dac_ivc)
 
         tune_rosco_ivc = om.IndepVarComp()
-        tune_rosco_ivc.add_output('PC_omega',         val=0.0, units='rad/s',     desc='Pitch controller natural frequency')
-        tune_rosco_ivc.add_output('PC_zeta',          val=0.0,                    desc='Pitch controller damping ratio')
+        n_PC = len(modeling_options['ROSCO']['U_pc'])
+        tune_rosco_ivc.add_output('PC_omega',         val=np.zeros(n_PC), units='rad/s',     desc='Pitch controller natural frequency')
+        tune_rosco_ivc.add_output('PC_zeta',          val=np.zeros(n_PC),                    desc='Pitch controller damping ratio')
         tune_rosco_ivc.add_output('VS_omega',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
         tune_rosco_ivc.add_output('VS_zeta',          val=0.0,                    desc='Generator torque controller damping ratio')
         tune_rosco_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')

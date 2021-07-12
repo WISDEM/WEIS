@@ -82,6 +82,14 @@ ROSCO:
     F_NotchType: 2
     Fl_Mode: 1 
     tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
+    zeta_pc: [1,1]
+    omega_pc: [0.2,0.2]
+    U_pc: [12,18]
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    twr_freq: 3.2
+    ptfm_freq: 0.2
+    Kp_float: -10
 
 openfast:
     analysis_settings:
