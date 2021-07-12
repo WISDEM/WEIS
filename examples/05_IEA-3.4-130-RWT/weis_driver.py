@@ -10,15 +10,14 @@ fname_wt_input         = os.path.join(wisdem_examples, "02_reference_turbines", 
 fname_modeling_options = run_dir + "modeling_options.yaml"
 fname_analysis_options = run_dir + "analysis_options.yaml"
 
+plot_flag = False
 
 tt = time.time()
 wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-if MPI:
-    rank = MPI.COMM_WORLD.Get_rank()
-else:
-    rank = 0
-if rank == 0:
+rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
+
+if rank == 0 and plot_flag:
     print('Run time: %f'%(time.time()-tt))
     sys.stdout.flush()
 
