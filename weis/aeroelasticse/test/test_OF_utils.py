@@ -64,19 +64,25 @@ class TestOFutils(unittest.TestCase):
     def testLinearFAST(self):
 
         lin_fast = LinearFAST(debug_level=2)
-        lin_fast.FAST_exe = osp.join(weis_dir,'local','bin','openfast')   # Path to executable
-        lin_fast.FAST_InputFile = 'iea15.fst'   # FAST input file (ext=.fst)
-        lin_fast.FAST_directory = self.fast.FAST_runDirectory   # Path to fst directory files
-
+        lin_fast.FAST_exe = osp.join(weis_dir,'local/bin/openfast')   # Path to executable
         lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-        lin_fast.FAST_directory           = osp.join(examples_dir, '01_aeroelasticse','OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        lin_fast.FAST_directory           = osp.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
         lin_fast.FAST_runDirectory        = osp.join(weis_dir,'outputs','iea_mono_lin')
 
+        # Read monopile input for fst_vt
+        fast_read = InputReader_OpenFAST()
+        fast_read.FAST_InputFile = lin_fast.FAST_InputFile
+        fast_read.FAST_directory = lin_fast.FAST_directory
+        fast_read.execute()
+        lin_fast.fst_vt = fast_read.fst_vt
+        
         lin_fast.v_rated                    = 10.74         # needed as input from RotorSE or something, to determine TrimCase for linearization
         lin_fast.wind_speeds                 = [16]
         lin_fast.DOFs                       = ['GenDOF','TwFADOF1'] #,'PtfmPDOF']  # enable with 
-        lin_fast.TMax                       = 6   # should be 1000-2000 sec or more with hydrodynamic states
+        lin_fast.TMax                       = 600   # should be 1000-2000 sec or more with hydrodynamic states
+        lin_fast.NLinTimes                  = 2
 
+        lin_fast.gen_linear_cases(inputs={'U_init':lin_fast.wind_speeds,'pitch_init':[12.86]})
         lin_fast.gen_linear_model()
 
 
