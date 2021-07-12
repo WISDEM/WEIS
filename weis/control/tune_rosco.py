@@ -526,7 +526,6 @@ class ROSCO_Turbine(ExplicitComponent):
 
         inps = load_rosco_yaml(parameter_filename)
         self.turbine_params         = inps['turbine_params']
-        self.controller_params      = inps['controller_params']
 
         FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
         FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
@@ -601,11 +600,6 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff / 100
         outputs['generator_efficiency'   ] = self.turbine.GenEff
         outputs['TowerHt'                ] = self.turbine.TowerHt
-
-        # These are ROSCO 'controller' parameters, but should probably be turbine
-        outputs['max_pitch'              ] = self.controller_params['max_pitch'] 
-        outputs['min_pitch'              ] = self.controller_params['max_pitch'] 
-        outputs['vs_minspd'              ] = self.controller_params['vs_minspd'] 
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table
