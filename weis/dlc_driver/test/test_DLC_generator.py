@@ -33,7 +33,7 @@ class TestIECWind(unittest.TestCase):
         np.testing.assert_equal(dlc_generator.cases[5].URef, cut_out)
         np.testing.assert_equal(dlc_generator.n_cases_dlc11, 6)
         print(len(dlc_generator.cases))
-        np.testing.assert_equal(dlc_generator.n_cases, 123)
+        np.testing.assert_equal(dlc_generator.n_cases, 47)
 
 if __name__ == "__main__":
     unittest.main()
