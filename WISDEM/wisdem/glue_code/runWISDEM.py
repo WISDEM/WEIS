@@ -3,7 +3,6 @@ import sys
 
 import numpy as np
 import openmdao.api as om
-
 from wisdem.commonse import fileIO
 from wisdem.commonse.mpi_tools import MPI
 from wisdem.glue_code.glue_code import WindPark
@@ -27,7 +26,7 @@ def run_wisdem(fname_wt_input, fname_modeling_options, fname_opt_options, overri
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
-    myopt = PoseOptimization(modeling_options, opt_options)
+    myopt = PoseOptimization(wt_init, modeling_options, opt_options)
 
     if MPI:
 
