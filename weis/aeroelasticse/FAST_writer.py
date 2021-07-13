@@ -49,7 +49,7 @@ class InputWriter_OpenFAST(object):
 
         self.FAST_namingOut = None    #Master FAST file
         self.FAST_runDirectory = None #Output directory
-        # self.fst_vt = {}
+        self.fst_vt = {}
         self.fst_update = {}
 
     def update(self, fst_update={}):
