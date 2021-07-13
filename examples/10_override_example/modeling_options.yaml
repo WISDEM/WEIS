@@ -36,3 +36,9 @@ Level2: # Options for WEIS fidelity level 2 = linear time domain
     flag: False
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
+
+ROSCO:
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    zeta_pc: 1
+    omega_pc: 0.2

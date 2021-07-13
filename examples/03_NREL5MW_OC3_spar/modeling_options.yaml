@@ -68,7 +68,12 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         RdtnDT: 0.0125
         PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar        # relative to WEIS
         PtfmMass_Init: 7.462e6
+
 ROSCO:
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    zeta_pc: 1
+    omega_pc: 0.2
     flag: True
     SD_Mode: 0
     PS_Mode: 1

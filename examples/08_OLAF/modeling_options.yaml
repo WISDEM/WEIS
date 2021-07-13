@@ -61,7 +61,12 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
             TreeBranchFactor: 1.5     
 
 ROSCO:
-    SD_Mode: 0
+    flag: True
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    zeta_pc: 1
+    omega_pc: 0.2
+    SDMode: 0
     
 DLC_driver:
     openfast_file_management:

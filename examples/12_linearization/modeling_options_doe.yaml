@@ -89,8 +89,14 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
         SimpMembers: True
-    ROSCO:
-        flag: True
+
+ROSCO:
+    flag: True
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    zeta_pc: 1
+    omega_pc: 0.2
+
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?

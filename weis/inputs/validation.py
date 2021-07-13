@@ -45,7 +45,7 @@ def get_modeling_schema():
     rosco_schema  = load_yaml(fschema_model_rosco)
     weis_schema   = load_yaml(fschema_model)
     weis_schema['properties']['WISDEM'].update( wisdem_schema['properties']['WISDEM'] )
-    weis_schema['properties']['ROSCO']['properties'].update(rosco_schema['properties']['controller_params']['properties'])
+    weis_schema['properties']['ROSCO'].update(rosco_schema['properties']['controller_params'])
     return weis_schema
 
 def load_modeling_yaml(finput):

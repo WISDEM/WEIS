@@ -57,6 +57,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
 ROSCO:
     flag: True
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    zeta_pc: 1
+    omega_pc: 0.2
 
 DLC_driver:
     openfast_file_management:
