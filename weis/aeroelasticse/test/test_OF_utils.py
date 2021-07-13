@@ -58,6 +58,7 @@ class TestOFutils(unittest.TestCase):
 
         fast_wr = runFAST_pywrapper()
         fast_wr.FAST_exe =  None # osp.join(weis_dir,'local/bin/openfast')   # Path to executable
+        fast_wr.FAST_lib = osp.join(weis_dir, 'local', 'lib', 'libopenfastlib'+libext)
         fast_wr.FAST_InputFile = self.fast.FAST_InputFile   # FAST input file (ext=.fst)
         fast_wr.FAST_directory = self.fast.FAST_directory   # Path to fst directory files
         fast_wr.FAST_runDirectory = self.fast.FAST_runDirectory   # Path to fst directory files
