@@ -124,14 +124,14 @@ class FASTLoadCases(ExplicitComponent):
         # File naming changes whether in MPI or not
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
-            self.FAST_directory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
+            self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
             self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
         else:
-            self.FAST_directory = FAST_directory_base
+            self.FAST_runDirectory = FAST_directory_base
             self.FAST_namingOut = self.FAST_InputFile
-        self.wind_directory = os.path.join(self.FAST_directory, 'wind')
-        if not os.path.exists(self.FAST_directory):
-            os.makedirs(self.FAST_directory)
+        self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
+        if not os.path.exists(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory)
         if not os.path.exists(self.wind_directory):
             os.mkdir(self.wind_directory)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
@@ -457,12 +457,12 @@ class FASTLoadCases(ExplicitComponent):
             self.write_FAST(fst_vt, discrete_outputs)
         else:
             # Write OF model and run
-            summary_stats, extreme_table, DELs, case_list, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            summary_stats, extreme_table, DELs, case_list, case_name, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
             if self.options['modeling_options']['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(
                 self.FAST_runDirectory,
-                case_name_list,
+                self.lin_case_name,
                 nlin=self.options['modeling_options']['Level2']['linearization']['NLinTimes']
                 )
 
@@ -504,14 +504,13 @@ class FASTLoadCases(ExplicitComponent):
 
                 # save to yaml, might want in analysis outputs
                 FileTools.save_yaml(
-                    self.options['modeling_options']['openfast']['file_management']['FAST_runDirectory'],
+                    self.FAST_runDirectory,
                     'OutOps.yaml',OutOps)
 
                 # Run linear simulation:
 
                 # Get case list, wind inputs should have already been generated
-                if self.FASTpref['dlc_settings']['run_IEC'] or self.FASTpref['dlc_settings']['run_blade_fatigue']:
-                    case_list, case_name_list, dlc_list = self.DLC_creation_IEC(inputs, discrete_inputs, fst_vt)
+                if self.options['modeling_options']['Level2']['simulation']['flag']:
 
                     # Extract disturbance(s)
                     level2_disturbance = []
@@ -1445,8 +1444,10 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
 
         # Append current DLC to full list of cases
-        case_list, case_name = CaseGen_General(case_inputs, self.FAST_directory, self.FAST_InputFile)
+        case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
         channels= self.output_channels()
+        
+        
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization
         if self.options['modeling_options']['Level2']['flag']:
@@ -1459,21 +1460,24 @@ class FASTLoadCases(ExplicitComponent):
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
 
-            case_list, case_name = fastBatch.gen_linear_cases(inputs)
-        else:
-            fastBatch = runFAST_pywrapper_batch()
-        fastBatch.channels = channels
-        fastBatch.FAST_runDirectory = self.FAST_directory
+            lin_case_list, lin_case_name        = fastBatch.gen_linear_cases(inputs)
+            fastBatch.case_list                 = lin_case_list
+            fastBatch.case_name_list            = lin_case_name
 
+            # Save this list of linear cases for making linear model, not the best solution, but it works
+            self.lin_case_name                  = lin_case_name
+        else:
+            fastBatch                           = runFAST_pywrapper_batch()
+            fastBatch.case_list                 = case_list
+            fastBatch.case_name_list            = case_name
+        
+        
+        fastBatch.channels          = channels
+        fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
-        fastBatch.FAST_directory    = self.FAST_directory
         fastBatch.fst_vt            = fst_vt
         fastBatch.keep_time         = False
         fastBatch.post              = FAST_IO_timeseries
-
-        fastBatch.case_list         = case_list
-        fastBatch.case_name_list    = case_name
-        fastBatch.channels          = channels
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
@@ -1490,7 +1494,7 @@ class FASTLoadCases(ExplicitComponent):
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
 
-        return summary_stats, extreme_table, DELs, case_list, dlc_generator
+        return summary_stats, extreme_table, DELs, case_list, case_name, dlc_generator
 
     def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
 

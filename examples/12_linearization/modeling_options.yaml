@@ -87,12 +87,13 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad5: [-8920000.0, 0.0,        0.0,        0.0,            16800000000.0,  0.0]
         AddBQuad6: [0.0,        0.0,        0.0,        0.0,            0.0,            48000000000.0]
         PotMod: 1
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
 ROSCO:
     flag: True
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?
+        flag: True
         TMax: 700.      # run simulations using IEC standards, could share that info
     linearization:
         TMax: 1600.

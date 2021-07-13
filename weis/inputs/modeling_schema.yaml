@@ -2532,6 +2532,10 @@ properties:
                 type: object
                 default: {}
                 properties:
+                    flag: 
+                        type: boolean
+                        default: False
+                        description: Whether or not to run a level 2 time domain simulation
                     TMax: &TMax
                         type: number
                         default: 720.0
