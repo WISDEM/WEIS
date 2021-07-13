@@ -1081,7 +1081,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
 
-            if modeling_options["Level1"]["potential_model_override"] in [1,3]:
+            if ( (fst_vt['HydroDyn']['PotMod'] == 0) or
+                 (modeling_options["Level1"]["potential_model_override"] in [1,3]) ):
                 # Only list members if using strip theory calculations.  Reminder:
                 # potential_model_override = 1: Strip theory only
                 # potential_model_override = 3: Strip theory for drag + BEM for inviscid
@@ -1151,7 +1152,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PtfmRefztRot']  = 0
 
             # If we're using the potential model, need these settings that aren't default
-            if fst_vt['HydroDyn']['PotMod']:
+            if fst_vt['HydroDyn']['PotMod'] == 1:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
