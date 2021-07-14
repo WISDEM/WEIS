@@ -70,10 +70,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmMass_Init: 7.462e6
 
 ROSCO:
-    zeta_vs: 1.0
-    omega_vs: 0.2
-    zeta_pc: 1
-    omega_pc: 0.2
     flag: True
     SD_Mode: 0
     PS_Mode: 1

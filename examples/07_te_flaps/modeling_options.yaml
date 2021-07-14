@@ -44,10 +44,7 @@ ROSCO:
     SD_Mode: 0
     Flp_Mode: 2
     zeta_vs: 1.0
-    omega_vs: 0.2
-    zeta_pc: 1
-    omega_pc: 0.2
-
+    
 DLC_driver:
     openfast_file_management:
         OF_run_fst: BAR10

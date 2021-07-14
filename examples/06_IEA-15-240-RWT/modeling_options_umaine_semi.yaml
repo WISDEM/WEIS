@@ -61,8 +61,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-    ROSCO:
-        flag: True
+
+ROSCO:
+    flag: True
     
 DLC_driver:
     openfast_file_management:
