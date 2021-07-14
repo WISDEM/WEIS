@@ -591,13 +591,11 @@ class Model():
          RMSsurge(imeto) = sqrt( sum( ((abs(rao{imeto}(:,1))).^2).*S(:,imeto) ) *(w(2)-w(1)) );
          RMSheave(imeto) = sqrt( sum( ((abs(rao{imeto}(:,3))).^2).*S(:,imeto) ) *(w(2)-w(1)) );
         '''
-
-        
         
         return self.results
 
 
-    def preprocess_HAMS(self, dw=0, wMax=0, dz=3.0, da=2.0):
+    def preprocess_HAMS(self, dw=0, wMax=0, dz=0, da=0):
         '''This generates a mesh for the platform, runs a BEM analysis on it
         using pyHAMS, and writes .1 and .3 output files for use with OpenFAST.
         The input parameters are useful for multifidelity applications where 
