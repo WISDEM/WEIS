@@ -1,9 +1,9 @@
 import numpy as np
 import os
 
-from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
-from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
-from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
+# from weis.aeroelasticse.Turbsim_mdao.turbsim_writer import TurbsimBuilder
+# from weis.aeroelasticse.Turbsim_mdao.turbsim_wrapper import Turbsim_wrapper
+# from weis.aeroelasticse.Turbsim_mdao.turbsim_vartrees import turbsiminputs
 
 class pyIECWind_extreme():
 
@@ -416,97 +416,97 @@ class pyIECWind_extreme():
         return self.fname_out, self.fname_type
         
 
-class pyIECWind_turb():
+# class pyIECWind_turb():
 
-    def __init__(self):
+#     def __init__(self):
 
-        # Defaults
-        self.seed             = np.random.uniform(1, 1e8)
-        self.Turbulence_Class = 'B'  # IEC Turbulance Class
-        self.z_hub            = 90.  # wind turbine hub height (m)
-        self.z_grid_center    = 90   # height of grid center from the ground (m)
-        self.D                = 126. # rotor diameter (m)
-        self.PLExp            = 0.2
-        self.AnalysisTime     = 720.
-        self.debug_level      = 0
-        self.overwrite        = True
+#         # Defaults
+#         self.seed             = np.random.uniform(1, 1e8)
+#         self.Turbulence_Class = 'B'  # IEC Turbulance Class
+#         self.z_hub            = 90.  # wind turbine hub height (m)
+#         self.z_grid_center    = 90   # height of grid center from the ground (m)
+#         self.D                = 126. # rotor diameter (m)
+#         self.PLExp            = 0.2
+#         self.AnalysisTime     = 720.
+#         self.debug_level      = 0
+#         self.overwrite        = True
 
-    def setup(self):
-        turbsim_vt = turbsiminputs()
-        turbsim_vt.runtime_options.RandSeed1  = self.seed
-        turbsim_vt.runtime_options.WrADTWR    = False
-        turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
-        turbsim_vt.tmspecs.HubHt              = self.z_grid_center # wind grid may be centered at hub height, but it may also go higher. RefHt stays at hub height
-        turbsim_vt.tmspecs.GridHeight         = (self.z_grid_center - 1.) * 2.0 # wind grid stops 1 meter above the ground
-        turbsim_vt.tmspecs.GridWidth          = (self.z_grid_center - 1.) * 2.0 # squared wind grid
-        turbsim_vt.tmspecs.NumGrid_Z          = 25
-        turbsim_vt.tmspecs.NumGrid_Y          = 25
-        turbsim_vt.tmspecs.HFlowAng           = 0.0
-        turbsim_vt.tmspecs.VFlowAng           = 0.0
-        turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
-        turbsim_vt.metboundconds.UserFile     = '"unused"'
-        turbsim_vt.metboundconds.IECturbc     = self.Turbulence_Class
-        turbsim_vt.metboundconds.IEC_WindType = self.IEC_WindType
-        turbsim_vt.metboundconds.ETMc         = '"default"'
-        turbsim_vt.metboundconds.WindProfileType = '"PL"'
-        turbsim_vt.metboundconds.ProfileFile  = '"unused"'
-        turbsim_vt.metboundconds.RefHt        = self.z_hub
-        turbsim_vt.metboundconds.URef         = self.Uref
-        turbsim_vt.metboundconds.PLExp        = self.PLExp
+#     def setup(self):
+#         turbsim_vt = turbsiminputs()
+#         turbsim_vt.runtime_options.RandSeed1  = self.seed
+#         turbsim_vt.runtime_options.WrADTWR    = False
+#         turbsim_vt.tmspecs.AnalysisTime       = self.AnalysisTime
+#         turbsim_vt.tmspecs.HubHt              = self.z_grid_center # wind grid may be centered at hub height, but it may also go higher. RefHt stays at hub height
+#         turbsim_vt.tmspecs.GridHeight         = (self.z_grid_center - 1.) * 2.0 # wind grid stops 1 meter above the ground
+#         turbsim_vt.tmspecs.GridWidth          = (self.z_grid_center - 1.) * 2.0 # squared wind grid
+#         turbsim_vt.tmspecs.NumGrid_Z          = 25
+#         turbsim_vt.tmspecs.NumGrid_Y          = 25
+#         turbsim_vt.tmspecs.HFlowAng           = 0.0
+#         turbsim_vt.tmspecs.VFlowAng           = 0.0
+#         turbsim_vt.metboundconds.TurbModel    = '"IECKAI"'
+#         turbsim_vt.metboundconds.UserFile     = '"unused"'
+#         turbsim_vt.metboundconds.IECturbc     = self.Turbulence_Class
+#         turbsim_vt.metboundconds.IEC_WindType = self.IEC_WindType
+#         turbsim_vt.metboundconds.ETMc         = '"default"'
+#         turbsim_vt.metboundconds.WindProfileType = '"PL"'
+#         turbsim_vt.metboundconds.ProfileFile  = '"unused"'
+#         turbsim_vt.metboundconds.RefHt        = self.z_hub
+#         turbsim_vt.metboundconds.URef         = self.Uref
+#         turbsim_vt.metboundconds.PLExp        = self.PLExp
         
-        turbsim_vt.noniecboundconds.Latitude  = '"default"'
-        turbsim_vt.noniecboundconds.RICH_NO   = 0.05
-        turbsim_vt.noniecboundconds.UStar     = '"default"'
-        turbsim_vt.noniecboundconds.ZI        = '"default"'
-        turbsim_vt.noniecboundconds.PC_UW     = '"default"'
-        turbsim_vt.noniecboundconds.PC_UV     = '"default"'
-        turbsim_vt.noniecboundconds.PC_VW     = '"default"'
+#         turbsim_vt.noniecboundconds.Latitude  = '"default"'
+#         turbsim_vt.noniecboundconds.RICH_NO   = 0.05
+#         turbsim_vt.noniecboundconds.UStar     = '"default"'
+#         turbsim_vt.noniecboundconds.ZI        = '"default"'
+#         turbsim_vt.noniecboundconds.PC_UW     = '"default"'
+#         turbsim_vt.noniecboundconds.PC_UV     = '"default"'
+#         turbsim_vt.noniecboundconds.PC_VW     = '"default"'
 
-        turbsim_vt.spatialcoherance.InCDec1   = '"default"'
-        turbsim_vt.spatialcoherance.InCDec2   = '"default"'
-        turbsim_vt.spatialcoherance.InCDec3   = '"default"'
-        turbsim_vt.spatialcoherance.CohExp    = '"default"'
+#         turbsim_vt.spatialcoherance.InCDec1   = '"default"'
+#         turbsim_vt.spatialcoherance.InCDec2   = '"default"'
+#         turbsim_vt.spatialcoherance.InCDec3   = '"default"'
+#         turbsim_vt.spatialcoherance.CohExp    = '"default"'
         
         
         
-        return turbsim_vt
+#         return turbsim_vt
 
-    def execute(self, IEC_WindType, Uref, ver='Turbsim'):
-        self.IEC_WindType = IEC_WindType
-        self.Uref = Uref
+#     def execute(self, IEC_WindType, Uref, ver='Turbsim'):
+#         self.IEC_WindType = IEC_WindType
+#         self.Uref = Uref
 
-        turbsim_vt = self.setup()
-        writer = TurbsimBuilder()
-        wrapper = Turbsim_wrapper()
+#         turbsim_vt = self.setup()
+#         writer = TurbsimBuilder()
+#         wrapper = Turbsim_wrapper()
 
-        # if self.case_name[-3:] != '.in':
-        #     self.case_name = self.case_name + '.in'
-        # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
-        # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
+#         # if self.case_name[-3:] != '.in':
+#         #     self.case_name = self.case_name + '.in'
+#         # self.case_name += '_U%1.1f'%self.Uref + '_Seed%1.1f'%self.seed
+#         # self.case_name += '_U%d'%self.Uref + '_Seed%d.in'%self.seed
 
-        case_name = self.case_name + '_' + IEC_WindType + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
+#         case_name = self.case_name + '_' + IEC_WindType + '_U%1.6f'%self.Uref + '_Seed%1.1f'%self.seed
         
-        tsim_input_file = case_name + '.in'
-        wind_file_out   = case_name + '.bts'
+#         tsim_input_file = case_name + '.in'
+#         wind_file_out   = case_name + '.bts'
         
-        wind_file_out_abs = os.path.realpath(os.path.normpath(os.path.join(self.outdir, wind_file_out)))
+#         wind_file_out_abs = os.path.realpath(os.path.normpath(os.path.join(self.outdir, wind_file_out)))
 
-        # If wind file already exists and overwriting is turned off, skip wind file write
-        if os.path.exists(os.path.join(self.outdir, wind_file_out)) and not self.overwrite:
-            return wind_file_out_abs, 3
+#         # If wind file already exists and overwriting is turned off, skip wind file write
+#         if os.path.exists(os.path.join(self.outdir, wind_file_out)) and not self.overwrite:
+#             return wind_file_out_abs, 3
 
-        # Run wind file generation
-        else:
-            writer.turbsim_vt = turbsim_vt
-            writer.run_dir = self.outdir
-            writer.tsim_input_file = tsim_input_file
-            writer.execute()
+#         # Run wind file generation
+#         else:
+#             writer.turbsim_vt = turbsim_vt
+#             writer.run_dir = self.outdir
+#             writer.tsim_input_file = tsim_input_file
+#             writer.execute()
 
-            wrapper.turbsim_input = os.path.realpath(os.path.join(writer.run_dir, writer.tsim_input_file))
-            wrapper.run_dir = writer.run_dir
-            wrapper.turbsim_exe = self.Turbsim_exe
-            wrapper.debug_level = self.debug_level
-            wrapper.execute()
+#             wrapper.turbsim_input = os.path.realpath(os.path.join(writer.run_dir, writer.tsim_input_file))
+#             wrapper.run_dir = writer.run_dir
+#             wrapper.turbsim_exe = self.Turbsim_exe
+#             wrapper.debug_level = self.debug_level
+#             wrapper.execute()
 
-            return wind_file_out_abs, 3
+#             return wind_file_out_abs, 3
 

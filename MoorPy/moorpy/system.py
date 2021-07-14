@@ -11,7 +11,7 @@ from moorpy.line import Line
 from moorpy.lineType import LineType
 
 #import moorpy.MoorSolve as msolve
-from moorpy.helpers import rotationMatrix, rotatePosition, getH, printVec, set_axes_equal, dsolve2, SolveError
+from moorpy.helpers import rotationMatrix, rotatePosition, getH, printVec, set_axes_equal, dsolve2, SolveError, MoorPyError
 
 
 
@@ -1305,7 +1305,10 @@ class System():
         
         # Call dsolve function
         #X, Y, info = msolve.dsolve(eval_func_equil, X0, step_func=step_func_equil, tol=tol, maxIter=maxIter)
-        X, Y, info = dsolve2(eval_func_equil, X0, step_func=step_func_equil, tol=tols, maxIter=maxIter, display=display)
+        try:
+            X, Y, info = dsolve2(eval_func_equil, X0, step_func=step_func_equil, tol=tols, maxIter=maxIter, display=display)
+        except Exception as e:
+            raise MoorPyError(e)
         # Don't need to call Ytarget in dsolve because it's already set to be zeros
         
         
@@ -1332,21 +1335,22 @@ class System():
                 print(f"current system stiffness: {K}")
                 print(f"\n Current force {F}")
             
-            # plot the convergence failure
-            if n < 8:
-                fig, ax = plt.subplots(2*n, 1, sharex=True)
-                for i in range(n):
-                    ax[  i].plot(info['Xs'][:info['iter']+1,i])
-                    ax[n+i].plot(info['Es'][:info['iter']+1,i])
-                ax[-1].set_xlabel("iteration")
-            else:
-                fig, ax = plt.subplots(n, 2, sharex=True)
-                for i in range(n):
-                    ax[i,0].plot(info['Xs'][:info['iter']+1,i])
-                    ax[i,1].plot(info['Es'][:info['iter']+1,i])
-                ax[-1,0].set_xlabel("iteration, X")
-                ax[-1,1].set_xlabel("iteration, Error")
-            plt.show()
+                # plot the convergence failure
+                if n < 8:
+                    fig, ax = plt.subplots(2*n, 1, sharex=True)
+                    for i in range(n):
+                        ax[  i].plot(info['Xs'][:info['iter']+1,i])
+                        ax[n+i].plot(info['Es'][:info['iter']+1,i])
+                    ax[-1].set_xlabel("iteration")
+                else:
+                    fig, ax = plt.subplots(n, 2, sharex=True)
+                    for i in range(n):
+                        ax[i,0].plot(info['Xs'][:info['iter']+1,i])
+                        ax[i,1].plot(info['Es'][:info['iter']+1,i])
+                    ax[-1,0].set_xlabel("iteration, X")
+                    ax[-1,1].set_xlabel("iteration, Error")
+                plt.show()
+                
             raise SolveError(f"solveEquilibrium3 failed to find equilibrium after {iter} iterations, with residual forces of {F}")
 
 

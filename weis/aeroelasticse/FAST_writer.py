@@ -49,7 +49,7 @@ class InputWriter_OpenFAST(object):
 
         self.FAST_namingOut = None    #Master FAST file
         self.FAST_runDirectory = None #Output directory
-        # self.fst_vt = {}
+        self.fst_vt = {}
         self.fst_update = {}
 
     def update(self, fst_update={}):
@@ -691,7 +691,7 @@ class InputWriter_OpenFAST(object):
         self.write_AeroDyn15Polar()
         
         # Generate AeroDyn v15 airfoil coordinates
-        if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != 0:
+        if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != '0':
             self.write_AeroDyn15Coord()
         
         if self.fst_vt['AeroDyn15']['WakeMod'] == 3:
@@ -844,7 +844,7 @@ class InputWriter_OpenFAST(object):
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
-            if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != 0:
+            if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != '0':
                 f.write('@"{:}_AF{:02d}_Coords.txt"       {:<11} {:}'.format(self.FAST_namingOut, afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             else:
                 f.write('{:<22d}       {:<11} {:}'.format(0, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
@@ -1275,7 +1275,14 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveDT'], 'WaveDT', '- Time step for incident wave calculations     (sec) [unused when WaveMod=0; 0.1<=WaveDT<=1.0 recommended; determines WaveOmegaMax=Pi/WaveDT in the IFFT]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveHs'], 'WaveHs', '- Significant wave height of incident waves (meters) [used only when WaveMod=1, 2, or 3]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveTp'], 'WaveTp', '- Peak-spectral period of incident waves       (sec) [used only when WaveMod=1 or 2]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WavePkShp'], 'WavePkShp', '- Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]\n'))
+        if isinstance(self.fst_vt['HydroDyn']['WavePkShp'], float):
+            if self.fst_vt['HydroDyn']['WavePkShp'] == 0.:
+                WavePkShp = 'Default'
+            else: 
+                WavePkShp = self.fst_vt['HydroDyn']['WavePkShp']
+        else:
+            WavePkShp = self.fst_vt['HydroDyn']['WavePkShp']
+        f.write('{:<22} {:<11} {:}'.format(WavePkShp, 'WavePkShp', '- Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WvLowCOff'], 'WvLowCOff', '- Low  cut-off frequency or lower frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WvHiCOff'], 'WvHiCOff', '- High cut-off frequency or upper frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['WaveDir'], 'WaveDir', '- Incident wave propagation heading direction                         (degrees) [unused when WaveMod=0 or 6]\n'))
@@ -1502,7 +1509,7 @@ class InputWriter_OpenFAST(object):
             ln.append('{:^11}'.format(self.fst_vt['HydroDyn']['FillDens'][i]))
             f.write(" ".join(ln) + '\n')
         f.write("---------------------- MARINE GROWTH -------------------------------------------\n")
-        f.write('{:<11d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NMGDepths'], 'NMGDepths', '- Number of marine-growth depths specified (-) [If FillDens = DEFAULT, then FillDens = WtrDens; FillFSLoc is related to MSL2SWL]\n'))
+        f.write('{:<11d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NMGDepths'], 'NMGDepths', '- Number of marine-growth depths specified (-)\n'))
         f.write(" ".join(['{:^11s}'.format(i) for i in ['MGDpth', 'MGThck', 'MGDens']])+'\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(m)', '(m)', '(kg/m^3)']])+'\n')
         for i in range(self.fst_vt['HydroDyn']['NMGDepths']):

@@ -19,10 +19,7 @@ WISDEM:
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
-    potential_bem_members: [spar]
     simulation:
-        TMax: 10.0
-        TStart: 5.0
         DT: 0.01
         CompElast: 1
         CompInflow: 0
@@ -58,36 +55,22 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
+        PotMod: 1
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
 ROSCO:
     flag: True
     
-openfast:
-    file_management:
-        FAST_namingOut:    NREL5MW_OC3_spar         # Name of the OpenFAST output files
-        FAST_runDirectory: temp/NREL5MW_OC3_spar             # Path to folder with the OpenFAST output files
-    dlc_settings:
-        run_power_curve:   True
-        run_IEC:           False
-        run_blade_fatigue: False
-        IEC: # Currently supported: 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3
-            - DLC:   1.1
-              U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-              Seeds: [1]
-            # - DLC:   1.3
-            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   1.4
-            # - DLC:   1.5
-            #   U:     [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   5.1
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   6.1
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-            # - DLC:   6.3
-            #   Seeds: [11, 12, 13, 14, 15, 16]
-        Power_Curve:
-            turbulent_power_curve: False # False: Steady Wind, True: Turbulent Inflow
-            U:     [5.0, 10.0] # If running turbulent power curve, can set U:[], and analysis will default to using the IEC - DLC 1.1 results.  This can be used to prevent running redundant turbulent operational cases
-            Seeds: [] # Used only when turbulent_power_curve=True
+DLC_driver:
+    openfast_file_management:
+        OF_run_fst: NREL5MW_OC3_spar
+        OF_run_dir: temp/NREL5MW_OC3_spar
+    DLCs:
+        - DLC: "1.1"
+          ws_bin_size: 5
+          n_seeds: 1
+          analysis_time: 5.
+          transient_time: 5.
+          turbulent_wind:
+              HubHt: 110
+              GridHeight: 160
+              GridWidth: 160

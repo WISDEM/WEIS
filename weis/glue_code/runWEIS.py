@@ -27,53 +27,23 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
-        # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
+        # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) 
+        # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
         if modeling_options['Level3']['flag']:
-            # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, otherwise it is half of the number of DV (rounded to the lower integer). We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
+            # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, 
+            # otherwise it is half of the number of DV (rounded to the lower integer). 
+            # We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
             else:
                 n_FD = int(np.floor(max_cores / 2))
-            # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and the number of cores available (minus the number of DV, which sit and wait for OF to complete)
-            
-            # need to calculate the number of OpenFAST runs from the user input
-            n_OF_runs = 0
-            if modeling_options['openfast']['dlc_settings']['run_power_curve']:
-                if modeling_options['openfast']['dlc_settings']['Power_Curve']['turbulent_power_curve']:
-                    n_OF_runs += len(modeling_options['openfast']['dlc_settings']['Power_Curve']['U'])*len(modeling_options['openfast']['dlc_settings']['Power_Curve']['Seeds'])
-                else:
-                    n_OF_runs += len(modeling_options['openfast']['dlc_settings']['Power_Curve']['U'])
-            if modeling_options['openfast']['dlc_settings']['run_IEC'] or modeling_options['openfast']['dlc_settings']['run_blade_fatigue']:
-                for dlc in modeling_options['openfast']['dlc_settings']['IEC']:
-                    dlc_vars = list(dlc.keys())
-                    # Number of wind speeds
-                    if 'U' not in dlc_vars:
-                        if dlc['DLC'] == 1.4: # assuming 1.4 is run at [V_rated-2, V_rated, V_rated] and +/- direction change
-                            n_U = 6
-                        elif dlc['DLC'] == 5.1: # assuming 1.4 is run at [V_rated-2, V_rated, V_rated]
-                            n_U = 3
-                        elif dlc['DLC'] in [6.1, 6.3]: # assuming V_50 for [-8, 8] deg yaw error
-                            n_U = 2
-                        else:
-                            print('Warning: for OpenFAST DLC %1.1f specified in the Analysis Options, wind speeds "U" must be provided'%dlc['DLC'])
-                    else:
-                        n_U = len(dlc['U'])
-                    # Number of seeds
-                    if 'Seeds' not in dlc_vars:
-                        if dlc['DLC'] == 1.4: # not turbulent
-                            n_Seeds = 1
-                        else:
-                            print('Warning: for OpenFAST DLC %1.1f specified in the Analysis Options, turbulent seeds "Seeds" must be provided'%dlc['DLC'])
-                    else:
-                        n_Seeds = len(dlc['Seeds'])
-
-                    n_OF_runs += n_U*n_Seeds
-
+            # Get the number of OpenFAST runs from the user input and the max that can run in parallel given the resources
+            # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and 
+            # the number of cores available (minus the number of DV, which sit and wait for OF to complete)
+            n_OF_runs = modeling_options['DLC_driver']['n_cases']
             n_DV = max([n_DV, 1])
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
-
-            modeling_options['openfast']['dlc_settings']['n_OF_runs'] = n_OF_runs
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             n_FD = min([max_cores, n_DV])
@@ -108,12 +78,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if MPI:
             if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
-                modeling_options['openfast']['analysis_settings']['mpi_run']           = True
-                modeling_options['openfast']['analysis_settings']['mpi_comm_map_down'] = comm_map_down
+                modeling_options['DLC_driver']['openfast_file_management']['mpi_run'] = True
+                modeling_options['DLC_driver']['openfast_file_management']['mpi_comm_map_down'] = comm_map_down
                 if opt_options['driver']['design_of_experiments']['flag']:
-                    modeling_options['openfast']['analysis_settings']['cores']   = 1
+                    modeling_options['DLC_driver']['openfast_file_management']['cores'] = 1
                 else:
-                    modeling_options['openfast']['analysis_settings']['cores']             = n_OF_runs_parallel            
+                    modeling_options['DLC_driver']['openfast_file_management']['cores'] = n_OF_runs_parallel            
             
             # Parallel settings for OpenMDAO
             if opt_options['driver']['design_of_experiments']['flag']:  
@@ -123,8 +93,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
-            modeling_options['openfast']['analysis_settings']['mpi_run'] = False
-            modeling_options['openfast']['analysis_settings']['cores']   = 1
+            modeling_options['DLC_driver']['openfast_file_management']['mpi_run'] = False
+            modeling_options['DLC_driver']['openfast_file_management']['cores']   = 1
             wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
@@ -199,7 +169,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
             wt_initial.update_ontology_control(wt_opt)
             # Remove the fst_vt key from the dictionary and write out the modeling options
-            modeling_options['openfast']['fst_vt'] = {}
+            modeling_options['DLC_driver']['openfast_file_management']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)
             wt_initial.write_options(froot_out)
             
