@@ -77,7 +77,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.HydroStates        = False         # should probably be false by default  
 
         # simulation setup
-        self.cores              = 4
+        self.cores              = 1
 
         # overwrite steady & linearizations
         self.overwrite          = True
@@ -252,7 +252,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Generate Cases
         case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_runDirectory, namebase='lin')
         self.case_list      = case_list
-        self.cast_name_list = case_name_list
+        self.case_name_list = case_name_list
 
         return case_list, case_name_list
 
@@ -267,21 +267,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         Only needs to be performed once for each model
 
         """
-
-        # do a read to get gearbox ratio
-        fastRead = InputReader_OpenFAST()
-        fastRead.FAST_InputFile = self.FAST_InputFile   # FAST input file (ext=.fst)
-        fastRead.FAST_directory = self.FAST_directory   # Path to fst directory files
-
-        fastRead.execute()
-
-        # linearization setup
-        self.GBRatio          = fastRead.fst_vt['ElastoDyn']['GBRatio']
-        self.fst_vt           = fastRead.fst_vt
-    
-        # run linearizations
-        self.case_list, self.case_name_list = self.gen_linear_cases()
-
         # Let runFAST_pywrapper check for files
         if not self.overwrite:
             self.overwrite_outfiles = False  
