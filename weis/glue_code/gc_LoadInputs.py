@@ -61,8 +61,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         self.modeling_options['Level1']['flag'] = True
                         self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, 'BEM','Output','Wamit_format','Buoy')
 
-                        if self.modeling_options["Level1"]["potential_model_override"] == 0:
-                            self.modeling_options["Level1"]["potential_model_override"] = 2
+                        #if self.modeling_options["Level1"]["potential_model_override"] == 0:
+                        #    self.modeling_options["Level1"]["potential_model_override"] = 2
                         
                     else:
                         if osp.exists( potpath+'.1' ):
