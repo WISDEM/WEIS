@@ -95,10 +95,10 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input('rotor_PC_GS_angles',     val=np.zeros(n_gain),   units='rad',        desc='Gain-schedule table: pitch angles')
         self.add_input('rotor_PC_GS_Kp',         val=np.zeros(n_gain),   units='s',          desc='Gain-schedule table: pitch controller kp gains')
         self.add_input('rotor_PC_GS_Ki',         val=np.zeros(n_gain),                       desc='Gain-schedule table: pitch controller ki gains')
-        self.add_input('rotor_Fl_Kp',            val=0.0,                        desc='Floating feedback gain')
+        self.add_input('Fl_Kp',                  val=0.0,                        desc='Floating feedback gain')
         self.add_input('rotor_inertia',          val=0.0,    units='kg*m**2',    desc='Rotor inertia')
-        self.add_input('rotor_TC_VS_Kp',         val=np.zeros(n_gain),   units='s',          desc='Gain-schedule table: torque controller kp gains')
-        self.add_input('rotor_TC_VS_Ki',         val=np.zeros(n_gain),                       desc='Gain-schedule table: torque controller ki gains')
+        self.add_input('rotor_TC_VS_Kp',         val=0.0,   units='s',          desc='Gain-schedule table: torque controller kp gains')
+        self.add_input('rotor_TC_VS_Ki',         val=0.0,                       desc='Gain-schedule table: torque controller ki gains')
         # Blade and rotor inputs
         self.add_discrete_input('nBlades', val=3, desc='number of blades')
         self.add_input('tilt', val=0.0, units='deg', desc='shaft upward tilt angle relative to horizontal')
@@ -126,6 +126,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input("rotor_powercurve_omega_rpm", val=np.zeros(n_pc), units="rpm", desc="rotor rotational speed")
         self.add_input("rotor_powercurve_pitch", val=np.zeros(n_pc), units="deg", desc="rotor pitch schedule")
         self.add_input("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
+        self.add_input("rho_water", val=1025.0, units="kg/m**3", desc="Density of sea water")
         self.add_input("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
         self.add_input("shear_exp", val=0.2, desc="Shear exponent of the wind.")
 
@@ -152,6 +153,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
             self.add_input(m_name+'heading', val=np.zeros(mnreps), units='deg', desc='Heading rotation of column about z axis (for repeated members)')
             self.add_input(m_name+'rA', val=np.zeros(ndim), units='m', desc='End A coordinates')
             self.add_input(m_name+'rB', val=np.zeros(ndim), units='m', desc='End B coordinates')
+            self.add_input(m_name+'s_ghostA', val=0.0, desc='Non-dimensional location where overlap point begins at end A')
+            self.add_input(m_name+'s_ghostB', val=1.0, desc='Non-dimensional location where overlap point begins at end B')
             self.add_input(m_name+'gamma', val=0.0, units='deg', desc='Twist angle about the member z axis')
             # ADD THIS AS AN OPTION IN WEIS
             self.add_discrete_input(m_name+'potMod', val=False, desc='Whether to model the member with potential flow')
@@ -266,6 +269,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        debug_flag = False
+        
         turbine_opt = self.options['turbine_options']
         mooring_opt = self.options['mooring_options']
         members_opt = self.options['member_options']
@@ -296,19 +301,18 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         design['settings'] = {}
         design['settings']['XiStart'] = float(modeling_opt['XiStart'])
-        design['settings']['dlsMax'] = float(modeling_opt['dlsMax'])
         design['settings']['min_freq'] = float(modeling_opt['min_freq'])
         design['settings']['max_freq'] = float(modeling_opt['max_freq'])
+        design['settings']['nIter'] = int(modeling_opt['nIter'])
 
         # Environment layer data
         design['site'] = {}
         design['site']['water_depth'] = float(inputs['mooring_water_depth'])
         design['site']['rho_air'] = float(inputs['rho_air'])
+        design['site']['rho_water'] = float(inputs['rho_water'])
         design['site']['mu_air' ] = float(inputs['mu_air'])
         design['site']['shearExp'] = float(inputs['shear_exp'])
         
-        # TODO: these float conversions are messy
-        # GB: OpenMDAO converts all variables, even scalar floats, into numpy arrays.  The other option is something like inputs['turbine_mRNA'][0]
         # RNA properties
         design['turbine'] = {}
         design['turbine']['mRNA']          = float(inputs['turbine_mRNA'])
@@ -384,11 +388,10 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['turbine']['pitch_control']['GS_Angles']    = inputs['rotor_PC_GS_angles']
         design['turbine']['pitch_control']['GS_Kp']        = inputs['rotor_PC_GS_Kp']
         design['turbine']['pitch_control']['GS_Ki']        = inputs['rotor_PC_GS_Ki']
-        design['turbine']['pitch_control']['Fl_Kp']        = float(inputs['rotor_Fl_Kp'])
+        design['turbine']['pitch_control']['Fl_Kp']        = float(inputs['Fl_Kp'])
         design['turbine']['torque_control'] = {}
-        # TODO: NEED HELP FROM DANZ ON WHERE THESE SHOULD BE CONNECTED TO
-        design['turbine']['torque_control']['VS_KP'] = 0.0
-        design['turbine']['torque_control']['VS_KI'] = 0.0
+        design['turbine']['torque_control']['VS_KP'] = float(inputs['rotor_TC_VS_Kp'])
+        design['turbine']['torque_control']['VS_KI'] = float(inputs['rotor_TC_VS_Ki'])
 
         # Operations
         design['turbine']['wt_ops'] = {}
@@ -399,7 +402,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Platform members
         design['platform'] = {}
         design['platform']['potModMaster'] = int(modeling_opt['potModMaster'])
-        design['platform']['nIter'] = int(modeling_opt['nIter'])
+        design['platform']['dlsMax'] = float(modeling_opt['dlsMax'])
+        design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
         design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):
             m_name = f'platform_member{i+1}_'
@@ -407,48 +411,59 @@ class RAFT_OMDAO(om.ExplicitComponent):
             mnpts_lfill = member_npts_lfill[i]
             mncaps = member_ncaps[i]
             mnreps = member_nreps[i]
-            mnpts = member_npts[i]
-            
+            #mnpts = member_npts[i]
+
+            # Set stations and end points that account for intersections/ghost segments
+            rA_0 = inputs[m_name+'rA']
+            rB_0 = inputs[m_name+'rB']
+            s_ghostA = inputs[m_name+'s_ghostA']
+            s_ghostB = inputs[m_name+'s_ghostB']
+            s_0 = inputs[m_name+'stations']
+            idx = np.logical_and(s_0>=s_ghostA, s_0<=s_ghostB)
+            s_grid = np.unique(np.r_[s_ghostA, s_0[idx], s_ghostB])
+            mnpts = len(idx)
+            rA = rA_0 + s_ghostA*(rB_0-rA_0)
+            rB = rA_0 + s_ghostB*(rB_0-rA_0)
             design['platform']['members'][i]['name'] = m_name
             design['platform']['members'][i]['type'] = i + 2
-            design['platform']['members'][i]['rA'] = inputs[m_name+'rA']
-            design['platform']['members'][i]['rB'] = inputs[m_name+'rB']
+            design['platform']['members'][i]['rA'] = rA
+            design['platform']['members'][i]['rB'] = rB
             design['platform']['members'][i]['shape'] = m_shape
             design['platform']['members'][i]['gamma'] = float(inputs[m_name+'gamma'])
             design['platform']['members'][i]['potMod'] = discrete_inputs[m_name+'potMod']
-            design['platform']['members'][i]['stations'] = inputs[m_name+'stations']
+            design['platform']['members'][i]['stations'] = s_grid
             
             # updated version to better handle 'diameters' between circular and rectangular members
             if m_shape == 'circ' or m_shape == 'square':
                 if member_scalar_d[i]:
                     design['platform']['members'][i]['d'] = [float(inputs[m_name+'d'])]*mnpts
                 else:
-                    design['platform']['members'][i]['d'] = inputs[m_name+'d']
+                    design['platform']['members'][i]['d'] = np.interp(s_grid, s_0, inputs[m_name+'d'])
             elif m_shape == 'rect':
                 if member_scalar_d[i]:
                     design['platform']['members'][i]['d'] = [inputs[m_name+'d']]*mnpts
                 else:
-                    design['platform']['members'][i]['d'] = inputs[m_name+'d']
+                    design['platform']['members'][i]['d'] = np.interp(s_grid, s_0, inputs[m_name+'d'])
             ''' original version of handling diameters
             if member_scalar_d[i]:
                 design['platform']['members'][i]['d'] = float(inputs[m_name+'d'])
             else:
-                design['platform']['members'][i]['d'] = inputs[m_name+'d']
+                design['platform']['members'][i]['d'] = np.interp(s_grid, s_0, inputs[m_name+'d'])
             '''
             if member_scalar_t[i]:
                 design['platform']['members'][i]['t'] = float(inputs[m_name+'t'])
             else:
-                design['platform']['members'][i]['t'] = inputs[m_name+'t']
+                design['platform']['members'][i]['t'] = np.interp(s_grid, s_0, inputs[m_name+'t'])
             if member_scalar_coeff[i]:
                 design['platform']['members'][i]['Cd'] = float(inputs[m_name+'Cd'])
                 design['platform']['members'][i]['Ca'] = float(inputs[m_name+'Ca'])
                 design['platform']['members'][i]['CdEnd'] = float(inputs[m_name+'CdEnd'])
                 design['platform']['members'][i]['CaEnd'] = float(inputs[m_name+'CaEnd'])
             else:
-                design['platform']['members'][i]['Cd'] = inputs[m_name+'Cd']
-                design['platform']['members'][i]['Ca'] = inputs[m_name+'Ca']
-                design['platform']['members'][i]['CdEnd'] = inputs[m_name+'CdEnd']
-                design['platform']['members'][i]['CaEnd'] = inputs[m_name+'CaEnd']
+                design['platform']['members'][i]['Cd'] = np.interp(s_grid, s_0, inputs[m_name+'Cd'])
+                design['platform']['members'][i]['Ca'] = np.interp(s_grid, s_0, inputs[m_name+'Ca'])
+                design['platform']['members'][i]['CdEnd'] = np.interp(s_grid, s_0, inputs[m_name+'CdEnd'])
+                design['platform']['members'][i]['CaEnd'] = np.interp(s_grid, s_0, inputs[m_name+'CaEnd'])
             design['platform']['members'][i]['rho_shell'] = float(inputs[m_name+'rho_shell'])
             if mnreps > 0:
                 design['platform']['members'][i]['heading'] = inputs[m_name+'heading']
@@ -457,21 +472,31 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 design['platform']['members'][i]['rho_fill'] = inputs[m_name+'rho_fill']
             if ( (mncaps > 0) or (inputs[m_name+'ring_spacing'] > 0) ):
                 # Member discretization
-                s_grid = inputs[m_name+'stations']
                 s_height = s_grid[-1] - s_grid[0]
                 # Get locations of internal structures based on spacing
                 ring_spacing = inputs[m_name+'ring_spacing']
                 n_stiff = 0 if ring_spacing == 0.0 else int(np.floor(s_height / ring_spacing))
                 s_ring = (np.arange(1, n_stiff + 0.1) - 0.5) * (ring_spacing / s_height)
                 d_ring = np.interp(s_ring, s_grid, design['platform']['members'][i]['d'])
-                ''''if ring_spacing == 0.0:     # from Kirana's patch
-                    d_ring = []
-                else:
-                    d_ring = np.interp(s_ring, s_grid, inputs[m_name+'d'])'''
                 # Combine internal structures based on spacing and defined positions
-                s_cap = np.r_[s_ring, inputs[m_name+'cap_stations']]
-                t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), inputs[m_name+'cap_t']]
-                di_cap = np.r_[d_ring-2*inputs[m_name+'ring_h'], inputs[m_name+'cap_d_in']]
+                s_cap_0 = inputs[m_name+'cap_stations']
+                idx_cap = np.logical_and(s_cap_0>=s_ghostA, s_cap_0<=s_ghostB)
+                s_cap, isort = np.unique(np.r_[s_ghostA, s_cap_0[idx_cap], s_ghostB], return_index=True)
+                t_cap = np.r_[inputs[m_name+'cap_t'][0], inputs[m_name+'cap_t'][idx_cap], inputs[m_name+'cap_t'][-1]][isort]
+                di_cap = np.zeros(s_cap.shape)
+                # No end caps at joints
+                if s_ghostA > 0.0:
+                    s_cap = s_cap[1:]
+                    t_cap = t_cap[1:]
+                    di_cap = di_cap[1:]
+                if s_ghostB < 1.0:
+                    s_cap = s_cap[:-1]
+                    t_cap = t_cap[:-1]
+                    di_cap = di_cap[:-1]
+                # Combine with ring stiffeners
+                s_cap = np.r_[s_ring, s_cap]
+                t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), t_cap]
+                di_cap = np.r_[d_ring-2*inputs[m_name+'ring_h'], di_cap]
                 # Store vectors in sorted order
                 isort = np.argsort(s_cap)
                 design['platform']['members'][i]['cap_stations'] = s_cap[isort]
@@ -510,22 +535,28 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['mooring']['line_types'][i]['tangential_added_mass'] = float(inputs[lt_name+'tangential_added_mass'])
             design['mooring']['line_types'][i]['transverse_drag'] = float(inputs[lt_name+'transverse_drag'])
             design['mooring']['line_types'][i]['tangential_drag'] = float(inputs[lt_name+'tangential_drag'])
+        design['mooring']['anchor_types'] = [dict() for m in range(1)] #Note: doesn't work [{}]*anchor_types
+        design['mooring']['anchor_types'][0]['name'] = 'drag_embedment'
+        design['mooring']['anchor_types'][0]['mass'] = 1e3
+        design['mooring']['anchor_types'][0]['cost'] = 1e4
+        design['mooring']['anchor_types'][0]['max_vertical_load'] = 0.0
+        design['mooring']['anchor_types'][0]['max_lateral_load'] = 1e5
 
         # DLCs
         design['cases'] = {}
         design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
         design['cases']['data'] = discrete_inputs['raft_dlcs']
 
+        # Debug
+        if debug_flag:
+            import pickle
+            with open('raft_design.pkl', 'wb') as handle:
+                pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                
         # create and run the model
         model = raft.Model(design)
         model.analyzeUnloaded()
         model.analyzeCases()
-        # GB: Seems like RAFT doesn't run cases like this anymore?
-        #model.setEnv(spectrum="unit")
-        #model.calcSystemProps()
-        #model.solveEigen()
-        #model.calcMooringAndOffsets()
-        #model.solveDynamics()
         results = model.calcOutputs()
         
         outs = self.list_outputs(out_stream=None)
