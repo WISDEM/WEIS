@@ -256,11 +256,11 @@ class DiscretizationYAML(om.ExplicitComponent):
             cost_param += imass * cost[imat]
 
             # Store the value associated with this thickness
-            if inputs['E_user'] > 1.:
-                E_param[k, :] = inputs['E_user']
+            if inputs["E_user"] > 1.0:
+                E_param[k, :] = inputs["E_user"]
             else:
                 E_param[k, :] = E[imat]
-                
+
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
 
@@ -834,7 +834,15 @@ class MemberComponent(om.ExplicitComponent):
             for s in self.sections:
                 if s >= s_ghost1:
                     break
+                self.sections[s].D = 1e-2
+                self.sections[s].t = 1e-3
+                self.sections[s].A = 1e-2
+                self.sections[s].Asx = 1e-2
+                self.sections[s].Asy = 1e-2
                 self.sections[s].rho = 1e-2
+                self.sections[s].Ixx = 1e-2
+                self.sections[s].Iyy = 1e-2
+                self.sections[s].Izz = 1e-2
                 self.sections[s].E *= 1e2
                 self.sections[s].G *= 1e2
         if s_ghost2 < 1.0:
@@ -842,7 +850,15 @@ class MemberComponent(om.ExplicitComponent):
             for s in self.sections:
                 if s < s_ghost2 or s == 1.0:
                     continue
+                self.sections[s].D = 1e-2
+                self.sections[s].t = 1e-3
+                self.sections[s].A = 1e-2
+                self.sections[s].Asx = 1e-2
+                self.sections[s].Asy = 1e-2
                 self.sections[s].rho = 1e-2
+                self.sections[s].Ixx = 1e-2
+                self.sections[s].Iyy = 1e-2
+                self.sections[s].Izz = 1e-2
                 self.sections[s].E *= 1e2
                 self.sections[s].G *= 1e2
 
