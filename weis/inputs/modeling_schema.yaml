@@ -51,7 +51,7 @@ properties:
                 description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list, 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = potential BEM modeling for inviscid forces and strip theory for viscous forces
             xi_start:
                 type: number
-                default: 0.1
+                default: 0.0
                 minimum: 0.0
                 maximum: 1000.0
                 description: Initial amplitude of each DOF for all frequencies
@@ -67,6 +67,12 @@ properties:
                 minimum: 1
                 maximum: 100
                 description: Maximum node splitting section amount
+            min_freq_BEM:
+                type: number
+                default: 0.1
+                minimum: 0.0
+                maximum: 2.0
+                description: lowest frequency and frequency interval to use in BEM analysis
     Level3: &ofmodopt
         type: object
         default: {}

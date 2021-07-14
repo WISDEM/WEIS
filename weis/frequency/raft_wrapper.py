@@ -25,6 +25,7 @@ class RAFT_WEIS(om.Group):
         raft_opt['XiStart'] = weis_opt['Level1']['xi_start']
         raft_opt['nIter'] = weis_opt['Level1']['nIter']
         raft_opt['dlsMax'] = weis_opt['Level1']['dls_max']
+        raft_opt['min_freq_BEM'] = weis_opt['Level1']['min_freq_BEM']
         raft_opt['n_cases'] = weis_opt['DLC_driver']['n_cases']
 
         turbine_opt = {}
@@ -136,10 +137,10 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f"platform_member{k+1}_ring_spacing", val=0.0)
             self.add_output(f"platform_member{k+1}_ring_t", val=0.0, units="m")
             self.add_output(f"platform_member{k+1}_ring_h", val=0.0, units="m")
-            self.add_output(f"platform_member{k+1}_Cd", val=np.zeros(n_height))
-            self.add_output(f"platform_member{k+1}_Ca", val=np.zeros(n_height))
-            self.add_output(f"platform_member{k+1}_CdEnd", val=np.zeros(n_height))
-            self.add_output(f"platform_member{k+1}_CaEnd", val=np.zeros(n_height))
+            self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height))
+            self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
+            self.add_output(f"platform_member{k+1}_CdEnd", val=0.6*np.ones(n_height))
+            self.add_output(f"platform_member{k+1}_CaEnd", val=0.6*np.ones(n_height))
             self.add_discrete_output(f"platform_member{k+1}_potMod", val=False)
 
         # Mooring inputs

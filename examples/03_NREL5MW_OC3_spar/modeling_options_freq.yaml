@@ -19,7 +19,9 @@ WISDEM:
 
 Level1:
     flag: True
-    potential_model_override: 2
+    potential_model_override: 0
+    potential_bem_members: [spar]
+    min_freq_BEM: 0.1
     min_freq: 0.1
     max_freq: 1.0
     

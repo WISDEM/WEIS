@@ -143,6 +143,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
+        self.add_output('VS_Kp',            val=0.0,        units='s',                          desc='Generator torque control proportional gain at first point in schedule')
+        self.add_output('VS_Ki',            val=0.0,                                            desc='Generator torque control integral gain at first point in schedule')
         if rosco_init_options['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
@@ -158,7 +160,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_output('PC_GS_angles',     val=np.zeros(rosco_init_options['PC_GS_n']), units='rad', desc='Gain-schedule table: pitch angles')
         self.add_output('PC_GS_Kp',         val=np.zeros(rosco_init_options['PC_GS_n']), units='s',   desc='Gain-schedule table: pitch controller kp gains')
         self.add_output('PC_GS_Ki',         val=np.zeros(rosco_init_options['PC_GS_n']),              desc='Gain-schedule table: pitch controller ki gains')
-        self.add_output('Fl_Kp',            val=0.0,            desc='Flap control integral gain')
+        self.add_output('Fl_Kp',            val=0.0,            desc='Floating feedback gain')
 
         # self.add_output('VS_Rgn2K',     val=0.0, units='N*m/(rad/s)**2',      desc='Generator torque constant in Region 2 (HSS side), [N-m/(rad/s)^2]')
 
@@ -356,12 +358,14 @@ class TuneROSCO(ExplicitComponent):
         outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
         outputs['Flp_Kp']  = controller.Kp_flap[-1]
         outputs['Flp_Ki']  = controller.Ki_flap[-1]
-
+        outputs['Fl_Kp']   = controller.Kp_float
 
         outputs['PC_GS_angles'] = controller.pitch_op_pc
         outputs['PC_GS_Kp']     = controller.pc_gain_schedule.Kp
         outputs['PC_GS_Ki']     = controller.pc_gain_schedule.Ki
         # outputs['VS_Rgn2K']     = controller.vs_rgn2K
+        outputs['VS_Kp'] = controller.vs_gain_schedule.Kp[0]
+        outputs['VS_Ki'] = controller.vs_gain_schedule.Ki[0]
  
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):
