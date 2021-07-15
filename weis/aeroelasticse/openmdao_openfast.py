@@ -947,12 +947,12 @@ class FASTLoadCases(ExplicitComponent):
         # SubDyn inputs- monopile and floating
         if modeling_options['flags']['monopile']:
             mono_index = twr_index+1 # Duplicate intersection point
-            n_joints = len(inputs['tower_outer_diameter'][:mono_index]) # Omit submerged pile
+            n_joints = len(inputs['tower_outer_diameter'][1:mono_index]) # Omit submerged pile
             n_members = n_joints - 1
             itrans = n_joints - 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointZss'] = twr_elev[:mono_index]
+            fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
             fst_vt['SubDyn']['NReact'] = 1
             fst_vt['SubDyn']['RJointID'] = [1]
             fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
@@ -961,11 +961,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
-            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][:mono_index]
-            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][:mono_index]
-            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][:mono_index]
-            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][:mono_index])[0] # Don't need deriv
-            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][:mono_index]
+            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][1:mono_index]
+            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][1:mono_index]
+            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
+            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0] # Don't need deriv
+            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
 
             # Find the members where the 9 channels of SubDyn should be placed
             grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
