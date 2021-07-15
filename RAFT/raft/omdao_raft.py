@@ -498,10 +498,11 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), t_cap]
                 di_cap = np.r_[d_ring-2*inputs[m_name+'ring_h'], di_cap]
                 # Store vectors in sorted order
-                isort = np.argsort(s_cap)
-                design['platform']['members'][i]['cap_stations'] = s_cap[isort]
-                design['platform']['members'][i]['cap_t'] = t_cap[isort]
-                design['platform']['members'][i]['cap_d_in'] = di_cap[isort]
+                if len(s_cap) > 0:
+                    isort = np.argsort(s_cap)
+                    design['platform']['members'][i]['cap_stations'] = s_cap[isort]
+                    design['platform']['members'][i]['cap_t'] = t_cap[isort]
+                    design['platform']['members'][i]['cap_d_in'] = di_cap[isort]
 
         design['mooring'] = {}
         design['mooring']['water_depth'] = float(inputs['mooring_water_depth'])
