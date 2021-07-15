@@ -54,12 +54,12 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
-        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
+        #AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
+        #AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
+        #AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
+        #AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
+        #AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
+        #AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
 
 ROSCO:
