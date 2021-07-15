@@ -47,8 +47,8 @@ properties:
             potential_model_override:
                 type: integer
                 default: 0
-                enum: [0, 1, 2, 3]
-                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list, 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = potential BEM modeling for inviscid forces and strip theory for viscous forces
+                enum: [0, 1, 2]
+                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory)
             xi_start:
                 type: number
                 default: 0.0
@@ -1904,6 +1904,28 @@ properties:
                         maximum: 3
                         default: 1
                         description: Body coupling model {1- include coupling terms between each body and NBody in HydroDyn equals NBODY in WAMIT, 2- neglect coupling terms between each body and NBODY=1 with XBODY=0 in WAMIT, 3- Neglect coupling terms between each body and NBODY=1 with XBODY=/0 in WAMIT} (switch) [only used when PotMod=1]
+                    SimplCd: &simpl
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 1.0
+                        description: Simple strip theory model coefficient, default of 1.0
+                    SimplCa: *simpl
+                    SimplCp: *simpl
+                    SimplCdMG: *simpl
+                    SimplCaMG: *simpl
+                    SimplCpMG: *simpl
+                    SimplAxCd: &simpl_0
+                        type: number
+                        minimum: 0.0
+                        maximum: 100.0
+                        default: 0.0
+                        description: Simple strip theory model coefficient, default of 0.0
+                    SimplAxCa: *simpl
+                    SimplAxCp: *simpl
+                    SimplAxCdMG: *simpl_0
+                    SimplAxCaMG: *simpl
+                    SimplAxCpMG: *simpl
             SubDyn: &ofsubdyn
                 type: object
                 default: {}

@@ -236,6 +236,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
+        self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
         self.add_input("platform_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -946,12 +947,12 @@ class FASTLoadCases(ExplicitComponent):
         # SubDyn inputs- monopile and floating
         if modeling_options['flags']['monopile']:
             mono_index = twr_index+1 # Duplicate intersection point
-            n_joints = len(inputs['tower_outer_diameter'][1:mono_index]) # Omit submerged pile
+            n_joints = len(inputs['tower_outer_diameter'][:mono_index]) # Omit submerged pile
             n_members = n_joints - 1
             itrans = n_joints - 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
+            fst_vt['SubDyn']['JointZss'] = twr_elev[:mono_index]
             fst_vt['SubDyn']['NReact'] = 1
             fst_vt['SubDyn']['RJointID'] = [1]
             fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
@@ -960,11 +961,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
-            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][1:mono_index]
-            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][1:mono_index]
-            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
-            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][1:mono_index])[0]
-            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
+            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][:mono_index]
+            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][:mono_index]
+            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][:mono_index]
+            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(inputs['tower_outer_diameter'][:mono_index])[0] # Don't need deriv
+            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][:mono_index]
 
             # Find the members where the 9 channels of SubDyn should be placed
             grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
@@ -1074,73 +1075,67 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AddF0'] = np.array( fst_vt['HydroDyn']['AddF0'] ).reshape(-1,1)
             fst_vt['HydroDyn']['AddCLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddCLin'+str(m+1)] for m in range(6)]) )
             fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
-            fst_vt['HydroDyn']['AddBQuad'] = np.zeros((6,6)) # Will use user input only if not using strip theory- updated below
+            BQuad = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
+            if np.any(BQuad):
+                print('WARNING: You are adding in additional drag terms that may double count strip theory estimated viscous drag terms.  Please zero out the BQuad entries or use modeling options SimplCd/a/p and/or potential_model_override and/or potential_bem_members to suppress strip theory for the members')
+            fst_vt['HydroDyn']['AddBQuad'] = BQuad
             fst_vt['HydroDyn']['NAxCoef'] = 1
             fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
             fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
 
-            if ( (fst_vt['HydroDyn']['PotMod'] == 0) or
-                 (modeling_options["Level1"]["potential_model_override"] in [1,3]) ):
-                # Only list members if using strip theory calculations.  Reminder:
-                # potential_model_override = 1: Strip theory only
-                # potential_model_override = 3: Strip theory for drag + BEM for inviscid
-                fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
-                fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
-                fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
-                fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
-                # New OpenFAST v3 HydroDyn really doesn't like joints right at MSL
-                hd_joints = np.array(fst_vt['SubDyn']['JointZss']).copy()
-                idx = np.where(hd_joints==0.0)[0]
-                if len(idx) > 0:
-                    hd_joints[idx[0]:] += 1e-2
-                fst_vt['HydroDyn']['Jointzi'] = hd_joints
-                fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
-                fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
-                fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
-                fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
-                fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
-                fst_vt['HydroDyn']['MemberID'] = fst_vt['SubDyn']['MemberID']
-                fst_vt['HydroDyn']['MJointID1'] = fst_vt['SubDyn']['MJointID1']
-                fst_vt['HydroDyn']['MJointID2'] = fst_vt['SubDyn']['MJointID2']
-                fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID1']
-                fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
-                fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
-                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 1.0
-                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 1.0
-                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 1.0
-                fst_vt['HydroDyn']['SimplAxCd'] = fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 1.0
-                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 1.0
-            else:
-                # No strip theory- only potential flow
-                # Okay to add-in user-provided viscous drag terms
-                fst_vt['HydroDyn']['AddBQuad'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
-                fst_vt['HydroDyn']['NJoints'] = 0
-                fst_vt['HydroDyn']['JointID'] = []
-                fst_vt['HydroDyn']['Jointxi'] = fst_vt['HydroDyn']['Jointyi'] = fst_vt['HydroDyn']['Jointzi'] = []
-                fst_vt['HydroDyn']['NPropSets'] = 0
-                fst_vt['HydroDyn']['PropSetID'] = fst_vt['HydroDyn']['PropD'] = fst_vt['HydroDyn']['PropThck'] = []
-                fst_vt['HydroDyn']['NMembers'] = 0
-                fst_vt['HydroDyn']['MemberID'] = fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MJointID2'] = []
-                fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['HydroDyn']['MDivSize'] = []
+            # List all joints, propsets, and members. Declare members are full strip theory or included in BEM using the PropPot flag below
+            fst_vt['HydroDyn']['NJoints'] = fst_vt['SubDyn']['NJoints']
+            fst_vt['HydroDyn']['JointID'] = fst_vt['SubDyn']['JointID']
+            fst_vt['HydroDyn']['Jointxi'] = fst_vt['SubDyn']['JointXss']
+            fst_vt['HydroDyn']['Jointyi'] = fst_vt['SubDyn']['JointYss']
+            # New OpenFAST v3 HydroDyn really doesn't like joints right at MSL or sea floor
+            hd_joints = np.array(fst_vt['SubDyn']['JointZss']).copy()
+            idx = np.where(hd_joints==0.0)[0]
+            if len(idx) > 0:
+                hd_joints[idx[0]:] += 1e-1
+            idx = np.where(hd_joints==-fst_vt['HydroDyn']['WtrDpth'])[0]
+            if len(idx) > 0:
+                hd_joints[idx[0]] -= 1e-2
+            fst_vt['HydroDyn']['Jointzi'] = hd_joints
+            fst_vt['HydroDyn']['NPropSets'] = fst_vt['SubDyn']['NPropSets']
+            fst_vt['HydroDyn']['PropSetID'] = fst_vt['SubDyn']['PropSetID1']
+            fst_vt['HydroDyn']['PropD'] = fst_vt['SubDyn']['XsecD']
+            fst_vt['HydroDyn']['PropThck'] = fst_vt['SubDyn']['XsecT']
+            fst_vt['HydroDyn']['NMembers'] = fst_vt['SubDyn']['NMembers']
+            fst_vt['HydroDyn']['MemberID'] = fst_vt['SubDyn']['MemberID']
+            fst_vt['HydroDyn']['MJointID1'] = fst_vt['SubDyn']['MJointID1']
+            fst_vt['HydroDyn']['MJointID2'] = fst_vt['SubDyn']['MJointID2']
+            fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID1']
+            fst_vt['HydroDyn']['MPropSetID2'] = fst_vt['SubDyn']['MPropSetID2']
+            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
+            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['NCoefDpth'] = 0
+            fst_vt['HydroDyn']['NCoefMembers'] = 0
+            fst_vt['HydroDyn']['NFillGroups'] = 0
+            fst_vt['HydroDyn']['NMGDepths'] = 0
+
+            if modeling_options["Level1"]["potential_model_override"] == 1:
+                # Strip theory only, no BEM
+                fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+            elif modeling_options["Level1"]["potential_model_override"] == 2:
+                # BEM only, no strip theory
                 fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
                 fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
                 fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
                 fst_vt['HydroDyn']['SimplAxCd'] = fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
                 fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
                 fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
-
-            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            PropPotBool = modeling_options["Level1"]["potential_model_override"] == 3
-            fst_vt['HydroDyn']['PropPot'] = [str(PropPotBool)] * fst_vt['HydroDyn']['NMembers']
-            fst_vt['HydroDyn']['NCoefDpth'] = 0
-            fst_vt['HydroDyn']['NCoefMembers'] = 0
-            fst_vt['HydroDyn']['NFillGroups'] = 0
-            fst_vt['HydroDyn']['NMGDepths'] = 0
+                fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
+            else:
+                PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
+                for k in range(fst_vt['HydroDyn']['NMembers']):
+                    idx = discrete_inputs['platform_elem_memid'][k]
+                    PropPotBool[k] = modeling_options["Level1"]["model_potential"][idx]
+                fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
             if fst_vt['HydroDyn']['NBody'] > 1:
                 raise Exception('Multiple HydroDyn bodies (NBody > 1) is currently not supported in WEIS')

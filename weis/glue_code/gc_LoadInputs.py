@@ -43,13 +43,16 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["offshore"]:
-                if self.modeling_options["Level1"]["potential_model_override"] in [2,3]:
+                if self.modeling_options["Level1"]["potential_model_override"] == 2:
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
                        (len(self.modeling_options["Level1"]["potential_bem_members"]) > 0) ):
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif self.modeling_options["Level1"]["potential_model_override"] == 1:
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 0
+                else:
+                    # Keep user defined value of PotMod
+                    pass
 
                 if self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1:
 
@@ -61,9 +64,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         self.modeling_options['Level1']['flag'] = True
                         self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, 'BEM','Output','Wamit_format','Buoy')
 
-                        #if self.modeling_options["Level1"]["potential_model_override"] == 0:
-                        #    self.modeling_options["Level1"]["potential_model_override"] = 2
-                        
                     else:
                         if osp.exists( potpath+'.1' ):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath(potpath)
@@ -75,16 +75,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
         # RAFT
-        if self.modeling_options['Level1']['flag']:
-            if self.modeling_options["flags"]["floating"]:
-                bool_init = True if self.modeling_options["Level1"]["potential_model_override"] in [2,3] else False
-                self.modeling_options["Level1"]["model_potential"] = [bool_init] * self.modeling_options["floating"]["members"]["n_members"]
+        if self.modeling_options["flags"]["floating"]:
+            bool_init = True if self.modeling_options["Level1"]["potential_model_override"]==2 else False
+            self.modeling_options["Level1"]["model_potential"] = [bool_init] * self.modeling_options["floating"]["members"]["n_members"]
 
-                if self.modeling_options["Level1"]["potential_model_override"] == 0:
-                    for k in self.modeling_options["Level1"]["potential_bem_members"]:
-                        idx = self.modeling_options["floating"]["members"]["name"].index(k)
-                        self.modeling_options["Level1"]["model_potential"][idx] = True
-
+            if self.modeling_options["Level1"]["potential_model_override"] == 0:
+                for k in self.modeling_options["Level1"]["potential_bem_members"]:
+                    idx = self.modeling_options["floating"]["members"]["name"].index(k)
+                    self.modeling_options["Level1"]["model_potential"][idx] = True
+        elif self.modeling_options["flags"]["offshore"]:
+            self.modeling_options["Level1"]["model_potential"] = [False]*1000
+            
         # ROSCO
         self.modeling_options['ROSCO']['flag'] = (self.modeling_options['Level1']['flag'] or
                                                   self.modeling_options['Level2']['flag'] or
