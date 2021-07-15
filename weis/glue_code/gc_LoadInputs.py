@@ -56,6 +56,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
                 if self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1:
 
+                    # If user requested PotMod but didn't specify any override or members, just run everything
+                    if ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
+                       (len(self.modeling_options["Level1"]["potential_bem_members"]) == 0) ):
+                        self.modeling_options["Level1"]["potential_model_override"] == 2
+                        
                     cwd = os.getcwd()
                     weis_dir = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
                     potpath = self.modeling_options["Level3"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')

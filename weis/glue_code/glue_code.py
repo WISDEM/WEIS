@@ -16,7 +16,7 @@ from weis.control.dac import RunXFOIL
 from wisdem.rotorse.rotor_power import NoStallConstraint
 from weis.control.tune_rosco import ServoSE_ROSCO
 #from wisdem.rotorse.rotor_elasticity import RotorElasticity
-from weis.aeroelasticse.rotor_loads_defl_strainsWEIS import RotorLoadsDeflStrainsWEIS
+from weis.aeroelasticse.utils import RotorLoadsDeflStrainsWEIS
 from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 from weis.frequency.raft_wrapper import RAFT_WEIS
@@ -388,6 +388,16 @@ class WindPark(om.Group):
                 self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
                 self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
                 self.connect("floating.transition_node", "aeroelastic.transition_node")
+
+                for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
+                    idx = modeling_options["floating"]["members"]["name2idx"][kname]
+                    #self.connect(f"floating.memgrp{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
+                    self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}:s")
+                    self.connect(f"floatingse.member{k}.outer_diameter", f"aeroelastic.member{k}:outer_diameter")
+                    self.connect(f"floatingse.member{k}.wall_thickness", f"aeroelastic.member{k}:wall_thickness")
+
+                    for var in ["joint1", "joint2", "s_ghost1", "s_ghost2"]:
+                        self.connect(f"floating.member_{kname}:{var}", f"aeroelastic.member{k}:{var}")
                 
                 if modeling_options["flags"]["tower"]:
                     self.connect('floatingse.tower.mass_den',                'aeroelastic.mass_den')
