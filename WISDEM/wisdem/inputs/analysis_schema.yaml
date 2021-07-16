@@ -533,11 +533,6 @@ properties:
                                 unit: kg/m**3
                                 description: Design variable bound
                             upper_bound: *rbound
-<<<<<<< HEAD
-                            
-                    
-=======
->>>>>>> be382d5b743056a7806b57c9bd371677cfb5e0de
             monopile: *towdv
             floating:
                 type: object
