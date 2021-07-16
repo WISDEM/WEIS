@@ -99,13 +99,13 @@ Level2:
         TMax: 700.      # run simulations using IEC standards, could share that info
         CompMooring: 1
     linearization:
-        TMax: 1600.
+        TMax: 60.
         DT: 0.01
-        TrimGain: 1e-4
-        TrimTol: 1e-3
-        wind_speeds: [16]
+        TrimGain: 1e-3
+        TrimTol: 1e-2
+        wind_speeds: [8.]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 4
+        NLinTimes: 1
 
 DLC_driver:
     openfast_file_management:
