@@ -4,29 +4,19 @@ from weis.test.utils import execute_script
 all_scripts = [
     "01_aeroelasticse/run_general",
     "01_aeroelasticse/run_OLAF",
-    
     # "02_control_opt/run_lin_turbine",
     # "02_control_opt/runOptimization",
-    
     #"03_NREL5MW_OC3_spar/weis_driver", # executed in the test_OC3.py
     "03_NREL5MW_OC3_spar/weis_freq_driver",
-    
     "04_NREL5MW_OC4_semi/weis_driver",
     "04_NREL5MW_OC4_semi/weis_freq_driver",
-    
     "05_IEA-3.4-130-RWT/weis_driver",
-    
     #"06_IEA-15-240-RWT/weis_driver", # executed in the test_IEA15.py
-    
     # "07_te_flaps/dac_driver",
-
     "08_OLAF/weis_driver",
-    
     #"09_design_of_experiments/weis_driver", # executed in the test_DOE.py
-    
     "10_override_example/weis_driver",
-
-    "12_linearization/doe_driver",
+    #"12_linearization/doe_driver", # Soul crushingly long
     "12_linearization/weis_driver"
 ]
 
