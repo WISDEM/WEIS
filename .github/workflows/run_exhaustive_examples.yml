@@ -74,15 +74,14 @@ jobs:
         shell: bash
         run: |
           cd weis/test
-          mpirun -n 2 --bind-to core python run_examples.py
+          python run_examples.py
           
       # Run scripts within rotor_opt folder with MPI
-      # INCLUDED IN RUN_EXAMPLES
-      #- name: Run parallel examples rotor optimization
-      #  shell: bash
-      #  run: |
-      #    cd examples/05_IEA-3.4-130-RWT
-      #    mpirun -np 2 python weis_driver.py
+      - name: Run parallel examples rotor optimization
+        shell: bash
+        run: |
+          cd examples/05_IEA-3.4-130-RWT
+          mpirun -np 2 python weis_driver.py
 
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
@@ -91,10 +90,9 @@ jobs:
       #    python dac_driver.py
 
       # Run scripts within design of experiments folder
-      # INCLUDED IN RUN_EXAMPLES
-      #- name: Run examples design of experiments
-      #  shell: bash
-      #  run: |
-      #    cd examples/09_design_of_experiments
-      #    mpirun -n 2 --bind-to core python DOE_openfast.py
-      #    python postprocess_results.py
+      - name: Run examples design of experiments
+        shell: bash
+        run: |
+          cd examples/09_design_of_experiments
+          mpirun -n 2 --bind-to core python DOE_openfast.py
+          python postprocess_results.py
