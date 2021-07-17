@@ -1,8 +1,9 @@
 import os
 
+from scipy.interpolate import PchipInterpolator
+
 import numpy as np
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator
 
 
 class PoseOptimization(object):
@@ -702,23 +703,23 @@ class PoseOptimization(object):
                 upper=monopile_opt["layer_thickness"]["upper_bound"],
                 ref=1e-2,
             )
-            
+
         if tower_opt["E"]["flag"]:
             ivc = wt_opt.model.add_subsystem("E_ivc", om.IndepVarComp(), promotes=[])
-            ivc.add_output('E_user', val=10., units='Pa')
+            ivc.add_output("E_user", val=10.0, units="Pa")
             wt_opt.model.add_design_var(
                 "E_ivc.E_user",
                 lower=tower_opt["E"]["lower_bound"],
                 upper=tower_opt["E"]["upper_bound"],
                 ref=1e9,
             )
-            wt_opt.model.connect('E_ivc.E_user', "towerse_post.E_user")
-            
+            wt_opt.model.connect("E_ivc.E_user", "towerse_post.E_user")
+
             if self.modeling["flags"]["floating"]:
-                wt_opt.model.connect('E_ivc.E_user', "floatingse.tower.E_user")
-            
+                wt_opt.model.connect("E_ivc.E_user", "floatingse.tower.E_user")
+
         for idx, material in enumerate(wt_init["materials"]):
-            if material['name'] == 'steel':
+            if material["name"] == "steel":
                 tower_material_index = idx
 
         if tower_opt["rho"]["flag"]:
@@ -729,7 +730,7 @@ class PoseOptimization(object):
                 ref=1e3,
                 indices=[tower_material_index],
             )
-            
+
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(
