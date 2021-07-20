@@ -206,11 +206,7 @@ class TestMemberComponent(unittest.TestCase):
         self.inputs["ring_stiffener_flange_thickness"] = 0.3
         self.inputs["ring_stiffener_web_height"] = 0.5
         self.inputs["ring_stiffener_flange_width"] = 1.0
-<<<<<<< Updated upstream
         self.inputs["ring_stiffener_spacing"] = 0.2  # non-dimensional ring stiffener spacing
-=======
-        self.inputs["ring_stiffener_spacing"] = 0.2 # non-dimensional ring stiffener spacing
->>>>>>> Stashed changes
 
         self.inputs["axial_stiffener_web_thickness"] = 0.0
         self.inputs["axial_stiffener_flange_thickness"] = 0.0
