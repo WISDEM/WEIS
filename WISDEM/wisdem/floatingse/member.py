@@ -1089,6 +1089,7 @@ class MemberComponent(om.ExplicitComponent):
         h_web = inputs["ring_stiffener_web_height"]
         w_flange = inputs["ring_stiffener_flange_width"]
         L_stiffener = inputs["ring_stiffener_spacing"]
+        L=1 # non-dimensional grid for member length
 
         n_stiff = 0 if L_stiffener == 0.0 else int(np.floor(1 / L_stiffener))
         if n_stiff == 0:
