@@ -75,13 +75,14 @@ class DLCGenerator(object):
                 
         return wind_speeds
 
-    def get_wind_seeds(self, options, n_wind_speeds):
+    def get_wind_seeds(self, options, wind_speeds):
         if len(options['wind_seed']) > 0:
             wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
         else:
-            wind_seeds = self.rng.integers(2147483648, size=options['n_seeds']*n_wind_speeds, dtype=int)
+            wind_seeds = self.rng.integers(2147483648, size=options['n_seeds']*len(wind_speeds), dtype=int)
+            wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
 
-        return wind_seeds
+        return wind_speeds, wind_seeds
 
     def get_wind_heading(self, options):
         if len(options['wind_heading']) > 0:
@@ -126,8 +127,8 @@ class DLCGenerator(object):
         return probabilities
 
     def get_metocean(self, options):
-        wind_speeds = self.get_wind_speeds(options)
-        wind_seeds = self.get_wind_seeds(options, len(wind_speeds))
+        wind_speeds_indiv = self.get_wind_speeds(options)
+        wind_speeds, wind_seeds = self.get_wind_seeds(options, wind_speeds_indiv)
         wind_heading = self.get_wind_heading(options)
         wave_Hs = self.get_wave_Hs(options)
         wave_Tp = self.get_wave_Tp(options)
@@ -524,7 +525,8 @@ class DLCGenerator(object):
         wind_speeds = np.arange(self.ws_cut_in, 0.7 * self.V_ref, options['ws_bin_size'])
         if wind_speeds[-1] != self.V_ref:
             wind_speeds = np.append(wind_speeds, self.V_ref)
-        wind_seeds = self.get_wind_seeds(options, len(wind_speeds))
+        wind_speeds, wind_seeds = self.get_wind_seeds(options, wind_speeds)
+        wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
         _, _, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
         # Counter for wind seed
         i_WiSe=0

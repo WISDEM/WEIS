@@ -30,9 +30,9 @@ class TestIECWind(unittest.TestCase):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-        np.testing.assert_equal(dlc_generator.cases[5].URef, cut_out)
-        np.testing.assert_equal(dlc_generator.n_cases_dlc11, 6)
-        np.testing.assert_equal(dlc_generator.n_cases, 47)
+        np.testing.assert_equal(dlc_generator.cases[11].URef, cut_out)
+        np.testing.assert_equal(dlc_generator.n_cases_dlc11, 12)
+        np.testing.assert_equal(dlc_generator.n_cases, 53)
 
 if __name__ == "__main__":
     unittest.main()
