@@ -219,7 +219,7 @@ class DLCGenerator(object):
             if len(wave_heading)>1:
                 i_WaH+=1
                 
-        self.n_cases_dlc11 = len(wind_speeds)
+        self.n_ws_dlc11 = len(np.unique(wind_speeds))
     
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
