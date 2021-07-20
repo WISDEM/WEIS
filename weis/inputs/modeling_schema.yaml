@@ -2753,7 +2753,7 @@ properties:
                             description: Number of turbulent wind seeds
                         wind_seed:
                             type: array
-                            default: [0]
+                            default: []
                             description: Turbulent wind random number generator seeds
                             items:
                                 type: integer
