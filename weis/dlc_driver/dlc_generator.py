@@ -40,14 +40,17 @@ class DLCInstance(object):
         
 class DLCGenerator(object):
 
-    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I', wind_turbulence_class = 'B'):
+    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I', wind_turbulence_class = 'B', fix_wind_seeds=True):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
         self.wind_speed_class = wind_speed_class
         self.wind_turbulence_class = wind_turbulence_class
         self.ws_rated = ws_rated
         self.cases = []
-        self.rng = np.random.default_rng()
+        if fix_wind_seeds:
+            self.rng = np.random.default_rng(12345)
+        else:
+            self.rng = np.random.default_rng()
         self.n_cases = 0
     
     def IECwind(self):
@@ -581,7 +584,8 @@ if __name__ == "__main__":
     DLCs = modeling_options['DLC_driver']['DLCs']
     
     # Initialize the generator
-    dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class)
+    fix_wind_seeds = modeling_options['DLC_driver']['fix_wind_seeds']
+    dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class, fix_wind_seeds)
 
     # Generate cases from user inputs
     for i_DLC in range(len(DLCs)):

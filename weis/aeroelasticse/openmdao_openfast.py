@@ -1393,7 +1393,8 @@ class FASTLoadCases(ExplicitComponent):
         hub_height = float(inputs['hub_height'])
         rotorD = float(inputs['Rtip'])*2.
         PLExp = float(inputs['shearExp'])
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class)
+        fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
