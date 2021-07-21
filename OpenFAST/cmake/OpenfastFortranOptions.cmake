@@ -42,7 +42,7 @@ macro(set_fast_fortran)
 
   # Abort if we do not have gfortran or Intel Fortran Compiler.
   if (NOT (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU" OR
-        ${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel"))
+        ${CMAKE_Fortran_COMPILER_ID} MATCHES "^Intel"))
     message(FATAL_ERROR "OpenFAST requires either GFortran or Intel Fortran Compiler. Compiler detected by CMake: ${FCNAME}.")
   endif()
 
@@ -54,7 +54,7 @@ macro(set_fast_fortran)
     elseif("${CMAKE_Fortran_COMPILER_VERSION}" VERSION_LESS "4.6.0")  
         message(FATAL_ERROR "A version of GNU GFortran greater than 4.6.0 is required. GFortran version detected by CMake: ${CMAKE_Fortran_COMPILER_VERSION}.")
     endif()
-  elseif(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
+  elseif(${CMAKE_Fortran_COMPILER_ID} MATCHES "^Intel")
     if("${CMAKE_Fortran_COMPILER_VERSION}" VERSION_LESS "11")
       message(FATAL_ERROR "A version of Intel ifort greater than 11 is required. ifort version detected by CMake: ${CMAKE_Fortran_COMPILER_VERSION}.")
     endif()
@@ -68,7 +68,7 @@ macro(set_fast_fortran)
   # Get OS/Compiler specific options
   if (${CMAKE_Fortran_COMPILER_ID} STREQUAL "GNU")
     set_fast_gfortran()
-  elseif(${CMAKE_Fortran_COMPILER_ID} STREQUAL "Intel")
+  elseif(${CMAKE_Fortran_COMPILER_ID} MATCHES "^Intel")
     set_fast_intel_fortran()
   endif()
 endmacro(set_fast_fortran)
@@ -100,7 +100,6 @@ endmacro(check_f2008_features)
 macro(set_fast_gfortran)
   if(NOT WIN32)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpic ")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
   endif(NOT WIN32)
 
@@ -119,11 +118,9 @@ macro(set_fast_gfortran)
     set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fdefault-real-8")
   endif (DOUBLE_PRECISION)
 
-  # debug flags #
-  # -fcheck=all gives the error: At line 695 of file /Users/gbarter/devel/WEIS/OpenFAST/modules/hydrodyn/src/WAMIT.f90
-  #  Fortran runtime error: Index '1' of dimension 1 of array 'wamitwvdir' above upper bound of 0
+  # debug flags
   if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set( CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -pedantic -fbacktrace" ) 
+    set( CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -fcheck=all,no-array-temps -pedantic -fbacktrace -finit-real=inf -finit-integer=9999." )
   endif()
 
   if(CYGWIN)
@@ -136,10 +133,6 @@ macro(set_fast_gfortran)
   if (OPENMP)
      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fopenmp")
      set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -fopenmp" )
-     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fopenmp")
-     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -fopenmp" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fopenmp")
-     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fopenmp" )
   endif()
 
   check_f2008_features()
@@ -162,8 +155,6 @@ endmacro(set_fast_intel_fortran)
 #
 macro(set_fast_intel_fortran_posix)
   set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fpic -fpp")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fpic")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpic")
   # Deal with Double/Single precision
   if (DOUBLE_PRECISION)
     add_definitions(-DOPENFAST_DOUBLE_PRECISION)
@@ -175,20 +166,14 @@ macro(set_fast_intel_fortran_posix)
   endif (DOUBLE_PRECISION)
 
   # debug flags
-  # -check all gives the error: At line 695 of file /Users/gbarter/devel/WEIS/OpenFAST/modules/hydrodyn/src/WAMIT.f90
-  #  Fortran runtime error: Index '1' of dimension 1 of array 'wamitwvdir' above upper bound of 0
   if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set( CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -traceback" )
+    set( CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -check all,no-array-temps -traceback" )
   endif()
 
   # OPENMP
   if (OPENMP)
      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -qopenmp")
      set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -qopenmp" )
-     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -qopenmp")
-     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -qopenmp" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -qopenmp")
-     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -qopenmp" )
   endif()
 
   check_f2008_features()
@@ -235,20 +220,14 @@ macro(set_fast_intel_fortran_windows)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:${stack_size}")
 
   # debug flags
-  #  /check:all gives the error: At line 695 of file /Users/gbarter/devel/WEIS/OpenFAST/modules/hydrodyn/src/WAMIT.f90
-  #  Fortran runtime error: Index '1' of dimension 1 of array 'wamitwvdir' above upper bound of 0
   if(CMAKE_BUILD_TYPE MATCHES Debug)
-    set( CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} /traceback" )
+    set( CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} /check:all /traceback" )
   endif()
 
   # OPENMP
   if (OPENMP)
      set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} /qopenmp")
      set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} /qopenmp" )
-     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /qopenmp")
-     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} /qopenmp" )
-     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /qopenmp")
-     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /qopenmp" )
   endif()
 
   check_f2008_features()

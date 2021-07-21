@@ -19,4 +19,21 @@ WISDEM:
 
 Level1: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
-    frequencies: [1.0]
+    potential_model_override: 1 #strip theory only
+    min_freq: 0.1
+    max_freq: 1.0
+
+DLC_driver:
+    openfast_file_management:
+        OF_run_fst: NREL5MW_OC4_semi
+        OF_run_dir: temp/NREL5MW_OC4_semi
+    DLCs:
+        - DLC: "1.1"
+          ws_bin_size: 5
+          n_seeds: 1
+          analysis_time: 5.
+          transient_time: 5.
+          turbulent_wind:
+              HubHt: 110
+              GridHeight: 160
+              GridWidth: 160

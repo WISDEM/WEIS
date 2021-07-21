@@ -51,7 +51,7 @@ class CMakeBuildExt(build_ext):
 
             # CMAKE profiles default for all
             buildtype = 'RelWithDebInfo' # Hydrodyn has issues with Debug
-            cmake_args = ['-DBUILD_SHARED_LIBS=OFF',
+            cmake_args = ['-DBUILD_SHARED_LIBS=ON',
                           '-DDOUBLE_PRECISION:BOOL=OFF',
                           '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
                           '-DCMAKE_INSTALL_PREFIX='+localdir,
@@ -61,7 +61,7 @@ class CMakeBuildExt(build_ext):
             # Custom tuning
             mycompiler = self.compiler.compiler[0]
             if ci_flag:
-                tune = '-O0 -g'  #-ffpe-trap=invalid,zero,overflow,underflow
+                tune = '-g'  #-O0 -ffpe-trap=invalid,zero,overflow,underflow
                 
             elif eagle_flag:
                 tune = '-xSKYLAKE-AVX512'
@@ -104,7 +104,7 @@ class CMakeBuildExt(build_ext):
 
 # All of the extensions
 fastExt    = CMakeExtension('openfast','OpenFAST')
-roscoExt   = CMakeExtension('rosco','ROSCO')
+roscoExt   = CMakeExtension('rosco','ROSCO/ROSCO')
 extList = [roscoExt] if platform.system() == "Windows" else  [roscoExt, fastExt]
 
 # Setup content
@@ -128,7 +128,7 @@ weis_pkgs       = find_packages()
 
 # Install the python sub-packages
 print(sys.argv)
-for pkg in ['WISDEM','ROSCO_toolbox','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse']:
+for pkg in ['WISDEM','ROSCO','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse']:
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially

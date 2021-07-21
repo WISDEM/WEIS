@@ -1,5 +1,6 @@
 import os
 import dill
+import copy
 from collections import OrderedDict
 import numpy as np
 
@@ -65,10 +66,16 @@ class BaseModel:
         """
         self.desvar_shapes = OrderedDict()
         total_size = 0
+        self.idx_starts = {}
 
-        for key, value in desvars.items():
-            if isinstance(value, (float, list)):
-                value = np.array(value)
+        for key, data in desvars.items():
+            if isinstance(data, (float, list)):
+                value = np.array(data)
+            elif isinstance(data, dict):
+                value = np.array(data['values'])
+                self.idx_starts[key] = data['idx_start']
+            else:
+                value = data
 
             self.desvar_shapes[key] = value.shape
             total_size += value.size
@@ -86,8 +93,8 @@ class BaseModel:
         outputs : dict of outputs
             Keys and values for output values from `compute()` to save.
         """
-        self.saved_desvars.append(self.flatten_desvars(desvars))
-        self.saved_outputs.append(outputs)
+        self.saved_desvars.append(copy.deepcopy(self.flatten_desvars(desvars)))
+        self.saved_outputs.append(copy.deepcopy(outputs))  # unclear why this is needed for output arrays
 
         # Only save to the pickle file if warmstart_file was provided
         if self.warmstart_file is not None:
@@ -128,7 +135,26 @@ class BaseModel:
 
         # Else, return None, so the function needs to be evaluated at this point
         return None
+        
+    def print_past_results(self):
+        """
+        Print out all desvars and outputs from past results. Useful for
+        post-processing and visualization.
+        """
 
+        print()
+        for (desvars, outputs) in zip(self.saved_desvars, self.saved_outputs):
+            print('Desvars:')
+            desvars = self.unflatten_desvars(desvars)
+            for key in desvars:
+                print(f"{key} : {desvars[key]}")
+            print()
+            print('Outputs:')
+            for key in outputs:
+                print(f"{key} : {outputs[key]}")
+            print()
+            print()
+            
     def compute(self, desvars):
         """
         Method to actually compute function outputs given desvars, needs to be
@@ -235,9 +261,13 @@ class BaseModel:
         """
         flattened_desvars = []
 
-        for key, value in desvars.items():
-            if isinstance(value, (float, list)):
-                value = np.array(value)
+        for key, data in desvars.items():
+            if isinstance(data, (float, list)):
+                value = np.array(data)
+            elif isinstance(data, dict):
+                value = np.array(data['values'])
+            else:
+                value = data
             flattened_value = np.atleast_1d(np.squeeze(value.flatten()))
             flattened_desvars.extend(flattened_value)
 
@@ -261,9 +291,13 @@ class BaseModel:
         desvars = OrderedDict()
         for key, shape in self.desvar_shapes.items():
             size = int(np.prod(shape))
-            desvars[key] = flattened_desvars[
+            values = flattened_desvars[
                 size_counter : size_counter + size
             ].reshape(shape)
             size_counter += size
+            if key in self.idx_starts.keys():
+                desvars[key] = {'values' : values, 'idx_start' : self.idx_starts[key]}
+            else:
+                desvars[key] = values
 
         return desvars

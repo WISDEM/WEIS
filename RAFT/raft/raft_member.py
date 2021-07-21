@@ -448,12 +448,12 @@ class Member:
             Mmat[3:,3:] = I_rot     # mass and inertia matrix about the submember's CG in unrotated, but translated local frame
 
             # translate this submember's local inertia matrix to the PRP and add it to the total member's M_struc matrix
-            self.M_struc += translateMatrix6to6DOF(center, Mmat) # mass matrix of the member about the PRP
+            self.M_struc += translateMatrix6to6DOF(Mmat, center) # mass matrix of the member about the PRP
 
 
             # end of submember for loop
 
-
+        
         # END CAPS/BULKHEADS
         # --------- Add the inertia properties of any end caps ---------
         self.m_cap_list = []
@@ -606,8 +606,7 @@ class Member:
             Mmat[3:,3:] = I_rot     # mass and inertia matrix about the submember's CG in unrotated, but translated local frame
 
             # translate this submember's local inertia matrix to the PRP and add it to the total member's M_struc matrix
-            self.M_struc += translateMatrix6to6DOF(center_cap, Mmat) # mass matrix of the member about the PRP
-
+            self.M_struc += translateMatrix6to6DOF(Mmat, center_cap) # mass matrix of the member about the PRP
 
 
         mass = self.M_struc[0,0]        # total mass of the entire member [kg]
@@ -619,7 +618,7 @@ class Member:
 
 
 
-    def getHydrostatics(self, env):
+    def getHydrostatics(self, rho, g):
         '''Calculates member hydrostatic properties, namely buoyancy and stiffness matrix'''
 
         pi = np.pi
@@ -705,14 +704,14 @@ class Member:
                 # derivatives from global to local
                 dPhi_dThx  = -sinBeta                     # \frac{d\phi}{d\theta_x} = \sin\beta
                 dPhi_dThy  =  cosBeta
-                dFz_dz   = -env.rho*env.g*AWP /cosPhi
+                dFz_dz   = -rho*g*AWP /cosPhi
 
                 # note: below calculations are based on untapered case, but
                 # temporarily approximated for taper by using dWP (diameter at water plane crossing) <<< this is rough
 
                 # buoyancy force and moment about end A
-                Fz = env.rho*env.g* V_UWi
-                M  = -env.rho*env.g*pi*( dWP**2/32*(2.0 + tanPhi**2) + 0.5*(rA[2]/cosPhi)**2)*sinPhi  # moment about axis of incline
+                Fz = rho*g* V_UWi
+                M  = -rho*g*pi*( dWP**2/32*(2.0 + tanPhi**2) + 0.5*(rA[2]/cosPhi)**2)*sinPhi  # moment about axis of incline
                 Mx = M*dPhi_dThx
                 My = M*dPhi_dThy
 
@@ -723,17 +722,17 @@ class Member:
 
                 # normal approach to hydrostatic stiffness, using this temporarily until above fancier approach is verified
                 Cmat[2,2] += -dFz_dz
-                Cmat[2,3] += env.rho*env.g*(     -AWP*yWP    )
-                Cmat[2,4] += env.rho*env.g*(      AWP*xWP    )
-                Cmat[3,2] += env.rho*env.g*(     -AWP*yWP    )
-                Cmat[3,3] += env.rho*env.g*(IxWP + AWP*yWP**2 )
-                Cmat[3,4] += env.rho*env.g*(      AWP*xWP*yWP)
-                Cmat[4,2] += env.rho*env.g*(      AWP*xWP    )
-                Cmat[4,3] += env.rho*env.g*(      AWP*xWP*yWP)
-                Cmat[4,4] += env.rho*env.g*(IyWP + AWP*xWP**2 )
+                Cmat[2,3] += rho*g*(     -AWP*yWP    )
+                Cmat[2,4] += rho*g*(      AWP*xWP    )
+                Cmat[3,2] += rho*g*(     -AWP*yWP    )
+                Cmat[3,3] += rho*g*(IxWP + AWP*yWP**2 )
+                Cmat[3,4] += rho*g*(      AWP*xWP*yWP)
+                Cmat[4,2] += rho*g*(      AWP*xWP    )
+                Cmat[4,3] += rho*g*(      AWP*xWP*yWP)
+                Cmat[4,4] += rho*g*(IyWP + AWP*xWP**2 )
 
-                Cmat[3,3] += env.rho*env.g*V_UWi * r_center[2]
-                Cmat[4,4] += env.rho*env.g*V_UWi * r_center[2]
+                Cmat[3,3] += rho*g*V_UWi * r_center[2]
+                Cmat[4,4] += rho*g*V_UWi * r_center[2]
 
                 V_UW += V_UWi
                 r_centerV += r_center*V_UWi
@@ -751,11 +750,11 @@ class Member:
                 r_center = rA + self.q*hc             # absolute coordinates of center of volume of this segment[m]
 
                 # buoyancy force (and moment) vector
-                Fvec += translateForce3to6DOF( r_center, np.array([0, 0, env.rho*env.g*V_UWi]) )
+                Fvec += translateForce3to6DOF(np.array([0, 0, rho*g*V_UWi]), r_center)
 
                 # hydrostatic stiffness matrix (about end A)
-                Cmat[3,3] += env.rho*env.g*V_UWi * r_center[2]
-                Cmat[4,4] += env.rho*env.g*V_UWi * r_center[2]
+                Cmat[3,3] += rho*g*V_UWi * r_center[2]
+                Cmat[4,4] += rho*g*V_UWi * r_center[2]
 
                 V_UW += V_UWi
                 r_centerV += r_center*V_UWi
@@ -768,12 +767,12 @@ class Member:
             r_center = r_centerV/V_UW    # calculate overall member center of buoyancy
         else:
             r_center = np.zeros(3)       # temporary fix for out-of-water members
-
+        
         return Fvec, Cmat, V_UW, r_center, AWP, IWP, xWP, yWP
 
 
-    def plot(self, ax):
-        '''Draws the member on the passed axes'''
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[]):
+        '''Draws the member on the passed axes, and optional platform offset and rotation matrix'''
 
         # --- get coordinates of member edges in member reference frame -------------------
 
@@ -809,14 +808,19 @@ class Member:
             coords = np.vstack([X, Y, Z])
 
 
-        # ----- rotate into global frame ------------------------------
-        newcoords = np.matmul(self.R, coords)
+        # ----- move to global frame ------------------------------
+        newcoords = np.matmul(self.R, coords)          # relative orientation in platform
 
-        # shift to end A location
-        Xs = newcoords[0,:] + self.rA[0]
-        Ys = newcoords[1,:] + self.rA[1]
-        Zs = newcoords[2,:] + self.rA[2]
+        newcoords = newcoords + self.rA[:,None]        # shift to end A location, still relative to platform
+        
+        if len(R_ptfm) > 0:
+            newcoords = np.matmul(R_ptfm, newcoords)   # account for offset platform orientation
 
+        # apply platform translational offset
+        Xs = newcoords[0,:] + r_ptfm[0]
+        Ys = newcoords[1,:] + r_ptfm[1]
+        Zs = newcoords[2,:] + r_ptfm[2]
+        
         # plot on the provided axes
         linebit = []  # make empty list to hold plotted lines, however many there are
         for i in range(n):  #range(int(len(Xs)/2-1)):
@@ -824,10 +828,10 @@ class Member:
             #linebit.append(ax.plot(Xs[[2*i,2*i+2]],Ys[[2*i,2*i+2]],Zs[[2*i,2*i+2]]      , color='k'))  # end A edges
             #linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color='k'))  # end B edges
 
-            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color='k'))  # side edges
+            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color='k', lw=0.5))  # side edges
 
         for j in range(m):
-            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color='k'))  # station rings
+            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color='k', lw=0.5))  # station rings
 
         return linebit
 
