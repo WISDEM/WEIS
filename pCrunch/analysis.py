@@ -39,6 +39,7 @@ class LoadsAnalysis:
         trim_data : tuple
             Trim processed outputs to desired times.
             Format: (min, max)
+        return_intermediate : bool
         """
 
         self.outputs = outputs
@@ -52,6 +53,7 @@ class LoadsAnalysis:
         self._mc = kwargs.get("magnitude_channels", {})
         self._fc = kwargs.get("fatigue_channels", {})
         self._td = kwargs.get("trim_data", ())
+        self._ri = kwargs.get("return_intermediate", False)
 
     def process_outputs(self, cores=1, **kwargs):
         """
@@ -60,10 +62,10 @@ class LoadsAnalysis:
         """
 
         if cores > 1:
-            stats, extrs, dels = self._process_parallel(cores, **kwargs)
+            stats, extrs, dels, ranges, Nrf, Mrf = self._process_parallel(cores, **kwargs)
 
         else:
-            stats, extrs, dels = self._process_serial(**kwargs)
+            stats, extrs, dels, ranges, Nrf, Mrf = self._process_serial(**kwargs)
 
         summary_stats, extremes, DELs = self.post_process(
             stats, extrs, dels, **kwargs
@@ -71,6 +73,9 @@ class LoadsAnalysis:
         self._summary_stats = summary_stats
         self._extremes = extremes
         self._dels = DELs
+        self._ranges = ranges
+        self._nrf = Nrf
+        self._mrf = Mrf
 
     def _process_serial(self, **kwargs):
         """Process outputs in serieal in serial."""
@@ -78,16 +83,22 @@ class LoadsAnalysis:
         summary_stats = {}
         extremes = {}
         DELs = {}
+        ranges = {}
+        Nrf = {}
+        Mrf = {}
 
         for output in self.outputs:
-            filename, stats, extrs, dels = self._process_output(
+            filename, stats, extrs, dels, r, nrf, mrf = self._process_output(
                 output, **kwargs
             )
             summary_stats[filename] = stats
             extremes[filename] = extrs
             DELs[filename] = dels
+            ranges[filename] = r
+            Nrf[filename] = nrf
+            Mrf[filename] = mrf
 
-        return summary_stats, extremes, DELs
+        return summary_stats, extremes, DELs, ranges, Nrf, Mrf
 
     def _process_parallel(self, cores, **kwargs):
         """
@@ -101,6 +112,9 @@ class LoadsAnalysis:
         summary_stats = {}
         extremes = {}
         DELs = {}
+        ranges = {}
+        Nrf = {}
+        Mrf = {}
 
         pool = mp.Pool(cores)
         returned = pool.map(
@@ -109,12 +123,15 @@ class LoadsAnalysis:
         pool.close()
         pool.join()
 
-        for filename, stats, extrs, dels in returned:
+        for filename, stats, extrs, dels, r, nrf, mrf in returned:
             summary_stats[filename] = stats
             extremes[filename] = extrs
             DELs[filename] = dels
+            ranges[filename] = r
+            Nrf[filename] = nrf
+            Mrf[filename] = mrf
 
-        return summary_stats, extremes, DELs
+        return summary_stats, extremes, DELs, ranges, Nrf, Mrf
 
     def _process_output(self, f, **kwargs):
         """
@@ -143,9 +160,9 @@ class LoadsAnalysis:
         elif isinstance(self._ec, list):
             extremes = output.extremes(self._ec)
 
-        dels = self.get_DELs(output, **kwargs)
+        dels, ranges, Nrf, Mrf = self.get_DELs(output, **kwargs)
 
-        return output.filename, stats, extremes, dels
+        return output.filename, stats, extremes, dels, ranges, Nrf, Mrf
 
     def get_summary_stats(self, output, **kwargs):
         """
@@ -315,6 +332,45 @@ class LoadsAnalysis:
 
         return self._dels
 
+    @property
+    def ranges(self):
+        """Returns ranges of the rainflow counting if `return_intermediate` is
+        passed."""
+
+        if self._ri is False:
+            print(f"Intermediate data not available as `return_intermediate` "
+                  f"flag was False. Please rerun with this flag set to True.")
+
+            return None
+
+        return self._ranges
+
+    @property
+    def means(self):
+        """Returns means of the rainflow counting if `return_intermediate` is
+        passed."""
+
+        if self._ri is False:
+            print(f"Intermediate data not available as `return_intermediate` "
+                  f"flag was False. Please rerun with this flag set to True.")
+
+            return None
+
+        return self._mrf
+
+    @property
+    def counts(self):
+        """Returns counts of the rainflow counting if `return_intermediate` is
+        passed."""
+
+        if self._ri is False:
+            print(f"Intermediate data not available as `return_intermediate` "
+                  f"flag was False. Please rerun with this flag set to True.")
+
+            return None
+
+        return self._nrf
+
     def get_DELs(self, output, **kwargs):
         """
         Appends computed damage equivalent loads for fatigue channels in
@@ -326,18 +382,33 @@ class LoadsAnalysis:
         """
 
         DELs = {}
+        ranges = {}
+        Nrf = {}
+        Mrf = {}
+
         for chan, slope in self._fc.items():
+
             try:
-                DEL = self._compute_del(
-                    output[chan], slope, output.elapsed_time, **kwargs
+                DEL, intm = self._compute_del(
+                    output[chan], slope, output.elapsed_time,
+                    return_intermediate=self._ri, **kwargs
                 )
                 DELs[chan] = DEL
+
+                if intm:
+                    ranges[chan], Nrf[chan], Mrf[chan] = intm
+
+                else:
+                    ranges[chan], Nrf[chan], Mrf[chan] = [np.NaN] * 3
 
             except IndexError as e:
                 print(f"Channel '{chan}' not found for DEL calculation.")
                 DELs[chan] = np.NaN
+                ranges[chan] = np.NaN
+                Nrf[chan] = np.NaN
+                Mrf[chan] = np.NaN
 
-        return DELs
+        return DELs, ranges, Nrf, Mrf
 
     @staticmethod
     def _compute_del(ts, slope, elapsed, **kwargs):
@@ -355,16 +426,24 @@ class LoadsAnalysis:
         rainflow_bins : int
             Number of bins used in rainflow analysis.
             Default: 100
+        return_intermediate
         """
 
         bins = kwargs.get("rainflow_bins", 100)
+        return_intermediate = kwargs.get("return_intermediate")
 
-        ranges = fatpack.find_rainflow_ranges(ts)
+        ranges, Mrf = fatpack.find_rainflow_ranges(ts, return_means=True)
         Nrf, Srf = fatpack.find_range_count(ranges, 100)
         DELs = Srf ** slope * Nrf / elapsed
         DEL = DELs.sum() ** (1 / slope)
 
-        return DEL
+        if return_intermediate:
+            intm = (ranges, Nrf, Mrf)
+        
+        else:
+            intm = None
+
+        return DEL, intm
 
 
 class PowerProduction:
