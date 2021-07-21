@@ -68,6 +68,8 @@ class Body():
         
         self.sharedLineTheta = []
         self.fairR = 0.
+        
+        self.R = np.eye(3)             # body orientation rotation matrix
     
         #print("Created Body "+str(self.number))
         
@@ -118,9 +120,11 @@ class Body():
         else:
             raise ValueError(f"Body setPosition method requires an argument of size 6, but size {len(r6):d} was provided")
         
+        self.R = rotationMatrix(self.r6[3], self.r6[4], self.r6[5])   # update body rotation matrix
+        
         # update the position of any attached Points
         for PointID,rPointRel in zip(self.attachedP,self.rPointRel):
-            rPoint = transformPosition(rPointRel, r6)            
+            rPoint = np.matmul(self.R, rPointRel) + self.r6[:3]  # rPoint = transformPosition(rPointRel, r6)            
             self.sys.pointList[PointID-1].setPosition(rPoint)
    
         if self.sys.display > 3:     
@@ -349,5 +353,5 @@ class Body():
     
     
     
-    
+#
     

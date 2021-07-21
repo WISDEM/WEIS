@@ -286,23 +286,23 @@ def writeMesh(savedNodes, savedPanels, oDir=""):
     if osp.isdir(oDir) is not True:
         os.makedirs(oDir)
         
-    oFilePath = os.path.join(oDir, f'HullMesh.pnl')
+    oFilePath = os.path.join(oDir, 'HullMesh.pnl')
 
     oFile = open(oFilePath, 'w')
-    oFile.write(f'    --------------Hull Mesh File---------------\n\n')
-    oFile.write(f'    # Number of Panels, Nodes, X-Symmetry and Y-Symmetry\n')
+    oFile.write('    --------------Hull Mesh File---------------\n\n')
+    oFile.write('    # Number of Panels, Nodes, X-Symmetry and Y-Symmetry\n')
     oFile.write(f'         {numPanels}         {numNodes}         0         0\n\n')
 
-    oFile.write(f'    #Start Definition of Node Coordinates     ! node_number   x   y   z\n')
+    oFile.write('    #Start Definition of Node Coordinates     ! node_number   x   y   z\n')
     for i in range(numNodes):
         oFile.write(f'{i+1:>5}{savedNodes[i][0]:18.3f}{savedNodes[i][1]:18.3f}{savedNodes[i][2]:18.3f}\n')
-    oFile.write(f'   #End Definition of Node Coordinates\n\n')
+    oFile.write('   #End Definition of Node Coordinates\n\n')
     
-    oFile.write(f'   #Start Definition of Node Relations   ! panel_number  number_of_vertices   Vertex1_ID   Vertex2_ID   Vertex3_ID   (Vertex4_ID)\n')
+    oFile.write('   #Start Definition of Node Relations   ! panel_number  number_of_vertices   Vertex1_ID   Vertex2_ID   Vertex3_ID   (Vertex4_ID)\n')
     for i in range(numPanels):
         oFile.write(''.join([f'{p:>8}' for p in savedPanels[i]])+'\n')
-    oFile.write(f'   #End Definition of Node Relations\n\n')
-    oFile.write(f'    --------------End Hull Mesh File---------------\n')
+    oFile.write('   #End Definition of Node Relations\n\n')
+    oFile.write('    --------------End Hull Mesh File---------------\n')
     
     oFile.close()
     

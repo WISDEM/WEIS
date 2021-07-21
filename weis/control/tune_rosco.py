@@ -41,9 +41,6 @@ class TuneROSCO(ExplicitComponent):
         rotorse_init_options = self.modeling_options['WISDEM']['RotorSE']
         n_pc     = rotorse_init_options['n_pc']
 
-        # Initialize DISCON_in var tree
-        self.modeling_options['openfast']['fst_vt']['DISCON_in'] = {}
-
         # Input parameters
         self.controller_params = {}
         # Controller Flags
@@ -146,6 +143,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_input('VS_zeta',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('VS_omega',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
+        self.add_output('VS_Kp',            val=0.0,        units='s',                          desc='Generator torque control proportional gain at first point in schedule')
+        self.add_output('VS_Ki',            val=0.0,                                            desc='Generator torque control integral gain at first point in schedule')
         if rosco_init_options['Flp_Mode'] > 0:
             self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
             self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
@@ -161,7 +160,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_output('PC_GS_angles',     val=np.zeros(rosco_init_options['PC_GS_n']), units='rad', desc='Gain-schedule table: pitch angles')
         self.add_output('PC_GS_Kp',         val=np.zeros(rosco_init_options['PC_GS_n']), units='s',   desc='Gain-schedule table: pitch controller kp gains')
         self.add_output('PC_GS_Ki',         val=np.zeros(rosco_init_options['PC_GS_n']),              desc='Gain-schedule table: pitch controller ki gains')
-        self.add_output('Fl_Kp',            val=0.0,            desc='Flap control integral gain')
+        self.add_output('Fl_Kp',            val=0.0,            desc='Floating feedback gain')
 
         # self.add_output('VS_Rgn2K',     val=0.0, units='N*m/(rad/s)**2',      desc='Generator torque constant in Region 2 (HSS side), [N-m/(rad/s)^2]')
 
@@ -279,78 +278,78 @@ class TuneROSCO(ExplicitComponent):
 
         # DISCON Parameters
         #   - controller
-        self.ROSCO_input = {}
-        self.ROSCO_input['LoggingLevel'] = controller.LoggingLevel
-        self.ROSCO_input['F_LPFType'] = controller.F_LPFType
-        self.ROSCO_input['F_NotchType'] = controller.F_NotchType
-        self.ROSCO_input['IPC_ControlMode'] = controller.IPC_ControlMode
-        self.ROSCO_input['VS_ControlMode'] = controller.VS_ControlMode
-        self.ROSCO_input['PC_ControlMode'] = controller.PC_ControlMode
-        self.ROSCO_input['Y_ControlMode'] = controller.Y_ControlMode
-        self.ROSCO_input['SS_Mode'] = controller.SS_Mode
-        self.ROSCO_input['WE_Mode'] = controller.WE_Mode
-        self.ROSCO_input['PS_Mode'] = controller.PS_Mode
-        self.ROSCO_input['SD_Mode'] = controller.SD_Mode
-        self.ROSCO_input['Fl_Mode'] = controller.Fl_Mode
-        self.ROSCO_input['Flp_Mode'] = controller.Flp_Mode
-        self.ROSCO_input['F_LPFDamping'] = controller.F_LPFDamping
-        self.ROSCO_input['F_SSCornerFreq'] = controller.ss_cornerfreq
-        self.ROSCO_input['PC_GS_angles'] = controller.pitch_op_pc
-        self.ROSCO_input['PC_GS_KP'] = controller.pc_gain_schedule.Kp
-        self.ROSCO_input['PC_GS_KI'] = controller.pc_gain_schedule.Ki
-        self.ROSCO_input['PC_MaxPit'] = controller.max_pitch
-        self.ROSCO_input['PC_MinPit'] = controller.min_pitch
-        self.ROSCO_input['IPC_Ki'] = float(inputs['IPC_Ki1p'])
-        self.ROSCO_input['VS_MinOMSpd'] = controller.vs_minspd
-        self.ROSCO_input['VS_Rgn2K'] = controller.vs_rgn2K
-        self.ROSCO_input['VS_RefSpd'] = controller.vs_refspd
-        self.ROSCO_input['VS_KP'] = controller.vs_gain_schedule.Kp
-        self.ROSCO_input['VS_KI'] = controller.vs_gain_schedule.Ki
-        self.ROSCO_input['SS_VSGain'] = controller.ss_vsgain
-        self.ROSCO_input['SS_PCGain'] = controller.ss_pcgain
-        self.ROSCO_input['WE_FOPoles_N'] = len(controller.v)
-        self.ROSCO_input['WE_FOPoles_v'] = controller.v
-        self.ROSCO_input['WE_FOPoles'] = controller.A
-        self.ROSCO_input['ps_wind_speeds'] = controller.v
-        self.ROSCO_input['PS_BldPitchMin'] = controller.ps_min_bld_pitch
-        self.ROSCO_input['SD_MaxPit'] = controller.sd_maxpit + 0.1
-        self.ROSCO_input['SD_CornerFreq'] = controller.sd_cornerfreq
-        self.ROSCO_input['Fl_Kp'] = controller.Kp_float
-        self.ROSCO_input['Flp_Kp'] = controller.Kp_flap
-        self.ROSCO_input['Flp_Ki'] = controller.Ki_flap
-        self.ROSCO_input['Flp_MaxPit'] = controller.flp_maxpit
-        self.ROSCO_input['Flp_Angle'] = 0.
+        ROSCO_input = {}
+        ROSCO_input['LoggingLevel'] = controller.LoggingLevel
+        ROSCO_input['F_LPFType'] = controller.F_LPFType
+        ROSCO_input['F_NotchType'] = controller.F_NotchType
+        ROSCO_input['IPC_ControlMode'] = controller.IPC_ControlMode
+        ROSCO_input['VS_ControlMode'] = controller.VS_ControlMode
+        ROSCO_input['PC_ControlMode'] = controller.PC_ControlMode
+        ROSCO_input['Y_ControlMode'] = controller.Y_ControlMode
+        ROSCO_input['SS_Mode'] = controller.SS_Mode
+        ROSCO_input['WE_Mode'] = controller.WE_Mode
+        ROSCO_input['PS_Mode'] = controller.PS_Mode
+        ROSCO_input['SD_Mode'] = controller.SD_Mode
+        ROSCO_input['Fl_Mode'] = controller.Fl_Mode
+        ROSCO_input['Flp_Mode'] = controller.Flp_Mode
+        ROSCO_input['F_LPFDamping'] = controller.F_LPFDamping
+        ROSCO_input['F_SSCornerFreq'] = controller.ss_cornerfreq
+        ROSCO_input['PC_GS_angles'] = controller.pitch_op_pc
+        ROSCO_input['PC_GS_KP'] = controller.pc_gain_schedule.Kp
+        ROSCO_input['PC_GS_KI'] = controller.pc_gain_schedule.Ki
+        ROSCO_input['PC_MaxPit'] = controller.max_pitch
+        ROSCO_input['PC_MinPit'] = controller.min_pitch
+        ROSCO_input['IPC_Ki'] = float(inputs['IPC_Ki1p'])
+        ROSCO_input['VS_MinOMSpd'] = controller.vs_minspd
+        ROSCO_input['VS_Rgn2K'] = controller.vs_rgn2K
+        ROSCO_input['VS_RefSpd'] = controller.vs_refspd
+        ROSCO_input['VS_KP'] = controller.vs_gain_schedule.Kp
+        ROSCO_input['VS_KI'] = controller.vs_gain_schedule.Ki
+        ROSCO_input['SS_VSGain'] = controller.ss_vsgain
+        ROSCO_input['SS_PCGain'] = controller.ss_pcgain
+        ROSCO_input['WE_FOPoles_N'] = len(controller.v)
+        ROSCO_input['WE_FOPoles_v'] = controller.v
+        ROSCO_input['WE_FOPoles'] = controller.A
+        ROSCO_input['ps_wind_speeds'] = controller.v
+        ROSCO_input['PS_BldPitchMin'] = controller.ps_min_bld_pitch
+        ROSCO_input['SD_MaxPit'] = controller.sd_maxpit + 0.1
+        ROSCO_input['SD_CornerFreq'] = controller.sd_cornerfreq
+        ROSCO_input['Fl_Kp'] = controller.Kp_float
+        ROSCO_input['Flp_Kp'] = controller.Kp_flap
+        ROSCO_input['Flp_Ki'] = controller.Ki_flap
+        ROSCO_input['Flp_MaxPit'] = controller.flp_maxpit
+        ROSCO_input['Flp_Angle'] = 0.
         
         # - turbine
-        self.ROSCO_input['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
-        self.ROSCO_input['v_rated'] = float(inputs['v_rated'])
-        self.ROSCO_input['F_FlpCornerFreq']  = [float(inputs['flap_freq']) * 2 * np.pi / 3., 0.7]
-        self.ROSCO_input['F_LPFCornerFreq']  = float(inputs['edge_freq']) * 2 * np.pi / 4.
-        self.ROSCO_input['F_NotchCornerFreq'] = float(inputs['twr_freq'])
-        self.ROSCO_input['F_FlCornerFreq'] = [float(inputs['ptfm_freq']), 0.707] 
-        self.ROSCO_input['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
-        self.ROSCO_input['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
-        self.ROSCO_input['VS_MaxRat'] = WISDEM_turbine.max_torque_rate
-        self.ROSCO_input['PC_RefSpd'] = WISDEM_turbine.rated_rotor_speed * WISDEM_turbine.Ng
-        self.ROSCO_input['VS_RtPwr'] = WISDEM_turbine.rated_power
-        self.ROSCO_input['VS_RtTq'] = WISDEM_turbine.rated_torque
-        self.ROSCO_input['VS_MaxTq'] = WISDEM_turbine.rated_torque * 1.1
-        self.ROSCO_input['VS_TSRopt'] = WISDEM_turbine.TSR_operational
-        self.ROSCO_input['WE_RhoAir'] = WISDEM_turbine.rho
-        self.ROSCO_input['WE_GearboxRatio'] = WISDEM_turbine.Ng
-        self.ROSCO_input['WE_Jtot'] = WISDEM_turbine.J
-        self.ROSCO_input['Cp_pitch_initial_rad'] = self.pitch_vector
-        self.ROSCO_input['Cp_TSR_initial'] = self.tsr_vector
-        self.ROSCO_input['Cp_table'] = WISDEM_turbine.Cp_table
-        self.ROSCO_input['Ct_table'] = WISDEM_turbine.Ct_table
-        self.ROSCO_input['Cq_table'] = WISDEM_turbine.Cq_table
-        self.ROSCO_input['Cp'] = WISDEM_turbine.Cp
-        self.ROSCO_input['Ct'] = WISDEM_turbine.Ct
-        self.ROSCO_input['Cq'] = WISDEM_turbine.Cq
+        ROSCO_input['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
+        ROSCO_input['v_rated'] = float(inputs['v_rated'])
+        ROSCO_input['F_FlpCornerFreq']  = [float(inputs['flap_freq']) * 2 * np.pi / 3., 0.7]
+        ROSCO_input['F_LPFCornerFreq']  = float(inputs['edge_freq']) * 2 * np.pi / 4.
+        ROSCO_input['F_NotchCornerFreq'] = float(inputs['twr_freq'])
+        ROSCO_input['F_FlCornerFreq'] = [float(inputs['ptfm_freq']), 0.707] 
+        ROSCO_input['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
+        ROSCO_input['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
+        ROSCO_input['VS_MaxRat'] = WISDEM_turbine.max_torque_rate
+        ROSCO_input['PC_RefSpd'] = WISDEM_turbine.rated_rotor_speed * WISDEM_turbine.Ng
+        ROSCO_input['VS_RtPwr'] = WISDEM_turbine.rated_power
+        ROSCO_input['VS_RtTq'] = WISDEM_turbine.rated_torque
+        ROSCO_input['VS_MaxTq'] = WISDEM_turbine.rated_torque * 1.1
+        ROSCO_input['VS_TSRopt'] = WISDEM_turbine.TSR_operational
+        ROSCO_input['WE_RhoAir'] = WISDEM_turbine.rho
+        ROSCO_input['WE_GearboxRatio'] = WISDEM_turbine.Ng
+        ROSCO_input['WE_Jtot'] = WISDEM_turbine.J
+        ROSCO_input['Cp_pitch_initial_rad'] = self.pitch_vector
+        ROSCO_input['Cp_TSR_initial'] = self.tsr_vector
+        ROSCO_input['Cp_table'] = WISDEM_turbine.Cp_table
+        ROSCO_input['Ct_table'] = WISDEM_turbine.Ct_table
+        ROSCO_input['Cq_table'] = WISDEM_turbine.Cq_table
+        ROSCO_input['Cp'] = WISDEM_turbine.Cp
+        ROSCO_input['Ct'] = WISDEM_turbine.Ct
+        ROSCO_input['Cq'] = WISDEM_turbine.Cq
 
-        self.modeling_options['openfast']['fst_vt']['DISCON_in'] = self.ROSCO_input  
+        if (self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']):
+            self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['DISCON_in'] = ROSCO_input
         
-
         # Outputs 
         if rosco_init_options['Flp_Mode'] >= 1:
             outputs['flptune_coeff1']   = 2*WISDEM_turbine.bld_flapwise_damp*WISDEM_turbine.bld_flapwise_freq + controller.kappa[-1]*WISDEM_turbine.bld_flapwise_freq**2*controller.Kp_flap[-1]
@@ -359,12 +358,14 @@ class TuneROSCO(ExplicitComponent):
         outputs['PC_Ki']   = controller.pc_gain_schedule.Ki[0]
         outputs['Flp_Kp']  = controller.Kp_flap[-1]
         outputs['Flp_Ki']  = controller.Ki_flap[-1]
-
+        outputs['Fl_Kp']   = controller.Kp_float
 
         outputs['PC_GS_angles'] = controller.pitch_op_pc
         outputs['PC_GS_Kp']     = controller.pc_gain_schedule.Kp
         outputs['PC_GS_Ki']     = controller.pc_gain_schedule.Ki
         # outputs['VS_Rgn2K']     = controller.vs_rgn2K
+        outputs['VS_Kp'] = controller.vs_gain_schedule.Kp[0]
+        outputs['VS_Ki'] = controller.vs_gain_schedule.Ki[0]
  
 class Cp_Ct_Cq_Tables(ExplicitComponent):
     def initialize(self):

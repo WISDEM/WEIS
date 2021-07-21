@@ -30,6 +30,12 @@ class SolveError(Error):
         self.message = message
     
 
+# Generic MoorPy error
+class MoorPyError(Error):
+    '''Derived error class for MoorPy. Contains an error message'''
+    def __init__(self, message):
+        self.message = str(message)
+
 
 
 

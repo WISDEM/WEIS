@@ -1,28 +1,28 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from weis.aeroelasticse.pyIECWind import pyIECWind_extreme
+from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 from scipy.special import modstruve, iv
 
 from ROSCO_toolbox.ofTools.util import spectral
-from weis.aeroelasticse.Turbsim_mdao.turbsim_file import TurbSimFile
+from weis.aeroelasticse.turbsim_file import TurbSimFile
 
 
 def IECKaimal(f, V_ref, HH, Class, Categ, TurbMod, R):
     
     ###### Initialize IEC Wind parameters #######
-    iec_wind = pyIECWind_extreme()
-    iec_wind.z_hub = HH
-    iec_wind.Turbine_Class = Class
-    iec_wind.Turbulence_Class = Categ
-    iec_wind.setup()
+    iec_turb = IEC_TurbulenceModels()
+    iec_turb.z_hub = HH
+    iec_turb.Turbine_Class = Class
+    iec_turb.Turbulence_Class = Categ
+    iec_turb.setup()
 
     # Compute wind turbulence standard deviation (invariant with height)
     if TurbMod == 'NTM':
-        sigma_1 = iec_wind.NTM(V_ref)
+        sigma_1 = iec_turb.NTM(V_ref)
     elif TurbMod == 'ETM':
-        sigma_1 = iec_wind.ETM(V_ref)
+        sigma_1 = iec_turb.ETM(V_ref)
     elif TurbMod == 'EWM':
-        sigma_1 = iec_wind.EWM(V_ref)
+        sigma_1 = iec_turb.EWM(V_ref)
     else:
         raise Exception("Wind model must be either NTM, ETM, or EWM. While you wrote " + TurbMod)
 

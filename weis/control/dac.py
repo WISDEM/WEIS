@@ -235,11 +235,10 @@ class RunXFOIL(ExplicitComponent):
         self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
         self.n_tab         = n_tab     = rotorse_options['n_tab']# Number of tabulated data. For distributed aerodynamic control this could be > 1
         self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
-        self.xfoil_path    = self.options['modeling_options']['xfoil']['path']
 
         # Use openfast cores for parallelization of xfoil 
-        FASTpref = self.options['modeling_options']['openfast']
-        xfoilpref = self.options['modeling_options']['xfoil']
+        xfoilpref = self.options['modeling_options']['Level3']['xfoil']
+        self.xfoil_path = xfoilpref['path']
 
         try:
             if xfoilpref['run_parallel']:
@@ -250,7 +249,7 @@ class RunXFOIL(ExplicitComponent):
             self.cores = 1
         
         if MPI and self.options['modeling_options']['Level3']['flag'] and self.options['opt_options']['driver']['optimization']['flag']:
-            self.mpi_comm_map_down = FASTpref['analysis_settings']['mpi_comm_map_down']
+            self.mpi_comm_map_down = self.options['modeling_options']['DLC_driver']['openfast_file_management']['mpi_comm_map_down']
 
         # Inputs blade outer shape
         self.add_input('s',          val=np.zeros(n_span),                      desc='1D array of the non-dimensional spanwise grid defined along blade axis (0-blade root, 1-blade tip)')
