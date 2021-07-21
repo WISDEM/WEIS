@@ -119,7 +119,7 @@ class FASTLoadCases(ExplicitComponent):
         n_pc         = int(rotorse_options['n_pc'])
 
         # DLC options
-        n_OF_dlc11 = modopt['DLC_driver']['n_cases_dlc11']
+        n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']
 
         # OpenFAST options
         OFmgmt = modopt['DLC_driver']['openfast_file_management']
@@ -350,11 +350,11 @@ class FASTLoadCases(ExplicitComponent):
             self.add_discrete_input("node_names", val=[""] * n_nodes)
 
         # Rotor power outputs
-        self.add_output('V_out', val=np.zeros(n_OF_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
-        self.add_output('P_out', val=np.zeros(n_OF_dlc11), units='W', desc='rotor electrical power')
-        self.add_output('Cp_out', val=np.zeros(n_OF_dlc11), desc='rotor aero power coefficient')
-        self.add_output('Omega_out', val=np.zeros(n_OF_dlc11), units='rpm', desc='rotation speeds to run')
-        self.add_output('pitch_out', val=np.zeros(n_OF_dlc11), units='deg', desc='pitch angles to run')
+        self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
+        self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
+        self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
+        self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
+        self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
@@ -1393,7 +1393,8 @@ class FASTLoadCases(ExplicitComponent):
         hub_height = float(inputs['hub_height'])
         rotorD = float(inputs['Rtip'])*2.
         PLExp = float(inputs['shearExp'])
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class)
+        fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
