@@ -95,6 +95,20 @@ properties:
                         enum: ['WARNING', 'SEVERE', 'FATAL']
                         default: 'FATAL'
                         description: Error level when simulation should abort (string) {'WARNING', 'SEVERE', 'FATAL'}
+                    TMax:
+                        type: number
+                        default: 720.
+                        minimum: 0.0
+                        maximum: 10000.0
+                        unit: s
+                        description: Total run time (s)
+                    TStart:
+                        type: number
+                        default: 120.
+                        minimum: 0.0
+                        maximum: 10000.0
+                        unit: s
+                        description: Time to begin tabular output (s)
                     DT:
                         type: number
                         default: 0.025
