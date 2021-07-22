@@ -424,8 +424,7 @@ class WT_RNTA(om.Group):
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
             self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
             self.connect("floating.transition_node", "floatingse.transition_node")
-            self.connect("floating.transition_piece_cost", "floatingse.tower.transition_piece_cost")
-            self.connect("floating.transition_piece_mass", "floatingse.tower.transition_piece_mass")
+            self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
             if modeling_options["flags"]["tower"]:
                 self.connect("tower_grid.height", "floatingse.tower_height")
             if modeling_options["flags"]["nacelle"]:
