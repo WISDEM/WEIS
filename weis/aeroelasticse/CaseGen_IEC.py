@@ -55,7 +55,6 @@ class CaseGen_IEC():
         self.uniqueWaveSeeds             = False
         self.grid_center_over_hh         = 1.      # Ratio between turbsim grid center and hub height
 
-        self.debug_level                 = 2
         self.parallel_windfile_gen       = False
         self.cores                       = 0
         self.overwrite                   = False
@@ -142,7 +141,6 @@ class CaseGen_IEC():
             iecwind.outdir           = self.wind_dir
             iecwind.case_name        = self.case_name_base
             iecwind.Turbsim_exe      = self.Turbsim_exe
-            iecwind.debug_level      = self.debug_level
             iecwind.overwrite        = self.overwrite
 
             # Set DLC specific settings

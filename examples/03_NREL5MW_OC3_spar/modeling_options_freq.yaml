@@ -19,7 +19,34 @@ WISDEM:
 
 Level1:
     flag: True
-    frequencies: [0.1]
+    potential_model_override: 0
+    potential_bem_members: [spar]
+    min_freq_BEM: 0.1
+    min_freq: 0.1
+    max_freq: 1.0
     
 Level3:
     flag: False
+    
+DLC_driver:
+    openfast_file_management:
+        OF_run_fst: NREL5MW_OC3_spar
+        OF_run_dir: temp/NREL5MW_OC3_spar
+    DLCs:
+        - DLC: "1.1"
+          ws_bin_size: 2
+          wind_speed: [14., 16.]
+          wave_height: [7., 8.]
+          wave_period: [1., 2.]
+          n_seeds: 1
+          analysis_time: 5.
+          transient_time: 5.
+          turbulent_wind:
+              HubHt: 90.0
+              GridHeight: 178.0
+              GridWidth: 178.0
+              Clockwise: True
+              IECturbc: B
+              RefHt: 90.0
+              PLExp: 0.11
+

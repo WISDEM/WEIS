@@ -20,10 +20,20 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # unpack options
         modeling_opt = self.options['modeling_options']
         nfreq = modeling_opt['nfreq']
+        n_cases = modeling_opt['n_cases']
 
         turbine_opt = self.options['turbine_options']
         turbine_npts = turbine_opt['npts']
-
+        n_gain = turbine_opt['PC_GS_n']
+        n_span = turbine_opt['n_span']
+        n_aoa = turbine_opt['n_aoa']
+        n_Re = turbine_opt['n_Re']
+        n_tab = turbine_opt['n_tab']
+        n_pc = turbine_opt['n_pc']
+        n_af = turbine_opt['n_af']
+        af_used_names = turbine_opt['af_used_names']
+        n_af_span = len(af_used_names)
+        
         members_opt = self.options['member_options']
         nmembers = members_opt['nmembers']
         member_npts = members_opt['npts']
@@ -41,9 +51,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
         nline_types = mooring_opt['nline_types']
         nconnections = mooring_opt['nconnections']
 
-        # frequency domain
-        self.add_input('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
-
         # turbine inputs
         self.add_input('turbine_mRNA', val=0.0, units='kg', desc='RNA mass')
         self.add_input('turbine_IxRNA', val=0.0, units='kg*m**2', desc='RNA moment of inertia about local x axis')
@@ -51,6 +58,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input('turbine_xCG_RNA', val=0.0, units='m', desc='x location of RNA center of mass')
         
         self.add_input('turbine_hHub', val=0.0, units='m', desc='Hub height above water line')
+        self.add_input('turbine_overhang', val=0.0, units='m', desc='Overhang of rotor apex from tower centerline (parallel to ground)')
         self.add_input('turbine_Fthrust', val=0.0, units='N', desc='Temporary thrust force to use')
         self.add_input('turbine_yaw_stiffness', val=0.0, units='N*m', desc='Additional yaw stiffness to apply if not modeling crowfoot in the mooring system')
         # tower inputs
@@ -84,12 +92,51 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input('turbine_tower_rho_shell', val=0.0, units='kg/m**3', desc='Material density')
 
         # control inputs
-        self.add_input('rotor_PC_GS_angles',     val=np.zeros(turbine_opt['PC_GS_n']),   units='rad',        desc='Gain-schedule table: pitch angles')
-        self.add_input('rotor_PC_GS_Kp',         val=np.zeros(turbine_opt['PC_GS_n']),   units='s',          desc='Gain-schedule table: pitch controller kp gains')
-        self.add_input('rotor_PC_GS_Ki',         val=np.zeros(turbine_opt['PC_GS_n']),                       desc='Gain-schedule table: pitch controller ki gains')
-        self.add_input('rotor_Fl_Kp',            val=0.0,                        desc='Floating feedback gain')
+        self.add_input('rotor_PC_GS_angles',     val=np.zeros(n_gain),   units='rad',        desc='Gain-schedule table: pitch angles')
+        self.add_input('rotor_PC_GS_Kp',         val=np.zeros(n_gain),   units='s',          desc='Gain-schedule table: pitch controller kp gains')
+        self.add_input('rotor_PC_GS_Ki',         val=np.zeros(n_gain),                       desc='Gain-schedule table: pitch controller ki gains')
+        self.add_input('Fl_Kp',                  val=0.0,                        desc='Floating feedback gain')
         self.add_input('rotor_inertia',          val=0.0,    units='kg*m**2',    desc='Rotor inertia')
+        self.add_input('rotor_TC_VS_Kp',         val=0.0,   units='s',          desc='Gain-schedule table: torque controller kp gains')
+        self.add_input('rotor_TC_VS_Ki',         val=0.0,                       desc='Gain-schedule table: torque controller ki gains')
+        # Blade and rotor inputs
+        self.add_discrete_input('nBlades', val=3, desc='number of blades')
+        self.add_input('tilt', val=0.0, units='deg', desc='shaft upward tilt angle relative to horizontal')
+        self.add_input('precone', val=0.0, units='deg', desc='hub precone angle')
+        self.add_input('wind_reference_height', val=0.0, units='m', desc='hub height used for power-law wind profile. U = Uref*(z/hubHt)**shearExp')
+        self.add_input('hub_radius', val=0.0, units='m', desc='radius of hub')
+        self.add_input("gear_ratio", val=1.0, desc="Total gear ratio of drivetrain (use 1.0 for direct)")
+        self.add_input('blade_r', val=np.zeros(n_span), units='m', desc='locations defining the blade along z-axis of blade coordinate system')
+        self.add_input('blade_chord', val=np.zeros(n_span), units='m', desc='corresponding chord length at each section')
+        self.add_input('blade_theta', val=np.zeros(n_span), units='deg', desc='corresponding :ref:`twist angle <blade_airfoil_coord>` at each section---positive twist decreases angle of attack')
+        self.add_input('blade_Rtip', val=0.0, units='m', desc='radius of blade tip')
+        self.add_input('blade_precurve', val=np.zeros(n_span), units='m', desc='location of blade pitch axis in x-direction of :ref:`blade coordinate system <azimuth_blade_coord>`')
+        self.add_input('blade_precurveTip', val=0.0, units='m', desc='location of blade pitch axis in x-direction at the tip (analogous to Rtip)')
+        self.add_input('blade_presweep', val=np.zeros(n_span), units='m', desc='location of blade pitch axis in y-direction of :ref:`blade coordinate system <azimuth_blade_coord>`')
+        self.add_input('blade_presweepTip', val=0.0, units='m', desc='location of blade pitch axis in y-direction at the tip (analogous to Rtip)')
+        # Airfoils
+        self.add_discrete_input("airfoils_name", val=n_af * [""], desc="1D array of names of airfoils.")
+        self.add_input("airfoils_position", val=np.zeros(n_af_span), desc="1D array of the non dimensional positions of the airfoils af_used defined along blade span.")
+        self.add_input("airfoils_r_thick", val=np.zeros(n_af), desc="1D array of the relative thicknesses of each airfoil.")
+        self.add_input("airfoils_aoa", val=np.zeros(n_aoa), units="rad", desc="1D array of the angles of attack used to define the polars of the airfoils. All airfoils defined in openmdao share this grid.")
+        self.add_input("airfoils_cl", val=np.zeros((n_af, n_aoa, n_Re, n_tab)), desc="4D array with the lift coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.")
+        self.add_input("airfoils_cd", val=np.zeros((n_af, n_aoa, n_Re, n_tab)), desc="4D array with the drag coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.")
+        self.add_input("airfoils_cm", val=np.zeros((n_af, n_aoa, n_Re, n_tab)), desc="4D array with the moment coefficients of the airfoils. Dimension 0 is along the different airfoils defined in the yaml, dimension 1 is along the angles of attack, dimension 2 is along the Reynolds number, dimension 3 is along the number of tabs, which may describe multiple sets at the same station, for example in presence of a flap.")
+        self.add_input("rotor_powercurve_v", val=np.zeros(n_pc), units="m/s", desc="wind vector")
+        self.add_input("rotor_powercurve_omega_rpm", val=np.zeros(n_pc), units="rpm", desc="rotor rotational speed")
+        self.add_input("rotor_powercurve_pitch", val=np.zeros(n_pc), units="deg", desc="rotor pitch schedule")
+        self.add_input("rho_air", val=1.225, units="kg/m**3", desc="Density of air")
+        self.add_input("rho_water", val=1025.0, units="kg/m**3", desc="Density of sea water")
+        self.add_input("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
+        self.add_input("shear_exp", val=0.2, desc="Shear exponent of the wind.")
 
+        # DLCs
+        self.add_discrete_input('raft_dlcs', val=[[]]*n_cases, desc='DLC case table for RAFT with each row a new case and headings described by the keys')
+        self.add_discrete_input('raft_dlcs_keys', val=['wind_speed', 'wind_heading', 'turbulence',
+                                                       'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                                       'wave_period', 'wave_height', 'wave_heading'],
+                                desc='DLC case table column headings')
+        
         # member inputs
         for i in range(1, nmembers + 1):
 
@@ -106,6 +153,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
             self.add_input(m_name+'heading', val=np.zeros(mnreps), units='deg', desc='Heading rotation of column about z axis (for repeated members)')
             self.add_input(m_name+'rA', val=np.zeros(ndim), units='m', desc='End A coordinates')
             self.add_input(m_name+'rB', val=np.zeros(ndim), units='m', desc='End B coordinates')
+            self.add_input(m_name+'s_ghostA', val=0.0, desc='Non-dimensional location where overlap point begins at end A')
+            self.add_input(m_name+'s_ghostB', val=1.0, desc='Non-dimensional location where overlap point begins at end B')
             self.add_input(m_name+'gamma', val=0.0, units='deg', desc='Twist angle about the member z axis')
             # ADD THIS AS AN OPTION IN WEIS
             self.add_discrete_input(m_name+'potMod', val=False, desc='Whether to model the member with potential flow')
@@ -220,6 +269,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
+        debug_flag = False
+        
         turbine_opt = self.options['turbine_options']
         mooring_opt = self.options['mooring_options']
         members_opt = self.options['member_options']
@@ -248,20 +299,33 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['name'] = ['spiderfloat']
         design['comments'] = ['none']
         
-        design['potModMaster'] = int(modeling_opt['potModMaster'])
-        design['XiStart'] = float(modeling_opt['XiStart'])
-        design['nIter'] = int(modeling_opt['nIter'])
-        design['dlsMax'] = float(modeling_opt['dlsMax'])
+        design['settings'] = {}
+        design['settings']['XiStart'] = float(modeling_opt['XiStart'])
+        design['settings']['min_freq'] = float(modeling_opt['min_freq'])
+        design['settings']['max_freq'] = float(modeling_opt['max_freq'])
+        design['settings']['nIter'] = int(modeling_opt['nIter'])
 
-        # TODO: these float conversions are messy
+        # Environment layer data
+        design['site'] = {}
+        design['site']['water_depth'] = float(inputs['mooring_water_depth'])
+        design['site']['rho_air'] = float(inputs['rho_air'])
+        design['site']['rho_water'] = float(inputs['rho_water'])
+        design['site']['mu_air' ] = float(inputs['mu_air'])
+        design['site']['shearExp'] = float(inputs['shear_exp'])
+        
+        # RNA properties
         design['turbine'] = {}
-        design['turbine']['mRNA'] = float(inputs['turbine_mRNA'])
-        design['turbine']['IxRNA'] = float(inputs['turbine_IxRNA'])
-        design['turbine']['IrRNA'] = float(inputs['turbine_IrRNA'])
-        design['turbine']['xCG_RNA'] = float(inputs['turbine_xCG_RNA'])
-        design['turbine']['hHub'] = float(inputs['turbine_hHub'])
-        design['turbine']['Fthrust'] = float(inputs['turbine_Fthrust'])
+        design['turbine']['mRNA']          = float(inputs['turbine_mRNA'])
+        design['turbine']['IxRNA']         = float(inputs['turbine_IxRNA'])
+        design['turbine']['IrRNA']         = float(inputs['turbine_IrRNA'])
+        design['turbine']['xCG_RNA']       = float(inputs['turbine_xCG_RNA'])
+        design['turbine']['hHub']          = float(inputs['turbine_hHub'])
+        design['turbine']['overhang']      = float(inputs['turbine_overhang'])
+        design['turbine']['Fthrust']       = float(inputs['turbine_Fthrust'])
         design['turbine']['yaw_stiffness'] = float(inputs['turbine_yaw_stiffness'])
+        design['turbine']['gear_ratio']    = float(inputs['gear_ratio'])
+
+        # Tower
         design['turbine']['tower'] = {}
         design['turbine']['tower']['name'] = 'tower'
         design['turbine']['tower']['type'] = 1
@@ -290,63 +354,116 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['turbine']['tower']['CaEnd'] = inputs['turbine_tower_CaEnd']
         design['turbine']['tower']['rho_shell'] = float(inputs['turbine_tower_rho_shell'])
 
-        design['turbine']['control'] = {}
-        design['turbine']['control']['PC_GS_Angles']    = inputs['rotor_PC_GS_angles']
-        design['turbine']['control']['PC_GS_Kp']        = inputs['rotor_PC_GS_Kp']
-        design['turbine']['control']['PC_GS_Ki']        = inputs['rotor_PC_GS_Ki']
-        design['turbine']['control']['Fl_Kp']           = float(inputs['rotor_Fl_Kp'])
-        design['turbine']['control']['I_drivetrain']    = float(inputs['rotor_inertia'])
+        # Blades and rotors
+        design['turbine']['nBlades']    = int(discrete_inputs['nBlades'])
+        design['turbine']['shaft_tilt'] = float(inputs['tilt'])
+        design['turbine']['precone']    = float(inputs['precone'])
+        design['turbine']['Zhub']       = float(inputs['wind_reference_height'])
+        design['turbine']['Rhub']       = float(inputs['hub_radius'])
+        design['turbine']['I_drivetrain']    = float(inputs['rotor_inertia'])
 
+        design['turbine']['blade'] = {}
+        design['turbine']['blade']['geometry']    = np.c_[inputs['blade_r'],
+                                                          inputs['blade_chord'],
+                                                          inputs['blade_theta'],
+                                                          inputs['blade_precurve'],
+                                                          inputs['blade_presweep']]
+        design['turbine']['blade']['Rtip']        = float(inputs['blade_Rtip'])
+        design['turbine']['blade']['precurveTip'] = float(inputs['blade_precurveTip'])
+        design['turbine']['blade']['presweepTip'] = float(inputs['blade_presweepTip'])
+        design['turbine']['blade']['airfoils']    = list(zip(inputs['airfoils_position'], turbine_opt['af_used_names']))
+        # airfoils data
+        n_af = turbine_opt['n_af']
+        design['turbine']['airfoils'] = [dict() for m in range(n_af)] #Note: doesn't work [{}]*n_af
+        for i in range(n_af):
+            design['turbine']['airfoils'][i]['name'] = discrete_inputs['airfoils_name'][i]
+            design['turbine']['airfoils'][i]['relative_thickness'] = inputs['airfoils_r_thick'][i]
+            design['turbine']['airfoils'][i]['data'] = np.c_[inputs['airfoils_aoa'],
+                                                             inputs['airfoils_cl'][i,:,0,0],
+                                                             inputs['airfoils_cd'][i,:,0,0],
+                                                             inputs['airfoils_cm'][i,:,0,0]]
+
+        # Control
+        design['turbine']['pitch_control'] = {}
+        design['turbine']['pitch_control']['GS_Angles']    = inputs['rotor_PC_GS_angles']
+        design['turbine']['pitch_control']['GS_Kp']        = inputs['rotor_PC_GS_Kp']
+        design['turbine']['pitch_control']['GS_Ki']        = inputs['rotor_PC_GS_Ki']
+        design['turbine']['pitch_control']['Fl_Kp']        = float(inputs['Fl_Kp'])
+        design['turbine']['torque_control'] = {}
+        design['turbine']['torque_control']['VS_KP'] = float(inputs['rotor_TC_VS_Kp'])
+        design['turbine']['torque_control']['VS_KI'] = float(inputs['rotor_TC_VS_Ki'])
+
+        # Operations
+        design['turbine']['wt_ops'] = {}
+        design['turbine']['wt_ops']['v'] = inputs['rotor_powercurve_v']
+        design['turbine']['wt_ops']['omega_op'] = inputs['rotor_powercurve_omega_rpm']
+        design['turbine']['wt_ops']['pitch_op'] = inputs['rotor_powercurve_pitch']
+        
+        # Platform members
         design['platform'] = {}
-        design['platform']['members'] = [dict() for i in range(nmembers)]
+        design['platform']['potModMaster'] = int(modeling_opt['potModMaster'])
+        design['platform']['dlsMax'] = float(modeling_opt['dlsMax'])
+        design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
+        design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):
             m_name = f'platform_member{i+1}_'
             m_shape = member_shapes[i]
             mnpts_lfill = member_npts_lfill[i]
             mncaps = member_ncaps[i]
             mnreps = member_nreps[i]
-            mnpts = member_npts[i]
-            
+            #mnpts = member_npts[i]
+
+            # Set stations and end points that account for intersections/ghost segments
+            rA_0 = inputs[m_name+'rA']
+            rB_0 = inputs[m_name+'rB']
+            s_ghostA = inputs[m_name+'s_ghostA']
+            s_ghostB = inputs[m_name+'s_ghostB']
+            s_0 = inputs[m_name+'stations']
+            idx = np.logical_and(s_0>=s_ghostA, s_0<=s_ghostB)
+            s_grid = np.unique(np.r_[s_ghostA, s_0[idx], s_ghostB])
+            mnpts = len(idx)
+            rA = rA_0 + s_ghostA*(rB_0-rA_0)
+            rB = rA_0 + s_ghostB*(rB_0-rA_0)
             design['platform']['members'][i]['name'] = m_name
             design['platform']['members'][i]['type'] = i + 2
-            design['platform']['members'][i]['rA'] = inputs[m_name+'rA']
-            design['platform']['members'][i]['rB'] = inputs[m_name+'rB']
+            design['platform']['members'][i]['rA'] = rA
+            design['platform']['members'][i]['rB'] = rB
             design['platform']['members'][i]['shape'] = m_shape
             design['platform']['members'][i]['gamma'] = float(inputs[m_name+'gamma'])
             design['platform']['members'][i]['potMod'] = discrete_inputs[m_name+'potMod']
-            design['platform']['members'][i]['stations'] = inputs[m_name+'stations']
+            design['platform']['members'][i]['stations'] = s_grid
             
             # updated version to better handle 'diameters' between circular and rectangular members
             if m_shape == 'circ' or m_shape == 'square':
                 if member_scalar_d[i]:
                     design['platform']['members'][i]['d'] = [float(inputs[m_name+'d'])]*mnpts
                 else:
-                    design['platform']['members'][i]['d'] = inputs[m_name+'d']
+                    design['platform']['members'][i]['d'] = np.interp(s_grid, s_0, inputs[m_name+'d'])
             elif m_shape == 'rect':
                 if member_scalar_d[i]:
                     design['platform']['members'][i]['d'] = [inputs[m_name+'d']]*mnpts
                 else:
-                    design['platform']['members'][i]['d'] = inputs[m_name+'d']
+                    design['platform']['members'][i]['d'] = np.interp(s_grid, s_0, inputs[m_name+'d'])
             ''' original version of handling diameters
             if member_scalar_d[i]:
                 design['platform']['members'][i]['d'] = float(inputs[m_name+'d'])
             else:
-                design['platform']['members'][i]['d'] = inputs[m_name+'d']
+                design['platform']['members'][i]['d'] = np.interp(s_grid, s_0, inputs[m_name+'d'])
             '''
             if member_scalar_t[i]:
                 design['platform']['members'][i]['t'] = float(inputs[m_name+'t'])
             else:
-                design['platform']['members'][i]['t'] = inputs[m_name+'t']
+                design['platform']['members'][i]['t'] = np.interp(s_grid, s_0, inputs[m_name+'t'])
             if member_scalar_coeff[i]:
                 design['platform']['members'][i]['Cd'] = float(inputs[m_name+'Cd'])
                 design['platform']['members'][i]['Ca'] = float(inputs[m_name+'Ca'])
                 design['platform']['members'][i]['CdEnd'] = float(inputs[m_name+'CdEnd'])
                 design['platform']['members'][i]['CaEnd'] = float(inputs[m_name+'CaEnd'])
             else:
-                design['platform']['members'][i]['Cd'] = inputs[m_name+'Cd']
-                design['platform']['members'][i]['Ca'] = inputs[m_name+'Ca']
-                design['platform']['members'][i]['CdEnd'] = inputs[m_name+'CdEnd']
-                design['platform']['members'][i]['CaEnd'] = inputs[m_name+'CaEnd']
+                design['platform']['members'][i]['Cd'] = np.interp(s_grid, s_0, inputs[m_name+'Cd'])
+                design['platform']['members'][i]['Ca'] = np.interp(s_grid, s_0, inputs[m_name+'Ca'])
+                design['platform']['members'][i]['CdEnd'] = np.interp(s_grid, s_0, inputs[m_name+'CdEnd'])
+                design['platform']['members'][i]['CaEnd'] = np.interp(s_grid, s_0, inputs[m_name+'CaEnd'])
             design['platform']['members'][i]['rho_shell'] = float(inputs[m_name+'rho_shell'])
             if mnreps > 0:
                 design['platform']['members'][i]['heading'] = inputs[m_name+'heading']
@@ -355,34 +472,50 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 design['platform']['members'][i]['rho_fill'] = inputs[m_name+'rho_fill']
             if ( (mncaps > 0) or (inputs[m_name+'ring_spacing'] > 0) ):
                 # Member discretization
-                s_grid = inputs[m_name+'stations']
                 s_height = s_grid[-1] - s_grid[0]
                 # Get locations of internal structures based on spacing
                 ring_spacing = inputs[m_name+'ring_spacing']
                 n_stiff = 0 if ring_spacing == 0.0 else int(np.floor(s_height / ring_spacing))
                 s_ring = (np.arange(1, n_stiff + 0.1) - 0.5) * (ring_spacing / s_height)
-                #d_ring = np.interp(s_ring, s_grid, inputs[m_name+'d'])
                 d_ring = np.interp(s_ring, s_grid, design['platform']['members'][i]['d'])
                 # Combine internal structures based on spacing and defined positions
-                s_cap = np.r_[s_ring, inputs[m_name+'cap_stations']]
-                t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), inputs[m_name+'cap_t']]
-                di_cap = np.r_[d_ring-2*inputs[m_name+'ring_h'], inputs[m_name+'cap_d_in']]
+                s_cap_0 = inputs[m_name+'cap_stations']
+                idx_cap = np.logical_and(s_cap_0>=s_ghostA, s_cap_0<=s_ghostB)
+                s_cap, isort = np.unique(np.r_[s_ghostA, s_cap_0[idx_cap], s_ghostB], return_index=True)
+                t_cap = np.r_[inputs[m_name+'cap_t'][0], inputs[m_name+'cap_t'][idx_cap], inputs[m_name+'cap_t'][-1]][isort]
+                di_cap = np.zeros(s_cap.shape)
+                # No end caps at joints
+                if s_ghostA > 0.0:
+                    s_cap = s_cap[1:]
+                    t_cap = t_cap[1:]
+                    di_cap = di_cap[1:]
+                if s_ghostB < 1.0:
+                    s_cap = s_cap[:-1]
+                    t_cap = t_cap[:-1]
+                    di_cap = di_cap[:-1]
+                # Combine with ring stiffeners
+                s_cap = np.r_[s_ring, s_cap]
+                t_cap = np.r_[inputs[m_name+'ring_t']*np.ones(n_stiff), t_cap]
+                di_cap = np.r_[d_ring-2*inputs[m_name+'ring_h'], di_cap]
                 # Store vectors in sorted order
-                isort = np.argsort(s_cap)
-                design['platform']['members'][i]['cap_stations'] = s_cap[isort]
-                design['platform']['members'][i]['cap_t'] = t_cap[isort]
-                design['platform']['members'][i]['cap_d_in'] = di_cap[isort]
+                if len(s_cap) > 0:
+                    isort = np.argsort(s_cap)
+                    design['platform']['members'][i]['cap_stations'] = s_cap[isort]
+                    design['platform']['members'][i]['cap_t'] = t_cap[isort]
+                    design['platform']['members'][i]['cap_d_in'] = di_cap[isort]
 
         design['mooring'] = {}
-        design['mooring']['water_depth'] = inputs['mooring_water_depth']
-        design['mooring']['points'] = [dict() for i in range(nconnections)]
+        design['mooring']['water_depth'] = float(inputs['mooring_water_depth'])
+        design['mooring']['points'] = [dict() for m in range(nconnections)] #Note: doesn't work [{}]*nconnections
         for i in range(0, nconnections):
             pt_name = f'mooring_point{i+1}_'
             design['mooring']['points'][i]['name'] = discrete_inputs[pt_name+'name']
             design['mooring']['points'][i]['type'] = discrete_inputs[pt_name+'type']
             design['mooring']['points'][i]['location'] = inputs[pt_name+'location']
+            if design['mooring']['points'][i]['type'].lower() == 'fixed':
+                design['mooring']['points'][i]['anchor_type'] = 'drag_embedment' #discrete_inputs[pt_name+'type']
 
-        design['mooring']['lines'] = [dict() for i in range(nlines)]
+        design['mooring']['lines'] = [dict() for m in range(nlines)] #Note: doesn't work [{}]*nlines
         for i in range(0, nlines):
             ml_name = f'mooring_line{i+1}_'
             design['mooring']['lines'][i]['name'] = f'line{i+1}'
@@ -390,7 +523,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['mooring']['lines'][i]['endB'] = discrete_inputs[ml_name+'endB']
             design['mooring']['lines'][i]['type'] = discrete_inputs[ml_name+'type']
             design['mooring']['lines'][i]['length'] = inputs[ml_name+'length']
-        design['mooring']['line_types'] = [dict() for i in range(nline_types)]
+        design['mooring']['line_types'] = [dict() for m in range(nline_types)] #Note: doesn't work [{}]*nline_types
         for i in range(0, nline_types):
             lt_name = f'mooring_line_type{i+1}_'
             design['mooring']['line_types'][i]['name'] = discrete_inputs[lt_name+'name']
@@ -403,23 +536,31 @@ class RAFT_OMDAO(om.ExplicitComponent):
             design['mooring']['line_types'][i]['tangential_added_mass'] = float(inputs[lt_name+'tangential_added_mass'])
             design['mooring']['line_types'][i]['transverse_drag'] = float(inputs[lt_name+'transverse_drag'])
             design['mooring']['line_types'][i]['tangential_drag'] = float(inputs[lt_name+'tangential_drag'])
+        design['mooring']['anchor_types'] = [dict() for m in range(1)] #Note: doesn't work [{}]*anchor_types
+        design['mooring']['anchor_types'][0]['name'] = 'drag_embedment'
+        design['mooring']['anchor_types'][0]['mass'] = 1e3
+        design['mooring']['anchor_types'][0]['cost'] = 1e4
+        design['mooring']['anchor_types'][0]['max_vertical_load'] = 0.0
+        design['mooring']['anchor_types'][0]['max_lateral_load'] = 1e5
 
-        # grab the depth
-        depth = float(design['mooring']['water_depth'])
+        # DLCs
+        design['cases'] = {}
+        design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
+        design['cases']['data'] = discrete_inputs['raft_dlcs']
 
-        # set up frequency range for computing response over
-        w = inputs['frequency_range']
-
+        # Debug
+        if debug_flag:
+            import pickle
+            with open('raft_design.pkl', 'wb') as handle:
+                pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
+                
         # create and run the model
-        model = raft.Model(design, w=w, depth=depth)
-        model.setEnv(spectrum="unit")
-        model.calcSystemProps()
-        model.solveEigen()
-        model.calcMooringAndOffsets()
-        model.solveDynamics()
+        model = raft.Model(design)
+        model.analyzeUnloaded()
+        model.analyzeCases()
         results = model.calcOutputs()
-
-        outs = self.list_outputs(values=False, out_stream=None)
+        
+        outs = self.list_outputs(out_stream=None)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]

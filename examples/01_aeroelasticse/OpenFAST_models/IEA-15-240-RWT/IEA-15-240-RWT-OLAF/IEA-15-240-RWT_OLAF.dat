@@ -39,4 +39,8 @@ False   TwrShadowOnWake    Include tower flow disturbance effects on wake convec
 1       nVTKBlades         Number of blades for which VTK files are exported {0: No VTK per blade, n: VTK for blade 1 to n} (-)
 1       VTKCoord           Coordinate system used for VTK export. {1: Global, 2: Hub, "default": 1}
 default VTK_fps            Frame rate for VTK output (frames per second) {"all" for all glue code timesteps, "default" for all OLAF timesteps} [used only if WrVTK=1]
+0                      nGridOut    GB DEBUG 7/8: Number of grid points for VTK output
+--GridOutHeaders--
+--GridOutUnits--
+1.0 1.0 1.0
 ------------------------------------------------------------------------------------------------

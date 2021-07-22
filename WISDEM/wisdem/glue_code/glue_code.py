@@ -664,8 +664,8 @@ class WindPark(om.Group):
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
             )
 
-        if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
-            self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
+        # if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
+        #     self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
 
         # BOS inputs
         if modeling_options["WISDEM"]["BOS"]["flag"]:
