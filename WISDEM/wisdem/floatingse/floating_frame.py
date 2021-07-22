@@ -357,7 +357,8 @@ class TowerPreMember(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         transition_node = inputs["transition_node"]
-        tower_top_node = transition_node
+        tower_top_node = 0  #previous code altered the original definition of transition_node
+        tower_top_node += transition_node
         tower_top_node[2] += float(inputs["tower_height"])
         outputs["tower_top_node"] = tower_top_node
 
@@ -638,7 +639,6 @@ class PlatformTowerFrame(om.ExplicitComponent):
         I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         outputs["transition_piece_I"] = I_trans
 
-
 class FrameAnalysis(om.ExplicitComponent):
     def initialize(self):
         self.options.declare("options")
@@ -820,6 +820,7 @@ class FrameAnalysis(om.ExplicitComponent):
                 m_trans += float(inputs["platform_mass"]) + inputs["platform_added_mass"][0] + m_variable
                 cg_trans = inputs["transition_node"] - inputs["platform_center_of_mass"]
                 I_trans[:3] += inputs["platform_added_mass"][3:]
+
             else:
                 m_trans += m_variable
                 cg_trans = np.zeros(3)

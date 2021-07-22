@@ -365,7 +365,7 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
-                    #self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass') ## TODO
+                    self.connect('floating.transition_piece_mass',  'aeroelastic.transition_piece_mass')
                     self.connect('floatingse.transition_piece_I',      'aeroelastic.transition_piece_I', src_indices=[0,1,2])
                     
             self.connect('airfoils.aoa',                    'aeroelastic.airfoils_aoa')
