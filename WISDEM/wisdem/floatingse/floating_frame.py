@@ -292,6 +292,11 @@ class PlatformFrame(om.ExplicitComponent):
             # Now do parallel axis theorem
             I_total += np.array(I_k2) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
+        # # TODO : fix this logic to correctly compute the moment of inertia for the variable ballast
+        # r_variable = (cg_variable - cg_k)
+        # I_variable = m_variable * r_variable**2
+        # I_total += I_variable
+
         # Store outputs
         nelem = elem_A.size
         outputs["platform_elem_D"] = NULL * np.ones(NELEM_MAX)
