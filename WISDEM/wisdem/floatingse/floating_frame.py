@@ -292,11 +292,6 @@ class PlatformFrame(om.ExplicitComponent):
             # Now do parallel axis theorem
             I_total += np.array(I_k2) + imass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
 
-        # # TODO : fix this logic to correctly compute the moment of inertia for the variable ballast
-        # r_variable = (cg_variable - cg_k)
-        # I_variable = m_variable * r_variable**2
-        # I_total += I_variable
-
         # Store outputs
         nelem = elem_A.size
         outputs["platform_elem_D"] = NULL * np.ones(NELEM_MAX)
@@ -643,6 +638,41 @@ class PlatformTowerFrame(om.ExplicitComponent):
         r_trans = inputs["platform_Rnode"][itrans_platform]
         I_trans = m_trans * r_trans ** 2.0 * np.r_[0.5, 0.5, 1.0, np.zeros(3)]
         outputs["transition_piece_I"] = I_trans
+        
+class ComputeTotalIWithVariableBallast(om.ExplicitComponent):
+    
+    def setup(self):
+        self.add_input('variable_ballast_mass', 0.0, units="kg")
+        self.add_input('variable_center_of_mass', val=np.zeros(3), units="m")
+        self.add_input('platform_mass', 0.0, units='kg')
+        self.add_input('platform_center_of_mass', np.zeros(3), units="m")
+        self.add_input('platform_I_total', np.zeros(6), units="kg*m**2")
+        self.add_input('transition_piece_I', np.zeros(6), units="kg*m**2")
+        
+        self.add_output('I_total_with_variable_and_trans', np.zeros(6), units="kg*m**2")
+
+    def compute(self, inputs, outputs):
+        variable_ballast_mass = inputs['variable_ballast_mass']
+        variable_center_of_mass = inputs['variable_center_of_mass']
+        platform_mass = inputs['platform_mass']
+        platform_center_of_mass = inputs['platform_center_of_mass']
+        platform_I_total = inputs['platform_I_total']
+        transition_piece_I = inputs['transition_piece_I']
+        
+        # Compute the total cg for the platform and the variable ballast together
+        # using a weighted sum approach
+        cg_plat_total = (variable_ballast_mass * variable_center_of_mass + platform_mass * platform_center_of_mass) / (variable_ballast_mass + platform_mass)
+        
+        # Compute the moment arm of the variable ballast
+        R = (cg_plat_total - cg_variable)
+        
+        # TODO : compute transition_piece_I with parallel axis theorem
+        
+        
+        # Compute the full moment of inertia for the platform and variable ballast
+        I_total_with_variable_and_trans = platform_I_total + transition_piece_I + variable_ballast_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        outputs['I_total_with_variable_and_trans'] = I_total_with_variable_and_trans
+
 
 class FrameAnalysis(om.ExplicitComponent):
     def initialize(self):
