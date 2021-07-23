@@ -6,15 +6,42 @@ __email__ = ["jake.nunemaker@nrel.gov"]
 
 import os
 import multiprocessing as mp
-from fnmatch import fnmatch
 from functools import partial
 
 import numpy as np
 import pandas as pd
 import fatpack
 
-from pCrunch.io import OpenFASTAscii, OpenFASTBinary, OpenFASTOutput
+from pCrunch.io import OpenFASTAscii, OpenFASTBinary #, OpenFASTOutput
 
+# Could use a dict or namedtuple here, but this standardizes things a bit better for users
+class FatigueParams:
+    """Simple data structure of parameters needed by fatigue calculation."""
+
+    def __init__(self, load2stress=1.0, slope=4.0, ult_stress=1.0, SNparam=1.0):
+        """
+        Creates an instance of `FatigueParams`.
+
+        Parameters
+        ----------
+        load2stress : float (optional)
+            Linear scaling coefficient to convert an applied load to stress such that S = load2stress * L
+        slope : float (optional)
+            Wohler exponent in the traditional SN-curve of S = A * N ^ -(1/m)
+        ult_stress : float (optional)
+            Ultimate stress for use in Goodman equivalent stress calculation
+        SNparam : float (optional)
+            Something to do with A in SN-curve. . .
+        """
+
+        self.load2stress = load2stress
+        self.slope = slope
+        self.ult_stress = ult_stress
+        self.SNparam = SNparam
+
+    def copy(self):
+        return FatigueParams(load2stress=self.load2stress, slope=self.slope,
+                             ult_stress=self.ult_stress, SNparam=self.SNparam)
 
 class LoadsAnalysis:
     """Implementation of `mlife` in python."""
@@ -53,8 +80,7 @@ class LoadsAnalysis:
         self._mc = kwargs.get("magnitude_channels", {})
         self._fc = kwargs.get("fatigue_channels", {})
         self._td = kwargs.get("trim_data", ())
-        self._ri = kwargs.get("return_intermediate", False)
-
+        
     def process_outputs(self, cores=1, **kwargs):
         """
         Processes all outputs for summary statistics and configured damage
@@ -62,20 +88,18 @@ class LoadsAnalysis:
         """
 
         if cores > 1:
-            stats, extrs, dels, ranges, Nrf, Mrf = self._process_parallel(cores, **kwargs)
+            stats, extrs, dels, damage = self._process_parallel(cores, **kwargs)
 
         else:
-            stats, extrs, dels, ranges, Nrf, Mrf = self._process_serial(**kwargs)
+            stats, extrs, dels, damage = self._process_serial(**kwargs)
 
-        summary_stats, extremes, DELs = self.post_process(
-            stats, extrs, dels, **kwargs
+        summary_stats, extremes, DELs, Damage = self.post_process(
+            stats, extrs, dels, damage, **kwargs
         )
         self._summary_stats = summary_stats
         self._extremes = extremes
         self._dels = DELs
-        self._ranges = ranges
-        self._nrf = Nrf
-        self._mrf = Mrf
+        self._damage = Damage
 
     def _process_serial(self, **kwargs):
         """Process outputs in serieal in serial."""
@@ -83,22 +107,18 @@ class LoadsAnalysis:
         summary_stats = {}
         extremes = {}
         DELs = {}
-        ranges = {}
-        Nrf = {}
-        Mrf = {}
+        Damage = {}
 
         for output in self.outputs:
-            filename, stats, extrs, dels, r, nrf, mrf = self._process_output(
+            filename, stats, extrs, dels, damage = self._process_output(
                 output, **kwargs
             )
             summary_stats[filename] = stats
             extremes[filename] = extrs
             DELs[filename] = dels
-            ranges[filename] = r
-            Nrf[filename] = nrf
-            Mrf[filename] = mrf
+            Damage[filename] = damage
 
-        return summary_stats, extremes, DELs, ranges, Nrf, Mrf
+        return summary_stats, extremes, DELs, Damage
 
     def _process_parallel(self, cores, **kwargs):
         """
@@ -112,9 +132,7 @@ class LoadsAnalysis:
         summary_stats = {}
         extremes = {}
         DELs = {}
-        ranges = {}
-        Nrf = {}
-        Mrf = {}
+        Damage = {}
 
         pool = mp.Pool(cores)
         returned = pool.map(
@@ -123,15 +141,13 @@ class LoadsAnalysis:
         pool.close()
         pool.join()
 
-        for filename, stats, extrs, dels, r, nrf, mrf in returned:
+        for filename, stats, extrs, dels, damage in returned:
             summary_stats[filename] = stats
             extremes[filename] = extrs
             DELs[filename] = dels
-            ranges[filename] = r
-            Nrf[filename] = nrf
-            Mrf[filename] = mrf
+            Damage[filename] = damage
 
-        return summary_stats, extremes, DELs, ranges, Nrf, Mrf
+        return summary_stats, extremes, DELs, Damage
 
     def _process_output(self, f, **kwargs):
         """
@@ -160,9 +176,9 @@ class LoadsAnalysis:
         elif isinstance(self._ec, list):
             extremes = output.extremes(self._ec)
 
-        dels, ranges, Nrf, Mrf = self.get_DELs(output, **kwargs)
+        dels, damage = self.get_DELs(output, **kwargs)
 
-        return output.filename, stats, extremes, dels, ranges, Nrf, Mrf
+        return output.filename, stats, extremes, dels, damage
 
     def get_summary_stats(self, output, **kwargs):
         """
@@ -183,8 +199,9 @@ class LoadsAnalysis:
                 "max": float(max(output[channel])),
                 "std": float(np.std(output[channel])),
                 "mean": float(np.mean(output[channel])),
+                "median": float(np.median(output[channel])),
                 "abs": float(max(np.abs(output[channel]))),
-                "integrated": float(np.trapz(output["Time"], output[channel])),
+                "integrated": float(np.trapz(output[channel], x=output["Time"])),
             }
 
         return fstats
@@ -202,7 +219,7 @@ class LoadsAnalysis:
         return output.extremes(channels)
 
     @staticmethod
-    def post_process(stats, extremes, dels, **kwargs):
+    def post_process(stats, extremes, dels, damage, **kwargs):
         """Post processes internal data to produce DataFrame outputs."""
 
         # Summary statistics
@@ -220,10 +237,11 @@ class LoadsAnalysis:
                 extreme_table[channel].append(sub)
         extremes = extreme_table
 
-        # Damage equivalent loads
+        # Damage and Damage Equivalent Loads
         dels = pd.DataFrame(dels).T
+        damage = pd.DataFrame(damage).T
 
-        return summary_stats, extremes, dels
+        return summary_stats, extremes, dels, damage
 
     def read_file(self, f):
         """
@@ -333,43 +351,13 @@ class LoadsAnalysis:
         return self._dels
 
     @property
-    def ranges(self):
-        """Returns ranges of the rainflow counting if `return_intermediate` is
-        passed."""
+    def damage(self):
+        """Returns Palmgren/Miner damage for all channels in `self._fc`"""
 
-        if self._ri is False:
-            print(f"Intermediate data not available as `return_intermediate` "
-                  f"flag was False. Please rerun with this flag set to True.")
+        if getattr(self, "_damage", None) is None:
+            raise ValueError("Outputs have not been processed.")
 
-            return None
-
-        return self._ranges
-
-    @property
-    def means(self):
-        """Returns means of the rainflow counting if `return_intermediate` is
-        passed."""
-
-        if self._ri is False:
-            print(f"Intermediate data not available as `return_intermediate` "
-                  f"flag was False. Please rerun with this flag set to True.")
-
-            return None
-
-        return self._mrf
-
-    @property
-    def counts(self):
-        """Returns counts of the rainflow counting if `return_intermediate` is
-        passed."""
-
-        if self._ri is False:
-            print(f"Intermediate data not available as `return_intermediate` "
-                  f"flag was False. Please rerun with this flag set to True.")
-
-            return None
-
-        return self._nrf
+        return self._damage
 
     def get_DELs(self, output, **kwargs):
         """
@@ -382,36 +370,28 @@ class LoadsAnalysis:
         """
 
         DELs = {}
-        ranges = {}
-        Nrf = {}
-        Mrf = {}
+        D = {}
 
-        for chan, slope in self._fc.items():
+        for chan, fatparams in self._fc.items():
 
             try:
-                DEL, intm = self._compute_del(
-                    output[chan], slope, output.elapsed_time,
-                    return_intermediate=self._ri, **kwargs
+                DELs[chan], D[chan] = self._compute_del(
+                    output[chan],
+                    fatparams.load2stress, fatparams.slope,
+                    fatparams.ult_stress, fatparams.SNparam,
+                    output.elapsed_time,
+                    **kwargs
                 )
-                DELs[chan] = DEL
 
-                if intm:
-                    ranges[chan], Nrf[chan], Mrf[chan] = intm
-
-                else:
-                    ranges[chan], Nrf[chan], Mrf[chan] = [np.NaN] * 3
-
-            except IndexError as e:
-                print(f"Channel '{chan}' not found for DEL calculation.")
+            except IndexError:
+                print(f"Channel '{chan}' not included in DEL calculation.")
                 DELs[chan] = np.NaN
-                ranges[chan] = np.NaN
-                Nrf[chan] = np.NaN
-                Mrf[chan] = np.NaN
+                D[chan] = np.NaN
 
-        return DELs, ranges, Nrf, Mrf
+        return DELs, D
 
     @staticmethod
-    def _compute_del(ts, slope, elapsed, **kwargs):
+    def _compute_del(ts, load2stress, slope, Sult, Sc, elapsed, **kwargs):
         """
         Computes damage equivalent load of input `ts`.
 
@@ -426,24 +406,44 @@ class LoadsAnalysis:
         rainflow_bins : int
             Number of bins used in rainflow analysis.
             Default: 100
-        return_intermediate
+        goodman_correction: boolean
+            Whether to apply Goodman mean correction to loads and stress
+            Default: False
+        return_damage: boolean
+            Whether to compute both DEL and true damage
+            Default: False
         """
 
         bins = kwargs.get("rainflow_bins", 100)
-        return_intermediate = kwargs.get("return_intermediate")
+        return_damage = kwargs.get("return_damage", False)
+        goodman = kwargs.get("goodman_correction", False)
 
-        ranges, Mrf = fatpack.find_rainflow_ranges(ts, return_means=True)
-        Nrf, Srf = fatpack.find_range_count(ranges, 100)
-        DELs = Srf ** slope * Nrf / elapsed
+        # Working with loads for DELs
+        F, Fmean = fatpack.find_rainflow_ranges(ts, return_means=True)
+        if goodman:
+            F = fatpack.find_goodman_equivalent_stress(F, Fmean, Sult/load2stress)
+        Nrf, Frf = fatpack.find_range_count(F, bins)
+        DELs = Frf ** slope * Nrf / elapsed
         DEL = DELs.sum() ** (1 / slope)
+        # With fatpack do:
+        #curve = fatpack.LinearEnduranceCurve(1.)
+        #curve.m = slope
+        #curve.Nc = elapsed
+        #DEL = curve.find_miner_sum(np.c_[Frf, Nrf]) ** (1 / slope)
 
-        if return_intermediate:
-            intm = (ranges, Nrf, Mrf)
-        
-        else:
-            intm = None
+        # Compute Palmgren/Miner damage using stress
+        D = np.nan # default return value
+        if return_damage:
+            S, Mrf = fatpack.find_rainflow_ranges(ts*load2stress, return_means=True)
+            if goodman:
+                S = fatpack.find_goodman_equivalent_stress(S, Mrf, Sult)
+            Nrf, Srf = fatpack.find_range_count(S, bins)
+            curve = fatpack.LinearEnduranceCurve(Sc)
+            curve.m = slope
+            curve.Nc = 1e6 # TODO- based on Sc or elapsed?
+            D = curve.find_miner_sum(np.c_[Srf, Nrf])
 
-        return DEL, intm
+        return DEL, D
 
 
 class PowerProduction:
