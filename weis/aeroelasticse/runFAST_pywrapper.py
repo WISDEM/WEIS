@@ -12,35 +12,30 @@ import multiprocessing as mp
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
-from weis.aeroelasticse.FAST_post   import FAST_IO_timeseries
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
-from pCrunch import LoadsAnalysis
+from pCrunch import LoadsAnalysis, FatigueParams
 
 import numpy as np
 
-from ctypes import create_string_buffer, c_double
-import weis
 
-weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
+weis_dir = os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) )
 lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
 openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
 sys.path.append(openfast_pydir)
 from openfast_library import FastLibAPI
 
 mactype = platform.system().lower()
-if mactype == "linux" or mactype == "linux2":
+if mactype in ["linux", "linux2"]:
     libext = ".so"
+elif mactype in ["win32", "windows", "cygwin"]: #NOTE: platform.system()='Windows', sys.platform='win32'
+    libext = '.dll'
 elif mactype == "darwin":
     libext = '.dylib'
-elif mactype == "win32" or mactype == "windows": #NOTE: platform.system()='Windows', sys.platform='win32'
-    libext = '.dll'
-elif mactype == "cygwin":
-    libext = ".dll"
 else:
     raise ValueError('Unknown platform type: '+mactype)
 
 
-magnitude_channels = {
+magnitude_channels_default = {
     'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
     'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
     'RootMc1': ["RootMxc1", "RootMyc1", "RootMzc1"],
@@ -49,19 +44,21 @@ magnitude_channels = {
     'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
     'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
     'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'],
+    'TwrBsM': ['TwrBsMxt', 'TwrBsMyt', 'TwrBsMzt'],
 }
 
-fatigue_channels = {
-    'RootMc1': 10,
-    'RootMc2': 10,
-    'RootMc3': 10,
-    'RootMyb1': 10,
-    'RootMyb2': 10,
-    'RootMyb3': 10,
-    'TwrBsMyt': 10
+fatigue_channels_default = {
+    'RootMc1': FatigueParams(slope=10),
+    'RootMc2': FatigueParams(slope=10),
+    'RootMc3': FatigueParams(slope=10),
+    'RootMyb1': FatigueParams(slope=10),
+    'RootMyb2': FatigueParams(slope=10),
+    'RootMyb3': FatigueParams(slope=10),
+    'TwrBsM': FatigueParams(slope=4),
+    'LSShftM': FatigueParams(slope=4),
 }
 
-# channel_extremes = [
+# channel_extremes_default = [
 #     'RotSpeed',
 #     'BldPitch1','BldPitch2','BldPitch3',
 #     "RotThrust","LSShftFys","LSShftFzs","RotTorq","LSSTipMys","LSSTipMzs","LSShftF","LSShftM",
@@ -98,13 +95,6 @@ fatigue_channels = {
 #     "M1N1MMze", "M4N1MMze", "M6N1MMze", "M8N1MMze", "M10N1MMze", "M13N1MMze", "M15N1MMze", "M17N1MMze", "M18N2MMze",
 #     ]
 
-la = LoadsAnalysis(
-    outputs=[],
-    magnitude_channels=magnitude_channels,
-    fatigue_channels=fatigue_channels,
-    #extreme_channels=channel_extremes,
-)
-
 
 class runFAST_pywrapper(object):
 
@@ -122,7 +112,10 @@ class runFAST_pywrapper(object):
         self.case               = {}     # dictionary of variable values to change
         self.channels           = {}     # dictionary of output channels to change
         self.keep_time          = False
-
+        self.goodman            = False
+        self.magnitude_channels = magnitude_channels_default
+        self.fatigue_channels   = fatigue_channels_default
+        self.la                 = None # Will be initialized on first run through
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
 
         # Optional population class attributes from key word arguments
@@ -134,6 +127,15 @@ class runFAST_pywrapper(object):
 
         super(runFAST_pywrapper, self).__init__()
 
+    def init_crunch(self):
+        if self.la is None:
+            self.la = LoadsAnalysis(
+                outputs=[],
+                magnitude_channels=self.magnitude_channels,
+                fatigue_channels=self.fatigue_channels,
+                #extreme_channels=channel_extremes_default,
+            )
+        
     def execute(self):
 
         # FAST version specific initialization
@@ -164,6 +166,9 @@ class runFAST_pywrapper(object):
             writer.FAST_yamlfile = self.FAST_yamlfile_out
             writer.write_yaml()
 
+        # Make sure pCrunch is ready
+        self.init_crunch()
+            
         if self.FAST_exe is None: # Use library
 
             FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
@@ -179,7 +184,7 @@ class runFAST_pywrapper(object):
                 output_dict[channel] = openfastlib.output_values[:,i]
             del(openfastlib)
             
-            output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=magnitude_channels)
+            output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
             os.chdir(orig_dir)
@@ -204,9 +209,9 @@ class runFAST_pywrapper(object):
                 print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
             if os.path.exists(FAST_Output):
-                output = OpenFASTBinary(FAST_Output, magnitude_channels=magnitude_channels)  #TODO: add magnitude_channels
+                output = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
             elif os.path.exists(FAST_Output_txt):
-                output = OpenFASTAscii(FAST_Output, magnitude_channels=magnitude_channels)
+                output = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
                 
             output.read()
 
@@ -215,13 +220,14 @@ class runFAST_pywrapper(object):
             for i, channel in enumerate(output.channels):
                 output_dict[channel] = output.df[channel].to_numpy()
 
-
         # Trim Data
         if self.fst_vt['Fst']['TStart'] > 0.0:
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
-        case_name, sum_stats, extremes, dels = la._process_output(output)
+        case_name, sum_stats, extremes, dels, damage = self.la._process_output(output,
+                                                                               return_damage=True,
+                                                                               goodman_correction=self.goodman)
 
-        return case_name, sum_stats, extremes, dels, output_dict
+        return case_name, sum_stats, extremes, dels, damage, output_dict
 
 
 class runFAST_pywrapper_batch(object):
@@ -246,30 +252,47 @@ class runFAST_pywrapper_batch(object):
 
         self.overwrite_outfiles = True
         self.keep_time          = False
+
+        self.goodman            = False
+        self.magnitude_channels = magnitude_channels_default
+        self.fatigue_channels   = fatigue_channels_default
+        self.la                 = None
         
         self.post               = None
+
+    def init_crunch(self):
+        if self.la is None:
+            self.la = LoadsAnalysis(
+                outputs=[],
+                magnitude_channels=self.magnitude_channels,
+                fatigue_channels=self.fatigue_channels,
+                #extreme_channels=channel_extremes_default,
+            )
 
     def create_case_data(self):
 
         case_data_all = []
         for i in range(len(self.case_list)):
             case_data = {}
-            case_data['case'] = self.case_list[i]
-            case_data['case_name'] = self.case_name_list[i]
-            case_data['FAST_exe'] = self.FAST_exe
-            case_data['FAST_lib'] = self.FAST_lib
-            case_data['FAST_runDirectory'] = self.FAST_runDirectory
-            case_data['FAST_InputFile'] = self.FAST_InputFile
-            case_data['FAST_directory'] = self.FAST_directory
-            case_data['read_yaml'] = self.read_yaml
-            case_data['FAST_yamlfile_in'] = self.FAST_yamlfile_in
-            case_data['fst_vt'] = self.fst_vt
-            case_data['write_yaml'] = self.write_yaml
-            case_data['FAST_yamlfile_out'] = self.FAST_yamlfile_out
-            case_data['channels'] = self.channels
+            case_data['case']               = self.case_list[i]
+            case_data['case_name']          = self.case_name_list[i]
+            case_data['FAST_exe']           = self.FAST_exe
+            case_data['FAST_lib']           = self.FAST_lib
+            case_data['FAST_runDirectory']  = self.FAST_runDirectory
+            case_data['FAST_InputFile']     = self.FAST_InputFile
+            case_data['FAST_directory']     = self.FAST_directory
+            case_data['read_yaml']          = self.read_yaml
+            case_data['FAST_yamlfile_in']   = self.FAST_yamlfile_in
+            case_data['fst_vt']             = self.fst_vt
+            case_data['write_yaml']         = self.write_yaml
+            case_data['FAST_yamlfile_out']  = self.FAST_yamlfile_out
+            case_data['channels']           = self.channels
             case_data['overwrite_outfiles'] = self.overwrite_outfiles
-            case_data['keep_time'] = self.keep_time
-            case_data['post'] = self.post
+            case_data['keep_time']          = self.keep_time
+            case_data['goodman']            = self.goodman
+            case_data['magnitude_channels'] = self.magnitude_channels
+            case_data['fatigue_channels']   = self.fatigue_channels
+            case_data['post']               = self.post
 
             case_data_all.append(case_data)
 
@@ -280,22 +303,26 @@ class runFAST_pywrapper_batch(object):
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory)
 
+        self.init_crunch()
+            
         case_data_all = self.create_case_data()
             
         ss = {}
         et = {}
         dl = {}
+        dam = {}
         ct = []
         for c in case_data_all:
-            _name, _ss, _et, _dl, _ct = evaluate(c)
+            _name, _ss, _et, _dl, _dam, _ct = evaluate(c)
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
+            dam[_name] = _dam
             ct.append(_ct)
         
-        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
+        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
-        return summary_stats, extreme_table, DELs, ct
+        return summary_stats, extreme_table, DELs, Damage, ct
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
@@ -307,6 +334,8 @@ class runFAST_pywrapper_batch(object):
             cores = mp.cpu_count()
         pool = mp.Pool(cores)
 
+        self.init_crunch()
+
         case_data_all = self.create_case_data()
 
         output = pool.map(evaluate_multi, case_data_all)
@@ -316,16 +345,18 @@ class runFAST_pywrapper_batch(object):
         ss = {}
         et = {}
         dl = {}
+        dam = {}
         ct = []
-        for _name, _ss, _et, _dl, _ct in output:
+        for _name, _ss, _et, _dl, _dam, _ct in output:
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
+            dam[_name] = _dam
             ct.append(_ct)
 
-        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
+        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
-        return summary_stats, extreme_table, DELs, ct
+        return summary_stats, extreme_table, DELs, Damage, ct
 
     def run_mpi(self, mpi_comm_map_down):
 
@@ -344,6 +375,8 @@ class runFAST_pywrapper_batch(object):
         # file management
         if not os.path.exists(self.FAST_runDirectory) and rank == 0:
             os.makedirs(self.FAST_runDirectory)
+
+        self.init_crunch()
 
         case_data_all = self.create_case_data()
 
@@ -366,51 +399,40 @@ class runFAST_pywrapper_batch(object):
         ss = {}
         et = {}
         dl = {}
+        dam = {}
         ct = []
-        for _name, _ss, _et, _dl, _ct in output:
+        for _name, _ss, _et, _dl, _dam, _ct in output:
             ss[_name] = _ss
             et[_name] = _et
             dl[_name] = _dl
+            dam[_name] = _dam
             ct.append(_ct)
 
-        summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
-
-        return summary_stats, extreme_table, DELs, ct
+        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
+        
+        return summary_stats, extreme_table, DELs, Damage, ct
 
 
 
 def evaluate(indict):
     # Batch FAST pyWrapper call, as a function outside the runFAST_pywrapper_batch class for pickle-ablility
 
+    # Could probably do this with vars(fast), but this gives tighter control
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
-                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time', 'post']
-    for k in indict:
-        if k in known_keys: continue
-        print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
+                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time',
+                  'goodman','magnitude_channels','fatigue_channels','post']
     
     fast = runFAST_pywrapper()
-    fast.FAST_exe           = indict['FAST_exe']              # Path to FAST
-    fast.FAST_lib           = indict['FAST_lib']              # Path to FAST
-    fast.FAST_InputFile     = indict['FAST_InputFile']        # Name of the fst - does not include full path
-    fast.FAST_directory     = indict['FAST_directory']        # Path to directory containing the case files
-    fast.FAST_runDirectory  = indict['FAST_runDirectory']     # Where 
-
-    fast.read_yaml          = indict['read_yaml']
-    fast.FAST_yamlfile_in   = indict['FAST_yamlfile_in']
-    fast.fst_vt             = indict['fst_vt']
-    fast.write_yaml         = indict['write_yaml']
-    fast.FAST_yamlfile_out  = indict['FAST_yamlfile_out']
-
-    fast.FAST_namingOut     = indict['case_name']
-    fast.case               = indict['case']
-    fast.channels           = indict['channels']
-
-    fast.overwrite_outfiles = indict['overwrite_outfiles']
-    fast.keep_time = indict['keep_time']
-
-    FAST_Output = fast.execute()
-    return FAST_Output
+    for k in indict:
+        if k == 'case_name':
+            fast.FAST_namingOut = indict['case_name']
+        elif k in known_keys:
+            setattr(fast, k, indict[k])
+        else:
+            print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
+    
+    return fast.execute()
 
 def evaluate_multi(indict):
     # helper function for running with multiprocessing.Pool.map
