@@ -742,7 +742,7 @@ class WindPark(om.Group):
             self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
             self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
             
-            if modeling_options['DLC_driver']['openfast_file_management']['model_only'] == False:
+            if modeling_options['General']['openfast_configuration']['model_only'] == False:
                 self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen_weis.DEL_RootMyb')
                 self.connect('aeroelastic.DEL_TwrBsMyt',       'outputs_2_screen_weis.DEL_TwrBsMyt')
                 self.connect('aeroelastic.rotor_overspeed',    'outputs_2_screen_weis.rotor_overspeed')

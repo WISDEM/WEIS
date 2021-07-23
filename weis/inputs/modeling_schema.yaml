@@ -12,6 +12,34 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
+            openfast_configuration:
+                type: object
+                default: {}
+                properties:
+                    OF_run_fst:
+                        type: string
+                        default: none
+                        description: Filename prefix for output files
+                    OF_run_dir:
+                        type: string
+                        default: none
+                        description: Path to place FAST output files (e.g. /home/user/myturbines/output)
+                    generate_af_coords:
+                        type: boolean
+                        default: False
+                        description: Flag to write airfoil coordinates out or not
+                    use_exe:
+                        type: boolean
+                        default: False
+                        description: Use openfast executable instead of library
+                    model_only:
+                        type: boolean
+                        default: False
+                        description: Flag to only generate an OpenFAST model and stop
+            goodman_correction:
+                type: boolean
+                default: False
+                description: Flag whether to apply the Goodman correction for mean stress value to the stress amplitude value in fatigue calculations
     WISDEM:
         type: object
         default: {}
@@ -2560,7 +2588,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag: 
+                    flag:
                         type: boolean
                         default: False
                         description: Whether or not to run a level 2 time domain simulation
@@ -2692,30 +2720,6 @@ properties:
         type: object
         default: {}
         properties:
-            openfast_file_management:
-                type: object
-                default: {}
-                properties:
-                    OF_run_fst:
-                        type: string
-                        default: none
-                        description: Filename prefix for output files
-                    OF_run_dir:
-                        type: string
-                        default: none
-                        description: Path to place FAST output files (e.g. /home/user/myturbines/output)
-                    generate_af_coords:
-                        type: boolean
-                        default: False
-                        description: Flag to write airfoil coordinates out or not
-                    use_exe:
-                        type: boolean
-                        default: False
-                        description: Use openfast executable instead of library
-                    model_only:
-                        type: boolean
-                        default: False
-                        description: Flag to only generate an OpenFAST model and stop
             DLCs:
                 type: array
                 default: [{}]

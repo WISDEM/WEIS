@@ -28,8 +28,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
-            self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt'] = {}
-            self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['outlist'] = fast.fst_vt['outlist']
+            self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
+            self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
             # Find the path to the WEIS controller
             run_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
@@ -39,7 +39,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.dylib')
             else:
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.so')
-            self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
+            self.modeling_options['General']['openfast_configuration']['path2dll'] = path2dll
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["offshore"]:
