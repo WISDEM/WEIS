@@ -644,10 +644,12 @@ class ComputeTotalIWithVariableBallast(om.ExplicitComponent):
     def setup(self):
         self.add_input('variable_ballast_mass', 0.0, units="kg")
         self.add_input('variable_center_of_mass', val=np.zeros(3), units="m")
-        self.add_input('platform_mass', 0.0, units='kg')
+        self.add_input('platform_mass', 0.0, units="kg")
         self.add_input('platform_center_of_mass', np.zeros(3), units="m")
         self.add_input('platform_I_total', np.zeros(6), units="kg*m**2")
-        self.add_input('transition_piece_I', np.zeros(6), units="kg*m**2")
+        #self.add_input('transition_piece_I', np.zeros(6), units="kg*m**2") # recalculating with parallel axis theorem below
+        self.add_input("transition_piece_mass", 0.0, units="kg")
+        self.add_input("transition_node", np.zeros(3), units="m")
         
         self.add_output('I_total_with_variable_and_trans', np.zeros(6), units="kg*m**2")
 
@@ -657,20 +659,30 @@ class ComputeTotalIWithVariableBallast(om.ExplicitComponent):
         platform_mass = inputs['platform_mass']
         platform_center_of_mass = inputs['platform_center_of_mass']
         platform_I_total = inputs['platform_I_total']
-        transition_piece_I = inputs['transition_piece_I']
+        #transition_piece_I = inputs['transition_piece_I'] # recalculating with parallel axis theorem below
+        transition_piece_mass = inputs['transition_piece_mass']
+        transition_node = inputs['transition_node'] # position of transition_piece point mass in global coordinate system == center of gravity/mass for point mass
         
         # Compute the total cg for the platform and the variable ballast together
         # using a weighted sum approach
-        cg_plat_total = (variable_ballast_mass * variable_center_of_mass + platform_mass * platform_center_of_mass) / (variable_ballast_mass + platform_mass)
-        
+        cg_plat_total = (variable_ballast_mass * variable_center_of_mass + platform_mass * platform_center_of_mass + transition_piece_mass * transition_node) / (variable_ballast_mass + platform_mass + transition_piece_mass)
+
         # Compute the moment arm of the variable ballast
-        R = (cg_plat_total - cg_variable)
-        
-        # TODO : compute transition_piece_I with parallel axis theorem
-        
-        
+        R_vb = (cg_plat_total - cg_variable)
+
+        # Compute the moment arm of the transition_piece 
+        R_trans = (cg_plat_total - transition_node) 
+
+        # Compute variable_ballast_I with parallel axis theorem
+        variable_ballast_I = variable_ballast_mass * (np.dot(R_vb, R_vb) * np.eye(3) - np.outer(R_vb, R_vb))
+
+        # Compute transition_piece_I with parallel axis theorem
+        transition_piece_I = transition_piece_mass * (np.dot(R_trans, R_trans) * np.eye(3) - np.outer(R_trans, R_trans))
+
         # Compute the full moment of inertia for the platform and variable ballast
-        I_total_with_variable_and_trans = platform_I_total + transition_piece_I + variable_ballast_mass * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
+        I_total_with_variable_and_trans = platform_I_total + transition_piece_I + variable_ballast_I
+        #I_total_with_variable_and_trans = platform_I_total + transition_piece_mass * (np.dot(R_trans, R_trans) * np.eye(3) - np.outer(R_trans, R_trans)) + variable_ballast_mass * (np.dot(R_vb, R_vb) * np.eye(3) - np.outer(R_vb, R_vb))
+        
         outputs['I_total_with_variable_and_trans'] = I_total_with_variable_and_trans
 
 
