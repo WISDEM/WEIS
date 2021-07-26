@@ -124,7 +124,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_input(f"member{k}:ring_stiffener_web_thickness", 0.0, units="m")
             self.add_input(f"member{k}:ring_stiffener_flange_width", 1e-6, units="m")
             self.add_input(f"member{k}:ring_stiffener_flange_thickness", 0.0, units="m")
-            self.add_input(f"member{k}:ring_stiffener_spacing", 1000.0, units="m")
+            self.add_input(f"member{k}:ring_stiffener_spacing", 0.0)
             self.add_input(f"platform_member{k+1}_stations", val=np.zeros(n_height))
             
             self.add_output(f"platform_member{k+1}_heading", val=np.zeros(0), units='deg')
@@ -228,8 +228,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
             # Ring stiffener discretization conversion
             if float(inputs[f"member{k}:ring_stiffener_spacing"]) > 0.0:
-                outputs[f"platform_member{k+1}_ring_spacing"] = (inputs[f"member{k}:ring_stiffener_spacing"] /
-                                                                 inputs[f"member{k}:height"])
+                outputs[f"platform_member{k+1}_ring_spacing"] = inputs[f"member{k}:ring_stiffener_spacing"]
                 h_web = inputs[f"member{k}:ring_stiffener_web_height"]
                 t_web = inputs[f"member{k}:ring_stiffener_web_thickness"]
                 t_flange = inputs[f"member{k}:ring_stiffener_flange_thickness"]

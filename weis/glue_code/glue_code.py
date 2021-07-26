@@ -384,7 +384,7 @@ class WindPark(om.Group):
                 self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                 self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
                 self.connect("floatingse.platform_mass", "aeroelastic.platform_mass")
-                self.connect("floatingse.platform_center_of_mass", "aeroelastic.platform_center_of_mass")
+                self.connect("floatingse.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
                 self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
                 self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
                 self.connect("floating.transition_node", "aeroelastic.transition_node")
