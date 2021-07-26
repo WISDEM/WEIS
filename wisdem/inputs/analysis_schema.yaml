@@ -1172,6 +1172,7 @@ properties:
 
     inverse_design:
         type: object
+        description: For use with the inverse_design merit_figure. Specifies the reference output variable's 'prom_name' name and the desired value, accepts multiple variables. A normalized difference between the actual value and reference value is calculated for each variable. A Root Mean Square (RMS) is calculated with all variables and the optimizer minimizes the RMS. If the refernce output variable is an array, specify the element index number via "idx".
         default: {}
         additionalProperties:
             type: object

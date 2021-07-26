@@ -424,6 +424,8 @@ class WT_RNTA(om.Group):
             self.connect("tower.outfitting_factor", "floatingse.tower.outfitting_factor_in")
             self.connect("tower.layer_mat", "floatingse.tower.layer_materials")
             self.connect("floating.transition_node", "floatingse.transition_node")
+            self.connect("floating.transition_piece_mass", "floatingse.transition_piece_mass")
+            self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
             if modeling_options["flags"]["tower"]:
                 self.connect("tower_grid.height", "floatingse.tower_height")
             if modeling_options["flags"]["nacelle"]:
@@ -663,8 +665,8 @@ class WindPark(om.Group):
                 "outputs_2_screen", Outputs_2_Screen(modeling_options=modeling_options, opt_options=opt_options)
             )
 
-        if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
-            self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
+        # if opt_options["opt_flag"] and opt_options["recorder"]["flag"]:
+        #     self.add_subsystem("conv_plots", Convergence_Trends_Opt(opt_options=opt_options))
 
         # BOS inputs
         if modeling_options["WISDEM"]["BOS"]["flag"]:
@@ -692,6 +694,9 @@ class WindPark(om.Group):
                     self.connect("mooring.line_diameter", "orbit.mooring_line_diameter", src_indices=[0])
                     self.connect("mooring.unstretched_length", "orbit.mooring_line_length", src_indices=[0])
                     self.connect("mooring.anchor_mass", "orbit.anchor_mass", src_indices=[0])
+                    self.connect("floating.transition_piece_mass", "orbit.transition_piece_mass")
+                    self.connect("floating.transition_piece_cost", "orbit.transition_piece_cost")
+                    self.connect("floatingse.platform_cost", "orbit.floating_substructure_cost")
                 self.connect("rotorse.re.precomp.blade_mass", "orbit.blade_mass")
                 self.connect("tcc.turbine_cost_kW", "orbit.turbine_capex")
                 if modeling_options["flags"]["nacelle"]:

@@ -381,7 +381,7 @@ class PoseOptimization(object):
                     seed=doe_options["seed"],
                 )
             elif doe_options["generator"].lower() == "fullfact":
-                generator = om.FullFactorialGenerator(levels=doe_options["num_samples"])
+                generator = om.FullFactorialGenerator(levels=int(doe_options["num_samples"]))
             elif doe_options["generator"].lower() == "plackettburman":
                 generator = om.PlackettBurmanGenerator()
             elif doe_options["generator"].lower() == "boxbehnken":
