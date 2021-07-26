@@ -1140,7 +1140,7 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]
     if blade_flag:
-        wt_opt['rotorse.wt_class.V_mean_overwrite'] = environment['V_mean']
+        wt_opt["rotorse.wt_class.V_mean_overwrite"] = environment["V_mean"]
 
     return wt_opt
 
