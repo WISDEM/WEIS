@@ -247,7 +247,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
-        self.add_input("platform_center_of_mass", np.zeros(3), units="m")
+        self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
 
@@ -709,22 +709,22 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
 
-        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_center_of_mass"][2]))
+        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_total_center_of_mass"][2]))
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # TODO: There is some confusion on PtfmRefzt
         # DZ: based on the openfast r-tests:
-        #   if this is floating, the z ref. point is 0.  Is this the reference that platform_center_of_mass is relative to?
+        #   if this is floating, the z ref. point is 0.  Is this the reference that platform_total_center_of_mass is relative to?
         #   if fixed bottom, it's the tower base height.
         if modopt['flags']['floating']:
             fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"])
             fst_vt['ElastoDyn']['PtfmRIner'] = float(inputs["platform_I_total"][0])
             fst_vt['ElastoDyn']['PtfmPIner'] = float(inputs["platform_I_total"][1])
             fst_vt['ElastoDyn']['PtfmYIner'] = float(inputs["platform_I_total"][2])
-            fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
-            fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
-            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
+            fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_total_center_of_mass"][0])
+            fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_total_center_of_mass"][1])
+            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_total_center_of_mass"][2])
             fst_vt['ElastoDyn']['PtfmRefzt'] = 0. # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
         else:
