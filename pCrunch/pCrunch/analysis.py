@@ -18,7 +18,7 @@ from pCrunch.io import OpenFASTAscii, OpenFASTBinary #, OpenFASTOutput
 class FatigueParams:
     """Simple data structure of parameters needed by fatigue calculation."""
 
-    def __init__(self, load2stress=1.0, slope=4.0, ult_stress=1.0, SNparam=1.0):
+    def __init__(self, load2stress=1.0, slope=4.0, ult_stress=1.0, S_intercept=0.0):
         """
         Creates an instance of `FatigueParams`.
 
@@ -30,18 +30,18 @@ class FatigueParams:
             Wohler exponent in the traditional SN-curve of S = A * N ^ -(1/m)
         ult_stress : float (optional)
             Ultimate stress for use in Goodman equivalent stress calculation
-        SNparam : float (optional)
-            Something to do with A in SN-curve. . .
+        S_intercept : float (optional)
+            Stress-axis intercept of log-log S-N Wohler curve. Taken as ultimate stress unless specified
         """
 
         self.load2stress = load2stress
         self.slope = slope
         self.ult_stress = ult_stress
-        self.SNparam = SNparam
+        self.S_intercept = S_intercept if S_intercept > 0.0 else ult_stress
 
     def copy(self):
         return FatigueParams(load2stress=self.load2stress, slope=self.slope,
-                             ult_stress=self.ult_stress, SNparam=self.SNparam)
+                             ult_stress=self.ult_stress, S_intercept=self.S_intercept)
 
 class LoadsAnalysis:
     """Implementation of `mlife` in python."""
@@ -376,10 +376,9 @@ class LoadsAnalysis:
 
             try:
                 DELs[chan], D[chan] = self._compute_del(
-                    output[chan],
+                    output[chan], output.elapsed_time,
                     fatparams.load2stress, fatparams.slope,
-                    fatparams.ult_stress, fatparams.SNparam,
-                    output.elapsed_time,
+                    fatparams.ult_stress, fatparams.S_intercept,
                     **kwargs
                 )
 
@@ -391,7 +390,7 @@ class LoadsAnalysis:
         return DELs, D
 
     @staticmethod
-    def _compute_del(ts, load2stress, slope, Sult, Sc, elapsed, **kwargs):
+    def _compute_del(ts, elapsed, load2stress, slope, Sult, Sc=0.0, **kwargs):
         """
         Computes damage equivalent load of input `ts`.
 
@@ -399,10 +398,16 @@ class LoadsAnalysis:
         ----------
         ts : np.array
             Time series to calculate DEL for.
-        slope : int | float
-            Slope of the fatigue curve.
         elapsed : int | float
             Elapsed time of the time series.
+        load2stress : float (optional)
+            Linear scaling coefficient to convert an applied load to stress such that S = load2stress * L
+        slope : int | float
+            Slope of the fatigue curve.
+        Sult : float (optional)
+            Ultimate stress for use in Goodman equivalent stress calculation
+        Sc : float (optional)
+            Stress-axis intercept of log-log S-N Wohler curve. Taken as ultimate stress unless specified
         rainflow_bins : int
             Number of bins used in rainflow analysis.
             Default: 100
@@ -417,7 +422,8 @@ class LoadsAnalysis:
         bins = kwargs.get("rainflow_bins", 100)
         return_damage = kwargs.get("return_damage", False)
         goodman = kwargs.get("goodman_correction", False)
-
+        Scin = Sc if Sc > 0.0 else Sult
+        
         # Working with loads for DELs
         F, Fmean = fatpack.find_rainflow_ranges(ts, return_means=True)
         if goodman:
@@ -440,7 +446,7 @@ class LoadsAnalysis:
             Nrf, Srf = fatpack.find_range_count(S, bins)
             curve = fatpack.LinearEnduranceCurve(Sc)
             curve.m = slope
-            curve.Nc = 1e6 # TODO- based on Sc or elapsed?
+            curve.Nc = 1
             D = curve.find_miner_sum(np.c_[Srf, Nrf])
 
         return DEL, D
