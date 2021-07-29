@@ -77,8 +77,14 @@ class DiscretizationYAML(om.ExplicitComponent):
         2D array of the shear moduli of the materials. Each row represents a material,
         the three members represent G12, G13 and G23.
     sigma_y_mat : numpy array[n_mat], [Pa]
-        2D array of the yield strength of the materials. Each row represents a material,
+        yield strength of the materials.
+    sigma_ult_mat : numpy array[n_mat, 3], [Pa]
+        2D array of the ultimate strength of the materials. Each row represents a material,
         the three members represent Xt12, Xt13 and Xt23.
+    wohler_exp_mat : numpy array[n_mat], [Pa]
+        Exponent, m, in the S-N fatigue curve S = A*N^-(1/m)
+    wohler_A_mat : numpy array[n_mat], [Pa]
+        Coefficient, A, in the S-N fatigue curve S = A*N^-(1/m)
     rho_mat : numpy array[n_mat], [kg/m**3]
         1D array of the density of the materials. For composites, this is the density of
         the laminate.
@@ -105,6 +111,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         Isotropic shear modulus of the materials along the member sections.
     sigma_y : numpy array[n_height-1], [Pa]
         Isotropic yield strength of the materials along the member sections.
+    sigma_ult : numpy array[n_height-1], [Pa]
+        Isotropic ultimate strength of the materials along the member sections.
+    wohler_exp : numpy array[n_height-1], [Pa]
+        Exponent, m, in the S-N fatigue curve S = A*N^-(1/m) of the materials along the member sections.
+    wohler_A : numpy array[n_height-1], [Pa]
+        Coefficient, A, in the S-N fatigue curve S = A*N^-(1/m) of the materials along the member sections.
     rho : numpy array[n_height-1], [kg/m**3]
         Density of the materials along the member sections.
     unit_cost : numpy array[n_height-1], [USD/kg]
@@ -140,6 +152,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_input("E_user", val=0.0, units="Pa")
         self.add_input("G_mat", val=np.zeros([n_mat, 3]), units="Pa")
         self.add_input("sigma_y_mat", val=np.zeros(n_mat), units="Pa")
+        self.add_input("sigma_ult_mat", val=np.zeros([n_mat, 3]), units="Pa")
+        self.add_input("wohler_exp_mat", val=np.zeros(n_mat))
+        self.add_input("wohler_A_mat", val=np.zeros(n_mat))
         self.add_input("rho_mat", val=np.zeros(n_mat), units="kg/m**3")
         self.add_input("unit_cost_mat", val=np.zeros(n_mat), units="USD/kg")
         self.add_input("outfitting_factor_in", val=1.0)
@@ -152,6 +167,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         self.add_output("E", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("G", val=np.zeros(n_height - 1), units="Pa")
         self.add_output("sigma_y", val=np.zeros(n_height - 1), units="Pa")
+        self.add_output("sigma_ult", val=np.zeros(n_height - 1), units="Pa")
+        self.add_output("wohler_exp", val=np.zeros(n_height - 1))
+        self.add_output("wohler_A", val=np.zeros(n_height - 1))
         self.add_output("rho", val=np.zeros(n_height - 1), units="kg/m**3")
         self.add_output("unit_cost", val=np.zeros(n_height - 1), units="USD/kg")
         self.add_output("outfitting_factor", val=np.ones(n_height - 1))
@@ -229,6 +247,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         E = np.mean(inputs["E_mat"], axis=1)
         G = np.mean(inputs["G_mat"], axis=1)
         sigy = inputs["sigma_y_mat"]
+        sigu = inputs["sigma_ult_mat"].min(axis=1)
+        m = inputs["wohler_exp_mat"]
+        A = inputs["wohler_A_mat"]
         rho = inputs["rho_mat"]
         cost = inputs["unit_cost_mat"]
         mat_names = discrete_inputs["material_names"]
@@ -237,6 +258,9 @@ class DiscretizationYAML(om.ExplicitComponent):
         E_param = np.zeros(twall.shape)
         G_param = np.zeros(twall.shape)
         sigy_param = np.zeros(twall.shape)
+        sigu_param = np.zeros(twall.shape)
+        m_param = np.zeros(twall.shape)
+        A_param = np.zeros(twall.shape)
         rho_param = np.zeros(n_height - 1)
         cost_param = np.zeros(n_height - 1)
 
@@ -265,6 +289,9 @@ class DiscretizationYAML(om.ExplicitComponent):
 
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
+            sigu_param[k, :] = sigu[imat]
+            m_param[k, :] = m[imat]
+            A_param[k, :] = A[imat]
 
         # Mass weighted cost (should really weight by radius too)
         cost_param /= rho_param
@@ -281,12 +308,18 @@ class DiscretizationYAML(om.ExplicitComponent):
         E_param = 0.5 * np.sum(vol_frac * E_param, axis=0) + 0.5 / np.sum(vol_frac / E_param, axis=0)
         G_param = 0.5 * np.sum(vol_frac * G_param, axis=0) + 0.5 / np.sum(vol_frac / G_param, axis=0)
         sigy_param = 0.5 * np.sum(vol_frac * sigy_param, axis=0) + 0.5 / np.sum(vol_frac / sigy_param, axis=0)
+        sigu_param = 0.5 * np.sum(vol_frac * sigu_param, axis=0) + 0.5 / np.sum(vol_frac / sigu_param, axis=0)
+        m_param = 0.5 * np.sum(vol_frac * m_param, axis=0) + 0.5 / np.sum(vol_frac / m_param, axis=0)
+        A_param = 0.5 * np.sum(vol_frac * A_param, axis=0) + 0.5 / np.sum(vol_frac / A_param, axis=0)
 
         # Store values
         outputs["E"] = E_param
         outputs["G"] = G_param
         outputs["rho"] = rho_param
         outputs["sigma_y"] = sigy_param
+        outputs["sigma_ult"] = sigu_param
+        outputs["wohler_exp"] = m_param
+        outputs["wohler_A"] = A_param
         outputs["unit_cost"] = cost_param
 
         # Unpack for Elastodyn
@@ -611,6 +644,14 @@ class MemberComponent(om.ExplicitComponent):
         Cross-sectional shear modulus all member segments
     section_sigma_y : numpy array[npts-1], [Pa]
         Cross-sectional yield stress of all member segments
+    axial_base_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress at member joint0
+    shear_base_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress at member joint0
+    axial_end_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress at member joint1
+    shear_end_load2stress : numpy array[6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress at member joint1
 
     """
 
@@ -724,6 +765,11 @@ class MemberComponent(om.ExplicitComponent):
         self.add_output("section_G", NULL * np.ones(MEMMAX), units="Pa")
         self.add_output("section_sigma_y", NULL * np.ones(MEMMAX), units="Pa")
 
+        self.add_output("axial_base_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("shear_base_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("axial_end_load2stress", val=np.zeros(6), units="m**2")
+        self.add_output("shear_end_load2stress", val=np.zeros(6), units="m**2")
+
     def add_node(self, s_new):
         # Quit if node already exists
         if s_new in self.sections:
@@ -827,6 +873,33 @@ class MemberComponent(om.ExplicitComponent):
                 sigy=sigymat[k],
             )
             self.add_section(s_full[k], s_full[k + 1], iprop)
+
+        # While the sections are simple, store cross section info
+        ax_base_load2stress = np.zeros(6)
+        sh_base_load2stress = np.zeros(6)
+        ax_end_load2stress = np.zeros(6)
+        sh_end_load2stress = np.zeros(6)
+        slist = self.sections.keys()
+        s = slist[0]
+        r_sec = 0.5 * self.sections[s].D
+        ax_base_load2stress[2] = 1.0 / self.sections[s].A
+        ax_base_load2stress[3] = r_sec / self.sections[s].Ixx
+        ax_base_load2stress[4] = r_sec / self.sections[s].Iyy
+        sh_base_load2stress[0] = r_sec / self.sections[s].Asx
+        sh_base_load2stress[1] = r_sec / self.sections[s].Asy
+        sh_base_load2stress[5] = 1.0 / self.sections[s].Izz
+        s = slist[-2]
+        r_sec = 0.5 * self.sections[s].D
+        ax_end_load2stress[2] = 1.0 / self.sections[s].A
+        ax_end_load2stress[3] = r_sec / self.sections[s].Ixx
+        ax_end_load2stress[4] = r_sec / self.sections[s].Iyy
+        sh_end_load2stress[0] = r_sec / self.sections[s].Asx
+        sh_end_load2stress[1] = r_sec / self.sections[s].Asy
+        sh_end_load2stress[5] = 1.0 / self.sections[s].Izz
+        outputs["axial_base_load2stress"] = ax_base_load2stress
+        outputs["shear_base_load2stress"] = sh_base_load2stress
+        outputs["axial_end_load2stress"] = ax_end_load2stress
+        outputs["shear_end_load2stress"] = sh_end_load2stress
 
         # Adjust for ghost sections
         s_ghost1 = float(inputs["s_ghost1"])
