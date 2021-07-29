@@ -717,6 +717,10 @@ class TowerPostFrame(om.ExplicitComponent):
         Total force on tower+rna
     turbine_M : numpy array[3], [N*m]
         Total x-moment on tower+rna measured at base
+    axial_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and axial stress
+    shear_load2stress : numpy array[nFull-1,6], [m**2]
+        Linear conversion factors between loads [Fx-z; Mx-z] and shear stress
 
     """
 
@@ -768,6 +772,8 @@ class TowerPostFrame(om.ExplicitComponent):
         self.add_output("axial_stress", val=np.zeros(nFull - 1), units="N/m**2")
         self.add_output("shear_stress", val=np.zeros(nFull - 1), units="N/m**2")
         self.add_output("hoop_stress", val=np.zeros(nFull - 1), units="N/m**2")
+        self.add_output("axial_load2stress", val=np.zeros((nFull - 1, 6)), units="m**2")
+        self.add_output("shear_load2stress", val=np.zeros((nFull - 1, 6)), units="m**2")
 
         self.add_output("hoop_stress_euro", val=np.zeros(nFull - 1), units="N/m**2")
         self.add_output("constr_stress", np.zeros(nFull - 1))
@@ -788,6 +794,7 @@ class TowerPostFrame(om.ExplicitComponent):
         h = np.diff(z)
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
+        n_sec = r_sec.size
 
         L_suction = float(inputs["suctionpile_depth"])
         L_buckling = self.options["modeling_options"]["buckling_length"]
@@ -820,7 +827,9 @@ class TowerPostFrame(om.ExplicitComponent):
         # Geom properties
         Az = inputs["Az"]
         Asx = inputs["Asx"]
+        Asy = inputs["Asy"]
         Jz = inputs["Jz"]
+        Ixx = inputs["Ixx"]
         Iyy = inputs["Iyy"]
 
         # See http://svn.code.sourceforge.net/p/frame3dd/code/trunk/doc/Frame3DD-manual.html#structuralmodeling
@@ -830,6 +839,16 @@ class TowerPostFrame(om.ExplicitComponent):
         outputs["constr_stress"] = util_con.vonMisesStressUtilization(
             axial_stress, hoop_stress, shear_stress, gamma_f * gamma_m * gamma_n, sigma_y
         )
+        ax_load2stress = np.zeros((n_sec, 6))
+        ax_load2stress[:, 2] = 1 / Az
+        ax_load2stress[:, 3] = r_sec / Ixx
+        ax_load2stress[:, 4] = r_sec / Iyy
+        sh_load2stress = np.zeros((n_sec, 6))
+        sh_load2stress[:, 0] = r_sec / Asx
+        sh_load2stress[:, 1] = r_sec / Asy
+        sh_load2stress[:, 5] = 1 / Jz
+        outputs["axial_load2stress"] = ax_load2stress
+        outputs["shear_load2stress"] = sh_load2stress
 
         if self.options["modeling_options"]["buckling_method"].lower().find("euro") >= 0:
             # Use Euro-code method

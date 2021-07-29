@@ -2128,6 +2128,8 @@ class Floating(om.Group):
         jivc = self.add_subsystem("joints", om.IndepVarComp(), promotes=["*"])
         jivc.add_output("location_in", val=np.zeros((n_joints, 3)), units="m")
         jivc.add_output("transition_node", val=np.zeros(3), units="m")
+        jivc.add_output("transition_piece_mass", val=0.0, units="kg", desc="point mass of transition piece")
+        jivc.add_output("transition_piece_cost", val=0.0, units="USD", desc="cost of transition piece")
 
         # Additions for optimizing individual nodes or multiple nodes concurrently
         self.add_subsystem("nodedv", NodeDVs(options=floating_init_options["joints"]), promotes=["*"])
@@ -2700,6 +2702,16 @@ class Materials(om.Group):
             val=np.zeros(n_mat),
             units="Pa",
             desc="Yield stress of the material (in the principle direction for composites).",
+        )
+        ivc.add_output(
+            "wohler_exp",
+            val=np.zeros(n_mat),
+            desc="Exponent of S-N Wohler fatigue curve in the form of S = A*N^-(1/m).",
+        )
+        ivc.add_output(
+            "wohler_intercept",
+            val=np.zeros(n_mat),
+            desc="Stress-intercept (A) of S-N Wohler fatigue curve in the form of S = A*N^-(1/m), taken as ultimate stress unless otherwise specified.",
         )
         ivc.add_output(
             "unit_cost", val=np.zeros(n_mat), units="USD/kg", desc="1D array of the unit costs of the materials."
