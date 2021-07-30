@@ -326,25 +326,25 @@ class FASTLoadCases(ExplicitComponent):
             
         # Inputs required for fatigue processing
         self.add_input('blade_root_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-        self.add_input('blade_root_ultstress',   val=1.0,   desc='Blade root ultimate stress for material')
+        self.add_input('blade_root_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
         self.add_input('blade_root_wohlerA',   val=1.0,   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
-        self.add_input('blade_root_sparU_load2stress',   val=np.ones(6),  desc='Blade root upper spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-        self.add_input('blade_root_sparL_load2stress',   val=np.ones(6),  desc='Blade root lower spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('blade_root_sparU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root upper spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('blade_root_sparL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root lower spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
         self.add_input('blade_maxc_wohlerexp',   val=1.0,   desc='Blade max chord Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-        self.add_input('blade_maxc_ultstress',   val=1.0,   desc='Blade max chord ultimate stress for material')
+        self.add_input('blade_maxc_ultstress',   val=1.0, units="Pa",   desc='Blade max chord ultimate stress for material')
         self.add_input('blade_maxc_wohlerA',   val=1.0,   desc='Blade max chord parameter, A, in S/N curve S=A*N^-(1/m)')
-        self.add_input('blade_maxc_teU_load2stress',   val=np.ones(6),  desc='Blade max chord upper trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-        self.add_input('blade_maxc_teL_load2stress',   val=np.ones(6),  desc='Blade max chord lower trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('blade_maxc_teU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord upper trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('blade_maxc_teL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord lower trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
         self.add_input('lss_wohlerexp',   val=1.0,   desc='Low speed shaft Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
         self.add_input('lss_wohlerA',     val=1.0,   desc='Low speed shaft parameter, A, in S/N curve S=A*N^-(1/m)')
-        self.add_input('lss_ultstress',   val=1.0,   desc='Low speed shaft Ultimate stress for material')
-        self.add_input('lss_axial_load2stress',   val=np.ones(6),  desc='Low speed shaft coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-        self.add_input('lss_shear_load2stress',   val=np.ones(6),  desc='Low speed shaft coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
-        self.add_input('tower_wohlerexp',   val=1.0,   desc='Tower-monopile Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-        self.add_input('tower_wohlerA',     val=1.0,   desc='Tower-monopile parameter, A, in S/N curve S=A*N^-(1/m)')
-        self.add_input('tower_ultstress',   val=1.0,   desc='Tower-monopile ultimate stress for material')
-        self.add_input('tower_axial_load2stress',   val=np.ones(6),  desc='Tower-monopile coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-        self.add_input('tower_shear_load2stress',   val=np.ones(6),  desc='Tower-monopile coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('lss_ultstress',   val=1.0, units="Pa",   desc='Low speed shaft Ultimate stress for material')
+        self.add_input('lss_axial_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('lss_shear_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('tower_wohlerexp',   val=np.ones(n_height-1),   desc='Tower-monopile Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+        self.add_input('tower_wohlerA',     val=np.ones(n_height-1),   desc='Tower-monopile parameter, A, in S/N curve S=A*N^-(1/m)')
+        self.add_input('tower_ultstress',   val=np.ones(n_height-1), units="Pa",   desc='Tower-monopile ultimate stress for material')
+        self.add_input('tower_axial_load2stress',   val=np.ones([n_height-1,6]), units="m**2",  desc='Tower-monopile coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+        self.add_input('tower_shear_load2stress',   val=np.ones([n_height-1,6]), units="m**2",  desc='Tower-monopile coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
         
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
@@ -424,16 +424,13 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('Std_PtfmPitch', val=0.0, units='deg', desc='standard deviation of platform pitch angle')
 
         # Fatigue output
-        self.add_output('damage_blade_root', val=0.0, desc="Miner's rule cumulative damage to spar cap at blade root")
-        self.add_output('damage_blade_maxc', val=0.0, desc="Miner's rule cumulative damage to spar cap at blade max chord")
-        self.add_output('damage_lss', val=0.0, desc="Miner's rule cumulative damage to spar cap at low speed shaft")
-        self.add_output('damage_tower_base', val=0.0, desc="Miner's rule cumulative damage to spar cap at tower base")
-        self.add_output('damage_monopile_base', val=0.0, desc="Miner's rule cumulative damage to spar cap at monopile base")
-        
-        # self.add_output('C_miners_SC_SS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Spar Cap, suction side")
-        # self.add_output('C_miners_SC_PS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Spar Cap, pressure side")
-        # self.add_output('C_miners_TE_SS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, suction side")
-        # self.add_output('C_miners_TE_PS', val=np.zeros((n_span, n_mat, 2)), desc="Miner's rule cummulative damage to Trailing-Edge reinforcement, pressure side")
+        self.add_output('damage_blade_root_sparU', val=0.0, desc="Miner's rule cumulative damage to upper spar cap at blade root")
+        self.add_output('damage_blade_root_sparL', val=0.0, desc="Miner's rule cumulative damage to lower spar cap at blade root")
+        self.add_output('damage_blade_maxc_teU', val=0.0, desc="Miner's rule cumulative damage to upper trailing edge at blade max chord")
+        self.add_output('damage_blade_maxc_teL', val=0.0, desc="Miner's rule cumulative damage to lower trailing edge at blade max chord")
+        self.add_output('damage_lss', val=0.0, desc="Miner's rule cumulative damage to low speed shaft at hub attachment")
+        self.add_output('damage_tower_base', val=0.0, desc="Miner's rule cumulative damage at tower base")
+        self.add_output('damage_monopile_base', val=0.0, desc="Miner's rule cumulative damage at monopile base")
 
         self.add_discrete_output('fst_vt_out', val={})
 
@@ -1558,46 +1555,49 @@ class FASTLoadCases(ExplicitComponent):
         blade_fatigue_root = FatigueParams(load2stress=1.0,
                                            slope=inputs['blade_root_wohlerexp'],
                                            ult_stress=inputs['blade_root_ultstress'],
-                                           SNparam=inputs['blade_root_snparam'])
+                                           S_intercept=inputs['blade_root_wohlerA'])
 
         blade_fatigue_te = FatigueParams(load2stress=1.0,
                                          slope=inputs['blade_maxc_wohlerexp'],
                                          ult_stress=inputs['blade_maxc_ultstress'],
-                                         SNparam=inputs['blade_maxc_snparam'])
+                                         S_intercept=inputs['blade_maxc_wohlerA'])
         for k in range(1,self.n_blades+1):
-            blade_root_Fz = blade_fatigue_root.copy()
-            blade_root_Fz.load2stress = inputs['blade_root_axial_load2stress'][2]
-            fatigue_channels[f'RootFzb{k}'] = blade_root_Fz
+            for u in ['U','L']:
+                blade_root_Fz = blade_fatigue_root.copy()
+                blade_root_Fz.load2stress = inputs[f'blade_root_spar{u}_load2stress'][2]
+                fatigue_channels[f'RootSpar{u}_Fzb{k}'] = blade_root_Fz
+                magnitude_channels[f'RootSpar{u}_Fzb{k}'] = [f'RootFzb{k}']
 
-            blade_root_Mx = blade_fatigue_root.copy()
-            blade_root_Mx.load2stress = inputs['blade_root_axial_load2stress'][3]
-            fatigue_channels[f'RootMxb{k}'] = blade_root_Mx
-            magnitude_channels[f'RootMxb{k}'] = [f'RootMxb{k}']
+                blade_root_Mx = blade_fatigue_root.copy()
+                blade_root_Mx.load2stress = inputs[f'blade_root_spar{u}_load2stress'][3]
+                fatigue_channels[f'RootSpar{u}_Mxb{k}'] = blade_root_Mx
+                magnitude_channels[f'RootSpar{u}_Mxb{k}'] = [f'RootMxb{k}']
 
-            blade_root_My = blade_fatigue_root.copy()
-            blade_root_My.load2stress = inputs['blade_root_axial_load2stress'][3]
-            fatigue_channels[f'RootMyb{k}'] = blade_root_My
-            magnitude_channels[f'RootMyb{k}'] = [f'RootMyb{k}']
+                blade_root_My = blade_fatigue_root.copy()
+                blade_root_My.load2stress = inputs[f'blade_root_spar{u}_load2stress'][3]
+                fatigue_channels[f'RootSpar{u}_Myb{k}'] = blade_root_My
+                magnitude_channels[f'RootSpar{u}_Myb{k}'] = [f'RootMyb{k}']
 
-            blade_maxc_Fz = blade_fatigue_te.copy()
-            blade_maxc_Fz.load2stress = inputs['blade_maxc_axial_load2stress'][2]
-            fatigue_channels[f'Spn2FLzb{k}'] = blade_maxc_Fz
+                blade_maxc_Fz = blade_fatigue_te.copy()
+                blade_maxc_Fz.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][2]
+                fatigue_channels[f'Spn2te{u}_FLzb{k}'] = blade_maxc_Fz
+                magnitude_channels[f'Spn2te{u}_FLzb{k}'] = [f'Spn2FLzb{k}']
 
-            blade_maxc_Mx = blade_fatigue_te.copy()
-            blade_maxc_Mx.load2stress = inputs['blade_maxc_axial_load2stress'][3]
-            fatigue_channels[f'Spn2MLxb{k}'] = blade_maxc_Mx
-            magnitude_channels[f'Spn2MLxb{k}'] = [f'Spn2MLxb{k}']
+                blade_maxc_Mx = blade_fatigue_te.copy()
+                blade_maxc_Mx.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][3]
+                fatigue_channels[f'Spn2te{u}_MLxb{k}'] = blade_maxc_Mx
+                magnitude_channels[f'Spn2te{u}_MLxb{k}'] = [f'Spn2MLxb{k}']
 
-            blade_maxc_My = blade_fatigue_te.copy()
-            blade_maxc_My.load2stress = inputs['blade_maxc_axial_load2stress'][3]
-            fatigue_channels[f'Spn2MLyb{k}'] = blade_maxc_My
-            magnitude_channels[f'Spn2MLyb{k}'] = [f'Spn2MLyb{k}']
+                blade_maxc_My = blade_fatigue_te.copy()
+                blade_maxc_My.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][3]
+                fatigue_channels[f'Spn2te{u}_MLyb{k}'] = blade_maxc_My
+                magnitude_channels[f'Spn2te{u}_MLyb{k}'] = [f'Spn2MLyb{k}']
 
         # Low speed shaft fatigue
         lss_fatigue = FatigueParams(load2stress=1.0,
                                     slope=inputs['lss_wohlerexp'],
                                     ult_stress=inputs['lss_ultstress'],
-                                    SNparam=inputs['lss_snparam'])        
+                                    S_intercept=inputs['lss_wohlerA'])        
         for s in ['Ax','Sh']:
             sstr = 'axial' if s=='Ax' else 'shear'
             for ik, k in enumerate(['F','M']):
@@ -1612,33 +1612,34 @@ class FASTLoadCases(ExplicitComponent):
                         magnitude_channels[f'LSShft{s}{k}{x}a'] = [f'LSShft{k}{x}a'] if x=='x' else [f'LSShft{k}ya', f'LSShft{k}za']
 
         # Fatigue at the tower base
+        n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
         tower_fatigue_base = FatigueParams(load2stress=1.0,
-                                           slope=inputs['tower_base_wohlerexp'],
-                                           ult_stress=inputs['tower_base_ultstress'],
-                                           SNparam=inputs['tower_base_snparam'])        
+                                           slope=inputs['tower_wohlerexp'][n_height_mon],
+                                           ult_stress=inputs['tower_ultstress'][n_height_mon],
+                                           S_intercept=inputs['tower_wohlerA'][n_height_mon],)
         for s in ['Ax','Sh']:
             sstr = 'axial' if s=='Ax' else 'shear'
             for ik, k in enumerate(['F','M']):
                 for ix, x in enumerate(['xy','z']):
                     idx = 3*ik+ix
                     tower_fatigue_ii = tower_fatigue_base.copy()
-                    tower_fatigue_ii.load2stress = inputs[f'tower_base_{sstr}_load2stress'][idx]
+                    tower_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][n_height_mon,idx]
                     fatigue_channels[f'TwrBs{s}{k}{x}t'] = tower_fatigue_ii
                     magnitude_channels[f'TwrBs{s}{k}{x}t'] = [f'TwrBs{k}{x}t'] if x=='z' else [f'TwrBs{k}xt', f'TwrBs{k}yt']
 
         # Fatigue at monopile base (mudline)
         if modopt['flags']['monopile']:
             monopile_fatigue_base = FatigueParams(load2stress=1.0,
-                                                   slope=inputs['monopile_base_wohlerexp'],
-                                                   ult_stress=inputs['monopile_base_ultstress'],
-                                                   SNparam=inputs['monopile_base_snparam'])        
+                                                   slope=inputs['tower_wohlerexp'][0],
+                                                   ult_stress=inputs['tower_ultstress'][0],
+                                                   S_intercept=inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
                     for ix, x in enumerate(['xy','z']):
                         idx = 3*ik+ix
                         monopile_fatigue_ii = monopile_fatigue_base.copy()
-                        monopile_fatigue_ii.load2stress = inputs[f'monopile_base_{sstr}_load2stress'][idx]
+                        monopile_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][0,idx]
                         fatigue_channels[f'M1N1{s}{k}K{x}e'] = monopile_fatigue_ii
                         magnitude_channels[f'M1N1{s}{k}K{x}e'] = [f'M1N1{k}K{x}e'] if x=='z' else [f'M1N1{k}Kxe', f'M1N1{k}Kye']
 
@@ -1986,31 +1987,44 @@ class FASTLoadCases(ExplicitComponent):
     def get_weighted_DELs(self, dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
+        # See if we have fatigue DLCs
         U = []
-        for i_case in range(dlc_generator.n_cases):
-            if dlc_generator.cases[i_case].label == '1.1':
-                U = np.append(U, dlc_generator.cases[i_case].URef)
+        Ufat = []
+        ifat = []
+        for k in range(dlc_generator.n_cases):
+            U.append( dlc_generator.cases[k].URef )
+            
+            if dlc_generator.cases[k].label in ['1.2', '6.4']:
+                Ufat.append( dlc_generator.cases[k].URef )
+                ifat.append( k )
 
-        # Get 
+        # If fatigue DLCs are present, then limit analysis to those only
+        if len(Ufat) > 0:
+            U = Ufat
+            DELs = DELs.iloc[ ifat ]
+            damage = damage.iloc[ ifat ]
+
+        # Get wind distribution probabilities, make sure they are normalized
         pp = PowerProduction(discrete_inputs['turbine_class'])
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
+        ws_prob /= ws_prob.sum()
 
-        # Shouldn't be dependent on merit figure. . .
-        #if self.options['opt_options']['merit_figure'] == 'DEL_RootMyb':
+        # Standard DELs for blade root and tower base
         temp = np.zeros(self.n_blades)
         for k in range(self.n_blades):
             temp[k] = np.sum(ws_prob*DELs[f'RootMyb{k+1}'])
         outputs['DEL_RootMyb'] = temp.max()
-
-        # Shouldn't be dependent on merit figure. . .
-        # Says TwrBsMyt, but computing all M components, not just y. . .
-        #if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
         outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsM'])
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         for k in range(1,self.n_blades+1):
-            damage[f'BladeRootAxial{k}'] = damage[f'RootFzb{k}'] + damage[f'RootMxb{k}'] + damage[f'RootMyb{k}']
-            damage[f'BladeMaxcAxial{k}'] = damage[f'Spn2FLzb{k}'] + damage[f'Spn2MLxb{k}'] + damage[f'Spn2MLyb{k}']
+            for u in ['U','L']:
+                damage[f'BladeRootSpar{u}_Axial{k}'] = (damage[f'RootSpar{u}_Fzb{k}'] +
+                                                      damage[f'RootSpar{u}_Mxb{k}'] +
+                                                      damage[f'RootSpar{u}_Myb{k}'])
+                damage[f'BladeMaxcTE{u}_Axial{k}'] = (damage[f'Spn2te{u}_FLzb{k}'] +
+                                                    damage[f'Spn2te{u}_MLxb{k}'] +
+                                                    damage[f'Spn2te{u}_MLyb{k}'])
 
         # Compute total fatigue damage in low speed shaft, tower base, monopile base
         myones = np.zeros( damage['LSShftAxFxa'].to_numpy().shape )
@@ -2031,13 +2045,21 @@ class FASTLoadCases(ExplicitComponent):
                         damage[f'MonopileBase{sstr}'] += damage[f'M1N1{s}{k}K{x}e']
 
         # Assemble damages
-        tempRoot = np.zeros(self.n_blades)
-        tempMaxc = np.zeros(self.n_blades)
+        tempRootU = np.zeros(self.n_blades)
+        tempRootL = np.zeros(self.n_blades)
+        tempMaxcU = np.zeros(self.n_blades)
+        tempMaxcL = np.zeros(self.n_blades)
         for k in range(self.n_blades):
-            tempRoot[k] = np.sum(ws_prob*damage[f'BladeRootAxial{k+1}'])
-            tempMaxc[k] = np.sum(ws_prob*damage[f'BladeMaxcAxial{k+1}'])
-        outputs['damage_blade_root'] = tempRoot.max()
-        outputs['damage_blade_maxc'] = tempMaxc.max()
+            tempRootU[k] = np.sum(ws_prob*damage[f'BladeRootSparU_Axial{k+1}'])
+            tempRootL[k] = np.sum(ws_prob*damage[f'BladeRootSparL_Axial{k+1}'])
+            tempMaxcU[k] = np.sum(ws_prob*damage[f'BladeMaxcTEU_Axial{k+1}'])
+            tempMaxcL[k] = np.sum(ws_prob*damage[f'BladeMaxcTEL_Axial{k+1}'])
+        outputs['damage_blade_root_sparU'] = tempRootU.max()
+        outputs['damage_blade_root_sparL'] = tempRootL.max()
+        outputs['damage_blade_maxc_teU'] = tempMaxcU.max()
+        outputs['damage_blade_maxc_teL'] = tempMaxcL.max()
+        print(outputs['damage_blade_root_sparU'], outputs['damage_blade_root_sparL'])
+        print(outputs['damage_blade_maxc_teU'], outputs['damage_blade_maxc_teL'])
         outputs['damage_lss'] = np.sqrt( np.sum(ws_prob*damage['LSSAxial'])**2 +
                                          np.sum(ws_prob*damage['LSSShear'])**2 )
         outputs['damage_tower_base'] = np.sqrt( np.sum(ws_prob*damage['TowerBaseAxial'])**2 +
