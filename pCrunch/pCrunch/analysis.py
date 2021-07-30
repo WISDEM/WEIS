@@ -18,12 +18,14 @@ from pCrunch.io import OpenFASTAscii, OpenFASTBinary #, OpenFASTOutput
 class FatigueParams:
     """Simple data structure of parameters needed by fatigue calculation."""
 
-    def __init__(self, load2stress=1.0, slope=4.0, ult_stress=1.0, S_intercept=0.0):
+    def __init__(self, lifetime=0.0, load2stress=1.0, slope=4.0, ult_stress=1.0, S_intercept=0.0):
         """
         Creates an instance of `FatigueParams`.
 
         Parameters
         ----------
+        lifetime :  float (optional)
+            Design lifetime of the component / material in years
         load2stress : float (optional)
             Linear scaling coefficient to convert an applied load to stress such that S = load2stress * L
         slope : float (optional)
@@ -34,13 +36,15 @@ class FatigueParams:
             Stress-axis intercept of log-log S-N Wohler curve. Taken as ultimate stress unless specified
         """
 
+        self.lifetime = float(lifetime)
         self.load2stress = float(load2stress)
         self.slope = float(slope)
         self.ult_stress = float(ult_stress)
         self.S_intercept = float(S_intercept) if float(S_intercept) > 0.0 else self.ult_stress
 
     def copy(self):
-        return FatigueParams(load2stress=self.load2stress, slope=self.slope,
+        return FatigueParams(lifetime=self.lifetime,
+                             load2stress=self.load2stress, slope=self.slope,
                              ult_stress=self.ult_stress, S_intercept=self.S_intercept)
 
 class LoadsAnalysis:
@@ -377,6 +381,7 @@ class LoadsAnalysis:
             try:
                 DELs[chan], D[chan] = self._compute_del(
                     output[chan], output.elapsed_time,
+                    fatparams.lifetime,
                     fatparams.load2stress, fatparams.slope,
                     fatparams.ult_stress, fatparams.S_intercept,
                     **kwargs
@@ -390,7 +395,7 @@ class LoadsAnalysis:
         return DELs, D
 
     @staticmethod
-    def _compute_del(ts, elapsed, load2stress, slope, Sult, Sc=0.0, **kwargs):
+    def _compute_del(ts, elapsed, lifetime, load2stress, slope, Sult, Sc=0.0, **kwargs):
         """
         Computes damage equivalent load of input `ts`.
 
@@ -400,6 +405,8 @@ class LoadsAnalysis:
             Time series to calculate DEL for.
         elapsed : int | float
             Elapsed time of the time series.
+        lifetime : int | float
+            Design lifetime of the component / material in years
         load2stress : float (optional)
             Linear scaling coefficient to convert an applied load to stress such that S = load2stress * L
         slope : int | float
@@ -441,7 +448,7 @@ class LoadsAnalysis:
         #DEL = curve.find_miner_sum(np.c_[Frf, Nrf]) ** (1 / slope)
 
         # Compute Palmgren/Miner damage using stress
-        D = 0.0 # default return value
+        D = np.nan # default return value
         if return_damage and load2stress > 0.0:
             try:
                 S, Mrf = fatpack.find_rainflow_ranges(ts*load2stress, return_means=True)
@@ -454,7 +461,9 @@ class LoadsAnalysis:
             curve.m = slope
             curve.Nc = 1
             D = curve.find_miner_sum(np.c_[Srf, Nrf])
-
+            if lifetime > 0.0:
+                D *= lifetime*365.0*24.0*60.0*60.0 / elapsed
+                
         return DEL, D
 
 
