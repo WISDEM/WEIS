@@ -3148,6 +3148,11 @@ properties:
                 type: boolean
                 default: True
                 description: Fix the seed of the random integer generator controlling the seed of TurbSim. When set to False, the seeds change everytime the DLC generator class is called. It is recommended to keep it to True when the optimization is on, or different wind seeds will be generated for every function call, complicating the smoothness of the solution space. Even when set to True, the wind seeds are different across wind speeds and DLCs.
+            fix_wave_seeds:
+                type: boolean
+                default: True
+                description: Fix the seed of the random integer generator controlling the wave seed of HydroDyn. When set to False, the seeds change everytime the DLC generator class is called. It is recommended to keep it to True when the optimization is on, or different wave seeds will be generated for every function call, complicating the smoothness of the solution space. Even when set to True, the wave seeds are different across wind speeds and DLCs.
+
 
     ROSCO:
         type: object
