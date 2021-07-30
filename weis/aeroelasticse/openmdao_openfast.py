@@ -1628,7 +1628,7 @@ class FASTLoadCases(ExplicitComponent):
             sstr = 'axial' if s=='Ax' else 'shear'
             for ik, k in enumerate(['F','M']):
                 for ix, x in enumerate(['xy','z']):
-                    idx = 3*ik+ix
+                    idx = 3*ik+2*ix
                     tower_fatigue_ii = tower_fatigue_base.copy()
                     tower_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][n_height_mon,idx]
                     fatigue_channels[f'TwrBs{s}{k}{x}t'] = tower_fatigue_ii
@@ -1644,7 +1644,7 @@ class FASTLoadCases(ExplicitComponent):
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
                     for ix, x in enumerate(['xy','z']):
-                        idx = 3*ik+ix
+                        idx = 3*ik+2*ix
                         monopile_fatigue_ii = monopile_fatigue_base.copy()
                         monopile_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][0,idx]
                         fatigue_channels[f'M1N1{s}{k}K{x}e'] = monopile_fatigue_ii
@@ -2071,10 +2071,7 @@ class FASTLoadCases(ExplicitComponent):
                                                 np.sum(ws_prob*damage['TowerBaseShear'])**2 )
         outputs['damage_monopile_base'] = np.sqrt( np.sum(ws_prob*damage['MonopileBaseAxial'])**2 +
                                                    np.sum(ws_prob*damage['MonopileBaseShear'])**2 )
-        print(outputs['damage_blade_root_sparU'], outputs['damage_blade_root_sparL'])
-        print(outputs['damage_blade_maxc_teU'], outputs['damage_blade_maxc_teL'])
-        print(outputs['damage_lss'])
-        print(outputs['damage_tower_base'], outputs['damage_monopile_base'])
+
         return outputs, discrete_outputs
 
     def get_control_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
