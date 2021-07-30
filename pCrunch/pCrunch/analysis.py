@@ -441,7 +441,7 @@ class LoadsAnalysis:
         #DEL = curve.find_miner_sum(np.c_[Frf, Nrf]) ** (1 / slope)
 
         # Compute Palmgren/Miner damage using stress
-        D = np.nan # default return value
+        D = 0.0 # default return value
         if return_damage and load2stress > 0.0:
             try:
                 S, Mrf = fatpack.find_rainflow_ranges(ts*load2stress, return_means=True)
