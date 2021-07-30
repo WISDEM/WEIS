@@ -2001,19 +2001,17 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
         # See if we have fatigue DLCs
-        U = []
-        Ufat = []
+        U = np.zeros(dlc_generator.n_cases)
         ifat = []
         for k in range(dlc_generator.n_cases):
-            U.append( dlc_generator.cases[k].URef )
+            U[k] = dlc_generator.cases[k].URef
             
             if dlc_generator.cases[k].label in ['1.2', '6.4']:
-                Ufat.append( dlc_generator.cases[k].URef )
                 ifat.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
-        if len(Ufat) > 0:
-            U = Ufat
+        if len(ifat) > 0:
+            U = U[ifat]
             DELs = DELs.iloc[ ifat ]
             damage = damage.iloc[ ifat ]
         
