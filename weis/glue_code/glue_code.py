@@ -474,6 +474,7 @@ class WindPark(om.Group):
                 self.connect("mooring.node_names", "aeroelastic.node_names")
 
             # For fatigue
+            self.connect('configuration.lifetime', 'aeroelastic.lifetime')
             #self.connect('rotorse.re.blade_root_wohlerexp', 'aeroelastic.blade_root_wohlerexp')
             #self.connect('rotorse.re.blade_root_wohlerA', 'aeroelastic.blade_root_wohlerA')
             #self.connect('rotorse.re.blade_root_ultstress', 'aeroelastic.blade_root_ultstress')

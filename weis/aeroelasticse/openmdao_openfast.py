@@ -331,6 +331,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_discrete_input("node_names", val=[""] * n_nodes)
             
         # Inputs required for fatigue processing
+        self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
         self.add_input('blade_root_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
         self.add_input('blade_root_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
         self.add_input('blade_root_wohlerA',   val=1.0,   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
@@ -1560,11 +1561,13 @@ class FASTLoadCases(ExplicitComponent):
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
         blade_fatigue_root = FatigueParams(load2stress=1.0,
+                                           lifetime=inputs['lifetime'],
                                            slope=inputs['blade_root_wohlerexp'],
                                            ult_stress=inputs['blade_root_ultstress'],
                                            S_intercept=inputs['blade_root_wohlerA'])
 
         blade_fatigue_te = FatigueParams(load2stress=1.0,
+                                         lifetime=inputs['lifetime'],
                                          slope=inputs['blade_maxc_wohlerexp'],
                                          ult_stress=inputs['blade_maxc_ultstress'],
                                          S_intercept=inputs['blade_maxc_wohlerA'])
@@ -1602,6 +1605,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Low speed shaft fatigue
         lss_fatigue = FatigueParams(load2stress=1.0,
+                                    lifetime=inputs['lifetime'],
                                     slope=inputs['lss_wohlerexp'],
                                     ult_stress=inputs['lss_ultstress'],
                                     S_intercept=inputs['lss_wohlerA'])        
@@ -1621,6 +1625,7 @@ class FASTLoadCases(ExplicitComponent):
         # Fatigue at the tower base
         n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
         tower_fatigue_base = FatigueParams(load2stress=1.0,
+                                           lifetime=inputs['lifetime'],
                                            slope=inputs['tower_wohlerexp'][n_height_mon],
                                            ult_stress=inputs['tower_ultstress'][n_height_mon],
                                            S_intercept=inputs['tower_wohlerA'][n_height_mon],)
@@ -1637,9 +1642,10 @@ class FASTLoadCases(ExplicitComponent):
         # Fatigue at monopile base (mudline)
         if modopt['flags']['monopile']:
             monopile_fatigue_base = FatigueParams(load2stress=1.0,
-                                                   slope=inputs['tower_wohlerexp'][0],
-                                                   ult_stress=inputs['tower_ultstress'][0],
-                                                   S_intercept=inputs['tower_wohlerA'][0])
+                                                  lifetime=inputs['lifetime'],
+                                                  slope=inputs['tower_wohlerexp'][0],
+                                                  ult_stress=inputs['tower_ultstress'][0],
+                                                  S_intercept=inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -2010,18 +2016,21 @@ class FASTLoadCases(ExplicitComponent):
             U = Ufat
             DELs = DELs.iloc[ ifat ]
             damage = damage.iloc[ ifat ]
-
+        
         # Get wind distribution probabilities, make sure they are normalized
+        # This should also take care of averaging across seeds
         pp = PowerProduction(discrete_inputs['turbine_class'])
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
         ws_prob /= ws_prob.sum()
 
+        # Scale all DELs and damage by probability and collapse over the various DLCs (inner dot product)
+        # Also work around NaNs
+        DELs = DELs.fillna(0.0).multiply(ws_prob, axis=0).sum()
+        damage = damage.fillna(0.0).multiply(ws_prob, axis=0).sum()
+        
         # Standard DELs for blade root and tower base
-        temp = np.zeros(self.n_blades)
-        for k in range(self.n_blades):
-            temp[k] = np.sum(ws_prob*DELs[f'RootMyb{k+1}'])
-        outputs['DEL_RootMyb'] = temp.max()
-        outputs['DEL_TwrBsMyt'] = np.sum(ws_prob*DELs['TwrBsM'])
+        outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
+        outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         for k in range(1,self.n_blades+1):
@@ -2034,13 +2043,12 @@ class FASTLoadCases(ExplicitComponent):
                                                     damage[f'Spn2te{u}_MLyb{k}'])
 
         # Compute total fatigue damage in low speed shaft, tower base, monopile base
-        myones = np.zeros( damage['LSShftAxFxa'].to_numpy().shape )
-        damage['LSSAxial'] = myones
-        damage['LSSShear'] = myones
-        damage['TowerBaseAxial'] = myones
-        damage['TowerBaseShear'] = myones
-        damage['MonopileBaseAxial'] = myones
-        damage['MonopileBaseShear'] = myones
+        damage['LSSAxial'] = 0.0
+        damage['LSSShear'] = 0.0
+        damage['TowerBaseAxial'] = 0.0
+        damage['TowerBaseShear'] = 0.0
+        damage['MonopileBaseAxial'] = 0.0
+        damage['MonopileBaseShear'] = 0.0
         for s in ['Ax','Sh']:
             sstr = 'Axial' if s=='Ax' else 'Shear'
             for ik, k in enumerate(['F','M']):
@@ -2052,25 +2060,13 @@ class FASTLoadCases(ExplicitComponent):
                         damage[f'MonopileBase{sstr}'] += damage[f'M1N1{s}{k}K{x}e']
 
         # Assemble damages
-        tempRootU = np.zeros(self.n_blades)
-        tempRootL = np.zeros(self.n_blades)
-        tempMaxcU = np.zeros(self.n_blades)
-        tempMaxcL = np.zeros(self.n_blades)
-        for k in range(self.n_blades):
-            tempRootU[k] = np.sum(ws_prob*damage[f'BladeRootSparU_Axial{k+1}'])
-            tempRootL[k] = np.sum(ws_prob*damage[f'BladeRootSparL_Axial{k+1}'])
-            tempMaxcU[k] = np.sum(ws_prob*damage[f'BladeMaxcTEU_Axial{k+1}'])
-            tempMaxcL[k] = np.sum(ws_prob*damage[f'BladeMaxcTEL_Axial{k+1}'])
-        outputs['damage_blade_root_sparU'] = tempRootU.max()
-        outputs['damage_blade_root_sparL'] = tempRootL.max()
-        outputs['damage_blade_maxc_teU'] = tempMaxcU.max()
-        outputs['damage_blade_maxc_teL'] = tempMaxcL.max()
-        outputs['damage_lss'] = np.sqrt( np.sum(ws_prob*damage['LSSAxial'])**2 +
-                                         np.sum(ws_prob*damage['LSSShear'])**2 )
-        outputs['damage_tower_base'] = np.sqrt( np.sum(ws_prob*damage['TowerBaseAxial'])**2 +
-                                                np.sum(ws_prob*damage['TowerBaseShear'])**2 )
-        outputs['damage_monopile_base'] = np.sqrt( np.sum(ws_prob*damage['MonopileBaseAxial'])**2 +
-                                                   np.sum(ws_prob*damage['MonopileBaseShear'])**2 )
+        outputs['damage_blade_root_sparU'] = np.max([damage[f'BladeRootSparU_Axial{k+1}'] for k in range(self.n_blades)])
+        outputs['damage_blade_root_sparL'] = np.max([damage[f'BladeRootSparL_Axial{k+1}'] for k in range(self.n_blades)])
+        outputs['damage_blade_maxc_teU'] = np.max([damage[f'BladeMaxcTEU_Axial{k+1}'] for k in range(self.n_blades)])
+        outputs['damage_blade_maxc_teL'] = np.max([damage[f'BladeMaxcTEL_Axial{k+1}'] for k in range(self.n_blades)])
+        outputs['damage_lss'] = np.sqrt( damage['LSSAxial']**2 + damage['LSSShear']**2 )
+        outputs['damage_tower_base'] = np.sqrt( damage['TowerBaseAxial']**2 + damage['TowerBaseShear']**2 )
+        outputs['damage_monopile_base'] = np.sqrt( damage['MonopileBaseAxial']**2 + damage['MonopileBaseShear']**2 )
 
         return outputs, discrete_outputs
 
