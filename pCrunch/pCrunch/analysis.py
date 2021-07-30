@@ -34,10 +34,10 @@ class FatigueParams:
             Stress-axis intercept of log-log S-N Wohler curve. Taken as ultimate stress unless specified
         """
 
-        self.load2stress = load2stress
-        self.slope = slope
-        self.ult_stress = ult_stress
-        self.S_intercept = S_intercept if S_intercept > 0.0 else ult_stress
+        self.load2stress = float(load2stress)
+        self.slope = float(slope)
+        self.ult_stress = float(ult_stress)
+        self.S_intercept = float(S_intercept) if float(S_intercept) > 0.0 else self.ult_stress
 
     def copy(self):
         return FatigueParams(load2stress=self.load2stress, slope=self.slope,
@@ -425,12 +425,15 @@ class LoadsAnalysis:
         Scin = Sc if Sc > 0.0 else Sult
         
         # Working with loads for DELs
-        F, Fmean = fatpack.find_rainflow_ranges(ts, return_means=True)
-        if goodman:
+        try:
+            F, Fmean = fatpack.find_rainflow_ranges(ts, return_means=True)
+        except:
+            F = Fmean = np.zeros(1)
+        if goodman and load2stress > 0.0:
             F = fatpack.find_goodman_equivalent_stress(F, Fmean, Sult/load2stress)
         Nrf, Frf = fatpack.find_range_count(F, bins)
         DELs = Frf ** slope * Nrf / elapsed
-        DEL = DELs.sum() ** (1 / slope)
+        DEL = DELs.sum() ** (1.0 / slope)
         # With fatpack do:
         #curve = fatpack.LinearEnduranceCurve(1.)
         #curve.m = slope
@@ -439,12 +442,15 @@ class LoadsAnalysis:
 
         # Compute Palmgren/Miner damage using stress
         D = np.nan # default return value
-        if return_damage:
-            S, Mrf = fatpack.find_rainflow_ranges(ts*load2stress, return_means=True)
+        if return_damage and load2stress > 0.0:
+            try:
+                S, Mrf = fatpack.find_rainflow_ranges(ts*load2stress, return_means=True)
+            except:
+                S = Mrf = np.zeros(1)
             if goodman:
                 S = fatpack.find_goodman_equivalent_stress(S, Mrf, Sult)
             Nrf, Srf = fatpack.find_range_count(S, bins)
-            curve = fatpack.LinearEnduranceCurve(Sc)
+            curve = fatpack.LinearEnduranceCurve(Scin)
             curve.m = slope
             curve.Nc = 1
             D = curve.find_miner_sum(np.c_[Srf, Nrf])
