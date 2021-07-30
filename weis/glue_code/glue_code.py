@@ -271,12 +271,12 @@ class WindPark(om.Group):
             self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
             self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options))
         
-            if modeling_options['WISDEM']['DriveSE']['flag']:
+            if modeling_options["flags"]["nacelle"]:
                 self.add_subsystem('drivese_post',   DrivetrainSE(modeling_options=modeling_options, n_dlcs=1))
                                                     
-            if modeling_options['WISDEM']['TowerSE']['flag']:
+            if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
                 self.add_subsystem('towerse_post',   TowerPostFrame(modeling_options=modeling_options["WISDEM"]["TowerSE"]))
-                self.add_subsystem('tcons_post',     TurbineConstraints(modeling_options = modeling_options))
+            self.add_subsystem('tcons_post',     TurbineConstraints(modeling_options = modeling_options))
             
             self.add_subsystem('financese_post', PlantFinance(verbosity=modeling_options['General']['verbosity']))
             
@@ -384,7 +384,7 @@ class WindPark(om.Group):
                 self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                 self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
                 self.connect("floatingse.platform_mass", "aeroelastic.platform_mass")
-                self.connect("floatingse.platform_center_of_mass", "aeroelastic.platform_center_of_mass")
+                self.connect("floatingse.platform_total_center_of_mass", "aeroelastic.platform_center_of_mass")
                 self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
                 self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
                 self.connect("floating.transition_node", "aeroelastic.transition_node")
@@ -407,6 +407,7 @@ class WindPark(om.Group):
                     self.connect('floatingse.tower.section_height',    'aeroelastic.tower_section_height')
                     self.connect('floatingse.tower.outer_diameter',    'aeroelastic.tower_outer_diameter')
                     self.connect('floatingse.tower.z_param',                 'aeroelastic.tower_monopile_z')
+                    self.connect('floatingse.tower.z_full',                 'aeroelastic.tower_monopile_z_full')
                     self.connect('floatingse.tower.wall_thickness',    'aeroelastic.tower_wall_thickness')
                     self.connect('floatingse.tower.E',                       'aeroelastic.tower_E')
                     self.connect('floatingse.tower.G',                       'aeroelastic.tower_G')
@@ -721,16 +722,15 @@ class WindPark(om.Group):
             #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
             
             # Connections to turbine constraints
-            if modeling_options["flags"]["tower"]:
-                self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
-                self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
-                self.connect('assembly.rotor_radius',           'tcons_post.Rtip')
-                self.connect('blade.outer_shape_bem.ref_axis',  'tcons_post.ref_axis_blade')
-                self.connect('hub.cone',                        'tcons_post.precone')
-                self.connect('nacelle.uptilt',                  'tcons_post.tilt')
-                self.connect('nacelle.overhang',                'tcons_post.overhang')
-                self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
-                self.connect('tower.diameter',                  'tcons_post.d_full')
+            self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
+            self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
+            self.connect('assembly.rotor_radius',           'tcons_post.Rtip')
+            self.connect('blade.outer_shape_bem.ref_axis',  'tcons_post.ref_axis_blade')
+            self.connect('hub.cone',                        'tcons_post.precone')
+            self.connect('nacelle.uptilt',                  'tcons_post.tilt')
+            self.connect('nacelle.overhang',                'tcons_post.overhang')
+            self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
+            self.connect('tower.diameter',                  'tcons_post.d_full')
                 
             # Inputs to plantfinancese from wt group
             self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')

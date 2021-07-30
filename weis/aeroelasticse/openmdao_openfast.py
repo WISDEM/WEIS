@@ -11,6 +11,7 @@ from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
 import weis.aeroelasticse.runFAST_pywrapper as fastwrap
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
+from wisdem.floatingse.member import get_nfull as get_nfull_float
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
@@ -82,9 +83,14 @@ class FASTLoadCases(ExplicitComponent):
         n_height_tow = modopt['WISDEM']['TowerSE']['n_height_tower']
         n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
         n_height     = modopt['WISDEM']['TowerSE']['n_height']
-        n_full_tow   = get_nfull(n_height_tow)
-        n_full_mon   = get_nfull(n_height_mon)
-        n_full       = get_nfull(n_height)
+        if modopt['flags']['floating']:
+            n_full_tow   = get_nfull_float(n_height_tow)
+            n_full_mon   = get_nfull_float(n_height_mon)
+            n_full       = get_nfull_float(n_height)
+        else:
+            n_full_tow   = get_nfull(n_height_tow)
+            n_full_mon   = get_nfull(n_height_mon)
+            n_full       = get_nfull(n_height)
         n_freq_tower = int(NFREQ/2)
         n_freq_blade = int(rotorse_options['n_freq']/2)
         n_pc         = int(rotorse_options['n_pc'])
@@ -1337,7 +1343,8 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt"]
         channels_out += ["TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt"]
         channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
-        channels_out += ["RotThrust", "LSShftFys", "LSShftFzs", "RotTorq", "LSSTipMys", "LSSTipMzs"]
+        channels_out += ["RotThrust", "LSShftFxs", "LSShftFys", "LSShftFzs", "LSShftFxa", "LSShftFya", "LSShftFza"]
+        channels_out += ["RotTorq", "LSSTipMxs", "LSSTipMys", "LSSTipMzs", "LSSTipMxa", "LSSTipMya", "LSSTipMza"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
         channels_out += ["PtfmSurge", "PtfmSway", "PtfmHeave", "PtfmRoll", "PtfmPitch", "PtfmYaw","NcIMURAys"]
         if self.n_blades == 3:
@@ -1606,10 +1613,10 @@ class FASTLoadCases(ExplicitComponent):
                     lss_fatigue_ii = lss_fatigue.copy()
                     lss_fatigue_ii.load2stress = inputs[f'lss_{sstr}_load2stress'][idx]
                     fatigue_channels[f'LSShft{s}{k}{x}a'] = lss_fatigue_ii
-                    if ik==1 and ix==1:
-                        magnitude_channels[f'LSShft{s}{k}{x}a'] = [f'LSSTip{k}ya', f'LSSTip{k}za']
+                    if ix==0:
+                        magnitude_channels[f'LSShft{s}{k}{x}a'] = ['RotThrust'] if ik==0 else ['RotTorq']
                     else:
-                        magnitude_channels[f'LSShft{s}{k}{x}a'] = [f'LSShft{k}{x}a'] if x=='x' else [f'LSShft{k}ya', f'LSShft{k}za']
+                        magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
         # Fatigue at the tower base
         n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
@@ -2058,15 +2065,16 @@ class FASTLoadCases(ExplicitComponent):
         outputs['damage_blade_root_sparL'] = tempRootL.max()
         outputs['damage_blade_maxc_teU'] = tempMaxcU.max()
         outputs['damage_blade_maxc_teL'] = tempMaxcL.max()
-        print(outputs['damage_blade_root_sparU'], outputs['damage_blade_root_sparL'])
-        print(outputs['damage_blade_maxc_teU'], outputs['damage_blade_maxc_teL'])
         outputs['damage_lss'] = np.sqrt( np.sum(ws_prob*damage['LSSAxial'])**2 +
                                          np.sum(ws_prob*damage['LSSShear'])**2 )
         outputs['damage_tower_base'] = np.sqrt( np.sum(ws_prob*damage['TowerBaseAxial'])**2 +
                                                 np.sum(ws_prob*damage['TowerBaseShear'])**2 )
         outputs['damage_monopile_base'] = np.sqrt( np.sum(ws_prob*damage['MonopileBaseAxial'])**2 +
                                                    np.sum(ws_prob*damage['MonopileBaseShear'])**2 )
-        
+        print(outputs['damage_blade_root_sparU'], outputs['damage_blade_root_sparL'])
+        print(outputs['damage_blade_maxc_teU'], outputs['damage_blade_maxc_teL'])
+        print(outputs['damage_lss'])
+        print(outputs['damage_tower_base'], outputs['damage_monopile_base'])
         return outputs, discrete_outputs
 
     def get_control_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
