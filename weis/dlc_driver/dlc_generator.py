@@ -52,6 +52,7 @@ class DLCGenerator(object):
         else:
             self.rng = np.random.default_rng()
         self.n_cases = 0
+        self.n_ws_dlc11 = 0
     
     def IECwind(self):
         self.IECturb = IEC_TurbulenceModels()
