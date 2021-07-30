@@ -2819,17 +2819,17 @@ properties:
                         wave_period:
                             type: array
                             description: Period between waves
-                            default: [1.e+1]
+                            default: []
                             items:
                                 type: number
                                 unit: s
                                 minItems: 1
                                 minimum: 0.0
-                                maximum: 100.0
+                                maximum: 1000.0
                         wave_height:
                             type: array
                             description: Height of the waves
-                            default: [1.e+1]
+                            default: []
                             items:
                                 type: number
                                 unit: m
@@ -3152,7 +3152,120 @@ properties:
                 type: boolean
                 default: True
                 description: Fix the seed of the random integer generator controlling the wave seed of HydroDyn. When set to False, the seeds change everytime the DLC generator class is called. It is recommended to keep it to True when the optimization is on, or different wave seeds will be generated for every function call, complicating the smoothness of the solution space. Even when set to True, the wave seeds are different across wind speeds and DLCs.
-
+            metocean_conditions:
+                type: object
+                default: {}
+                description: Here the metocean conditions can be specified in terms of wind speeds, significant wave height (Hs), and wave period (Tp) for normal sea state (NSS), fatigue calculations, and severe sea state (SSS). Currently WEIS neglects the joint probability density function crossing wind/wave directionality, wave peak shape parameter gamma
+                properties:
+                    wind_speed:
+                        type: array
+                        description: Array of wind speeds to tabulate Hs and Tp
+                        default: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 50.0
+                            uniqueItems: true
+                    wave_height_NSS:
+                        type: array
+                        description: Array of Hs for NSS conditional to wind speed
+                        default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
+                        items:
+                            type: number
+                            unit: m
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    wave_period_NSS:
+                        type: array
+                        description: Array of Tp for NSS conditional to wind speed
+                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_height_fatigue:
+                        type: array
+                        description: Array of Hs for fatigue computations conditional to wind speed
+                        default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
+                        items:
+                            type: number
+                            unit: m
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    wave_period_fatigue:
+                        type: array
+                        description: Array of Tp for fatigue computations conditional to wind speed
+                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_height_SSS:
+                        type: array
+                        description: Array of Hs for SSS conditional to wind speed
+                        default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
+                        items:
+                            type: number
+                            unit: m
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    wave_period_SSS:
+                        type: array
+                        description: Array of Tp for SSS conditional to wind speed
+                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_height50:
+                            type: number
+                            description: Wave height with 50-year occurrence, used in DLC 6.1
+                            default: 15.
+                            type: number
+                            unit: m
+                            minimum: 0.0
+                            maximum: 100.0
+                    wave_period50:
+                            type: number
+                            description: Wave period with 50-year occurrence, used in DLC 6.1
+                            default: 15.
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1000.0
+                    wave_height1:
+                            type: number
+                            description: Wave height with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
+                            default: 15.
+                            type: number
+                            unit: m
+                            minimum: 0.0
+                            maximum: 100.0
+                    wave_period1:
+                            type: number
+                            description: Wave period with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
+                            default: 15.
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1000.0
 
     ROSCO:
         type: object

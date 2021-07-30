@@ -281,7 +281,8 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         ws_class = discrete_inputs['turbine_class']
         turb_class = discrete_inputs['turbulence_class']
         fix_wind_seeds = opt['DLC_driver']['fix_wind_seeds']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, turb_class, fix_wind_seeds)
+        metocean = opt['DLC_driver']['metocean_conditions']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, turb_class, fix_wind_seeds, metocean)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]

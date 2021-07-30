@@ -9,10 +9,11 @@ class TestIECWind(unittest.TestCase):
     def test_generator(self):
 
         # Wind turbine inputs that will eventually come in from somewhere
-        cut_in = 4.
-        cut_out = 25.
-        rated = 10.
-        wind_class = 'I'
+        ws_cut_in = 4.
+        ws_cut_out = 25.
+        ws_rated = 10.
+        wind_speed_class = 'I'
+        wind_turbulence_class = 'B'
 
         # Load modeling options file
         weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
@@ -23,14 +24,17 @@ class TestIECWind(unittest.TestCase):
         DLCs = modeling_options['DLC_driver']['DLCs']
         
         # Initialize the generator
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, wind_class)
+        fix_wind_seeds = modeling_options['DLC_driver']['fix_wind_seeds']
+        fix_wave_seeds = modeling_options['DLC_driver']['fix_wave_seeds']
+        metocean = modeling_options['DLC_driver']['metocean_conditions']
+        dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class, fix_wind_seeds, fix_wave_seeds, metocean)
 
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-        np.testing.assert_equal(dlc_generator.cases[11].URef, cut_out)
+        np.testing.assert_equal(dlc_generator.cases[11].URef, ws_cut_out)
         np.testing.assert_equal(dlc_generator.n_ws_dlc11, 6)
         np.testing.assert_equal(dlc_generator.n_cases, 53)
 
