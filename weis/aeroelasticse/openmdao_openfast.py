@@ -1411,6 +1411,7 @@ class FASTLoadCases(ExplicitComponent):
         WaveTp = np.zeros(dlc_generator.n_cases)
         WaveHd = np.zeros(dlc_generator.n_cases)
         WaveGamma = np.zeros(dlc_generator.n_cases)
+        WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
         TMax = np.zeros(dlc_generator.n_cases)
         TStart = np.zeros(dlc_generator.n_cases)
 
@@ -1479,6 +1480,7 @@ class FASTLoadCases(ExplicitComponent):
             WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
+            WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
             TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
             TStart[i_case] = dlc_generator.cases[i_case].transient_time
 
@@ -1504,6 +1506,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
+        case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)

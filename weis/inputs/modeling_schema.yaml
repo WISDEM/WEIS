@@ -2768,7 +2768,16 @@ properties:
                         wind_seed:
                             type: array
                             default: []
-                            description: Turbulent wind random number generator seeds
+                            description: Turbulent wind random number generator seeds for TurbSim
+                            items:
+                                type: integer
+                                unit: none
+                                minItems: 1
+                                uniqueItems: true
+                        wave_seed:
+                            type: array
+                            default: []
+                            description: Wave random number generator seeds for HydroDyn
                             items:
                                 type: integer
                                 unit: none
@@ -2855,14 +2864,6 @@ properties:
                                 minItems: 1
                                 minimum: 0.
                                 maximum: 1.
-                        unique_wind_seeds:
-                            type: boolean
-                            default: False
-                            description: Run different wind seeds for each wind speed
-                        unique_wave_seeds:
-                            type: boolean
-                            default: False
-                            description: Run different wave seeds for each wind speed
                         IEC_WindType:
                             type: string
                             default: NTM
