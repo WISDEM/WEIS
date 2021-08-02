@@ -121,7 +121,6 @@ class runFAST_pywrapper(object):
         self.fst_vt             = {}
         self.case               = {}     # dictionary of variable values to change
         self.channels           = {}     # dictionary of output channels to change
-        self.debug_level        = 0
         self.keep_time          = False
 
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
@@ -188,7 +187,7 @@ class runFAST_pywrapper(object):
             if not self.keep_time: output_dict = None
 
         else: # use executable
-            wrapper = FAST_wrapper(debug_level=self.debug_level)
+            wrapper = FAST_wrapper()
 
             # Run FAST
             wrapper.FAST_exe = self.FAST_exe
@@ -202,8 +201,7 @@ class runFAST_pywrapper(object):
             if self.overwrite_outfiles or (not self.overwrite_outfiles and not (os.path.exists(FAST_Output) or os.path.exists(FAST_Output_txt))):
                 wrapper.execute()
             else:
-                if self.debug_level>0:
-                    print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
+                print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
             if os.path.exists(FAST_Output):
                 output = OpenFASTBinary(FAST_Output, magnitude_channels=magnitude_channels)  #TODO: add magnitude_channels
@@ -235,7 +233,6 @@ class runFAST_pywrapper_batch(object):
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
-        self.debug_level        = 0
 
         self.read_yaml          = False
         self.FAST_yamlfile_in   = ''
@@ -270,7 +267,6 @@ class runFAST_pywrapper_batch(object):
             case_data['write_yaml'] = self.write_yaml
             case_data['FAST_yamlfile_out'] = self.FAST_yamlfile_out
             case_data['channels'] = self.channels
-            case_data['debug_level'] = self.debug_level
             case_data['overwrite_outfiles'] = self.overwrite_outfiles
             case_data['keep_time'] = self.keep_time
             case_data['post'] = self.post
@@ -388,7 +384,7 @@ def evaluate(indict):
 
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
-                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'debug_level', 'overwrite_outfiles', 'keep_time', 'post']
+                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time', 'post']
     for k in indict:
         if k in known_keys: continue
         print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
@@ -409,7 +405,6 @@ def evaluate(indict):
     fast.FAST_namingOut     = indict['case_name']
     fast.case               = indict['case']
     fast.channels           = indict['channels']
-    fast.debug_level        = indict['debug_level']
 
     fast.overwrite_outfiles = indict['overwrite_outfiles']
     fast.keep_time = indict['keep_time']

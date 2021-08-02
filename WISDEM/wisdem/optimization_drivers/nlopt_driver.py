@@ -415,6 +415,7 @@ class NLoptDriver(Driver):
         """
         model = self._problem().model
         f_new = 1e10
+
         try:
 
             # Pass in new parameters

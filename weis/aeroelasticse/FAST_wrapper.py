@@ -10,7 +10,6 @@ class FAST_wrapper(object):
         self.FAST_exe = None   # Path to executable
         self.FAST_InputFile = None   # FAST input file (ext=.fst)
         self.FAST_directory = None   # Path to fst directory files
-        self.debug_level = 0 #(0:quiet, 1:output task description, 2:full FAST stdout)
 
         # Optional population class attributes from key word arguments
         for k, w in kwargs.items():
@@ -38,34 +37,9 @@ class FAST_wrapper(object):
         olddir = os.getcwd()
         os.chdir(self.FAST_directory)
 
-        if self.debug_level > 0:
-            print ("EXECUTING OpenFAST")
-            print ("Executable: \t", self.FAST_exe)
-            print ("Run directory: \t", self.FAST_directory)
-            print ("Input file: \t", self.FAST_InputFile)
-            print ("Exec string: \t", exec_str)
-
         start = time.time()
-        if self.debug_level > 1:
-            _ = subprocess.run(exec_str, check=True)
-        else:
-            _ = subprocess.run(exec_str, stderr=subprocess.STDOUT, check=True)
+        _ = subprocess.run(exec_str, check=True)
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
 
         os.chdir(olddir)
-
-if __name__=="__main__":
-
-
-    fast = FAST_wrapper(debug_level=2)
-
-    # Path to fst directory files
-
-    fast.FAST_exe = 'C:/Users/egaertne/WT_Codes/openfast-dev/build/glue-codes/openfast/openfast.exe'   # Path to executable
-    # fast.FAST_InputFile = 'test.fst'   # FAST input file (ext=.fst)
-    # fast.FAST_directory = 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/FAST_mdao/temp/OpenFAST'   # Path to fst directory files
-    fast.FAST_InputFile = 'RotorSE_FAST_5MW_0.fst'   # FAST input file (ext=.fst)
-    fast.FAST_directory = "C:/Users/egaertne/WISDEM/RotorSE_yaml/RotorSE/src/rotorse/temp/RotorSE_FAST_5MW"   # Path to fst directory files
-
-    fast.execute()

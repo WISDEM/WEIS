@@ -15,33 +15,14 @@ from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
 
 this_file_dir = os.path.dirname(os.path.realpath(__file__))
+weis_dir = os.path.dirname(os.path.dirname(this_file_dir))
 
 class TestGeneral(unittest.TestCase):
     def test_run(self):
         # Paths calling the standard modules of WEIS
         fastBatch = runFAST_pywrapper_batch()
-        run_dir1 = (
-            os.path.dirname(
-                os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-                )
-            )
-            + os.sep
-        )
-        fastBatch.FAST_exe          = os.path.join(run_dir1, 'local','bin','openfast')   # Path to executable
-        run_dir2 = (
-            os.path.dirname(
-                os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-                )
-            )
-            + os.sep
-            + "examples"
-            + os.sep
-            + "01_aeroelasticse"
-            + os.sep
-        )
-        fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        fastBatch.FAST_exe          = os.path.join(weis_dir, 'local','bin','openfast')   # Path to executable
+        fastBatch.FAST_directory    = os.path.join(weis_dir,'examples','01_aeroelasticse', 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
         fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
         fastBatch.debug_level       = 2
@@ -157,7 +138,7 @@ class TestGeneral(unittest.TestCase):
             sfx = 'dylib'
         else:
             sfx = 'so'
-        path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.'+sfx)
+        path2dll = os.path.join(weis_dir, 'local','lib','libdiscon.'+sfx)
 
         case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 
