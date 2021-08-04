@@ -123,6 +123,20 @@ properties:
                         enum: ['WARNING', 'SEVERE', 'FATAL']
                         default: 'FATAL'
                         description: Error level when simulation should abort (string) {'WARNING', 'SEVERE', 'FATAL'}
+                    TMax:
+                        type: number
+                        default: 720.
+                        minimum: 0.0
+                        maximum: 10000.0
+                        unit: s
+                        description: Total run time (s)
+                    TStart:
+                        type: number
+                        default: 120.
+                        minimum: 0.0
+                        maximum: 10000.0
+                        unit: s
+                        description: Time to begin tabular output (s)
                     DT:
                         type: number
                         default: 0.025
@@ -2730,10 +2744,10 @@ properties:
                             type: string
                             default: '1.1'
                             enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', 'Custom']
-                            description: IEC DLC to run. Currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.2, 6.3, 6.4
+                            description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
-                            description: Wind speeds for this DLC
+                            description: Wind speeds for this DLC. If these are defined, ws_bin_size is neglected.
                             default: []
                             items:
                                 type: number
@@ -2748,17 +2762,26 @@ properties:
                             minimum: 0.01
                             maximum: 20.0
                             unit: m/s
-                            description: Size of the wind speed bin, usually set to 2 m/s
+                            description: Size of the wind speed bin between cut in and cout out wind speeds. It usually can be set to 2 m/s. This entry is neglected if the wind speeds are specified by the user.
                         n_seeds:
                             type: integer
                             default: 1
                             minimum: 1
                             maximum: 100
-                            description: Number of turbulent wind seeds
+                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.
                         wind_seed:
                             type: array
                             default: []
-                            description: Turbulent wind random number generator seeds
+                            description: Array of turbulent wind seeds for TurbSim. If these are defined, n_seeds is neglected.
+                            items:
+                                type: integer
+                                unit: none
+                                minItems: 1
+                                uniqueItems: true
+                        wave_seed:
+                            type: array
+                            default: []
+                            description: Wave random number generator seeds for HydroDyn
                             items:
                                 type: integer
                                 unit: none
@@ -2766,7 +2789,7 @@ properties:
                                 uniqueItems: true
                         wind_heading:
                             type: array
-                            description: Wind direction from north
+                            description: Wind direction from north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed.
                             default: [0.]
                             items:
                                 type: number
@@ -2776,7 +2799,7 @@ properties:
                                 maximum: 180.0
                         yaw_misalign:
                             type: array
-                            description: Alignment of the nacelle with respect to north
+                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
                             default: [0.]
                             items:
                                 type: number
@@ -2786,7 +2809,7 @@ properties:
                                 maximum: 180.0
                         wave_spectrum:
                             type: array
-                            description: Spectrum of the waves
+                            description: Spectrum of the waves. This array must currently have either length=1, i.e. one constant spectrum, or the same length of the array wind_speed
                             #default: ["JONSWAP"]
                             items:
                                 type: str
@@ -2794,23 +2817,23 @@ properties:
                                 minItems: 1
                         turbine_status:
                             type: string
-                            description: Status of the turbine, it can be either operating, parked-idling, or parked-still
+                            description: Status of the turbine, it can be either operating, parked-idling, or parked-still. Each DLC come with its default turbine status specified by the standards.
                             default: operating
                             enum: ['operating','parked-idling','parked-still']
                         wave_period:
                             type: array
-                            description: Period between waves
-                            default: [1.e+1]
+                            description: Period between waves. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_period is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
+                            default: []
                             items:
                                 type: number
                                 unit: s
                                 minItems: 1
                                 minimum: 0.0
-                                maximum: 100.0
+                                maximum: 1000.0
                         wave_height:
                             type: array
-                            description: Height of the waves
-                            default: [1.e+1]
+                            description: Height of the waves. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_height is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
+                            default: []
                             items:
                                 type: number
                                 unit: m
@@ -2819,7 +2842,7 @@ properties:
                                 maximum: 100.0
                         wave_heading:
                             type: array
-                            description: Heading of the waves with respect to north
+                            description: Heading of the waves with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
                             default: [0.]
                             items:
                                 type: number
@@ -2829,7 +2852,7 @@ properties:
                                 maximum: 180.0
                         wave_gamma:
                             type: array
-                            description: Peak-shape parameter of incident wave spectrum. If 0, the default from IEC61400-3 / HydroDyn is used
+                            description: Peak-shape parameter of incident wave spectrum. If 0, the default from IEC61400-3 / HydroDyn is used. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
                             default: [0.]
                             items:
                                 type: number
@@ -2838,46 +2861,41 @@ properties:
                                 maximum: 10.0
                         probabilities:
                             type: array
-                            description: Probability of occurrance for each case
+                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed.
                             default: [1.]
                             items:
                                 type: number
                                 minItems: 1
                                 minimum: 0.
                                 maximum: 1.
-                        unique_wind_seeds:
-                            type: boolean
-                            default: False
-                            description: Run different wind seeds for each wind speed
-                        unique_wave_seeds:
-                            type: boolean
-                            default: False
-                            description: Run different wave seeds for each wind speed
                         IEC_WindType:
                             type: string
                             default: NTM
                             enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG']
-                            description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3), 'ECD'=extreme coherent gust with direction change, 'EDC'=extreme direction change, 'EOG'=extreme operating gust
+                            description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3), 'ECD'=extreme coherent gust with direction change, 'EDC'=extreme direction change, 'EOG'=extreme operating gust. Normally the user does not need to define this entry.
                         analysis_time:
                             type: number
                             unit: s
                             minimum: 0.0
                             maximum: 1.e+4
                             default: 0.
+                            description: This is the length of the simulation where outputs will be recorded. Its default is 600 seconds (10 minutes) for most simulations, except for the coherent cases where a shorter time window of 200 s is used.
                         transient_time:
                             type: number
                             unit: s
                             minimum: 0.0
                             maximum: 1.e+4
                             default: 120.
+                            description: This is the length of the simulation where outputs will be discarded. Its default is 120 seconds (2 minutes) for all simulations. The total simulation time is the sum of analysis_time and transient_time
                         turbulent_wind:
                             type: object
                             default: {}
+                            description: These are all inputs to TurbSim. These inputs usually do not need to be set unless you are trying to customize a DLC
                             properties:
                                 flag:
                                     type: boolean
                                     default: False
-                                    description: Flag switching between steady wind and turbulent wind grid from TurbSim
+                                    description: Flag switching between steady wind and turbulent wind grid from TurbSim.
                                 Echo:
                                     type: boolean
                                     default: False
@@ -3137,6 +3155,124 @@ properties:
                 type: boolean
                 default: True
                 description: Fix the seed of the random integer generator controlling the seed of TurbSim. When set to False, the seeds change everytime the DLC generator class is called. It is recommended to keep it to True when the optimization is on, or different wind seeds will be generated for every function call, complicating the smoothness of the solution space. Even when set to True, the wind seeds are different across wind speeds and DLCs.
+            fix_wave_seeds:
+                type: boolean
+                default: True
+                description: Fix the seed of the random integer generator controlling the wave seed of HydroDyn. When set to False, the seeds change everytime the DLC generator class is called. It is recommended to keep it to True when the optimization is on, or different wave seeds will be generated for every function call, complicating the smoothness of the solution space. Even when set to True, the wave seeds are different across wind speeds and DLCs.
+            metocean_conditions:
+                type: object
+                default: {}
+                description: Here the metocean conditions can be specified in terms of wind speeds, significant wave height (Hs), and wave period (Tp) for normal sea state (NSS), fatigue calculations, and severe sea state (SSS). Currently WEIS neglects the joint probability density function crossing wind/wave directionality, wave peak shape parameter gamma
+                properties:
+                    wind_speed:
+                        type: array
+                        description: Array of wind speeds to tabulate Hs and Tp
+                        default: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 50.0
+                            uniqueItems: true
+                    wave_height_NSS:
+                        type: array
+                        description: Array of Hs for NSS conditional to wind speed
+                        default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
+                        items:
+                            type: number
+                            unit: m
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    wave_period_NSS:
+                        type: array
+                        description: Array of Tp for NSS conditional to wind speed
+                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_height_fatigue:
+                        type: array
+                        description: Array of Hs for fatigue computations conditional to wind speed
+                        default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
+                        items:
+                            type: number
+                            unit: m
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    wave_period_fatigue:
+                        type: array
+                        description: Array of Tp for fatigue computations conditional to wind speed
+                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_height_SSS:
+                        type: array
+                        description: Array of Hs for SSS conditional to wind speed
+                        default: [1.10, 1.18, 1.32, 1.54, 1.84, 2.19, 2.60, 3.06, 3.62, 4.03, 4.52]
+                        items:
+                            type: number
+                            unit: m
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    wave_period_SSS:
+                        type: array
+                        description: Array of Tp for SSS conditional to wind speed
+                        default: [8.52, 8.31, 8.01, 7.65, 7.44, 7.46, 7.64, 8.05, 8.52, 8.99, 9.45]
+                        items:
+                            type: number
+                            unit: s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 1000.0
+                            uniqueItems: false
+                    wave_height50:
+                            type: number
+                            description: Wave height with 50-year occurrence, used in DLC 6.1
+                            default: 15.
+                            type: number
+                            unit: m
+                            minimum: 0.0
+                            maximum: 100.0
+                    wave_period50:
+                            type: number
+                            description: Wave period with 50-year occurrence, used in DLC 6.1
+                            default: 15.
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1000.0
+                    wave_height1:
+                            type: number
+                            description: Wave height with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
+                            default: 15.
+                            type: number
+                            unit: m
+                            minimum: 0.0
+                            maximum: 100.0
+                    wave_period1:
+                            type: number
+                            description: Wave period with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
+                            default: 15.
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1000.0
 
     ROSCO:
         type: object

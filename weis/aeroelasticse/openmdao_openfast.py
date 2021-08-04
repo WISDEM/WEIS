@@ -228,7 +228,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
-        self.add_input("platform_center_of_mass", np.zeros(3), units="m")
+        self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
         self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
 
@@ -725,22 +725,22 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TipMass(2)'] = 0.
         fst_vt['ElastoDyn']['TipMass(3)'] = 0.
 
-        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_center_of_mass"][2]))
+        tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_total_center_of_mass"][2]))
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
         fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
 
         # TODO: There is some confusion on PtfmRefzt
         # DZ: based on the openfast r-tests:
-        #   if this is floating, the z ref. point is 0.  Is this the reference that platform_center_of_mass is relative to?
+        #   if this is floating, the z ref. point is 0.  Is this the reference that platform_total_center_of_mass is relative to?
         #   if fixed bottom, it's the tower base height.
         if modopt['flags']['floating']:
             fst_vt['ElastoDyn']['PtfmMass'] = float(inputs["platform_mass"])
             fst_vt['ElastoDyn']['PtfmRIner'] = float(inputs["platform_I_total"][0])
             fst_vt['ElastoDyn']['PtfmPIner'] = float(inputs["platform_I_total"][1])
             fst_vt['ElastoDyn']['PtfmYIner'] = float(inputs["platform_I_total"][2])
-            fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_center_of_mass"][0])
-            fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_center_of_mass"][1])
-            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_center_of_mass"][2])
+            fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_total_center_of_mass"][0])
+            fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_total_center_of_mass"][1])
+            fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_total_center_of_mass"][2])
             fst_vt['ElastoDyn']['PtfmRefzt'] = 0. # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
         else:
@@ -1412,7 +1412,9 @@ class FASTLoadCases(ExplicitComponent):
         rotorD = float(inputs['Rtip'])*2.
         PLExp = float(inputs['shearExp'])
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds)
+        fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
+        metocean = modopt['DLC_driver']['metocean_conditions']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
@@ -1428,6 +1430,7 @@ class FASTLoadCases(ExplicitComponent):
         WaveTp = np.zeros(dlc_generator.n_cases)
         WaveHd = np.zeros(dlc_generator.n_cases)
         WaveGamma = np.zeros(dlc_generator.n_cases)
+        WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
         TMax = np.zeros(dlc_generator.n_cases)
         TStart = np.zeros(dlc_generator.n_cases)
 
@@ -1496,6 +1499,7 @@ class FASTLoadCases(ExplicitComponent):
             WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
+            WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
             TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
             TStart[i_case] = dlc_generator.cases[i_case].transient_time
 
@@ -1521,6 +1525,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
+        case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
