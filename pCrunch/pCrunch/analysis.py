@@ -379,6 +379,7 @@ class LoadsAnalysis:
         for chan, fatparams in self._fc.items():
 
             try:
+
                 DELs[chan], D[chan] = self._compute_del(
                     output[chan], output.elapsed_time,
                     fatparams.lifetime,
@@ -436,8 +437,8 @@ class LoadsAnalysis:
             F, Fmean = fatpack.find_rainflow_ranges(ts, return_means=True)
         except:
             F = Fmean = np.zeros(1)
-        if goodman and load2stress > 0.0:
-            F = fatpack.find_goodman_equivalent_stress(F, Fmean, Sult/load2stress)
+        if goodman and np.abs(load2stress) > 0.0:
+            F = fatpack.find_goodman_equivalent_stress(F, Fmean, Sult/np.abs(load2stress))
         Nrf, Frf = fatpack.find_range_count(F, bins)
         DELs = Frf ** slope * Nrf / elapsed
         DEL = DELs.sum() ** (1.0 / slope)
@@ -449,7 +450,7 @@ class LoadsAnalysis:
 
         # Compute Palmgren/Miner damage using stress
         D = np.nan # default return value
-        if return_damage and load2stress > 0.0:
+        if return_damage and np.abs(load2stress) > 0.0:
             try:
                 S, Mrf = fatpack.find_rainflow_ranges(ts*load2stress, return_means=True)
             except:
