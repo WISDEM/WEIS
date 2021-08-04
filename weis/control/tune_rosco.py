@@ -559,6 +559,7 @@ class ROSCO_Turbine(ExplicitComponent):
         self.add_output('gearbox_efficiency',val=1.0,                                desc='Gearbox efficiency')
         self.add_output('generator_efficiency', val=1.0,                             desc='Generator efficiency')
         self.add_output('TowerHt',           val=1.0,        units='m',              desc='Tower height')
+        self.add_output('hub_height',        val=1.0,        units='m',              desc='Hub height')
 
         # 
         self.add_output('max_pitch',         val=0.0,        units='rad',            desc='')
@@ -601,6 +602,7 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff / 100
         outputs['generator_efficiency'   ] = self.turbine.GenEff
         outputs['TowerHt'                ] = self.turbine.TowerHt
+        outputs['hub_height'             ] = self.turbine.hubHt
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table

@@ -122,6 +122,7 @@ class runFAST_pywrapper(object):
         self.case               = {}     # dictionary of variable values to change
         self.channels           = {}     # dictionary of output channels to change
         self.keep_time          = False
+        self.use_exe            = False  # use openfast executable instead of library, helpful for debugging sometimes
 
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
 
@@ -164,7 +165,7 @@ class runFAST_pywrapper(object):
             writer.FAST_yamlfile = self.FAST_yamlfile_out
             writer.write_yaml()
 
-        if self.FAST_exe is None: # Use library
+        if self.use_exe: # Use library
 
             FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
             
@@ -246,6 +247,7 @@ class runFAST_pywrapper_batch(object):
 
         self.overwrite_outfiles = True
         self.keep_time          = False
+        self.use_exe            = False
         
         self.post               = None
 
@@ -269,6 +271,7 @@ class runFAST_pywrapper_batch(object):
             case_data['channels'] = self.channels
             case_data['overwrite_outfiles'] = self.overwrite_outfiles
             case_data['keep_time'] = self.keep_time
+            case_data['use_exe'] = self.use_exe
             case_data['post'] = self.post
 
             case_data_all.append(case_data)
@@ -384,7 +387,7 @@ def evaluate(indict):
 
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
-                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time', 'post']
+                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time', 'post', 'use_exe']
     for k in indict:
         if k in known_keys: continue
         print(f'WARNING: Unknown OpenFAST executation parameter, {k}')
@@ -407,7 +410,8 @@ def evaluate(indict):
     fast.channels           = indict['channels']
 
     fast.overwrite_outfiles = indict['overwrite_outfiles']
-    fast.keep_time = indict['keep_time']
+    fast.keep_time  = indict['keep_time']
+    fast.use_exe    = indict['use_exe']
 
     FAST_Output = fast.execute()
     return FAST_Output

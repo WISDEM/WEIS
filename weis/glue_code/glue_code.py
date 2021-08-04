@@ -355,6 +355,11 @@ class WindPark(om.Group):
             if modeling_options['ROSCO']['flag']==False:
                 raise Exception("ERROR: WISDEM does not support openfast without the tuning of ROSCO")
 
+            # Configuration parameters needed if model comes from openfast
+            self.connect('control.V_in',                    'aeroelastic.V_cutin')
+            self.connect('control.V_out',                   'aeroelastic.V_cutout')
+            self.connect('env.shear_exp',                   'aeroelastic.shearExp')
+
             
             # Connections to aeroelasticse
             if not modeling_options['Level3']['from_openfast']:
@@ -367,8 +372,7 @@ class WindPark(om.Group):
                 self.connect('blade.interp_airfoils.coord_xy_interp', 'aeroelastic.coord_xy_interp')
                 self.connect('env.rho_air',                     'aeroelastic.rho')
                 self.connect('env.speed_sound_air',             'aeroelastic.speed_sound_air')
-                self.connect('env.mu_air',                      'aeroelastic.mu')                    
-                self.connect('env.shear_exp',                   'aeroelastic.shearExp')                    
+                self.connect('env.mu_air',                      'aeroelastic.mu')                               
                 self.connect('env.water_depth',                 'aeroelastic.water_depth')
                 self.connect('env.rho_water',                   'aeroelastic.rho_water')
                 self.connect('env.mu_water',                    'aeroelastic.mu_water')
@@ -399,7 +403,7 @@ class WindPark(om.Group):
                 self.connect('drivese.drivetrain_spring_constant', 'aeroelastic.drivetrain_spring_constant')
                 self.connect('drivese.drivetrain_damping_coefficient', 'aeroelastic.drivetrain_damping_coefficient')
 
-                self.connect('assembly.hub_height',             'aeroelastic.hub_height')
+                
                 if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
                     self.connect('towerse.mass_den',                'aeroelastic.mass_den')
                     self.connect('towerse.foreaft_stff',            'aeroelastic.foreaft_stff')
@@ -493,8 +497,6 @@ class WindPark(om.Group):
                 self.connect('rotorse.wt_class.V_extreme1',             'aeroelastic.V_extreme1')
                 self.connect('rotorse.wt_class.V_extreme50',            'aeroelastic.V_extreme50')
                 self.connect('rotorse.wt_class.V_mean',                 'aeroelastic.V_mean_iec')
-                self.connect('control.V_in',                    'aeroelastic.V_cutin')
-                self.connect('control.V_out',                   'aeroelastic.V_cutout')
                 self.connect('configuration.rated_power',       'aeroelastic.control_ratedPower')
                 self.connect('control.max_TS',                  'aeroelastic.control_maxTS')
                 self.connect('control.maxOmega',                'aeroelastic.control_maxOmega')
@@ -930,15 +932,22 @@ class WindPark(om.Group):
                     #self.connect('max_taper_ratio',         'max_taper') # TODO- 
                     #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
                 
-            # Inputs to plantfinancese from wt group
-            self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
+            else:  # connections from outside WISDEM
+                self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
+                self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
+                self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
 
-            self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
-            if modeling_options['WISDEM']['BOS']['flag']:
-                if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
-                    self.connect('orbit.total_capex_kW',    'financese_post.bos_per_kW')
-                else:
-                    self.connect('landbosse.bos_capex_kW',  'financese_post.bos_per_kW')
+            # Inputs to plantfinancese from wt group
+            if not modeling_options['Level3']['from_openfast']:
+                self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
+
+                self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
+                if modeling_options['WISDEM']['BOS']['flag']:
+                    if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
+                        self.connect('orbit.total_capex_kW',    'financese_post.bos_per_kW')
+                    else:
+                        self.connect('landbosse.bos_capex_kW',  'financese_post.bos_per_kW')
+
             # Inputs to plantfinancese from input yaml
             if modeling_options['flags']['control'] and not modeling_options['Level3']['from_openfast']:
                 self.connect('configuration.rated_power',     'financese_post.machine_rating')
@@ -950,13 +959,14 @@ class WindPark(om.Group):
                 self.connect('costs.wake_loss_factor',  'financese_post.wake_loss_factor')
                 self.connect('costs.fixed_charge_rate', 'financese_post.fixed_charge_rate')
 
+            self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
+
             # Connections to outputs to screen
-            if modeling_options['ROSCO']['flag']:
-                self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
+            if not modeling_options['Level3']['from_openfast']:
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
                 
-            self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
-            self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
+                self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
+                self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
             
             if modeling_options['DLC_driver']['openfast_file_management']['model_only'] == False:
                 self.connect('aeroelastic.DEL_RootMyb',        'outputs_2_screen_weis.DEL_RootMyb')

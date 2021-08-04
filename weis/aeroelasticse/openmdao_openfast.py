@@ -93,6 +93,16 @@ class FASTLoadCases(ExplicitComponent):
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_pc          = n_pc      = rotorse_options['n_pc']
 
+        # Environmental Conditions needed regardless of where model comes from
+        self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
+        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
+        self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
+        self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
+        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
+        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
+        self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
+        self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+
         if not self.options['modeling_options']['Level3']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
             self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
@@ -140,42 +150,6 @@ class FASTLoadCases(ExplicitComponent):
             n_freq_tower = int(NFREQ/2)
             n_freq_blade = int(rotorse_options['n_freq']/2)
             n_pc         = int(rotorse_options['n_pc'])
-
-            # DLC options
-            n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']
-
-            # OpenFAST options
-            OFmgmt = modopt['DLC_driver']['openfast_file_management']
-            self.model_only = OFmgmt['model_only']
-            FAST_directory_base = OFmgmt['OF_run_dir']
-            # If the path is relative, make it an absolute path
-            if not os.path.isabs(FAST_directory_base):
-                FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
-            # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
-            self.clean_FAST_directory = False
-            self.FAST_InputFile = OFmgmt['OF_run_fst']
-            # File naming changes whether in MPI or not
-            if MPI:
-                rank    = MPI.COMM_WORLD.Get_rank()
-                self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
-                self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
-            else:
-                self.FAST_runDirectory = FAST_directory_base
-                self.FAST_namingOut = self.FAST_InputFile
-            self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
-            if not os.path.exists(self.FAST_runDirectory):
-                os.makedirs(self.FAST_runDirectory)
-            if not os.path.exists(self.wind_directory):
-                os.mkdir(self.wind_directory)
-            # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
-            self.cores = OFmgmt['cores']
-            self.case = {}
-            self.channels = {}
-            self.mpi_run = False
-            if 'mpi_run' in OFmgmt.keys():
-                self.mpi_run         = OFmgmt['mpi_run']
-                if self.mpi_run:
-                    self.mpi_comm_map_down   = OFmgmt['mpi_comm_map_down']
 
             # ElastoDyn Inputs
             # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -248,7 +222,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('ac',                val=np.zeros(n_span), desc='aerodynamic center of airfoil distribution')
             self.add_input('pitch_axis',        val=np.zeros(n_span), desc='1D array of the chordwise position of the pitch axis (0-LE, 1-TE), defined along blade span.')
             self.add_input('Rhub',              val=0.0, units='m', desc='dimensional radius of hub')
-            self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
             self.add_input('airfoils_cl',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='lift coefficients, spanwise')
             self.add_input('airfoils_cd',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='drag coefficients, spanwise')
             self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
@@ -288,9 +261,6 @@ class FASTLoadCases(ExplicitComponent):
 
             # Turbine level inputs
             self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
-            self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
-            self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-            self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
             self.add_input('control_ratedPower',        val=0.,  units='W',    desc='machine power rating')
             self.add_input('control_maxOmega',          val=0.0, units='rpm',  desc='maximum allowed rotor rotation speed')
             self.add_input('control_maxTS',             val=0.0, units='m/s',  desc='maximum allowed blade tip speed')
@@ -312,17 +282,14 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('U_vector',      val=np.zeros(n_U),     units='m/s',  desc='Wind speed vector used')
 
             # Environmental conditions
-            self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
             self.add_input('V_R25',       val=0.0, units='m/s',      desc='region 2.5 transition wind speed')
             self.add_input('Vgust',       val=0.0, units='m/s',      desc='gust wind speed')
             self.add_input('V_extreme1',  val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 1-year retunr period')
             self.add_input('V_extreme50', val=0.0, units='m/s',      desc='IEC extreme wind speed at hub height for a 50-year retunr period')
             self.add_input('V_mean_iec',  val=0.0, units='m/s',      desc='IEC mean wind for turbulence class')
-            self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
-            self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
+            
             self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
             self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
-            self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
             self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
             self.add_input(
                     "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
@@ -371,6 +338,57 @@ class FASTLoadCases(ExplicitComponent):
                 self.add_input("nodes_drag_area", val=np.zeros(n_nodes), units="m**2")
                 self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
                 self.add_discrete_input("node_names", val=[""] * n_nodes)
+
+        # DLC options
+        n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']
+
+        # OpenFAST options
+        OFmgmt = modopt['DLC_driver']['openfast_file_management']
+        self.model_only = OFmgmt['model_only']
+        FAST_directory_base = OFmgmt['OF_run_dir']
+        # If the path is relative, make it an absolute path
+        if not os.path.isabs(FAST_directory_base):
+            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+        # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
+        self.clean_FAST_directory = False
+        self.FAST_InputFile = OFmgmt['OF_run_fst']
+        # File naming changes whether in MPI or not
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
+            self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
+        else:
+            self.FAST_runDirectory = FAST_directory_base
+            self.FAST_namingOut = self.FAST_InputFile
+        self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
+        if not os.path.exists(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory)
+        if not os.path.exists(self.wind_directory):
+            os.mkdir(self.wind_directory)
+        # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
+        self.cores = OFmgmt['cores']
+        self.case = {}
+        self.channels = {}
+        self.mpi_run = False
+        if 'mpi_run' in OFmgmt.keys():
+            self.mpi_run         = OFmgmt['mpi_run']
+            if self.mpi_run:
+                self.mpi_comm_map_down   = OFmgmt['mpi_comm_map_down']
+
+        # User-defined FAST library/executable
+        if modopt['Level3']['FAST_exe'] != 'none':
+            if os.path.isabs(FASTpref['file_management']['FAST_exe']):
+                self.FAST_exe = FASTpref['file_management']['FAST_exe']
+            else:
+                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             FASTpref['file_management']['FAST_exe'])
+
+        if modopt['Level3']['FAST_exe'] != 'none':
+            if os.path.isabs(FASTpref['file_management']['FAST_lib']):
+                self.FAST_lib = FASTpref['file_management']['FAST_lib']
+            else:
+                self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             FASTpref['file_management']['FAST_lib'])
 
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
@@ -500,13 +518,13 @@ class FASTLoadCases(ExplicitComponent):
 
         fst_vt = self.init_FAST_model()
 
-        if not self.options['modeling_options']['Level3']['from_openfast']:
+        if not modopt['Level3']['from_openfast']:
             fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         else:
             fast_reader = InputReader_OpenFAST()
-            fast_reader.FAST_InputFile = self.options['modeling_options']['Level3']['openfast_file']   # FAST input file (ext=.fst)
-            fast_reader.FAST_directory = self.options['modeling_options']['Level3']['openfast_dir']   # Path to fst directory files
-            fast_reader.path2dll      = self.options['modeling_options']['openfast']['file_management']['path2dll']   # Path to dll file
+            fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
+            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
+            fast_reader.path2dll        = modopt['DLC_driver']['openfast_file_management']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
             fst_vt = self.load_FAST_model_opts(fst_vt)
@@ -518,8 +536,8 @@ class FASTLoadCases(ExplicitComponent):
             # Fix AddF0: Should be a n x 1 array (list of lists):
             fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
 
-            if self.options['modeling_options']['ROSCO']['flag']:
-                fst_vt['DISCON_in'] = self.options['modeling_options']['openfast']['fst_vt']['DISCON_in']
+            if modopt['ROSCO']['flag']:
+                fst_vt['DISCON_in'] = modopt['DLC_driver']['openfast_file_management']['fst_vt']['DISCON_in']
                 
                 
         if self.model_only == True:
@@ -693,8 +711,6 @@ class FASTLoadCases(ExplicitComponent):
         for key1 in modeling_options['Level3']['outlist']:
                 for key2 in modeling_options['Level3']['outlist'][key1]:
                     fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
-
-        fst_vt['ServoDyn']['DLL_FileName'] = modopt['DLC_driver']['openfast_file_management']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
             fst_vt['AeroDyn15']['IndToler'] = 'default'
@@ -1518,12 +1534,18 @@ class FASTLoadCases(ExplicitComponent):
                 WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
                     dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, i_case)
 
-        # Set initial rotor speed and pitch if the WT operates in this DLC,
-        # otherwise set pitch to 90 deg and rotor speed to 0 rpm
+        # Set initial rotor speed and pitch if the WT operates in this DLC and available,
+        # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
+        # set rotor speed to rated and pitch to 15 deg if operating
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbine_status == 'operating':
-                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
-                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
+                # We have initial conditions from WISDEM
+                if ('U' in inputs) and ('Omega' in inputs) and ('pitch' in inputs):
+                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
+                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
+                else:
+                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
+                    pitch_initial[i_case]       = 15
             else:
                 rot_speed_initial[i_case] = 0.
                 pitch_initial[i_case] = 90.
@@ -1585,15 +1607,15 @@ class FASTLoadCases(ExplicitComponent):
         else:
             fastBatch                           = runFAST_pywrapper_batch()
             fastBatch.case_list                 = case_list
-            fastBatch.case_name_list            = case_name
-        
+            fastBatch.case_name_list            = case_name     
         
         fastBatch.channels          = channels
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
-        fastBatch.keep_time         = self.FASTpref['file_management']['save_timeseries']
+        fastBatch.keep_time         = modopt['DLC_driver']['openfast_file_management']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
+        fastBatch.use_exe           = modopt['DLC_driver']['openfast_file_management']['use_exe']
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
@@ -2072,7 +2094,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
-        def save_timeseries(self,chan_time):
+    def save_timeseries(self,chan_time):
         '''
         Save ALL the timeseries: each iteration and openfast run thereof
         '''

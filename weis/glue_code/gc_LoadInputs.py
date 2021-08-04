@@ -39,7 +39,14 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.dylib')
             else:
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.so')
-            self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
+
+            # User-defined control dylib (path2dll)
+            if self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] == 'none':   #Default option, use above
+                self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
+            else:
+                if not os.path.isabs(self.modeling_options['DLC_driver']['openfast_file_management']['path2dll']):  # make relative path absolute
+                    self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = \
+                        os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_lib'])
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["offshore"]:
