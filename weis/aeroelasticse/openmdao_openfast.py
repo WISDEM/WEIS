@@ -332,14 +332,20 @@ class FASTLoadCases(ExplicitComponent):
             
         # Inputs required for fatigue processing
         self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
-        self.add_input('blade_root_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-        self.add_input('blade_root_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
-        self.add_input('blade_root_wohlerA',   val=1.0,   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_sparU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_sparU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_sparU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+        self.add_input('blade_sparL_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_sparL_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_sparL_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+        self.add_input('blade_teU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_teU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_teU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+        self.add_input('blade_teL_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_teL_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+        self.add_input('blade_teL_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
         self.add_input('blade_root_sparU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root upper spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
         self.add_input('blade_root_sparL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root lower spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-        self.add_input('blade_maxc_wohlerexp',   val=1.0,   desc='Blade max chord Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-        self.add_input('blade_maxc_ultstress',   val=1.0, units="Pa",   desc='Blade max chord ultimate stress for material')
-        self.add_input('blade_maxc_wohlerA',   val=1.0,   desc='Blade max chord parameter, A, in S/N curve S=A*N^-(1/m)')
         self.add_input('blade_maxc_teU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord upper trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
         self.add_input('blade_maxc_teL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord lower trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
         self.add_input('lss_wohlerexp',   val=1.0,   desc='Low speed shaft Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
@@ -1560,19 +1566,19 @@ class FASTLoadCases(ExplicitComponent):
         fatigue_channels =  dict( fastwrap.fatigue_channels_default )
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
-        blade_fatigue_root = FatigueParams(load2stress=1.0,
-                                           lifetime=inputs['lifetime'],
-                                           slope=inputs['blade_root_wohlerexp'],
-                                           ult_stress=inputs['blade_root_ultstress'],
-                                           S_intercept=inputs['blade_root_wohlerA'])
-
-        blade_fatigue_te = FatigueParams(load2stress=1.0,
-                                         lifetime=inputs['lifetime'],
-                                         slope=inputs['blade_maxc_wohlerexp'],
-                                         ult_stress=inputs['blade_maxc_ultstress'],
-                                         S_intercept=inputs['blade_maxc_wohlerA'])
-        for k in range(1,self.n_blades+1):
-            for u in ['U','L']:
+        for u in ['U','L']:
+            blade_fatigue_root = FatigueParams(load2stress=1.0,
+                                               lifetime=inputs['lifetime'],
+                                               slope=inputs[f'blade_spar{u}_wohlerexp'],
+                                               ult_stress=inputs[f'blade_spar{u}_ultstress'],
+                                               S_intercept=inputs[f'blade_spar{u}_wohlerA'])
+            blade_fatigue_te = FatigueParams(load2stress=1.0,
+                                             lifetime=inputs['lifetime'],
+                                             slope=inputs[f'blade_te{u}_wohlerexp'],
+                                             ult_stress=inputs[f'blade_te{u}_ultstress'],
+                                             S_intercept=inputs[f'blade_te{u}_wohlerA'])
+            
+            for k in range(1,self.n_blades+1):
                 blade_root_Fz = blade_fatigue_root.copy()
                 blade_root_Fz.load2stress = inputs[f'blade_root_spar{u}_load2stress'][2]
                 fatigue_channels[f'RootSpar{u}_Fzb{k}'] = blade_root_Fz
@@ -1584,7 +1590,7 @@ class FASTLoadCases(ExplicitComponent):
                 magnitude_channels[f'RootSpar{u}_Mxb{k}'] = [f'RootMxb{k}']
 
                 blade_root_My = blade_fatigue_root.copy()
-                blade_root_My.load2stress = inputs[f'blade_root_spar{u}_load2stress'][3]
+                blade_root_My.load2stress = inputs[f'blade_root_spar{u}_load2stress'][4]
                 fatigue_channels[f'RootSpar{u}_Myb{k}'] = blade_root_My
                 magnitude_channels[f'RootSpar{u}_Myb{k}'] = [f'RootMyb{k}']
 
@@ -1599,7 +1605,7 @@ class FASTLoadCases(ExplicitComponent):
                 magnitude_channels[f'Spn2te{u}_MLxb{k}'] = [f'Spn2MLxb{k}']
 
                 blade_maxc_My = blade_fatigue_te.copy()
-                blade_maxc_My.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][3]
+                blade_maxc_My.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][4]
                 fatigue_channels[f'Spn2te{u}_MLyb{k}'] = blade_maxc_My
                 magnitude_channels[f'Spn2te{u}_MLyb{k}'] = [f'Spn2MLyb{k}']
 
