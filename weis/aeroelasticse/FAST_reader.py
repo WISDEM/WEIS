@@ -206,11 +206,10 @@ class InputReader_OpenFAST(object):
         self.fst_vt['Fst']['MooringFile_path']  = os.path.split(self.fst_vt['Fst']['MooringFile'])[0]
         self.fst_vt['Fst']['IceFile_path']      = os.path.split(self.fst_vt['Fst']['IceFile'])[0]
 
-    def read_ElastoDyn(self):
+    def read_ElastoDyn(self, ed_file):
         # ElastoDyn v1.03 Input File
         # Currently no differences between FASTv8.16 and OpenFAST.
 
-        ed_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['EDFile'])
         f = open(ed_file)
 
         f.readline()
@@ -385,11 +384,9 @@ class InputReader_OpenFAST(object):
 
         f.close()
 
-    def read_ElastoDynBlade(self):
+    def read_ElastoDynBlade(self, blade_file):
         # ElastoDyn v1.00 Blade Input File
         # Currently no differences between FASTv8.16 and OpenFAST.
-
-        blade_file = os.path.join(self.FAST_directory, self.fst_vt['ElastoDyn']['BldFile1'])
 
         f = open(blade_file)
         # print blade_file
@@ -444,11 +441,9 @@ class InputReader_OpenFAST(object):
 
         f.close()
 
-    def read_ElastoDynTower(self):
+    def read_ElastoDynTower(self, tower_file):
         # ElastoDyn v1.00 Tower Input Files
         # Currently no differences between FASTv8.16 and OpenFAST.
-
-        tower_file = os.path.join(self.FAST_directory, self.fst_vt['ElastoDyn']['TwrFile'])  
         
         f = open(tower_file)
 
@@ -2012,14 +2007,20 @@ class InputReader_OpenFAST(object):
     def execute(self):
           
         self.read_MainInput()
-        self.read_ElastoDyn()
-        self.read_ElastoDynBlade()
-        self.read_ElastoDynTower()
+        ed_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['EDFile'])
+        self.read_ElastoDyn(ed_file)
+        if not os.path.isabs(self.fst_vt['ElastoDyn']['BldFile1']):
+            ed_blade_file = os.path.join(os.path.dirname(ed_file), self.fst_vt['ElastoDyn']['BldFile1'])
+        self.read_ElastoDynBlade(ed_blade_file)
+        if not os.path.isabs(self.fst_vt['ElastoDyn']['TwrFile']):
+            ed_tower_file = os.path.join(os.path.dirname(ed_file), self.fst_vt['ElastoDyn']['TwrFile'])
+        self.read_ElastoDynTower(ed_tower_file)
         self.read_InflowWind()
         self.read_AeroDyn15()
-        self.read_ServoDyn()
-        if ROSCO:
-            self.read_DISCON_in()
+        if self.fst_vt['Fst']['CompServo'] == 1:
+            self.read_ServoDyn()
+            if ROSCO:
+                self.read_DISCON_in()
         hd_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['HydroFile']))
         if os.path.isfile(hd_file): 
             self.read_HydroDyn(hd_file)

@@ -157,13 +157,14 @@ class InputWriter_OpenFAST(object):
         # self.write_WindWnd()
         self.write_InflowWind()
         if self.fst_vt['Fst']['CompAero'] == 1:
-            self.write_AeroDyn14()
+            raise Exception('AeroDyn14 is no longer supported in WEIS')
         elif self.fst_vt['Fst']['CompAero'] == 2:
             self.write_AeroDyn15()
         
-        if 'DISCON_in' in self.fst_vt and ROSCO:
-            self.write_DISCON_in()
-        self.write_ServoDyn()
+        if self.fst_vt['Fst']['CompServo'] == 1:
+            if 'DISCON_in' in self.fst_vt and ROSCO:
+                self.write_DISCON_in()
+            self.write_ServoDyn()
         
         if self.fst_vt['Fst']['CompHydro'] == 1:
             self.write_HydroDyn()
