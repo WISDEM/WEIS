@@ -3245,7 +3245,6 @@ properties:
                             type: number
                             description: Wave height with 50-year occurrence, used in DLC 6.1
                             default: 15.
-                            type: number
                             unit: m
                             minimum: 0.0
                             maximum: 100.0
@@ -3253,7 +3252,6 @@ properties:
                             type: number
                             description: Wave period with 50-year occurrence, used in DLC 6.1
                             default: 15.
-                            type: number
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
@@ -3261,7 +3259,6 @@ properties:
                             type: number
                             description: Wave height with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
                             default: 15.
-                            type: number
                             unit: m
                             minimum: 0.0
                             maximum: 100.0
@@ -3269,7 +3266,6 @@ properties:
                             type: number
                             description: Wave period with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
                             default: 15.
-                            type: number
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
