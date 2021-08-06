@@ -959,7 +959,8 @@ class WindPark(om.Group):
                 self.connect('costs.wake_loss_factor',  'financese_post.wake_loss_factor')
                 self.connect('costs.fixed_charge_rate', 'financese_post.fixed_charge_rate')
 
-            self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
+            if modeling_options['DLC_driver']['n_ws_dlc11'] > 0:
+                self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
 
             # Connections to outputs to screen
             if not modeling_options['Level3']['from_openfast']:

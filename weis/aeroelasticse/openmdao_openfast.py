@@ -391,12 +391,13 @@ class FASTLoadCases(ExplicitComponent):
                                              FASTpref['file_management']['FAST_lib'])
 
         # Rotor power outputs
-        self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
-        self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
-        self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
-        self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
-        self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
-        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
+        if modopt['DLC_driver']['n_ws_dlc11'] > 0:
+            self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
+            self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
+            self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
+            self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
+            self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
+            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
@@ -545,8 +546,7 @@ class FASTLoadCases(ExplicitComponent):
             self.write_FAST(fst_vt, discrete_outputs)
         else:
             # Write OF model and run
-            summary_stats, extreme_table, DELs, case_list, case_name, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
-
+            summary_stats, extreme_table, DELs, case_list, case_name, chan_time, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
             if modopt['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(
                 self.FAST_runDirectory,
@@ -642,7 +642,8 @@ class FASTLoadCases(ExplicitComponent):
 
                         summary_stats, extreme_table, DELs = la.post_process(ss, et, dl)
 
-            self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
+        # Post process at both Level 2 and 3
+        self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
@@ -1629,17 +1630,17 @@ class FASTLoadCases(ExplicitComponent):
             summary_stats, extreme_table, DELs, _ = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
-                summary_stats, extreme_table, DELs, _ = fastBatch.run_serial()
+                summary_stats, extreme_table, DELs, chan_time = fastBatch.run_serial()
             else:
-                summary_stats, extreme_table, DELs, _ = fastBatch.run_multi(self.cores)
+                summary_stats, extreme_table, DELs, chan_time = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
         sys.stdout.flush()
 
-        return summary_stats, extreme_table, DELs, case_list, case_name_list, dlc_list, chan_time
+        return summary_stats, extreme_table, DELs, case_list, case_name, chan_time, dlc_generator
 
-    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
+    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
         # Analysis
@@ -1650,18 +1651,21 @@ class FASTLoadCases(ExplicitComponent):
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
         if modopt['flags']['monopile'] and modopt['Level3']['flag']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
-        outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
-        outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, discrete_inputs, outputs, discrete_outputs)
+
+        if modopt['DLC_driver']['n_ws_dlc11'] > 0:
+            outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
+            outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, discrete_inputs, outputs, discrete_outputs)
+        
         outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating']:
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
 
         # Save Data
-        if self.options['modeling_options']['openfast']['file_management']['save_timeseries']:
+        if modopt['DLC_driver']['openfast_file_management']['save_timeseries']:
             self.save_timeseries(chan_time)
 
-        if self.options['modeling_options']['openfast']['file_management']['save_iterations']:
+        if modopt['DLC_driver']['openfast_file_management']['save_iterations']:
             self.save_iterations(summary_stats,DELs)
 
     def get_blade_loading(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):

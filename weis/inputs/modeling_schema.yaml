@@ -95,20 +95,6 @@ properties:
                         enum: ['WARNING', 'SEVERE', 'FATAL']
                         default: 'FATAL'
                         description: Error level when simulation should abort (string) {'WARNING', 'SEVERE', 'FATAL'}
-                    TMax:
-                        type: number
-                        default: 720.
-                        minimum: 0.0
-                        maximum: 10000.0
-                        unit: s
-                        description: Total run time (s)
-                    TStart:
-                        type: number
-                        default: 120.
-                        minimum: 0.0
-                        maximum: 10000.0
-                        unit: s
-                        description: Time to begin tabular output (s)
                     DT:
                         type: number
                         default: 0.025
@@ -3275,7 +3261,6 @@ properties:
                             type: number
                             description: Wave height with 50-year occurrence, used in DLC 6.1
                             default: 15.
-                            type: number
                             unit: m
                             minimum: 0.0
                             maximum: 100.0
@@ -3283,7 +3268,6 @@ properties:
                             type: number
                             description: Wave period with 50-year occurrence, used in DLC 6.1
                             default: 15.
-                            type: number
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
@@ -3291,7 +3275,6 @@ properties:
                             type: number
                             description: Wave height with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
                             default: 15.
-                            type: number
                             unit: m
                             minimum: 0.0
                             maximum: 100.0
@@ -3299,7 +3282,6 @@ properties:
                             type: number
                             description: Wave period with 1-year occurrence, used in DLC 6.3, 7.1, and 8.2
                             default: 15.
-                            type: number
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0

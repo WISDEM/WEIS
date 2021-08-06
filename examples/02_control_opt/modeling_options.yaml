@@ -23,8 +23,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     simulation:
-        TMax: 10.
-        TStart: 0
         DT: 0.0125
         CompElast: 1
         CompInflow: 1
@@ -100,10 +98,10 @@ DLC_driver:
         save_iterations: True
     DLCs:
         - DLC: "1.1"
-          wind_speed: [12,16,20]
+          wind_speed: [16]
           n_seeds: 1
-          analysis_time: 700.
-          transient_time: 60.
+          analysis_time: 10.
+          transient_time: 0.1
           turbulent_wind:
               HubHt: 140
               GridHeight: 220
