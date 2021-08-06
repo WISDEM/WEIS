@@ -348,13 +348,12 @@ class DiscretizationYAML(om.ExplicitComponent):
         # While the sections are simple, store cross section info for fatigue
         ax_load2stress = np.zeros([n_height - 1, 6])
         sh_load2stress = np.zeros([n_height - 1, 6])
-        r_sec = 0.5 * D
         ax_load2stress[:, 2] = 1.0 / itube.Area
-        ax_load2stress[:, 3] = r_sec / itube.Jxx
-        ax_load2stress[:, 4] = r_sec / itube.Jyy
-        sh_load2stress[:, 0] = r_sec / itube.Asx
-        sh_load2stress[:, 1] = r_sec / itube.Asy
-        sh_load2stress[:, 5] = 1.0 / itube.J0
+        ax_load2stress[:, 3] = 1.0 / itube.S
+        ax_load2stress[:, 4] = 1.0 / itube.S
+        sh_load2stress[:, 0] = 1.0 / itube.Asx
+        sh_load2stress[:, 1] = 1.0 / itube.Asy
+        sh_load2stress[:, 5] = 1.0 / itube.C
         outputs["axial_load2stress"] = ax_load2stress
         outputs["shear_load2stress"] = sh_load2stress
 
@@ -492,6 +491,8 @@ class MemberDiscretization(om.ExplicitComponent):
         # Assuming straight (non-curved) members, set dimensional z along the axis
         outputs["s_full"] = s_full
         outputs["z_full"] = s_full * inputs["height"]
+
+        # Account for intersections with ghost values
 
         # All other parameters
         outputs["d_full"] = np.interp(s_full, s_param, inputs["outer_diameter"])
@@ -1529,6 +1530,8 @@ class MemberHydro(om.ExplicitComponent):
         self.add_input("z_full", np.zeros(n_full), units="m")
         self.add_input("d_full", np.zeros(n_full), units="m")
         self.add_input("s_all", NULL * np.ones(MEMMAX))
+        self.add_input("s_ghost1", 0.0)
+        self.add_input("s_ghost2", 1.0)
         self.add_input("nodes_xyz", NULL * np.ones((MEMMAX, 3)), units="m")
 
         self.add_output("center_of_buoyancy", np.zeros(3), units="m")
@@ -1546,6 +1549,8 @@ class MemberHydro(om.ExplicitComponent):
         # Unpack variables
         nnode = np.where(inputs["s_all"] == NULL)[0][0]
         s_grid = inputs["s_all"][:nnode]
+        s_ghost1 = float(inputs["s_ghost1"])
+        s_ghost2 = float(inputs["s_ghost2"])
         xyz = inputs["nodes_xyz"][:nnode, :]
         s_full = inputs["s_full"]
         z_full = inputs["z_full"]
@@ -1574,6 +1579,14 @@ class MemberHydro(om.ExplicitComponent):
             outputs["waterline_centroid"] = np.zeros(2)
         else:
             return
+
+        # Make sure we account for overlaps
+        if s_under[0] < s_ghost1:
+            s_under = np.unique(np.r_[s_ghost1, np.maximum(s_ghost1, s_under)])
+        if s_under[-1] > s_ghost2:
+            s_under = np.unique(np.r_[np.minimum(s_ghost2, s_under), s_ghost2])
+
+        # Get geometry of valid sections
         z_under = np.interp(s_under, s_full, z_full)
         r_under = np.interp(s_under, s_full, R_od)
         if waterline:
