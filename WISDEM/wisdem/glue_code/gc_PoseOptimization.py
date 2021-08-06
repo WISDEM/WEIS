@@ -1,8 +1,8 @@
 import os
 
+import numpy as np
 from scipy.interpolate import PchipInterpolator
 
-import numpy as np
 import openmdao.api as om
 
 

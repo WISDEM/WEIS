@@ -78,12 +78,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if MPI:
             if modeling_options['Level3']['flag']:
                 # Parallel settings for OpenFAST
-                modeling_options['DLC_driver']['openfast_file_management']['mpi_run'] = True
-                modeling_options['DLC_driver']['openfast_file_management']['mpi_comm_map_down'] = comm_map_down
+                modeling_options['General']['openfast_configuration']['mpi_run'] = True
+                modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down
                 if opt_options['driver']['design_of_experiments']['flag']:
-                    modeling_options['DLC_driver']['openfast_file_management']['cores'] = 1
+                    modeling_options['General']['openfast_configuration']['cores'] = 1
                 else:
-                    modeling_options['DLC_driver']['openfast_file_management']['cores'] = n_OF_runs_parallel            
+                    modeling_options['General']['openfast_configuration']['cores'] = n_OF_runs_parallel            
             
             # Parallel settings for OpenMDAO
             if opt_options['driver']['design_of_experiments']['flag']:  
@@ -93,8 +93,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
-            modeling_options['DLC_driver']['openfast_file_management']['mpi_run'] = False
-            modeling_options['DLC_driver']['openfast_file_management']['cores']   = 1
+            modeling_options['General']['openfast_configuration']['mpi_run'] = False
+            modeling_options['General']['openfast_configuration']['cores']   = 1
             wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
 
         # If at least one of the design variables is active, setup an optimization
@@ -169,7 +169,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
             wt_initial.update_ontology_control(wt_opt)
             # Remove the fst_vt key from the dictionary and write out the modeling options
-            modeling_options['DLC_driver']['openfast_file_management']['fst_vt'] = {}
+            modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)
             wt_initial.write_options(froot_out)
             

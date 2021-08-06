@@ -380,7 +380,7 @@ class TowerPreMember(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         transition_node = inputs["transition_node"]
-        tower_top_node = 0  #previous code altered the original definition of transition_node
+        tower_top_node = 0  # previous code altered the original definition of transition_node
         tower_top_node += transition_node
         tower_top_node[2] += float(inputs["tower_height"])
         outputs["tower_top_node"] = tower_top_node
@@ -1120,6 +1120,9 @@ class FloatingFrame(om.Group):
             "E_mat",
             "G_mat",
             "sigma_y_mat",
+            "sigma_ult_mat",
+            "wohler_exp_mat",
+            "wohler_A_mat",
             "rho_mat",
             "rho_water",
             "unit_cost_mat",

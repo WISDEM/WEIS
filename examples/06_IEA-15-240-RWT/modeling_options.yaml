@@ -8,6 +8,8 @@ WISDEM:
         n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
         n_span: 60
     TowerSE:
         flag: True
@@ -104,7 +106,7 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 10
           n_seeds: 1
-          analysis_time: 5.
+          analysis_time: 40.
           transient_time: 5.
           turbulent_wind:
               HubHt: 140

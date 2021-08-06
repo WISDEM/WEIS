@@ -9,7 +9,7 @@ class RAFT_WEIS(om.Group):
 
     def initialize(self):
         self.options.declare('modeling_options')
-    
+
     def setup(self):
         # Stuff WEIS options into RAFT options structure
         weis_opt = self.options['modeling_options']
@@ -55,7 +55,7 @@ class RAFT_WEIS(om.Group):
         mooring_opt['nlines'] = weis_opt['mooring']['n_lines']
         mooring_opt['nline_types'] = weis_opt['mooring']['n_line_types']
         mooring_opt['nconnections'] = weis_opt['mooring']['n_nodes']
-        
+
 
         self.add_subsystem('pre', RAFT_WEIS_Prep(modeling_options=weis_opt), promotes=['*'])
         self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
@@ -67,10 +67,10 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('modeling_options')
-    
+
     def setup(self):
         opt = self.options['modeling_options']
-        
+
         n_nodes = opt['mooring']['n_nodes']
         n_lines = opt['mooring']['n_lines']
         n_line_types = opt['mooring']['n_line_types']
@@ -96,7 +96,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         self.add_output('turbine_tower_Ca', val=np.zeros(n_height_tow), desc='Transverse added mass coefficient')
         self.add_output('turbine_tower_CdEnd', val=np.zeros(n_height_tow), desc='End axial drag coefficient')
         self.add_output('turbine_tower_CaEnd', val=np.zeros(n_height_tow), desc='End axial added mass coefficient')
-        
+
         # RNA mass properties
         self.add_input("rna_I_TT", np.zeros(6), units="kg*m**2", desc='Moment of inertia at tower top [Ixx, Iyy, Izz, Ixy, Ixz, Iyz]')
         self.add_input('turbine_mRNA', val=0.0, units='kg', desc='RNA mass')
@@ -124,9 +124,9 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_input(f"member{k}:ring_stiffener_web_thickness", 0.0, units="m")
             self.add_input(f"member{k}:ring_stiffener_flange_width", 1e-6, units="m")
             self.add_input(f"member{k}:ring_stiffener_flange_thickness", 0.0, units="m")
-            self.add_input(f"member{k}:ring_stiffener_spacing", 0.0)
+            self.add_input(f"member{k}:ring_stiffener_spacing", 1.0)
             self.add_input(f"platform_member{k+1}_stations", val=np.zeros(n_height))
-            
+
             self.add_output(f"platform_member{k+1}_heading", val=np.zeros(0), units='deg')
             self.add_output(f"platform_member{k+1}_gamma", val=0.0, units='deg')
             self.add_output(f"platform_member{k+1}_t", val=np.zeros(n_height), units="m")
@@ -177,7 +177,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f'mooring_line_type{k+1}_transverse_added_mass', val=0.0, desc='Transverse added mass')
             self.add_output(f'mooring_line_type{k+1}_tangential_added_mass', val=0.0, desc='Tangential added mass')
             self.add_output(f'mooring_line_type{k+1}_transverse_drag', val=0.0, desc='Transverse drag')
-            self.add_output(f'mooring_line_type{k+1}_tangential_drag', val=0.0, desc='Tangential drag') 
+            self.add_output(f'mooring_line_type{k+1}_tangential_drag', val=0.0, desc='Tangential drag')
 
         # DLC cases to run
         self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
@@ -191,7 +191,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                                                         'wave_period', 'wave_height', 'wave_heading'],
                                  desc='DLC case table column headings')
 
-        
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         opt = self.options['modeling_options']
 
@@ -205,7 +205,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         Re = float(inputs['rho_air'])*inputs['tower_U']*inputs['turbine_tower_d']/float(inputs['mu_air'])
         cd, _ = cylinderDrag(Re)
         outputs['turbine_tower_Cd'] = cd
-        
+
         # Move tower-top MoI to hub height
         m_rna = float(inputs['turbine_mRNA'])
         I_rna = util.assembleI( inputs['rna_I_TT'] )
@@ -221,13 +221,14 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         var_height = inputs['member_variable_height']
         for k in range(n_member):
             discrete_outputs[f"platform_member{k+1}_potMod"] = opt["Level1"]["model_potential"][k]
-            
+
             # Member thickness
             outputs[f"platform_member{k+1}_t"] = inputs[f"member{k}:layer_thickness"].sum(axis=0)
             outputs[f"platform_member{k+1}_rho_shell"] = inputs[f"member{k}:rho"].mean()
 
             # Ring stiffener discretization conversion
-            if float(inputs[f"member{k}:ring_stiffener_spacing"]) > 0.0:
+            if ( (float(inputs[f"member{k}:ring_stiffener_spacing"]) > 0.0) and
+                 (float(inputs[f"member{k}:ring_stiffener_spacing"]) < 1.0) ):
                 outputs[f"platform_member{k+1}_ring_spacing"] = inputs[f"member{k}:ring_stiffener_spacing"]
                 h_web = inputs[f"member{k}:ring_stiffener_web_height"]
                 t_web = inputs[f"member{k}:ring_stiffener_web_thickness"]
@@ -249,7 +250,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                 l_fill[iball] = h_ballast[ii] if rho_ballast[ii] < 1100.0 else var_height[k]
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
-            
+
         # Mooring
         for k in range(opt['mooring']['n_nodes']):
             discrete_outputs[f'mooring_point{k+1}_name'] = opt['mooring']['node_names'][k]
@@ -265,12 +266,12 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         for k in range(opt['mooring']['n_line_types']):
             discrete_outputs[f'mooring_line_type{k+1}_name'] = opt['mooring']["line_type_name"][k]
             outputs[f'mooring_line_type{k+1}_cost'] = inputs['line_cost_rate'][k]
-            
+
             for var in ['diameter','mass_density','stiffness','breaking_load',
                         'transverse_added_mass','tangential_added_mass','transverse_drag','tangential_drag']:
                 outputs[f'mooring_line_type{k+1}_{var}'] = inputs[f'line_{var}'][k]
 
-                
+
         # Cases
         DLCs = opt['DLC_driver']['DLCs']
         # Initialize the DLC generator
@@ -306,4 +307,3 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         discrete_outputs['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
                                               'turbine_status', 'yaw_misalign', 'wave_spectrum',
                                               'wave_period', 'wave_height', 'wave_heading']
-        

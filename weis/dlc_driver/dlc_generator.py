@@ -5,7 +5,7 @@ from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 
 
 class DLCInstance(object):
-    
+
     def __init__(self, options=None):
         # Set default DLC with empty properties
         self.URef = 0.0
@@ -36,10 +36,10 @@ class DLCInstance(object):
     def default_turbsim_props(self, options):
         for key in options['turbulent_wind'].keys():
             setattr(self, key, options['turbulent_wind'][key])
-        
+
 class DLCGenerator(object):
 
-    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I', 
+    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I',
                 wind_turbulence_class = 'B', fix_wind_seeds=True, fix_wave_seeds=True, metocean={}):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
@@ -56,6 +56,8 @@ class DLCGenerator(object):
         else:
             self.rng_wave = np.random.default_rng()
         self.n_cases = 0
+        self.n_ws_dlc11 = 0
+
         # Metocean conditions
         self.mo_ws = metocean['wind_speed']
         self.mo_Hs_NSS = metocean['wave_height_NSS']
@@ -76,7 +78,7 @@ class DLCGenerator(object):
             raise Exception('The vector of metocean conditions wave_height_SSS in the modeling options must have the same length of the tabulated wind speeds')
         if len(self.mo_ws)!=len(self.mo_Tp_SSS):
             raise Exception('The vector of metocean conditions wave_period_SSS in the modeling options must have the same length of the tabulated wind speeds')
-    
+
         # Load extreme wave heights and periods
         self.wave_Hs50 = np.array([metocean['wave_height50']])
         self.wave_Tp50 = np.array([metocean['wave_period50']])
@@ -102,7 +104,7 @@ class DLCGenerator(object):
             wind_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+0.5*options['ws_bin_size'], options['ws_bin_size'])
             if wind_speeds[-1] != self.ws_cut_out:
                 wind_speeds = np.append(wind_speeds, self.ws_cut_out)
-                
+
         return wind_speeds
 
     def get_wind_seeds(self, options, wind_speeds):
@@ -113,7 +115,7 @@ class DLCGenerator(object):
             wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
 
         return wind_speeds, wind_seeds
-    
+
     def get_wave_seeds(self, options, wind_speeds):
         if len(options['wave_seed']) > 0:
             wave_seeds = np.array( [int(m) for m in options['wave_seeds']] )
@@ -142,7 +144,7 @@ class DLCGenerator(object):
         else:
             wave_Tp = np.array([])
         return wave_Tp
-    
+
     def get_wave_gamma(self, options):
         if len(options['wave_gamma']) > 0:
             wave_gamma = np.array( [float(m) for m in options['wave_gamma']] )
@@ -198,30 +200,30 @@ class DLCGenerator(object):
 
     def generate(self, label, options):
         known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4]
-        
+
         # Get extreme wind speeds
         self.IECwind()
 
         found = False
         for ilab in known_dlcs:
             func_name = 'generate_'+str(ilab).replace('.','p')
-            
+
             if label in [ilab, str(ilab)]: # Match either 1.1 or '1.1'
                 found = True
                 getattr(self, func_name)(options) # calls self.generate_1p1(options)
                 break
-            
+
         if not found:
             raise ValueError(f'DLC {label} is not currently supported')
 
         self.n_cases = len(self.cases)
-        
+
     def generate_custom(self, options):
         pass
-    
+
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)        
+        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
         if len(wave_Hs)==0:
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
@@ -268,9 +270,9 @@ class DLCGenerator(object):
                 i_WG+=1
             if len(wave_heading)>1:
                 i_WaH+=1
-                
+
         self.n_ws_dlc11 = len(np.unique(wind_speeds))
-    
+
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
         wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities = self.get_metocean(options)
@@ -321,7 +323,7 @@ class DLCGenerator(object):
                 i_WG+=1
             if len(wave_heading)>1:
                 i_WaH+=1
-    
+
     def generate_1p3(self, options):
         # Power production extreme turbulence model - ultimate loads
         wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
@@ -527,7 +529,7 @@ class DLCGenerator(object):
 
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
-            
+
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
         yaw_misalign_deg = np.array([-8., 8.])
         if len(wave_Hs)==0:
@@ -692,7 +694,7 @@ class DLCGenerator(object):
 
 
 if __name__ == "__main__":
-    
+
     # Wind turbine inputs that will eventually come in from somewhere
     ws_cut_in = 4.
     ws_cut_out = 25.
@@ -704,10 +706,10 @@ if __name__ == "__main__":
     weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
     fname_modeling_options = os.path.join(weis_dir , "examples", "05_IEA-3.4-130-RWT", "modeling_options.yaml")
     modeling_options = sch.load_modeling_yaml(fname_modeling_options)
-    
+
     # Extract user defined list of cases
     DLCs = modeling_options['DLC_driver']['DLCs']
-    
+
     # Initialize the generator
     fix_wind_seeds = modeling_options['DLC_driver']['fix_wind_seeds']
     fix_wave_seeds = modeling_options['DLC_driver']['fix_wave_seeds']
@@ -721,4 +723,3 @@ if __name__ == "__main__":
 
     print(dlc_generator.cases[5].URef)
     print(dlc_generator.n_cases)
-                

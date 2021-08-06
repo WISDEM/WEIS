@@ -8,20 +8,12 @@ Class and function for generating linear models from OpenFAST
 examples/control_opt/run_lin_turbine.py will run outputs from gen_linear_model()
 
 '''
+import numpy as np
+import os
+
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.aeroelasticse.FileTools import save_yaml, load_yaml
-
-# pCrunch Modules and instantiation
-import matplotlib.pyplot as plt 
 from ROSCO_toolbox import utilities as ROSCO_utilities
-
-# WISDEM modules
-from weis.aeroelasticse import FileTools
-
-import numpy as np
-import sys, os, platform
 
 import weis
 weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
