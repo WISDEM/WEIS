@@ -376,19 +376,23 @@ class FASTLoadCases(ExplicitComponent):
                 self.mpi_comm_map_down   = OFmgmt['mpi_comm_map_down']
 
         # User-defined FAST library/executable
-        if modopt['Level3']['FAST_exe'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['FAST_exe']):
-                self.FAST_exe = FASTpref['file_management']['FAST_exe']
+        if OFmgmt['FAST_exe'] != 'none':
+            if os.path.isabs(OFmgmt['FAST_exe']):
+                self.FAST_exe = OFmgmt['FAST_exe']
             else:
                 self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             FASTpref['file_management']['FAST_exe'])
+                                             OFmgmt['FAST_exe'])
+        else:
+            self.FAST_exe = 'none'
 
-        if modopt['Level3']['FAST_exe'] != 'none':
-            if os.path.isabs(FASTpref['file_management']['FAST_lib']):
-                self.FAST_lib = FASTpref['file_management']['FAST_lib']
+        if OFmgmt['FAST_lib'] != 'none':
+            if os.path.isabs(OFmgmt['FAST_lib']):
+                self.FAST_lib = OFmgmt['FAST_lib']
             else:
                 self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             FASTpref['file_management']['FAST_lib'])
+                                             OFmgmt['FAST_lib'])
+        else:
+            self.FAST_lib = 'none'
 
         # Rotor power outputs
         if modopt['DLC_driver']['n_ws_dlc11'] > 0:
@@ -1600,7 +1604,6 @@ class FASTLoadCases(ExplicitComponent):
             # Use openfast binary until library works
             fastBatch                           = LinearFAST(**linearization_options)
             fastBatch.FAST_lib                  = None      # linearization not working with library
-            fastBatch.FAST_exe                  = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/bin/openfast')
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
 
@@ -1622,6 +1625,8 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.keep_time         = modopt['DLC_driver']['openfast_file_management']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['DLC_driver']['openfast_file_management']['use_exe']
+        fastBatch.FAST_exe          = self.FAST_exe
+        fastBatch.FAST_lib          = self.FAST_lib
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 

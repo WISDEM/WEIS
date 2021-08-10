@@ -2548,14 +2548,6 @@ properties:
                 type: string
                 default: unused
                 description: OpenFAST input directory, containing .fst file
-            FAST_exe:
-                type: string
-                default: none
-                description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
-            FAST_lib:
-                type: string
-                default: none
-                description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
             xfoil:
                 type: object
                 default: {}
@@ -2742,6 +2734,14 @@ properties:
                         type: boolean
                         default: False
                         description: Use openfast executable instead of library
+                    FAST_exe:
+                        type: string
+                        default: none
+                        description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_lib:
+                        type: string
+                        default: none
+                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
                     model_only:
                         type: boolean
                         default: False
