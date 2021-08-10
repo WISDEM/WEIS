@@ -56,6 +56,8 @@ la = LoadsAnalysis(
     fatigue_channels=fatigue_channels,
 )
 
+weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
 import pickle
 
 if MPI:
@@ -528,7 +530,10 @@ class FASTLoadCases(ExplicitComponent):
         else:
             fast_reader = InputReader_OpenFAST()
             fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
-            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
+            if os.path.isabs(modopt['Level3']['openfast_dir']):
+                fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
+            else:
+                fast_reader.FAST_directory  = os.path.join(weis_dir, modopt['Level3']['openfast_dir'])
             fast_reader.path2dll        = modopt['DLC_driver']['openfast_file_management']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
@@ -1625,14 +1630,16 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.keep_time         = modopt['DLC_driver']['openfast_file_management']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['DLC_driver']['openfast_file_management']['use_exe']
-        fastBatch.FAST_exe          = self.FAST_exe
-        fastBatch.FAST_lib          = self.FAST_lib
+        if self.FAST_exe != 'none':
+            fastBatch.FAST_exe          = self.FAST_exe
+        if self.FAST_lib != 'none':
+            fastBatch.FAST_lib          = self.FAST_lib
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Run FAST
         if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
-            summary_stats, extreme_table, DELs, _ = fastBatch.run_mpi(self.mpi_comm_map_down)
+            summary_stats, extreme_table, DELs, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
                 summary_stats, extreme_table, DELs, chan_time = fastBatch.run_serial()
