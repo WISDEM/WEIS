@@ -39,6 +39,8 @@ elif platform.system() == 'Darwin':
 else:
     lib_ext = '.so'
 
+weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+
 def make_coarse_grid(s_grid, diam):
 
     s_coarse = [s_grid[0]]
@@ -102,9 +104,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path
+        # If the path is relative, make it an absolute path to base WEIS dir
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+            FAST_directory_base = os.path.join(weis_dir, FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -1165,6 +1167,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
             # Use coarse member nodes for HydroDyn
+
+            # Simplify members if using potential model only
+            if modopt["Level1"]["potential_model_override"] == 2:
+                joints_xyz = np.array([[0,0,0],[0,0,-1]])
+                N1 = np.array([N1[0]])
+                N2 = np.array([N2[0]])
                 
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
