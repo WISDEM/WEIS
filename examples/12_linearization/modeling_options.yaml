@@ -1,5 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: lin
+        OF_run_dir: outputs/IEA_level2_dtqp
+        use_exe: True
 
 WISDEM:
     RotorSE:
@@ -97,21 +101,22 @@ Level2:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: True
-        TMax: 10.      # run simulations using IEC standards, could share that info
+        TMax: 100.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 60.
+        TMax: 1600.
         DT: 0.01
-        TrimGain: 1e-3
-        TrimTol: 1e-2
-        wind_speeds: [8.]
+        TrimGain: 1e-4
+        TrimTol: 1e-3
+        wind_speeds: [6,10,12,18,22]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 1
+        NLinTimes: 4
+
+Level1:
+    potential_model_override: 2
+
+   
 
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: lin
-        OF_run_dir: outputs/IEA_level2
-        use_exe: True
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
