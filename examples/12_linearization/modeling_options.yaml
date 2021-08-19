@@ -107,9 +107,9 @@ Level2:
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        wind_speeds: [6,10,12,18,22]
+        wind_speeds: [12, 12.25, 12.5, 12.75, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 4
+        NLinTimes: 12
 
 Level1:
     potential_model_override: 2
