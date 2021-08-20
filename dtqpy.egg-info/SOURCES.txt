@@ -1,0 +1,8 @@
+README.md
+setup.py
+dtqpy.egg-info/PKG-INFO
+dtqpy.egg-info/SOURCES.txt
+dtqpy.egg-info/dependency_links.txt
+dtqpy.egg-info/not-zip-safe
+dtqpy.egg-info/requires.txt
+dtqpy.egg-info/top_level.txt
