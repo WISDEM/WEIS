@@ -11,8 +11,8 @@ import numpy as np
 from numpy.matlib import repmat
 
 # import DTQPy specific functions
-from dtqpy.src.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
-from dtqpy.src.DTQPy_getQPIndex import DTQPy_getQPIndex
+from dtqpy.dtqpy.src.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
+from dtqpy.dtqpy.src.DTQPy_getQPIndex import DTQPy_getQPIndex
 
 def DTQPy_M(Mfull,internal,opts):
     
