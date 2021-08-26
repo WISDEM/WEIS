@@ -1,0 +1,16 @@
+!.gitignore
+
+# ignore certain file extensions
+*.ini
+*.asv
+*.out
+
+# ignore certain folders
+.private*/
+plots*/
+__pycache__*/
+dtqpy.egg-info
+
+# ignore specific files
+notes.txt
+DTQP_TEST_bench_LQDO_results.xlsx
