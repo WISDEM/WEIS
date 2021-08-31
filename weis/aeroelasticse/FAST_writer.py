@@ -1891,7 +1891,47 @@ class InputWriter_OpenFAST(object):
         f.write('END\n')
         f.write('------------------------- need this line --------------------------------------\n')
 
-        f.close()        
+        f.close()
+        
+        
+    def write_StC(self):
+        # Generate SubDyn v1.1 input file
+        self.fst_vt['Fst']['StCFile'] = self.FAST_namingOut + '_StC_Twr.dat'
+        sd_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['StCFile'])
+        f = open(sd_file, 'w')
+        
+        f.write('------- STRUCTURAL CONTROL (StC) INPUT FILE ----------------------------\n')
+        f.write('Generated with AeroElasticSE FAST driver within WEIS\n')
+        
+        f.write('---------------------- SIMULATION CONTROL --------------------------------------\n')
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['StC']['Echo'], 'Echo', '- Echo input data to "<rootname>.SD.ech" (flag)\n'))
+        
+        f.write('---------------------- StC DEGREES OF FREEDOM ----------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_DOF_MODE'], 'StC_DOF_MODE', '- DOF mode (switch) {0: No StC or TLCD DOF; 1: StC_X_DOF, StC_Y_DOF, and/or StC_Z_DOF (three independent StC DOFs); 2: StC_XY_DOF (Omni-Directional StC); 3: TLCD; 4: Prescribed force/moment time series}\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_DOF'], 'StC_X_DOF', '- DOF on or off for StC X (flag) [Used only when StC_DOF_MODE=1]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_DOF'], 'StC_Y_DOF', '- DOF on or off for StC Y (flag) [Used only when StC_DOF_MODE=1]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_DOF'], 'StC_Z_DOF', '- DOF on or off for StC Z (flag) [Used only when StC_DOF_MODE=1]\n'))
+        
+        f.write('---------------------- StC LOCATION ------------------------------------------- [relative to the reference origin of component attached to]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_P_X'], 'StC_P_X', '- At rest X position of StC (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_P_Y'], 'StC_P_Y', '- At rest Y position of StC (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_P_Z'], 'StC_P_Z', '- At rest Z position of StC (m)\n'))
+        
+        f.write('---------------------- StC INITIAL CONDITIONS --------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_DSP'], 'StC_X_DSP', '- StC X initial displacement (m) [relative to at rest position]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_DSP'], 'StC_Y_DSP', '- StC Y initial displacement (m) [relative to at rest position]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_DSP'], 'StC_Z_DSP', '- StC Z initial displacement (m) [relative to at rest position; used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        
+        f.write('---------------------- StC CONFIGURATION -------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('---------------------- StC MASS, STIFFNESS, & DAMPING ------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('---------------------- StC USER-DEFINED SPRING FORCES ------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('---------------------- StC SPRING FORCES TABLE -------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('---------------------- StructCtrl CONTROL -------------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('---------------------- TLCD --------------------------------------------------- [used only when StC_DOF_MODE=3]\n')
+        f.write('---------------------- PRESCRIBED TIME SERIES --------------------------------- [used only when StC_DOF_MODE=4]\n')
+        f.write('-------------------------------------------------------------------------------\n')
+
+        f.close()
 
 if __name__=="__main__":
 
