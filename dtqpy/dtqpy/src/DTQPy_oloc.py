@@ -15,9 +15,9 @@ import os
 import sys
 import pickle
 
-from dtqpy.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.dtqpy.src.DTQPy_solve import DTQPy_solve
+from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from dtqpy.src.DTQPy_solve import DTQPy_solve
 
 
 def DTQPy_oloc(LinearModels,disturbance):
@@ -338,7 +338,7 @@ def DTQPy_oloc(LinearModels,disturbance):
     # blade pitch
     ax3.plot(T,U[:,2])
     #ax3.set_ylim([0.2, 0.3])
-    ax3.set_title('Bld Pitch [rad/s]')
+    ax3.set_title('Bld Pitch [rad]')
     ax3.set_xlim([t0,tf])
 
     fig.subplots_adjust(hspace = 0.65)
@@ -358,6 +358,8 @@ def DTQPy_oloc(LinearModels,disturbance):
     fig2.subplots_adjust(hspace = 0.65)
     
     plt.show()
+
+    return T, U
     
 
 if __name__ == '__main__':
