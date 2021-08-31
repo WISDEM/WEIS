@@ -156,6 +156,9 @@ class FASTLoadCases(ExplicitComponent):
         # ServoDyn Inputs
         self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
         self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
+        
+        # StC or TMD inputs; structural control and tuned mass dampers
+        self.add_discrete_input("num_tower_StCs", val=0)
 
         # tower properties
         self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -702,10 +705,59 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['BStCfiles']     = "unused"
         fst_vt['ServoDyn']['NumNStC']       = 0
         fst_vt['ServoDyn']['NStCfiles']     = "unused"
-        fst_vt['ServoDyn']['NumTStC']       = 0
+        fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
         fst_vt['ServoDyn']['TStCfiles']     = "unused"
         fst_vt['ServoDyn']['NumSStC']       = 0
         fst_vt['ServoDyn']['SStCfiles']     = "unused"
+        
+        fst_vt['StC']['Echo'] = True
+        fst_vt['StC']['StC_DOF_MODE'] = 3
+        fst_vt['StC']['StC_X_DOF'] = False
+        fst_vt['StC']['StC_Y_DOF'] = False
+        fst_vt['StC']['StC_Z_DOF'] = False
+        fst_vt['StC']['StC_P_X'] = 0.
+        fst_vt['StC']['StC_P_Y'] = 0.
+        fst_vt['StC']['StC_P_Z'] = 75.
+        fst_vt['StC']['StC_X_DSP'] = 0.
+        fst_vt['StC']['StC_Y_DSP'] = 0.
+        fst_vt['StC']['StC_Z_DSP'] = 0.
+        fst_vt['StC']['StC_X_PSP'] = 0.
+        fst_vt['StC']['StC_X_NSP'] = 0.
+        fst_vt['StC']['StC_Y_PSP'] = 0.
+        fst_vt['StC']['StC_Y_NSP'] = 0.
+        fst_vt['StC']['StC_Z_PSP'] = 0.
+        fst_vt['StC']['StC_Z_NSP'] = 0.
+        fst_vt['StC']['StC_X_M'] = 0.
+        fst_vt['StC']['StC_Y_M'] = 0.
+        fst_vt['StC']['StC_Z_M'] = 0.
+        fst_vt['StC']['StC_XY_M'] = 0.
+        fst_vt['StC']['StC_X_K'] = 0.
+        fst_vt['StC']['StC_Y_K'] = 0.
+        fst_vt['StC']['StC_Z_K'] = 0.
+        fst_vt['StC']['StC_X_C'] = 0.
+        fst_vt['StC']['StC_Y_C'] = 0.
+        fst_vt['StC']['StC_Z_C'] = 0.
+        fst_vt['StC']['StC_X_KS'] = 0.
+        fst_vt['StC']['StC_Y_KS'] = 0.
+        fst_vt['StC']['StC_Z_KS'] = 0.
+        fst_vt['StC']['StC_X_CS'] = 0.
+        fst_vt['StC']['StC_Y_CS'] = 0.
+        fst_vt['StC']['StC_Z_CS'] = 0.
+        fst_vt['StC']['Use_F_TBL'] = False
+        fst_vt['StC']['NKInpSt'] = 17
+        fst_vt['StC']['L_X'] = 7.9325
+        fst_vt['StC']['B_X'] = 6.5929
+        fst_vt['StC']['area_X'] = 2.0217
+        fst_vt['StC']['area_ratio_X'] = 0.913
+        fst_vt['StC']['headLossCoeff_X'] = 2.5265
+        fst_vt['StC']['rho_X'] = 1000
+        fst_vt['StC']['L_Y'] = 3.5767
+        fst_vt['StC']['B_Y'] = 2.1788
+        fst_vt['StC']['area_Y'] = 1.2252
+        fst_vt['StC']['area_ratio_Y'] = 2.7232
+        fst_vt['StC']['headLossCoeff_Y'] = 0.6433
+        fst_vt['StC']['rho_Y'] = 1000        
+        
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]

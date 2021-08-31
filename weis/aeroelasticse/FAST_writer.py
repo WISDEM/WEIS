@@ -164,6 +164,8 @@ class InputWriter_OpenFAST(object):
         if 'DISCON_in' in self.fst_vt and ROSCO:
             self.write_DISCON_in()
         self.write_ServoDyn()
+        if self.fst_vt['Fst']['CompHydro'] == 1:
+            self.write_HydroDyn()
         
         if self.fst_vt['Fst']['CompHydro'] == 1:
             self.write_HydroDyn()
@@ -1895,7 +1897,6 @@ class InputWriter_OpenFAST(object):
         
         
     def write_StC(self):
-        # Generate SubDyn v1.1 input file
         self.fst_vt['Fst']['StCFile'] = self.FAST_namingOut + '_StC_Twr.dat'
         sd_file = os.path.join(self.FAST_runDirectory, self.fst_vt['Fst']['StCFile'])
         f = open(sd_file, 'w')
@@ -1923,11 +1924,51 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_DSP'], 'StC_Z_DSP', '- StC Z initial displacement (m) [relative to at rest position; used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
         
         f.write('---------------------- StC CONFIGURATION -------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_PSP'], 'StC_X_PSP', '- Positive stop position (maximum X mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_NSP'], 'StC_X_NSP', '- Negative stop position (minimum X mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_PSP'], 'StC_Y_PSP', '- Positive stop position (maximum Y mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_NSP'], 'StC_Y_NSP', '- Negative stop position (minimum Y mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_PSP'], 'StC_Z_PSP', '- Positive stop position (maximum Z mass displacement) (m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_NSP'], 'StC_Z_NSP', '- Negative stop position (minimum Z mass displacement) (m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        
         f.write('---------------------- StC MASS, STIFFNESS, & DAMPING ------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_M'], 'StC_X_M', '- StC X mass (kg) [must equal StC_Y_M for StC_DOF_MODE = 2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_M'], 'StC_Y_M', '- StC Y mass (kg) [must equal StC_X_M for StC_DOF_MODE = 2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_M'], 'StC_Z_M', '- StC Z mass (kg) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_XY_M'], 'StC_XY_M', '- StC Z mass (kg) [used only when StC_DOF_MODE=2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_K'], 'StC_X_K', '- StC X stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_K'], 'StC_Y_K', '- StC Y stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_K'], 'StC_Z_K', '- StC Z stiffness (N/m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_C'], 'StC_X_C', '- StC X damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_C'], 'StC_Y_C', '- StC Y damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_C'], 'StC_Z_C', '- StC Z damping (N/(m/s)) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_KS'], 'StC_X_KS', '- Stop spring X stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_KS'], 'StC_Y_KS', '- Stop spring Y stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_KS'], 'StC_Z_KS', '- Stop spring Z stiffness (N/m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_X_CS'], 'StC_X_CS', '- Stop spring X damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Y_CS'], 'StC_Y_CS', '- Stop spring Y damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['StC_Z_CS'], 'StC_Z_CS', '- Stop spring Z damping (N/(m/s)) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        
         f.write('---------------------- StC USER-DEFINED SPRING FORCES ------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['StC']['Use_F_TBL'], 'Use_F_TBL', '- Use spring force from user-defined table (flag)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['NKInpSt'], 'NKInpSt', '- Number of spring force input stations\n'))
+        
         f.write('---------------------- StC SPRING FORCES TABLE -------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
         f.write('---------------------- StructCtrl CONTROL -------------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
         f.write('---------------------- TLCD --------------------------------------------------- [used only when StC_DOF_MODE=3]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['L_X'], 'L_X', '- X TLCD total length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['B_X'], 'B_X', '- X TLCD horizontal length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['area_X'], 'area_X', '- X TLCD cross-sectional area of vertical column (m^2)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['area_ratio_X'], 'area_ratio_X', '- X TLCD cross-sectional area ratio (vertical column area divided by horizontal column area) (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['headLossCoeff_X'], 'headLossCoeff_X', '- X TLCD head loss coeff (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['rho_X'], 'rho_X', '- X TLCD liquid density (kg/m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['L_Y'], 'L_Y', '- Y TLCD total length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['B_Y'], 'B_Y', '- Y TLCD horizontal length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['area_Y'], 'area_Y', '- Y TLCD cross-sectional area of vertical column (m^2)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['area_ratio_Y'], 'area_ratio_Y', '- Y TLCD cross-sectional area ratio (vertical column area divided by horizontal column area) (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['headLossCoeff_Y'], 'headLossCoeff_Y', '- Y TLCD head loss coeff (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['StC']['rho_Y'], 'rho_Y', '- Y TLCD liquid density (kg/m^3)\n'))
+        
         f.write('---------------------- PRESCRIBED TIME SERIES --------------------------------- [used only when StC_DOF_MODE=4]\n')
         f.write('-------------------------------------------------------------------------------\n')
 
