@@ -7,9 +7,7 @@ from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse.CaseGen_General import case_naming
 import pickle
-from dtqpy.dtqpy.src.DTQPy_oloc import DTQPy_oloc
-
-from scipy.io import savemat
+from dtqpy.src.DTQPy_oloc import DTQPy_oloc
 
 import numpy as np
 
@@ -92,30 +90,23 @@ if __name__ == '__main__':
     n_lin_ws = len(modeling_options['Level2']['linearization']['wind_speeds'])
     lin_case_name = case_naming(n_lin_ws,'lin')
     
-    
-    LinearTurbine = LinearTurbineModel(
-                os.path.join(weis_dir,'outputs/IEA_level2_dtqp'),  # directory where linearizations are
-                lin_case_name,
-                nlin=modeling_options['Level2']['linearization']['NLinTimes'],
-                reduceControls = True
-                )
-    
-    saveflag = False
-    
-    if saveflag:
-        outfile = mydir + os.sep + "LinearTurbine.pkl"
-        
+    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
+
+    if True or not os.path.exists(lin_pickle):
+        LinearTurbine = LinearTurbineModel(
+                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_AR'),  # directory where linearizations are
+                    lin_case_name,
+                    nlin=modeling_options['Level2']['linearization']['NLinTimes'],
+                    reduceControls = True
+                    )
+
         with open(outfile,"wb") as pkl_file:
             pickle.dump(LinearTurbine,pkl_file)
-        
-        outfile = mydir + os.sep + "dist.pkl"
-        
-        with open(outfile,"wb") as handle:
-            pickle.dump(level2_disturbance[0],handle)
-        
-        
-    
-    breakpoint()
+    else:
+        with open(lin_pickle,"rb") as pkl_file:
+            LinearTurbine = pickle.load(pkl_file)
+           
+
     for dist in level2_disturbance:
         DTQPy_oloc(LinearTurbine,dist)
     
