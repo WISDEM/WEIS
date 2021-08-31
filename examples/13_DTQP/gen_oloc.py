@@ -92,7 +92,11 @@ if __name__ == '__main__':
     
     lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
 
-    if True or not os.path.exists(lin_pickle):
+    if True and os.path.exists(lin_pickle):
+        with open(lin_pickle,"rb") as pkl_file:
+            LinearTurbine = pickle.load(pkl_file)
+    
+    else:   # load the model and run MBC3
         LinearTurbine = LinearTurbineModel(
                     os.path.join(weis_dir,'outputs/IEA_level2_dtqp_AR'),  # directory where linearizations are
                     lin_case_name,
@@ -102,9 +106,7 @@ if __name__ == '__main__':
 
         with open(lin_pickle,"wb") as pkl_file:
             pickle.dump(LinearTurbine,pkl_file)
-    else:
-        with open(lin_pickle,"rb") as pkl_file:
-            LinearTurbine = pickle.load(pkl_file)
+        
            
 
     for dist in level2_disturbance:
