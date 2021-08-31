@@ -100,7 +100,7 @@ if __name__ == '__main__':
                     reduceControls = True
                     )
 
-        with open(outfile,"wb") as pkl_file:
+        with open(lin_pickle,"wb") as pkl_file:
             pickle.dump(LinearTurbine,pkl_file)
     else:
         with open(lin_pickle,"rb") as pkl_file:
