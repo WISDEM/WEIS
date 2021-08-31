@@ -6,6 +6,10 @@ from weis.aeroelasticse.turbsim_file    import TurbSimFile
 from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse.CaseGen_General import case_naming
+import pickle
+from dtqpy.dtqpy.src.DTQPy_oloc import DTQPy_oloc
+
+from scipy.io import savemat
 
 import numpy as np
 
@@ -66,24 +70,55 @@ if __name__ == '__main__':
         ts_file     = TurbSimFile(WindFile_name[i_case])
         ts_file.compute_rot_avg(rotorD/2)
         u_h         = ts_file['rot_avg'][0,:]
+        
+        
+        off = max(u_h) - 25
+        ind = u_h > 25;
+        
+        # remove any windspeeds > 25 m/s
+        if ind.any():
+            u_h[ind] = u_h[ind] - off
+        u_h[ind] -= 1
+        
         tt          = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
 
 
     # Linear Model
-
+    
     # number of linear wind speeds and other options below assume that you haven't changed 
     # the Level2: linearization: options from example 12_linearization
     # if the modelling input was changed, or different between 12_ and 13_, these options will produce unexpected results
     n_lin_ws = len(modeling_options['Level2']['linearization']['wind_speeds'])
     lin_case_name = case_naming(n_lin_ws,'lin')
-
+    
+    
     LinearTurbine = LinearTurbineModel(
                 os.path.join(weis_dir,'outputs/IEA_level2_dtqp'),  # directory where linearizations are
                 lin_case_name,
-                nlin=modeling_options['Level2']['linearization']['NLinTimes']
+                nlin=modeling_options['Level2']['linearization']['NLinTimes'],
+                reduceControls = True
                 )
-
+    
+    saveflag = False
+    
+    if saveflag:
+        outfile = mydir + os.sep + "LinearTurbine.pkl"
+        
+        with open(outfile,"wb") as pkl_file:
+            pickle.dump(LinearTurbine,pkl_file)
+        
+        outfile = mydir + os.sep + "dist.pkl"
+        
+        with open(outfile,"wb") as handle:
+            pickle.dump(level2_disturbance[0],handle)
+        
+        
+    
+    breakpoint()
+    for dist in level2_disturbance:
+        DTQPy_oloc(LinearTurbine,dist)
+    
     '''
     Athul, do you think you could work with LinearTurbine and level2_disturbance[i] to make a dtqp function of your script?
     Something like:

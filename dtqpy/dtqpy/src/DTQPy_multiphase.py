@@ -7,9 +7,9 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
-from dtqpy.src.DTQPy_create import DTQPy_create
-from dtqpy.src.solver.DTQPy_SOLVER import DTQPy_SOLVER
-from dtqpy.src.DTQPy_scalingLinear import DTQPy_scalingLinear
+from dtqpy.dtqpy.src.DTQPy_create import DTQPy_create
+from dtqpy.dtqpy.src.solver.DTQPy_SOLVER import DTQPy_SOLVER
+from dtqpy.dtqpy.src.DTQPy_scalingLinear import DTQPy_scalingLinear
 
 def DTQPy_multiphase(setup,opts):
     

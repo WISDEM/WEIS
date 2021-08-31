@@ -8,13 +8,13 @@ Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
 from scipy import sparse
-from dtqpy.src.classes.DTQPy_CLASS_INTERNAL import *
-from dtqpy.src.objective.DTQPy_createH import DTQPy_createH
-from dtqpy.src.objective.DTQPy_createf import DTQPy_createf
-from dtqpy.src.objective.DTQPy_createc import DTQPy_createc
-from dtqpy.src.defects.DTQPy_DEFECTS import DTQPy_DEFECTS
-from dtqpy.src.add_constraints.DTQPy_create_YZ import DTQPy_create_YZ
-from dtqpy.src.add_constraints.DTQPy_create_bnds import DTQPy_create_bnds
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_INTERNAL import *
+from dtqpy.dtqpy.src.objective.DTQPy_createH import DTQPy_createH
+from dtqpy.dtqpy.src.objective.DTQPy_createf import DTQPy_createf
+from dtqpy.dtqpy.src.objective.DTQPy_createc import DTQPy_createc
+from dtqpy.dtqpy.src.defects.DTQPy_DEFECTS import DTQPy_DEFECTS
+from dtqpy.dtqpy.src.add_constraints.DTQPy_create_YZ import DTQPy_create_YZ
+from dtqpy.dtqpy.src.add_constraints.DTQPy_create_bnds import DTQPy_create_bnds
 
 def DTQPy_create(setup,opts):
     # initialize some stuff

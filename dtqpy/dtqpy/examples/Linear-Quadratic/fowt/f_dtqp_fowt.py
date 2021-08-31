@@ -14,12 +14,12 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.src.DTQPy_solve import DTQPy_solve
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from dtqpy.dtqpy.src.DTQPy_solve import DTQPy_solve
 
 
-def f_dtqp_fowt(LinearModels,disturbance):
+def f1_dtqp_fowt(LinearModels,disturbance):
 
     # load linear models
     Chan = LinearModels['Chan']
@@ -237,6 +237,7 @@ def f_dtqp_fowt(LinearModels,disturbance):
             [0],
             [0],
             [0]])
+    breakpoint()
     UBs = X0_n - Xo_fun(W_fun(0))[None].T
     LBs = X0_n - Xo_fun(W_fun(0))[None].T
 
@@ -382,6 +383,6 @@ if __name__ == '__main__':
     
     
 
-    f_dtqp_fowt(LinearModels,Wind_o)
+    f1_dtqp_fowt(LinearModels,Wind_o)
 
 

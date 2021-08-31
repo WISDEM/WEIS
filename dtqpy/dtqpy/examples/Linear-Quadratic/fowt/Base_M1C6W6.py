@@ -103,9 +103,10 @@ if filterflag:
 
 
 # temporary solution, will need to change
-from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.src.DTQPy_solve import DTQPy_solve
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+breakpoint()
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from dtqpy.dtqpy.src.DTQPy_solve import DTQPy_solve
 
 opts = options()
 

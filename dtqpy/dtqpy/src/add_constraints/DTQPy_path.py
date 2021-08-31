@@ -8,8 +8,8 @@ Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
 
-from dtqpy.src.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
-from dtqpy.src.DTQPy_getQPIndex import DTQPy_getQPIndex
+from dtqpy.dtqpy.src.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
+from dtqpy.dtqpy.src.DTQPy_getQPIndex import DTQPy_getQPIndex
 
 def DTQPy_path(YZ,internal):
     
