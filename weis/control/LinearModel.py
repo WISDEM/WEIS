@@ -118,35 +118,22 @@ class LinearTurbineModel(object):
             
             # Reduce the number of controls
             if reduceControls:
-                Req_Controls = ["IfW Extended input: horizontal wind speed (steady/uniform wind), m/s","ED Generator torque, Nm","ED Extended input: collective blade-pitch command, rad"]
+                Req_Controls = [
+                    "IfW Extended input: horizontal wind speed (steady/uniform wind), m/s",
+                    "ED Generator torque, Nm",
+                    "ED Extended input: collective blade-pitch command, rad"]
                 n_controls = len(matData['DescCntrlInpt'])
                 DescCntrlInpt = matData['DescCntrlInpt']
                 ReqCtrl_Indices = np.zeros((n_controls,3),dtype = bool)
-                
-                for ind in range(3):
-                    ReqCtrl_Indices[:,ind] = [Req_Controls[ind] == Cntrl for Cntrl in DescCntrlInpt ]
-                    
-                ReqCtrl_Indices = np.sum(ReqCtrl_Indices, axis = 1)
-                
-                Req = [val == 1 for val in ReqCtrl_Indices]
-                
-                nu = np.sum(Req)
-                
-                nx,null,null = np.shape(B_ops)
-                ny,null,null = np.shape(D_ops)
-                
-                B_ops_red = np.zeros((nx,nu,n_lin_cases))
-                D_ops_red = np.zeros((ny,nu,n_lin_cases))
-                u_ops_red = np.zeros((nu,n_lin_cases))
-                
-                for lin_case in range(n_lin_cases):
-                    B_ops_red[:,:,lin_case] = B_ops[:,Req,lin_case]
-                    D_ops_red[:,:,lin_case] = D_ops[:,Req,lin_case]
-                    u_ops_red[:,lin_case] = u_ops[Req,lin_case]
-                    
-                B_ops = B_ops_red 
-                D_ops = D_ops_red 
-                u_ops = u_ops_red
+
+                Req = np.array([dc in Req_Controls for dc in DescCntrlInpt])
+                B_ops = B_ops[:,Req,:]
+                D_ops = D_ops[:,Req,:]
+                u_ops = u_ops[Req,:]
+
+                # Slice descriptions as well
+                matData['DescCntrlInpt'] = np.array(matData['DescCntrlInpt'])[Req].tolist()
+
            
             
             
