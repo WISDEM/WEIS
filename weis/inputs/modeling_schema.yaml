@@ -2634,6 +2634,13 @@ properties:
                             uniqueItems: True
                             minimum: 0.0
                             maximum: 50.0
+                    rated_offset:
+                        type: number
+                        default: 1
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: m/s
+                        description: Amount to increase rated wind speed from cc-blade to openfast with DOFs enabled.  In general, the more DOFs, the greater this value.
                     DOFs:
                         type: array
                         description: List of degrees-of-freedom to linearize about

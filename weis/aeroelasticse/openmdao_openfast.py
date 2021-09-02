@@ -473,6 +473,10 @@ class FASTLoadCases(ExplicitComponent):
                 'B' : None,
                 'C' : None,
                 'D' : None,
+                'x_ops':None,
+                'u_ops':None,
+                'y_ops':None,
+                'u_h':None,
                 'omega_rpm' : None,
                 'DescCntrlInpt' : None,
                 'DescStates' : None,
@@ -503,7 +507,8 @@ class FASTLoadCases(ExplicitComponent):
                 LinearTurbine = LinearTurbineModel(
                 self.FAST_runDirectory,
                 self.lin_case_name,
-                nlin=modopt['Level2']['linearization']['NLinTimes']
+                nlin=modopt['Level2']['linearization']['NLinTimes'],
+                reduceControls=True
                 )
 
                 # DZ->JJ: the info you seek is in LinearTurbine
@@ -517,6 +522,10 @@ class FASTLoadCases(ExplicitComponent):
                     'B' : LinearTurbine.B_ops,
                     'C' : LinearTurbine.C_ops,
                     'D' : LinearTurbine.D_ops,
+                    'x_ops':LinearTurbine.x_ops,
+                    'u_ops':LinearTurbine.u_ops,
+                    'y_ops':LinearTurbine.y_ops,
+                    'u_h':LinearTurbine.u_h,
                     'omega_rpm' : LinearTurbine.omega_rpm,
                     'DescCntrlInpt' : LinearTurbine.DescCntrlInpt,
                     'DescStates' : LinearTurbine.DescStates,

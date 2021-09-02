@@ -52,6 +52,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         # Linear specific default attributes
         # linearization setup
         self.v_rated            = 11         # needed as input from RotorSE or something, to determine TrimCase for linearization
+        self.rated_offset       = 1
         self.GBRatio            = 1
         self.wind_speeds         = [15]
         self.DOFs               = ['GenDOF','TwFADOF1']
@@ -236,6 +237,18 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("Fst","NLinTimes")] = {'vals':[self.NLinTimes], 'group':0}     # modelling option
 
         # Trim case depends on rated wind speed (torque below-rated, pitch above)
+        if 'Vrated' in inputs:
+            # The rated wind speed in weis is determined by cc-blade and doesn't account for 
+            # deflections like platform pitch angle, etc., so we offset the rated wind speed 
+            # to make sure we aren't trying to trim the pitch angle when there isn't enough 
+            # power in the wind to reach rated rotor speed.  In the future, we might be able
+            # to detect the actual rated wind speed with an openfast simulation, but this method 
+            # results in simulations that don't crash.  Near rated linearization where there is 
+            # enough power in the wind, but the trim case is 2 will have slightly higher rotor 
+            # speed operating points, which is okay for now.  In general, the more DOFs that 
+            # are enabled the greater the rated offset should be
+            self.v_rated = inputs['Vrated'] + self.rated_offset
+
         TrimCase = 3 * np.ones(len(self.wind_speeds),dtype=int)
         TrimCase[np.array(self.wind_speeds) < self.v_rated] = 2
 
