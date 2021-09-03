@@ -1,6 +1,8 @@
 import numpy as np
 import os, shutil, sys, platform
 import copy
+import glob
+from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
@@ -455,10 +457,12 @@ class FASTLoadCases(ExplicitComponent):
 
         if modopt['Level2']['flag']:
             self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
-            ABCD_list = []
+            self.ABCD_list = []
 
             with open(self.lin_pkl_file_name, 'wb') as handle:
-                pickle.dump(ABCD_list, handle)
+                pickle.dump(self.ABCD_list, handle)
+            
+            self.lin_idx = 0
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         modopt = self.options['modeling_options']
@@ -489,13 +493,14 @@ class FASTLoadCases(ExplicitComponent):
                 ABCD_list = pickle.load(handle)
 
             ABCD_list.append(ABCD)
+            self.ABCD_list = ABCD_list
 
             with open(self.lin_pkl_file_name, 'wb') as handle:
                 pickle.dump(ABCD_list, handle)
 
         fst_vt = self.init_FAST_model()
         fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
-
+        
         if self.model_only == True:
             # Write input OF files, but do not run OF
             self.write_FAST(fst_vt, discrete_outputs)
@@ -541,6 +546,14 @@ class FASTLoadCases(ExplicitComponent):
 
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
+                    
+                lin_files = glob.glob(os.path.join(self.FAST_runDirectory, '*.lin'))
+                
+                dest = os.path.join(self.FAST_runDirectory, f'copied_lin_files_{self.lin_idx}')
+                Path(dest).mkdir(parents=True, exist_ok=True)
+                for file in lin_files:
+                    shutil.copy2(file, dest)
+                self.lin_idx += 1
 
                 print('Saving Operating Points...')
 
