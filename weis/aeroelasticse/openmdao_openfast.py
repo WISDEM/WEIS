@@ -193,7 +193,6 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
         self.add_input('nacelle_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the nacelle [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
         self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
-        self.add_input('twr2shaft',       val=0.0,         units='m',   desc='Vertical distance from tower top plane to shaft start')
         self.add_input('GenIner',         val=0.0,         units='kg*m**2',   desc='Moments of inertia for the generator about high speed shaft')
         self.add_input('drivetrain_spring_constant',         val=0.0,         units='N*m/rad',   desc='Moments of inertia for the generator about high speed shaft')
         self.add_input("drivetrain_damping_coefficient", 0.0, units="N*m*s/rad", desc='Equivalent damping coefficient for the drivetrain system')
@@ -687,7 +686,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['PreCone(2)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['PreCone(3)'] = k*inputs['cone'][0]
         fst_vt['ElastoDyn']['ShftTilt']   = k*inputs['tilt'][0]
-        fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0]
+        fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0] / np.cos(np.deg2rad(inputs['tilt'][0])) # OpenFAST defines the overhang tilted (!)
         fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
@@ -717,7 +716,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
-        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['twr2shaft'])
+        tower_top_height = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+        # The Twr2Shft is just the difference between hub height, tower top height, and sin(tilt)*overhang
+        fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['hub_height']) - tower_top_height - abs(fst_vt['ElastoDyn']['OverHang'])*np.sin(np.deg2rad(inputs['tilt'][0]))
         fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
 
         # Mass and inertia inputs
@@ -727,7 +728,7 @@ class FASTLoadCases(ExplicitComponent):
 
         tower_base_height = max(float(inputs['tower_base_height']), float(inputs["platform_total_center_of_mass"][2]))
         fst_vt['ElastoDyn']['TowerBsHt'] = tower_base_height # Height of tower base above ground level [onshore] or MSL [offshore] (meters)
-        fst_vt['ElastoDyn']['TowerHt']   = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
+        fst_vt['ElastoDyn']['TowerHt']   = tower_top_height
 
         # TODO: There is some confusion on PtfmRefzt
         # DZ: based on the openfast r-tests:
