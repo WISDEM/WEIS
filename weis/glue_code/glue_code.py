@@ -343,7 +343,6 @@ class WindPark(om.Group):
             self.connect('nacelle.uptilt',                  'aeroelastic.tilt')
             self.connect('nacelle.overhang',                'aeroelastic.overhang')
             self.connect('nacelle.distance_tt_hub',         'aeroelastic.distance_tt_hub')
-            self.connect('drivese.constr_height',           'aeroelastic.twr2shaft')
             self.connect('drivese.drivetrain_spring_constant', 'aeroelastic.drivetrain_spring_constant')
             self.connect('drivese.drivetrain_damping_coefficient', 'aeroelastic.drivetrain_damping_coefficient')
 
