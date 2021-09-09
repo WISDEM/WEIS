@@ -93,14 +93,14 @@ def Generate_AddtionalConstraints(DescOutput,Cw,Dw,ws,W_fun,time,Qty,b,yw):
     
 
 
-def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False,plot=False):
+def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     '''
         Function to compute the open loop optimal control of a linear turbine model, given
         a disturbance and constraints
 
         Inputs:         LinearModels:  LinearTurbineModel object specified in weis/control
                         disturbance: dictionary with Time and Wind fields
-                        constraints: dictionary with key as OpenFAST state or output and value as constraint value
+                        constraints: dictionary with key as OpenFAST state or output, value is a list with lower and upper bounds
                         plot: boolean flag whether to plot outputs
     '''
     
@@ -231,7 +231,7 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = True
+    OutputCon_flag = False
     
     if OutputCon_flag:
         Qty = "ED TwrBsFxt, (kN)"
@@ -249,8 +249,16 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False,plot=False):
     lb = -np.ones((nx,1))*np.inf
 
     # set ub values for PtfmPitch and Genspeed
-    ub[iPtfmPitch] = np.deg2rad(6)
-    ub[iGenSpeed] = 0.7913+0.0001
+    for const in constraints:
+        if const in DescStates:
+            iConst = DescStates.index(const)
+            ub[iConst] = constraints[const][1]      # max, min would be index 0
+        elif const in DescOutputs:
+            iConst = DescOutputs.index(const)
+            # do other output constraint things
+        else:
+            raise Exception(f'{const} not in DescStates or DescOutputs')
+
 
     # initialize
     UBx = np.empty((nx,1),dtype = 'O')

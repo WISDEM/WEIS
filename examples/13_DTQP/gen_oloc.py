@@ -6,8 +6,10 @@ from weis.aeroelasticse.turbsim_file    import TurbSimFile
 from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse.CaseGen_General import case_naming
+from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
-from dtqpy.src.DTQPy_oloc import DTQPy_oloc
+from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+
 
 import numpy as np
 
@@ -16,12 +18,15 @@ weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__fi
 if __name__ == '__main__':
 
     # read WEIS options:
-    mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-    fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
-    modeling_options = sch.load_modeling_yaml(fname_modeling_options)
+    mydir                       = os.path.dirname(os.path.realpath(__file__))  # get path to this file
+    fname_modeling_options      = mydir + os.sep + "modeling_options.yaml"
+    modeling_options            = sch.load_modeling_yaml(fname_modeling_options)
 
-    fname_wt_input   = mydir + os.sep + "IEA-15-floating.yaml"
-    wt_init          = sch.load_geometry_yaml(fname_wt_input)
+    fname_wt_input              = mydir + os.sep + "IEA-15-floating.yaml"
+    wt_init                     = sch.load_geometry_yaml(fname_wt_input)
+
+    fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
+    analysis_options            = sch.load_analysis_yaml(fname_analysis_options)
 
     # Wind turbine inputs 
     ws_cut_in               = wt_init['control']['supervisory']['Vin']
@@ -109,25 +114,29 @@ if __name__ == '__main__':
             pickle.dump(LinearTurbine,pkl_file)
     
     
-    for dist in level2_disturbance: 
-        DTQPy_oloc(LinearTurbine,dist,OutputCon_flag)
+    fst_vt = {}
+    fst_vt['DISCON_in'] = {}
+    fst_vt['DISCON_in']['PC_RefSpd'] = 0.7853192931562493
+
+    la = LoadsAnalysis(
+            outputs=[],
+        )
+
+    magnitude_channels = {
+        "RootMc1": ["RootMxc1", "RootMyc1", "RootMzc1"],
+        "RootMc2": ["RootMxc2", "RootMyc2", "RootMzc2"],
+        "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
+        }
+
+    run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+
+    summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
+        LinearTurbine, 
+        level2_disturbance, 
+        analysis_options, 
+        fst_vt, 
+        la, 
+        magnitude_channels, 
+        run_directory
+        )
     
-    '''
-    Athul, do you think you could work with LinearTurbine and level2_disturbance[i] to make a dtqp function of your script?
-    Something like:
-
-    for dist in level2_disturbance:
-        oloc = dtqp_solve(LinearTurbine,dist)
-
-
-    LinearTurbine contains:
-        .A_ops  (A matrices n_states x n_states x n_wind_speeds)
-        .B_ops  (B matrices n_states x n_inputs x n_wind_speeds)
-        .C_ops  (C matrices n_outputs x n_states x n_wind_speeds)
-        .D_ops  (D matrices n_outputs x n_inputs x n_wind_speeds)
-
-        u_ops, x_ops, and y_ops are the input, state, and output operating points, respectively
-        u_h are the wind speeds linearized at
-        
-
-    '''
