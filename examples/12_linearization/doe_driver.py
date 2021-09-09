@@ -7,3 +7,5 @@ fname_modeling_options = mydir + os.sep + "modeling_options_doe.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options_doe.yaml"
 
 wt_opt, modeling_options, analysis_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
+
+print(wt_opt.model.aeroelastic.ABCD_list)

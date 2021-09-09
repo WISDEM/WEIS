@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import weis.inputs as sch
 import os
@@ -7,14 +9,26 @@ from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse.CaseGen_General import case_naming
 import pickle
-from dtqpy.src.DTQPy_oloc import DTQPy_oloc
+from dtqpy.dtqpy.src.DTQPy_oloc import DTQPy_oloc
+
 
 import numpy as np
 
+class dict2class(object):
+    
+    def __init__(self,my_dict):
+        
+        for key in my_dict:
+            setattr(self,key,my_dict[key])
+            
+        self.A_ops = self.A
+        self.B_ops = self.B
+        self.C_ops = self.C
+        self.D_ops = self.D
+
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-if __name__ == '__main__':
-
+if __name__ == "__main__":
     # read WEIS options:
     mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
     fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
@@ -78,56 +92,28 @@ if __name__ == '__main__':
             u_h[ind] = u_h[ind] - off
         
         
-        tt          = ts_file['t']
+        tt = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
-
-
+        
+        
     # Linear Model
     
-    # number of linear wind speeds and other options below assume that you haven't changed 
-    # the Level2: linearization: options from example 12_linearization
-    # if the modelling input was changed, or different between 12_ and 13_, these options will produce unexpected results
-    n_lin_ws = len(modeling_options['Level2']['linearization']['wind_speeds'])
-    lin_case_name = case_naming(n_lin_ws,'lin')
-    OutputCon_flag = False
+    pkl_file = mydir + os.sep + "outputs" + os.sep + "ABCD_matrices.pkl"
     
-    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
-
-    if True and os.path.exists(lin_pickle):
-        with open(lin_pickle,"rb") as pkl_file:
-            LinearTurbine = pickle.load(pkl_file)
-    
-    else:   # load the model and run MBC3
-        LinearTurbine = LinearTurbineModel(
-                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_AR'),  # directory where linearizations are
-                    lin_case_name,
-                    nlin=modeling_options['Level2']['linearization']['NLinTimes'],
-                    reduceControls = True
-                    )
-
-        with open(lin_pickle,"wb") as pkl_file:
-            pickle.dump(LinearTurbine,pkl_file)
-    
-    
-    for dist in level2_disturbance: 
-        DTQPy_oloc(LinearTurbine,dist,OutputCon_flag)
-    
-    '''
-    Athul, do you think you could work with LinearTurbine and level2_disturbance[i] to make a dtqp function of your script?
-    Something like:
-
-    for dist in level2_disturbance:
-        oloc = dtqp_solve(LinearTurbine,dist)
-
-
-    LinearTurbine contains:
-        .A_ops  (A matrices n_states x n_states x n_wind_speeds)
-        .B_ops  (B matrices n_states x n_inputs x n_wind_speeds)
-        .C_ops  (C matrices n_outputs x n_states x n_wind_speeds)
-        .D_ops  (D matrices n_outputs x n_inputs x n_wind_speeds)
-
-        u_ops, x_ops, and y_ops are the input, state, and output operating points, respectively
-        u_h are the wind speeds linearized at
+    with open(pkl_file,"rb") as handle:
+        ABCD_list = pickle.load(handle)
         
-
-    '''
+    n_cases = len(ABCD_list)
+    
+    for n in range(n_cases):
+        ABCD = ABCD_list[n]
+        
+        LinearTurbine = dict2class(ABCD)
+        
+        for dist in level2_disturbance: 
+            DTQPy_oloc(LinearTurbine,dist)
+            
+        
+        
+        
+        

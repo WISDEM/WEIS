@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 #os.chdir('../../../')
 
-from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.src.DTQPy_solve import DTQPy_solve
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from dtqpy.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+from dtqpy.dtqpy.src.DTQPy_solve import DTQPy_solve
 
 opts = options()
 opts.dt.nt = 1000
@@ -57,7 +57,7 @@ linearY[1].right = 5; linearY[1].matrix = np.array([[0],[-1],[0],[0]])
 
 Y[0].linear = linearY
 Y[0].b = 0
-
+breakpoint()
 Z = [Simple_Linear_Constraints() for n in range(2)]
 
 linearZ1 = [Simple_Bounds() for n in range(2)]
