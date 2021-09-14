@@ -9,6 +9,8 @@ from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
+fd_methods = ['SLSQP','SNOPT']
+
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
@@ -30,6 +32,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) 
         # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
         if modeling_options['Level3']['flag']:
+            
+            # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
+            if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+                n_DV = 1
+            
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, 
             # otherwise it is half of the number of DV (rounded to the lower integer). 
             # We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
