@@ -7,7 +7,8 @@ from wisdem.commonse.mpi_tools              import MPI
 from wisdem.towerse      import NFREQ, get_nfull
 import wisdem.commonse.utilities              as util
 from wisdem.rotorse.rotor_power             import eval_unsteady
-from weis.aeroelasticse.FAST_writer       import InputWriter_OpenFAST
+from weis.aeroelasticse.FAST_writer         import InputWriter_OpenFAST
+from weis.aeroelasticse.FAST_reader         import InputReader_OpenFAST
 import weis.aeroelasticse.runFAST_pywrapper as fastwrap
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
@@ -544,7 +545,7 @@ class FASTLoadCases(ExplicitComponent):
                 fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
             else:
                 fast_reader.FAST_directory  = os.path.join(weis_dir, modopt['Level3']['openfast_dir'])
-            fast_reader.path2dll        = modopt['DLC_driver']['openfast_file_management']['path2dll']   # Path to dll file
+            fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
             fst_vt = self.load_FAST_model_opts(fst_vt)
@@ -557,7 +558,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
 
             if modopt['ROSCO']['flag']:
-                fst_vt['DISCON_in'] = modopt['DLC_driver']['openfast_file_management']['fst_vt']['DISCON_in']
+                fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
                 
                 
         if self.model_only == True:
@@ -735,7 +736,7 @@ class FASTLoadCases(ExplicitComponent):
                 for key2 in modeling_options['Level3']['outlist'][key1]:
                     fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
         
-        fst_vt['ServoDyn']['DLL_FileName'] = modopt['General']['openfast_configuration']['path2dll']
+        fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
             fst_vt['AeroDyn15']['IndToler'] = 'default'
@@ -1637,7 +1638,7 @@ class FASTLoadCases(ExplicitComponent):
             # Save this list of linear cases for making linear model, not the best solution, but it works
             self.lin_case_name                  = lin_case_name
         else:
-            fastBatch                           = fastwrap.fastwrap()
+            fastBatch                           = fastwrap.runFAST_pywrapper_batch()
             fastBatch.case_list                 = case_list
             fastBatch.case_name_list            = case_name     
         
@@ -1645,9 +1646,9 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
-        fastBatch.keep_time         = modopt['DLC_driver']['openfast_file_management']['save_timeseries']
+        fastBatch.keep_time         = modopt['General']['openfast_configuration']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
-        fastBatch.use_exe           = modopt['DLC_driver']['openfast_file_management']['use_exe']
+        fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         if self.FAST_exe != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
         if self.FAST_lib != 'none':
@@ -1661,101 +1662,102 @@ class FASTLoadCases(ExplicitComponent):
         fatigue_channels =  dict( fastwrap.fatigue_channels_default )
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
-        for u in ['U','L']:
-            blade_fatigue_root = FatigueParams(load2stress=1.0,
-                                               lifetime=inputs['lifetime'],
-                                               slope=inputs[f'blade_spar{u}_wohlerexp'],
-                                               ult_stress=inputs[f'blade_spar{u}_ultstress'],
-                                               S_intercept=inputs[f'blade_spar{u}_wohlerA'])
-            blade_fatigue_te = FatigueParams(load2stress=1.0,
-                                             lifetime=inputs['lifetime'],
-                                             slope=inputs[f'blade_te{u}_wohlerexp'],
-                                             ult_stress=inputs[f'blade_te{u}_ultstress'],
-                                             S_intercept=inputs[f'blade_te{u}_wohlerA'])
-            
-            for k in range(1,self.n_blades+1):
-                blade_root_Fz = blade_fatigue_root.copy()
-                blade_root_Fz.load2stress = inputs[f'blade_root_spar{u}_load2stress'][2]
-                fatigue_channels[f'RootSpar{u}_Fzb{k}'] = blade_root_Fz
-                magnitude_channels[f'RootSpar{u}_Fzb{k}'] = [f'RootFzb{k}']
+        if not modopt['Level3']['from_openfast']:
+            for u in ['U','L']:
+                blade_fatigue_root = FatigueParams(load2stress=1.0,
+                                                lifetime=inputs['lifetime'],
+                                                slope=inputs[f'blade_spar{u}_wohlerexp'],
+                                                ult_stress=inputs[f'blade_spar{u}_ultstress'],
+                                                S_intercept=inputs[f'blade_spar{u}_wohlerA'])
+                blade_fatigue_te = FatigueParams(load2stress=1.0,
+                                                lifetime=inputs['lifetime'],
+                                                slope=inputs[f'blade_te{u}_wohlerexp'],
+                                                ult_stress=inputs[f'blade_te{u}_ultstress'],
+                                                S_intercept=inputs[f'blade_te{u}_wohlerA'])
+                
+                for k in range(1,self.n_blades+1):
+                    blade_root_Fz = blade_fatigue_root.copy()
+                    blade_root_Fz.load2stress = inputs[f'blade_root_spar{u}_load2stress'][2]
+                    fatigue_channels[f'RootSpar{u}_Fzb{k}'] = blade_root_Fz
+                    magnitude_channels[f'RootSpar{u}_Fzb{k}'] = [f'RootFzb{k}']
 
-                blade_root_Mx = blade_fatigue_root.copy()
-                blade_root_Mx.load2stress = inputs[f'blade_root_spar{u}_load2stress'][3]
-                fatigue_channels[f'RootSpar{u}_Mxb{k}'] = blade_root_Mx
-                magnitude_channels[f'RootSpar{u}_Mxb{k}'] = [f'RootMxb{k}']
+                    blade_root_Mx = blade_fatigue_root.copy()
+                    blade_root_Mx.load2stress = inputs[f'blade_root_spar{u}_load2stress'][3]
+                    fatigue_channels[f'RootSpar{u}_Mxb{k}'] = blade_root_Mx
+                    magnitude_channels[f'RootSpar{u}_Mxb{k}'] = [f'RootMxb{k}']
 
-                blade_root_My = blade_fatigue_root.copy()
-                blade_root_My.load2stress = inputs[f'blade_root_spar{u}_load2stress'][4]
-                fatigue_channels[f'RootSpar{u}_Myb{k}'] = blade_root_My
-                magnitude_channels[f'RootSpar{u}_Myb{k}'] = [f'RootMyb{k}']
+                    blade_root_My = blade_fatigue_root.copy()
+                    blade_root_My.load2stress = inputs[f'blade_root_spar{u}_load2stress'][4]
+                    fatigue_channels[f'RootSpar{u}_Myb{k}'] = blade_root_My
+                    magnitude_channels[f'RootSpar{u}_Myb{k}'] = [f'RootMyb{k}']
 
-                blade_maxc_Fz = blade_fatigue_te.copy()
-                blade_maxc_Fz.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][2]
-                fatigue_channels[f'Spn2te{u}_FLzb{k}'] = blade_maxc_Fz
-                magnitude_channels[f'Spn2te{u}_FLzb{k}'] = [f'Spn2FLzb{k}']
+                    blade_maxc_Fz = blade_fatigue_te.copy()
+                    blade_maxc_Fz.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][2]
+                    fatigue_channels[f'Spn2te{u}_FLzb{k}'] = blade_maxc_Fz
+                    magnitude_channels[f'Spn2te{u}_FLzb{k}'] = [f'Spn2FLzb{k}']
 
-                blade_maxc_Mx = blade_fatigue_te.copy()
-                blade_maxc_Mx.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][3]
-                fatigue_channels[f'Spn2te{u}_MLxb{k}'] = blade_maxc_Mx
-                magnitude_channels[f'Spn2te{u}_MLxb{k}'] = [f'Spn2MLxb{k}']
+                    blade_maxc_Mx = blade_fatigue_te.copy()
+                    blade_maxc_Mx.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][3]
+                    fatigue_channels[f'Spn2te{u}_MLxb{k}'] = blade_maxc_Mx
+                    magnitude_channels[f'Spn2te{u}_MLxb{k}'] = [f'Spn2MLxb{k}']
 
-                blade_maxc_My = blade_fatigue_te.copy()
-                blade_maxc_My.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][4]
-                fatigue_channels[f'Spn2te{u}_MLyb{k}'] = blade_maxc_My
-                magnitude_channels[f'Spn2te{u}_MLyb{k}'] = [f'Spn2MLyb{k}']
+                    blade_maxc_My = blade_fatigue_te.copy()
+                    blade_maxc_My.load2stress = inputs[f'blade_maxc_te{u}_load2stress'][4]
+                    fatigue_channels[f'Spn2te{u}_MLyb{k}'] = blade_maxc_My
+                    magnitude_channels[f'Spn2te{u}_MLyb{k}'] = [f'Spn2MLyb{k}']
 
-        # Low speed shaft fatigue
-        lss_fatigue = FatigueParams(load2stress=1.0,
-                                    lifetime=inputs['lifetime'],
-                                    slope=inputs['lss_wohlerexp'],
-                                    ult_stress=inputs['lss_ultstress'],
-                                    S_intercept=inputs['lss_wohlerA'])        
-        for s in ['Ax','Sh']:
-            sstr = 'axial' if s=='Ax' else 'shear'
-            for ik, k in enumerate(['F','M']):
-                for ix, x in enumerate(['x','yz']):
-                    idx = 3*ik+ix
-                    lss_fatigue_ii = lss_fatigue.copy()
-                    lss_fatigue_ii.load2stress = inputs[f'lss_{sstr}_load2stress'][idx]
-                    fatigue_channels[f'LSShft{s}{k}{x}a'] = lss_fatigue_ii
-                    if ix==0:
-                        magnitude_channels[f'LSShft{s}{k}{x}a'] = ['RotThrust'] if ik==0 else ['RotTorq']
-                    else:
-                        magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
+            # Low speed shaft fatigue
+            lss_fatigue = FatigueParams(load2stress=1.0,
+                                        lifetime=inputs['lifetime'],
+                                        slope=inputs['lss_wohlerexp'],
+                                        ult_stress=inputs['lss_ultstress'],
+                                        S_intercept=inputs['lss_wohlerA'])        
+            for s in ['Ax','Sh']:
+                sstr = 'axial' if s=='Ax' else 'shear'
+                for ik, k in enumerate(['F','M']):
+                    for ix, x in enumerate(['x','yz']):
+                        idx = 3*ik+ix
+                        lss_fatigue_ii = lss_fatigue.copy()
+                        lss_fatigue_ii.load2stress = inputs[f'lss_{sstr}_load2stress'][idx]
+                        fatigue_channels[f'LSShft{s}{k}{x}a'] = lss_fatigue_ii
+                        if ix==0:
+                            magnitude_channels[f'LSShft{s}{k}{x}a'] = ['RotThrust'] if ik==0 else ['RotTorq']
+                        else:
+                            magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
-        # Fatigue at the tower base
-        n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
-        tower_fatigue_base = FatigueParams(load2stress=1.0,
-                                           lifetime=inputs['lifetime'],
-                                           slope=inputs['tower_wohlerexp'][n_height_mon],
-                                           ult_stress=inputs['tower_ultstress'][n_height_mon],
-                                           S_intercept=inputs['tower_wohlerA'][n_height_mon],)
-        for s in ['Ax','Sh']:
-            sstr = 'axial' if s=='Ax' else 'shear'
-            for ik, k in enumerate(['F','M']):
-                for ix, x in enumerate(['xy','z']):
-                    idx = 3*ik+2*ix
-                    tower_fatigue_ii = tower_fatigue_base.copy()
-                    tower_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][n_height_mon,idx]
-                    fatigue_channels[f'TwrBs{s}{k}{x}t'] = tower_fatigue_ii
-                    magnitude_channels[f'TwrBs{s}{k}{x}t'] = [f'TwrBs{k}{x}t'] if x=='z' else [f'TwrBs{k}xt', f'TwrBs{k}yt']
-
-        # Fatigue at monopile base (mudline)
-        if modopt['flags']['monopile']:
-            monopile_fatigue_base = FatigueParams(load2stress=1.0,
-                                                  lifetime=inputs['lifetime'],
-                                                  slope=inputs['tower_wohlerexp'][0],
-                                                  ult_stress=inputs['tower_ultstress'][0],
-                                                  S_intercept=inputs['tower_wohlerA'][0])
+            # Fatigue at the tower base
+            n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
+            tower_fatigue_base = FatigueParams(load2stress=1.0,
+                                            lifetime=inputs['lifetime'],
+                                            slope=inputs['tower_wohlerexp'][n_height_mon],
+                                            ult_stress=inputs['tower_ultstress'][n_height_mon],
+                                            S_intercept=inputs['tower_wohlerA'][n_height_mon],)
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
                     for ix, x in enumerate(['xy','z']):
                         idx = 3*ik+2*ix
-                        monopile_fatigue_ii = monopile_fatigue_base.copy()
-                        monopile_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][0,idx]
-                        fatigue_channels[f'M1N1{s}{k}K{x}e'] = monopile_fatigue_ii
-                        magnitude_channels[f'M1N1{s}{k}K{x}e'] = [f'M1N1{k}K{x}e'] if x=='z' else [f'M1N1{k}Kxe', f'M1N1{k}Kye']
+                        tower_fatigue_ii = tower_fatigue_base.copy()
+                        tower_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][n_height_mon,idx]
+                        fatigue_channels[f'TwrBs{s}{k}{x}t'] = tower_fatigue_ii
+                        magnitude_channels[f'TwrBs{s}{k}{x}t'] = [f'TwrBs{k}{x}t'] if x=='z' else [f'TwrBs{k}xt', f'TwrBs{k}yt']
+
+            # Fatigue at monopile base (mudline)
+            if modopt['flags']['monopile']:
+                monopile_fatigue_base = FatigueParams(load2stress=1.0,
+                                                    lifetime=inputs['lifetime'],
+                                                    slope=inputs['tower_wohlerexp'][0],
+                                                    ult_stress=inputs['tower_ultstress'][0],
+                                                    S_intercept=inputs['tower_wohlerA'][0])
+                for s in ['Ax','Sh']:
+                    sstr = 'axial' if s=='Ax' else 'shear'
+                    for ik, k in enumerate(['F','M']):
+                        for ix, x in enumerate(['xy','z']):
+                            idx = 3*ik+2*ix
+                            monopile_fatigue_ii = monopile_fatigue_base.copy()
+                            monopile_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][0,idx]
+                            fatigue_channels[f'M1N1{s}{k}K{x}e'] = monopile_fatigue_ii
+                            magnitude_channels[f'M1N1{s}{k}K{x}e'] = [f'M1N1{k}K{x}e'] if x=='z' else [f'M1N1{k}Kxe', f'M1N1{k}Kye']
 
         # Store settings
         fastBatch.goodman            = modopt['General']['goodman_correction'] # Where does this get placed in schema?
@@ -1806,10 +1808,10 @@ class FASTLoadCases(ExplicitComponent):
                                                                    outputs, discrete_outputs)
 
         # Save Data
-        if modopt['DLC_driver']['openfast_file_management']['save_timeseries']:
+        if modopt['General']['openfast_configuration']['save_timeseries']:
             self.save_timeseries(chan_time)
 
-        if modopt['DLC_driver']['openfast_file_management']['save_iterations']:
+        if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(summary_stats,DELs)
 
     def get_blade_loading(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):

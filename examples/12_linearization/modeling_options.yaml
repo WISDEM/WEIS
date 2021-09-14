@@ -1,5 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: lin
+        OF_run_dir: outputs/IEA_level2
+        use_exe: True
 
 WISDEM:
     RotorSE:
@@ -111,10 +115,6 @@ Level2:
         NLinTimes: 1
 
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: lin
-        OF_run_dir: outputs/IEA_level2
-        use_exe: True
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2

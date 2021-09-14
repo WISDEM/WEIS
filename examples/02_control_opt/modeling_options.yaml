@@ -1,5 +1,10 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: IEA15
+        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/control_opt
+        save_timeseries: True
+        save_iterations: True
 
 WISDEM:
     RotorSE:
@@ -93,12 +98,6 @@ ROSCO:
 
 
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: IEA15
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/control_opt
-        save_timeseries: True
-        save_iterations: True
-
     DLCs:
         - DLC: "1.1"
           wind_speed: [16]
