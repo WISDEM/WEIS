@@ -2726,6 +2726,14 @@ properties:
                     #     type: boolean
                     #     default: False
                     #     description: Write module-level linearization output files in addition to output for full system? (flag) [unused if Linearize=False]
+            DTQP: # this may be shared with Level3 IEC load cases in the future
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run a DTQP optimization at level 2
             #InflowWind: *ofinflowwind
             #AeroDyn: *ofaerodyn
             #ElastoDyn: *ofelastodyn
