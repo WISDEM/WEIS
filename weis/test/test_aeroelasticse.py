@@ -149,7 +149,7 @@ class TestGeneral(unittest.TestCase):
         fastBatch.case_name_list = case_name_list
 
         # Run OpenFAST, either serially or sequentially
-        _,_,_,out = fastBatch.run_serial()
+        _,_,_,_,out = fastBatch.run_serial()
             
         compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=5e-1, train=False)
 

@@ -12,6 +12,54 @@ properties:
                 type: boolean
                 default: False
                 description: Prints additional outputs to screen (and to a file log in the future)
+            openfast_configuration:
+                type: object
+                default: {}
+                properties:
+                    OF_run_fst:
+                        type: string
+                        default: none
+                        description: Filename prefix for output files
+                    OF_run_dir:
+                        type: string
+                        default: none
+                        description: Path to place FAST output files (e.g. /home/user/myturbines/output)
+                    generate_af_coords:
+                        type: boolean
+                        default: False
+                        description: Flag to write airfoil coordinates out or not
+                    use_exe:
+                        type: boolean
+                        default: False
+                        description: Use openfast executable instead of library
+                    model_only:
+                        type: boolean
+                        default: False
+                        description: Flag to only generate an OpenFAST model and stop
+                    save_timeseries:
+                        type: boolean
+                        default: False
+                        description: Save openfast output timeseries
+                    save_iterations:
+                        type: boolean
+                        default: False
+                        description: Save summary stats and other info for each openfast iteration.  Could bump this up to a more global post-processing input.
+                    FAST_exe:
+                        type: string
+                        default: none
+                        description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_lib:
+                        type: string
+                        default: none
+                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
+                    path2dll:
+                        type: string
+                        default: none
+                        description: Path to controller shared library (e.g. /home/user/myturbines/libdiscon.so)
+            goodman_correction:
+                type: boolean
+                default: False
+                description: Flag whether to apply the Goodman correction for mean stress value to the stress amplitude value in fatigue calculations
     WISDEM:
         type: object
         default: {}
@@ -2574,7 +2622,7 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flag: 
+                    flag:
                         type: boolean
                         default: False
                         description: Whether or not to run a level 2 time domain simulation
@@ -2706,50 +2754,6 @@ properties:
         type: object
         default: {}
         properties:
-            openfast_file_management:
-                type: object
-                default: {}
-                properties:
-                    OF_run_fst:
-                        type: string
-                        default: none
-                        description: Filename prefix for the OpenFAST input and output files
-                    OF_run_dir:
-                        type: string
-                        default: none
-                        description: Path to a folder where the FAST files are written (e.g. /home/user/myturbines/output)
-                    generate_af_coords:
-                        type: boolean
-                        default: False
-                        description: Flag to write airfoil coordinates out or not. Airfoil coordinates are used in OpenFAST only for visualization purposes or in the aeroacoustics model.
-                    save_timeseries:
-                        type: boolean
-                        default: False
-                        description: Save openfast output timeseries
-                    save_iterations:
-                        type: boolean
-                        default: False
-                        description: Save summary stats and other info for each openfast iteration.  Could bump this up to a more global post-processing input.
-                    use_exe:
-                        type: boolean
-                        default: False
-                        description: Use openfast executable instead of library
-                    FAST_exe:
-                        type: string
-                        default: none
-                        description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
-                    FAST_lib:
-                        type: string
-                        default: none
-                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
-                    model_only:
-                        type: boolean
-                        default: False
-                        description: Flag to only generate an OpenFAST model and stop the call to WEIS.
-                    path2dll:
-                        type: string
-                        default: none
-                        description: Path to controller shared library (e.g. /home/user/myturbines/libdiscon.so)
             DLCs:
                 type: array
                 default: [{}]
@@ -2877,7 +2881,7 @@ properties:
                                 maximum: 10.0
                         probabilities:
                             type: array
-                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed. 
+                            description: Probability of occurrance for each case. This entry is relevant only for DLC 1.2 and 6.4. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed.
                             default: [1.]
                             items:
                                 type: number
@@ -2911,7 +2915,7 @@ properties:
                                 flag:
                                     type: boolean
                                     default: False
-                                    description: Flag switching between steady wind and turbulent wind grid from TurbSim. 
+                                    description: Flag switching between steady wind and turbulent wind grid from TurbSim.
                                 Echo:
                                     type: boolean
                                     default: False

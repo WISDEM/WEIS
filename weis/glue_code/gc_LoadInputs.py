@@ -28,8 +28,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
-            self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt'] = {}
-            self.modeling_options['DLC_driver']['openfast_file_management']['fst_vt']['outlist'] = fast.fst_vt['outlist']
+            self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
+            self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
             # Find the path to the WEIS controller
             run_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
@@ -41,11 +41,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.so')
 
             # User-defined control dylib (path2dll)
-            if self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] == 'none':   #Default option, use above
-                self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = path2dll
+            if self.modeling_options['General']['openfast_configuration']['path2dll'] == 'none':   #Default option, use above
+                self.modeling_options['General']['openfast_configuration']['path2dll'] = path2dll
             else:
-                if not os.path.isabs(self.modeling_options['DLC_driver']['openfast_file_management']['path2dll']):  # make relative path absolute
-                    self.modeling_options['DLC_driver']['openfast_file_management']['path2dll'] = \
+                if not os.path.isabs(self.modeling_options['General']['openfast_configuration']['path2dll']):  # make relative path absolute
+                    self.modeling_options['General']['openfast_configuration']['path2dll'] = \
                         os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_lib'])
 
             # Activate HAMS in Level1 if requested for Level 2 or 3

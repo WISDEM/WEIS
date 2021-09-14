@@ -161,9 +161,10 @@ class InputWriter_OpenFAST(object):
         elif self.fst_vt['Fst']['CompAero'] == 2:
             self.write_AeroDyn15()
         
-        if 'DISCON_in' in self.fst_vt and ROSCO:
-            self.write_DISCON_in()
-        self.write_ServoDyn()
+        if self.fst_vt['Fst']['CompServo'] == 1:
+            if 'DISCON_in' in self.fst_vt and ROSCO:
+                self.write_DISCON_in()
+            self.write_ServoDyn()
         
         if self.fst_vt['Fst']['CompHydro'] == 1:
             self.write_HydroDyn()
@@ -978,6 +979,134 @@ class InputWriter_OpenFAST(object):
             for row in coord:
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             f.close()
+
+    def write_AeroDyn14(self):
+
+        # ======= Airfoil Files ========
+        # make directory for airfoil files
+        if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
+            try:
+                os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+            except:
+                try:
+                    time.sleep(random.random())
+                    if not os.path.isdir(os.path.join(self.FAST_runDirectory,'AeroData')):
+                        os.mkdir(os.path.join(self.FAST_runDirectory,'AeroData'))
+                except:
+                    print("Error tring to make '%s'!"%os.path.join(self.FAST_runDirectory,'AeroData'))
+
+        # create write airfoil objects to files
+        for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
+             af_name = os.path.join(self.FAST_runDirectory, 'AeroData', 'Airfoil' + str(i) + '.dat')
+             self.fst_vt['AeroDyn14']['FoilNm'][i]  = os.path.join('AeroData', 'Airfoil' + str(i) + '.dat')
+             self.write_AeroDyn14Polar(af_name, i)
+
+        self.fst_vt['Fst']['AeroFile'] = self.FAST_namingOut + '_AeroDyn14.dat'
+        ad_file = os.path.join(self.FAST_runDirectory,self.fst_vt['Fst']['AeroFile'])
+        f = open(ad_file,'w')
+
+        # create Aerodyn Tower
+        if self.fst_vt['AeroDyn14']['TwrShad'] > 0:
+            self.write_AeroDyn14Tower()
+
+        # ======= Aerodyn Input File ========
+        f.write('AeroDyn v14.04.* INPUT FILE\n\n')
+        
+        # f.write('{:}\n'.format(self.fst_vt['aerodyn']['SysUnits']))
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['StallMod']))        
+        
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['UseCm']))
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['InfModel']))
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['IndModel']))
+        f.write('{: 2.15e}\n'.format(self.fst_vt['AeroDyn14']['AToler']))
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['TLModel']))
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['HLModel']))
+        f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['TwrShad']))  
+        if self.fst_vt['AeroDyn14']['TwrShad'] > 0:
+            f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['TwrPotent']))  
+            f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['TwrShadow']))
+            f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['TwrFile']))
+            f.write('{:}\n'.format(self.fst_vt['AeroDyn14']['CalcTwrAero']))  
+        else:
+            f.write('{: 2.15e}\n'.format(self.fst_vt['AeroDyn14']['ShadHWid']))
+            f.write('{: 2.15e}\n'.format(self.fst_vt['AeroDyn14']['T_Shad_Refpt']))
+  
+        f.write('{: 2.15e}\n'.format(self.fst_vt['AeroDyn14']['AirDens']))  
+  
+        f.write('{: 2.15e}\n'.format(self.fst_vt['AeroDyn14']['KinVisc']))  
+  
+        f.write('{:2}\n'.format(self.fst_vt['AeroDyn14']['DTAero']))        
+        
+
+        f.write('{:2}\n'.format(self.fst_vt['AeroDyn14']['NumFoil']))
+        for i in range (self.fst_vt['AeroDyn14']['NumFoil']):
+            f.write('"{:}"\n'.format(self.fst_vt['AeroDyn14']['FoilNm'][i]))
+
+        f.write('{:2}\n'.format(self.fst_vt['AeroDynBlade']['BldNodes']))
+        rnodes = self.fst_vt['AeroDynBlade']['RNodes']
+        twist = self.fst_vt['AeroDynBlade']['AeroTwst']
+        drnodes = self.fst_vt['AeroDynBlade']['DRNodes']
+        chord = self.fst_vt['AeroDynBlade']['Chord']
+        nfoil = self.fst_vt['AeroDynBlade']['NFoil']
+        prnelm = self.fst_vt['AeroDynBlade']['PrnElm']
+        f.write('Nodal properties\n')
+        for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
+            f.write('{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
+
+        f.close()        
+
+    def write_AeroDyn14Tower(self):
+        # AeroDyn v14.04 Tower
+        self.fst_vt['AeroDyn14']['TwrFile'] = self.FAST_namingOut + '_AeroDyn14_tower.dat'
+        filename = os.path.join(self.FAST_runDirectory, self.fst_vt['AeroDyn14']['TwrFile'])
+        f = open(filename, 'w')
+
+        f.write('AeroDyn tower file, Aerodyn v14.04 formatting\n')
+        f.write('Generated with AeroElasticSE FAST driver\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDynTower']['NTwrHt'], 'NTwrHt', '- Number of tower input height stations listed (-)\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDynTower']['NTwrRe'], 'NTwrRe', '- Number of tower Re values (-)\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDynTower']['NTwrCD'], 'NTwrCD', '- Number of tower CD columns (-) Note: For current versions, this MUST be 1\n'))
+        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDynTower']['Tower_Wake_Constant'], 'Tower_Wake_Constant', '- Tower wake constant (-) {0.0: full potential flow, 0.1: Bak model}\n'))
+        f.write('---------------------- DISTRIBUTED TOWER PROPERTIES ----------------------------\n')
+        f.write('TwrHtFr  TwrWid  NTwrCDCol\n')
+        for HtFr, Wid, CDId in zip(self.fst_vt['AeroDynTower']['TwrHtFr'], self.fst_vt['AeroDynTower']['TwrWid'], self.fst_vt['AeroDynTower']['NTwrCDCol']):
+            f.write('{: 2.15e}  {: 2.15e}   {:d}\n'.format(HtFr, Wid, int(CDId)))
+        f.write('---------------------- Re v CD PROPERTIES --------------------------------------\n')
+        f.write('TwrRe  '+ '  '.join(['TwrCD%d'%(i+1) for i in range(self.fst_vt['AeroDynTower']['NTwrCD'])]) +'\n')
+        for Re, CD in zip(self.fst_vt['AeroDynTower']['TwrRe'], self.fst_vt['AeroDynTower']['TwrCD']):
+            f.write('% 2.15e' %Re + '   '.join(['% 2.15e'%cdi for cdi in CD]) + '\n')
+        
+        f.close()
+
+    def write_AeroDyn14Polar(self, filename, a_i):
+        # AeroDyn v14 Airfoil Polar Input File
+
+        f = open(filename, 'w')
+        f.write('AeroDyn airfoil file, Aerodyn v14.04 formatting\n')
+        f.write('Generated with AeroElasticSE FAST driver\n')
+
+        f.write('{:9d}\t{:}'.format(self.fst_vt['AeroDynBlade']['af_data'][a_i]['number_tables'], 'Number of airfoil tables in this file\n'))
+        for i in range(self.fst_vt['AeroDynBlade']['af_data'][a_i]['number_tables']):
+            param = self.fst_vt['AeroDynBlade']['af_data'][a_i]['af_tables'][i]
+            f.write('{:9g}\t{:}'.format(i, 'Table ID parameter\n'))
+            f.write('{: f}\t{:}'.format(param['StallAngle'], 'Stall angle (deg)\n'))
+            f.write('{: f}\t{:}'.format(0, 'No longer used, enter zero\n'))
+            f.write('{: f}\t{:}'.format(0, 'No longer used, enter zero\n'))
+            f.write('{: f}\t{:}'.format(0, 'No longer used, enter zero\n'))
+            f.write('{: f}\t{:}'.format(param['ZeroCn'], 'Angle of attack for zero Cn for linear Cn curve (deg)\n'))
+            f.write('{: f}\t{:}'.format(param['CnSlope'], 'Cn slope for zero lift for linear Cn curve (1/rad)\n'))
+            f.write('{: f}\t{:}'.format(param['CnPosStall'], 'Cn at stall value for positive angle of attack for linear Cn curve\n'))
+            f.write('{: f}\t{:}'.format(param['CnNegStall'], 'Cn at stall value for negative angle of attack for linear Cn curve\n'))
+            f.write('{: f}\t{:}'.format(param['alphaCdMin'], 'Angle of attack for minimum CD (deg)\n'))
+            f.write('{: f}\t{:}'.format(param['CdMin'], 'Minimum CD value\n'))
+            if param['cm']:
+                for a, cl, cd, cm in zip(param['alpha'], param['cl'], param['cd'], param['cm']):
+                    f.write('{: 6e}  {: 6e}  {: 6e}  {: 6e}\n'.format(a, cl, cd, cm))
+            else:
+                for a, cl, cd in zip(param['alpha'], param['cl'], param['cd']):
+                    f.write('{: 6e}  {: 6e}  {: 6e}\n'.format(a, cl, cd))
+        
+        f.close()
 
     def write_OLAF(self):
 
