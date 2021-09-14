@@ -2141,40 +2141,41 @@ class FASTLoadCases(ExplicitComponent):
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
-        for k in range(1,self.n_blades+1):
-            for u in ['U','L']:
-                damage[f'BladeRootSpar{u}_Axial{k}'] = (damage[f'RootSpar{u}_Fzb{k}'] +
-                                                      damage[f'RootSpar{u}_Mxb{k}'] +
-                                                      damage[f'RootSpar{u}_Myb{k}'])
-                damage[f'BladeMaxcTE{u}_Axial{k}'] = (damage[f'Spn2te{u}_FLzb{k}'] +
-                                                    damage[f'Spn2te{u}_MLxb{k}'] +
-                                                    damage[f'Spn2te{u}_MLyb{k}'])
+        if not modopt['Level3']['from_openfast']:
+            for k in range(1,self.n_blades+1):
+                for u in ['U','L']:
+                    damage[f'BladeRootSpar{u}_Axial{k}'] = (damage[f'RootSpar{u}_Fzb{k}'] +
+                                                        damage[f'RootSpar{u}_Mxb{k}'] +
+                                                        damage[f'RootSpar{u}_Myb{k}'])
+                    damage[f'BladeMaxcTE{u}_Axial{k}'] = (damage[f'Spn2te{u}_FLzb{k}'] +
+                                                        damage[f'Spn2te{u}_MLxb{k}'] +
+                                                        damage[f'Spn2te{u}_MLyb{k}'])
 
-        # Compute total fatigue damage in low speed shaft, tower base, monopile base
-        damage['LSSAxial'] = 0.0
-        damage['LSSShear'] = 0.0
-        damage['TowerBaseAxial'] = 0.0
-        damage['TowerBaseShear'] = 0.0
-        damage['MonopileBaseAxial'] = 0.0
-        damage['MonopileBaseShear'] = 0.0
-        for s in ['Ax','Sh']:
-            sstr = 'Axial' if s=='Ax' else 'Shear'
-            for ik, k in enumerate(['F','M']):
-                for ix, x in enumerate(['x','yz']):
-                    damage[f'LSS{sstr}'] += damage[f'LSShft{s}{k}{x}a']
-                for ix, x in enumerate(['xy','z']):
-                    damage[f'TowerBase{sstr}'] += damage[f'TwrBs{s}{k}{x}t']
-                    if modopt['flags']['monopile'] and modopt['Level3']['flag']:
-                        damage[f'MonopileBase{sstr}'] += damage[f'M1N1{s}{k}K{x}e']
+            # Compute total fatigue damage in low speed shaft, tower base, monopile base
+            damage['LSSAxial'] = 0.0
+            damage['LSSShear'] = 0.0
+            damage['TowerBaseAxial'] = 0.0
+            damage['TowerBaseShear'] = 0.0
+            damage['MonopileBaseAxial'] = 0.0
+            damage['MonopileBaseShear'] = 0.0
+            for s in ['Ax','Sh']:
+                sstr = 'Axial' if s=='Ax' else 'Shear'
+                for ik, k in enumerate(['F','M']):
+                    for ix, x in enumerate(['x','yz']):
+                        damage[f'LSS{sstr}'] += damage[f'LSShft{s}{k}{x}a']
+                    for ix, x in enumerate(['xy','z']):
+                        damage[f'TowerBase{sstr}'] += damage[f'TwrBs{s}{k}{x}t']
+                        if modopt['flags']['monopile'] and modopt['Level3']['flag']:
+                            damage[f'MonopileBase{sstr}'] += damage[f'M1N1{s}{k}K{x}e']
 
-        # Assemble damages
-        outputs['damage_blade_root_sparU'] = np.max([damage[f'BladeRootSparU_Axial{k+1}'] for k in range(self.n_blades)])
-        outputs['damage_blade_root_sparL'] = np.max([damage[f'BladeRootSparL_Axial{k+1}'] for k in range(self.n_blades)])
-        outputs['damage_blade_maxc_teU'] = np.max([damage[f'BladeMaxcTEU_Axial{k+1}'] for k in range(self.n_blades)])
-        outputs['damage_blade_maxc_teL'] = np.max([damage[f'BladeMaxcTEL_Axial{k+1}'] for k in range(self.n_blades)])
-        outputs['damage_lss'] = np.sqrt( damage['LSSAxial']**2 + damage['LSSShear']**2 )
-        outputs['damage_tower_base'] = np.sqrt( damage['TowerBaseAxial']**2 + damage['TowerBaseShear']**2 )
-        outputs['damage_monopile_base'] = np.sqrt( damage['MonopileBaseAxial']**2 + damage['MonopileBaseShear']**2 )
+            # Assemble damages
+            outputs['damage_blade_root_sparU'] = np.max([damage[f'BladeRootSparU_Axial{k+1}'] for k in range(self.n_blades)])
+            outputs['damage_blade_root_sparL'] = np.max([damage[f'BladeRootSparL_Axial{k+1}'] for k in range(self.n_blades)])
+            outputs['damage_blade_maxc_teU'] = np.max([damage[f'BladeMaxcTEU_Axial{k+1}'] for k in range(self.n_blades)])
+            outputs['damage_blade_maxc_teL'] = np.max([damage[f'BladeMaxcTEL_Axial{k+1}'] for k in range(self.n_blades)])
+            outputs['damage_lss'] = np.sqrt( damage['LSSAxial']**2 + damage['LSSShear']**2 )
+            outputs['damage_tower_base'] = np.sqrt( damage['TowerBaseAxial']**2 + damage['TowerBaseShear']**2 )
+            outputs['damage_monopile_base'] = np.sqrt( damage['MonopileBaseAxial']**2 + damage['MonopileBaseShear']**2 )
 
         return outputs, discrete_outputs
 
