@@ -98,16 +98,17 @@ ROSCO:
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?
-        TMax: 700.      # run simulations using IEC standards, could share that info
-        CompMooring: 1
+        flag: True
+        TMax: 100.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 60.
+        TMax: 1600.
         DT: 0.01
-        TrimGain: 1e-3
-        TrimTol: 1e-2
-        wind_speeds: [8.]
+        TrimGain: 1e-4
+        TrimTol: 1e-3
+        wind_speeds: [3, 4, 5, 6, 7, 8, 8.25, 8.5, 8.75, 9, 9.25, 9.5, 9.625, 9.75, 9.875, 10, 10.12, 10.25, 10.38, 10.5, 10.62, 10.75, 10.88, 11, 11.12, 11.25, 11.38, 11.5, 11.75, 12, 12.25, 12.5, 12.75, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 ]
+        rated_offset: 1.5
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 1
+        NLinTimes: 12
 
 DLC_driver:
     openfast_file_management:

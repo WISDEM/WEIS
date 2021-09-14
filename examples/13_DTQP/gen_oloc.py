@@ -96,7 +96,8 @@ if __name__ == '__main__':
     lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
-    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
+    lin_pickle = mydir + os.sep + "outputs"+os.sep + "LinearTurbine.pkl"
+    
 
     if True and os.path.exists(lin_pickle):
         with open(lin_pickle,"rb") as pkl_file:
@@ -129,6 +130,7 @@ if __name__ == '__main__':
         }
 
     run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    
 
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 

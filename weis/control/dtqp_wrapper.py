@@ -27,6 +27,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
 
     ### Set up constraints
     dtqp_constraints = {}
+    breakpoint()
 
     # catch any other flags, maybe this is better handled elsehwere
     blade_const = analysis_options['constraints']['blade']
@@ -105,8 +106,9 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         dl[_name] = _dl
         dam[_name] = _dam
         ct.append(OutData)
+        
 
-        output.df.to_pickle(os.path.join(run_dir,case_names[i_oloc]+'.p'))
+        #output.df.to_pickle(os.path.join(run_dir,case_names[i_oloc]+'.p'))
 
     summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
 

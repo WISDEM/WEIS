@@ -247,6 +247,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     # initialize
     ub = np.ones((nx,1))*np.inf
     lb = -np.ones((nx,1))*np.inf
+    
 
     # set ub values for PtfmPitch and Genspeed
     for const in constraints:
