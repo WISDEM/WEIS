@@ -666,7 +666,7 @@ class FASTLoadCases(ExplicitComponent):
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         # Post process at both Level 2 and 3
-        self.post_process(summary_stats, extreme_table, DELs, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+        self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
@@ -1772,6 +1772,8 @@ class FASTLoadCases(ExplicitComponent):
 
         # Run FAST
         if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
+            print('MPI INFO:')
+            print(self.mpi_comm_map_down)
             summary_stats, extreme_table, DELs, Damage, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
@@ -1785,7 +1787,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator
 
-    def post_process(self, summary_stats, extreme_table, DELs, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
+    def post_process(self, summary_stats, extreme_table, DELs, damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
         # Analysis
@@ -1799,7 +1801,7 @@ class FASTLoadCases(ExplicitComponent):
 
         if modopt['DLC_driver']['n_ws_dlc11'] > 0:
             outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
-            outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, discrete_inputs, outputs, discrete_outputs)
+            outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
 
