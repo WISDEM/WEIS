@@ -49,7 +49,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_lib'])
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
-            if self.modeling_options["flags"]["offshore"]:
+            if self.modeling_options["flags"]["offshore"] or self.modeling_options["Level3"]["from_openfast"]:
                 if self.modeling_options["Level1"]["potential_model_override"] == 2:
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
