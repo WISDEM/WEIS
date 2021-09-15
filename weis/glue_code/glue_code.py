@@ -652,135 +652,135 @@ class WindPark(om.Group):
                         self.connect('nacelle.bedplate_flange_thickness', 'drivese_post.bedplate_flange_thickness') # only used in geared
                         self.connect('nacelle.bedplate_web_thickness',    'drivese_post.bedplate_web_thickness') # only used in geared
                             
-                        self.connect('hub.hub_material',                  'drivese_post.hub_material')
-                        self.connect('hub.spinner_material',              'drivese_post.spinner_material')
-                        self.connect('nacelle.lss_material',              'drivese_post.lss_material')
-                        self.connect('nacelle.bedplate_material',         'drivese_post.bedplate_material')
-                        self.connect('materials.name',                    'drivese_post.material_names')
-                        self.connect('materials.E',                       'drivese_post.E_mat')
-                        self.connect('materials.G',                       'drivese_post.G_mat')
-                        self.connect('materials.rho',                     'drivese_post.rho_mat')
-                        self.connect('materials.sigma_y',                 'drivese_post.Xy_mat')
-                        self.connect("materials.Xt",                      "drivese_post.Xt_mat")
-                        self.connect("materials.wohler_exp",              "drivese_post.wohler_exp_mat")
-                        self.connect("materials.wohler_intercept",        "drivese_post.wohler_A_mat")
-                        self.connect('materials.unit_cost',               'drivese_post.unit_cost_mat')
+                    self.connect('hub.hub_material',                  'drivese_post.hub_material')
+                    self.connect('hub.spinner_material',              'drivese_post.spinner_material')
+                    self.connect('nacelle.lss_material',              'drivese_post.lss_material')
+                    self.connect('nacelle.bedplate_material',         'drivese_post.bedplate_material')
+                    self.connect('materials.name',                    'drivese_post.material_names')
+                    self.connect('materials.E',                       'drivese_post.E_mat')
+                    self.connect('materials.G',                       'drivese_post.G_mat')
+                    self.connect('materials.rho',                     'drivese_post.rho_mat')
+                    self.connect('materials.sigma_y',                 'drivese_post.Xy_mat')
+                    self.connect("materials.Xt",                      "drivese_post.Xt_mat")
+                    self.connect("materials.wohler_exp",              "drivese_post.wohler_exp_mat")
+                    self.connect("materials.wohler_intercept",        "drivese_post.wohler_A_mat")
+                    self.connect('materials.unit_cost',               'drivese_post.unit_cost_mat')
 
-                        if modeling_options['flags']['generator']:
+                    if modeling_options['flags']['generator']:
 
-                            self.connect('generator.B_r'          , 'drivese_post.generator.B_r')
-                            self.connect('generator.P_Fe0e'       , 'drivese_post.generator.P_Fe0e')
-                            self.connect('generator.P_Fe0h'       , 'drivese_post.generator.P_Fe0h')
-                            self.connect('generator.S_N'          , 'drivese_post.generator.S_N')
-                            self.connect('generator.alpha_p'      , 'drivese_post.generator.alpha_p')
-                            self.connect('generator.b_r_tau_r'    , 'drivese_post.generator.b_r_tau_r')
-                            self.connect('generator.b_ro'         , 'drivese_post.generator.b_ro')
-                            self.connect('generator.b_s_tau_s'    , 'drivese_post.generator.b_s_tau_s')
-                            self.connect('generator.b_so'         , 'drivese_post.generator.b_so')
-                            self.connect('generator.cofi'         , 'drivese_post.generator.cofi')
-                            self.connect('generator.freq'         , 'drivese_post.generator.freq')
-                            self.connect('generator.h_i'          , 'drivese_post.generator.h_i')
-                            self.connect('generator.h_sy0'        , 'drivese_post.generator.h_sy0')
-                            self.connect('generator.h_w'          , 'drivese_post.generator.h_w')
-                            self.connect('generator.k_fes'        , 'drivese_post.generator.k_fes')
-                            self.connect('generator.k_fillr'      , 'drivese_post.generator.k_fillr')
-                            self.connect('generator.k_fills'      , 'drivese_post.generator.k_fills')
-                            self.connect('generator.k_s'          , 'drivese_post.generator.k_s')
-                            self.connect('generator.m'            , 'drivese_post.generator.m')
-                            self.connect('generator.mu_0'         , 'drivese_post.generator.mu_0')
-                            self.connect('generator.mu_r'         , 'drivese_post.generator.mu_r')
-                            self.connect('generator.p'            , 'drivese_post.generator.p')
-                            self.connect('generator.phi'          , 'drivese_post.generator.phi')
-                            self.connect('generator.q1'           , 'drivese_post.generator.q1')
-                            self.connect('generator.q2'           , 'drivese_post.generator.q2')
-                            self.connect('generator.ratio_mw2pp'  , 'drivese_post.generator.ratio_mw2pp')
-                            self.connect('generator.resist_Cu'    , 'drivese_post.generator.resist_Cu')
-                            self.connect('generator.sigma'        , 'drivese_post.generator.sigma')
-                            self.connect('generator.y_tau_p'      , 'drivese_post.generator.y_tau_p')
-                            self.connect('generator.y_tau_pr'     , 'drivese_post.generator.y_tau_pr')
+                        self.connect('generator.B_r'          , 'drivese_post.generator.B_r')
+                        self.connect('generator.P_Fe0e'       , 'drivese_post.generator.P_Fe0e')
+                        self.connect('generator.P_Fe0h'       , 'drivese_post.generator.P_Fe0h')
+                        self.connect('generator.S_N'          , 'drivese_post.generator.S_N')
+                        self.connect('generator.alpha_p'      , 'drivese_post.generator.alpha_p')
+                        self.connect('generator.b_r_tau_r'    , 'drivese_post.generator.b_r_tau_r')
+                        self.connect('generator.b_ro'         , 'drivese_post.generator.b_ro')
+                        self.connect('generator.b_s_tau_s'    , 'drivese_post.generator.b_s_tau_s')
+                        self.connect('generator.b_so'         , 'drivese_post.generator.b_so')
+                        self.connect('generator.cofi'         , 'drivese_post.generator.cofi')
+                        self.connect('generator.freq'         , 'drivese_post.generator.freq')
+                        self.connect('generator.h_i'          , 'drivese_post.generator.h_i')
+                        self.connect('generator.h_sy0'        , 'drivese_post.generator.h_sy0')
+                        self.connect('generator.h_w'          , 'drivese_post.generator.h_w')
+                        self.connect('generator.k_fes'        , 'drivese_post.generator.k_fes')
+                        self.connect('generator.k_fillr'      , 'drivese_post.generator.k_fillr')
+                        self.connect('generator.k_fills'      , 'drivese_post.generator.k_fills')
+                        self.connect('generator.k_s'          , 'drivese_post.generator.k_s')
+                        self.connect('generator.m'            , 'drivese_post.generator.m')
+                        self.connect('generator.mu_0'         , 'drivese_post.generator.mu_0')
+                        self.connect('generator.mu_r'         , 'drivese_post.generator.mu_r')
+                        self.connect('generator.p'            , 'drivese_post.generator.p')
+                        self.connect('generator.phi'          , 'drivese_post.generator.phi')
+                        self.connect('generator.q1'           , 'drivese_post.generator.q1')
+                        self.connect('generator.q2'           , 'drivese_post.generator.q2')
+                        self.connect('generator.ratio_mw2pp'  , 'drivese_post.generator.ratio_mw2pp')
+                        self.connect('generator.resist_Cu'    , 'drivese_post.generator.resist_Cu')
+                        self.connect('generator.sigma'        , 'drivese_post.generator.sigma')
+                        self.connect('generator.y_tau_p'      , 'drivese_post.generator.y_tau_p')
+                        self.connect('generator.y_tau_pr'     , 'drivese_post.generator.y_tau_pr')
 
-                            self.connect('generator.I_0'          , 'drivese_post.generator.I_0')
-                            self.connect('generator.d_r'          , 'drivese_post.generator.d_r')
-                            self.connect('generator.h_m'          , 'drivese_post.generator.h_m')
-                            self.connect('generator.h_0'          , 'drivese_post.generator.h_0')
-                            self.connect('generator.h_s'          , 'drivese_post.generator.h_s')
-                            self.connect('generator.len_s'        , 'drivese_post.generator.len_s')
-                            self.connect('generator.n_r'          , 'drivese_post.generator.n_r')
-                            self.connect('generator.rad_ag'       , 'drivese_post.generator.rad_ag')
-                            self.connect('generator.t_wr'         , 'drivese_post.generator.t_wr')
+                        self.connect('generator.I_0'          , 'drivese_post.generator.I_0')
+                        self.connect('generator.d_r'          , 'drivese_post.generator.d_r')
+                        self.connect('generator.h_m'          , 'drivese_post.generator.h_m')
+                        self.connect('generator.h_0'          , 'drivese_post.generator.h_0')
+                        self.connect('generator.h_s'          , 'drivese_post.generator.h_s')
+                        self.connect('generator.len_s'        , 'drivese_post.generator.len_s')
+                        self.connect('generator.n_r'          , 'drivese_post.generator.n_r')
+                        self.connect('generator.rad_ag'       , 'drivese_post.generator.rad_ag')
+                        self.connect('generator.t_wr'         , 'drivese_post.generator.t_wr')
 
-                            self.connect('generator.n_s'          , 'drivese_post.generator.n_s')
-                            self.connect('generator.b_st'         , 'drivese_post.generator.b_st')
-                            self.connect('generator.d_s'          , 'drivese_post.generator.d_s')
-                            self.connect('generator.t_ws'         , 'drivese_post.generator.t_ws')
+                        self.connect('generator.n_s'          , 'drivese_post.generator.n_s')
+                        self.connect('generator.b_st'         , 'drivese_post.generator.b_st')
+                        self.connect('generator.d_s'          , 'drivese_post.generator.d_s')
+                        self.connect('generator.t_ws'         , 'drivese_post.generator.t_ws')
 
-                            self.connect('generator.rho_Copper'   , 'drivese_post.generator.rho_Copper')
-                            self.connect('generator.rho_Fe'       , 'drivese_post.generator.rho_Fe')
-                            self.connect('generator.rho_Fes'      , 'drivese_post.generator.rho_Fes')
-                            self.connect('generator.rho_PM'       , 'drivese_post.generator.rho_PM')
+                        self.connect('generator.rho_Copper'   , 'drivese_post.generator.rho_Copper')
+                        self.connect('generator.rho_Fe'       , 'drivese_post.generator.rho_Fe')
+                        self.connect('generator.rho_Fes'      , 'drivese_post.generator.rho_Fes')
+                        self.connect('generator.rho_PM'       , 'drivese_post.generator.rho_PM')
 
-                            self.connect('generator.C_Cu'         , 'drivese_post.generator.C_Cu')
-                            self.connect('generator.C_Fe'         , 'drivese_post.generator.C_Fe')
-                            self.connect('generator.C_Fes'        , 'drivese_post.generator.C_Fes')
-                            self.connect('generator.C_PM'         , 'drivese_post.generator.C_PM')
+                        self.connect('generator.C_Cu'         , 'drivese_post.generator.C_Cu')
+                        self.connect('generator.C_Fe'         , 'drivese_post.generator.C_Fe')
+                        self.connect('generator.C_Fes'        , 'drivese_post.generator.C_Fes')
+                        self.connect('generator.C_PM'         , 'drivese_post.generator.C_PM')
 
-                            if modeling_options['WISDEM']['GeneratorSE']['type'] in ['pmsg_outer']:
-                                self.connect('generator.N_c'          , 'drivese_post.generator.N_c')
-                                self.connect('generator.b'            , 'drivese_post.generator.b')
-                                self.connect('generator.c'            , 'drivese_post.generator.c')
-                                self.connect('generator.E_p'          , 'drivese_post.generator.E_p')
-                                self.connect('generator.h_yr'         , 'drivese_post.generator.h_yr')
-                                self.connect('generator.h_ys'         , 'drivese_post.generator.h_ys')
-                                self.connect('generator.h_sr'         , 'drivese_post.generator.h_sr')
-                                self.connect('generator.h_ss'         , 'drivese_post.generator.h_ss')
-                                self.connect('generator.t_r'          , 'drivese_post.generator.t_r')
-                                self.connect('generator.t_s'          , 'drivese_post.generator.t_s')
+                        if modeling_options['WISDEM']['GeneratorSE']['type'] in ['pmsg_outer']:
+                            self.connect('generator.N_c'          , 'drivese_post.generator.N_c')
+                            self.connect('generator.b'            , 'drivese_post.generator.b')
+                            self.connect('generator.c'            , 'drivese_post.generator.c')
+                            self.connect('generator.E_p'          , 'drivese_post.generator.E_p')
+                            self.connect('generator.h_yr'         , 'drivese_post.generator.h_yr')
+                            self.connect('generator.h_ys'         , 'drivese_post.generator.h_ys')
+                            self.connect('generator.h_sr'         , 'drivese_post.generator.h_sr')
+                            self.connect('generator.h_ss'         , 'drivese_post.generator.h_ss')
+                            self.connect('generator.t_r'          , 'drivese_post.generator.t_r')
+                            self.connect('generator.t_s'          , 'drivese_post.generator.t_s')
 
-                                self.connect('generator.u_allow_pcent', 'drivese_post.generator.u_allow_pcent')
-                                self.connect('generator.y_allow_pcent', 'drivese_post.generator.y_allow_pcent')
-                                self.connect('generator.z_allow_deg'  , 'drivese_post.generator.z_allow_deg')
-                                self.connect('generator.B_tmax'       , 'drivese_post.generator.B_tmax')
-                                self.connect('rotorse.rp.powercurve.rated_mech', 'drivese_post.generator.P_mech')
+                            self.connect('generator.u_allow_pcent', 'drivese_post.generator.u_allow_pcent')
+                            self.connect('generator.y_allow_pcent', 'drivese_post.generator.y_allow_pcent')
+                            self.connect('generator.z_allow_deg'  , 'drivese_post.generator.z_allow_deg')
+                            self.connect('generator.B_tmax'       , 'drivese_post.generator.B_tmax')
+                            self.connect('rotorse.rp.powercurve.rated_mech', 'drivese_post.generator.P_mech')
 
-                            if modeling_options['WISDEM']['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
-                                self.connect('generator.tau_p'        , 'drivese_post.generator.tau_p')
-                                self.connect('generator.h_ys'         , 'drivese_post.generator.h_ys')
-                                self.connect('generator.h_yr'         , 'drivese_post.generator.h_yr')
-                                self.connect('generator.b_arm'        , 'drivese_post.generator.b_arm')
+                        if modeling_options['WISDEM']['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                            self.connect('generator.tau_p'        , 'drivese_post.generator.tau_p')
+                            self.connect('generator.h_ys'         , 'drivese_post.generator.h_ys')
+                            self.connect('generator.h_yr'         , 'drivese_post.generator.h_yr')
+                            self.connect('generator.b_arm'        , 'drivese_post.generator.b_arm')
 
-                            elif modeling_options['WISDEM']['GeneratorSE']['type'] in ['scig','dfig']:
-                                self.connect('generator.B_symax'      , 'drivese_post.generator.B_symax')
-                                self.connect('generator.S_Nmax'      , 'drivese_post.generator.S_Nmax')
+                        elif modeling_options['WISDEM']['GeneratorSE']['type'] in ['scig','dfig']:
+                            self.connect('generator.B_symax'      , 'drivese_post.generator.B_symax')
+                            self.connect('generator.S_Nmax'      , 'drivese_post.generator.S_Nmax')
 
-                            if modeling_options['WISDEM']['DriveSE']['direct']:
-                                self.connect('nacelle.nose_diameter',             'drivese_post.generator.D_nose', src_indices=[-1])
-                                self.connect('nacelle.lss_diameter',              'drivese_post.generator.D_shaft', src_indices=[0])
-                            else:
-                                self.connect('nacelle.hss_diameter',              'drivese_post.generator.D_shaft', src_indices=[-1])
-
+                        if modeling_options['WISDEM']['DriveSE']['direct']:
+                            self.connect('nacelle.nose_diameter',             'drivese_post.generator.D_nose', src_indices=[-1])
+                            self.connect('nacelle.lss_diameter',              'drivese_post.generator.D_shaft', src_indices=[0])
                         else:
-                            self.connect('generator.generator_mass_user', 'drivese_post.generator_mass_user')
-                            self.connect('generator.generator_efficiency_user', 'drivese_post.generator_efficiency_user')
+                            self.connect('nacelle.hss_diameter',              'drivese_post.generator.D_shaft', src_indices=[-1])
 
-                    # Connections to TowerSE
-                    if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
-                        tow_params = ["z_full","d_full","t_full","suctionpile_depth",
-                                    "Az","Asx","Asy","Jz","Ixx","Iyy",
-                                    "E_full","G_full","rho_full","sigma_y_full"]
-                        for k in tow_params:
-                            self.connect(f'towerse.{k}', f'towerse_post.{k}')
-                        self.connect("towerse.wind.qdyn", "towerse_post.qdyn")
+                    else:
+                        self.connect('generator.generator_mass_user', 'drivese_post.generator_mass_user')
+                        self.connect('generator.generator_efficiency_user', 'drivese_post.generator_efficiency_user')
 
-                        self.connect("aeroelastic.tower_monopile_maxMy_Fz", "towerse_post.tower_Fz")
-                        self.connect("aeroelastic.tower_monopile_maxMy_Fx", "towerse_post.tower_Vx")
-                        self.connect("aeroelastic.tower_monopile_maxMy_Fy", "towerse_post.tower_Vy")
-                        self.connect("aeroelastic.tower_monopile_maxMy_Mx", "towerse_post.tower_Mxx")
-                        self.connect("aeroelastic.tower_monopile_maxMy_My", "towerse_post.tower_Myy")
-                        self.connect("aeroelastic.tower_monopile_maxMy_Mz", "towerse_post.tower_Mzz")
+                # Connections to TowerSE
+                if modeling_options["flags"]["tower"] and not modeling_options["flags"]["floating"]:
+                    tow_params = ["z_full","d_full","t_full","suctionpile_depth",
+                                "Az","Asx","Asy","Jz","Ixx","Iyy",
+                                "E_full","G_full","rho_full","sigma_y_full"]
+                    for k in tow_params:
+                        self.connect(f'towerse.{k}', f'towerse_post.{k}')
+                    self.connect("towerse.wind.qdyn", "towerse_post.qdyn")
 
-                    #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
-                    #self.connect('max_taper_ratio',         'max_taper') # TODO- 
-                    #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
+                    self.connect("aeroelastic.tower_monopile_maxMy_Fz", "towerse_post.tower_Fz")
+                    self.connect("aeroelastic.tower_monopile_maxMy_Fx", "towerse_post.tower_Vx")
+                    self.connect("aeroelastic.tower_monopile_maxMy_Fy", "towerse_post.tower_Vy")
+                    self.connect("aeroelastic.tower_monopile_maxMy_Mx", "towerse_post.tower_Mxx")
+                    self.connect("aeroelastic.tower_monopile_maxMy_My", "towerse_post.tower_Myy")
+                    self.connect("aeroelastic.tower_monopile_maxMy_Mz", "towerse_post.tower_Mzz")
+
+                #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
+                #self.connect('max_taper_ratio',         'max_taper') # TODO- 
+                #self.connect('min_diameter_thickness_ratio', 'min_d_to_t')
 					
                 # Connections to turbine constraints
                 self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
