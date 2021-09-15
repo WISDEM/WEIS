@@ -3,30 +3,43 @@ import numpy as np
 import wisdem.commonse.utilities as util
 from wisdem.commonse.wind_wave_drag import cylinderDrag
 from raft.omdao_raft import RAFT_OMDAO
+from weis.dlc_driver.dlc_generator    import DLCGenerator
 
 class RAFT_WEIS(om.Group):
 
     def initialize(self):
         self.options.declare('modeling_options')
-    
+
     def setup(self):
         # Stuff WEIS options into RAFT options structure
         weis_opt = self.options['modeling_options']
 
         raft_opt = {}
-        raft_opt['nfreq'] = len(weis_opt['Level1']['frequencies'])
+
+        raft_opt['min_freq'] = min_freq = weis_opt['Level1']['min_freq']
+        raft_opt['max_freq'] = max_freq = weis_opt['Level1']['max_freq']
+        frequencies = np.arange(min_freq, max_freq+0.5*min_freq, min_freq)
+        raft_opt['nfreq'] = len(frequencies)
+
         raft_opt['potModMaster'] = weis_opt['Level1']['potential_model_override']
         raft_opt['XiStart'] = weis_opt['Level1']['xi_start']
         raft_opt['nIter'] = weis_opt['Level1']['nIter']
         raft_opt['dlsMax'] = weis_opt['Level1']['dls_max']
+        raft_opt['min_freq_BEM'] = weis_opt['Level1']['min_freq_BEM']
+        raft_opt['n_cases'] = weis_opt['DLC_driver']['n_cases']
 
         turbine_opt = {}
         turbine_opt['npts'] = weis_opt['WISDEM']['TowerSE']['n_height_tower']
         turbine_opt['scalar_thicknesses'] = turbine_opt['scalar_diameters'] = turbine_opt['scalar_coefficients'] = False
         turbine_opt['shape'] = 'circ'
-
-        # Add control options to turbine_opt for now
         turbine_opt['PC_GS_n'] = weis_opt['ROSCO']['PC_GS_n']
+        turbine_opt['n_span'] = weis_opt['WISDEM']['RotorSE']['n_span']
+        turbine_opt['n_aoa'] = weis_opt['WISDEM']['RotorSE']['n_aoa']
+        turbine_opt['n_Re'] = weis_opt['WISDEM']['RotorSE']['n_Re']
+        turbine_opt['n_tab'] = weis_opt['WISDEM']['RotorSE']['n_tab']
+        turbine_opt['n_pc'] = weis_opt['WISDEM']['RotorSE']['n_pc']
+        turbine_opt['n_af'] = weis_opt['WISDEM']['RotorSE']['n_af']
+        turbine_opt['af_used_names'] = weis_opt['WISDEM']['RotorSE']['af_used']
 
         members_opt = {}
         members_opt['nmembers'] = len(weis_opt["floating"]["members"]["name"])
@@ -42,7 +55,7 @@ class RAFT_WEIS(om.Group):
         mooring_opt['nlines'] = weis_opt['mooring']['n_lines']
         mooring_opt['nline_types'] = weis_opt['mooring']['n_line_types']
         mooring_opt['nconnections'] = weis_opt['mooring']['n_nodes']
-        
+
 
         self.add_subsystem('pre', RAFT_WEIS_Prep(modeling_options=weis_opt), promotes=['*'])
         self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
@@ -54,11 +67,10 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('modeling_options')
-    
+
     def setup(self):
         opt = self.options['modeling_options']
-        nfreq = len(opt['Level1']['frequencies'])
-        
+
         n_nodes = opt['mooring']['n_nodes']
         n_lines = opt['mooring']['n_lines']
         n_line_types = opt['mooring']['n_line_types']
@@ -84,7 +96,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         self.add_output('turbine_tower_Ca', val=np.zeros(n_height_tow), desc='Transverse added mass coefficient')
         self.add_output('turbine_tower_CdEnd', val=np.zeros(n_height_tow), desc='End axial drag coefficient')
         self.add_output('turbine_tower_CaEnd', val=np.zeros(n_height_tow), desc='End axial added mass coefficient')
-        
+
         # RNA mass properties
         self.add_input("rna_I_TT", np.zeros(6), units="kg*m**2", desc='Moment of inertia at tower top [Ixx, Iyy, Izz, Ixy, Ixz, Iyz]')
         self.add_input('turbine_mRNA', val=0.0, units='kg', desc='RNA mass')
@@ -112,9 +124,9 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_input(f"member{k}:ring_stiffener_web_thickness", 0.0, units="m")
             self.add_input(f"member{k}:ring_stiffener_flange_width", 1e-6, units="m")
             self.add_input(f"member{k}:ring_stiffener_flange_thickness", 0.0, units="m")
-            self.add_input(f"member{k}:ring_stiffener_spacing", 1000.0, units="m")
+            self.add_input(f"member{k}:ring_stiffener_spacing", 1.0)
             self.add_input(f"platform_member{k+1}_stations", val=np.zeros(n_height))
-            
+
             self.add_output(f"platform_member{k+1}_heading", val=np.zeros(0), units='deg')
             self.add_output(f"platform_member{k+1}_gamma", val=0.0, units='deg')
             self.add_output(f"platform_member{k+1}_t", val=np.zeros(n_height), units="m")
@@ -125,10 +137,10 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f"platform_member{k+1}_ring_spacing", val=0.0)
             self.add_output(f"platform_member{k+1}_ring_t", val=0.0, units="m")
             self.add_output(f"platform_member{k+1}_ring_h", val=0.0, units="m")
-            self.add_output(f"platform_member{k+1}_Cd", val=np.zeros(n_height))
-            self.add_output(f"platform_member{k+1}_Ca", val=np.zeros(n_height))
-            self.add_output(f"platform_member{k+1}_CdEnd", val=np.zeros(n_height))
-            self.add_output(f"platform_member{k+1}_CaEnd", val=np.zeros(n_height))
+            self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height))
+            self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
+            self.add_output(f"platform_member{k+1}_CdEnd", val=0.6*np.ones(n_height))
+            self.add_output(f"platform_member{k+1}_CaEnd", val=0.6*np.ones(n_height))
             self.add_discrete_output(f"platform_member{k+1}_potMod", val=False)
 
         # Mooring inputs
@@ -165,16 +177,23 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f'mooring_line_type{k+1}_transverse_added_mass', val=0.0, desc='Transverse added mass')
             self.add_output(f'mooring_line_type{k+1}_tangential_added_mass', val=0.0, desc='Tangential added mass')
             self.add_output(f'mooring_line_type{k+1}_transverse_drag', val=0.0, desc='Transverse drag')
-            self.add_output(f'mooring_line_type{k+1}_tangential_drag', val=0.0, desc='Tangential drag') 
+            self.add_output(f'mooring_line_type{k+1}_tangential_drag', val=0.0, desc='Tangential drag')
 
-        # Frequencies to calculate
-        self.add_output('frequency_range', val=np.zeros(nfreq), units='Hz', desc='Frequency range to compute response over')
-    
+        # DLC cases to run
+        self.add_input('V_cutin',     val=0.0, units='m/s',      desc='Minimum wind speed where turbine operates (cut-in)')
+        self.add_input('V_cutout',    val=0.0, units='m/s',      desc='Maximum wind speed where turbine operates (cut-out)')
+        self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
+        self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
+        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
+        self.add_discrete_output('raft_dlcs', val=[[]]*opt['DLC_driver']['n_cases'], desc='DLC case table for RAFT with each row a new case and headings described by the keys')
+        self.add_discrete_output('raft_dlcs_keys', val=['wind_speed', 'wind_heading', 'turbulence',
+                                                        'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                                        'wave_period', 'wave_height', 'wave_heading'],
+                                 desc='DLC case table column headings')
+
+
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         opt = self.options['modeling_options']
-
-        # Frequencies to calculate
-        outputs['frequency_range'] = np.array( opt['Level1']['frequencies'] )
 
         # Tower layer sections
         outputs['turbine_tower_t'] = inputs['tower_layer_thickness'].sum(axis=0)
@@ -186,7 +205,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         Re = float(inputs['rho_air'])*inputs['tower_U']*inputs['turbine_tower_d']/float(inputs['mu_air'])
         cd, _ = cylinderDrag(Re)
         outputs['turbine_tower_Cd'] = cd
-        
+
         # Move tower-top MoI to hub height
         m_rna = float(inputs['turbine_mRNA'])
         I_rna = util.assembleI( inputs['rna_I_TT'] )
@@ -202,15 +221,15 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         var_height = inputs['member_variable_height']
         for k in range(n_member):
             discrete_outputs[f"platform_member{k+1}_potMod"] = opt["Level1"]["model_potential"][k]
-            
+
             # Member thickness
             outputs[f"platform_member{k+1}_t"] = inputs[f"member{k}:layer_thickness"].sum(axis=0)
             outputs[f"platform_member{k+1}_rho_shell"] = inputs[f"member{k}:rho"].mean()
 
             # Ring stiffener discretization conversion
-            if float(inputs[f"member{k}:ring_stiffener_spacing"]) > 0.0:
-                outputs[f"platform_member{k+1}_ring_spacing"] = (inputs[f"member{k}:ring_stiffener_spacing"] /
-                                                                 inputs[f"member{k}:height"])
+            if ( (float(inputs[f"member{k}:ring_stiffener_spacing"]) > 0.0) and
+                 (float(inputs[f"member{k}:ring_stiffener_spacing"]) < 1.0) ):
+                outputs[f"platform_member{k+1}_ring_spacing"] = inputs[f"member{k}:ring_stiffener_spacing"]
                 h_web = inputs[f"member{k}:ring_stiffener_web_height"]
                 t_web = inputs[f"member{k}:ring_stiffener_web_thickness"]
                 t_flange = inputs[f"member{k}:ring_stiffener_flange_thickness"]
@@ -231,7 +250,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                 l_fill[iball] = h_ballast[ii] if rho_ballast[ii] < 1100.0 else var_height[k]
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
-            
+
         # Mooring
         for k in range(opt['mooring']['n_nodes']):
             discrete_outputs[f'mooring_point{k+1}_name'] = opt['mooring']['node_names'][k]
@@ -247,8 +266,44 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         for k in range(opt['mooring']['n_line_types']):
             discrete_outputs[f'mooring_line_type{k+1}_name'] = opt['mooring']["line_type_name"][k]
             outputs[f'mooring_line_type{k+1}_cost'] = inputs['line_cost_rate'][k]
-            
+
             for var in ['diameter','mass_density','stiffness','breaking_load',
                         'transverse_added_mass','tangential_added_mass','transverse_drag','tangential_drag']:
                 outputs[f'mooring_line_type{k+1}_{var}'] = inputs[f'line_{var}'][k]
-                    
+
+
+        # Cases
+        DLCs = opt['DLC_driver']['DLCs']
+        # Initialize the DLC generator
+        cut_in = inputs['V_cutin']
+        cut_out = inputs['V_cutout']
+        rated = inputs['Vrated']
+        ws_class = discrete_inputs['turbine_class']
+        turb_class = discrete_inputs['turbulence_class']
+        fix_wind_seeds = opt['DLC_driver']['fix_wind_seeds']
+        fix_wave_seeds = opt['DLC_driver']['fix_wave_seeds']
+        metocean = opt['DLC_driver']['metocean_conditions']
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, turb_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        # Generate cases from user inputs
+        for i_DLC in range(len(DLCs)):
+            DLCopt = DLCs[i_DLC]
+            dlc_generator.generate(DLCopt['DLC'], DLCopt)
+        # Build case table for RAFT
+        raft_cases = [[]]*dlc_generator.n_cases
+        for i, icase in enumerate(dlc_generator.cases):
+            turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{icase.IEC_WindType[-3:]}'
+            opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
+            waveStr = 'JONSWAP' #icase.wave_spectrum
+            raft_cases[i] = [icase.URef,
+                             icase.wind_heading,
+                             turbStr,
+                             opStr,
+                             icase.yaw_misalign,
+                             waveStr,
+                             max(1.0, icase.wave_period),
+                             max(1.0, icase.wave_height),
+                             icase.wave_heading]
+        discrete_outputs['raft_dlcs'] = raft_cases
+        discrete_outputs['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
+                                              'turbine_status', 'yaw_misalign', 'wave_spectrum',
+                                              'wave_period', 'wave_height', 'wave_heading']

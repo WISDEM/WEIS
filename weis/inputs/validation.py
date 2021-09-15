@@ -2,12 +2,16 @@ import os
 import jsonmerge
 import wisdem.inputs
 from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types
-
+import ROSCO_toolbox.inputs
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
 fschema_geom_wisdem    = os.path.join(froot_wisdem, 'geometry_schema.yaml')
 fschema_model_wisdem   = os.path.join(froot_wisdem, 'modeling_schema.yaml')
+fschema_model_rosco    = os.path.join(froot_wisdem, 'modeling_schema.yaml')
 fschema_opt_wisdem     = os.path.join(froot_wisdem, 'analysis_schema.yaml')
+
+froot_rosco            = os.path.dirname(ROSCO_toolbox.inputs.__file__)
+fschema_model_rosco    = os.path.join(froot_rosco, 'toolbox_schema.yaml')
 
 froot           = os.path.dirname(os.path.realpath(__file__))
 fdefaults_geom  = os.path.join(froot, 'geometry_defaults.yaml')
@@ -38,8 +42,10 @@ def write_geometry_yaml(instance, foutput):
 
 def get_modeling_schema():
     wisdem_schema = load_yaml(fschema_model_wisdem)
+    rosco_schema  = load_yaml(fschema_model_rosco)
     weis_schema   = load_yaml(fschema_model)
     weis_schema['properties']['WISDEM'].update( wisdem_schema['properties']['WISDEM'] )
+    weis_schema['properties']['ROSCO'].update(rosco_schema['properties']['controller_params'])
     return weis_schema
 
 def load_modeling_yaml(finput):

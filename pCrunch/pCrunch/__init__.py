@@ -5,7 +5,7 @@ __email__ = ["nikhar.abbas@nrel.gov", "jake.nunemaker@nrel.gov"]
 
 
 from ._version import get_versions
-from .analysis import LoadsAnalysis, PowerProduction
+from .analysis import LoadsAnalysis, PowerProduction, FatigueParams
 
 __version__ = get_versions()["version"]
 del get_versions

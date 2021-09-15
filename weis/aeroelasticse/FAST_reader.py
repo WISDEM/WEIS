@@ -74,6 +74,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ElastoDynTower'] = {}
         self.fst_vt['InflowWind'] = {}
         self.fst_vt['AeroDyn15'] = {}
+        self.fst_vt['AeroDyn14'] = {}
         self.fst_vt['AeroDynBlade'] = {}
         self.fst_vt['AeroDynTower'] = {}
         self.fst_vt['AeroDynPolar'] = {}
@@ -206,11 +207,10 @@ class InputReader_OpenFAST(object):
         self.fst_vt['Fst']['MooringFile_path']  = os.path.split(self.fst_vt['Fst']['MooringFile'])[0]
         self.fst_vt['Fst']['IceFile_path']      = os.path.split(self.fst_vt['Fst']['IceFile'])[0]
 
-    def read_ElastoDyn(self):
+    def read_ElastoDyn(self, ed_file):
         # ElastoDyn v1.03 Input File
         # Currently no differences between FASTv8.16 and OpenFAST.
 
-        ed_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['EDFile'])
         f = open(ed_file)
 
         f.readline()
@@ -385,11 +385,9 @@ class InputReader_OpenFAST(object):
 
         f.close()
 
-    def read_ElastoDynBlade(self):
+    def read_ElastoDynBlade(self, blade_file):
         # ElastoDyn v1.00 Blade Input File
         # Currently no differences between FASTv8.16 and OpenFAST.
-
-        blade_file = os.path.join(self.FAST_directory, self.fst_vt['ElastoDyn']['BldFile1'])
 
         f = open(blade_file)
         # print blade_file
@@ -444,11 +442,9 @@ class InputReader_OpenFAST(object):
 
         f.close()
 
-    def read_ElastoDynTower(self):
+    def read_ElastoDynTower(self, tower_file):
         # ElastoDyn v1.00 Tower Input Files
         # Currently no differences between FASTv8.16 and OpenFAST.
-
-        tower_file = os.path.join(self.FAST_directory, self.fst_vt['ElastoDyn']['TwrFile'])  
         
         f = open(tower_file)
 
@@ -819,8 +815,15 @@ class InputReader_OpenFAST(object):
         f.readline()
         data = f.readline()
         while data.split()[0] != 'END':
-            channels = data.split('"')
-            channel_list = channels[1].split(',')
+            if data.find('"')>=0:
+                channels = data.split('"')
+                channel_list = channels[1].split(',')
+            else:
+                row_string = data.split(',')
+                if len(row_string)==1:
+                    channel_list = row_string[0].split('\n')[0]
+                else:
+                    channel_list = row_string
             self.set_outlist(self.fst_vt['outlist']['AeroDyn'], channel_list)
             data = f.readline()
 
@@ -1021,8 +1024,182 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['OLAF']['nVTKBlades']  = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['OLAF']['VTKCoord']    = int_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['OLAF']['VTK_fps']     = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['OLAF']['nGridOut']    = int_read(f.readline().split()[0])
         f.readline()
         f.close()
+
+    def read_AeroDyn14(self):
+        # AeroDyn v14.04
+
+        ad_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['AeroFile'])
+        f = open(ad_file)
+        # AeroDyn file header (aerodyn)
+        f.readline()
+        f.readline()
+        self.fst_vt['AeroDyn14']['StallMod'] = f.readline().split()[0]
+        self.fst_vt['AeroDyn14']['UseCm'] = f.readline().split()[0]
+        self.fst_vt['AeroDyn14']['InfModel'] = f.readline().split()[0]
+        self.fst_vt['AeroDyn14']['IndModel'] = f.readline().split()[0]
+        self.fst_vt['AeroDyn14']['AToler'] = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn14']['TLModel'] = f.readline().split()[0]
+        self.fst_vt['AeroDyn14']['HLModel'] = f.readline().split()[0]
+        self.fst_vt['AeroDyn14']['TwrShad'] = int(f.readline().split()[0])
+        if self.fst_vt['AeroDyn14']['TwrShad'] > 0:
+            self.fst_vt['AeroDyn14']['TwrPotent'] = bool_read(f.readline().split()[0])
+            self.fst_vt['AeroDyn14']['TwrShadow'] = bool_read(f.readline().split()[0])
+            self.fst_vt['AeroDyn14']['TwrFile'] = f.readline().split()[0].replace('"','').replace("'",'')
+            self.fst_vt['AeroDyn14']['CalcTwrAero'] = bool_read(f.readline().split()[0])
+        else:
+            self.fst_vt['AeroDyn14']['ShadHWid'] = float_read(f.readline().split()[0])
+            self.fst_vt['AeroDyn14']['T_Shad_Refpt'] = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn14']['AirDens'] = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn14']['KinVisc'] = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn14']['DTAero'] = float_read(f.readline().split()[0])
+
+        # AeroDyn Blade Properties (blade_aero)
+        self.fst_vt['AeroDyn14']['NumFoil'] = int(f.readline().split()[0])
+        self.fst_vt['AeroDyn14']['FoilNm'] = [None] * self.fst_vt['AeroDyn14']['NumFoil']
+        for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
+            af_filename = f.readline().split()[0]
+            af_filename = fix_path(af_filename)
+            self.fst_vt['AeroDyn14']['FoilNm'][i]  = af_filename[1:-1]
+        
+        self.fst_vt['AeroDynBlade']['BldNodes'] = int(f.readline().split()[0])
+        f.readline()
+        self.fst_vt['AeroDynBlade']['RNodes'] = [None] * self.fst_vt['AeroDynBlade']['BldNodes']
+        self.fst_vt['AeroDynBlade']['AeroTwst'] = [None] * self.fst_vt['AeroDynBlade']['BldNodes']
+        self.fst_vt['AeroDynBlade']['DRNodes'] = [None] * self.fst_vt['AeroDynBlade']['BldNodes']
+        self.fst_vt['AeroDynBlade']['Chord'] = [None] * self.fst_vt['AeroDynBlade']['BldNodes']
+        self.fst_vt['AeroDynBlade']['NFoil'] = [None] * self.fst_vt['AeroDynBlade']['BldNodes']
+        self.fst_vt['AeroDynBlade']['PrnElm'] = [None] * self.fst_vt['AeroDynBlade']['BldNodes']       
+        for i in range(self.fst_vt['AeroDynBlade']['BldNodes']):
+            data = f.readline().split()
+            self.fst_vt['AeroDynBlade']['RNodes'][i]  = float_read(data[0])
+            self.fst_vt['AeroDynBlade']['AeroTwst'][i]  = float_read(data[1])
+            self.fst_vt['AeroDynBlade']['DRNodes'][i]  = float_read(data[2])
+            self.fst_vt['AeroDynBlade']['Chord'][i]  = float_read(data[3])
+            self.fst_vt['AeroDynBlade']['NFoil'][i]  = int(data[4])
+            self.fst_vt['AeroDynBlade']['PrnElm'][i]  = data[5]
+
+        f.close()
+
+        # create airfoil objects
+        self.fst_vt['AeroDynBlade']['af_data'] = []
+        for i in range(self.fst_vt['AeroDyn14']['NumFoil']):
+             self.fst_vt['AeroDynBlade']['af_data'].append(self.read_AeroDyn14Polar(os.path.join(self.FAST_directory,self.fst_vt['AeroDyn14']['FoilNm'][i])))
+
+        # tower
+        if self.fst_vt['AeroDyn14']['TwrShad'] > 0:
+            self.read_AeroDyn14Tower()
+
+    def read_AeroDyn14Tower(self):
+        # AeroDyn v14.04 Tower
+
+        ad_tower_file = os.path.join(self.FAST_directory, self.fst_vt['AeroDyn14']['TwrFile'])
+        f = open(ad_tower_file)
+
+        f.readline()
+        f.readline()
+        self.fst_vt['AeroDynTower']['NTwrHt'] = int(f.readline().split()[0])
+        self.fst_vt['AeroDynTower']['NTwrRe'] = int(f.readline().split()[0])
+        self.fst_vt['AeroDynTower']['NTwrCD'] = int(f.readline().split()[0])
+        self.fst_vt['AeroDynTower']['Tower_Wake_Constant'] = float_read(f.readline().split()[0])
+        
+        f.readline()
+        f.readline()
+        self.fst_vt['AeroDynTower']['TwrHtFr'] = [None]*self.fst_vt['AeroDynTower']['NTwrHt']
+        self.fst_vt['AeroDynTower']['TwrWid'] = [None]*self.fst_vt['AeroDynTower']['NTwrHt']
+        self.fst_vt['AeroDynTower']['NTwrCDCol'] = [None]*self.fst_vt['AeroDynTower']['NTwrHt']
+        for i in range(self.fst_vt['AeroDynTower']['NTwrHt']):
+            data = [float(val) for val in f.readline().split()]
+            self.fst_vt['AeroDynTower']['TwrHtFr'][i]  = data[0] 
+            self.fst_vt['AeroDynTower']['TwrWid'][i]  = data[1]
+            self.fst_vt['AeroDynTower']['NTwrCDCol'][i]  = data[2]
+
+        f.readline()
+        f.readline()
+        self.fst_vt['AeroDynTower']['TwrRe'] = [None]*self.fst_vt['AeroDynTower']['NTwrRe']
+        self.fst_vt['AeroDynTower']['TwrCD'] = np.zeros((self.fst_vt['AeroDynTower']['NTwrRe'], self.fst_vt['AeroDynTower']['NTwrCD']))
+        for i in range(self.fst_vt['AeroDynTower']['NTwrRe']):
+            data = [float(val) for val in f.readline().split()]
+            self.fst_vt['AeroDynTower']['TwrRe'][i]  = data[0]
+            self.fst_vt['AeroDynTower']['TwrCD'][i,:]  = data[1:]
+
+        f.close()
+
+    def read_AeroDyn14Polar(self, aerodynFile):
+        # AeroDyn v14 Airfoil Polar Input File
+
+        # open aerodyn file
+        f = open(aerodynFile, 'r')
+                
+        airfoil = copy.copy(self.fst_vt['AeroDynPolar'])
+
+        # skip through header
+        airfoil['description'] = f.readline().rstrip()  # remove newline
+        f.readline()
+        airfoil['number_tables'] = int(f.readline().split()[0])
+
+        IDParam = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        StallAngle = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        f.readline()
+        f.readline()
+        f.readline()
+        ZeroCn = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        CnSlope = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        CnPosStall = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        CnNegStall = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        alphaCdMin = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+        CdMin = [float_read(val) for val in f.readline().split()[0:airfoil['number_tables']]]
+
+        data = []
+        airfoil['af_tables'] = []
+        while True:
+            line = f.readline()
+            if 'EOT' in line:
+                break
+            line = [float_read(s) for s in line.split()]
+            if len(line) < 1:
+                break
+            data.append(line)
+
+        # loop through tables
+        for i in range(airfoil['number_tables']):
+            polar = {}
+            polar['IDParam'] = IDParam[i]
+            polar['StallAngle'] = StallAngle[i]
+            polar['ZeroCn'] = ZeroCn[i]
+            polar['CnSlope'] = CnSlope[i]
+            polar['CnPosStall'] = CnPosStall[i]
+            polar['CnNegStall'] = CnNegStall[i]
+            polar['alphaCdMin'] = alphaCdMin[i]
+            polar['CdMin'] = CdMin[i]
+
+            alpha = []
+            cl = []
+            cd = []
+            cm = []
+            # read polar information line by line
+            for datai in data:
+                if len(datai) == airfoil['number_tables']*3+1:
+                    alpha.append(datai[0])
+                    cl.append(datai[1 + 3*i])
+                    cd.append(datai[2 + 3*i])
+                    cm.append(datai[3 + 3*i])
+                elif len(datai) == airfoil['number_tables']*2+1:
+                    alpha.append(datai[0])
+                    cl.append(datai[1 + 2*i])
+                    cd.append(datai[2 + 2*i])
+
+            polar['alpha'] = alpha
+            polar['cl'] = cl
+            polar['cd'] = cd
+            polar['cm'] = cm
+            airfoil['af_tables'].append(polar)
+
+        f.close()
+
+        return airfoil
 
     def read_ServoDyn(self):
         # ServoDyn v1.05 Input File
@@ -1108,12 +1285,16 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['YawManRat'] = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['NacYawF']   = float_read(f.readline().split()[0])
 
-        # Tuned Mass Damper (tuned_mass_damper)
+        # Structural Control
         f.readline()
-        self.fst_vt['ServoDyn']['CompNTMD'] = bool_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['NTMDfile'] = f.readline().split()[0][1:-1]
-        self.fst_vt['ServoDyn']['CompTTMD'] = bool_read(f.readline().split()[0])
-        self.fst_vt['ServoDyn']['TTMDfile'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumBStC']  = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['BStCfiles'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumNStC']  = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['NStCfiles'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumTStC'] = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['TStCfiles'] = f.readline().split()[0][1:-1]
+        self.fst_vt['ServoDyn']['NumSStC'] = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['SStCfiles'] = f.readline().split()[0][1:-1]
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()
@@ -1276,15 +1457,21 @@ class InputReader_OpenFAST(object):
         # FLOATING PLATFORM
         f.readline()
         self.fst_vt['HydroDyn']['PotMod']        = int_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PotFile']       = os.path.normpath(os.path.join(os.path.split(hd_file)[0], f.readline().split()[0][1:-1]))
-        self.fst_vt['HydroDyn']['WAMITULEN']     = float_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmVol0']      = float_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmCOBxt']     = float_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmCOByt']     = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['ExctnMod']      = int_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnMod']       = int_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnTMax']      = float_read(f.readline().split()[0])
         self.fst_vt['HydroDyn']['RdtnDT']        = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['NBody']         = int_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['NBodyMod']      = int_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PotFile']       = os.path.normpath(os.path.join(os.path.split(hd_file)[0], f.readline().split()[0][1:-1]))
+        self.fst_vt['HydroDyn']['WAMITULEN']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefxt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefyt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefzt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmRefztRot'] = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmVol0']      = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmCOBxt']     = float_read(f.readline().split()[0])
+        self.fst_vt['HydroDyn']['PtfmCOByt']     = float_read(f.readline().split()[0])
 
         # 2ND-ORDER FLOATING PLATFORM FORCES
         f.readline()
@@ -1293,18 +1480,9 @@ class InputReader_OpenFAST(object):
         self.fst_vt['HydroDyn']['DiffQTF']       = int_read(f.readline().split()[0]) # ?
         self.fst_vt['HydroDyn']['SumQTF']        = int_read(f.readline().split()[0]) # ?
 
-        # FLOATING PLATFORM FORCE FLAGS
-        f.readline()
-        self.fst_vt['HydroDyn']['PtfmSgF']       = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmSwF']       = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmHvF']       = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmRF']        = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmPF']        = bool_read(f.readline().split()[0])
-        self.fst_vt['HydroDyn']['PtfmYF']        = bool_read(f.readline().split()[0])
-
         # PLATFORM ADDITIONAL STIFFNESS AND DAMPING
         f.readline()
-        self.fst_vt['HydroDyn']['AddF0']         = [float(idx) for idx in f.readline().strip().split()[:6]]
+        self.fst_vt['HydroDyn']['AddF0']         = np.array([[float(idx) for idx in f.readline().strip().split()[0]] for i in range(6)])
         self.fst_vt['HydroDyn']['AddCLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
         self.fst_vt['HydroDyn']['AddBLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
         self.fst_vt['HydroDyn']['AddBQuad']      = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
@@ -1370,10 +1548,12 @@ class InputReader_OpenFAST(object):
         self.fst_vt['HydroDyn']['SimplCaMG']   = float(ln[3])
         self.fst_vt['HydroDyn']['SimplCp']     = float(ln[4])
         self.fst_vt['HydroDyn']['SimplCpMG']   = float(ln[5])
-        self.fst_vt['HydroDyn']['SimplAxCa']   = float(ln[6])
-        self.fst_vt['HydroDyn']['SimplAxCaMG'] = float(ln[7])
-        self.fst_vt['HydroDyn']['SimplAxCp']   = float(ln[8])
-        self.fst_vt['HydroDyn']['SimplAxCpMG'] = float(ln[9])
+        self.fst_vt['HydroDyn']['SimplAxCd']   = float(ln[6])
+        self.fst_vt['HydroDyn']['SimplAxCdMG'] = float(ln[7])
+        self.fst_vt['HydroDyn']['SimplAxCa'] = float(ln[8])
+        self.fst_vt['HydroDyn']['SimplAxCaMG'] = float(ln[9])
+        self.fst_vt['HydroDyn']['SimplAxCp'] = float(ln[10])
+        self.fst_vt['HydroDyn']['SimplAxCpMG'] = float(ln[11])
 
         #DEPTH-BASED HYDRODYNAMIC COEFFICIENTS
         f.readline()
@@ -1385,6 +1565,8 @@ class InputReader_OpenFAST(object):
         self.fst_vt['HydroDyn']['DpthCaMG']   = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
         self.fst_vt['HydroDyn']['DpthCp']     = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
         self.fst_vt['HydroDyn']['DpthCpMG']   = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
+        self.fst_vt['HydroDyn']['DpthAxCd']   = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
+        self.fst_vt['HydroDyn']['DpthAxCdMG'] = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
         self.fst_vt['HydroDyn']['DpthAxCa']   = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
         self.fst_vt['HydroDyn']['DpthAxCaMG'] = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
         self.fst_vt['HydroDyn']['DpthAxCp']   = [None]*self.fst_vt['HydroDyn']['NCoefDpth']
@@ -1400,10 +1582,12 @@ class InputReader_OpenFAST(object):
             self.fst_vt['HydroDyn']['DpthCaMG'][i]   = float(ln[4])
             self.fst_vt['HydroDyn']['DpthCp'][i]     = float(ln[5])
             self.fst_vt['HydroDyn']['DpthCpMG'][i]   = float(ln[6])
-            self.fst_vt['HydroDyn']['DpthAxCa'][i]   = float(ln[7])
-            self.fst_vt['HydroDyn']['DpthAxCaMG'][i] = float(ln[8])
-            self.fst_vt['HydroDyn']['DpthAxCp'][i]   = float(ln[9])
-            self.fst_vt['HydroDyn']['DpthAxCpMG'][i] = float(ln[10])
+            self.fst_vt['HydroDyn']['DpthAxCd'][i]   = float(ln[7])
+            self.fst_vt['HydroDyn']['DpthAxCdMG'][i] = float(ln[8])
+            self.fst_vt['HydroDyn']['DpthAxCa'][i]   = float(ln[9])
+            self.fst_vt['HydroDyn']['DpthAxCaMG'][i] = float(ln[10])
+            self.fst_vt['HydroDyn']['DpthAxCp'][i]   = float(ln[11])
+            self.fst_vt['HydroDyn']['DpthAxCpMG'][i] = float(ln[12])
 
         #MEMBER-BASED HYDRODYNAMIC COEFFICIENTS
         f.readline()
@@ -1421,6 +1605,10 @@ class InputReader_OpenFAST(object):
         self.fst_vt['HydroDyn']['MemberCp2']     = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
         self.fst_vt['HydroDyn']['MemberCpMG1']   = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
         self.fst_vt['HydroDyn']['MemberCpMG2']   = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
+        self.fst_vt['HydroDyn']['MemberAxCd1']   = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
+        self.fst_vt['HydroDyn']['MemberAxCd2']   = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
+        self.fst_vt['HydroDyn']['MemberAxCdMG1'] = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
+        self.fst_vt['HydroDyn']['MemberAxCdMG2'] = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
         self.fst_vt['HydroDyn']['MemberAxCa1']   = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
         self.fst_vt['HydroDyn']['MemberAxCa2']   = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
         self.fst_vt['HydroDyn']['MemberAxCaMG1'] = [None]*self.fst_vt['HydroDyn']['NCoefMembers']
@@ -1447,14 +1635,18 @@ class InputReader_OpenFAST(object):
             self.fst_vt['HydroDyn']['MemberCp2'][i]     = float(ln[10])
             self.fst_vt['HydroDyn']['MemberCpMG1'][i]   = float(ln[11])
             self.fst_vt['HydroDyn']['MemberCpMG2'][i]   = float(ln[12])
-            self.fst_vt['HydroDyn']['MemberAxCa1'][i]   = float(ln[13])
-            self.fst_vt['HydroDyn']['MemberAxCa2'][i]   = float(ln[14])
-            self.fst_vt['HydroDyn']['MemberAxCaMG1'][i] = float(ln[15])
-            self.fst_vt['HydroDyn']['MemberAxCaMG2'][i] = float(ln[16])
-            self.fst_vt['HydroDyn']['MemberAxCp1'][i]   = float(ln[17])
-            self.fst_vt['HydroDyn']['MemberAxCp2'][i]   = float(ln[18])
-            self.fst_vt['HydroDyn']['MemberAxCpMG1'][i] = float(ln[19])
-            self.fst_vt['HydroDyn']['MemberAxCpMG2'][i] = float(ln[20])
+            self.fst_vt['HydroDyn']['MemberAxCd1'][i]   = float(ln[13])
+            self.fst_vt['HydroDyn']['MemberAxCd2'][i]   = float(ln[14])
+            self.fst_vt['HydroDyn']['MemberAxCdMG1'][i] = float(ln[15])
+            self.fst_vt['HydroDyn']['MemberAxCdMG2'][i] = float(ln[16])
+            self.fst_vt['HydroDyn']['MemberAxCa1'][i]   = float(ln[17])
+            self.fst_vt['HydroDyn']['MemberAxCa2'][i]   = float(ln[18])
+            self.fst_vt['HydroDyn']['MemberAxCaMG1'][i] = float(ln[19])
+            self.fst_vt['HydroDyn']['MemberAxCaMG2'][i] = float(ln[20])
+            self.fst_vt['HydroDyn']['MemberAxCp1'][i]   = float(ln[21])
+            self.fst_vt['HydroDyn']['MemberAxCp2'][i]   = float(ln[22])
+            self.fst_vt['HydroDyn']['MemberAxCpMG1'][i] = float(ln[23])
+            self.fst_vt['HydroDyn']['MemberAxCpMG2'][i] = float(ln[24])
 
         #MEMBERS
         f.readline()
@@ -1569,6 +1761,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['SDdeltaT']  = float_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['IntMethod'] = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['SttcSolve'] = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['GuyanLoadCorrection'] = bool_read(f.readline().split()[0])
         f.readline()
         # FEA and CRAIG-BAMPTON PARAMETERS
         self.fst_vt['SubDyn']['FEMMod']    = int_read(f.readline().split()[0])
@@ -1576,6 +1769,10 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['CBMod']     = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['Nmodes']    = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['JDampings'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['GuyanDampMod'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['RayleighDamp'] = [float(m.replace(',','')) for m in f.readline().split()[:2]]
+        self.fst_vt['SubDyn']['GuyanDampSize'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['GuyanDamp'] = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(self.fst_vt['SubDyn']['GuyanDampSize'])])
         f.readline()
         # STRUCTURE JOINTS
         self.fst_vt['SubDyn']['NJoints']   = int_read(f.readline().split()[0])
@@ -1583,6 +1780,11 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['JointXss']  = [None]*self.fst_vt['SubDyn']['NJoints']
         self.fst_vt['SubDyn']['JointYss']  = [None]*self.fst_vt['SubDyn']['NJoints']
         self.fst_vt['SubDyn']['JointZss']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointType']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointDirX']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointDirY']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointDirZ']  = [None]*self.fst_vt['SubDyn']['NJoints']
+        self.fst_vt['SubDyn']['JointStiff']  = [None]*self.fst_vt['SubDyn']['NJoints']
         ln = f.readline().split()
         ln = f.readline().split()
         for i in range(self.fst_vt['SubDyn']['NJoints']):
@@ -1591,6 +1793,11 @@ class InputReader_OpenFAST(object):
             self.fst_vt['SubDyn']['JointXss'][i]   = float(ln[1])
             self.fst_vt['SubDyn']['JointYss'][i]   = float(ln[2])
             self.fst_vt['SubDyn']['JointZss'][i]   = float(ln[3])
+            self.fst_vt['SubDyn']['JointType'][i]   = int(ln[4])
+            self.fst_vt['SubDyn']['JointDirX'][i]   = float(ln[5])
+            self.fst_vt['SubDyn']['JointDirY'][i]   = float(ln[6])
+            self.fst_vt['SubDyn']['JointDirZ'][i]   = float(ln[7])
+            self.fst_vt['SubDyn']['JointStiff'][i]   = float(ln[8])
         f.readline()
         # BASE REACTION JOINTS
         self.fst_vt['SubDyn']['NReact']   = int_read(f.readline().split()[0])
@@ -1643,6 +1850,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['MJointID2']   = [None]*self.fst_vt['SubDyn']['NMembers']
         self.fst_vt['SubDyn']['MPropSetID1'] = [None]*self.fst_vt['SubDyn']['NMembers']
         self.fst_vt['SubDyn']['MPropSetID2'] = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['MType']       = [None]*self.fst_vt['SubDyn']['NMembers']
         self.fst_vt['SubDyn']['COSMID']      = [None]*self.fst_vt['SubDyn']['NMembers']
         ln = f.readline().split()
         ln = f.readline().split()
@@ -1653,8 +1861,9 @@ class InputReader_OpenFAST(object):
             self.fst_vt['SubDyn']['MJointID2'][i]   = int(ln[2])
             self.fst_vt['SubDyn']['MPropSetID1'][i] = int(ln[3])
             self.fst_vt['SubDyn']['MPropSetID2'][i] = int(ln[4])
-            if len(ln) > 5:
-                self.fst_vt['SubDyn']['COSMID'][i]  = int(ln[5])
+            self.fst_vt['SubDyn']['MType'][i]       = int(ln[5])
+            if len(ln) > 6:
+                self.fst_vt['SubDyn']['COSMID'][i]  = int(ln[6])
         f.readline()
         # MEMBER X-SECTION PROPERTY data 1/2
         self.fst_vt['SubDyn']['NPropSets'] = int_read(f.readline().split()[0])
@@ -1695,14 +1904,40 @@ class InputReader_OpenFAST(object):
             self.fst_vt['SubDyn']['YoungE2'][i]    = float(ln[1])
             self.fst_vt['SubDyn']['ShearG2'][i]    = float(ln[2])
             self.fst_vt['SubDyn']['MatDens2'][i]   = float(ln[3])
-            self.fst_vt['SubDyn']['XsecA'][i]     = float(ln[4])
-            self.fst_vt['SubDyn']['XsecAsx'][i]   = float(ln[5])
-            self.fst_vt['SubDyn']['XsecAsy'][i]   = float(ln[6])
-            self.fst_vt['SubDyn']['XsecJxx'][i]   = float(ln[7])
-            self.fst_vt['SubDyn']['XsecJyy'][i]   = float(ln[8])
-            self.fst_vt['SubDyn']['XsecJ0'][i]    = float(ln[9])
+            self.fst_vt['SubDyn']['XsecA'][i]      = float(ln[4])
+            self.fst_vt['SubDyn']['XsecAsx'][i]    = float(ln[5])
+            self.fst_vt['SubDyn']['XsecAsy'][i]    = float(ln[6])
+            self.fst_vt['SubDyn']['XsecJxx'][i]    = float(ln[7])
+            self.fst_vt['SubDyn']['XsecJyy'][i]    = float(ln[8])
+            self.fst_vt['SubDyn']['XsecJ0'][i]     = float(ln[9])
+        # CABLE PROPERTIES
         f.readline()
+        self.fst_vt['SubDyn']['NCablePropSets'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['CablePropSetID'] = [None]*self.fst_vt['SubDyn']['NCablePropSets']
+        self.fst_vt['SubDyn']['CableEA']        = [None]*self.fst_vt['SubDyn']['NCablePropSets']
+        self.fst_vt['SubDyn']['CableMatDens']   = [None]*self.fst_vt['SubDyn']['NCablePropSets']
+        self.fst_vt['SubDyn']['CableT0']        = [None]*self.fst_vt['SubDyn']['NCablePropSets']
+        f.readline()
+        f.readline()
+        for i in range(self.fst_vt['SubDyn']['NCablePropSets']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['CablePropSetID'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['CableEA'][i]        = float(ln[1])
+            self.fst_vt['SubDyn']['CableMatDens'][i]   = float(ln[1])
+            self.fst_vt['SubDyn']['CableT0'][i]        = float(ln[1])
+        # RIGID LINK PROPERTIES
+        f.readline()
+        self.fst_vt['SubDyn']['NRigidPropSets'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['RigidPropSetID'] = [None]*self.fst_vt['SubDyn']['NRigidPropSets']
+        self.fst_vt['SubDyn']['RigidMatDens']   = [None]*self.fst_vt['SubDyn']['NRigidPropSets']
+        f.readline()
+        f.readline()
+        for i in range(self.fst_vt['SubDyn']['NRigidPropSets']):
+            ln = f.readline().split()
+            self.fst_vt['SubDyn']['RigidPropSetID'][i] = int(ln[0])
+            self.fst_vt['SubDyn']['RigidMatDens'][i]   = float(ln[1])
         # MEMBER COSINE MATRICES
+        f.readline()
         self.fst_vt['SubDyn']['NCOSMs'] = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['COSMID'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
         self.fst_vt['SubDyn']['COSM11'] = [None]*self.fst_vt['SubDyn']['NCOSMs']
@@ -1736,6 +1971,12 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['JMXX']      = [None]*self.fst_vt['SubDyn']['NCmass']
         self.fst_vt['SubDyn']['JMYY']      = [None]*self.fst_vt['SubDyn']['NCmass']
         self.fst_vt['SubDyn']['JMZZ']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMXY']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMXZ']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['JMYZ']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['MCGX']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['MCGY']      = [None]*self.fst_vt['SubDyn']['NCmass']
+        self.fst_vt['SubDyn']['MCGZ']      = [None]*self.fst_vt['SubDyn']['NCmass']
         ln = f.readline().split()
         ln = f.readline().split()
         for i in range(self.fst_vt['SubDyn']['NCmass']):
@@ -1745,9 +1986,15 @@ class InputReader_OpenFAST(object):
             self.fst_vt['SubDyn']['JMXX'][i]      = float(ln[2])
             self.fst_vt['SubDyn']['JMYY'][i]      = float(ln[3])
             self.fst_vt['SubDyn']['JMZZ'][i]      = float(ln[4])
+            self.fst_vt['SubDyn']['JMXY'][i]      = float(ln[5])
+            self.fst_vt['SubDyn']['JMXZ'][i]      = float(ln[6])
+            self.fst_vt['SubDyn']['JMYZ'][i]      = float(ln[7])
+            self.fst_vt['SubDyn']['MCGX'][i]      = float(ln[8])
+            self.fst_vt['SubDyn']['MCGY'][i]      = float(ln[9])
+            self.fst_vt['SubDyn']['MCGZ'][i]      = float(ln[10])
         f.readline()
         # OUTPUT
-        self.fst_vt['SubDyn']['SSSum']    = bool_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['SumPrint'] = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutCOSM']  = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutAll']   = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutSwtch'] = int_read(f.readline().split()[0])
@@ -1941,14 +2188,25 @@ class InputReader_OpenFAST(object):
     def execute(self):
           
         self.read_MainInput()
-        self.read_ElastoDyn()
-        self.read_ElastoDynBlade()
-        self.read_ElastoDynTower()
+        ed_file = os.path.join(self.FAST_directory, self.fst_vt['Fst']['EDFile'])
+        self.read_ElastoDyn(ed_file)
+        if not os.path.isabs(self.fst_vt['ElastoDyn']['BldFile1']):
+            ed_blade_file = os.path.join(os.path.dirname(ed_file), self.fst_vt['ElastoDyn']['BldFile1'])
+        self.read_ElastoDynBlade(ed_blade_file)
+        if not os.path.isabs(self.fst_vt['ElastoDyn']['TwrFile']):
+            ed_tower_file = os.path.join(os.path.dirname(ed_file), self.fst_vt['ElastoDyn']['TwrFile'])
+        self.read_ElastoDynTower(ed_tower_file)
         self.read_InflowWind()
-        self.read_AeroDyn15()
-        self.read_ServoDyn()
-        if ROSCO:
-            self.read_DISCON_in()
+        # AeroDyn version selection
+        if self.fst_vt['Fst']['CompAero'] == 1:
+            self.read_AeroDyn14()
+        elif self.fst_vt['Fst']['CompAero'] == 2:
+            self.read_AeroDyn15()
+            
+        if self.fst_vt['Fst']['CompServo'] == 1:
+            self.read_ServoDyn()
+            if ROSCO:
+                self.read_DISCON_in()
         hd_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['HydroFile']))
         if os.path.isfile(hd_file): 
             self.read_HydroDyn(hd_file)

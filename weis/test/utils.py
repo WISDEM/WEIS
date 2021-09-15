@@ -5,7 +5,6 @@ This file contains helper functions for the testing suite within WEIS.
 import importlib
 import os
 import pickle
-from pathlib import Path
 from time import time
 
 from openmdao.utils.assert_utils import assert_near_equal
@@ -36,15 +35,6 @@ def execute_script(fscript):
     spec.loader.exec_module(mod)
     print(time() - s, "seconds to run")
 
-
-def run_all_scripts(folder_string, all_scripts):
-    scripts = [m for m in all_scripts if m.find(folder_string) >= 0]
-    for k in scripts:
-        try:
-            execute_script(k)
-        except Exception as e:
-            print("Failed to run,", k)
-            raise
 
 
 def compare_regression_values(

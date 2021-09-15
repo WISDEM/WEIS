@@ -5,14 +5,14 @@
 ElastoDyn = {}
 
 # Blade 1 Tip Motions
-ElastoDyn['TipDxc1']          = False     # (m); Blade 1 out-of-plane tip deflection (relative to the undeflected position); Directed along the xc1-axis
+ElastoDyn['TipDxc1']          = True      # (m); Blade 1 out-of-plane tip deflection (relative to the undeflected position); Directed along the xc1-axis
 ElastoDyn['OoPDefl1']         = False     # (m); Blade 1 out-of-plane tip deflection (relative to the undeflected position); Directed along the xc1-axis
-ElastoDyn['TipDyc1']          = False     # (m); Blade 1 in-plane tip deflection (relative to the undeflected position); Directed along the yc1-axis
+ElastoDyn['TipDyc1']          = True      # (m); Blade 1 in-plane tip deflection (relative to the undeflected position); Directed along the yc1-axis
 ElastoDyn['IPDefl1']          = False     # (m); Blade 1 in-plane tip deflection (relative to the undeflected position); Directed along the yc1-axis
-ElastoDyn['TipDzc1']          = False     # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
-ElastoDyn['TipDzb1']          = False     # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
-ElastoDyn['TipDxb1']          = False     # (m); Blade 1 flapwise tip deflection (relative to the undeflected position); Directed along the xb1-axis
-ElastoDyn['TipDyb1']          = False     # (m); Blade 1 edgewise tip deflection (relative to the undeflected position); Directed along the yb1-axis
+ElastoDyn['TipDzc1']          = True      # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
+ElastoDyn['TipDzb1']          = True      # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
+ElastoDyn['TipDxb1']          = True      # (m); Blade 1 flapwise tip deflection (relative to the undeflected position); Directed along the xb1-axis
+ElastoDyn['TipDyb1']          = True      # (m); Blade 1 edgewise tip deflection (relative to the undeflected position); Directed along the yb1-axis
 ElastoDyn['TipALxb1']         = False     # (m/s^2); Blade 1 local flapwise tip acceleration (absolute); Directed along the local xb1-axis
 ElastoDyn['TipALyb1']         = False     # (m/s^2); Blade 1 local edgewise tip acceleration (absolute); Directed along the local yb1-axis
 ElastoDyn['TipALzb1']         = False     # (m/s^2); Blade 1 local axial tip acceleration (absolute); Directed along the local zb1-axis
@@ -28,14 +28,14 @@ ElastoDyn['TwrClrnc1']        = False     # (m); Blade 1 tip-to-tower clearance 
 ElastoDyn['Tip2Twr1']         = False     # (m); Blade 1 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance.; N/A
 
 # Blade 2 Tip Motions
-ElastoDyn['TipDxc2']          = False     # (m); Blade 2 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc2-axis
+ElastoDyn['TipDxc2']          = True      # (m); Blade 2 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc2-axis
 ElastoDyn['OoPDefl2']         = False     # (m); Blade 2 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc2-axis
-ElastoDyn['TipDyc2']          = False     # (m); Blade 2 in-plane tip deflection (relative to the pitch axis); Directed along the yc2-axis
+ElastoDyn['TipDyc2']          = True      # (m); Blade 2 in-plane tip deflection (relative to the pitch axis); Directed along the yc2-axis
 ElastoDyn['IPDefl2']          = False     # (m); Blade 2 in-plane tip deflection (relative to the pitch axis); Directed along the yc2-axis
-ElastoDyn['TipDzc2']          = False     # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
-ElastoDyn['TipDzb2']          = False     # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
-ElastoDyn['TipDxb2']          = False     # (m); Blade 2 flapwise tip deflection (relative to the pitch axis); Directed along the xb2-axis
-ElastoDyn['TipDyb2']          = False     # (m); Blade 2 edgewise tip deflection (relative to the pitch axis); Directed along the yb2-axis
+ElastoDyn['TipDzc2']          = True      # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
+ElastoDyn['TipDzb2']          = True      # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
+ElastoDyn['TipDxb2']          = True      # (m); Blade 2 flapwise tip deflection (relative to the pitch axis); Directed along the xb2-axis
+ElastoDyn['TipDyb2']          = True      # (m); Blade 2 edgewise tip deflection (relative to the pitch axis); Directed along the yb2-axis
 ElastoDyn['TipALxb2']         = False     # (m/s^2); Blade 2 local flapwise tip acceleration (absolute); Directed along the local xb2-axis
 ElastoDyn['TipALyb2']         = False     # (m/s^2); Blade 2 local edgewise tip acceleration (absolute); Directed along the local yb2-axis
 ElastoDyn['TipALzb2']         = False     # (m/s^2); Blade 2 local axial tip acceleration (absolute); Directed along the local zb2-axis
@@ -51,14 +51,14 @@ ElastoDyn['TwrClrnc2']        = False     # (m); Blade 2 tip-to-tower clearance 
 ElastoDyn['Tip2Twr2']         = False     # (m); Blade 2 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance.; N/A
 
 # Blade 3 Tip Motions
-ElastoDyn['TipDxc3']          = False     # (m); Blade 3 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc3-axis
+ElastoDyn['TipDxc3']          = True      # (m); Blade 3 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc3-axis
 ElastoDyn['OoPDefl3']         = False     # (m); Blade 3 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc3-axis
-ElastoDyn['TipDyc3']          = False     # (m); Blade 3 in-plane tip deflection (relative to the pitch axis); Directed along the yc3-axis
+ElastoDyn['TipDyc3']          = True      # (m); Blade 3 in-plane tip deflection (relative to the pitch axis); Directed along the yc3-axis
 ElastoDyn['IPDefl3']          = False     # (m); Blade 3 in-plane tip deflection (relative to the pitch axis); Directed along the yc3-axis
-ElastoDyn['TipDzc3']          = False     # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
-ElastoDyn['TipDzb3']          = False     # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
-ElastoDyn['TipDxb3']          = False     # (m); Blade 3 flapwise tip deflection (relative to the pitch axis); Directed along the xb3-axis
-ElastoDyn['TipDyb3']          = False     # (m); Blade 3 edgewise tip deflection (relative to the pitch axis); Directed along the yb3-axis
+ElastoDyn['TipDzc3']          = True      # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
+ElastoDyn['TipDzb3']          = True      # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
+ElastoDyn['TipDxb3']          = True      # (m); Blade 3 flapwise tip deflection (relative to the pitch axis); Directed along the xb3-axis
+ElastoDyn['TipDyb3']          = True      # (m); Blade 3 edgewise tip deflection (relative to the pitch axis); Directed along the yb3-axis
 ElastoDyn['TipALxb3']         = False     # (m/s^2); Blade 3 local flapwise tip acceleration (absolute); Directed along the local xb3-axis
 ElastoDyn['TipALyb3']         = False     # (m/s^2); Blade 3 local edgewise tip acceleration (absolute); Directed along the local yb3-axis
 ElastoDyn['TipALzb3']         = False     # (m/s^2); Blade 3 local axial tip acceleration (absolute); Directed along the local zb3-axis
@@ -632,7 +632,7 @@ ElastoDyn['RootMzc1']         = False     # (kN m); Blade 1 pitching moment at t
 ElastoDyn['RootMzb1']         = False     # (kN m); Blade 1 pitching moment at the blade root; About the zc1- and zb1-axes
 ElastoDyn['RootMxb1']         = False     # (kN m); Blade 1 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb1-axis
 ElastoDyn['RootMEdg1']        = False     # (kN m); Blade 1 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb1-axis
-ElastoDyn['RootMyb1']         = False     # (kN m); Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb1-axis
+ElastoDyn['RootMyb1']         = True      # (kN m); Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb1-axis
 ElastoDyn['RootMFlp1']        = False     # (kN m); Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb1-axis
 
 # Blade 2 Root Loads
@@ -650,7 +650,7 @@ ElastoDyn['RootMzc2']         = False     # (kN m); Blade 2 pitching moment at t
 ElastoDyn['RootMzb2']         = False     # (kN m); Blade 2 pitching moment at the blade root; About the zc2- and zb2-axes
 ElastoDyn['RootMxb2']         = False     # (kN m); Blade 2 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb2-axis
 ElastoDyn['RootMEdg2']        = False     # (kN m); Blade 2 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb2-axis
-ElastoDyn['RootMyb2']         = False     # (kN m); Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb2-axis
+ElastoDyn['RootMyb2']         = True      # (kN m); Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb2-axis
 ElastoDyn['RootMFlp2']        = False     # (kN m); Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb2-axis
 
 # Blade 3 Root Loads
@@ -668,7 +668,7 @@ ElastoDyn['RootMzc3']         = False     # (kN m); Blade 3 pitching moment at t
 ElastoDyn['RootMzb3']         = False     # (kN m); Blade 3 pitching moment at the blade root; About the zc3- and zb3-axes
 ElastoDyn['RootMxb3']         = False     # (kN m); Blade 3 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb3-axis
 ElastoDyn['RootMEdg3']        = False     # (kN m); Blade 3 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb3-axis
-ElastoDyn['RootMyb3']         = False     # (kN m); Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb3-axis
+ElastoDyn['RootMyb3']         = True      # (kN m); Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb3-axis
 ElastoDyn['RootMFlp3']        = False     # (kN m); Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb3-axis
 
 # Blade 1 Local Span Loads
@@ -849,9 +849,9 @@ ElastoDyn['LSShftFya']        = False     # (kN); Rotating low-speed shaft shear
 ElastoDyn['LSSGagFya']        = False     # (kN); Rotating low-speed shaft shear force (this is constant along the shaft); Directed along the ya-axis
 ElastoDyn['LSShftFza']        = False     # (kN); Rotating low-speed shaft shear force (this is constant along the shaft); Directed along the za-axis
 ElastoDyn['LSSGagFza']        = False     # (kN); Rotating low-speed shaft shear force (this is constant along the shaft); Directed along the za-axis
-ElastoDyn['LSShftFys']        = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the ys-axis
+ElastoDyn['LSShftFys']        = True      # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the ys-axis
 ElastoDyn['LSSGagFys']        = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the ys-axis
-ElastoDyn['LSShftFzs']        = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the zs-axis
+ElastoDyn['LSShftFzs']        = True      # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the zs-axis
 ElastoDyn['LSSGagFzs']        = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the zs-axis
 ElastoDyn['LSShftMxa']        = False     # (kN m); Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque); About the xa- and xs-axes
 ElastoDyn['LSShftMxs']        = False     # (kN m); Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque); About the xa- and xs-axes
@@ -861,8 +861,8 @@ ElastoDyn['RotTorq']          = False     # (kN m); Low-speed shaft torque (this
 ElastoDyn['LSShftTq']         = False     # (kN m); Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque); About the xa- and xs-axes
 ElastoDyn['LSSTipMya']        = False     # (kN m); Rotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the ya-axis
 ElastoDyn['LSSTipMza']        = False     # (kN m); Rotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the za-axis
-ElastoDyn['LSSTipMys']        = False     # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the ys-axis
-ElastoDyn['LSSTipMzs']        = False     # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the zs-axis
+ElastoDyn['LSSTipMys']        = True      # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the ys-axis
+ElastoDyn['LSSTipMzs']        = True      # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the zs-axis
 ElastoDyn['RotPwr']           = False     # (kW); Rotor power (this is equivalent to the low-speed shaft power); N/A
 ElastoDyn['LSShftPwr']        = False     # (kW); Rotor power (this is equivalent to the low-speed shaft power); N/A
 
@@ -902,7 +902,7 @@ ElastoDyn['TwrBsFxt']         = False     # (kN); Tower base fore-aft shear forc
 ElastoDyn['TwrBsFyt']         = False     # (kN); Tower base side-to-side shear force; Directed along the yt-axis
 ElastoDyn['TwrBsFzt']         = False     # (kN); Tower base axial force; Directed along the zt-axis
 ElastoDyn['TwrBsMxt']         = False     # (kN m); Tower base roll (or side-to-side) moment (i.e., the moment caused by side-to-side forces); About the xt-axis
-ElastoDyn['TwrBsMyt']         = False     # (kN m); Tower base pitching (or fore-aft) moment (i.e., the moment caused by fore-aft forces); About the yt-axis
+ElastoDyn['TwrBsMyt']         = True      # (kN m); Tower base pitching (or fore-aft) moment (i.e., the moment caused by fore-aft forces); About the yt-axis
 ElastoDyn['TwrBsMzt']         = False     # (kN m); Tower base yaw (or torsional) moment; About the zt-axis
 
 # Local Tower Loads
@@ -9441,14 +9441,14 @@ OutList['HorWndDir']          = False     # (deg); Horizontal hub-height wind di
 OutList['VerWndDir']          = False     # (deg); Vertical hub-height wind direction; About an axis orthogonal to the zi-axis and the HorWindV-vector
 
 # Blade 1 Tip Motions
-OutList['TipDxc1']            = False     # (m); Blade 1 out-of-plane tip deflection (relative to the undeflected position); Directed along the xc1-axis
+OutList['TipDxc1']            = True      # (m); Blade 1 out-of-plane tip deflection (relative to the undeflected position); Directed along the xc1-axis
 OutList['OoPDefl1']           = False     # (m); Blade 1 out-of-plane tip deflection (relative to the undeflected position); Directed along the xc1-axis
-OutList['TipDyc1']            = False     # (m); Blade 1 in-plane tip deflection (relative to the undeflected position); Directed along the yc1-axis
+OutList['TipDyc1']            = True      # (m); Blade 1 in-plane tip deflection (relative to the undeflected position); Directed along the yc1-axis
 OutList['IPDefl1']            = False     # (m); Blade 1 in-plane tip deflection (relative to the undeflected position); Directed along the yc1-axis
-OutList['TipDzc1']            = False     # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
-OutList['TipDzb1']            = False     # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
-OutList['TipDxb1']            = False     # (m); Blade 1 flapwise tip deflection (relative to the undeflected position); Directed along the xb1-axis
-OutList['TipDyb1']            = False     # (m); Blade 1 edgewise tip deflection (relative to the undeflected position); Directed along the yb1-axis
+OutList['TipDzc1']            = True      # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
+OutList['TipDzb1']            = True      # (m); Blade 1 axial tip deflection (relative to the undeflected position); Directed along the zc1- and zb1-axes
+OutList['TipDxb1']            = True      # (m); Blade 1 flapwise tip deflection (relative to the undeflected position); Directed along the xb1-axis
+OutList['TipDyb1']            = True      # (m); Blade 1 edgewise tip deflection (relative to the undeflected position); Directed along the yb1-axis
 OutList['TipALxb1']           = False     # (m/s^2); Blade 1 local flapwise tip acceleration (absolute); Directed along the local xb1-axis
 OutList['TipALyb1']           = False     # (m/s^2); Blade 1 local edgewise tip acceleration (absolute); Directed along the local yb1-axis
 OutList['TipALzb1']           = False     # (m/s^2); Blade 1 local axial tip acceleration (absolute); Directed along the local zb1-axis
@@ -9464,14 +9464,14 @@ OutList['TwrClrnc1']          = False     # (m); Blade 1 tip-to-tower clearance 
 OutList['Tip2Twr1']           = False     # (m); Blade 1 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance.; N/A
 
 # Blade 2 Tip Motions
-OutList['TipDxc2']            = False     # (m); Blade 2 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc2-axis
+OutList['TipDxc2']            = True      # (m); Blade 2 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc2-axis
 OutList['OoPDefl2']           = False     # (m); Blade 2 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc2-axis
-OutList['TipDyc2']            = False     # (m); Blade 2 in-plane tip deflection (relative to the pitch axis); Directed along the yc2-axis
+OutList['TipDyc2']            = True      # (m); Blade 2 in-plane tip deflection (relative to the pitch axis); Directed along the yc2-axis
 OutList['IPDefl2']            = False     # (m); Blade 2 in-plane tip deflection (relative to the pitch axis); Directed along the yc2-axis
-OutList['TipDzc2']            = False     # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
-OutList['TipDzb2']            = False     # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
-OutList['TipDxb2']            = False     # (m); Blade 2 flapwise tip deflection (relative to the pitch axis); Directed along the xb2-axis
-OutList['TipDyb2']            = False     # (m); Blade 2 edgewise tip deflection (relative to the pitch axis); Directed along the yb2-axis
+OutList['TipDzc2']            = True      # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
+OutList['TipDzb2']            = True      # (m); Blade 2 axial tip deflection (relative to the pitch axis); Directed along the zc2- and zb2-axes
+OutList['TipDxb2']            = True      # (m); Blade 2 flapwise tip deflection (relative to the pitch axis); Directed along the xb2-axis
+OutList['TipDyb2']            = True      # (m); Blade 2 edgewise tip deflection (relative to the pitch axis); Directed along the yb2-axis
 OutList['TipALxb2']           = False     # (m/s^2); Blade 2 local flapwise tip acceleration (absolute); Directed along the local xb2-axis
 OutList['TipALyb2']           = False     # (m/s^2); Blade 2 local edgewise tip acceleration (absolute); Directed along the local yb2-axis
 OutList['TipALzb2']           = False     # (m/s^2); Blade 2 local axial tip acceleration (absolute); Directed along the local zb2-axis
@@ -9487,14 +9487,14 @@ OutList['TwrClrnc2']          = False     # (m); Blade 2 tip-to-tower clearance 
 OutList['Tip2Twr2']           = False     # (m); Blade 2 tip-to-tower clearance estimate. This is computed as the perpendicular distance from the yaw axis to the tip of blade 1 when the blade tip is below the yaw bearing. When the tip of blade 1 is above the yaw bearing, it is computed as the absolute distance from the yaw bearing to the blade tip. Please note that you should reduce this value by the tower radius to obtain the actual tower clearance.; N/A
 
 # Blade 3 Tip Motions
-OutList['TipDxc3']            = False     # (m); Blade 3 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc3-axis
+OutList['TipDxc3']            = True      # (m); Blade 3 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc3-axis
 OutList['OoPDefl3']           = False     # (m); Blade 3 out-of-plane tip deflection (relative to the pitch axis); Directed along the xc3-axis
-OutList['TipDyc3']            = False     # (m); Blade 3 in-plane tip deflection (relative to the pitch axis); Directed along the yc3-axis
+OutList['TipDyc3']            = True      # (m); Blade 3 in-plane tip deflection (relative to the pitch axis); Directed along the yc3-axis
 OutList['IPDefl3']            = False     # (m); Blade 3 in-plane tip deflection (relative to the pitch axis); Directed along the yc3-axis
-OutList['TipDzc3']            = False     # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
-OutList['TipDzb3']            = False     # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
-OutList['TipDxb3']            = False     # (m); Blade 3 flapwise tip deflection (relative to the pitch axis); Directed along the xb3-axis
-OutList['TipDyb3']            = False     # (m); Blade 3 edgewise tip deflection (relative to the pitch axis); Directed along the yb3-axis
+OutList['TipDzc3']            = True      # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
+OutList['TipDzb3']            = True      # (m); Blade 3 axial tip deflection (relative to the pitch axis); Directed along the zc3- and zb3-axes
+OutList['TipDxb3']            = True      # (m); Blade 3 flapwise tip deflection (relative to the pitch axis); Directed along the xb3-axis
+OutList['TipDyb3']            = True      # (m); Blade 3 edgewise tip deflection (relative to the pitch axis); Directed along the yb3-axis
 OutList['TipALxb3']           = False     # (m/s^2); Blade 3 local flapwise tip acceleration (absolute); Directed along the local xb3-axis
 OutList['TipALyb3']           = False     # (m/s^2); Blade 3 local edgewise tip acceleration (absolute); Directed along the local yb3-axis
 OutList['TipALzb3']           = False     # (m/s^2); Blade 3 local axial tip acceleration (absolute); Directed along the local zb3-axis
@@ -10071,7 +10071,7 @@ OutList['RootMzc1']           = False     # (kN m); Blade 1 pitching moment at t
 OutList['RootMzb1']           = False     # (kN m); Blade 1 pitching moment at the blade root; About the zc1- and zb1-axes
 OutList['RootMxb1']           = False     # (kN m); Blade 1 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb1-axis
 OutList['RootMEdg1']          = False     # (kN m); Blade 1 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb1-axis
-OutList['RootMyb1']           = False     # (kN m); Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb1-axis
+OutList['RootMyb1']           = True      # (kN m); Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb1-axis
 OutList['RootMFlp1']          = False     # (kN m); Blade 1 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb1-axis
 
 # Blade 2 Root Loads
@@ -10089,7 +10089,7 @@ OutList['RootMzc2']           = False     # (kN m); Blade 2 pitching moment at t
 OutList['RootMzb2']           = False     # (kN m); Blade 2 pitching moment at the blade root; About the zc2- and zb2-axes
 OutList['RootMxb2']           = False     # (kN m); Blade 2 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb2-axis
 OutList['RootMEdg2']          = False     # (kN m); Blade 2 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb2-axis
-OutList['RootMyb2']           = False     # (kN m); Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb2-axis
+OutList['RootMyb2']           = True      # (kN m); Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb2-axis
 OutList['RootMFlp2']          = False     # (kN m); Blade 2 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb2-axis
 
 # Blade 3 Root Loads
@@ -10107,7 +10107,7 @@ OutList['RootMzc3']           = False     # (kN m); Blade 3 pitching moment at t
 OutList['RootMzb3']           = False     # (kN m); Blade 3 pitching moment at the blade root; About the zc3- and zb3-axes
 OutList['RootMxb3']           = False     # (kN m); Blade 3 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb3-axis
 OutList['RootMEdg3']          = False     # (kN m); Blade 3 edgewise moment (i.e., the moment caused by edgewise forces) at the blade root; About the xb3-axis
-OutList['RootMyb3']           = False     # (kN m); Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb3-axis
+OutList['RootMyb3']           = True      # (kN m); Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb3-axis
 OutList['RootMFlp3']          = False     # (kN m); Blade 3 flapwise moment (i.e., the moment caused by flapwise forces) at the blade root; About the yb3-axis
 
 # Blade 1 Local Span Loads
@@ -10288,9 +10288,9 @@ OutList['LSShftFya']          = False     # (kN); Rotating low-speed shaft shear
 OutList['LSSGagFya']          = False     # (kN); Rotating low-speed shaft shear force (this is constant along the shaft); Directed along the ya-axis
 OutList['LSShftFza']          = False     # (kN); Rotating low-speed shaft shear force (this is constant along the shaft); Directed along the za-axis
 OutList['LSSGagFza']          = False     # (kN); Rotating low-speed shaft shear force (this is constant along the shaft); Directed along the za-axis
-OutList['LSShftFys']          = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the ys-axis
+OutList['LSShftFys']          = True      # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the ys-axis
 OutList['LSSGagFys']          = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the ys-axis
-OutList['LSShftFzs']          = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the zs-axis
+OutList['LSShftFzs']          = True      # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the zs-axis
 OutList['LSSGagFzs']          = False     # (kN); Nonrotating low-speed shaft shear force (this is constant along the shaft); Directed along the zs-axis
 OutList['LSShftMxa']          = False     # (kN m); Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque); About the xa- and xs-axes
 OutList['LSShftMxs']          = False     # (kN m); Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque); About the xa- and xs-axes
@@ -10300,8 +10300,8 @@ OutList['RotTorq']            = False     # (kN m); Low-speed shaft torque (this
 OutList['LSShftTq']           = False     # (kN m); Low-speed shaft torque (this is constant along the shaft and is equivalent to the rotor torque); About the xa- and xs-axes
 OutList['LSSTipMya']          = False     # (kN m); Rotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the ya-axis
 OutList['LSSTipMza']          = False     # (kN m); Rotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the za-axis
-OutList['LSSTipMys']          = False     # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the ys-axis
-OutList['LSSTipMzs']          = False     # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the zs-axis
+OutList['LSSTipMys']          = True      # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the ys-axis
+OutList['LSSTipMzs']          = True      # (kN m); Nonrotating low-speed shaft bending moment at the shaft tip (teeter pin for 2-blader, apex of rotation for 3-blader); About the zs-axis
 OutList['CThrstAzm']          = False     # (deg); Azimuth location of the center of thrust. This is estimated using values of LSSTipMys, LSSTipMzs, and RotThrust.; About the xa- and xs-axes
 OutList['CThrstRad']          = False     # (-); Dimensionless radial (arm) location of the center of thrust. This is estimated using values of LSSTipMys, LSSTipMzs, and RotThrust. (nondimensionalized using the undeflected tip radius normal to the shaft and limited to values between 0 and 1 (inclusive)); Always positive (directed radially outboard at azimuth angle CThrstAzm)
 OutList['CThrstArm']          = False     # (-); Dimensionless radial (arm) location of the center of thrust. This is estimated using values of LSSTipMys, LSSTipMzs, and RotThrust. (nondimensionalized using the undeflected tip radius normal to the shaft and limited to values between 0 and 1 (inclusive)); Always positive (directed radially outboard at azimuth angle CThrstAzm)
@@ -10365,7 +10365,7 @@ OutList['TwrBsFxt']           = False     # (kN); Tower base fore-aft shear forc
 OutList['TwrBsFyt']           = False     # (kN); Tower base side-to-side shear force; Directed along the yt-axis
 OutList['TwrBsFzt']           = False     # (kN); Tower base axial force; Directed along the zt-axis
 OutList['TwrBsMxt']           = False     # (kN m); Tower base roll (or side-to-side) moment (i.e., the moment caused by side-to-side forces); About the xt-axis
-OutList['TwrBsMyt']           = False     # (kN m); Tower base pitching (or fore-aft) moment (i.e., the moment caused by fore-aft forces); About the yt-axis
+OutList['TwrBsMyt']           = True      # (kN m); Tower base pitching (or fore-aft) moment (i.e., the moment caused by fore-aft forces); About the yt-axis
 OutList['TwrBsMzt']           = False     # (kN m); Tower base yaw (or torsional) moment; About the zt-axis
 
 # Local Tower Loads

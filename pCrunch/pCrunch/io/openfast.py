@@ -98,9 +98,12 @@ class OpenFASTBase:
             if new_chan in self.channels:
                 print(f"Channel '{new_chan}' already exists.")
                 continue
-
-            arrays = np.array([self[a] for a in chans]).T
-            normed = np.linalg.norm(arrays, axis=1).reshape(arrays.shape[0], 1)
+            try:
+                arrays = np.array([self[a] for a in chans]).T
+                normed = np.linalg.norm(arrays, axis=1).reshape(arrays.shape[0], 1)
+            except:
+                normed = np.nan * np.ones((self.data.shape[0],1))
+                
             self.data = np.append(self.data, normed, axis=1)
             self.channels = np.append(self.channels, new_chan)
 
