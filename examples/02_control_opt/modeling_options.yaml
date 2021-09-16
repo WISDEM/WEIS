@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA15
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/control_opt
+        OF_run_dir: outputs/control_opt
         save_timeseries: True
         save_iterations: True
 
@@ -73,7 +73,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         RdtnMod: 1
         PotMod: 1
         DiffQTF: 0
-        PotFile: /Users/dzalkind/Tools/WEIS-1/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
     InflowWind:
         RefHt: 150.0
