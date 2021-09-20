@@ -560,7 +560,10 @@ class FASTLoadCases(ExplicitComponent):
 
                     # This is going to use the last discon_in file of the linearization set as the simulation file
                     # Currently fine because openfast is executed (or not executed if overwrite=False) after the file writing
-                    discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
+                    if 'DLL_InFile' in self.fst_vt['ServoDyn']:     # if using file inputs
+                        discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
+                    else:       # if using fst_vt inputs from openfast_openmdao
+                        discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
 
                     lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
 

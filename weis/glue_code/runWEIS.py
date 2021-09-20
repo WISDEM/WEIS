@@ -44,6 +44,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_DV = max([n_DV, 1])
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
+        elif modeling_options['Level2']['flag']:
+            if max_cores > 2. * n_DV:
+                n_FD = n_DV
+            else:
+                n_FD = int(np.floor(max_cores / 2))
+            n_OF_runs = modeling_options['Level2']['linearization']['NLinTimes']
+            n_DV = max([n_DV, 1])
+            max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
+            n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             n_FD = min([max_cores, n_DV])
@@ -62,7 +71,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_FD = max([n_FD, 1])
             comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
             rank    = MPI.COMM_WORLD.Get_rank()
-            color_i = color_map[rank]
+            if rank < len(color_map):
+                color_i = color_map[rank]
+            else:
+                color_i = max(color_map) + 1
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
 
     else:
@@ -76,7 +88,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
         if MPI:
-            if modeling_options['Level3']['flag']:
+            if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['General']['openfast_configuration']['mpi_run'] = True
                 modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down
@@ -159,6 +171,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 
         sys.stdout.flush()
         # Run openmdao problem
+        print('rank {:} with color_i {:} entering to run openmdao'.format(rank, color_i))
         if opt_options['opt_flag']:
             wt_opt.run_driver()
         else:
@@ -176,7 +189,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Level3']['flag'] and not opt_options['driver']['design_of_experiments']['flag']:
+    if MPI and \
+            (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
+            (not opt_options['driver']['design_of_experiments']['flag']) and \
+            color_i in color_map:
+        print('rank {:} with color_i {:} entering to compute OF simulation'.format(rank, color_i))
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
@@ -187,7 +204,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
-        
+    if MPI:
+        print('rank {:} with color_i {:} waiting at the barrier'.format(rank, color_i))
+        MPI.COMM_WORLD.Barrier()
+
     if rank == 0:
         return wt_opt, modeling_options, opt_options
     else:
