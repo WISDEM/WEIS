@@ -137,6 +137,9 @@ if __name__ == '__main__':
         fst_vt, 
         la, 
         magnitude_channels, 
-        run_directory
+        run_directory,
+        cores = 4
         )
+
+    print('here')
     
