@@ -108,12 +108,15 @@ Level2:
     linearization:
         TMax: 2000.
         DT: 0.01
-        TrimGain: 1e-3
-        TrimTol: 1e-2
+        TrimGain: 1e-4
+        TrimTol: 1e-3
         rated_offset: 0.75
         wind_speeds: [4., 6., 8., 10., 12., 14., 16.]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 12
+
+Level1:
+    potential_model_override: 2
 
 DLC_driver:
     DLCs:
