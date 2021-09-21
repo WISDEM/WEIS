@@ -734,7 +734,6 @@ class PoseOptimization(object):
                 ref=1e3,
                 indices=[tower_material_index],
             )
-
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(

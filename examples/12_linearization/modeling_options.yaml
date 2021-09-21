@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/IEA_level2_test
+        OF_run_dir: outputs/IEA_level2
         use_exe: True
 
 WISDEM:
@@ -96,7 +96,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
 ROSCO:
     flag: True
-
+    zeta_vs: 1
+    omega_vs: 0.2
+    zeta_pc: [1]
+    omega_pc: [0.2]
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?

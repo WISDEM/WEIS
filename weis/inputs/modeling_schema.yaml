@@ -36,6 +36,26 @@ properties:
                         type: boolean
                         default: False
                         description: Flag to only generate an OpenFAST model and stop
+                    save_timeseries:
+                        type: boolean
+                        default: False
+                        description: Save openfast output timeseries
+                    save_iterations:
+                        type: boolean
+                        default: False
+                        description: Save summary stats and other info for each openfast iteration.  Could bump this up to a more global post-processing input.
+                    FAST_exe:
+                        type: string
+                        default: none
+                        description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                    FAST_lib:
+                        type: string
+                        default: none
+                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
+                    path2dll:
+                        type: string
+                        default: none
+                        description: Path to controller shared library (e.g. /home/user/myturbines/libdiscon.so)
             goodman_correction:
                 type: boolean
                 default: False
@@ -123,20 +143,6 @@ properties:
                         enum: ['WARNING', 'SEVERE', 'FATAL']
                         default: 'FATAL'
                         description: Error level when simulation should abort (string) {'WARNING', 'SEVERE', 'FATAL'}
-                    TMax:
-                        type: number
-                        default: 720.
-                        minimum: 0.0
-                        maximum: 10000.0
-                        unit: s
-                        description: Total run time (s)
-                    TStart:
-                        type: number
-                        default: 120.
-                        minimum: 0.0
-                        maximum: 10000.0
-                        unit: s
-                        description: Time to begin tabular output (s)
                     DT:
                         type: number
                         default: 0.025
@@ -1585,7 +1591,9 @@ properties:
                         description: Time step for incident wave calculations     (sec) [unused when WaveMod=0; 0.1<=WaveDT<=1.0 recommended; determines WaveOmegaMax=Pi/WaveDT in the IFFT]
                     WavePkShp:
                         type: number
-                        default: -999.0
+                        default: 1.0
+                        minimum: 1
+                        maximum: 7
                         unit: none
                         description: Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]
                     WvLowCOff:
@@ -1628,10 +1636,10 @@ properties:
                         description: Number of wave directions [only used when WaveMod=2,3, or 4 and WaveDirMod=1; odd number only]
                     WaveDirRange:
                         type: number
-                        unit: rad
-                        default: 1.5707963267948966
+                        unit: deg
+                        default: 90
                         minimum: 0.0
-                        maximum: 6.283185307179586
+                        maximum: 360
                         description: Range of wave directions (full range = WaveDir +/- 1/2*WaveDirRange) (degrees) [only used when WaveMod=2,3,or 4 and WaveDirMod=1]
                     WaveSeed1:
                         type: integer
@@ -1658,21 +1666,21 @@ properties:
                         description: Number of points where the incident wave elevations can be computed (-) [maximum of 9 output locations]
                     WaveElevxi:
                         type: array
-                        default: [0.0]
+                        default: ['0.0']
                         description: List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
                         items:
-                            type: number
-                            default: 0.0
-                            unit: m
+                            type: string
+                            # default: 0.0
+                            # unit: m
                             maxItems: 9
                     WaveElevyi:
                         type: array
-                        default: [0.0]
+                        default: ['0.0']
                         description: List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
                         items:
-                            type: number
-                            default: 0.0
-                            unit: m
+                            type: string
+                            # default: 0.0
+                            # unit: m
                             maxItems: 9
                     WvDiffQTF:
                         type: boolean
@@ -1724,7 +1732,7 @@ properties:
                         description: Sub-surface current velocity at still water level  (m/s) [used only when CurrMod=1]
                     CurrSSDir:
                         type: number
-                        default: -999.0
+                        default: 0
                         maximum: 6.283185307179586
                         unit: rad
                         description: Sub-surface current heading direction (radians) or 0.0 for default [used only when CurrMod=1]
@@ -1779,12 +1787,12 @@ properties:
                         default: 1.0
                         unit: m
                         description: Characteristic body length scale used to redimensionalize Capytaine/NEMOH/WAMIT output (meters) [only used when PotMod=1]
-                    PtfmVol0:
-                        type: number
-                        default: 0.0
-                        minimum: 0.0
-                        units: m^3
-                        description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    # PtfmVol0:
+                    #     type: number
+                    #     default: 0.0
+                    #     minimum: 0.0
+                    #     units: m^3
+                    #     description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
                     PtfmMass_Init:
                         type: number
                         default: 0.0
@@ -1824,7 +1832,7 @@ properties:
                         type: number
                         minimum: 0.0
                         maximum: 1e3
-                        default: 0.0
+                        default: 0.0125
                         unit: s
                         description: Time step for wave radiation kernel calculations, use 0.0 for default (sec) [only used when PotMod=1; DT<=RdtnDT<=0.1 recommended; determines RdtnOmegaMax=Pi/RdtnDT in the cosine transform]
                     MnDrift:
@@ -2576,6 +2584,18 @@ properties:
                     ServoDyn:
                         type: object
                         default: {}
+            from_openfast:
+                type: boolean
+                default: False
+                description: Whether we derive OpenFAST model from an existing model and ignore WISDEM
+            openfast_file: 
+                type: string
+                default: unused
+                description: Main (.fst) OpenFAST input file name. No directory.
+            openfast_dir: 
+                type: string
+                default: unused
+                description: OpenFAST input directory, containing .fst file
             xfoil:
                 type: object
                 default: {}
@@ -3288,97 +3308,9 @@ properties:
     ROSCO:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 3 = nonlinear time domain
+        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/ROSCO_toolbox/inputs/toolbox_shema.yaml
         properties:
-            flag:
-                type: boolean
-                default: False
-                description: Whether or not to tune and run ROSCO
-            LoggingLevel:
-                type: integer
-                enum: [0, 1, 2]
-                default: 1
-                description: 0, write no debug files, 1, write standard output .dbg-file, 2, write standard output .dbg-file and complete avrSWAP-array .dbg2-file
-            F_LPFType:
-                type: integer
-                enum: [1, 2]
-                default: 1
-                description: Low pass filter type, {1, first-order low-pass filter, 2, second-order low-pass filter}
-            F_NotchType:
-                type: integer
-                enum: [0, 1, 2, 3]
-                default: 0
-                description:  Notch filter on generator speed and/or tower fore-aft motion (for floating) {0, disable, 1, generator speed, 2, tower-top fore-aft motion, 3, generator speed and tower-top fore-aft motion}
-            IPC_ControlMode:
-                type: integer
-                enum: [0, 1, 2]
-                default: 0
-                description: Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0, off, 1, 1P reductions, 2, 1P+2P reductions}
-            VS_ControlMode:
-                type: integer
-                enum: [0, 1, 2]
-                default: 2
-                description: Generator torque control mode in above rated conditions {0, constant torque, 1, constant power, 2, TSR tracking PI control}
-            PC_ControlMode:
-                type: integer
-                enum: [0, 1]
-                default: 1
-                description: Blade pitch control mode {0, No pitch, fix to fine pitch, 1, active PI blade pitch control}
-            Y_ControlMode:
-                type: integer
-                enum: [0, 1, 2]
-                default: 0
-                description: Yaw control mode {0, no yaw control, 1, yaw rate control, 2, yaw-by-IPC}
-            SS_Mode:
-                type: integer
-                enum: [0, 1]
-                default: 1
-                description: Setpoint Smoother mode {0, no setpoint smoothing, 1, use setpoint smoothing}
-            WE_Mode:
-                type: integer
-                enum: [0, 1, 2]
-                default: 2
-                description: Wind speed estimator mode {0 = One-second low pass filtered hub height wind speed, 1 = Immersion and Invariance Estimator, 2 = Extended Kalman Filter}
-            PS_Mode:
-                type: integer
-                enum: [0, 1, 2, 3]
-                default: 1
-                description:  Pitch saturation mode {0 = no pitch saturation, 1 = peak shaving, 2 = Cp maximization at low wind speed, 3 = 1 + 2}
-            SD_Mode:
-                type: integer
-                enum: [0, 1]
-                default: 1
-                description: Shutdown mode {0, no shutdown procedure, 1, pitch to max pitch at shutdown}
-            Fl_Mode:
-                type: integer
-                enum: [0, 1]
-                default: 0
-                description: Floating specific feedback mode {0, no nacelle velocity feedback, 1, nacelle velocity feedback}
-            Flp_Mode:
-                type: integer
-                enum: [0, 1, 2]
-                default: 0
-                description: Flap control mode {0, no flap control, 1, steady state flap angle, 2, Proportional flap control}
-            PwC_Mode:
-                type: integer
-                enum: [0, 1, 2]
-                default: 0
-                description: Power control mode {0 = no power control, 1 = constant power, 2 = open loop power from PwC_OpenLoop_Inp, 3 = open loop power vs. wind speed from PwC_OpenLoop_Inp}
-            Bld_FlpDamp:
-                type: number
-                default: 0.7
-                minimum: 0.0
-                maximum: 2.0
-                description: Blade collective flapwise damping at rated wind speed, used for flap controller tuning
-            PC_GS_n:
-                type: number
-                default: 29
-                minimum: 1
-                maximum: 100
-                description: Number of blade pitch control gain scheduling breakpoints
-            WS_GS_n:
-                type: number
-                default: 59
-                minimum: 2
-                maximum: 100
-                description: Number of wind speed gain scheduling breakpoints
+            tuning_yaml:
+                type: string
+                description: ROSCO_Toolbox control tuning yaml used to load initial turbine parameters. Used in controls-only optimization.
+                default: unused
