@@ -1699,7 +1699,7 @@ class FASTLoadCases(ExplicitComponent):
         if self.FAST_lib != 'none':
             fastBatch.FAST_lib          = self.FAST_lib
 
-        fastBatch.overwrite_outfiles = False  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
+        fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
         # Initialize fatigue channels and setings
         # TODO: Stress Concentration Factor?
