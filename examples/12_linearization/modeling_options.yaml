@@ -41,7 +41,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     OutFileFmt: 3
     simulation:
-        TMax: 2000.0
+        TMax: 1.0
         DT: 0.01
         CompElast: 1
         CompInflow: 1

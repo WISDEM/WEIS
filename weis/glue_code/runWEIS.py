@@ -178,7 +178,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
                 
         sys.stdout.flush()
         # Run openmdao problem
-        print('rank {:} with color_i {:} entering to run openmdao'.format(rank, color_i))
         if opt_options['opt_flag']:
             wt_opt.run_driver()
         else:
@@ -199,7 +198,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
             (not opt_options['driver']['design_of_experiments']['flag']) and \
             color_i in color_map:
-        print('rank {:} with color_i {:} entering to compute OF simulation'.format(rank, color_i))
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
@@ -211,7 +209,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         sys.stdout.flush()
 
     if MPI:
-        print('rank {:} with color_i {:} waiting at the barrier'.format(rank, color_i))
         MPI.COMM_WORLD.Barrier()
 
     if rank == 0:
