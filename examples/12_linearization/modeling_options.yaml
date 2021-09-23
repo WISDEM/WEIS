@@ -41,7 +41,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     OutFileFmt: 3
     simulation:
-        TMax: 1.
+        TMax: 2000.0
         DT: 0.01
         CompElast: 1
         CompInflow: 1
@@ -104,21 +104,21 @@ Level2:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: True
-        TMax: 100.      # run simulations using IEC standards, could share that info
+        TMax: 600.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 1600.
+        TMax: 2000.
         DT: 0.01
-        TrimGain: 1e-4
-        TrimTol: 1e-3
-        wind_speeds: [12, 12.25, 12.5, 12.75, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 ]
-        rated_offset: 1.5
+        TrimGain: 1e-3
+        TrimTol: 1e-2
+        wind_speeds: [4., 6., 8., 10., 12., 14., 16.]
+        rated_offset: 0.75
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 12
 
 Level1:
     potential_model_override: 2
 
-   
+
 
 DLC_driver:
     DLCs:
