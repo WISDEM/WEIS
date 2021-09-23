@@ -4,12 +4,12 @@ import pickle
 import os
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-
-pkl_path = mydir + os.sep + "outputs" + os.sep + "IEA_level2" + os.sep + "ABCD_matrices.pkl"
+weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+pkl_path = weis_dir + os.sep + "outputs" + os.sep +  "ABCD_matrices.pkl"
 
 with open(pkl_path, 'rb') as handle:
     ABCD_list = pickle.load(handle)
-    
+  
 print("Information available in the pickle file:")
 for key in ABCD_list[0]:
     print(key)

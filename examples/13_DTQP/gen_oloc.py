@@ -9,9 +9,28 @@ from weis.aeroelasticse.CaseGen_General import case_naming
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
-
+import matplotlib.pyplot as plt
 
 import numpy as np
+
+def Calc_AEP(summary_stats,dlc_generator,Turbine_class):
+    
+    
+    idx_pwrcrv = []
+    U = []
+    for i_case in range(dlc_generator.n_cases):
+        if dlc_generator.cases[i_case].label == '1.1':
+            idx_pwrcrv = np.append(idx_pwrcrv, i_case)
+            U = np.append(U, dlc_generator.cases[i_case].URef)
+
+    stats_pwrcrv = summary_stats.iloc[idx_pwrcrv].copy()
+    
+    if len(U) > 1:
+        pp = PowerProduction(Turbine_class)
+        pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
+        AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
+        
+        breakpoint()
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -24,6 +43,8 @@ if __name__ == '__main__':
 
     fname_wt_input              = mydir + os.sep + "IEA-15-floating.yaml"
     wt_init                     = sch.load_geometry_yaml(fname_wt_input)
+    
+    Turbine_class = wt_init["assembly"]["turbine_class"]
 
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
     analysis_options            = sch.load_analysis_yaml(fname_analysis_options)
@@ -85,8 +106,8 @@ if __name__ == '__main__':
         
         tt          = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
-
-
+        #plt.plot(tt,u_h)
+    
     # Linear Model
     
     # number of linear wind speeds and other options below assume that you haven't changed 
@@ -142,3 +163,4 @@ if __name__ == '__main__':
         run_directory
         )
     
+    AEP = Calc_AEP(summary_stats,dlc_generator,Turbine_class)

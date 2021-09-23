@@ -11,9 +11,31 @@ from weis.aeroelasticse.CaseGen_General import case_naming
 import pickle
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
-
+import matplotlib.pyplot as plt
 import numpy as np
+from mat4py import loadmat  
 
+def Calc_AEP(summary_stats,dlc_generator,Turbine_class):
+    
+    
+    idx_pwrcrv = []
+    U = []
+    for i_case in range(dlc_generator.n_cases):
+        if dlc_generator.cases[i_case].label == '1.1':
+            idx_pwrcrv = np.append(idx_pwrcrv, i_case)
+            U = np.append(U, dlc_generator.cases[i_case].URef)
+
+    stats_pwrcrv = summary_stats.iloc[idx_pwrcrv].copy()
+    
+    if len(U) > 1:
+        pp = PowerProduction(Turbine_class)
+        pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
+        AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
+    else:
+        AEP = 0
+    
+    return AEP
+    
 class dict2class(object):
     
     def __init__(self,my_dict):
@@ -36,6 +58,8 @@ if __name__ == "__main__":
 
     fname_wt_input   = mydir + os.sep + "IEA-15-floating.yaml"
     wt_init          = sch.load_geometry_yaml(fname_wt_input)
+    
+    Turbine_class = wt_init["assembly"]["turbine_class"]
     
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
     analysis_options            = sch.load_analysis_yaml(fname_analysis_options)
@@ -94,21 +118,21 @@ if __name__ == "__main__":
         if ind.any():
             u_h[ind] = u_h[ind] - off
         
-        
+        print(np.mean(u_h))
         tt = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
         
-        
+       
     # Linear Model
-    
-    pkl_file = mydir + os.sep + "outputs" + os.sep + "ABCD_matrices.pkl"
+    pkl_file = mydir + os.sep + "outputs" + os.sep + "ABCD_red.pkl"
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)
-    breakpoint()    
+
+    breakpoint()   
     fst_vt = {}
     fst_vt['DISCON_in'] = {}
-    fst_vt['DISCON_in']['PC_RefSpd'] = 0.7853192931562493
+    fst_vt['DISCON_in']['PC_RefSpd'] = 0.7914 #0.7853192931562493
 
     la = LoadsAnalysis(
             outputs=[],
@@ -122,8 +146,9 @@ if __name__ == "__main__":
 
     run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
     
-        
+    
     n_cases = len(ABCD_list)
+    AEP = np.zeros((n_cases,)) 
     
     for n in range(n_cases):
         ABCD = ABCD_list[n]
@@ -139,8 +164,9 @@ if __name__ == "__main__":
         magnitude_channels, 
         run_directory
         )
-            
+          
+        
+        AEP[n] = Calc_AEP(summary_stats,dlc_generator,Turbine_class)
         
         
-        
-        
+    

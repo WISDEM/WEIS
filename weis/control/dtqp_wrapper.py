@@ -8,6 +8,9 @@ from pCrunch.io import OpenFASTOutput
 from weis.aeroelasticse.CaseGen_General import case_naming
 
 
+
+
+
 def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads_analysis,magnitude_channels,run_dir):
     ''' 
     Convert weis information to DTQP and vice versa
@@ -27,7 +30,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
 
     ### Set up constraints
     dtqp_constraints = {}
-    breakpoint()
+    
 
     # catch any other flags, maybe this is better handled elsehwere
     blade_const = analysis_options['constraints']['blade']
@@ -111,6 +114,9 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         #output.df.to_pickle(os.path.join(run_dir,case_names[i_oloc]+'.p'))
 
     summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
+    
+    # Calculate AEP
+    
 
     return summary_stats, extreme_table, DELs, Damage
 

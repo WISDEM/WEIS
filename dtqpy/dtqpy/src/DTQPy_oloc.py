@@ -175,7 +175,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     
 
-    if filterflag:
+    if filterflag:                         
         t_f = 1
         dt = tt[2,0]-tt[1,0]
         nb = int(np.floor(t_f/dt))
@@ -188,7 +188,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     opts.dt.nt = 1000
     opts.solver.tolerence = 1e-10
-    opts.solver.maxiters = 1000000
+    opts.solver.maxiters = 1500
     opts.solver.function = 'pyoptsparse'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
@@ -259,8 +259,8 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
             # do other output constraint things
         else:
             raise Exception(f'{const} not in DescStates or DescOutputs')
-
-
+    
+    GSmax = ub[iGenSpeed][0];
     # initialize
     UBx = np.empty((nx,1),dtype = 'O')
     LBx = np.empty((nx,1),dtype = 'O')
@@ -282,22 +282,19 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     LBc = np.array([[lambda t: W_fun(t)-W_fun(t)],
                     [lambda t: min(uw[1,:])-GT_fun(W_fun(t))],
                     [lambda t: min(uw[2,:])-BP_fun(W_fun(t))]])
-
+    
     # initial state
     X0_n = np.zeros((nx,1))
-    X0_n[0:8] = np.array( [[0.0493],
+    X0_n[0:5] = np.array( [[0.0493],
         [0.1957],
         [0.0000],
         [0.0001],
-        [0.7913],
-            [0],
-            [0],
-            [0]])
+        [GSmax]])
     
     
     UBs = X0_n - Xo_fun(W_fun(0))[None].T
     LBs = X0_n - Xo_fun(W_fun(0))[None].T
-
+    
     # UB,LB
     UB = [Simple_Bounds() for n in range(3)]
     LB = [Simple_Bounds() for n in range(3)]
@@ -423,7 +420,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
         # torue
         ax2.plot(T,U[:,iGenTorque]/1e+07)
-        ax2.set_ylim([1.8,2])
+        #ax2.set_ylim([1.8,2])
         ax2.set_title('Gen Torque [MWm]')
         ax2.set_xlim([t0,tf])
 
