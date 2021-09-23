@@ -708,8 +708,8 @@ class FASTLoadCases(ExplicitComponent):
                     )
 
             # Post process regardless of level
-            self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
-
+            self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+        
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
             try:
