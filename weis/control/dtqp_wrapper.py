@@ -63,7 +63,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     if control_const['rotor_overspeed']['flag']:
         desc = 'ED First time derivative of Variable speed generator DOF (internal DOF index = DOF_GeAz), rad/s'
         if desc in LinearTurbine.DescStates:
-            dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] ]
+            dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] + 0.01 ]
         else:
             raise Exception('rotor_overspeed constraint is set, but ED GenSpeed is not a state in the LinearModel')
 
@@ -131,6 +131,16 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         
 # Wrapper for actually running dtqp with a single input, useful for running in parallel
 def run_dtqp(dtqp_input):
+
+    # Check that LinearTurbine models have wind speeds that cover disturbance
+    if dtqp_input['dist']['Wind'].mean() < dtqp_input['LinearTurbine'].u_h.min() or  dtqp_input['dist']['Wind'].mean() > dtqp_input['LinearTurbine'].u_h.max():
+        raise Exception('dtqp_wrapper: The mean wind speed of the disturbance is {:1f} m/s and the LinearTurbine has operating points from {:.1f} to {:.1f} m/s'.format(
+            dtqp_input['dist']['Wind'].mean(), 
+            dtqp_input['LinearTurbine'].u_h.min(),
+            dtqp_input['LinearTurbine'].u_h.max()))
+
+
+    # Run DTQP
     T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
 
     # Shorten output names from linearization output to one like level3 openfast output
