@@ -41,7 +41,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     OutFileFmt: 3
     simulation:
-        TMax: 2000.0
+        TMax: 1.0
         DT: 0.01
         CompElast: 1
         CompInflow: 1
@@ -113,7 +113,7 @@ Level2:
         rated_offset: 0.75
         wind_speeds: [4., 6., 8., 10., 12., 14., 16.]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 12
+        NLinTimes: 2
 
 Level1:
     potential_model_override: 2

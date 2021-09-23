@@ -4,8 +4,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        spar_cap_ss: Spar_cap_SS
-        spar_cap_ps: Spar_cap_PS
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
         n_tsr_perf_surfaces: 5

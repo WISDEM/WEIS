@@ -316,9 +316,9 @@ class LinearTurbineModel(object):
 
         # operating points dict
         ops = {}
-        ops['u']    = u_op[self.ind_fast_inps]
+        ops['u']    = u_op
         ops['uh']   = wind_speed_op
-        ops['y']    = y_op[self.ind_fast_outs]
+        ops['y']    = y_op
         ops['x']    = x_op
 
         return ops, P_op

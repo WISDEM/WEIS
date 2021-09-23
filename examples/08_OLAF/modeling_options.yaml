@@ -4,8 +4,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        spar_cap_ss: Spar_cap_ss
-        spar_cap_ps: Spar_cap_ps
+        spar_cap_ss: Spar_Cap_ss
+        spar_cap_ps: Spar_Cap_ps
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
         regulation_reg_III: True
