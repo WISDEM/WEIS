@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
     # generate wind files
     FAST_namingOut = 'oloc'
-    wind_directory = 'outputs/oloc/wind'
+    wind_directory = '/Users/dzalkind/Tools/WEIS-1/examples/13_DTQP/outputs/oloc/wind'
     if not os.path.exists(wind_directory):
         os.makedirs(wind_directory)
     rotorD = wt_init['assembly']['rotor_diameter']
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     
     else:   # load the model and run MBC3
         LinearTurbine = LinearTurbineModel(
-                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_AR'),  # directory where linearizations are
+                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_full'),  # directory where linearizations are
                     lin_case_name,
                     nlin=modeling_options['Level2']['linearization']['NLinTimes'],
                     reduceControls = True
@@ -128,7 +128,15 @@ if __name__ == '__main__':
         "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
         }
 
+    if os.path.isabs(modeling_options['General']['openfast_configuration']['OF_run_dir']):
+        run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    else:
+        run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
     run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    
+    if not os.path.exists(run_directory):
+        os.makedirs(run_directory)
+
 
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
@@ -138,7 +146,7 @@ if __name__ == '__main__':
         la, 
         magnitude_channels, 
         run_directory,
-        cores = 4
+        cores = 1
         )
 
     print('here')
