@@ -76,9 +76,9 @@ class WT_RNTA(om.Group):
             self.connect("blade.interp_airfoils.r_thick_interp", "rotorse.ccblade.rthick")
             self.connect("airfoils.aoa", "rotorse.airfoils_aoa")
             self.connect("airfoils.Re", "rotorse.airfoils_Re")
-            self.connect("blade.interp_airfoils.cl_interp", "rotorse.airfoils_cl")
-            self.connect("blade.interp_airfoils.cd_interp", "rotorse.airfoils_cd")
-            self.connect("blade.interp_airfoils.cm_interp", "rotorse.airfoils_cm")
+            self.connect("af_3d.cl_corrected", "rotorse.airfoils_cl")
+            self.connect("af_3d.cd_corrected", "rotorse.airfoils_cd")
+            self.connect("af_3d.cm_corrected", "rotorse.airfoils_cm")
             self.connect("assembly.hub_height", "rotorse.hub_height")
             self.connect("hub.cone", "rotorse.precone")
             self.connect("nacelle.uptilt", "rotorse.tilt")
@@ -439,7 +439,6 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["nacelle"]:
                 self.connect("drivese.base_F", "floatingse.rna_F")
                 self.connect("drivese.base_M", "floatingse.rna_M")
-                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
                 self.connect("drivese.rna_cm", "floatingse.rna_cg")
                 self.connect("drivese.rna_mass", "floatingse.rna_mass")
 
