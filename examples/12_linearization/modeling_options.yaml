@@ -104,17 +104,16 @@ Level2:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: True
-        TMax: 600.      # run simulations using IEC standards, could share that info
+        TMax: 20.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 2000.
+        TMax: 600.
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        rated_offset: 0.75
-        wind_speeds: [4., 6., 8., 10., 12., 14., 16.]
+        wind_speeds: [14.]
         rated_offset: 0.75
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 12
+        NLinTimes: 2
 
 Level1:
     potential_model_override: 2
