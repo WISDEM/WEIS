@@ -557,7 +557,7 @@ class PowerProduction:
 
         assert len(stats) == len(windspeeds)
         
-        pwr = stats.loc[:, ("GenPw", "mean")].to_frame()
+        pwr = stats.loc[:, ("GenPwr", "mean")].to_frame()
 
         # Group and average powers by wind speeds
         pwr["windspeeds"] = windspeeds
