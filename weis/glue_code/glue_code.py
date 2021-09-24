@@ -94,9 +94,9 @@ class WindPark(om.Group):
         self.connect('control.rated_TSR',                     'xf.rated_TSR')
         if modeling_options['flags']['control']:
             self.connect('control.max_TS',                        'xf.max_TS')
-        self.connect('blade.interp_airfoils.cl_interp',       'xf.cl_interp')
-        self.connect('blade.interp_airfoils.cd_interp',       'xf.cd_interp')
-        self.connect('blade.interp_airfoils.cm_interp',       'xf.cm_interp')
+        self.connect("af_3d.cl_corrected", "xf.cl_interp")
+        self.connect("af_3d.cd_corrected", "xf.cd_interp")
+        self.connect("af_3d.cm_corrected", "xf.cm_interp")
 
         # ROSCO can be used at all levels
         if modeling_options['ROSCO']['flag']:
