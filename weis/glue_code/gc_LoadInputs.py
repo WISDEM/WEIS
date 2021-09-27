@@ -39,10 +39,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.dylib')
             else:
                 path2dll = osp.join(run_dir, 'local','lib','libdiscon.so')
-            self.modeling_options['General']['openfast_configuration']['path2dll'] = path2dll
+
+            # User-defined control dylib (path2dll)
+            if self.modeling_options['General']['openfast_configuration']['path2dll'] == 'none':   #Default option, use above
+                self.modeling_options['General']['openfast_configuration']['path2dll'] = path2dll
+            else:
+                if not os.path.isabs(self.modeling_options['General']['openfast_configuration']['path2dll']):  # make relative path absolute
+                    self.modeling_options['General']['openfast_configuration']['path2dll'] = \
+                        os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_lib'])
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
-            if self.modeling_options["flags"]["offshore"]:
+            if self.modeling_options["flags"]["offshore"] or self.modeling_options["Level3"]["from_openfast"]:
                 if self.modeling_options["Level1"]["potential_model_override"] == 2:
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
@@ -112,7 +119,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
-        self.modeling_options['DLC_driver']['n_ws_dlc11'] = dlc_generator.n_ws_dlc11
+        if hasattr(dlc_generator,'n_ws_dlc11'):
+            self.modeling_options['DLC_driver']['n_ws_dlc11'] = dlc_generator.n_ws_dlc11
+        else:
+            self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
 
 
     def set_openmdao_vectors_control(self):
@@ -128,10 +138,12 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     def update_ontology_control(self, wt_opt):
         # Update controller
         if self.modeling_options['flags']['control']:
-            self.wt_init['control']['pitch']['PC_omega'] = float(wt_opt['tune_rosco_ivc.PC_omega'])
-            self.wt_init['control']['pitch']['PC_zeta']  = float(wt_opt['tune_rosco_ivc.PC_zeta'])
-            self.wt_init['control']['torque']['VS_omega'] = float(wt_opt['tune_rosco_ivc.VS_omega'])
-            self.wt_init['control']['torque']['VS_zeta']  = float(wt_opt['tune_rosco_ivc.VS_zeta'])
+            self.wt_init['control']['pitch']['omega_pc'] = wt_opt['tune_rosco_ivc.omega_pc']
+            self.wt_init['control']['pitch']['zeta_pc']  = wt_opt['tune_rosco_ivc.zeta_pc']
+            self.wt_init['control']['torque']['omega_vs'] = float(wt_opt['tune_rosco_ivc.omega_vs'])
+            self.wt_init['control']['torque']['zeta_vs']  = float(wt_opt['tune_rosco_ivc.zeta_vs'])
+            self.wt_init['control']['pitch']['Kp_float']  = float(wt_opt['tune_rosco_ivc.Kp_float'])
+            self.wt_init['control']['pitch']['ptfm_freq']  = float(wt_opt['tune_rosco_ivc.ptfm_freq'])
             if self.modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.wt_init['control']['dac']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
                 self.wt_init['control']['dac']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])

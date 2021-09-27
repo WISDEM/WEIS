@@ -1,5 +1,8 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: NREL5MW_OC3_spar
+        OF_run_dir: temp/NREL5MW_OC3_spar
 
 WISDEM:
     RotorSE:
@@ -83,12 +86,15 @@ ROSCO:
     flag: True
     SD_Mode: 0
     PS_Mode: 1
-    Fl_Mode: 1
+    Fl_Mode: 2
+    zeta_pc: [0.7]
+    omega_pc: [0.35]
+    twr_freq: 100                     # Frequency of notch in floating feedback (F_NotchCornerFreq)
+    ptfm_freq: .2                     # Frequency of LPF in floating feedback (F_FlCornerFreq)
+    zeta_vs: 0.7
+    omega_vs: 0.2
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: temp/NREL5MW_OC3_spar
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2

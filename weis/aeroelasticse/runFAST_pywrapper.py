@@ -112,10 +112,12 @@ class runFAST_pywrapper(object):
         self.case               = {}     # dictionary of variable values to change
         self.channels           = {}     # dictionary of output channels to change
         self.keep_time          = False
+        self.use_exe            = False  # use openfast executable instead of library, helpful for debugging sometimes
         self.goodman            = False
         self.magnitude_channels = magnitude_channels_default
         self.fatigue_channels   = fatigue_channels_default
         self.la                 = None # Will be initialized on first run through
+        
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
 
         # Optional population class attributes from key word arguments
@@ -169,7 +171,7 @@ class runFAST_pywrapper(object):
         # Make sure pCrunch is ready
         self.init_crunch()
             
-        if self.FAST_exe is None: # Use library
+        if not self.use_exe: # Use library
 
             FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
             
@@ -257,6 +259,7 @@ class runFAST_pywrapper_batch(object):
         self.magnitude_channels = magnitude_channels_default
         self.fatigue_channels   = fatigue_channels_default
         self.la                 = None
+        self.use_exe            = False
         
         self.post               = None
 
@@ -288,6 +291,7 @@ class runFAST_pywrapper_batch(object):
             case_data['FAST_yamlfile_out']  = self.FAST_yamlfile_out
             case_data['channels']           = self.channels
             case_data['overwrite_outfiles'] = self.overwrite_outfiles
+            case_data['use_exe']            = self.use_exe
             case_data['keep_time']          = self.keep_time
             case_data['goodman']            = self.goodman
             case_data['magnitude_channels'] = self.magnitude_channels
@@ -421,7 +425,7 @@ def evaluate(indict):
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
                   'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time',
-                  'goodman','magnitude_channels','fatigue_channels','post']
+                  'goodman','magnitude_channels','fatigue_channels','post','use_exe']
     
     fast = runFAST_pywrapper()
     for k in indict:

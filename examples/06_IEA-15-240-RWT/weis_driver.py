@@ -5,8 +5,7 @@ import os, time, sys
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-wisdem_examples        = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "WISDEM", "examples")
-fname_wt_input         = os.path.join(wisdem_examples, "02_reference_turbines", "IEA-15-240-RWT.yaml")
+fname_wt_input         = run_dir + "IEA-15-240-RWT.yaml"
 fname_modeling_options = run_dir + "modeling_options.yaml"
 fname_analysis_options = run_dir + "analysis_options.yaml"
 
