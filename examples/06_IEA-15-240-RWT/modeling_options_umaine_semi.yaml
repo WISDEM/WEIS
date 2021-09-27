@@ -64,6 +64,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         #AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
 
+Level1:
+    flag: False
+    potential_model_override: 2
+
 ROSCO:
     flag: True
     

@@ -29,7 +29,7 @@ from ROSCO_toolbox import control_interface as ROSCO_ci
 from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
-
+from weis.aeroelasticse.StC_defaults        import default_StC_vt
 
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -738,6 +738,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['HydroDyn']          = {}
         fst_vt['MoorDyn']           = {}
         fst_vt['MAP']               = {}
+        
+        # Structural control
+        fst_vt['TStC']               = {}
 
         fst_vt = self.load_FAST_model_opts(fst_vt)
 
@@ -821,64 +824,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
         fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
         fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
-
-        # Structural Control: these could be defaulted modeling options, but we will add them as DVs later, so we'll hard code them here for now
-        fst_vt['ServoDyn']['NumBStC']       = 0
-        fst_vt['ServoDyn']['BStCfiles']     = "unused"
-        fst_vt['ServoDyn']['NumNStC']       = 0
-        fst_vt['ServoDyn']['NStCfiles']     = "unused"
-        fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
-        fst_vt['ServoDyn']['TStCfiles']     = "unused"
-        fst_vt['ServoDyn']['NumSStC']       = 0
-        fst_vt['ServoDyn']['SStCfiles']     = "unused"
-        
-        fst_vt['StC']['Echo'] = True
-        fst_vt['StC']['StC_DOF_MODE'] = 3
-        fst_vt['StC']['StC_X_DOF'] = False
-        fst_vt['StC']['StC_Y_DOF'] = False
-        fst_vt['StC']['StC_Z_DOF'] = False
-        fst_vt['StC']['StC_P_X'] = 0.
-        fst_vt['StC']['StC_P_Y'] = 0.
-        fst_vt['StC']['StC_P_Z'] = 75.
-        fst_vt['StC']['StC_X_DSP'] = 0.
-        fst_vt['StC']['StC_Y_DSP'] = 0.
-        fst_vt['StC']['StC_Z_DSP'] = 0.
-        fst_vt['StC']['StC_X_PSP'] = 0.
-        fst_vt['StC']['StC_X_NSP'] = 0.
-        fst_vt['StC']['StC_Y_PSP'] = 0.
-        fst_vt['StC']['StC_Y_NSP'] = 0.
-        fst_vt['StC']['StC_Z_PSP'] = 0.
-        fst_vt['StC']['StC_Z_NSP'] = 0.
-        fst_vt['StC']['StC_X_M'] = 0.
-        fst_vt['StC']['StC_Y_M'] = 0.
-        fst_vt['StC']['StC_Z_M'] = 0.
-        fst_vt['StC']['StC_XY_M'] = 0.
-        fst_vt['StC']['StC_X_K'] = 0.
-        fst_vt['StC']['StC_Y_K'] = 0.
-        fst_vt['StC']['StC_Z_K'] = 0.
-        fst_vt['StC']['StC_X_C'] = 0.
-        fst_vt['StC']['StC_Y_C'] = 0.
-        fst_vt['StC']['StC_Z_C'] = 0.
-        fst_vt['StC']['StC_X_KS'] = 0.
-        fst_vt['StC']['StC_Y_KS'] = 0.
-        fst_vt['StC']['StC_Z_KS'] = 0.
-        fst_vt['StC']['StC_X_CS'] = 0.
-        fst_vt['StC']['StC_Y_CS'] = 0.
-        fst_vt['StC']['StC_Z_CS'] = 0.
-        fst_vt['StC']['Use_F_TBL'] = False
-        fst_vt['StC']['NKInpSt'] = 17
-        fst_vt['StC']['L_X'] = 7.9325
-        fst_vt['StC']['B_X'] = 6.5929
-        fst_vt['StC']['area_X'] = 2.0217
-        fst_vt['StC']['area_ratio_X'] = 0.913
-        fst_vt['StC']['headLossCoeff_X'] = 2.5265
-        fst_vt['StC']['rho_X'] = 1000
-        fst_vt['StC']['L_Y'] = 3.5767
-        fst_vt['StC']['B_Y'] = 2.1788
-        fst_vt['StC']['area_Y'] = 1.2252
-        fst_vt['StC']['area_ratio_Y'] = 2.7232
-        fst_vt['StC']['headLossCoeff_Y'] = 0.6433
-        fst_vt['StC']['rho_Y'] = 1000        
         
 
         # Masses and inertias from DriveSE
@@ -1496,6 +1441,56 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MAP']['B'] = np.zeros( n_nodes )
             fst_vt['MAP']['Option'] = ["outer_tol 1e-5"]
 
+
+        # Structural Control: these could be defaulted modeling options, but we will add them as DVs later, so we'll hard code them here for now
+        fst_vt['ServoDyn']['NumBStC']       = 0
+        fst_vt['ServoDyn']['BStCfiles']     = ["unused"]
+        fst_vt['ServoDyn']['NumNStC']       = 0
+        fst_vt['ServoDyn']['NStCfiles']     = ["unused"]
+        fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
+        fst_vt['ServoDyn']['NumTStC']       = 1
+        fst_vt['ServoDyn']['TStCfiles']     = ["unused"]
+        fst_vt['ServoDyn']['NumSStC']       = 0
+        fst_vt['ServoDyn']['SStCfiles']     = ["unused"]
+
+        # Catch erors, we only support tower, nacelle and substructure StCs right now
+        if fst_vt['ServoDyn']['NumBStC']:
+            raise Exception('openmdao_openfast: WEIS currently only supports tower TMDs')
+
+        # Hard-coded tower input
+        TStC_height = [0.5]       # % of the way up the tower
+        TStC_mass   = [5000]
+        TStC_stiffness = [2300]
+        TStC_damping = [30]
+
+
+        fst_vt['TStC'] = [None] * fst_vt['ServoDyn']['NumTStC']
+
+        for i_TStC in range(fst_vt['ServoDyn']['NumTStC']):
+            # Set defaults initially
+            fst_vt['TStC'][i_TStC] = default_StC_vt()  
+
+            # Mode is omnidirectional for tower TMD
+            fst_vt['TStC'][i_TStC]['StC_DOF_MODE']  = 2
+            fst_vt['TStC'][i_TStC]['StC_X_DOF'] = fst_vt['TStC'][i_TStC]['StC_X_DOF']   = True
+            
+            # Set height, X = Y = 0 for now
+            fst_vt['TStC'][i_TStC]['StC_P_Z']  = TStC_height[i_TStC] * (fst_vt['ElastoDyn']['TowerHt'] - fst_vt['ElastoDyn']['TowerBsHt']) +  fst_vt['ElastoDyn']['TowerBsHt']
+
+            # Set Mass, Stiffness, Damping
+            fst_vt['TStC'][i_TStC]['StC_X_M'] = fst_vt['TStC'][i_TStC]['StC_Y_M'] = fst_vt['TStC'][i_TStC]['StC_XY_M']  = TStC_mass[i_TStC]
+            fst_vt['TStC'][i_TStC]['StC_X_K'] = fst_vt['TStC'][i_TStC]['StC_Y_K']   = TStC_stiffness[i_TStC]
+            fst_vt['TStC'][i_TStC]['StC_X_C'] = fst_vt['TStC'][i_TStC]['StC_Y_C']   = TStC_damping[i_TStC]
+
+
+
+            # Control
+            fst_vt['TStC'][i_TStC]['StC_CMODE']  = 1
+            fst_vt['TStC'][i_TStC]['StC_SA_MODE']  = 1
+
+            # ServoDyn files, update later to go with each case
+            fst_vt['ServoDyn']['TStCfiles'][i_TStC] = self.FAST_namingOut + f"_StC_Twr_{i_TStC}.dat"
+            
         return fst_vt
 
     def output_channels(self):
