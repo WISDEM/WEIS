@@ -100,7 +100,7 @@ CONTAINS
 
         
         ! FloatingFeedback
-        IF (CntrPar%Fl_Mode == 1) THEN
+        IF (CntrPar%Fl_Mode > 0) THEN
             LocalVar%Fl_PitCom = FloatingFeedback(LocalVar, CntrPar, objInst)
             LocalVar%PC_PitComT = LocalVar%PC_PitComT + LocalVar%Fl_PitCom
         ENDIF
@@ -363,7 +363,8 @@ CONTAINS
     REAL FUNCTION FloatingFeedback(LocalVar, CntrPar, objInst) 
     ! FloatingFeedback defines a minimum blade pitch angle based on a lookup table provided by DISON.IN
     !       Fl_Mode = 0, No feedback
-    !       Fl_Mode = 1, Proportional feedback of nacelle velocity
+    !       Fl_Mode = 1, Proportional feedback of nacelle velocity (translational)
+    !       Fl_Mode = 2, Proportional feedback of nacelle velocity (rotational)
         USE ROSCO_Types, ONLY : LocalVariables, ControlParameters, ObjectInstances
         IMPLICIT NONE
         ! Inputs
@@ -371,11 +372,17 @@ CONTAINS
         TYPE(LocalVariables), INTENT(IN)     :: LocalVar 
         TYPE(ObjectInstances), INTENT(INOUT)    :: objInst
         ! Allocate Variables 
-        REAL(8)                      :: NacIMU_FA_vel ! Tower fore-aft velocity
+        REAL(8)                      :: FA_vel ! Tower fore-aft velocity [m/s]
+        REAL(8)                      :: NacIMU_FA_vel ! Tower fore-aft pitching velocity [rad/s]
         
         ! Calculate floating contribution to pitch command
+        FA_vel = PIController(LocalVar%FA_AccF, 0.0, 1.0, -100.0 , 100.0 ,LocalVar%DT, 0.0, .FALSE., objInst%instPI) ! NJA: should never reach saturation limits....
         NacIMU_FA_vel = PIController(LocalVar%NacIMU_FA_AccF, 0.0, 1.0, -100.0 , 100.0 ,LocalVar%DT, 0.0, .FALSE., objInst%instPI) ! NJA: should never reach saturation limits....
-        FloatingFeedback = (0.0 - NacIMU_FA_vel) * CntrPar%Fl_Kp !* LocalVar%PC_KP/maxval(CntrPar%PC_GS_KP)
+        if (CntrPar%Fl_Mode == 1) THEN
+            FloatingFeedback = (0.0 - FA_vel) * CntrPar%Fl_Kp !* LocalVar%PC_KP/maxval(CntrPar%PC_GS_KP)
+        ELSEIF (CntrPar%Fl_Mode == 2) THEN
+            FloatingFeedback = (0.0 - NacIMU_FA_vel) * CntrPar%Fl_Kp !* LocalVar%PC_KP/maxval(CntrPar%PC_GS_KP)
+        END IF
 
     END FUNCTION FloatingFeedback
 !-------------------------------------------------------------------------------------------------------------------------------

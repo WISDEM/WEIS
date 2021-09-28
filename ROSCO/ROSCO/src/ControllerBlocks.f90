@@ -255,13 +255,6 @@ CONTAINS
                 Cp_op   = 0.25  ! initialize so debug output doesn't give *****
                 
             ELSE
-                IF (ieee_is_nan(v_h)) THEN
-                   om_r = LocalVar%RotSpeedF
-                   v_t = 0.0
-                   v_m = LocalVar%HorWindV
-                   v_h = LocalVar%HorWindV
-                ENDIF
-                
                 ! Find estimated operating Cp and system pole
                 A_op = interp1d(CntrPar%WE_FOPoles_v,CntrPar%WE_FOPoles,v_h,ErrVar)
 
@@ -305,7 +298,16 @@ CONTAINS
                 v_m = xh(3,1)
                 v_h = v_t + v_m
                 LocalVar%WE_Vw = v_m + v_t
+
+                IF (ieee_is_nan(v_h)) THEN
+                    om_r = LocalVar%RotSpeedF
+                    v_t = 0.0
+                    v_m = LocalVar%HorWindV
+                    v_h = LocalVar%HorWindV
+                    LocalVar%WE_Vw = v_m + v_t
                 ENDIF
+
+            ENDIF
             ! Debug Outputs
             DebugVar%WE_Cp = Cp_op
             DebugVar%WE_Vm = v_m

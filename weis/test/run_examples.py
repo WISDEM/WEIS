@@ -17,7 +17,7 @@ all_scripts = [
     #"09_design_of_experiments/weis_driver", # executed in the test_DOE.py
     "10_override_example/weis_driver",
     #"12_linearization/doe_driver", # Soul crushingly long
-    "12_linearization/weis_driver"
+    # "12_linearization/weis_driver"
 ]
 
 class TestExamples(unittest.TestCase):

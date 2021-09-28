@@ -163,9 +163,9 @@ properties:
             Fl_Mode:            
                 type: number
                 minimum: 0
-                maximum: 1
+                maximum: 2
                 default: 0
-                description: Floating specific feedback mode (0- no nacelle velocity feedback, 1- nacelle velocity feedback)
+                description: Floating specific feedback mode (0- no nacelle velocity feedback, 1 - nacelle velocity feedback, 2 - nacelle pitching acceleration feedback)
             Flp_Mode:           
                 type: number
                 minimum: 0
@@ -186,7 +186,7 @@ properties:
                     type: number
                     minimum: 0
                     uniqueItems: True
-                default: [0]
+                default: [12]
             zeta_pc:                       
                 type: [array,number]
                 description: List of pitch controller desired damping ratio at U_pc [-]

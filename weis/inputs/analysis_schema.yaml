@@ -132,6 +132,34 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: rad/s
+                                    Kp_float:
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: -100
+                                                unit: s
+                                            max:
+                                                type: number
+                                                default: 0
+                                                unit: s
+                                    ptfm_freq:
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.00001
+                                                minimum: 0.00001
+                                                unit: rad/s
+                                            max:
+                                                type: number
+                                                default: 1.5
+                                                minimum: 0.00001
+                                                unit: rad/s
                             torque_control:
                                 type: object
                                 default: {}
