@@ -775,6 +775,7 @@ class TowerMass(om.ExplicitComponent):
         hub_height = inputs["hub_height"]
         tower_mass_coeff = inputs["tower_mass_coeff"]
         tower_mass_exp = inputs["tower_mass_exp"]
+        breakpoint()
 
         # calculate the tower mass
         outputs["tower_mass"] = tower_mass_coeff * hub_height ** tower_mass_exp

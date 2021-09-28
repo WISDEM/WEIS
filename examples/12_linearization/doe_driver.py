@@ -6,7 +6,11 @@ fname_wt_input         = mydir + os.sep + "IEA-15-floating.yaml"
 fname_modeling_options = mydir + os.sep + "modeling_options_doe.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options_doe.yaml"
 
+<<<<<<< HEAD
 wt_opt, modeling_options, analysis_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
 breakpoint()
 #print(wt_opt.model.aeroelastic.ABCD_list)
+=======
+wt_opt, modeling_options, analysis_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
+>>>>>>> 848b2406ee8e0e671c61fb7a3dd706db58b2cf87

@@ -4,8 +4,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        spar_cap_ss: Spar_cap_SS
-        spar_cap_ps: Spar_cap_PS
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
         n_tsr_perf_surfaces: 5
@@ -55,6 +55,11 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 
 ROSCO:
     flag: True
+    zeta_pc:    [1.0]
+    omega_pc:   [0.2]
+    zeta_vs: 1.0
+    omega_vs: 0.2
+
     
 DLC_driver:
     openfast_file_management:

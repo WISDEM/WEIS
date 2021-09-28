@@ -3,10 +3,10 @@ import os.path as osp
 import platform
 import numpy as np
 
-# if not platform.system() == 'Windows':
-#     import pyhams.libhams as hams
-# else:
-#     import subprocess as sub
+if not platform.system() == 'Windows':
+    import pyhams.libhams as hams
+else:
+    import subprocess as sub
 
 def nemohmesh_to_pnl(nemohMeshPath, writeDir=None):
     '''

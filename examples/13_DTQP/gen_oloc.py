@@ -134,7 +134,7 @@ if __name__ == '__main__':
 
     run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
     
-
+    
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
         level2_disturbance, 
@@ -142,7 +142,10 @@ if __name__ == '__main__':
         fst_vt, 
         la, 
         magnitude_channels, 
-        run_directory
+        run_directory,
+        cores = 1
         )
+
+    print('here')
     
     

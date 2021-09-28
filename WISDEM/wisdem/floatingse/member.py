@@ -1,5 +1,7 @@
 import copy
 
+from sortedcontainers import SortedDict
+
 import numpy as np
 import openmdao.api as om
 import wisdem.commonse.frustum as frustum
@@ -7,7 +9,6 @@ import wisdem.commonse.utilities as util
 import wisdem.commonse.manufacturing as manufacture
 import wisdem.commonse.cross_sections as cs
 from wisdem.commonse import eps, gravity
-from sortedcontainers import SortedDict
 from wisdem.commonse.wind_wave_drag import CylinderEnvironment
 from wisdem.commonse.utilization_constraints import GeometricConstraints
 
@@ -293,7 +294,6 @@ class DiscretizationYAML(om.ExplicitComponent):
                 E_param[k, :] = inputs["E_user"]
             else:
                 E_param[k, :] = E[imat]
-
             G_param[k, :] = G[imat]
             sigy_param[k, :] = sigy[imat]
             sigu_param[k, :] = sigu[imat]
