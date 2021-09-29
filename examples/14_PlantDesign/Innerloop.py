@@ -124,7 +124,7 @@ if __name__ == "__main__":
         
        
     # Linear Model
-    pkl_file = mydir + os.sep + "outputs" + os.sep + "ABCD_red.pkl"
+    pkl_file = mydir + os.sep + "outputs" + os.sep + "ABCD_matrices.pkl"
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)

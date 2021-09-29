@@ -186,7 +186,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     opts = options()
 
-    opts.dt.nt = 1000
+    opts.dt.nt = 3000
     opts.solver.tolerence = 1e-10
     opts.solver.maxiters = 1500
     opts.solver.function = 'pyoptsparse'

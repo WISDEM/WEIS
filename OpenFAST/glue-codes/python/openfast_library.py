@@ -19,9 +19,9 @@ class FastLibAPI(CDLL):
         super().__init__(library_path)
         self.library_path = library_path
         self.input_file_name = create_string_buffer(os.path.abspath(input_file_name).encode('utf-8'))
-
+        breakpoint()
         self._initialize_routines()
-
+        
         # Create buffers for class data
         self.n_turbines = c_int(1)
         self.i_turb = c_int(0)

@@ -18,7 +18,7 @@ constraints:
     rotor_overspeed:
       flag: True
       # min: 0.0
-      max: 0.0
+      max: 0.2
     Max_PtfmPitch:
       flag: True
       max: 5.5

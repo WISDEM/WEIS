@@ -117,7 +117,7 @@ if __name__ == '__main__':
         with open(lin_pickle,"wb") as pkl_file:
             pickle.dump(LinearTurbine,pkl_file)
     
-    
+    breakpoint()
     fst_vt = {}
     fst_vt['DISCON_in'] = {}
     fst_vt['DISCON_in']['PC_RefSpd'] = 0.7853192931562493
@@ -137,7 +137,7 @@ if __name__ == '__main__':
     
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
-        level2_disturbance, 
+        level2_disturbance[0:1], 
         analysis_options, 
         fst_vt, 
         la, 
