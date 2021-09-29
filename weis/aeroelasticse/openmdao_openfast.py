@@ -701,6 +701,7 @@ class FASTLoadCases(ExplicitComponent):
                         LinearTurbine, 
                         level2_disturbance, 
                         self.options['opt_options'], 
+                        self.options['modeling_options'], 
                         self.fst_vt, 
                         self.la, 
                         self.magnitude_channels, 

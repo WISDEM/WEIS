@@ -142,11 +142,12 @@ if __name__ == '__main__':
         LinearTurbine, 
         level2_disturbance, 
         analysis_options, 
+        modeling_options,
         fst_vt, 
         la, 
         magnitude_channels, 
         run_directory,
-        cores = 1
+        cores = 4
         )
 
     print('here')

@@ -32,7 +32,10 @@ def DTQPy_multiphase(setup,opts):
         X = X.reshape(-1,1)
         X = X*(SM) + SC
     
-    F = F+c
+    if F == None:
+        raise Exception("The optimization problem was not solved. Check log for more details")
+    else:
+        F = F+c
     
     nt = internal.nt;nu = internal.nu; ny = internal.ny; npl = internal.npl
     

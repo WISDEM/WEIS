@@ -113,6 +113,9 @@ Level2:
         NLinTimes: 12
     DTQP:
         flag: True
+        nt: 5000
+        maxiters: 1500
+        tolerance: 1e-5
 
 Level1:
     potential_model_override: 2

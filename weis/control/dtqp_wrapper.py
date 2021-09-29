@@ -9,7 +9,7 @@ from pCrunch.io import OpenFASTOutput
 from weis.aeroelasticse.CaseGen_General import case_naming
 
 
-def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
+def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
     ''' 
     Convert weis information to DTQP and vice versa
     Catch errors to ensure we are using DTQP in a way that it is able to be used
@@ -18,6 +18,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     Inputs:         LinearTurbine:  LinearTurbineModel object
                     level2_disturbances: list of disturbance dicts with Time and Wind keys
                     analysis_options: weis analysis options with constraints, merit figures
+                    modeling_options: weis modeling options with DTQP options
                     fst_vt: dict with OpenFAST/ROSCO variables
                     loads_analysis: pCrunch LoadsAnalysis object
                     magnitude_channels: dict for pCrunch
@@ -91,6 +92,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         dtqp_input['case_name']             = case_names[i_oloc]
         dtqp_input['run_dir']               = run_dir
         dtqp_input['magnitude_channels']    = magnitude_channels
+        dtqp_input['dtqp_options']          = modeling_options['Level2']['DTQP']
 
         dtqp_input_list.append(dtqp_input)
 
@@ -141,7 +143,12 @@ def run_dtqp(dtqp_input):
 
 
     # Run DTQP
-    T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+    T,U,X,Y = DTQPy_oloc(
+        dtqp_input['LinearTurbine'],
+        dtqp_input['dist'],
+        dtqp_input['dtqp_constraints'],
+        dtqp_input['dtqp_options'],
+        plot=dtqp_input['plot'])
 
     # Shorten output names from linearization output to one like level3 openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed

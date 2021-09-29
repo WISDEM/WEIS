@@ -2754,6 +2754,19 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run a DTQP optimization at level 2
+                    nt:
+                        type: number
+                        default: 5000
+                        description: Number of timesteps in DTQP timeseries optimization
+                    maxiters:
+                        type: number
+                        default: 1500
+                        description: Maximum number of DTQP optimization iterations
+                    tolerance:
+                        type: number
+                        default: 1.E-10
+                        description: Tolerance of DTQP optimization
+
             #InflowWind: *ofinflowwind
             #AeroDyn: *ofaerodyn
             #ElastoDyn: *ofelastodyn
