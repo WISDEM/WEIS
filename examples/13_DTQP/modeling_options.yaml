@@ -113,7 +113,7 @@ Level2:
         NLinTimes: 12
     DTQP:
         flag: True
-        nt: 5000
+        nt: 3000
         maxiters: 1500
         tolerance: 1e-5
 
@@ -129,7 +129,7 @@ DLC_driver:
           wind_speed: [16.,20.,24.]
           wave_height: [8.]
           wave_period: [2.]
-          wind_seeds: [1]
+          wind_seed: [1,2,3]
           n_seeds: 2
           analysis_time: 700.
           transient_time: 100.

@@ -147,7 +147,7 @@ if __name__ == '__main__':
         la, 
         magnitude_channels, 
         run_directory,
-        cores = 4
+        cores = 1
         )
 
     print('here')
