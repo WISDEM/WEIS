@@ -757,6 +757,7 @@ def get_flap_polars(run_xfoil_params, afi):
             # eta = blade['outer_shape_bem']['chord']['grid'][afi]
             c   = chord[afi]  # blade chord length at cross section
             s   = span[afi]
+            cr  = chord[afi] / rad_loc[afi]
             rR  = rad_loc[afi] / rad_loc[-1]  # non-dimensional blade radial station at cross section in the rotor coordinate system
             Re_loc_af[:,ind] = c* maxTS * rR / KinVisc
             Ma_loc_af[:,ind] = maxTS * rR / SpdSound
@@ -771,8 +772,8 @@ def get_flap_polars(run_xfoil_params, afi):
             data = runXfoil(xfoil_path, flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc_af[0, ind], **xfoil_kw)
 
             oldpolar= Polar(Re_loc_af[0,ind], data[:,0],data[:,1],data[:,2],data[:,4]) # data[:,0] is alpha, data[:,1] is Cl, data[:,2] is Cd, data[:,4] is Cm
-            polar3d = oldpolar.correction3D(rR,c/R,run_xfoil_params['tsr']) # Apply 3D corrections (made sure to change the r/R, c/R, and tsr values appropriately when calling AFcorrections())
-            cdmax   = 1.5
+            polar3d = oldpolar.correction3D(rR,cr,run_xfoil_params['tsr']) # Apply 3D corrections (made sure to change the r/R, c/r, and tsr values appropriately when calling AFcorrections())
+            cdmax   = np.max(data[:,2]) # Keep the same max Cd as before
             polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
 
             for j in range(run_xfoil_params['n_Re']):

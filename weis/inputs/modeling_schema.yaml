@@ -3294,3 +3294,8 @@ properties:
         type: object
         default: {}
         description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/ROSCO_toolbox/inputs/toolbox_shema.yaml
+        properties:
+            tuning_yaml:
+                type: string
+                description: ROSCO_Toolbox control tuning yaml used to load initial turbine parameters. Used in controls-only optimization.
+                default: unused

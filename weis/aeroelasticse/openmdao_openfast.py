@@ -1772,8 +1772,6 @@ class FASTLoadCases(ExplicitComponent):
 
         # Run FAST
         if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
-            print('MPI INFO:')
-            print(self.mpi_comm_map_down)
             summary_stats, extreme_table, DELs, Damage, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
