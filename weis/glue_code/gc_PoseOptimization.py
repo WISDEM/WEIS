@@ -32,6 +32,23 @@ class PoseOptimizationWEIS(PoseOptimization):
         if self.opt['driver']['optimization']['form'] == 'central':
             n_add *= 2
 
+        # TMD DVs
+        if self.opt['design_variables']['TMDs']['flag']:
+            TMD_opt = self.opt['design_variables']['TMDs']
+
+            # We only support one TMD for now
+            for tmd_group in TMD_opt['groups']:
+                if 'mass' in tmd_group:
+                    n_add += 1
+                if 'stiffness' in tmd_group:
+                    n_add += 1
+                if 'damping' in tmd_group:
+                    n_add += 1
+
+
+
+        
+
         return n_DV+n_add
 
 
@@ -108,6 +125,17 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_design_var('tune_rosco_ivc.ptfm_freq', lower=control_opt['servo']['pitch_control']['ptfm_freq']['min'], 
                                                            upper=control_opt['servo']['pitch_control']['ptfm_freq']['max'])
 
+        if self.opt['design_variables']['TMDs']['flag']:
+            TMD_opt = self.opt['design_variables']['TMDs']
+
+            # We only support one TMD for now
+            for tmd_group in TMD_opt['groups']:
+                if 'mass' in tmd_group:
+                    wt_opt.model.add_design_var('TMDs.mass', lower=tmd_group['mass']['lower_bound'],upper=tmd_group['mass']['upper_bound'])
+                if 'stiffness' in tmd_group:
+                    wt_opt.model.add_design_var('TMDs.stiffness', lower=tmd_group['stiffness']['lower_bound'],upper=tmd_group['stiffness']['upper_bound'])
+                if 'damping' in tmd_group:
+                    wt_opt.model.add_design_var('TMDs.damping', lower=tmd_group['damping']['lower_bound'],upper=tmd_group['damping']['upper_bound'])
         
         return wt_opt
 

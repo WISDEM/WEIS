@@ -907,7 +907,7 @@ TMDs:
       component: tower
       location: [0,0,0.5]
       mass: 2000
-      stiffness: 28000
+      stiffness: 20.e5
       damping: 2800
 
 materials:

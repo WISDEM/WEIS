@@ -200,6 +200,44 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
+        TMDs:
+            type: object
+            description: Design variables associated with TMDs
+            default: {}
+            properties:
+                flag: *flag
+                groups:
+                    type: array
+                    description: Sets of members that share the same design
+                    default: []
+                    items:
+                        type: object
+                        properties:
+                            names:
+                                type: array
+                                description: TMD names of those that are linked
+                                items:
+                                    type: string
+                            mass:
+                                type: object
+                                description: Mass optimization of TMD group
+                                properties:
+                                    lower_bound: &bound
+                                        type: number
+                                        default: 20000
+                                    upper_bound: *bound
+                            stiffness:
+                                type: object
+                                description: Stiffness optimization of TMD group
+                                properties:
+                                    lower_bound: *bound
+                                    upper_bound: *bound
+                            damping:
+                                type: object
+                                description: Damping optimization of TMD group
+                                properties:
+                                    lower_bound: *bound
+                                    upper_bound: *bound
 
     constraints:
         # GB: These all need gammas or safety factors
