@@ -1,5 +1,8 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: IEA_w_TMD
+        OF_run_dir: outputs/IEA_w_TMD_0
 
 WISDEM:
     RotorSE:
@@ -31,6 +34,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompSub: 0
         CompMooring: 3
         CompIce: 0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
@@ -63,6 +67,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         #AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         #AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
+        PotFile: /Users/dzalkind/Tools/WEIS-3/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi.1
 
 Level1:
     flag: False
@@ -72,17 +77,14 @@ ROSCO:
     flag: True
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: VolturnUS-S_semi
-        OF_run_dir: temp/VolturnUS-S_semi
     DLCs:
         - DLC: "1.1"
-          ws_bin_size: 10
+          wind_speed: [12,14,16]
           n_seeds: 1
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 600.
+          transient_time: 1.e-5
           turbulent_wind:
               HubHt: 140
-              GridHeight: 220
-              GridWidth: 220
+              GridHeight: 300
+              GridWidth: 300
 

@@ -159,7 +159,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
 
             # StC or TMD inputs; structural control and tuned mass dampers
-            self.add_discrete_input("num_tower_StCs", val=0)
 
             # tower properties
             self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
@@ -356,6 +355,13 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('tower_axial_load2stress',   val=np.ones([n_height-1,6]), units="m**2",  desc='Tower-monopile coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
             self.add_input('tower_shear_load2stress',   val=np.ones([n_height-1,6]), units="m**2",  desc='Tower-monopile coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
         
+
+        # TMD params
+        if self.options['modeling_options']['flags']['TMDs']:
+            self.add_input('TMD_mass',         val=0.0, units='kg',         desc='TMD Mass')
+            self.add_input('TMD_stiffness',    val=0.0, units='N/m',        desc='TMD Stiffnes')
+            self.add_input('TMD_damping',      val=0.0, units='N/(m/s)',    desc='TMD Damping')
+            self.add_discrete_input('num_tower_StCs',      val=0,           desc='Number of tower TMDs')
 
         # DLC options
         n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']
@@ -1448,48 +1454,50 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['NumNStC']       = 0
         fst_vt['ServoDyn']['NStCfiles']     = ["unused"]
         fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
-        fst_vt['ServoDyn']['NumTStC']       = 1
         fst_vt['ServoDyn']['TStCfiles']     = ["unused"]
         fst_vt['ServoDyn']['NumSStC']       = 0
         fst_vt['ServoDyn']['SStCfiles']     = ["unused"]
+
+
 
         # Catch erors, we only support tower, nacelle and substructure StCs right now
         if fst_vt['ServoDyn']['NumBStC']:
             raise Exception('openmdao_openfast: WEIS currently only supports tower TMDs')
 
         # Hard-coded tower input
-        TStC_height = [0.5]       # % of the way up the tower
-        TStC_mass   = [5000]
-        TStC_stiffness = [2300]
-        TStC_damping = [30]
+        if modopt['flags']['TMDs']:
+            TStC_height         = [0.5]       # fraction of the way up the tower
+            TStC_mass           = [inputs['TMD_mass']]
+            TStC_stiffness      = [inputs['TMD_stiffness']]
+            TStC_damping        = [inputs['TMD_damping']]
+
+            fst_vt['TStC'] = [None] * fst_vt['ServoDyn']['NumTStC']
+
+            for i_TStC in range(fst_vt['ServoDyn']['NumTStC']):
+                # Set defaults initially
+                fst_vt['TStC'][i_TStC] = default_StC_vt()  
+
+                # Mode is omnidirectional for tower TMD
+                fst_vt['TStC'][i_TStC]['StC_DOF_MODE']  = 2
+                fst_vt['TStC'][i_TStC]['StC_X_DOF'] = fst_vt['TStC'][i_TStC]['StC_X_DOF']   = True
+                
+                # Set height, X = Y = 0 for now
+                fst_vt['TStC'][i_TStC]['StC_P_Z']  = TStC_height[i_TStC] * (fst_vt['ElastoDyn']['TowerHt'] - fst_vt['ElastoDyn']['TowerBsHt']) +  fst_vt['ElastoDyn']['TowerBsHt']
+
+                # Set Mass, Stiffness, Damping
+                fst_vt['TStC'][i_TStC]['StC_X_M'] = fst_vt['TStC'][i_TStC]['StC_Y_M'] = fst_vt['TStC'][i_TStC]['StC_XY_M']  = TStC_mass[i_TStC][0]
+                fst_vt['TStC'][i_TStC]['StC_X_K'] = fst_vt['TStC'][i_TStC]['StC_Y_K']   = TStC_stiffness[i_TStC][0]
+                fst_vt['TStC'][i_TStC]['StC_X_C'] = fst_vt['TStC'][i_TStC]['StC_Y_C']   = TStC_damping[i_TStC][0]
 
 
-        fst_vt['TStC'] = [None] * fst_vt['ServoDyn']['NumTStC']
 
-        for i_TStC in range(fst_vt['ServoDyn']['NumTStC']):
-            # Set defaults initially
-            fst_vt['TStC'][i_TStC] = default_StC_vt()  
+                # Control
+                fst_vt['TStC'][i_TStC]['StC_CMODE']  = 1
+                fst_vt['TStC'][i_TStC]['StC_SA_MODE']  = 1
 
-            # Mode is omnidirectional for tower TMD
-            fst_vt['TStC'][i_TStC]['StC_DOF_MODE']  = 2
-            fst_vt['TStC'][i_TStC]['StC_X_DOF'] = fst_vt['TStC'][i_TStC]['StC_X_DOF']   = True
-            
-            # Set height, X = Y = 0 for now
-            fst_vt['TStC'][i_TStC]['StC_P_Z']  = TStC_height[i_TStC] * (fst_vt['ElastoDyn']['TowerHt'] - fst_vt['ElastoDyn']['TowerBsHt']) +  fst_vt['ElastoDyn']['TowerBsHt']
-
-            # Set Mass, Stiffness, Damping
-            fst_vt['TStC'][i_TStC]['StC_X_M'] = fst_vt['TStC'][i_TStC]['StC_Y_M'] = fst_vt['TStC'][i_TStC]['StC_XY_M']  = TStC_mass[i_TStC]
-            fst_vt['TStC'][i_TStC]['StC_X_K'] = fst_vt['TStC'][i_TStC]['StC_Y_K']   = TStC_stiffness[i_TStC]
-            fst_vt['TStC'][i_TStC]['StC_X_C'] = fst_vt['TStC'][i_TStC]['StC_Y_C']   = TStC_damping[i_TStC]
-
-
-
-            # Control
-            fst_vt['TStC'][i_TStC]['StC_CMODE']  = 1
-            fst_vt['TStC'][i_TStC]['StC_SA_MODE']  = 1
-
-            # ServoDyn files, update later to go with each case
-            fst_vt['ServoDyn']['TStCfiles'][i_TStC] = self.FAST_namingOut + f"_StC_Twr_{i_TStC}.dat"
+                # ServoDyn files, update later to go with each case
+                fst_vt['ServoDyn']['TStCfiles'][i_TStC] = os.path.join(self.FAST_runDirectory,self.FAST_namingOut + f"_StC_Twr_{i_TStC}.dat")
+                # print(f"fst_vt['ServoDyn']['TStCfiles'][i_TStC]:{fst_vt['ServoDyn']['TStCfiles'][i_TStC]}")
             
         return fst_vt
 

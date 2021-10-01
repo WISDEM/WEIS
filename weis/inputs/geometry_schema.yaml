@@ -113,6 +113,63 @@ properties:
                 minimum: 0
                 maximum: 0.6
                 default: 0.4
+    TMDs:
+        type: array
+        description: Ontology definition for TMDs
+        items:
+            type: object
+            required:
+                - name
+                - component
+                - location
+                - mass
+                - stiffness
+                - damping
+            properties:
+                name:
+                    description: Unique name of the TMD
+                    type: string
+                component:
+                    description: Component location of the TMD (tower or platform)
+                    type: string
+                    enum:
+                        - tower
+                        - platform
+                location:
+                    description:  Fractional location of TMD if center of member is [0,0,0] and edges are \pm 1
+                    type: array
+                    items:
+                        type: number
+                        minIteams: 3
+                        maxItems: 3
+                mass:
+                    description: Mass of TMD
+                    type: number
+                    unit: kg
+                stiffness:
+                    description: Stiffness of TMD
+                    type: number
+                    unit: N/m
+                damping:
+                    description: Damping of TMD
+                    type: number
+                    unit: (N/(m/s))
+                X_DOF:
+                    description: Dof on or off for StC X
+                    type: boolean
+                    default: False
+                Y_DOF:
+                    description: Dof on or off for StC Y
+                    type: boolean
+                    default: False
+                Z_DOF:
+                    description: Dof on or off for StC Z
+                    type: boolean
+                    default: False
+
+                
+
+        
 definitions:
     distributed_data:
         grid_nd:

@@ -20,6 +20,8 @@ from weis.aeroelasticse.utils import RotorLoadsDeflStrainsWEIS
 from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 from weis.frequency.raft_wrapper import RAFT_WEIS
+from weis.control.tmd import TMDs
+
 
 class WindPark(om.Group):
     # Openmdao group to run the analysis of the wind turbine
@@ -798,6 +800,15 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
                 self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
 
+            # TMD connections to openmdao_openfast
+            if modeling_options['flags']['TMDs']:
+                self.add_subsystem('TMDs',  TMDs(modeling_options = modeling_options, opt_options = opt_options))
+
+                self.connect('TMDs.mass',               'aeroelastic.TMD_mass')
+                self.connect('TMDs.stiffness',          'aeroelastic.TMD_stiffness')
+                self.connect('TMDs.damping',            'aeroelastic.TMD_damping')
+                self.connect('TMDs.num_tower_StCs',     'aeroelastic.num_tower_StCs')
+            
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')

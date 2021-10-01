@@ -124,6 +124,13 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         else:
             self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
 
+        self.modeling_options['flags']['TMDs'] = False
+        if 'TMDs' in self.wt_init:
+            if self.modeling_options['Level3']['flag']:
+                self.modeling_options['flags']['TMDs'] = True
+            else:
+                raise Exception("TMDs in Levels 1 and 2 are not supported yet")
+
 
     def set_openmdao_vectors_control(self):
         # Distributed aerodynamic control devices along blade

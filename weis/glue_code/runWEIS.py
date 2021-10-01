@@ -8,6 +8,7 @@ from weis.glue_code.glue_code         import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
+from weis.control.tmd                 import assign_TMD_values
 
 fd_methods = ['SLSQP','SNOPT']
 
@@ -141,6 +142,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = assign_ROSCO_values(wt_opt, modeling_options)
+        if modeling_options['flags']['TMDs']:
+            wt_opt = assign_TMD_values(wt_opt, wt_init)
+
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
