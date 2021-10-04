@@ -6,7 +6,8 @@ import pickle
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-pkl_path = mydir + os.sep + "outputs" + os.sep + "IEA_level2" + os.sep+  "ABCD_matrices.pkl"
+opt_path = mydir + os.sep + "outputs" + os.sep + "new_doe" 
+pkl_path = opt_path + os.sep+  "ABCD_matrices.pkl"
 
 with open(pkl_path, 'rb') as handle:
 
@@ -18,7 +19,7 @@ for key in ABCD_list[0]:
 print()    
 
 
-cr = om.CaseReader("tower_doe/log_opt.sql")
+cr = om.CaseReader(opt_path+ os.sep +"log_opt.sql")
 
 driver_cases = cr.get_cases('driver')
 

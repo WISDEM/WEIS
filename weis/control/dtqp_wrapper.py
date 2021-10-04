@@ -158,7 +158,7 @@ def run_dtqp(dtqp_input):
     OutData['Time'] = T.flatten()
 
     output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
-    output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
+    #output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
 
     return output
 
