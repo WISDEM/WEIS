@@ -69,7 +69,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         #AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         #AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        PotFile: /Users/dzalkind/Tools/WEIS-3/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi.1
+        # PotFile: /Users/dzalkind/Tools/WEIS-3/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi.1
 
 Level1:
     flag: False
