@@ -1684,11 +1684,11 @@ properties:
                             maxItems: 9
                     WvDiffQTF:
                         type: boolean
-                        default: True
+                        default: False
                         description: Full difference-frequency 2nd-order wave kinematics (flag)
                     WvSumQTF:
                         type: boolean
-                        default: True
+                        default: False
                         description: Full summation-frequency  2nd-order wave kinematics (flag)
                     WvLowCOffD:
                         type: number

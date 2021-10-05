@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/IEA_w_TMD_0
+        OF_run_dir: outputs/IEA_w_TMD_7
         save_iterations: True
         save_timeseries: True
 
@@ -51,25 +51,26 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         TwFADOF2 : True
         TwSSDOF1 : True
         TwSSDOF2 : True
-        PtfmSgDOF: False
-        PtfmSwDOF: False
-        PtfmHvDOF: False
-        PtfmRDOF : False
-        PtfmPDOF : False
-        PtfmYDOF : False
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
     HydroDyn:
         WaveTMax: 1 #3630
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
-        #AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        #AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        #AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        #AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        #AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        #AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
+        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
+        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
+        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
+        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
+        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
+        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        # PotFile: /Users/dzalkind/Tools/WEIS-3/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi.1
+        WaveMod: 0
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 Level1:
     flag: False
@@ -81,9 +82,9 @@ ROSCO:
 DLC_driver:
     DLCs:
         - DLC: "1.1"
-          wind_speed: [12,14,16]
+          wind_speed: [12]
           n_seeds: 1
-          analysis_time: 5.
+          analysis_time: 105.
           transient_time: 1.e-5
           turbulent_wind:
               HubHt: 140
