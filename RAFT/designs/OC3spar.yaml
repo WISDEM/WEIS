@@ -1067,6 +1067,7 @@ platform:
     min_freq_BEM : 0.03   #  [Hz]  lowest frequency and frequency interval to use in BEM analysis
     dz_BEM       : 3.0    #  [m]   axial discretization panel length target for BEM analysis
     da_BEM       : 2.0    #  [m]   azimuthal discretization panel length target for BEM analysis
+    potModMaster : 1
 
     members:   # list all members here
         

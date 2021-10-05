@@ -120,6 +120,7 @@ class Model():
             
         # calculate platform offsets and mooring system equilibrium state
         self.calcMooringAndOffsets()
+        self.results['properties']['offset_unloaded'] = self.fowtList[0].Xi0
 
 
     
@@ -127,9 +128,56 @@ class Model():
         '''This runs through all the specified load cases, building a dictionary of results.'''
         
         nCases = len(self.design['cases']['data'])
+        nLines = len(self.ms.lineList)        
+        
+        
+        # set up output arrays for load cases
+        
+        self.results['case_metrics'] = {}
+        self.results['case_metrics']['surge_avg'] = np.zeros(nCases)
+        self.results['case_metrics']['surge_std'] = np.zeros(nCases)
+        self.results['case_metrics']['surge_max'] = np.zeros(nCases)
+        
+        self.results['case_metrics']['heave_avg'] = np.zeros(nCases)
+        self.results['case_metrics']['heave_std'] = np.zeros(nCases)
+        self.results['case_metrics']['heave_max'] = np.zeros(nCases)
+        
+        self.results['case_metrics']['pitch_avg'] = np.zeros(nCases)
+        self.results['case_metrics']['pitch_std'] = np.zeros(nCases)
+        self.results['case_metrics']['pitch_max'] = np.zeros(nCases)
+        # nacelle acceleration
+        self.results['case_metrics']['AxRNA_std'] = np.zeros(nCases)
+        # tower base bending moment
+        self.results['case_metrics']['Mbase_avg'] = np.zeros(nCases) 
+        self.results['case_metrics']['Mbase_std'] = np.zeros(nCases)
+        self.results['case_metrics']['Mbase_max'] = np.zeros(nCases)
+        self.results['case_metrics']['Mbase_DEL'] = np.zeros(nCases)        
+        # rotor speed
+        self.results['case_metrics']['omega_avg'] = np.zeros(nCases)    
+        self.results['case_metrics']['omega_std'] = np.zeros(nCases)    
+        self.results['case_metrics']['omega_max'] = np.zeros(nCases)      
+        # generator torque
+        self.results['case_metrics']['torque_avg'] = np.zeros(nCases) 
+        self.results['case_metrics']['torque_std'] = np.zeros(nCases)    
+        self.results['case_metrics']['torque_max'] = np.zeros(nCases)       
+        # rotor power 
+        self.results['case_metrics']['power_avg'] = np.zeros(nCases)
+        self.results['case_metrics']['power_std'] = np.zeros(nCases)    
+        self.results['case_metrics']['power_max'] = np.zeros(nCases)    
+        # collective blade pitch
+        self.results['case_metrics']['bPitch_avg'] = np.zeros(nCases)   
+        self.results['case_metrics']['bPitch_std'] = np.zeros(nCases)    
+        self.results['case_metrics']['bPitch_max'] = np.zeros(nCases)    
+        # mooring tension
+        self.results['case_metrics']['Tmoor_avg'] = np.zeros([nCases, 2*nLines]) # 2d array, for each line in each case?
+        self.results['case_metrics']['Tmoor_std'] = np.zeros([nCases, 2*nLines])
+        self.results['case_metrics']['Tmoor_max'] = np.zeros([nCases, 2*nLines])
+        self.results['case_metrics']['Tmoor_DEL'] = np.zeros([nCases, 2*nLines])
+        
+        
+        
         
         # calculate the system's constant properties
-        #self.calcSystemConstantProps()
         for fowt in self.fowtList:
             fowt.calcStatics()
             fowt.calcBEM()
@@ -162,8 +210,27 @@ class Model():
             # solve system dynamics
             self.solveDynamics(case)
             
-            # process outputs for each case (TO DO)
-            #self.calcOutputs()
+            # process outputs that are specific to the floating unit       
+            self.fowtList[0].saveTurbineOutputs(self.results['case_metrics'], iCase, fowt.Xi0, self.Xi[0:6,:])            
+ 
+            # process mooring tension outputs
+            T_moor_amps = np.zeros([len(self.T_moor), self.nw]) 
+            for iw in range(self.nw):
+                T_moor_amps[:,iw] = np.matmul(self.J_moor, self.Xi[:,iw])
+            
+            self.results['case_metrics']['Tmoor_avg'][iCase,:] = self.T_moor
+            for iT in range(len(self.T_moor)):
+                TRMS = getRMS(T_moor_amps[iT,:]) # estimated mooring line RMS tension [N]
+                self.results['case_metrics']['Tmoor_std'][iCase,iT] = TRMS
+                self.results['case_metrics']['Tmoor_max'][iCase,iT] = self.T_moor[iT] + 3*TRMS
+                #self.results['case_metrics']['Tmoor_DEL'][iCase,iT] = 
+            
+        print("---tensions average ---")
+        printMat(self.results['case_metrics']['Tmoor_avg'])
+        print("---tensions standard deviation ---")
+        printMat(self.results['case_metrics']['Tmoor_std'])
+            
+        print(self.results['case_metrics'])
 
     """
     def calcSystemConstantProps(self):
@@ -173,14 +240,14 @@ class Model():
             fowt.calcBEM()
             fowt.calcStatics()
             #fowt.calcDynamicConstants()
-
+        
         # First get mooring system characteristics about undisplaced platform position (useful for baseline and verification)
-        try: 
+        try:
             self.C_moor0 = self.ms.getCoupledStiffness(lines_only=True)                             # this method accounts for eqiuilibrium of free objects in the system
             self.F_moor0 = self.ms.getForces(DOFtype="coupled", lines_only=True)
         except Exception as e:
             raise RuntimeError('An error occured when getting linearized mooring properties in undisplaced state: '+e.message)
-
+        
         self.results['properties'] = {}   # signal this data is available by adding a section to the results dictionary
     """    
     
@@ -199,7 +266,7 @@ class Model():
         #self.ms.display=2
 
         try:
-            self.ms.solveEquilibrium3(DOFtype="both", tol=-0.01) #, rmsTol=1.0E-5)     # get the system to its equilibrium
+            self.ms.solveEquilibrium3(DOFtype="both", tol=0.01) #, rmsTol=1.0E-5)     # get the system to its equilibrium
         except Exception as e:     #mp.MoorPyError
             print('An error occured when solving system equilibrium: '+e.message)
             #raise RuntimeError('An error occured when solving unloaded equilibrium: '+error.message)
@@ -219,8 +286,9 @@ class Model():
         print("Pitch: {:.2f}".format(r6eq[4]*180/np.pi))
 
         try:
-            C_moor = self.ms.getCoupledStiffness(lines_only=True)
+            C_moor, J_moor = self.ms.getCoupledStiffness(lines_only=True, tensions=True) # get stiffness matrix and tension jacobian matrix
             F_moor = self.ms.getForces(DOFtype="coupled", lines_only=True)    # get net forces and moments from mooring lines on Body
+            T_moor = self.ms.getTensions()
         except Exception as e:
             raise RuntimeError('An error occured when getting linearized mooring properties in offset state: '+e.message)
             
@@ -228,7 +296,9 @@ class Model():
         C_moor[5,5] += fowt.yawstiff
 
         self.C_moor = C_moor
+        self.J_moor = J_moor        # jacobian of mooring line tensions w.r.t. coupled DOFs
         self.F_moor = F_moor
+        self.T_moor = T_moor
 
         # store results
         self.results['means'] = {}   # signal this data is available by adding a section to the results dictionary
@@ -255,7 +325,7 @@ class Model():
         fowt = self.fowtList[0]
 
         # add any additional yaw stiffness that isn't included in the MoorPy model (e.g. if a bridle isn't modeled)
-        C_tot[5,5] += fowt.yawstiff
+        C_tot[5,5] += fowt.yawstiff     # will need to be put in calcSystemProps() once there is more than 1 fowt in a model
 
         # add fowt's terms to system matrices (BEM arrays are not yet included here)
         M_tot += fowt.M_struc + fowt.A_hydro_morison   # mass
@@ -300,6 +370,7 @@ class Model():
 
         print("natural frequencies from eigen values")
         printVec(fns)
+        print(1/fns)
         print("mode shapes from eigen values")
         printMat(modes)
 
@@ -329,7 +400,7 @@ class Model():
         fn[4] = np.sqrt( (C_tot[4,4] + C_tot[0,0]*((zCMx-zMoorx)**2 - zMoorx**2) ) / (M_tot[4,4] - M_tot[0,0]*zCMx**2 ))/ 2.0/np.pi     # this contains adjustments to reflect rotation about the CG rather than PRP
         # note that the above lines use off-diagonal term rather than parallel axis theorem since rotation will not be exactly at CG due to effect of added mass
         printVec(fn)
-
+        print(1/fn)
                 
         # store results
         self.results['eigen'] = {}   # signal this data is available by adding a section to the results dictionary
@@ -363,9 +434,8 @@ class Model():
         # sum up all linear (non-varying) matrices up front
         M_lin = fowt.A_aero + fowt.M_struc[:,:,None] + fowt.A_BEM + fowt.A_hydro_morison[:,:,None] # mass
         B_lin = fowt.B_aero + fowt.B_struc[:,:,None] + fowt.B_BEM                                  # damping
-        C_lin = fowt.C_aero + fowt.C_struc   + self.C_moor        + fowt.C_hydro                   # stiffness
+        C_lin =               fowt.C_struc   + self.C_moor        + fowt.C_hydro                   # stiffness
         F_lin = fowt.F_aero +                          fowt.F_BEM + fowt.F_hydro_iner              # excitation
-        
         
         # start fixed point iteration loop for dynamics   <<< would a secant method solve be possible/better? <<<
         for iiter in range(nIter):
@@ -504,6 +574,8 @@ class Model():
             self.results['properties']['Buoyancy (pgV)'] = fowt.rho_water*fowt.g*fowt.V
             self.results['properties']['Center of Buoyancy'] = fowt.rCB
             self.results['properties']['C stiffness matrix'] = fowt.C_hydro
+            
+            # unloaded equilibrium <<< 
             
             self.results['properties']['F_lines0'] = self.F_moor0
             self.results['properties']['C_lines0'] = self.C_moor0
