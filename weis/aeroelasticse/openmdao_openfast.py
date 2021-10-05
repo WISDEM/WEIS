@@ -1453,7 +1453,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['BStCfiles']     = ["unused"]
         fst_vt['ServoDyn']['NumNStC']       = 0
         fst_vt['ServoDyn']['NStCfiles']     = ["unused"]
-        fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
+        fst_vt['ServoDyn']['NumTStC']       = 0 
         fst_vt['ServoDyn']['TStCfiles']     = ["unused"]
         fst_vt['ServoDyn']['NumSStC']       = 0
         fst_vt['ServoDyn']['SStCfiles']     = ["unused"]
@@ -1466,6 +1466,8 @@ class FASTLoadCases(ExplicitComponent):
 
         # Hard-coded tower input
         if modopt['flags']['TMDs']:
+            fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
+
             TStC_height         = [0.5]       # fraction of the way up the tower
             TStC_mass           = [inputs['TMD_mass']]
             TStC_stiffness      = [inputs['TMD_stiffness']]
