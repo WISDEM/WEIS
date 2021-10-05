@@ -372,6 +372,12 @@ def rotateMatrix3(Min, rotMat):
     return np.matmul( np.matmul(rotMat, Min), rotMat.T )
 
 
+def getRMS(xi):
+    '''Calculates standard deviation or RMS of inputted (complex) response amplitude vector.'''
+    
+    return np.sqrt( np.sum( np.abs(xi)**2 / len(xi) ) )
+
+
 def JONSWAP(ws, Hs, Tp, Gamma=1.0):
     '''Returns the JONSWAP wave spectrum for the given frequencies and parameters.
 

@@ -554,10 +554,19 @@ class RAFT_OMDAO(om.ExplicitComponent):
             with open('raft_design.pkl', 'wb') as handle:
                 pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 
-        # create and run the model
+        # set up the model
         model = raft.Model(design)
         model.analyzeUnloaded()
-        model.analyzeCases()
+        
+        # option to generate seperate HAMS data for level 2 or 3, with higher res settings
+        if False: #preprocessBEM:
+            model.preprocess_HAMS(dw=dwFAST, wMax=wMaxFAST0, dz=dzFAST, da=daFAST)  
+        
+        # option to run level 1 load cases
+        if True: #processCases:
+            model.analyzeCases()
+            
+        # get and process results
         results = model.calcOutputs()
         
         outs = self.list_outputs(out_stream=None)

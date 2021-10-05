@@ -52,21 +52,10 @@ class Rotor:
         self.R_rot      = turbine['blade']['Rtip']  # rotor radius [m]
         #yaw  = 0        
 
-        # Set some turbine params, this can come from WEIS/WISDEM or an external input
-        if old:
-            self.rot_from_weis = yaml.load(open(os.path.join(raft_dir,'designs/rotors/IEA-15MW_WEIS.yaml'),'r'))
-            self.Uhub = np.array(self.rot_from_weis['wt_ops']['v'])
-            self.Omega_rpm = np.array(self.rot_from_weis['wt_ops']['omega_op']) / rpm2radps
-            self.pitch_deg = np.array(self.rot_from_weis['wt_ops']['pitch_op']) * rad2deg
-            self.I_drivetrain = 3.2e8
-        else:   # planning on this option going forward
-            #self.Uhub = np.array([14.])
-            #self.Omega_rpm = np.array([7.56])
-            #self.pitch_deg = np.array([13.78])
-            self.Uhub      = np.array(turbine['wt_ops']['v'])
-            self.Omega_rpm = np.array(turbine['wt_ops']['omega_op']) / rpm2radps
-            self.pitch_deg = np.array(turbine['wt_ops']['pitch_op']) * rad2deg
-            self.I_drivetrain = float(turbine['I_drivetrain'])
+        self.Uhub      = np.array(turbine['wt_ops']['v'])
+        self.Omega_rpm = np.array(turbine['wt_ops']['omega_op'])
+        self.pitch_deg = np.array(turbine['wt_ops']['pitch_op'])
+        self.I_drivetrain = float(turbine['I_drivetrain'])
 
 
         # Set default control gains
@@ -239,6 +228,12 @@ class Rotor:
         loads, derivs = self.ccblade.evaluate(Uhub, Omega_rpm, pitch_deg, coefficients=True)
 
         # organize and save the relevant outputs...
+        self.U_case         = Uhub
+        self.Omega_case     = Omega_rpm
+        self.aero_torque    = loads["Q"][0]
+        self.aero_power     = loads["P"][0]
+        self.pitch_case     = pitch_deg
+
         outputs = {}
         
         outputs["P"] = loads["P"]
@@ -371,6 +366,7 @@ class Rotor:
         '''Calculates stiffness, damping, added mass, and excitation coefficients
         from rotor aerodynamics coupled with turbine controls.
         Results are w.r.t. nonrotating hub reference frame.
+        Currently returning 6 DOF mean loads, but other terms are just hub fore-aft scalars.
         
          ptfm_pitch
             mean platform pitch angle to be included in rotor tilt angle [rad]
@@ -391,12 +387,12 @@ class Rotor:
         dQ_dPi = np.atleast_1d(np.diag(derivs["dQ"]["dpitch"])) * rad2deg
 
         # Pitch control gains at Uinf (Uinf), flip sign to translate ROSCO convention to this one
-        kp_U    = -np.interp(Uinf, self.Uhub, self.kp_0) 
-        ki_U    = -np.interp(Uinf, self.Uhub, self.ki_0) 
+        self.kp_beta    = -np.interp(Uinf, self.Uhub, self.kp_0) 
+        self.ki_beta    = -np.interp(Uinf, self.Uhub, self.ki_0) 
 
         # Torque control gains, need to get these from somewhere
-        kp_tau = self.kp_tau * (kp_U == 0)  #     -38609162.66552     ! VS_KP				- Proportional gain for generator PI torque controller [1/(rad/s) Nm]. (Only used in the transitional 2.5 region if VS_ControlMode =/ 2)
-        ki_tau = self.kp_tau  * (kp_U == 0)   #    -4588245.18720      ! VS_KI	
+        kp_tau = self.kp_tau * (self.kp_beta == 0)  #     -38609162.66552     ! VS_KP				- Proportional gain for generator PI torque controller [1/(rad/s) Nm]. (Only used in the transitional 2.5 region if VS_ControlMode =/ 2)
+        ki_tau = self.kp_tau  * (self.kp_beta == 0)   #    -4588245.18720      ! VS_KI	
         
         a_aer = np.zeros_like(self.w)
         b_aer = np.zeros_like(self.w)
@@ -406,19 +402,19 @@ class Rotor:
         E   = np.zeros_like(self.w,dtype=np.complex_)
 
         # Roots of characteristic equation, helps w/ debugging
-        p = np.array([-self.I_drivetrain, (dQ_dOm + kp_U * dQ_dPi - self.Ng * kp_tau), ki_U* dQ_dPi - self.Ng * ki_tau])
+        p = np.array([-self.I_drivetrain, (dQ_dOm + self.kp_beta * dQ_dPi - self.Ng * kp_tau), self.ki_beta* dQ_dPi - self.Ng * ki_tau])
         r = np.roots(p)
 
         for iw, omega in enumerate(self.w):
             
             # Denominator of control transfer function
-            D[iw] = self.I_drivetrain * omega**2 + (dQ_dOm + kp_U * dQ_dPi - self.Ng * kp_tau) * 1j * omega + ki_U* dQ_dPi - self.Ng * ki_tau
+            D[iw] = self.I_drivetrain * omega**2 + (dQ_dOm + self.kp_beta * dQ_dPi - self.Ng * kp_tau) * 1j * omega + self.ki_beta* dQ_dPi - self.Ng * ki_tau
 
             # control transfer function
             C[iw] = 1j * omega * (dQ_dU - self.k_float * dQ_dPi / self.Zhub) / D[iw]
 
             # Thrust transfer function
-            E[iw] = ((dT_dOm + kp_U * dT_dPi) * 1j * omega + ki_U * dT_dPi )
+            E[iw] = ((dT_dOm + self.kp_beta * dT_dPi) * 1j * omega + self.ki_beta * dT_dPi )
 
             # alternative for debugging
             C2[iw] = C[iw] / (1j * omega)
@@ -430,17 +426,8 @@ class Rotor:
             a_aer[iw] = -(1/omega**2) * np.real(T)
             b_aer[iw] = (1/omega) * np.imag(T)
         
-        # coefficients to be filled in
-        nw = len(self.w)
-        A_aero = np.zeros([6,6,nw])                     # added mass
-        B_aero = np.zeros([6,6,nw])                     # damping
-        C_aero = np.zeros([6,6])                        # stiffness
-        F_aero0= np.zeros(6)                            # steady wind forces/moments
-        F_aero = np.zeros([6,nw])                       # wind excitation spectra in each DOF
-        
-        # calculate contribution to system matrices      
-        A_aero[0,0,:] = a_aer
-        B_aero[0,0,:] = b_aer
+        # Save transfer functions required for output
+        self.C = C
                 
         # calculate steady aero forces and moments
         F_aero0 = np.array([loads["T" ][0], loads["Y"  ][0], loads["Z"  ][0],
@@ -449,16 +436,16 @@ class Rotor:
         # calculate wind excitation force/moment spectra
         _,_,_,S_rot = self.IECKaimal(case)
 
-        V_w = np.sqrt(S_rot)
+        self.V_w = S_rot
         T_0 = loads["T" ][0]
-        T_w1 = dT_dU * V_w
-        T_w2 = (E * C * V_w) / (1j * self.w)
+        T_w1 = dT_dU * self.V_w
+        T_w2 = (E * C * self.V_w) / (1j * self.w)
 
         T_ext = T_w1 + T_w2
 
         # print('here')
         if False:
-            plt.plot(self.w, V_w, label = 'S_rot')
+            plt.plot(self.w, self.V_w, label = 'S_rot')
             plt.yscale('log')
             plt.xscale('log')
 
@@ -473,17 +460,16 @@ class Rotor:
             plt.plot(self.w, np.abs(T_ext))
             # plt.plot(self.w, abs(T_w2))
 
-            plt.show()
+            # plt.show()
 
-
-
-
+        f_aero = T_ext  # wind thrust force excitation spectrum
+        
         #for i in range(nw):                             # loop through each frequency component
         #    F_aero[0,i] = U_amplitude[i]*dT_dU             # surge excitation
         #    F_aero[4,i] = U_amplitude[i]*dT_dU*Zhub        # pitch excitation
         
         
-        return A_aero, B_aero, C_aero, F_aero0, F_aero, a_aer, b_aer #  B_aero, C_aero, F_aero0, F_aero
+        return F_aero0, f_aero, a_aer, b_aer #  B_aero, C_aero, F_aero0, F_aero
         
         
     def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=np.eye(3), azimuth=0):
@@ -688,7 +674,7 @@ if __name__=='__main__':
         for iU, Uinf in enumerate(UU):
             # rr.V = Uinf
             case['wind_speed'] = Uinf
-            _,_,_,_,_, a_aer, b_aer = rr.calcAeroServoContributions(case)
+            _,_, a_aer, b_aer = rr.calcAeroServoContributions(case)
 
             a_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, a_aer)
             b_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, b_aer)
@@ -699,16 +685,20 @@ if __name__=='__main__':
 
 
         ax1[0].plot(UU,a_aer_U)
-        ax1[0].set_ylabel('a_aer @ 30 sec.')
+        ax1[0].set_ylabel('$a_\mathrm{aer}$ @ 30 sec.\n(kg)')
         ax1[0].grid(True)
 
         ax1[1].plot(UU,b_aer_U)
-        ax1[1].set_ylabel('b_aer @ 30 sec.')
+        ax1[1].set_ylabel('$b_\mathrm{aer}$ @ 30 sec.\n(Ns/m)')
         ax1[1].grid(True)
 
-        ax1[1].set_xlabel('U (m/s)')
+        ax1[1].set_xlabel('Wind Speed (m/s)')
 
-    plt.show()
+        plt.ticklabel_format(axis='y',style='sci',scilimits=(0,0))
+
+        fig1.align_ylabels()
+
+    plt.savefig('/Users/dzalkind/Projects/WEIS/Docs/Level1/rotor_mass_damp.pdf',format='pdf')
 
 
     # ax1[0].plot(ww,a_aer)
