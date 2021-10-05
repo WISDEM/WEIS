@@ -378,7 +378,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         for i in range(n_af):
             design['turbine']['airfoils'][i]['name'] = discrete_inputs['airfoils_name'][i]
             design['turbine']['airfoils'][i]['relative_thickness'] = inputs['airfoils_r_thick'][i]
-            design['turbine']['airfoils'][i]['data'] = np.c_[inputs['airfoils_aoa'],
+            design['turbine']['airfoils'][i]['data'] = np.c_[inputs['airfoils_aoa'] * raft.helpers.rad2deg(1),
                                                              inputs['airfoils_cl'][i,:,0,0],
                                                              inputs['airfoils_cd'][i,:,0,0],
                                                              inputs['airfoils_cm'][i,:,0,0]]
