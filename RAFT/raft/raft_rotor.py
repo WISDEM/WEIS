@@ -110,9 +110,9 @@ class Rotor:
 
             polar_table = np.array(turbine["airfoils"][i]['data'])
             
-            cl[i, :, 0] = np.interp(aoa, polar_table[:,0], polar_table[:,1])
-            cd[i, :, 0] = np.interp(aoa, polar_table[:,0], polar_table[:,2])
-            cm[i, :, 0] = np.interp(aoa, polar_table[:,0], polar_table[:,3])
+            cl[i, :, 0] = np.interp(aoa, np.rad2deg(polar_table[:,0]), polar_table[:,1])
+            cd[i, :, 0] = np.interp(aoa, np.rad2deg(polar_table[:,0]), polar_table[:,2])
+            cm[i, :, 0] = np.interp(aoa, np.rad2deg(polar_table[:,0]), polar_table[:,3])
 
             #plt.figure()
             #plt.plot(polar_table[:,0], polar_table[:,1])
