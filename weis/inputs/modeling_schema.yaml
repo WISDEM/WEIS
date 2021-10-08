@@ -3327,3 +3327,21 @@ properties:
                 type: string
                 description: ROSCO_Toolbox control tuning yaml used to load initial turbine parameters. Used in controls-only optimization.
                 default: unused
+
+    OL2CL:
+        type: object
+        default: {}
+        decription: Options for WEIS open loop to closed loop control optimization
+        properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run open loop to closed loop optimization
+            trajectory_dir:
+                type: string
+                default: unused
+                description: Directory where open loop control trajectories are located
+            save_error:
+                type: boolean
+                default: True
+                description: Save error timeseries?
