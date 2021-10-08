@@ -151,8 +151,8 @@ DLC_driver:
           wave_period: [2.]
           wind_seed: [1] #,2,3]
           n_seeds: 2
-          analysis_time: 150.
-          transient_time: 50.
+          analysis_time: 700.
+          transient_time: 100.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True
