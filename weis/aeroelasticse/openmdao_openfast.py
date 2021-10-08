@@ -1391,6 +1391,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
             fst_vt['MoorDyn']['Type'] = mooropt["node_type"][:]
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
+            # hack here
+            fst_vt['MoorDyn']['X'][:3] *= -1
+
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
             fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
