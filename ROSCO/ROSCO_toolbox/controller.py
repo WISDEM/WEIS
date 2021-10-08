@@ -638,7 +638,7 @@ def multi_sigma(xx,x_bp,y_bp):
 
     # add first and last values to beginning and end
     yy[xx<x_bp[0]]      = y_bp[0]
-    yy[xx>x_bp[-1]]     = y_bp[-1]
+    yy[xx>=x_bp[-1]]     = y_bp[-1]
 
     if False:  # debug plot
         import matplotlib.pyplot as plt
