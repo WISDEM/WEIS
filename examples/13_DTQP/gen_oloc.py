@@ -13,6 +13,18 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+class dict2class(object):
+    
+    def __init__(self,my_dict):
+        
+        for key in my_dict:
+            setattr(self,key,my_dict[key])
+            
+        self.A_ops = self.A
+        self.B_ops = self.B
+        self.C_ops = self.C
+        self.D_ops = self.D
+
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -99,12 +111,14 @@ if __name__ == '__main__':
     lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
-    lin_pickle = mydir + os.sep + "outputs"+os.sep + "LinearTurbine.pkl"
+    lin_pickle = mydir + os.sep + "outputs"+os.sep + "LinTurbine_fix.pkl"
     
 
     if True and os.path.exists(lin_pickle):
         with open(lin_pickle,"rb") as pkl_file:
             LinearTurbine = pickle.load(pkl_file)
+        if isinstance(LinearTurbine,list):
+            LinearTurbine = dict2class(LinearTurbine[0])
     
     else:   # load the model and run MBC3
         LinearTurbine = LinearTurbineModel(
@@ -117,7 +131,7 @@ if __name__ == '__main__':
         with open(lin_pickle,"wb") as pkl_file:
             pickle.dump(LinearTurbine,pkl_file)
     
-    breakpoint()
+    
     fst_vt = {}
     fst_vt['DISCON_in'] = {}
     fst_vt['DISCON_in']['PC_RefSpd'] = 0.7853192931562493
@@ -137,7 +151,7 @@ if __name__ == '__main__':
     
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
-        level2_disturbance[0:1], 
+        level2_disturbance, 
         analysis_options, 
         fst_vt, 
         la, 
