@@ -21,8 +21,8 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-    BOS:
-        flag: True
+    # BOS:
+    #     flag: True
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
