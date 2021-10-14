@@ -170,7 +170,13 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     self.modeling_options['TMDs']['num_tower_TMDs'] += 1
                 else:
                     raise Exception('Invalid TMD component mapping for {} on {}'.format(
-                        self.modeling_options['TMDs']['name'][i_TMD],component))                
+                        self.modeling_options['TMDs']['name'][i_TMD],component))      
+
+            # Set TMD group  mapping: list of length n_groups, with i_TMDs in each group
+            n_groups = self.modeling_options['TMDs']['n_TMDs']      # for now, each TMD is its own group
+            self.modeling_options['TMDs']['group_mapping'] = [None] * n_groups
+            for i_group in range(n_groups):
+                self.modeling_options['TMDs']['group_mapping'][i_group] = [i_group]
 
     def update_ontology_control(self, wt_opt):
         # Update controller

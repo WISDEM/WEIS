@@ -54,7 +54,7 @@ def default_StC_vt():
     StC['SpringForceTable']['F_Z']      =  [-4.8e6,4.8e6]
     # ---------------------- StructCtrl CONTROL -------------------------------------------- [used only when StC_DOF_MODE=1 or 2]
     StC['StC_CMODE']        = 0       # - Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}
-    StC['StC_SA_MODE']      = 0       # - Semi-Active control mode {1: velocity-based ground hook control; 2: Inverse velocity-based ground hook control; 3: displacement-based ground hook control 4: Phase difference Algorithm with Friction Force 5: Phase difference Algorithm with Damping Force} (-)
+    StC['StC_SA_MODE']      = 1       # - Semi-Active control mode {1: velocity-based ground hook control; 2: Inverse velocity-based ground hook control; 3: displacement-based ground hook control 4: Phase difference Algorithm with Friction Force 5: Phase difference Algorithm with Damping Force} (-)
     StC['StC_X_C_HIGH']     = 0       # - StC X high damping for ground hook control
     StC['StC_X_C_LOW']      = 0       # - StC X low damping for ground hook control
     StC['StC_Y_C_HIGH']     = 0       # - StC Y high damping for ground hook control

@@ -1147,7 +1147,7 @@ control:
 TMDs:
     - name: tower_TMD
       component: tower
-      location: [0,0,0.5]
+      location: [0,0,100]
       mass: 2000
       stiffness: 20.e5
       damping: 2800
@@ -1157,7 +1157,7 @@ TMDs:
       Y_DOF: True
     - name: ptfm_TMD1
       component: column1
-      location: [0,0,0]
+      location: [-51.75,0,0]
       mass: 2000
       stiffness: 20.e5
       damping: 2800
@@ -1166,7 +1166,7 @@ TMDs:
       Z_DOF: True
     - name: ptfm_TMD2
       component: column3
-      location: [0,0,0]
+      location: [25.8750,  44.8168,   0.0000]
       mass: 2000
       stiffness: 20.e5
       damping: 2800
@@ -1175,7 +1175,7 @@ TMDs:
       Z_DOF: True
     - name: ptfm_TMD3
       component: column3
-      location: [0,0,0]
+      location: [25.8750,  -44.8168,   0.0000]
       mass: 2000
       stiffness: 20.e5
       damping: 2800

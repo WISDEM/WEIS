@@ -745,8 +745,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['MoorDyn']           = {}
         fst_vt['MAP']               = {}
         
-        # Structural control
-        fst_vt['TStC']               = {}
+        # List of structural controllers
+        fst_vt['TStC'] = {}; fst_vt['TStC'] = []
+        fst_vt['SStC'] = {}; fst_vt['SStC'] = []
 
         fst_vt = self.load_FAST_model_opts(fst_vt)
 
@@ -1448,59 +1449,57 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MAP']['Option'] = ["outer_tol 1e-5"]
 
 
-        # Structural Control: these could be defaulted modeling options, but we will add them as DVs later, so we'll hard code them here for now
+        # Structural Control
         fst_vt['ServoDyn']['NumBStC']       = 0
         fst_vt['ServoDyn']['BStCfiles']     = ["unused"]
         fst_vt['ServoDyn']['NumNStC']       = 0
         fst_vt['ServoDyn']['NStCfiles']     = ["unused"]
         fst_vt['ServoDyn']['NumTStC']       = 0 
-        fst_vt['ServoDyn']['TStCfiles']     = ["unused"]
+        fst_vt['ServoDyn']['TStCfiles']     = []
         fst_vt['ServoDyn']['NumSStC']       = 0
-        fst_vt['ServoDyn']['SStCfiles']     = ["unused"]
-
-
-
-        # Catch erors, we only support tower, nacelle and substructure StCs right now
-        if fst_vt['ServoDyn']['NumBStC']:
-            raise Exception('openmdao_openfast: WEIS currently only supports tower TMDs')
-
-        # Hard-coded tower input
+        fst_vt['ServoDyn']['SStCfiles']     = []
+        
         if modopt['flags']['TMDs']:
-            fst_vt['ServoDyn']['NumTStC']       = int(discrete_inputs['num_tower_StCs'])
+            for i_TMD in range(modopt['TMDs']['n_TMDs']):
 
-            TStC_height         = [0.5]       # fraction of the way up the tower
-            TStC_mass           = [inputs['TMD_mass']]
-            TStC_stiffness      = [inputs['TMD_stiffness']]
-            TStC_damping        = [inputs['TMD_damping']]
+                StC_i = default_StC_vt()
 
-            fst_vt['TStC'] = [None] * fst_vt['ServoDyn']['NumTStC']
+                StC_i['StC_DOF_MODE']   = 1
+                StC_i['StC_X_DOF']     = modopt['TMDs']['X_DOF'][i_TMD]
+                StC_i['StC_Y_DOF']     = modopt['TMDs']['Y_DOF'][i_TMD]
+                StC_i['StC_Z_DOF']     = modopt['TMDs']['Z_DOF'][i_TMD]
 
-            for i_TStC in range(fst_vt['ServoDyn']['NumTStC']):
-                # Set defaults initially
-                fst_vt['TStC'][i_TStC] = default_StC_vt()  
-
-                # Mode is omnidirectional for tower TMD
-                fst_vt['TStC'][i_TStC]['StC_DOF_MODE']  = 2
-                fst_vt['TStC'][i_TStC]['StC_X_DOF'] = fst_vt['TStC'][i_TStC]['StC_X_DOF']   = True
-                
-                # Set height, X = Y = 0 for now
-                fst_vt['TStC'][i_TStC]['StC_P_Z']  = TStC_height[i_TStC] * (fst_vt['ElastoDyn']['TowerHt'] - fst_vt['ElastoDyn']['TowerBsHt']) +  fst_vt['ElastoDyn']['TowerBsHt']
-
-                # Set Mass, Stiffness, Damping
-                fst_vt['TStC'][i_TStC]['StC_X_M'] = fst_vt['TStC'][i_TStC]['StC_Y_M'] = fst_vt['TStC'][i_TStC]['StC_XY_M']  = TStC_mass[i_TStC][0]
-                fst_vt['TStC'][i_TStC]['StC_X_K'] = fst_vt['TStC'][i_TStC]['StC_Y_K']   = TStC_stiffness[i_TStC][0]
-                fst_vt['TStC'][i_TStC]['StC_X_C'] = fst_vt['TStC'][i_TStC]['StC_Y_C']   = TStC_damping[i_TStC][0]
-
-
-
-                # Control
-                fst_vt['TStC'][i_TStC]['StC_CMODE']  = 1
-                fst_vt['TStC'][i_TStC]['StC_SA_MODE']  = 1
-
-                # ServoDyn files, update later to go with each case
-                fst_vt['ServoDyn']['TStCfiles'][i_TStC] = os.path.join(self.FAST_runDirectory,self.FAST_namingOut + f"_StC_Twr_{i_TStC}.dat")
-                # print(f"fst_vt['ServoDyn']['TStCfiles'][i_TStC]:{fst_vt['ServoDyn']['TStCfiles'][i_TStC]}")
+                if StC_i['StC_X_DOF'] and StC_i['StC_Y_DOF'] and not StC_i['StC_Z_DOF']:
+                    omni = True
+                    StC_i['StC_DOF_MODE']   = 2
             
+                # Set position
+                StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
+                StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
+                StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                
+                # Set Mass, Stiffness, Damping
+                StC_i['StC_X_M'] = StC_i['StC_Y_M']   = StC_i['StC_Z_M'] = StC_i['StC_XY_M']  = inputs['TMD_mass'][i_TMD]
+                StC_i['StC_X_K'] = StC_i['StC_Y_K']   = StC_i['StC_Z_K'] = inputs['TMD_stiffness'][i_TMD]
+                StC_i['StC_X_C'] = StC_i['StC_Y_C']   = StC_i['StC_Z_C'] = inputs['TMD_damping'][i_TMD]
+
+                if modopt['TMDs']['component'][i_TMD] == 'tower':
+                    fst_vt['ServoDyn']['NumTStC'] += 1
+                    fst_vt['ServoDyn']['TStCfiles'].append(os.path.join(self.FAST_runDirectory,self.FAST_namingOut + f"_StC_Twr_{i_TMD}.dat"))
+                    fst_vt['TStC'].append(StC_i)
+
+                elif modopt['TMDs']['component'][i_TMD] in modopt['floating']['members']['name']:
+                    fst_vt['ServoDyn']['NumSStC'] += 1
+                    fst_vt['ServoDyn']['SStCfiles'].append(os.path.join(self.FAST_runDirectory,self.FAST_namingOut + f"_StC_Ptfm_{i_TMD}.dat"))
+                    fst_vt['SStC'].append(StC_i)
+
+            # If no StC file assigned, set to unused
+            if not fst_vt['ServoDyn']['TStCfiles']:
+                fst_vt['ServoDyn']['TStCfiles'] = ["unused"]
+            if not fst_vt['ServoDyn']['SStCfiles']:
+                fst_vt['ServoDyn']['SStCfiles'] = ["unused"]
+
+
         return fst_vt
 
     def output_channels(self):

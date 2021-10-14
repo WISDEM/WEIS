@@ -312,6 +312,13 @@ class WindPark(om.Group):
                             'transverse_added_mass','tangential_added_mass','transverse_drag','tangential_drag']:
                     self.connect(f'mooring.line_{var}', f'raft.line_{var}')
 
+        # TMD connections to openmdao_openfast
+        if modeling_options['flags']['TMDs']:
+            self.add_subsystem('TMDs',  TMD_group(modeling_options = modeling_options, opt_options = opt_options))
+
+            self.connect('TMDs.mass',               'aeroelastic.TMD_mass')
+            self.connect('TMDs.stiffness',          'aeroelastic.TMD_stiffness')
+            self.connect('TMDs.damping',            'aeroelastic.TMD_damping')
 
         if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
@@ -361,7 +368,6 @@ class WindPark(om.Group):
             self.connect('control.V_in',                    'aeroelastic.V_cutin')
             self.connect('control.V_out',                   'aeroelastic.V_cutout')
             self.connect('env.shear_exp',                   'aeroelastic.shearExp')
-
             
             # Connections to aeroelasticse
             if not modeling_options['Level3']['from_openfast']:
@@ -799,14 +805,6 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
                 self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
                 self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
-
-            # TMD connections to openmdao_openfast
-            if modeling_options['flags']['TMDs']:
-                self.add_subsystem('TMDs',  TMD_group(modeling_options = modeling_options, opt_options = opt_options))
-
-                self.connect('TMDs.mass',               'aeroelastic.TMD_mass')
-                self.connect('TMDs.stiffness',          'aeroelastic.TMD_stiffness')
-                self.connect('TMDs.damping',            'aeroelastic.TMD_damping')
             
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:

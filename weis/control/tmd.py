@@ -34,16 +34,6 @@ class TMD_group(Group):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
 
-        self.add_subsystem('TMDs',
-            TMDs(modeling_options = modeling_options, opt_options=opt_options),
-            promotes=
-                [
-                    'mass',
-                    'stiffness',
-                    'damping',
-                ]
-        )
-
         self.add_subsystem('TMD_IVCs',
             TMD_IVCs(modeling_options = modeling_options, opt_options=opt_options),
             promotes=
@@ -55,6 +45,17 @@ class TMD_group(Group):
                     'group_damping_ratio',
                 ]
         )
+        
+        self.add_subsystem('TMDs',
+            TMDs(modeling_options = modeling_options, opt_options=opt_options),
+            promotes=
+                [
+                    'mass',
+                    'stiffness',
+                    'damping',
+                ]
+        )
+        
 
         self.connect('group_mass','TMDs.group_mass')
         self.connect('group_stiffness','TMDs.group_stiffness')
@@ -82,8 +83,8 @@ class TMDs(ExplicitComponent):
         self.add_input('group_mass',                 val=np.zeros(n_groups), units='kg',        desc='TMD Mass')
         self.add_input('group_stiffness',            val=np.zeros(n_groups), units='N/m',       desc='TMD Stiffnes')
         self.add_input('group_damping',              val=np.zeros(n_groups), units='N/(m/s)',   desc='TMD Damping')
-        self.add_input('group_natural_frequency',    val=np.zeros(n_groups), units='rad/s',     desc='TMD natural frequencies')
-        self.add_input('group_damping_ratio',        val=np.zeros(n_groups),                    desc='TMD damping ratios')
+        self.add_input('group_natural_frequency',    val=-np.ones(n_groups), units='rad/s',     desc='TMD natural frequencies')
+        self.add_input('group_damping_ratio',        val=-np.ones(n_groups),                    desc='TMD damping ratios')
 
         self.add_output('mass',                 val=np.zeros(n_TMDs), units='kg',           desc='TMD Mass')
         self.add_output('stiffness',            val=np.zeros(n_TMDs), units='N/m',          desc='TMD Stiffnes')
@@ -95,7 +96,31 @@ class TMDs(ExplicitComponent):
         Someday, we'll do things like mapping the relative locations to global coords
         '''
         print('here')
+        n_groups = self.modeling_options['TMDs']['n_TMDs']       # for now
+        
+        group_mapping = self.modeling_options['TMDs']['group_mapping']  
+        # for each group
+        for i_group in range(n_groups):
+            # which turbines are in group i
+            tmds_in_group = group_mapping[i_group]
+            for i_TMD in tmds_in_group:
+                
+                # mass
+                outputs['mass'][i_TMD] = inputs['group_mass'][i_group]
 
+                # stiffness:
+                if inputs['group_natural_frequency'][i_group] < 0:      # default is -1
+                    outputs['stiffness'][i_TMD] = inputs['group_stiffness'][i_group]
+                else:
+                    outputs['stiffness'][i_TMD] = inputs['group_natural_frequency'][i_group]**2 * inputs['group_mass'][i_group]
+
+                # damping:
+                if inputs['group_damping_ratio'][i_group] < 0:      # default is -1
+                    outputs['damping'][i_TMD] = inputs['group_damping'][i_group]
+                else:
+                    outputs['damping'][i_TMD] = 2 * inputs['group_damping_ratio'][i_group] * inputs['group_natural_frequency'][i_group] * inputs['group_mass'][i_group]
+
+        print('here')  # to check mapping
 
 class TMD_IVCs(IndepVarComp):
     def initialize(self):
@@ -112,6 +137,6 @@ class TMD_IVCs(IndepVarComp):
         self.add_output('group_mass',               val=np.zeros(n_groups), units='kg',        desc='TMD Mass')
         self.add_output('group_stiffness',          val=np.zeros(n_groups), units='N/m',       desc='TMD Stiffnes')
         self.add_output('group_damping',            val=np.zeros(n_groups), units='N/(m/s)',   desc='TMD Damping')
-        self.add_output('group_natural_frequency',  val=np.zeros(n_groups), units='rad/s',     desc='TMD natural frequency')
-        self.add_output('group_damping_ratio',      val=np.zeros(n_groups),                    desc='TMD damping ratio')
+        self.add_output('group_natural_frequency',  val=-np.ones(n_groups), units='rad/s',     desc='TMD natural frequency')
+        self.add_output('group_damping_ratio',      val=-np.ones(n_groups),                    desc='TMD damping ratio')
 

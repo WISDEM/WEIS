@@ -136,7 +136,7 @@ properties:
                     #     - tower
                     #     - platform
                 location:
-                    description:  Fractional location of TMD if center of member is [0,0,0] and edges are \pm 1
+                    description:  Location of TMD in global coordinates
                     type: array
                     items:
                         type: number
