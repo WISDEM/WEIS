@@ -142,6 +142,36 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             else:
                 raise Exception('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
 
+        if 'TMDs' in self.wt_init:
+            n_TMDs = len(self.wt_init['TMDs'])
+            self.modeling_options['TMDs'] = {}
+            self.modeling_options['TMDs']['n_TMDs']                 = n_TMDs
+            # TODO: come back and check how many of these need to be modeling options
+            self.modeling_options['TMDs']['name']                   = [tmd['name'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['component']              = [tmd['component'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['location']               = [tmd['location'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['mass']                   = [tmd['mass'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['stiffness']              = [tmd['stiffness'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['damping']                = [tmd['damping'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['natural_frequency']      = [tmd['natural_frequency'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['damping_ratio']          = [tmd['damping_ratio'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['X_DOF']                  = [tmd['X_DOF'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['Y_DOF']                  = [tmd['Y_DOF'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['Z_DOF']                  = [tmd['Z_DOF'] for  tmd in self.wt_init['TMDs']]
+
+            # Check that TMD locations map to somewhere valid (tower or platform member)
+            self.modeling_options['TMDs']['num_tower_TMDs'] = 0
+            self.modeling_options['TMDs']['num_ptfm_TMDs']  = 0
+            
+            for i_TMD, component in enumerate(self.modeling_options['TMDs']['component']):
+                if self.modeling_options['flags']['floating'] and component in self.modeling_options['floating']['members']['name']:
+                    self.modeling_options['TMDs']['num_ptfm_TMDs'] += 1
+                elif component == 'tower':
+                    self.modeling_options['TMDs']['num_tower_TMDs'] += 1
+                else:
+                    raise Exception('Invalid TMD component mapping for {} on {}'.format(
+                        self.modeling_options['TMDs']['name'][i_TMD],component))                
+
     def update_ontology_control(self, wt_opt):
         # Update controller
         if self.modeling_options['flags']['control']:

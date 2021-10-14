@@ -358,10 +358,10 @@ class FASTLoadCases(ExplicitComponent):
 
         # TMD params
         if self.options['modeling_options']['flags']['TMDs']:
-            self.add_input('TMD_mass',         val=0.0, units='kg',         desc='TMD Mass')
-            self.add_input('TMD_stiffness',    val=0.0, units='N/m',        desc='TMD Stiffnes')
-            self.add_input('TMD_damping',      val=0.0, units='N/(m/s)',    desc='TMD Damping')
-            self.add_discrete_input('num_tower_StCs',      val=0,           desc='Number of tower TMDs')
+            n_TMDs = self.options['modeling_options']['TMDs']['n_TMDs']
+            self.add_input('TMD_mass',         val=np.zeros(n_TMDs), units='kg',         desc='TMD Mass')
+            self.add_input('TMD_stiffness',    val=np.zeros(n_TMDs), units='N/m',        desc='TMD Stiffnes')
+            self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
         # DLC options
         n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']

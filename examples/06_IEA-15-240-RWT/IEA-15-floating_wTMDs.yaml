@@ -1151,6 +1151,38 @@ TMDs:
       mass: 2000
       stiffness: 20.e5
       damping: 2800
+      natural_frequency: 0.2 # rad/s
+      damping_ratio: 0.1
+      X_DOF: True
+      Y_DOF: True
+    - name: ptfm_TMD1
+      component: column1
+      location: [0,0,0]
+      mass: 2000
+      stiffness: 20.e5
+      damping: 2800
+      natural_frequency: 0.2 # rad/s
+      damping_ratio: 0.1
+      Z_DOF: True
+    - name: ptfm_TMD2
+      component: column3
+      location: [0,0,0]
+      mass: 2000
+      stiffness: 20.e5
+      damping: 2800
+      natural_frequency: 0.2 # rad/s
+      damping_ratio: 0.1
+      Z_DOF: True
+    - name: ptfm_TMD3
+      component: column3
+      location: [0,0,0]
+      mass: 2000
+      stiffness: 20.e5
+      damping: 2800
+      natural_frequency: 0.2 # rad/s
+      damping_ratio: 0.1
+      Z_DOF: True
+
 
 environment:
     air_density: 1.225

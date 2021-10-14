@@ -132,9 +132,9 @@ properties:
                 component:
                     description: Component location of the TMD (tower or platform)
                     type: string
-                    enum:
-                        - tower
-                        - platform
+                    # enum:
+                    #     - tower
+                    #     - platform
                 location:
                     description:  Fractional location of TMD if center of member is [0,0,0] and edges are \pm 1
                     type: array
@@ -146,14 +146,17 @@ properties:
                     description: Mass of TMD
                     type: number
                     unit: kg
+                    default: 0
                 stiffness:
                     description: Stiffness of TMD
                     type: number
                     unit: N/m
+                    default: 0
                 damping:
                     description: Damping of TMD
                     type: number
                     unit: (N/(m/s))
+                    default: 0
                 X_DOF:
                     description: Dof on or off for StC X
                     type: boolean
@@ -166,6 +169,16 @@ properties:
                     description: Dof on or off for StC Z
                     type: boolean
                     default: False
+                natural_frequency:
+                    description: Natural frequency of TMD, will overwrite stiffness (-1 indicates that it's not used)
+                    type: number
+                    unit: rad/s
+                    default: -1
+                damping_ratio:
+                    description: Daming ratio of TMD, will overwrite damping (-1 indicates that it's not used)
+                    type: number
+                    unit: non-dimensional
+                    default: -1
 
                 
 

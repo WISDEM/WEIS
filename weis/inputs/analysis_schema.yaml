@@ -238,6 +238,18 @@ properties:
                                 properties:
                                     lower_bound: *bound
                                     upper_bound: *bound
+                            natural_frequency:
+                                type: object
+                                description: Natural frequency optimization of TMD group
+                                properties:
+                                    lower_bound: *bound
+                                    upper_bound: *bound
+                            damping_ratio:
+                                type: object
+                                description: Damping ratio optimization of TMD group
+                                properties:
+                                    lower_bound: *bound
+                                    upper_bound: *bound
 
     constraints:
         # GB: These all need gammas or safety factors
