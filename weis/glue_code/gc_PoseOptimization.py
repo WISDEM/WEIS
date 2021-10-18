@@ -143,7 +143,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                         upper=tmd_group['stiffness']['upper_bound']
                         )
                     if 'natural_frequency' in tmd_group:
-                        raise Execption("natural_frequency and stiffness can not be design variables in the same group")
+                        raise Exception("natural_frequency and stiffness can not be design variables in the same group")
                 if 'damping' in tmd_group:
                     wt_opt.model.add_design_var(
                         f'TMDs.TMD_IVCs.group_{i_group}_damping', 
@@ -151,7 +151,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                         upper=tmd_group['damping']['upper_bound']
                         )
                     if 'damping_ratio' in tmd_group:
-                        raise Execption("damping_ratio and damping can not be design variables in the same group")
+                        raise Exception("damping_ratio and damping can not be design variables in the same group")
                 if 'natural_frequency' in tmd_group:
                     wt_opt.model.add_design_var(
                         f'TMDs.TMD_IVCs.group_{i_group}_natural_frequency', 

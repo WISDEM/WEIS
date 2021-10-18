@@ -222,7 +222,6 @@ properties:
                                 mass:
                                     type: object
                                     description: Mass optimization of TMD group
-                                    default: {}
                                     properties:
                                         lower_bound: &bound
                                             type: number
@@ -243,7 +242,6 @@ properties:
                                 stiffness:
                                     type: object
                                     description: Stiffness optimization of TMD group
-                                    default: {}
                                     properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
@@ -251,7 +249,6 @@ properties:
                                 damping:
                                     type: object
                                     description: Damping optimization of TMD group
-                                    default: {}
                                     properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
@@ -259,7 +256,6 @@ properties:
                                 natural_frequency:
                                     type: object
                                     description: Natural frequency optimization of TMD group
-                                    default: {}
                                     properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
@@ -271,7 +267,6 @@ properties:
                                 damping_ratio:
                                     type: object
                                     description: Damping ratio optimization of TMD group
-                                    default: {}
                                     properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
