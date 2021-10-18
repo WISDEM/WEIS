@@ -143,7 +143,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = assign_ROSCO_values(wt_opt, modeling_options)
         if modeling_options['flags']['TMDs']:
-            wt_opt = assign_TMD_values(wt_opt, wt_init)
+            wt_opt = assign_TMD_values(wt_opt, wt_init, opt_options)
 
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         if modeling_options['Level3']['flag']:

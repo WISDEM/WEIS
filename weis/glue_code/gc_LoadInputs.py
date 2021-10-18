@@ -173,10 +173,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         self.modeling_options['TMDs']['name'][i_TMD],component))      
 
             # Set TMD group  mapping: list of length n_groups, with i_TMDs in each group
-            n_groups = self.modeling_options['TMDs']['n_TMDs']      # for now, each TMD is its own group
-            self.modeling_options['TMDs']['group_mapping'] = [None] * n_groups
-            for i_group in range(n_groups):
-                self.modeling_options['TMDs']['group_mapping'][i_group] = [i_group]
+            # Loop through TMD names, assign to own group if not in an analysis group
+            if 'TMDs' in self.analysis_options['design_variables']:
+                tmd_group_map = []
+                tmd_names = self.modeling_options['TMDs']['name']
+                
+                for i_group, tmd_group in enumerate(self.analysis_options['design_variables']['TMDs']['groups']):
+                    tmds_in_group_i = [tmd_names.index(tmd_name) for tmd_name in tmd_group['names']]
+
+                    tmd_group_map.append(tmds_in_group_i)
+                
+                self.modeling_options['TMDs']['group_mapping'] = tmd_group_map
 
     def update_ontology_control(self, wt_opt):
         # Update controller

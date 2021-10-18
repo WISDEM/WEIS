@@ -129,13 +129,41 @@ class PoseOptimizationWEIS(PoseOptimization):
             TMD_opt = self.opt['design_variables']['TMDs']
 
             # We only support one TMD for now
-            for tmd_group in TMD_opt['groups']:
+            for i_group, tmd_group in enumerate(TMD_opt['groups']):
                 if 'mass' in tmd_group:
-                    wt_opt.model.add_design_var('TMDs.mass', lower=tmd_group['mass']['lower_bound'],upper=tmd_group['mass']['upper_bound'])
+                    wt_opt.model.add_design_var(
+                        f'TMDs.TMD_IVCs.group_{i_group}_mass', 
+                        lower=tmd_group['mass']['lower_bound'],
+                        upper=tmd_group['mass']['upper_bound'],
+                        )
                 if 'stiffness' in tmd_group:
-                    wt_opt.model.add_design_var('TMDs.stiffness', lower=tmd_group['stiffness']['lower_bound'],upper=tmd_group['stiffness']['upper_bound'])
+                    wt_opt.model.add_design_var(
+                        f'TMDs.TMD_IVCs.group_{i_group}_stiffness', 
+                        lower=tmd_group['stiffness']['lower_bound'],
+                        upper=tmd_group['stiffness']['upper_bound']
+                        )
+                    if 'natural_frequency' in tmd_group:
+                        raise Execption("natural_frequency and stiffness can not be design variables in the same group")
                 if 'damping' in tmd_group:
-                    wt_opt.model.add_design_var('TMDs.damping', lower=tmd_group['damping']['lower_bound'],upper=tmd_group['damping']['upper_bound'])
+                    wt_opt.model.add_design_var(
+                        f'TMDs.TMD_IVCs.group_{i_group}_damping', 
+                        lower=tmd_group['damping']['lower_bound'],
+                        upper=tmd_group['damping']['upper_bound']
+                        )
+                    if 'damping_ratio' in tmd_group:
+                        raise Execption("damping_ratio and damping can not be design variables in the same group")
+                if 'natural_frequency' in tmd_group:
+                    wt_opt.model.add_design_var(
+                        f'TMDs.TMD_IVCs.group_{i_group}_natural_frequency', 
+                        lower=tmd_group['natural_frequency']['lower_bound'],
+                        upper=tmd_group['natural_frequency']['upper_bound']
+                        )
+                if 'damping_ratio' in tmd_group:
+                    wt_opt.model.add_design_var(
+                        f'TMDs.TMD_IVCs.group_{i_group}_damping_ratio', 
+                        lower=tmd_group['damping_ratio']['lower_bound'],
+                        upper=tmd_group['damping_ratio']['upper_bound']
+                        )
         
         return wt_opt
 

@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/IEA_w_TMD_7
+        OF_run_dir: outputs/IEA_w_TMD_11
         save_iterations: True
         save_timeseries: True
 
@@ -58,7 +58,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : True
         PtfmYDOF : True
     HydroDyn:
-        WaveTMax: 1 #3630
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WaveSeed1: 123456789
@@ -69,7 +68,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        WaveMod: 0
+        # WaveMod: 0
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 Level1:
@@ -99,8 +98,8 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [12]
           n_seeds: 1
-          analysis_time: 600.
-          transient_time: 100.
+          analysis_time: 10.
+          transient_time: 0.01
           turbulent_wind:
               HubHt: 140
               GridHeight: 300

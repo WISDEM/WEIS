@@ -1577,7 +1577,7 @@ properties:
                         description: Model for stretching incident wave kinematics to instantaneous free surface {0 = none=no stretching, 1 = vertical stretching, 2 = extrapolation stretching, 3 = Wheeler stretching} (switch) [unused when WaveMod=0 or when PotMod/=0]
                     WaveTMax:
                         type: number
-                        default: 850.0
+                        default: 3600
                         minimum: 0.0
                         maximum: 1e5
                         unit: s
