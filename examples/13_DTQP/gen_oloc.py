@@ -15,7 +15,7 @@ import numpy as np
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
-if __name__ == '__main__':
+def gen_oloc():
 
     # read WEIS options:
     mydir                       = os.path.dirname(os.path.realpath(__file__))  # get path to this file
@@ -145,3 +145,4 @@ if __name__ == '__main__':
 
     print('here')
     
+gen_oloc()
