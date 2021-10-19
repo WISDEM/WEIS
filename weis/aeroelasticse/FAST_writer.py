@@ -948,7 +948,10 @@ class InputWriter_OpenFAST(object):
                     print('Airfoil number ' + str(afi) + ' tab number ' + str(tab) + ' has the moment coefficient different between +-180 deg. This is changed to be the same now.')
                     cm[0] = cm[-1]
 
-
+                if self.fst_vt['AeroDyn15']['InCol_Cm'] == 0:
+                    cm = np.zeros_like(cl)
+                if self.fst_vt['AeroDyn15']['InCol_Cpmin'] == 0:
+                    cpmin = np.zeros_like(cl)
                 polar = np.column_stack((alpha, cl, cd, cm, cpmin))
                 polar = polar[:,polar_map]
 
