@@ -62,30 +62,46 @@ def TVmat2cell(f,time):
     return A
 
 def Generate_AddtionalConstraints(DescOutput,Cw,Dw,ws,W_fun,time,Qty,b,yw):
-    indQty = DescOutput.index(Qty)
     
-    Cqty = Cw[:,indQty,:]
-    Dqty = Dw[:,indQty,:]
-    Yoqty = yw[indQty,:]
+    # get the number of constraints 
+    n_con = len(Qty)
     
+    if len(Qty) == len(b):
+        pass
+    else:
+        raise Exception("The number of constraints and the maximum values are not equal")
+        
+    # initialize
+    Z = [Simple_Linear_Constraints() for n in range(n_con)]
     
-    Cind_pp = PchipInterpolator(ws,Cqty.T,axis = 1)
-    Dind_pp = PchipInterpolator(ws,Dqty.T,axis = 1)
-    Yoind_pp = PchipInterpolator(ws,Yoqty, axis = 1)
-    
-    Cind_op = lambda w: Cind_pp(w)
-    Dind_op = lambda w: Dind_pp(w)
-    Yoind_op = lambda w: Yoind_pp(w)
-    
-    Z = [Simple_Linear_Constraints() for n in range(1)]
-
-    linearZ = [Simple_Bounds() for n in range(2)]
-    
-    linearZ[0].right = 2; linearZ[0].matrix = TVmat2cell(lambda t: Cind_op(W_fun(t)),time)
-    linearZ[1].right = 1; linearZ[1].matrix = TVmat2cell(lambda t: Dind_op(W_fun(t)),time)
-    
-    Z[0].linear = linearZ
-    Z[0].b = lambda t: b - Yoind_op(W_fun(t))
+    for i in range(n_con):
+        
+        # Get the index for the quantity
+        indQty = DescOutput.index(Qty[i])
+        
+        # Get corresponding columns in the C and D matrices
+        Cqty = Cw[:,indQty,:]
+        Dqty = Dw[:,indQty,:]
+        Yoqty = yw[indQty,:]
+        
+        # generate interpolating functions
+        Cind_pp = PchipInterpolator(ws,Cqty.T,axis = 1)
+        Dind_pp = PchipInterpolator(ws,Dqty.T,axis = 1)
+        Yoind_pp = PchipInterpolator(ws,Yoqty, axis = 1)
+        
+        Cind_op = lambda w: Cind_pp(w)
+        Dind_op = lambda w: Dind_pp(w)
+        Yoind_op = lambda w: Yoind_pp(w)
+        
+        # initialize 
+        linearZ = [Simple_Bounds() for n in range(2)]
+        
+        # assign
+        linearZ[0].right = 2; linearZ[0].matrix = TVmat2cell(lambda t: Cind_op(W_fun(t)),time)
+        linearZ[1].right = 1; linearZ[1].matrix = TVmat2cell(lambda t: Dind_op(W_fun(t)),time)
+        
+        Z[i].linear = linearZ
+        Z[i].b = lambda t: b[i] - Yoind_op(W_fun(t))
     
     
     
@@ -188,7 +204,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     opts.dt.nt = 1000
     opts.solver.tolerence = 1e-10
-    opts.solver.maxiters = 1500
+    opts.solver.maxiters = 30
     opts.solver.function = 'pyoptsparse'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
@@ -231,12 +247,14 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = False
+    OutputCon_flag = True
     
     if OutputCon_flag:
-        Qty = "ED TwrBsFxt, (kN)"
+        Qty = ["ED TwrBsFxt, (kN)"] #Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
         
-        Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,5000,yw)
+        b = [5000] #b = [5000,28000]
+        
+        Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,b,yw)
 
     # lambda function to find the values of lambda function at specific indices
     indexat = lambda expr,index: expr[index,:]
@@ -407,7 +425,10 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         yl[i,:] = np.squeeze(np.dot(C,xl.T) + np.dot(D,ul.T)) 
         
     Y = yl + Yo_off
-            
+    Qty_p = 'SrvD GenPwr, (kW)'
+    Yindp = DescOutput.index(Qty_p)
+    
+    Y[:,Yindp] *= 10**(-3)
 
     # plot
     if plot:
@@ -432,13 +453,9 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
         fig.subplots_adjust(hspace = 0.65)
         
+        # plot states
+        fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
         
-        if OutputCon_flag:
-            fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
-        else:
-            fig2, ((ax1,ax2)) = plt.subplots(2,1)
-                
-
         # PtfmPitch
         ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
         ax1.set_xlim([t0,tf])
@@ -449,16 +466,32 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         ax2.set_xlim([t0,tf])
         ax2.set_title('Gen Speed [rad/s]')
         
-        if OutputCon_flag:
-            Yind = DescOutput.index(Qty)
-            ax3.plot(T,Y[:,Yind])
-            ax3.set_xlim([t0,tf])
-            ax3.set_title(Qty)
-
+        ax3.plot(T,Y[:,Yindp]*1000)
+        ax3.set_xlim([t0,tf])
+        ax3.set_title(Qty)
+        
         fig2.subplots_adjust(hspace = 0.65)
         
+        if OutputCon_flag:
+            
+            n_con = len(Qty)
+            
+            fig3,ax = plt.subplots(n_con,1)
+            
+            for i in range(n_con):    
+                if n_con == 1:
+                    Yind = DescOutput.index(Qty[i])
+                    ax.plot(T,Y[:,Yind])
+                    ax.set_xlim([t0,tf])
+                    ax.set_title(Qty)
+                else:   
+                    Yind = DescOutput.index(Qty[i])
+                    ax[i].plot(T,Y[:,Yind])
+                    ax[i].set_xlim([t0,tf])
+                    ax[i].set_title(Qty)
+
         plt.show()
-   
+    
     return T,U,X,Y
     
 

@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/new_doe
+    folder_output: outputs/rho_newt
     fname_output: iea15mw
     
 design_variables:
@@ -33,7 +33,7 @@ driver:
     flag: True            # Flag to enable design of experiments
     run_parallel: True    # Flag to run using parallel processing
     generator: Uniform    # Type of input generator. (Uniform)
-    num_samples: 4      # number of samples for (Uniform only)
+    num_samples: 1      # number of samples for (Uniform only)
 
 
 recorder:

@@ -14,6 +14,96 @@ from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 import matplotlib.pyplot as plt
 import numpy as np
 from mat4py import loadmat  
+from copy                                   import deepcopy
+
+from weis.glue_code.gc_LoadInputs           import WindTurbineOntologyPythonWEIS
+from wisdem.glue_code.gc_WT_InitModel       import yaml2openmdao
+from weis.glue_code.gc_PoseOptimization     import PoseOptimizationWEIS
+from weis.glue_code.glue_code               import WindPark
+from weis.glue_code.gc_ROSCOInputs          import assign_ROSCO_values
+from weis.control.LinearModel               import LinearTurbineModel
+from wisdem.glue_code.gc_PoseOptimization   import PoseOptimization as PoseOptimizationWISDEM
+
+import openmdao.api as om
+from wisdem.plant_financese.plant_finance import PlantFinance
+
+
+def Calc_LCOE(Turbine_Cost,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf):
+    
+    prob = om.Problem()
+    prob.model = PlantFinance()
+    prob.setup() 
+    
+    ncase = len(Turbine_Cost)
+    lcoe = np.zeros((ncase,))
+    
+    for i in range(ncase):
+        # Set variable inputs with intended units
+        prob.set_val("machine_rating", MR, units="MW")
+        prob.set_val("tcc_per_kW", Turbine_Cost[i]/MR, units="USD/MW")
+        prob.set_val("turbine_number", 1)
+        prob.set_val("opex_per_kW", opex_per_kW, units="USD/kW/yr")
+        prob.set_val("fixed_charge_rate", 0.056)
+        prob.set_val("bos_per_kW", bos_per_kW, units="USD/kW")
+        prob.set_val("wake_loss_factor", 0.15)
+        prob.set_val("turbine_aep", AEP[i], units="MW*h")
+        
+        prob.run_model()
+        lcoe[i] = prob.get_val('lcoe')
+
+    return lcoe
+
+
+
+def Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options,rho):
+    
+    wt_ontology = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_analysis_options)
+    
+    TM, MO, AO = wt_ontology.get_input_data()
+    
+    # switch off important flags
+    MO['Level1']['flag'] = False
+    MO['Level2']['flag'] = False
+    MO['Level3']['flag'] = False
+    MO['ROSCO']['flag'] = False
+    AO['recorder']['flag'] = False
+    AO['driver']['optimization']['flag'] = False
+    AO['driver']['design_of_experiments']['flag'] = False
+    TM['costs']['turbine_number'] = 1
+    
+    opex_per_kW = TM['costs']['opex_per_kW']
+    bos_per_kW = TM['costs']['bos_per_kW']
+    fcr = TM['costs']['fixed_charge_rate']
+    wlf = TM['costs']['wake_loss_factor']
+    
+    ncase  = len(rho)
+    
+    Turbine_Cost = np.zeros((ncase,))
+    
+    for i in range(ncase): 
+        
+
+        TM["materials"][1]["rho"] = rho[i]
+        myopt = PoseOptimizationWISDEM(TM, MO, AO)
+        #breakpoint()
+        # initialize the open mdao problem
+        wt_opt = om.Problem(model=WindPark(modeling_options=MO, opt_options=AO))
+        wt_opt.setup()
+        
+        # assign the different values for the various subsystems
+        wt_opt = yaml2openmdao(wt_opt, MO, TM, AO)
+        wt_opt = myopt.set_initial(wt_opt, TM)
+        wt_opt.run_model()
+        
+
+
+        MR = wt_opt.get_val('financese.machine_rating',units = 'MW')
+        Cost_turbine_MW = wt_opt.get_val('financese.tcc_per_kW', units='USD/MW')[0]
+        
+        Turbine_Cost[i] = Cost_turbine_MW*MR
+        
+        
+    return Turbine_Cost,MR,opex_per_kW,bos_per_kW,fcr,wlf
 
 def Calc_AEP(summary_stats,dlc_generator,Turbine_class):
     
@@ -124,15 +214,15 @@ if __name__ == "__main__":
         
        
     # Linear Model
-    pkl_file = mydir + os.sep + "outputs" + os.sep + "ABCD_matrices.pkl"
+    pkl_file = mydir + os.sep + "outputs" + os.sep+  "ABCD_replist.pkl" 
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)
 
-      
+    
     fst_vt = {}
     fst_vt['DISCON_in'] = {}
-    fst_vt['DISCON_in']['PC_RefSpd'] = 0.7914 #0.7853192931562493
+    fst_vt['DISCON_in']['PC_RefSpd'] = 0.7853192931562493
 
     la = LoadsAnalysis(
             outputs=[],
@@ -149,6 +239,11 @@ if __name__ == "__main__":
     
     n_cases = len(ABCD_list)
     AEP = np.zeros((n_cases,)) 
+    
+    # Evaluate the cost
+    rho = [7800,7800,7800,7800,7800]
+    TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, rho)
+    
     
     for n in range(n_cases):
         ABCD = ABCD_list[n]
@@ -169,4 +264,4 @@ if __name__ == "__main__":
         AEP[n] = Calc_AEP(summary_stats,dlc_generator,Turbine_class)
         
         
-    
+    LCOE = Calc_LCOE(TC,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf)

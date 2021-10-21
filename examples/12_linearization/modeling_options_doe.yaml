@@ -1,11 +1,10 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/tdoe
+        OF_run_dir: outputs/rho_newt
         use_exe: True
-
+        
 WISDEM:
     RotorSE:
         flag: True
@@ -99,31 +98,35 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 
 ROSCO:
     flag: True
-    
+    zeta_vs: 1
+    omega_vs: 0.2
+    zeta_pc: [1]
+    omega_pc: [0.2]
 
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?
-        flag: True
-        TMax: 100.      # run simulations using IEC standards, could share that info
+        flag: False
+        TMax: 700.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 1600.
+        TMax: 2000.
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        wind_speeds: [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 ]#[3, 4, 5, 6, 7, 8, 8.25, 8.5, 8.75, 9, 9.25, 9.5, 9.625, 9.75, 9.875, 10, 10.12, 10.25, 10.38, 10.5, 10.62, 10.75, 10.88, 11, 11.12, 11.25, 11.38, 11.5, 11.75, 12, 12.25, 12.5, 12.75, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25 ]
-        rated_offset: 0.75
+        wind_speeds: [12] #[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+        rated_offset: 2.5
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 12
-        
+    DTQP:
+        flag: True
+        nt: 3000
+        maxiters: 1500
+        tolerance: 1e-5
+
 Level1:
     potential_model_override: 2
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: lin
-        OF_run_dir: outputs/tower_doe
-        use_exe: True
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2

@@ -72,7 +72,7 @@ class PlantFinance(om.ExplicitComponent):
         c_turbine = tcc_per_kW * t_rating
         c_bos_turbine = bos_per_kW * t_rating
         c_opex_turbine = opex_per_kW * t_rating
-
+        
         # Run a few checks on the inputs
         if n_turbine == 0:
             raise ValueError(

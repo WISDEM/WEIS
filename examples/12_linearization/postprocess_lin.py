@@ -6,7 +6,7 @@ import pickle
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-opt_path = mydir + os.sep + "outputs" + os.sep + "new_doe" 
+opt_path = mydir + os.sep + "outputs" + os.sep + "rho_debug" 
 pkl_path = opt_path + os.sep+  "ABCD_matrices.pkl"
 
 with open(pkl_path, 'rb') as handle:

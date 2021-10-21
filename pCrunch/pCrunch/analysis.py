@@ -566,7 +566,7 @@ class PowerProduction:
         # Wind probability
         unique = list(np.unique(windspeeds))
         wind_prob = self.prob_WindDist(unique, disttype="pdf")
-
+        
         # Calculate AEP
         AEP = np.trapz(pwr.T * wind_prob, unique) * 8760
 
