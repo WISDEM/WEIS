@@ -86,7 +86,7 @@ def yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options):
         bos = wt_init["bos"]
         wt_opt = assign_bos_values(wt_opt, bos, offshore)
     else:
-        costs = {}
+        bos = {}
 
     if modeling_options["flags"]["costs"]:
         costs = wt_init["costs"]
@@ -862,7 +862,6 @@ def assign_tower_values(wt_opt, modeling_options, tower):
         elif modeling_options["flags"]["floating"]:
             wt_opt["floatingse.rna_mass"] = modeling_options["WISDEM"]["Loading"]["mass"]
             wt_opt["floatingse.rna_cg"] = modeling_options["WISDEM"]["Loading"]["center_of_mass"]
-            wt_opt["floatingse.rna_I"] = modeling_options["WISDEM"]["Loading"]["moment_of_inertia"]
             wt_opt["floatingse.rna_F"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["force"]
             wt_opt["floatingse.rna_M"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["moment"]
             wt_opt["floatingse.Uref"] = modeling_options["WISDEM"]["Loading"]["loads"][0]["velocity"]
@@ -1242,7 +1241,7 @@ def assign_costs_values(wt_opt, costs):
     return wt_opt
 
 
-def assign_airfoil_values(wt_opt, modeling_options, airfoils):
+def assign_airfoil_values(wt_opt, modeling_options, airfoils, coordinates_only=False):
     # Function to assign values to the openmdao component Airfoils
 
     n_af = modeling_options["WISDEM"]["RotorSE"]["n_af"]
@@ -1351,14 +1350,15 @@ def assign_airfoil_values(wt_opt, modeling_options, airfoils):
         # plt.show()
 
     # Assign to openmdao structure
-    wt_opt["airfoils.aoa"] = aoa
     wt_opt["airfoils.name"] = name
-    wt_opt["airfoils.ac"] = ac
     wt_opt["airfoils.r_thick"] = r_thick
-    wt_opt["airfoils.Re"] = Re
-    wt_opt["airfoils.cl"] = cl
-    wt_opt["airfoils.cd"] = cd
-    wt_opt["airfoils.cm"] = cm
+    if coordinates_only == False:
+        wt_opt["airfoils.aoa"] = aoa
+        wt_opt["airfoils.ac"] = ac
+        wt_opt["airfoils.Re"] = Re
+        wt_opt["airfoils.cl"] = cl
+        wt_opt["airfoils.cd"] = cd
+        wt_opt["airfoils.cm"] = cm
 
     wt_opt["airfoils.coord_xy"] = coord_xy
 

@@ -93,7 +93,16 @@ def Generate_AddtionalConstraints(DescOutput,Cw,Dw,ws,W_fun,time,Qty,b,yw):
     
 
 
-def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False):
+def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
+    '''
+        Function to compute the open loop optimal control of a linear turbine model, given
+        a disturbance and constraints
+
+        Inputs:         LinearModels:  LinearTurbineModel object specified in weis/control
+                        disturbance: dictionary with Time and Wind fields
+                        constraints: dictionary with key as OpenFAST state or output, value is a list with lower and upper bounds
+                        plot: boolean flag whether to plot outputs
+    '''
     
     # load linear models
     Aw = np.transpose(LinearModels.A_ops,(2,0,1))
@@ -179,7 +188,7 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False):
 
     opts.dt.nt = 1000
     opts.solver.tolerence = 1e-10
-    opts.solver.maxiters = 1000000
+    opts.solver.maxiters = 1500
     opts.solver.function = 'pyoptsparse'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
@@ -222,7 +231,7 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = True
+    OutputCon_flag = False
     
     if OutputCon_flag:
         Qty = "ED TwrBsFxt, (kN)"
@@ -240,9 +249,17 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False):
     lb = -np.ones((nx,1))*np.inf
 
     # set ub values for PtfmPitch and Genspeed
-    ub[iPtfmPitch] = np.deg2rad(6)
-    ub[iGenSpeed] = 0.7913+0.0001
-
+    for const in constraints:
+        if const in DescStates:
+            iConst = DescStates.index(const)
+            ub[iConst] = constraints[const][1]      # max, min would be index 0
+        elif const in DescOutputs:
+            iConst = DescOutputs.index(const)
+            # do other output constraint things
+        else:
+            raise Exception(f'{const} not in DescStates or DescOutputs')
+    
+    GSmax = ub[iGenSpeed][0];
     # initialize
     UBx = np.empty((nx,1),dtype = 'O')
     LBx = np.empty((nx,1),dtype = 'O')
@@ -264,17 +281,14 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False):
     LBc = np.array([[lambda t: W_fun(t)-W_fun(t)],
                     [lambda t: min(uw[1,:])-GT_fun(W_fun(t))],
                     [lambda t: min(uw[2,:])-BP_fun(W_fun(t))]])
-
+    
     # initial state
     X0_n = np.zeros((nx,1))
-    X0_n[0:8] = np.array( [[0.0493],
+    X0_n[0:5] = np.array( [[0.0493],
         [0.1957],
         [0.0000],
         [0.0001],
-        [0.7913],
-            [0],
-            [0],
-            [0]])
+        [GSmax]])
     
     
     UBs = X0_n - Xo_fun(W_fun(0))[None].T
@@ -377,72 +391,73 @@ def DTQPy_oloc(LinearModels,disturbance,OutputCon_flag = False):
     X =  Xl + Xo_off
     U = Ul + Uo_off
     
-    if OutputCon_flag:
-        yl = np.zeros((opts.dt.nt,np.shape(yw)[0]))
-        for i in range(len(T)):
-            t = T[i,0]
-            w = W_fun(t)
-            
-            C = C_op(w)
-            D = D_op(w)
-            
-            xl = Xl[i,:]
-            ul = Ul[i,:]
-            
-            yl[i,:] = np.squeeze(np.dot(C,xl.T) + np.dot(D,ul.T)) 
-            
-        Y = yl + Yo_off
+    # Compute output 
+    yl = np.zeros((opts.dt.nt,np.shape(yw)[0]))
+    for i in range(len(T)):
+        t = T[i,0]
+        w = W_fun(t)
+        
+        C = C_op(w)
+        D = D_op(w)
+        
+        xl = Xl[i,:]
+        ul = Ul[i,:]
+        
+        yl[i,:] = np.squeeze(np.dot(C,xl.T) + np.dot(D,ul.T)) 
+        
+    Y = yl + Yo_off
             
 
     # plot
-    fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
+    if plot:
+        fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
 
-    # wind
-    ax1.plot(T,U[:,0])
-    ax1.set_title('Wind Speed [m/s]')
-    ax1.set_xlim([t0,tf])
+        # wind
+        ax1.plot(T,U[:,0])
+        ax1.set_title('Wind Speed [m/s]')
+        ax1.set_xlim([t0,tf])
 
-    # torue
-    ax2.plot(T,U[:,iGenTorque]/1e+07)
-    ax2.set_ylim([1.8,2])
-    ax2.set_title('Gen Torque [MWm]')
-    ax2.set_xlim([t0,tf])
+        # torue
+        ax2.plot(T,U[:,iGenTorque]/1e+07)
+        #ax2.set_ylim([1.8,2])
+        ax2.set_title('Gen Torque [MWm]')
+        ax2.set_xlim([t0,tf])
 
-    # blade pitch
-    ax3.plot(T,U[:,iBldPitch])
-    #ax3.set_ylim([0.2, 0.3])
-    ax3.set_title('Bld Pitch [rad/s]')
-    ax3.set_xlim([t0,tf])
-
-    fig.subplots_adjust(hspace = 0.65)
-    
-    
-    if OutputCon_flag:
-        fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
-    else:
-        fig2, ((ax1,ax2)) = plt.subplots(2,1)
-            
-
-    # PtfmPitch
-    ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
-    ax1.set_xlim([t0,tf])
-    ax1.set_title('Ptfm Pitch [deg]')
-
-    # FenSpeed
-    ax2.plot(T,X[:,iGenSpeed])
-    ax2.set_xlim([t0,tf])
-    ax2.set_title('Gen Speed [rad/s]')
-    
-    if OutputCon_flag:
-        Yind = DescOutput.index(Qty)
-        ax3.plot(T,Y[:,Yind])
+        # blade pitch
+        ax3.plot(T,U[:,iBldPitch])
+        #ax3.set_ylim([0.2, 0.3])
+        ax3.set_title('Bld Pitch [rad]')
         ax3.set_xlim([t0,tf])
-        ax3.set_title(Qty)
 
-    fig2.subplots_adjust(hspace = 0.65)
-    
-    plt.show()
-    
+        fig.subplots_adjust(hspace = 0.65)
+        
+        
+        if OutputCon_flag:
+            fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
+        else:
+            fig2, ((ax1,ax2)) = plt.subplots(2,1)
+                
+
+        # PtfmPitch
+        ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
+        ax1.set_xlim([t0,tf])
+        ax1.set_title('Ptfm Pitch [deg]')
+
+        # FenSpeed
+        ax2.plot(T,X[:,iGenSpeed])
+        ax2.set_xlim([t0,tf])
+        ax2.set_title('Gen Speed [rad/s]')
+        
+        if OutputCon_flag:
+            Yind = DescOutput.index(Qty)
+            ax3.plot(T,Y[:,Yind])
+            ax3.set_xlim([t0,tf])
+            ax3.set_title(Qty)
+
+        fig2.subplots_adjust(hspace = 0.65)
+        
+        plt.show()
+   
     return T,U,X,Y
     
 

@@ -2,9 +2,11 @@ import unittest
 from weis.test.utils import execute_script
 
 skinny_scripts = [
+    "02_control_opt/weis_driver",       #It's fast, I promise (49 sec. locally)
     "03_NREL5MW_OC3_spar/weis_driver",
     "06_IEA-15-240-RWT/weis_driver",
     "09_design_of_experiments/weis_driver",
+    # "13_DTQP/gen_oloc",
 ]
 
 class TestSkinnyExamples(unittest.TestCase):

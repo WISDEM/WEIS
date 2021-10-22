@@ -9,6 +9,8 @@ from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
+fd_methods = ['SLSQP','SNOPT']
+
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
@@ -30,6 +32,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD) 
         # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
         if modeling_options['Level3']['flag']:
+            
+            # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
+            if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+                n_DV = 1
+            
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs, 
             # otherwise it is half of the number of DV (rounded to the lower integer). 
             # We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
@@ -41,6 +48,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and 
             # the number of cores available (minus the number of DV, which sit and wait for OF to complete)
             n_OF_runs = modeling_options['DLC_driver']['n_cases']
+            n_DV = max([n_DV, 1])
+            max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
+            n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
+        elif modeling_options['Level2']['flag']:
+            if max_cores > 2. * n_DV:
+                n_FD = n_DV
+            else:
+                n_FD = int(np.floor(max_cores / 2))
+            n_OF_runs = modeling_options['Level2']['linearization']['NLinTimes']
             n_DV = max([n_DV, 1])
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
@@ -62,7 +78,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             n_FD = max([n_FD, 1])
             comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
             rank    = MPI.COMM_WORLD.Get_rank()
-            color_i = color_map[rank]
+            if rank < len(color_map):
+                color_i = color_map[rank]
+            else:
+                color_i = max(color_map) + 1
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
 
     else:
@@ -76,7 +95,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
         if MPI:
-            if modeling_options['Level3']['flag']:
+            if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['General']['openfast_configuration']['mpi_run'] = True
                 modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down
@@ -121,7 +140,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
-        wt_opt = assign_ROSCO_values(wt_opt, modeling_options, wt_init['control'])
+        wt_opt = assign_ROSCO_values(wt_opt, modeling_options)
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
@@ -167,7 +186,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if (not MPI) or (MPI and rank == 0):
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
-            wt_initial.update_ontology_control(wt_opt)
             # Remove the fst_vt key from the dictionary and write out the modeling options
             modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             wt_initial.write_ontology(wt_opt, froot_out)
@@ -176,7 +194,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
-    if MPI and modeling_options['Level3']['flag'] and not opt_options['driver']['design_of_experiments']['flag']:
+    if MPI and \
+            (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
+            (not opt_options['driver']['design_of_experiments']['flag']) and \
+            color_i in color_map:
         # subprocessor ranks spin, waiting for FAST simulations to run
         sys.stdout.flush()
         if rank in comm_map_up.keys():
@@ -187,7 +208,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
-        
+    if MPI:
+        MPI.COMM_WORLD.Barrier()
+
     if rank == 0:
         return wt_opt, modeling_options, opt_options
     else:

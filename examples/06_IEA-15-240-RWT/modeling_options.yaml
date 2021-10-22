@@ -84,19 +84,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 
 ROSCO:
     flag: True
-
-Level2:
-    flag: False
-    simulation:         # could these be included in openfast options?
-        TMax: 700.      # run simulations using IEC standards, could share that info
-    linearization:
-        TMax: 1600.
-        DT: 0.01
-        TrimGain: 1e-4
-        TrimTol: 1e-3
-        wind_speeds: [16]
-        DOFs: ['GenDOF','TwFADOF1']
-        NLinTimes: 4    
+    zeta_pc: [1.0]
+    omega_pc: [0.2]
+    zeta_vs: 1.0
+    omega_vs: 0.2
     
 DLC_driver:
     openfast_file_management:
