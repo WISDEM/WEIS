@@ -12,6 +12,9 @@ Please cite the following two items if you use the DT QP Project:
 
 ---
 ### General Information
+This is a limited implementation of the [DTQP](https://github.com/danielrherber/dt-qp-project) in python to solve strictly linear-quadratic dynamic optimizations problems on simple equi-distant mesh.
+Unlike DTQP, DTQPy has only the composite trapezoidal (CTR) method implemented for transcribing the objective function, and the dynamic constraints.
+Additionally, no mesh-refinement feature has been implemented.
 
 #### Contributors
 - [Athul K. Sundarrajan](https://github.com/AthulKrishnaSundarrajan)

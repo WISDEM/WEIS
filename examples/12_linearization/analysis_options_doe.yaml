@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/rho_newt
+    folder_output: outputs/rho_fix
     fname_output: iea15mw
     
 design_variables:

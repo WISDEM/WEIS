@@ -205,7 +205,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     opts.dt.nt = 1000
     opts.solver.tolerence = 1e-10
     opts.solver.maxiters = 30
-    opts.solver.function = 'pyoptsparse'
+    opts.solver.function = 'ipopt'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
     W_pp = PchipInterpolator(np.squeeze(tt),np.squeeze(Wind_speed))

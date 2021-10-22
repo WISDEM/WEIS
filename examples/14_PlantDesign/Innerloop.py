@@ -43,13 +43,16 @@ def Calc_LCOE(Turbine_Cost,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf):
         prob.set_val("tcc_per_kW", Turbine_Cost[i]/MR, units="USD/MW")
         prob.set_val("turbine_number", 1)
         prob.set_val("opex_per_kW", opex_per_kW, units="USD/kW/yr")
-        prob.set_val("fixed_charge_rate", 0.056)
+        prob.set_val("fixed_charge_rate", fcr)
         prob.set_val("bos_per_kW", bos_per_kW, units="USD/kW")
-        prob.set_val("wake_loss_factor", 0.15)
+        prob.set_val("wake_loss_factor", wlf)
         prob.set_val("turbine_aep", AEP[i], units="MW*h")
         
         prob.run_model()
         lcoe[i] = prob.get_val('lcoe')
+        
+    prob.model.list_inputs(units=True)
+    prob.model.list_outputs(units=True)
 
     return lcoe
 
@@ -214,7 +217,7 @@ if __name__ == "__main__":
         
        
     # Linear Model
-    pkl_file = mydir + os.sep + "outputs" + os.sep+  "ABCD_replist.pkl" 
+    pkl_file = mydir + os.sep +   "ABCD_replist.pkl" 
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)
@@ -242,7 +245,7 @@ if __name__ == "__main__":
     
     # Evaluate the cost
     rho = [7800,7800,7800,7800,7800]
-    TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, rho)
+    #TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, rho)
     
     
     for n in range(n_cases):
@@ -264,4 +267,4 @@ if __name__ == "__main__":
         AEP[n] = Calc_AEP(summary_stats,dlc_generator,Turbine_class)
         
         
-    LCOE = Calc_LCOE(TC,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf)
+    #LCOE = Calc_LCOE(TC,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf)

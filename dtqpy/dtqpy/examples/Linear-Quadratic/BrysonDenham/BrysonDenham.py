@@ -13,9 +13,9 @@ Primary Contributor: Daniel R. Herber (danielrherber on Github)
 import os
 import sys
 
-sys.path.insert(1,'/dt-qp-py-project/src')
+#sys.path.insert(1,'/dt-qp-py-project/src')
 
-os.chdir('../../../')
+#os.chdir('../../../')
 import numpy as np
 from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
 from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
@@ -29,7 +29,8 @@ aux = auxdata()
 
 opts = options()
 opts.dt.nt = 1000
-opts.solver.function = 'pyoptsparse'
+opts.solver.function = 'slsqp'
+opts.solver.maxiters = 200
 
 opts.solver.tolerence = 1e-5
 #opts.solver.maxiters = 10000
