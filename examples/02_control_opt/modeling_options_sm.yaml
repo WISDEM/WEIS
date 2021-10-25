@@ -28,7 +28,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    openfast_dir: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     simulation:
         DT: 0.0125
         CompElast: 1
@@ -73,7 +73,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         RdtnMod: 1
         PotMod: 1
         DiffQTF: 0
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: /Users/nabbas/Documents/WindEnergyToolbox/WEIS/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
     InflowWind:
         RefHt: 150.0
@@ -85,16 +85,26 @@ ROSCO:
     ps_percent: 0.85
     F_LPFType: 2
     F_NotchType: 2
-    Fl_Mode: 2 
+    Fl_Mode: 1 
     tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
-    zeta_pc: [1,1]
-    omega_pc: [0.2,0.2]
-    U_pc: [12,18]
+    zeta_pc: 1.2
+    omega_pc: 0.2
+    U_pc: [12, 13, 14, 15, 18]
     zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     omega_vs: 0.12  
     twr_freq: 3.2
     ptfm_freq: 0.2
     Kp_float: -10
+    linmodel_tuning:
+        type: robust #'robust or simulation'
+        linfile_path: /Users/nabbas/Documents/WindEnergyToolbox/WEIS/ROSCO/Test_Cases/IEA-15-240-RWT-UMaineSemi/linearizations
+        lintune_outpath: rs_outfiles
+        load_parallel: True
+        stability_margin: 0.1
+        omega_pc:
+            max: 0.2
+            min: 0.0
+
 
 
 DLC_driver:
@@ -102,10 +112,10 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [16]
           n_seeds: 1
-          analysis_time: 10.
-          transient_time: 0.1
+          analysis_time: 300.0
+          transient_time: 120.0
           turbulent_wind:
               HubHt: 140
               GridHeight: 220
               GridWidth: 220
-              AnalysisTime: 5.
+            #   AnalysisTime: 5.
