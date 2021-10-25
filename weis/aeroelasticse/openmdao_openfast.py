@@ -1893,7 +1893,7 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
         # Analysis
-        if self.options['modeling_options']['flags']['blade']:
+        if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
             outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         if self.options['modeling_options']['flags']['tower']:
             outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
@@ -1901,7 +1901,7 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['flags']['monopile'] and modopt['Level3']['flag']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
 
-        if modopt['DLC_driver']['n_ws_dlc11'] > 0:
+        if modopt['DLC_driver']['n_ws_dlc11'] > 0 and bool(self.fst_vt['Fst']['CompAero']):
             outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
             outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
