@@ -1276,7 +1276,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['WaveTp'] = float(inputs['Tsig_wave'])
             if fst_vt['HydroDyn']['WavePkShp']<=-999.0: fst_vt['HydroDyn']['WavePkShp'] = "DEFAULT"
             fst_vt['HydroDyn']['WaveDir'] = float(inputs['beta_wave'])
-            fst_vt['HydroDyn']['WaveDirRange'] = np.rad2deg(fst_vt['HydroDyn']['WaveDirRange'])
+            fst_vt['HydroDyn']['WaveDirRange'] = fst_vt['HydroDyn']['WaveDirRange'] / np.rad2deg(1)
             fst_vt['HydroDyn']['WaveElevxi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevxi']]
             fst_vt['HydroDyn']['WaveElevyi'] = [str(m) for m in fst_vt['HydroDyn']['WaveElevyi']]
             fst_vt['HydroDyn']['CurrSSDir'] = "DEFAULT" if fst_vt['HydroDyn']['CurrSSDir']<=-999.0 else np.rad2deg(fst_vt['HydroDyn']['CurrSSDir'])
