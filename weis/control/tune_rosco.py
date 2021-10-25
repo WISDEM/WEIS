@@ -7,8 +7,9 @@ January 2020
 
 from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
-from ROSCO_toolbox import utilities as ROSCO_utilities
 from ROSCO_toolbox.inputs.validation import load_rosco_yaml
+from ROSCO_toolbox.linear.robust_scheduling import rsched_driver
+from ROSCO_toolbox.utilities import list_check
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
@@ -155,9 +156,14 @@ class TuneROSCO(ExplicitComponent):
         self.add_discrete_input('usecd',        val=True,                                       desc='use drag coefficient in computing induction factors')
 
         # Controller Tuning Parameters
-        n_PC = len(rosco_init_options['U_pc'])
-        self.add_input('zeta_pc',           val=np.zeros(n_PC),                                            desc='Pitch controller damping ratio')
-        self.add_input('omega_pc',          val=np.zeros(n_PC),        units='rad/s',                      desc='Pitch controller natural frequency')
+        if rosco_init_options['linmodel_tuning']['type'] == 'robust':
+            n_PC = 1
+        else:
+            n_PC = len(rosco_init_options['U_pc'])
+        self.add_input('zeta_pc',           val=np.zeros(n_PC),                                 desc='Pitch controller damping ratio')
+        self.add_input('omega_pc',          val=np.zeros(n_PC),        units='rad/s',           desc='Pitch controller natural frequency')
+        self.add_input('stability_margin',  val=0.0,                                            desc='Maximum stability margin for robust scheduling')
+        self.add_input('omega_pc_max',      val=0.0,                                            desc='Maximum allowable omega margin for robust scheduling')
         self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_output('VS_Kp',            val=0.0,        units='s',                          desc='Generator torque control proportional gain at first point in schedule')
@@ -190,8 +196,8 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
-        rosco_init_options['omega_pc']    = inputs['omega_pc'].tolist()
-        rosco_init_options['zeta_pc']     = inputs['zeta_pc'].tolist()
+        rosco_init_options['omega_pc']    = inputs['omega_pc']
+        rosco_init_options['zeta_pc']     = inputs['zeta_pc']
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
         rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
@@ -298,9 +304,48 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
             WISDEM_turbine.bld_flapwise_damp = self.modeling_options['ROSCO']['Bld_FlpDamp']
 
-        # Tune Controller!
+        # Instantiate controller
         controller = ROSCO_controller.Controller(rosco_init_options)
+
+        # Stability margin based analysis
+        if rosco_init_options['linmodel_tuning']['type'] == 'robust':
+            # Scheduling options
+            scheduling_options = { 'driver': 'optimization',
+                            'windspeed': rosco_init_options['U_pc'],
+                            'stability_margin': inputs['stability_margin'],
+                            'omega': [0.01, inputs['omega_pc'][0]], # two inputs denotes a range for a design variable
+                            'k_float': [controller.Kp_float]}    # one input denotes a set value
+
+            # Collect options
+            rs_options = {}
+            rs_options['linturb_options'] = rosco_init_options['linmodel_tuning']
+            rs_options['ROSCO_options'] = {}
+            rs_options['ROSCO_options']['controller_params'] = rosco_init_options
+            rs_options['path_options']  = {'output_dir': os.path.join(self.options['opt_options']['general']['folder_output'], 
+                                                                     rosco_init_options['linmodel_tuning']['lintune_outpath']),
+                                           'output_name': 'robust_scheduling'
+                                          }
+            rs_options['opt_options']   = scheduling_options
+
+            # Add inputs to ROSCO_options to bypass need to generate turbine object in the ROSCO toolbox
+            rs_options['ROSCO_options']['dict_inputs'] = inputs
+
+            # Run robust scheduling
+            self.sd = rsched_driver(rs_options)
+            self.sd.setup()
+            self.sd.execute()
+
+            # Re-define ROSCO tuning parameters
+            controller.omega_pc = self.sd.omegas
+            controller.zeta_pc = np.ones(len(self.sd.omegas)) * controller.zeta_pc
+
+            print("controller.omega_pc = {}".format(controller.omega_pc))
+            print("controller.zeta_pc = {}".format(controller.zeta_pc))
+
+        # Tune Controller!
         controller.tune_controller(WISDEM_turbine)
+        print("controller.pc_gain_schedule.Kp = {}".format(controller.pc_gain_schedule.Kp))
+        print("controller.pc_gain_schedule.Ki = {}".format(controller.pc_gain_schedule.Ki))
 
         # DISCON Parameters
         #   - controller
