@@ -57,8 +57,9 @@ def DTQPy_SOLVER_slsqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
             funcs = {}
             
             # objective function = 1/2*x'*H*x + f'*x
-            funcs['obj'] = 0.5*np.dot(x,H.dot(x)) + (f.T).dot(x)
-            
+            obj = 0.5*np.dot(x,H.dot(x)) + (f.T).dot(x)
+            funcs['obj'] = obj[0]
+            #breakpoint()
             fail = False
             
             # return
@@ -96,12 +97,14 @@ def DTQPy_SOLVER_slsqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     
     # LB and UB for the optimization variables
     x0 = np.zeros(nx)
+    lb[lb == -np.inf] = -1e20
+    ub[ub == np.inf] = 1e20
     optProb.addVarGroup("xvars", nx, lower=lb, upper=ub, value=x0)
     
     # construct the upper and lower bounds for linear equality and inequality constraints
     # beq < Aeq < beq
     # -inf < A < b
-    lower = np.array(np.vstack([-np.inf*np.ones((n,1)),beq.todense()])).squeeze()
+    lower = np.array(np.vstack([-1e20*np.ones((n,1)),beq.todense()])).squeeze()
     upper = np.array(np.vstack([b.todense(),beq.todense()])).squeeze()
     
     # add linear constraints
@@ -112,7 +115,7 @@ def DTQPy_SOLVER_slsqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
         upper = upper, # upper limit
         linear = True, # linear
         wrt = ['xvars'],
-        jac = {"xvars": sparse.vstack([A,Aeq]).tocsc()} # jacobian/gradient of linear constraints
+        jac = {"xvars": sparse.vstack([A,Aeq])} # jacobian/gradient of linear constraints
         )
     
     # setup SLSQP problem
@@ -129,7 +132,7 @@ def DTQPy_SOLVER_slsqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     inform = sol.optInform
     EXITFLAG = inform["value"]
     internal.output = inform["text"]
-    breakpoint()
+    
     # extract optimal objective function value
     if EXITFLAG < -1:
         F = None

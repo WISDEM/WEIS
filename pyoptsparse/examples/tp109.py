@@ -57,7 +57,7 @@ def objfunc(xdict):
     fcon[7] = x[4]*x[6]*cos(x[3] - 0.25) + x[5]*x[6]*cos(x[3] - x[2] - 0.25) - 2*c*x[6]**2 - 22.938*a + 0.7533e-3*a*x[6]**2
     fcon[8] = x[3] - x[2] + 0.55
     fcon[9] = x[2] - x[3] + 0.55
-
+    
     if USE_LINEAR:
         funcs['con'] = fcon[0:8]
     else:

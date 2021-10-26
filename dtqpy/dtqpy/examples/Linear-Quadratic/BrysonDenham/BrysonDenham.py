@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 aux = auxdata()
 
 opts = options()
-opts.dt.nt = 1000
+opts.dt.nt = 100
 opts.solver.function = 'slsqp'
 opts.solver.maxiters = 200
 

@@ -247,12 +247,12 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = True
+    OutputCon_flag = False
     
     if OutputCon_flag:
         Qty = ["ED TwrBsFxt, (kN)"] #Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
         
-        b = [5000] #b = [5000,28000]
+        b = [4000] #b = [5000,28000]
         
         Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,b,yw)
 
@@ -432,45 +432,45 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     # plot
     if plot:
-        fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
+        # fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
 
-        # wind
-        ax1.plot(T,U[:,0])
-        ax1.set_title('Wind Speed [m/s]')
-        ax1.set_xlim([t0,tf])
+        # # wind
+        # ax1.plot(T,U[:,0])
+        # ax1.set_title('Wind Speed [m/s]')
+        # ax1.set_xlim([t0,tf])
 
-        # torue
-        ax2.plot(T,U[:,iGenTorque]/1e+07)
-        #ax2.set_ylim([1.8,2])
-        ax2.set_title('Gen Torque [MWm]')
-        ax2.set_xlim([t0,tf])
+        # # torue
+        # ax2.plot(T,U[:,iGenTorque]/1e+07)
+        # #ax2.set_ylim([1.8,2])
+        # ax2.set_title('Gen Torque [MWm]')
+        # ax2.set_xlim([t0,tf])
 
-        # blade pitch
-        ax3.plot(T,U[:,iBldPitch])
-        #ax3.set_ylim([0.2, 0.3])
-        ax3.set_title('Bld Pitch [rad]')
-        ax3.set_xlim([t0,tf])
+        # # blade pitch
+        # ax3.plot(T,U[:,iBldPitch])
+        # #ax3.set_ylim([0.2, 0.3])
+        # ax3.set_title('Bld Pitch [rad]')
+        # ax3.set_xlim([t0,tf])
 
-        fig.subplots_adjust(hspace = 0.65)
+        # fig.subplots_adjust(hspace = 0.65)
         
-        # plot states
-        fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
+        # # plot states
+        # fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
         
-        # PtfmPitch
-        ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
-        ax1.set_xlim([t0,tf])
-        ax1.set_title('Ptfm Pitch [deg]')
+        # # PtfmPitch
+        # ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
+        # ax1.set_xlim([t0,tf])
+        # ax1.set_title('Ptfm Pitch [deg]')
 
-        # FenSpeed
-        ax2.plot(T,X[:,iGenSpeed])
-        ax2.set_xlim([t0,tf])
-        ax2.set_title('Gen Speed [rad/s]')
+        # # FenSpeed
+        # ax2.plot(T,X[:,iGenSpeed])
+        # ax2.set_xlim([t0,tf])
+        # ax2.set_title('Gen Speed [rad/s]')
         
-        ax3.plot(T,Y[:,Yindp]*1000)
-        ax3.set_xlim([t0,tf])
-        ax3.set_title(Qty)
+        # ax3.plot(T,Y[:,Yindp]*1000)
+        # ax3.set_xlim([t0,tf])
+        # ax3.set_title(Qty)
         
-        fig2.subplots_adjust(hspace = 0.65)
+        # fig2.subplots_adjust(hspace = 0.65)
         
         if OutputCon_flag:
             
