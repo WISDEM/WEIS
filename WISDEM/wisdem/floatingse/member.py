@@ -1725,13 +1725,17 @@ class Member(om.Group):
         self.options.declare("column_options")
         self.options.declare("idx")
         self.options.declare("n_mat")
+        self.options.declare("n_refine", default=None)
 
     def setup(self):
         opt = self.options["column_options"]
         idx = self.options["idx"]
-
+        
         n_height = opt["n_height"][idx]
-        n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
+        if self.options["n_refine"] == None:
+            n_refine = NREFINE if n_height > 2 else np.maximum(NREFINE, 2)
+        else:
+            n_refine = self.options["n_refine"]
         n_full = get_nfull(n_height, nref=n_refine)
 
         # TODO: Use reference axis and curvature, s, instead of assuming everything is vertical on z

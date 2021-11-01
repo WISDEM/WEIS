@@ -1159,7 +1159,7 @@ class FloatingFrame(om.Group):
         ]
         self.add_subsystem(
             "tower",
-            Member(column_options=opt["floating"]["tower"], idx=0, n_mat=opt["materials"]["n_mat"]),
+            Member(column_options=opt["floating"]["tower"], idx=0, n_mat=opt["materials"]["n_mat"], n_refine=opt["WISDEM"]["TowerSE"]["n_refine"]),
             promotes=prom,
         )
         self.add_subsystem("mux", PlatformTowerFrame(options=opt), promotes=["*"])

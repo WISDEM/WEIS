@@ -125,9 +125,14 @@ class FASTLoadCases(ExplicitComponent):
             n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
             n_height     = modopt['WISDEM']['TowerSE']['n_height']
             if modopt['flags']['floating']:
-                n_full_tow   = get_nfull_float(n_height_tow)
-                n_full_mon   = get_nfull_float(n_height_mon)
-                n_full       = get_nfull_float(n_height)
+                n_refine = modopt['WISDEM']['TowerSE']['n_refine']
+                n_full_tow   = get_nfull_float(n_height_tow, nref=n_refine)
+                n_full_mon   = get_nfull_float(n_height_mon, nref=n_refine)
+                n_full       = get_nfull_float(n_height, nref=n_refine)
+                print("n_full_tow", n_full_tow)
+                print("n_full_mon", n_full_mon)
+                print("n_full", n_full)
+                
             else:
                 n_full_tow   = get_nfull(n_height_tow)
                 n_full_mon   = get_nfull(n_height_mon)
@@ -2045,7 +2050,8 @@ class FASTLoadCases(ExplicitComponent):
 
         modopt = self.options['modeling_options']
         n_height_tow = modopt['WISDEM']['TowerSE']['n_height_tower']
-        n_full_tow   = get_nfull(n_height_tow)
+        n_refine = modopt['WISDEM']['TowerSE']['n_refine']
+        n_full_tow   = get_nfull(n_height_tow, nref=n_refine)
 
         tower_chans_Fx = ["TwrBsFxt", "TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt", "YawBrFxp"]
         tower_chans_Fy = ["TwrBsFyt", "TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt", "YawBrFyp"]
@@ -2104,7 +2110,8 @@ class FASTLoadCases(ExplicitComponent):
 
         modopt = self.options['modeling_options']
         n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
-        n_full_mon   = get_nfull(n_height_mon)
+        n_refine = modopt['WISDEM']['TowerSE']['n_refine']
+        n_full_mon   = get_nfull(n_height_mon, nref=n_refine)
 
         monopile_chans_Fx = []
         monopile_chans_Fy = []

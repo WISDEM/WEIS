@@ -18,6 +18,7 @@ WISDEM:
         te_ps: TE_reinforcement_PS
     TowerSE:
         flag: True
+        n_refine: 5
     DriveSE:
         flag: True
     FloatingSE:
