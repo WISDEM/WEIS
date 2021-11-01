@@ -204,7 +204,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     opts.dt.nt = 1000
     opts.solver.tolerence = 1e-10
-    opts.solver.maxiters = 30
+    opts.solver.maxiters = 150
     opts.solver.function = 'ipopt'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
@@ -227,6 +227,9 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     # Generator speed function
     GS_fun = BuildFunction(ws,xw[iGenSpeed,:])
+    
+    # Ptfm pitch fun
+    PP_fun = BuildFunction(ws,xw[iPtfmPitch,:])
 
     # -1*GS function
     GSn_fun = BuildFunction(ws,-xw[iGenSpeed,:])
@@ -247,12 +250,14 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = False
+    OutputCon_flag = True
     
     if OutputCon_flag:
-        Qty = ["ED TwrBsFxt, (kN)"] #Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
+        #Qty = ["ED TwrBsFxt, (kN)"] 
+        Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
         
-        b = [4000] #b = [5000,28000]
+        #b = [4000] 
+        b = [4000,30000]
         
         Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,b,yw)
 
@@ -347,8 +352,20 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     L[lx].left = 1
     L[lx].right = 1
     L[lx].matrix = np.diag([0,R1,R2])
+    
+    
+    # L[lx].left = 0;
+    # L[lx].right = 0;
+    # L00 = np.empty((1,1),dtype = 'O'); L00[0,0] = lambda t: 6 - PP_fun(W_fun(t))
+    # L[lx].matrix = L00
 
     lx = lx+1
+    
+    # L[lx].left = 2;
+    # L[lx].right = 2;
+    # L1 = np.zeros((nx,nx))
+    # L1[iPtfmPitch,iPtfmPitch] = -1
+    # L[lx].matrix = L1
 
     # uPX
     L[lx].left = 1
@@ -432,45 +449,45 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     # plot
     if plot:
-        # fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
+        fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
 
-        # # wind
-        # ax1.plot(T,U[:,0])
-        # ax1.set_title('Wind Speed [m/s]')
-        # ax1.set_xlim([t0,tf])
+        # wind
+        ax1.plot(T,U[:,0])
+        ax1.set_title('Wind Speed [m/s]')
+        ax1.set_xlim([t0,tf])
 
-        # # torue
-        # ax2.plot(T,U[:,iGenTorque]/1e+07)
-        # #ax2.set_ylim([1.8,2])
-        # ax2.set_title('Gen Torque [MWm]')
-        # ax2.set_xlim([t0,tf])
+        # torue
+        ax2.plot(T,U[:,iGenTorque]/1e+07)
+        #ax2.set_ylim([1.8,2])
+        ax2.set_title('Gen Torque [MWm]')
+        ax2.set_xlim([t0,tf])
 
-        # # blade pitch
-        # ax3.plot(T,U[:,iBldPitch])
-        # #ax3.set_ylim([0.2, 0.3])
-        # ax3.set_title('Bld Pitch [rad]')
-        # ax3.set_xlim([t0,tf])
+        # blade pitch
+        ax3.plot(T,U[:,iBldPitch])
+        #ax3.set_ylim([0.2, 0.3])
+        ax3.set_title('Bld Pitch [rad]')
+        ax3.set_xlim([t0,tf])
 
-        # fig.subplots_adjust(hspace = 0.65)
+        fig.subplots_adjust(hspace = 0.65)
         
-        # # plot states
-        # fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
+        # plot states
+        fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
         
-        # # PtfmPitch
-        # ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
-        # ax1.set_xlim([t0,tf])
-        # ax1.set_title('Ptfm Pitch [deg]')
+        # PtfmPitch
+        ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
+        ax1.set_xlim([t0,tf])
+        ax1.set_title('Ptfm Pitch [deg]')
 
-        # # FenSpeed
-        # ax2.plot(T,X[:,iGenSpeed])
-        # ax2.set_xlim([t0,tf])
-        # ax2.set_title('Gen Speed [rad/s]')
+        # FenSpeed
+        ax2.plot(T,X[:,iGenSpeed])
+        ax2.set_xlim([t0,tf])
+        ax2.set_title('Gen Speed [rad/s]')
         
-        # ax3.plot(T,Y[:,Yindp]*1000)
-        # ax3.set_xlim([t0,tf])
-        # ax3.set_title(Qty)
+        ax3.plot(T,Y[:,Yindp]*1000)
+        ax3.set_xlim([t0,tf])
+        ax3.set_title(Qty_p)
         
-        # fig2.subplots_adjust(hspace = 0.65)
+        fig2.subplots_adjust(hspace = 0.65)
         
         if OutputCon_flag:
             
@@ -483,12 +500,13 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
                     Yind = DescOutput.index(Qty[i])
                     ax.plot(T,Y[:,Yind])
                     ax.set_xlim([t0,tf])
-                    ax.set_title(Qty)
+                    ax.set_title(Qty[i])
                 else:   
                     Yind = DescOutput.index(Qty[i])
                     ax[i].plot(T,Y[:,Yind])
                     ax[i].set_xlim([t0,tf])
-                    ax[i].set_title(Qty)
+                    ax[i].set_title(Qty[i])
+            fig3.subplots_adjust(hspace = 0.65)
 
         plt.show()
     

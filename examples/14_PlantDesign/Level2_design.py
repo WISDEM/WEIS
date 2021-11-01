@@ -45,7 +45,9 @@ def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
         MR = wt_opt.get_val('financese.machine_rating',units = 'MW')
         Cost_turbine_KW = wt_opt.get_val('financese.tcc_per_kW', units='USD/MW')[0]
         Cost_turbine = Cost_turbine_KW*MR
-        #print('Turbine cost: {:} USD'.format(Cost_turbine))
+        LCOE = wt_opt.get_val('financese.lcoe',units = 'USD/KW/h')
+        #print(LCOE)
+        print('LCOE: {:} USD/KW/h'.format(LCOE))
                
     return Cost_turbine
 
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     
     turbine_model, modeling_options, analysis_options = wt_ontology.get_input_data()
     
-    #breakpoint()
+    
     modeling_options['Level1']['flag'] = False
     modeling_options['Level2']['flag'] = False
     modeling_options['Level3']['flag'] = False
@@ -71,7 +73,7 @@ if __name__ == "__main__":
     #analysis_options['recorder']['flag'] = False
     
     
-    rho_s = [7800,5000]
+    rho_s = [7800]
     
     
     CT = Calc_TC(turbine_model, modeling_options, analysis_options, rho_s)

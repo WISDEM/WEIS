@@ -30,7 +30,7 @@ from wisdem.plant_financese.plant_finance import PlantFinance
 
 def Calc_rho(mydir):
     
-    sql_path = mydir + os.sep + "outputs" + os.sep + "log_opt.sql"
+    sql_path = mydir + os.sep + "outputs" + os.sep + "log_opt_FF.sql"
     
     cr = om.CaseReader(sql_path)
     
@@ -239,6 +239,7 @@ if __name__ == "__main__":
        
     # Linear Model
     pkl_file = mydir + os.sep + "outputs" + os.sep +  "ABCD_red_matrices.pkl" 
+    pkl_file = mydir + os.sep + 'LinModel_removed_fix.pkl'
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)
@@ -265,9 +266,10 @@ if __name__ == "__main__":
     AEP = np.zeros((n_cases,)) 
     
     # Evaluate the cost
-    rho = Calc_rho(mydir)
+    #rho = Calc_rho(mydir)
+    #rho = [7800,7800,7800,7800,7800]
     
-    TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, rho)
+    #TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, rho)
     
     
     for n in range(n_cases):
@@ -289,6 +291,16 @@ if __name__ == "__main__":
         AEP[n] = Calc_AEP(summary_stats,dlc_generator,Turbine_class)
         
         
-    LCOE = Calc_LCOE(TC,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf)
+    # LCOE = Calc_LCOE(TC,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf)
     
-    #plt.plot(rho,LCOE,'*')
+    # fig,ax = plt.subplots(1,1)
+    # ax.plot(rho,LCOE,'*-',linewidth = 2,markersize = 10)
+    # ax.set_xlabel('rho [kg/m**3]')
+    # ax.set_ylabel('LCOE [USD/kW/h]')
+    # ax.set_title('LCOE vs Tower Density')
+    
+    # fig,ax = plt.subplots(1,1)
+    # ax.plot(rho,AEP,'*-',linewidth = 2,markersize = 10)
+    # ax.set_xlabel('rho [kg/m**3]')
+    # ax.set_ylabel('AEP [kWh]')
+    # ax.set_title(' AEP vs Tower Desity')

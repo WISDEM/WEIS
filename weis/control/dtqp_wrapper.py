@@ -81,7 +81,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     ### Loop throught and call DTQP for each disturbance
     case_names = case_naming(len(level2_disturbances),'oloc')
 
-    plot = True
+    plot = False
 
     dtqp_input_list = []
     

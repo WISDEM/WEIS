@@ -1181,7 +1181,7 @@ costs:
     fixed_charge_rate: 0.056
     bos_per_kW: 4053.
     opex_per_kW: 137.
-    turbine_number: 40.
+    turbine_number: 1.
     labor_rate: 58.8
     painting_rate: 30.0
     blade_mass_cost_coeff: 14.6

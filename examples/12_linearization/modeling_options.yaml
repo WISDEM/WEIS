@@ -101,7 +101,7 @@ ROSCO:
     zeta_pc: [1]
     omega_pc: [0.2]
 Level2:
-    flag: True
+    flag: False
     simulation:         # could these be included in openfast options?
         flag: True
         TMax: 100.      # run simulations using IEC standards, could share that info
