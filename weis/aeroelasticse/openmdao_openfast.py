@@ -129,10 +129,6 @@ class FASTLoadCases(ExplicitComponent):
                 n_full_tow   = get_nfull_float(n_height_tow, nref=n_refine)
                 n_full_mon   = get_nfull_float(n_height_mon, nref=n_refine)
                 n_full       = get_nfull_float(n_height, nref=n_refine)
-                print("n_full_tow", n_full_tow)
-                print("n_full_mon", n_full_mon)
-                print("n_full", n_full)
-                
             else:
                 n_full_tow   = get_nfull(n_height_tow)
                 n_full_mon   = get_nfull(n_height_mon)
