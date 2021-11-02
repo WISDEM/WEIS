@@ -716,10 +716,11 @@ class PoseOptimization(object):
                 upper=tower_opt["E"]["upper_bound"],
                 ref=1e9,
             )
-            wt_opt.model.connect("E_ivc.E_user", "towerse_post.E_user")
 
             if self.modeling["flags"]["floating"]:
                 wt_opt.model.connect("E_ivc.E_user", "floatingse.tower.E_user")
+            else:
+                wt_opt.model.connect("E_ivc.E_user", "towerse_post.E_user")
 
         for idx, material in enumerate(wt_init["materials"]):
             if material["name"] == "steel":
