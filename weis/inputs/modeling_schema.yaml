@@ -2654,6 +2654,13 @@ properties:
                             uniqueItems: True
                             minimum: 0.0
                             maximum: 50.0
+                    rated_offset:
+                        type: number
+                        default: 1
+                        minimum: 0.0
+                        maximum: 10.0
+                        unit: m/s
+                        description: Amount to increase rated wind speed from cc-blade to openfast with DOFs enabled.  In general, the more DOFs, the greater this value.
                     DOFs:
                         type: array
                         description: List of degrees-of-freedom to linearize about
@@ -2739,6 +2746,14 @@ properties:
                     #     type: boolean
                     #     default: False
                     #     description: Write module-level linearization output files in addition to output for full system? (flag) [unused if Linearize=False]
+            DTQP: # this may be shared with Level3 IEC load cases in the future
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        default: False
+                        description: Whether or not to run a DTQP optimization at level 2
             #InflowWind: *ofinflowwind
             #AeroDyn: *ofaerodyn
             #ElastoDyn: *ofelastodyn

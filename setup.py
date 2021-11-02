@@ -128,7 +128,7 @@ weis_pkgs       = find_packages()
 
 # Install the python sub-packages
 print(sys.argv)
-for pkg in ['WISDEM','ROSCO','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse']:
+for pkg in ['WISDEM','ROSCO','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse','dtqpy']:
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially

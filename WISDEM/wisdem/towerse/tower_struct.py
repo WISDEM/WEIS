@@ -733,6 +733,7 @@ class TowerPostFrame(om.ExplicitComponent):
 
         # Material properties
         self.add_input("E_full", np.zeros(nFull - 1), units="N/m**2")
+        self.add_input("E_user", val=0.0, units="Pa")
         self.add_input("G_full", np.zeros(nFull - 1), units="Pa")
         self.add_input("rho_full", np.zeros(nFull - 1), units="kg/m**3")
         self.add_input("sigma_y_full", np.zeros(nFull - 1), units="N/m**2")
@@ -778,7 +779,11 @@ class TowerPostFrame(om.ExplicitComponent):
         d_sec, _ = util.nodal2sectional(d)
         r_sec = 0.5 * d_sec
         n_sec = r_sec.size
-
+        
+        # Overwrite the E if the user specifies it
+        if inputs["E_user"] > 1.0:
+            E = inputs["E_user"]
+            
         L_suction = float(inputs["suctionpile_depth"])
         L_buckling = self.options["modeling_options"]["buckling_length"]
         gamma_f = self.options["modeling_options"]["gamma_f"]
