@@ -1478,10 +1478,24 @@ class FASTLoadCases(ExplicitComponent):
                 StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
                 StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
                 
-                # Set Mass, Stiffness, Damping
-                StC_i['StC_X_M'] = StC_i['StC_Y_M']   = StC_i['StC_Z_M'] = StC_i['StC_XY_M']  = inputs['TMD_mass'][i_TMD]
-                StC_i['StC_X_K'] = StC_i['StC_Y_K']   = StC_i['StC_Z_K'] = inputs['TMD_stiffness'][i_TMD]
-                StC_i['StC_X_C'] = StC_i['StC_Y_C']   = StC_i['StC_Z_C'] = inputs['TMD_damping'][i_TMD]
+                # Set Mass, Stiffness, Damping only in DOFs enabled
+                if StC_i['StC_X_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                    StC_i['StC_X_M'] = inputs['TMD_mass'][i_TMD]
+                    StC_i['StC_X_K'] = inputs['TMD_stiffness'][i_TMD]
+                    StC_i['StC_X_C'] = inputs['TMD_damping'][i_TMD]
+                elif StC_i['StC_Y_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                    StC_i['StC_Y_M'] = inputs['TMD_mass'][i_TMD]
+                    StC_i['StC_Y_K'] = inputs['TMD_stiffness'][i_TMD]
+                    StC_i['StC_Y_C'] = inputs['TMD_damping'][i_TMD]
+                elif StC_i['StC_Z_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                    StC_i['StC_Z_M'] = inputs['TMD_mass'][i_TMD]
+                    StC_i['StC_Z_K'] = inputs['TMD_stiffness'][i_TMD]
+                    StC_i['StC_Z_C'] = inputs['TMD_damping'][i_TMD]
+                elif StC_i['StC_DOF_MODE'] == 2:
+                    StC_i['StC_XY_M']  = inputs['TMD_mass'][i_TMD]
+                    # XY stiffnesses, damping equal for now
+                    StC_i['StC_X_K'] = StC_i['StC_Y_K']  = inputs['TMD_stiffness'][i_TMD]
+                    StC_i['StC_X_C'] = StC_i['StC_Y_C']  = inputs['TMD_damping'][i_TMD]
 
                 if modopt['TMDs']['component'][i_TMD] == 'tower':
                     fst_vt['ServoDyn']['NumTStC'] += 1
