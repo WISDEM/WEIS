@@ -1285,6 +1285,13 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['YawManRat'] = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['NacYawF']   = float_read(f.readline().split()[0])
 
+        # Aero flow control
+        f.readline()
+        self.fst_vt['ServoDyn']['AfCmode']      = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['AfC_Mean']     = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['AfC_Amp']      = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['AfC_Phase']    = float_read(f.readline().split()[0])
+
         # Structural Control
         f.readline()
         self.fst_vt['ServoDyn']['NumBStC']  = int(f.readline().split()[0])
@@ -1295,6 +1302,10 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['TStCfiles'] = f.readline().split()[0][1:-1]
         self.fst_vt['ServoDyn']['NumSStC'] = int(f.readline().split()[0])
         self.fst_vt['ServoDyn']['SStCfiles'] = f.readline().split()[0][1:-1]
+
+        # Cable control
+        f.readline()
+        self.fst_vt['ServoDyn']['CCmode']  = int(f.readline().split()[0])
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()

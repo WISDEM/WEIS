@@ -2431,6 +2431,32 @@ properties:
                         default: 0.
                         unit: deg
                         description: Final yaw angle for override yaw maneuvers (degrees)
+                    AfCmode:
+                        type: integer
+                        enum: [0,1,4,5]
+                        default: 0
+                        description: Airfoil control mode {0- none, 1- cosine wave cycle, 4- user-defined from Simulink/Labview, 5- user-defined from Bladed-style DLL}
+                    AfC_Mean:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Mean level for sinusoidal cycling or steady value (-) [used only with AfCmode==1]
+                    AfC_Amp:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Amplitude for for cosine cycling of flap signal (AfC = AfC_Amp*cos(Azimuth+phase)+AfC_mean) (-) [used only with AfCmode==1]
+                    AfC_phase:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: AfC_phase - Phase relative to the blade azimuth (0 is vertical) for for cosine cycling of flap signal (deg) [used only with AfCmode==1]
+                    CCmode:
+                        type: integer
+                        enum: [0,4,5]
+                        default: 0
+                        unit: deg
+                        description: Cable control mode {0- none, 4- user-defined from Simulink/Labview, 5- user-defineAfC_phased from Bladed-style DLL}
                     CompNTMD:
                         type: boolean
                         default: False
