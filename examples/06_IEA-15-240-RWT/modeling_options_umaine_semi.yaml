@@ -2,9 +2,10 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/IEA_w_TMD_11
+        OF_run_dir: outputs/IEA_w_TMD_21
         save_iterations: True
         save_timeseries: True
+        use_exe: True
 
 WISDEM:
     RotorSE:
@@ -57,6 +58,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
+    ServoDyn:
+        PCMode: 0
+        VSContrl: 0
     HydroDyn:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
@@ -96,12 +100,12 @@ ROSCO:
 DLC_driver:
     DLCs:
         - DLC: "1.1"
-          wind_speed: [12,16,20,24]
-          wave_height: [6,7,8,9]
-          wave_period: [11,12,13,14]
+          wind_speed: [24]
+          wave_height: [9]
+          wave_period: [14]
           n_seeds: 1
-          analysis_time: 10.
-          transient_time: 0.01
+          analysis_time: 300.
+          transient_time: .01
           turbulent_wind:
               HubHt: 140
               GridHeight: 300
