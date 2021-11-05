@@ -56,6 +56,14 @@ properties:
                         type: string
                         default: none
                         description: Path to controller shared library (e.g. /home/user/myturbines/libdiscon.so)
+                    allow_fails:
+                        type: boolean
+                        default: False
+                        description: Allow WEIS to continue if OpenFAST fails?  All outputs will be filled with fail_value. Use with caution!
+                    fail_value:
+                        type: number
+                        default: -9999
+                        decription: All OpenFAST outputs will be filled with this if the simulation fails. 
             goodman_correction:
                 type: boolean
                 default: False

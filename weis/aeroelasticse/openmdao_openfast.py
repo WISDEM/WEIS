@@ -1470,7 +1470,6 @@ class FASTLoadCases(ExplicitComponent):
                 StC_i['StC_Z_DOF']     = modopt['TMDs']['Z_DOF'][i_TMD]
 
                 if StC_i['StC_X_DOF'] and StC_i['StC_Y_DOF'] and not StC_i['StC_Z_DOF']:
-                    omni = True
                     StC_i['StC_DOF_MODE']   = 2
             
                 # Set position
@@ -1754,7 +1753,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
-        channels= self.output_channels()
+        channels= self.output_channels(fst_vt)
         
         
         # FAST wrapper setup
@@ -1786,6 +1785,8 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.keep_time         = modopt['General']['openfast_configuration']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
+        fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
+        fastBatch.fail_value        = modopt['General']['openfast_configuration']['fail_value']
         if self.FAST_exe != 'none':
             fastBatch.FAST_exe          = self.FAST_exe
         if self.FAST_lib != 'none':
