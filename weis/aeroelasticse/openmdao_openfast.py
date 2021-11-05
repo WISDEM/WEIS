@@ -1516,7 +1516,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return fst_vt
 
-    def output_channels(self):
+    def output_channels(self,fst_vt):
         modopt = self.options['modeling_options']
 
         # Mandatory output channels to include
@@ -1591,6 +1591,25 @@ class FASTLoadCases(ExplicitComponent):
         # Floating output channels
         if modopt['flags']['floating']:
             channels_out += ["PtfmPitch", "PtfmRoll", "PtfmYaw", "PtfmSurge", "PtfmSway", "PtfmHeave"]
+
+        # Structural Control Channels
+        if modopt['flags']['TMDs']:
+            for i_SStC in range(len(fst_vt['SStC'])):
+                channels_out += [f'SStC{i_SStC+1}_Fxi',f'SStC{i_SStC+1}_Fyi',f'SStC{i_SStC+1}_Fzi']
+                channels_out += [f'SStC{i_SStC+1}_Mxi',f'SStC{i_SStC+1}_Myi',f'SStC{i_SStC+1}_Mzi']
+                channels_out += [f'SStC{i_SStC+1}_Fxl',f'SStC{i_SStC+1}_Fyl',f'SStC{i_SStC+1}_Fzl']
+                channels_out += [f'SStC{i_SStC+1}_Mxl',f'SStC{i_SStC+1}_Myl',f'SStC{i_SStC+1}_Mzl']
+                channels_out += [f'SStC{i_SStC+1}_XQ',f'SStC{i_SStC+1}_YQ',f'SStC{i_SStC+1}_ZQ']
+                channels_out += [f'SStC{i_SStC+1}_XQD',f'SStC{i_SStC+1}_YQD',f'SStC{i_SStC+1}_ZQD']
+
+            for i_TStC in range(len(fst_vt['TStC'])):
+                channels_out += [f'TStC{i_TStC+1}_Fxi',f'TStC{i_TStC+1}_Fyi',f'TStC{i_TStC+1}_Fzi']
+                channels_out += [f'TStC{i_TStC+1}_Mxi',f'TStC{i_TStC+1}_Myi',f'TStC{i_TStC+1}_Mzi']
+                channels_out += [f'TStC{i_TStC+1}_Fxl',f'TStC{i_TStC+1}_Fyl',f'TStC{i_TStC+1}_Fzl']
+                channels_out += [f'TStC{i_TStC+1}_Mxl',f'TStC{i_TStC+1}_Myl',f'TStC{i_TStC+1}_Mzl']
+                channels_out += [f'TStC{i_TStC+1}_XQ',f'TStC{i_TStC+1}_YQ',f'TStC{i_TStC+1}_ZQ']
+                channels_out += [f'TStC{i_TStC+1}_XQD',f'TStC{i_TStC+1}_YQD',f'TStC{i_TStC+1}_ZQD']
+
 
         channels = {}
         for var in channels_out:
