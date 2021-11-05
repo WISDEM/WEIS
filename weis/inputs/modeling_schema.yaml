@@ -222,6 +222,52 @@ properties:
                         enum: [0,1,2]
                         default: 0
                         description: Compute ice loads (switch) {0=None; 1=IceFloe; 2=IceDyn}
+                    MHK:
+                        type: integer
+                        enum: [0,1,2]
+                        default: 0
+                        description: MHK turbine type (switch) {0=Not an MHK turbine; 1=Fixed MHK turbine; 2=Floating MHK turbine}
+                    Gravity:
+                        type: number
+                        default: 9.81
+                        minimum: 0.0
+                        maximum: 100.0
+                        unit: m / s**2
+                        description: Gravitational acceleration (m/s^2)
+                    AirDens:
+                        type: number
+                        default: 1.225
+                        description: Air density (kg/m^3)
+                        unit: kg/m**3
+                    WtrDens:
+                        type: number
+                        default: 1025
+                        description: Water density (kg/m^3)
+                        unit: kg/m**3
+                    KinVisc:
+                        type: number
+                        default: 1.464E-05
+                        description: Kinematic viscosity of working fluid (m^2/s)
+                    SpdSound:
+                        type: number
+                        default: 335
+                        description: Speed of sound in working fluid (m/s)
+                    Patm:
+                        type: number
+                        default: 103500
+                        description: Atmospheric pressure (Pa) [used only for an MHK turbine cavitation check]
+                    Pvap:
+                        type: number
+                        default: 1700
+                        description: Vapour pressure of working fluid (Pa) [used only for an MHK turbine cavitation check]
+                    WtrDpth:
+                        type: number
+                        default: 300
+                        description: Water depth (m)
+                    MSL2SWL:
+                        type: number
+                        default: 0
+                        description: Offset between still-water level and mean sea level (m) [positive upward]
                     EDFile:
                         type: string
                         default: none
@@ -889,6 +935,14 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
+                    UAStartRad:
+                        type: number
+                        default: 0
+                        description: Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
+                    UAEndRad:
+                        type: number
+                        default: 1
+                        description: Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
                     AFTabMod:
                         type: integer
                         enum: [1,2,3]
@@ -959,13 +1013,6 @@ properties:
                         maximum: 10.0
                         unit: s
                         description: Integration time step, 0.0 for default (s)
-                    Gravity:
-                        type: number
-                        default: 9.81
-                        minimum: 0.0
-                        maximum: 100.0
-                        unit: m / s**2
-                        description: Gravitational acceleration (m/s^2)
                     FlapDOF1:
                         type: boolean
                         default: True

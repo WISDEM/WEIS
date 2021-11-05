@@ -6,8 +6,8 @@ General:
         save_iterations: True
         save_timeseries: True
         use_exe: True
-        allow_fails: True
-        fail_value: 9999
+        # allow_fails: True
+        # fail_value: 9999
 
 WISDEM:
     RotorSE:
