@@ -6,6 +6,8 @@ General:
         save_iterations: True
         save_timeseries: True
         use_exe: True
+        allow_fails: True
+        fail_value: 9999
 
 WISDEM:
     RotorSE:
@@ -58,9 +60,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
-    ServoDyn:
-        PCMode: 0
-        VSContrl: 0
     HydroDyn:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
