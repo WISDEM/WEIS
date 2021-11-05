@@ -2235,12 +2235,12 @@ class FASTLoadCases(ExplicitComponent):
             outputs['AEP']         = AEP
         else:
             outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
-            outputs['AEP']         = 0.0
+            outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
             outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
             outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
             if self.fst_vt['Fst']['CompServo'] == 1:
                 outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
-            print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated.')
+            print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
 
         outputs['V_out']       = np.unique(U)
 
