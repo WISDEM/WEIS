@@ -329,6 +329,32 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
+        damage:
+            type: object
+            default: {}
+            properties:
+                tower_base:
+                    type: object
+                    description: Tower base damage constraint
+                    default: {}
+                    properties:
+                        flag: *flag
+                        max:
+                            type: number
+                            default: 1.0
+                            minimum: 1.e-5
+                            maximum: 30.0
+
+        openfast_failed:
+            type: object
+            default: {}
+            properties:
+                flag:
+                    type: boolean
+                    description: Constrain design to one where OpenFAST simulations don't fail_value
+                    default: False
+
+    
 
     merit_figure:
         type: string

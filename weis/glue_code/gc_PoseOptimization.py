@@ -239,9 +239,22 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = control_constraints['Max_PtfmPitch']['max'])
         if control_constraints['Std_PtfmPitch']['flag']:
             if self.modeling['Level3']['flag'] != True:
-                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Std_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
+
+        # OpenFAST failure
+        if self.opt['constraints']['openfast_failed']['flag']:
+            if self.modeling['Level3']['flag'] != True:
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with openfast_failed constraint.')
+            wt_opt.model.add_constraint('aeroelastic.openfast_failed',upper = 1.)
+
+        # Damage constraints
+        damage_constraints = self.opt['constraints']['damage']
+        if damage_constraints['tower_base']['flag']:
+            if self.modeling['Level3']['flag'] != True:
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
+            wt_opt.model.add_constraint('aeroelastic.damage_tower_base',upper = damage_constraints['tower_base']['max'])
 
         return wt_opt
 

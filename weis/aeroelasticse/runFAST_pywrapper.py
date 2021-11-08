@@ -223,16 +223,22 @@ class runFAST_pywrapper(object):
 
             if not failed:
                 if os.path.exists(FAST_Output):
-                    output = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
+                    output_init = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
                 elif os.path.exists(FAST_Output_txt):
-                    output = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
+                    output_init = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
                     
-                output.read()
+                output_init.read()
 
                 # Make output dict
                 output_dict = {}
-                for i, channel in enumerate(output.channels):
-                    output_dict[channel] = output.df[channel].to_numpy()
+                for i, channel in enumerate(output_init.channels):
+                    output_dict[channel] = output_init.df[channel].to_numpy()
+
+                # Add channel to indicate failed run
+                output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
+
+                # Re-make output
+                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
             
             else: # fill with -9999s
                 output_dict = {}
@@ -242,6 +248,8 @@ class runFAST_pywrapper(object):
                         if self.fst_vt['outlist'][module][channel]:
                             output_dict[channel] = np.full(len(output_dict['Time']),fill_value=self.fail_value) 
 
+                # Add channel to indicate failed run
+                output_dict['openfast_failed'] = np.ones(len(output_dict['Time']))
 
                 output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 

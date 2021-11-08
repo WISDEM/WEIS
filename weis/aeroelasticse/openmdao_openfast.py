@@ -508,6 +508,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('damage_tower_base', val=0.0, desc="Miner's rule cumulative damage at tower base")
         self.add_output('damage_monopile_base', val=0.0, desc="Miner's rule cumulative damage at monopile base")
 
+        # Simulation output
+        self.add_output('openfast_failed', val=0.0, desc="Numerical value for whether any openfast runs failed. 0 if false, 2 if true")
+
         self.add_discrete_output('fst_vt_out', val={})
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
@@ -1945,6 +1948,10 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['flags']['floating']:
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
                                                                    outputs, discrete_outputs)
+
+        # Did any OpenFAST runs fail?
+        if any(summary_stats['openfast_failed']['mean'] > 0):
+            outputs['openfast_failed'] = 2
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
