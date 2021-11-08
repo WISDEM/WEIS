@@ -45,6 +45,7 @@ class PoseOptimization(object):
         blade_opt = self.opt["design_variables"]["blade"]
         tower_opt = self.opt["design_variables"]["tower"]
         mono_opt = self.opt["design_variables"]["monopile"]
+        jacket_opt = self.opt["design_variables"]["jacket"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
@@ -119,18 +120,22 @@ class PoseOptimization(object):
             n_DV += 1
 
         if tower_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height"]
         if tower_opt["layer_thickness"]["flag"]:
-            n_DV += (
-                self.modeling["WISDEM"]["TowerSE"]["n_height_tower"]
-                * self.modeling["WISDEM"]["TowerSE"]["n_layers_tower"]
-            )
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height"] * self.modeling["WISDEM"]["TowerSE"]["n_layers"]
         if mono_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
+            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
         if mono_opt["layer_thickness"]["flag"]:
             n_DV += (
-                self.modeling["WISDEM"]["TowerSE"]["n_height_monopile"]
-                * self.modeling["WISDEM"]["TowerSE"]["n_layers_monopile"]
+                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
+            )
+        if jacket_opt["outer_diameter"]["flag"]:
+            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        if jacket_opt["layer_thickness"]["flag"]:
+            n_DV += (
+                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
             )
         if hub_opt["cone"]["flag"]:
             n_DV += 1
@@ -397,6 +402,9 @@ class PoseOptimization(object):
             # Initialize driver
             wt_opt.driver = om.DOEDriver(generator)
 
+            if doe_options["debug_print"]:
+                wt_opt.driver.options["debug_print"] = ["desvars", "ln_cons", "nl_cons", "objs"]
+
             # options
             wt_opt.driver.options["run_parallel"] = doe_options["run_parallel"]
 
@@ -426,17 +434,17 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("tcons.tip_deflection_ratio")
 
         elif self.opt["merit_figure"] == "tower_mass":
-            if not self.modeling["flags"]["floating"]:
-                wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
-            else:
-                wt_opt.model.add_objective("floatingse.tower_mass", ref=1e6)
+            wt_opt.model.add_objective("towerse.tower_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "monopile_mass":
-            wt_opt.model.add_objective("towerse.monopile_mass", ref=1e6)
+            wt_opt.model.add_objective("fixedse.monopile_mass", ref=1e6)
+
+        elif self.opt["merit_figure"] == "jacket_mass":
+            wt_opt.model.add_objective("fixedse.jacket_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "structural_mass":
             if not self.modeling["flags"]["floating"]:
-                wt_opt.model.add_objective("towerse.structural_mass", ref=1e6)
+                wt_opt.model.add_objective("fixedse.structural_mass", ref=1e6)
             else:
                 wt_opt.model.add_objective("floatingse.system_structural_mass", ref=1e6)
 
@@ -485,6 +493,7 @@ class PoseOptimization(object):
         blade_opt = self.opt["design_variables"]["blade"]
         tower_opt = self.opt["design_variables"]["tower"]
         monopile_opt = self.opt["design_variables"]["monopile"]
+        jacket_opt = self.opt["design_variables"]["jacket"]
         control_opt = self.opt["design_variables"]["control"]
         hub_opt = self.opt["design_variables"]["hub"]
         drive_opt = self.opt["design_variables"]["drivetrain"]
@@ -586,6 +595,68 @@ class PoseOptimization(object):
                 ref=1.0e-2,
             )
 
+        L_D_options = blade_opt["aero_shape"]["L/D"]
+        if L_D_options["flag"]:
+            n_opt = L_D_options["n_opt"]
+            indices = range(L_D_options["index_start"], L_D_options["index_end"])
+            s_opt_L_D = np.linspace(0.0, 1.0, n_opt)
+            init_L_D_opt = np.interp(
+                s_opt_L_D,
+                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
+            )
+
+            wt_opt.model.add_design_var(
+                "inn_af.L_D_opt",
+                indices=indices,
+                lower=init_L_D_opt[indices] - L_D_options["max_decrease"],
+                upper=init_L_D_opt[indices] + L_D_options["max_increase"],
+            )
+
+        c_d_options = blade_opt["aero_shape"]["c_d"]
+        if c_d_options["flag"]:
+            n_opt = c_d_options["n_opt"]
+            indices = range(c_d_options["index_start"], c_d_options["index_end"])
+            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
+            init_c_d_opt = np.interp(
+                s_opt_c_d,
+                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
+            )
+
+            wt_opt.model.add_design_var(
+                "inn_af.c_d_opt",
+                indices=indices,
+                lower=init_c_d_opt[indices] - c_d_options["max_decrease"],
+                upper=init_c_d_opt[indices] + c_d_options["max_increase"],
+            )
+
+        stall_options = blade_opt["aero_shape"]["stall_margin"]
+        if stall_options["flag"]:
+            n_opt = stall_options["n_opt"]
+            indices = range(stall_options["index_start"], stall_options["index_end"])
+            s_opt_c_d = np.linspace(0.0, 1.0, n_opt)
+            init_stall_opt = np.interp(
+                s_opt_c_d,
+                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+            )
+
+            wt_opt.model.add_design_var(
+                "inn_af.stall_margin_opt",
+                indices=indices,
+                lower=init_stall_opt[indices] - stall_options["max_decrease"],
+                upper=init_stall_opt[indices] + stall_options["max_increase"],
+            )
+
+        z_options = blade_opt["aero_shape"]["z"]
+        if z_options["flag"]:
+            wt_opt.model.add_design_var(
+                "inn_af.z",
+                lower=z_options["lower_bound"],
+                upper=z_options["upper_bound"],
+            )
+
         # Only add the pressure side design variables if we do set
         # `equal_to_suction` as False in the optimization yaml.
         spar_cap_ps_options = blade_opt["structure"]["spar_cap_ps"]
@@ -674,7 +745,7 @@ class PoseOptimization(object):
                 ref=1.0e-2,
             )
 
-        # -- Tower & Monopile --
+        # -- Tower --
         if tower_opt["outer_diameter"]["flag"]:
             wt_opt.model.add_design_var(
                 "tower.diameter",
@@ -691,6 +762,34 @@ class PoseOptimization(object):
                 ref=1e-2,
             )
 
+        if tower_opt["E"]["flag"]:
+            ivc = wt_opt.model.add_subsystem("E_ivc", om.IndepVarComp(), promotes=[])
+            ivc.add_output("E_user", val=10.0, units="Pa")
+            wt_opt.model.add_design_var(
+                "E_ivc.E_user",
+                lower=tower_opt["E"]["lower_bound"],
+                upper=tower_opt["E"]["upper_bound"],
+                ref=1e9,
+            )
+            wt_opt.model.connect("E_ivc.E_user", "towerse.E_user")
+
+            if self.modeling["flags"]["monopile"] or self.modeling["flags"]["jacket"]:
+                wt_opt.model.connect("E_ivc.E_user", "fixedse.E_user")
+
+        for idx, material in enumerate(wt_init["materials"]):
+            if material["name"] == "steel":
+                tower_material_index = idx
+
+        if tower_opt["rho"]["flag"]:
+            wt_opt.model.add_design_var(
+                "materials.rho",
+                lower=tower_opt["rho"]["lower_bound"],
+                upper=tower_opt["rho"]["upper_bound"],
+                ref=1e3,
+                indices=[tower_material_index],
+            )
+
+        # -- Monopile --
         if monopile_opt["outer_diameter"]["flag"]:
             wt_opt.model.add_design_var(
                 "monopile.diameter",
@@ -707,33 +806,100 @@ class PoseOptimization(object):
                 ref=1e-2,
             )
 
-        if tower_opt["E"]["flag"]:
-            ivc = wt_opt.model.add_subsystem("E_ivc", om.IndepVarComp(), promotes=[])
-            ivc.add_output("E_user", val=10.0, units="Pa")
+        # -- Jacket --
+        if jacket_opt["r_foot"]["flag"]:
             wt_opt.model.add_design_var(
-                "E_ivc.E_user",
-                lower=tower_opt["E"]["lower_bound"],
-                upper=tower_opt["E"]["upper_bound"],
-                ref=1e9,
+                "jacket.r_foot",
+                lower=jacket_opt["r_foot"]["lower_bound"],
+                upper=jacket_opt["r_foot"]["upper_bound"],
+                ref=5.0,
             )
 
-            if self.modeling["flags"]["floating"]:
-                wt_opt.model.connect("E_ivc.E_user", "floatingse.tower.E_user")
-            else:
-                wt_opt.model.connect("E_ivc.E_user", "towerse_post.E_user")
-
-        for idx, material in enumerate(wt_init["materials"]):
-            if material["name"] == "steel":
-                tower_material_index = idx
-
-        if tower_opt["rho"]["flag"]:
+        if jacket_opt["r_head"]["flag"]:
             wt_opt.model.add_design_var(
-                "materials.rho",
-                lower=tower_opt["rho"]["lower_bound"],
-                upper=tower_opt["rho"]["upper_bound"],
-                ref=1e3,
-                indices=[tower_material_index],
+                "jacket.r_head",
+                lower=jacket_opt["r_head"]["lower_bound"],
+                upper=jacket_opt["r_head"]["upper_bound"],
+                ref=5.0,
             )
+
+        if jacket_opt["d_l"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.d_l",
+                lower=jacket_opt["d_l"]["lower_bound"],
+                upper=jacket_opt["d_l"]["upper_bound"],
+            )
+
+        if jacket_opt["height"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.height",
+                lower=jacket_opt["height"]["lower_bound"],
+                upper=jacket_opt["height"]["upper_bound"],
+            )
+
+        if jacket_opt["q"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.q",
+                lower=jacket_opt["q"]["lower_bound"],
+                upper=jacket_opt["q"]["upper_bound"],
+            )
+
+        if jacket_opt["l_osg"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.l_osg",
+                lower=jacket_opt["l_osg"]["lower_bound"],
+                upper=jacket_opt["l_osg"]["upper_bound"],
+            )
+
+        if jacket_opt["l_tp"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.l_tp",
+                lower=jacket_opt["l_tp"]["lower_bound"],
+                upper=jacket_opt["l_tp"]["upper_bound"],
+            )
+
+        if jacket_opt["gamma_b"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.gamma_b",
+                lower=jacket_opt["gamma_b"]["lower_bound"],
+                upper=jacket_opt["gamma_b"]["upper_bound"],
+            )
+
+        if jacket_opt["gamma_t"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.gamma_t",
+                lower=jacket_opt["gamma_t"]["lower_bound"],
+                upper=jacket_opt["gamma_t"]["upper_bound"],
+            )
+
+        if jacket_opt["beta_b"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.beta_b",
+                lower=jacket_opt["beta_b"]["lower_bound"],
+                upper=jacket_opt["beta_b"]["upper_bound"],
+            )
+
+        if jacket_opt["beta_t"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.beta_t",
+                lower=jacket_opt["beta_t"]["lower_bound"],
+                upper=jacket_opt["beta_t"]["upper_bound"],
+            )
+
+        if jacket_opt["tau_b"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.tau_b",
+                lower=jacket_opt["tau_b"]["lower_bound"],
+                upper=jacket_opt["tau_b"]["upper_bound"],
+            )
+
+        if jacket_opt["tau_t"]["flag"]:
+            wt_opt.model.add_design_var(
+                "jacket.tau_t",
+                lower=jacket_opt["tau_t"]["lower_bound"],
+                upper=jacket_opt["tau_t"]["upper_bound"],
+            )
+
         # -- Control --
         if control_opt["tsr"]["flag"]:
             wt_opt.model.add_design_var(
@@ -1002,11 +1168,10 @@ class PoseOptimization(object):
                 )
 
         if blade_constr["stall"]["flag"]:
-            if blade_opt["aero_shape"]["twist"]["flag"]:
-                wt_opt.model.add_constraint("rotorse.stall_check.no_stall_constraint", upper=1.0)
-            else:
+            wt_opt.model.add_constraint("rotorse.stall_check.no_stall_constraint", upper=1.0)
+            if not blade_opt["aero_shape"]["twist"]["flag"]:
                 print(
-                    "WARNING: the margin to stall is set to be constrained, but twist is not an active design variable. The constraint is not enforced."
+                    "WARNING: the margin to stall is set to be constrained, but twist is not an active design variable."
                 )
 
         if blade_constr["tip_deflection"]["flag"]:
@@ -1097,9 +1262,8 @@ class PoseOptimization(object):
                 "rotorse.rp.AEP", lower=self.opt["constraints"]["blade"]["AEP"]["min"], ref=-1.0e6
             )
 
-        # Tower and monopile contraints
+        # Tower contraints
         tower_constr = self.opt["constraints"]["tower"]
-        monopile_constr = self.opt["constraints"]["monopile"]
         if tower_constr["height_constraint"]["flag"]:
             wt_opt.model.add_constraint(
                 "towerse.height_constraint",
@@ -1107,83 +1271,106 @@ class PoseOptimization(object):
                 upper=tower_constr["height_constraint"]["upper_bound"],
             )
 
-        if (tower_constr["stress"]["flag"] or monopile_constr["stress"]["flag"]) and not self.modeling["flags"][
-            "floating"
-        ]:
-            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_stress", upper=1.0)
-        elif tower_constr["stress"]["flag"] and self.modeling["flags"]["floating"]:
-            wt_opt.model.add_constraint("floatingse.constr_tower_stress", upper=1.0)
+        if tower_constr["stress"]["flag"]:
+            wt_opt.model.add_constraint("towerse.post.constr_stress", upper=1.0)
 
-        if (
-            tower_constr["global_buckling"]["flag"] or monopile_constr["global_buckling"]["flag"]
-        ) and not self.modeling["flags"]["floating"]:
-            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_global_buckling", upper=1.0)
-        elif tower_constr["global_buckling"]["flag"] and self.modeling["flags"]["floating"]:
-            wt_opt.model.add_constraint("floatingse.constr_tower_global_buckling", upper=1.0)
+        if tower_constr["global_buckling"]["flag"]:
+            wt_opt.model.add_constraint("towerse.post.constr_global_buckling", upper=1.0)
 
-        if (tower_constr["shell_buckling"]["flag"] or monopile_constr["shell_buckling"]["flag"]) and not self.modeling[
-            "flags"
-        ]["floating"]:
-            for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                wt_opt.model.add_constraint("towerse.post" + kstr + ".constr_shell_buckling", upper=1.0)
-        elif tower_constr["shell_buckling"]["flag"] and self.modeling["flags"]["floating"]:
-            wt_opt.model.add_constraint("floatingse.constr_tower_shell_buckling", upper=1.0)
+        if tower_constr["shell_buckling"]["flag"]:
+            wt_opt.model.add_constraint("towerse.post.constr_shell_buckling", upper=1.0)
 
-        if tower_constr["d_to_t"]["flag"] or monopile_constr["d_to_t"]["flag"]:
-            if not self.modeling["flags"]["floating"]:
-                wt_opt.model.add_constraint(
-                    "towerse.constr_d_to_t",
-                    lower=tower_constr["d_to_t"]["lower_bound"],
-                    upper=tower_constr["d_to_t"]["upper_bound"],
-                )
-            else:
-                wt_opt.model.add_constraint(
-                    "floatingse.tower.constr_d_to_t",
-                    lower=tower_constr["d_to_t"]["lower_bound"],
-                    upper=tower_constr["d_to_t"]["upper_bound"],
-                )
+        if tower_constr["d_to_t"]["flag"]:
+            wt_opt.model.add_constraint(
+                "towerse.constr_d_to_t",
+                lower=tower_constr["d_to_t"]["lower_bound"],
+                upper=tower_constr["d_to_t"]["upper_bound"],
+            )
 
-        if tower_constr["taper"]["flag"] or monopile_constr["taper"]["flag"]:
-            if not self.modeling["flags"]["floating"]:
-                wt_opt.model.add_constraint("towerse.constr_taper", lower=tower_constr["taper"]["lower_bound"])
-            else:
-                wt_opt.model.add_constraint("floatingse.tower.constr_taper", lower=tower_constr["taper"]["lower_bound"])
+        if tower_constr["taper"]["flag"]:
+            wt_opt.model.add_constraint("towerse.constr_taper", lower=tower_constr["taper"]["lower_bound"])
 
-        if tower_constr["slope"]["flag"] or monopile_constr["slope"]["flag"]:
-            if not self.modeling["flags"]["floating"]:
-                wt_opt.model.add_constraint("towerse.slope", upper=1.0)
-            else:
-                wt_opt.model.add_constraint("floatingse.tower.slope", upper=1.0)
+        if tower_constr["slope"]["flag"]:
+            wt_opt.model.add_constraint("towerse.slope", upper=1.0)
 
-        if monopile_constr["pile_depth"]["flag"]:
-            wt_opt.model.add_constraint("towerse.suctionpile_depth", lower=monopile_constr["pile_depth"]["lower_bound"])
+        if tower_constr["thickness_slope"]["flag"]:
+            wt_opt.model.add_constraint("towerse.thickness_slope", upper=1.0)
 
         if tower_constr["frequency"]["flag"]:
             wt_opt.model.add_constraint("tcons.constr_tower_f_1Pmargin", upper=0.0)
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
-        elif tower_constr["frequency_1"]["flag"] or monopile_constr["frequency_1"]["flag"]:
-            if not self.modeling["flags"]["floating"]:
-                for k in range(self.modeling["WISDEM"]["TowerSE"]["nLC"]):
-                    kstr = "" if self.modeling["WISDEM"]["TowerSE"]["nLC"] <= 1 else str(k + 1)
-                    wt_opt.model.add_constraint(
-                        "towerse.tower" + kstr + ".structural_frequencies",
-                        indices=[0],
-                        lower=tower_constr["frequency_1"]["lower_bound"],
-                        upper=tower_constr["frequency_1"]["upper_bound"],
-                    )
-            else:
-                wt_opt.model.add_constraint(
-                    "floatingse.tower_freqs",
-                    indices=[0],
-                    lower=tower_constr["frequency_1"]["lower_bound"],
-                    upper=tower_constr["frequency_1"]["upper_bound"],
-                )
+        elif tower_constr["frequency_1"]["flag"]:
+            varstr = (
+                "floatingse.structural_frequencies"
+                if self.modeling["flags"]["floating"]
+                else "towerse.tower.structural_frequencies"
+            )
+            wt_opt.model.add_constraint(
+                varstr,
+                indices=[0],
+                lower=tower_constr["frequency_1"]["lower_bound"],
+                upper=tower_constr["frequency_1"]["upper_bound"],
+            )
+
+        # Monopile constraints
+        monopile_constr = self.opt["constraints"]["monopile"]
+
+        if monopile_constr["stress"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post.constr_stress", upper=1.0)
+
+        if monopile_constr["global_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post.constr_global_buckling", upper=1.0)
+
+        if monopile_constr["shell_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.post.constr_shell_buckling", upper=1.0)
+
+        if monopile_constr["d_to_t"]["flag"]:
+            wt_opt.model.add_constraint(
+                "fixedse.constr_d_to_t",
+                lower=monopile_constr["d_to_t"]["lower_bound"],
+                upper=monopile_constr["d_to_t"]["upper_bound"],
+            )
+
+        if monopile_constr["taper"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_taper", lower=monopile_constr["taper"]["lower_bound"])
+
+        if monopile_constr["slope"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.slope", upper=1.0)
+
+        if monopile_constr["thickness_slope"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.thickness_slope", upper=1.0)
+
+        elif monopile_constr["frequency_1"]["flag"]:
+            wt_opt.model.add_constraint(
+                "fixedse.monopile.structural_frequencies",
+                indices=[0],
+                lower=monopile_constr["frequency_1"]["lower_bound"],
+                upper=monopile_constr["frequency_1"]["upper_bound"],
+            )
+
+        if monopile_constr["pile_depth"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.suctionpile_depth", lower=monopile_constr["pile_depth"]["lower_bound"])
+
+        # Jacket constraints
+        jacket_constr = self.opt["constraints"]["jacket"]
+
+        if jacket_constr["stress"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_stress", upper=1.0)
+
+        if jacket_constr["global_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_global_buckling", upper=1.0)
+
+        if jacket_constr["shell_buckling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_shell_buckling", upper=1.0)
+
+        elif jacket_constr["frequency_1"]["flag"]:
+            wt_opt.model.add_constraint(
+                "fixedse.jacket.structural_frequencies",
+                indices=[0],
+                lower=jacket_constr["frequency_1"]["lower_bound"],
+                upper=jacket_constr["frequency_1"]["upper_bound"],
+            )
 
         # Hub and drivetrain constraints
         hub_constr = self.opt["constraints"]["hub"]
@@ -1269,6 +1456,9 @@ class PoseOptimization(object):
             wt_opt.driver.recording_options["record_desvars"] = True
             wt_opt.driver.recording_options["record_objectives"] = True
 
+            if self.opt["recorder"]["includes"]:
+                wt_opt.driver.recording_options["includes"] = self.opt["recorder"]["includes"]
+
         return wt_opt
 
     def set_initial(self, wt_opt, wt_init):
@@ -1304,6 +1494,23 @@ class PoseOptimization(object):
                     wt_init["components"]["blade"]["outer_shape_bem"]["L/D"]["values"],
                 )
                 wt_opt["inn_af.L_D_opt"] = init_L_D_opt
+                wt_opt["inn_af.s_opt_c_d"] = np.linspace(0.0, 1.0, blade_opt["aero_shape"]["c_d"]["n_opt"])
+                init_c_d_opt = np.interp(
+                    wt_opt["inn_af.s_opt_c_d"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["c_d"]["values"],
+                )
+                wt_opt["inn_af.c_d_opt"] = init_c_d_opt
+
+                wt_opt["inn_af.s_opt_stall_margin"] = np.linspace(
+                    0.0, 1.0, blade_opt["aero_shape"]["stall_margin"]["n_opt"]
+                )
+                init_stall_margin_opt = np.interp(
+                    wt_opt["inn_af.s_opt_stall_margin"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["grid"],
+                    wt_init["components"]["blade"]["outer_shape_bem"]["stall_margin"]["values"],
+                )
+                wt_opt["inn_af.stall_margin_opt"] = init_stall_margin_opt
 
             wt_opt["blade.opt_var.s_opt_spar_cap_ss"] = np.linspace(
                 0.0, 1.0, blade_opt["structure"]["spar_cap_ss"]["n_opt"]
@@ -1338,7 +1545,7 @@ class PoseOptimization(object):
                         if (
                             self.opt["design_variables"]["blade"]["structure"]["spar_cap_ps"]["equal_to_suction"]
                             == False
-                        ) or ss_before_ps == False:
+                        ) or (ss_before_ps == False):
                             init_spar_cap_ps_opt = np.interp(
                                 wt_opt["blade.opt_var.s_opt_spar_cap_ps"],
                                 wt_init["components"]["blade"]["internal_structure_2d_fem"]["layers"][i]["thickness"][

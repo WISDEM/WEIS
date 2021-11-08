@@ -25,9 +25,7 @@ class TestRegression(unittest.TestCase):
     def test15MW(self):
         ## IEA 15MW
         fname_wt_input = test_dir + "IEA-15-240-RWT.yaml"
-        wt_opt, _, _ = run_wisdem(
-            fname_wt_input, fname_modeling_options, fname_analysis_options
-        )
+        wt_opt, _, _ = run_wisdem(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
         self.assertAlmostEqual(wt_opt["rotorse.re.precomp.blade_mass"][0], 69911.6542917299, 1)
         self.assertAlmostEqual(wt_opt["rotorse.rp.AEP"][0] * 1.0e-6, 78.1538730538, 1)
