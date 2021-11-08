@@ -368,7 +368,6 @@ class Frame(object):
         """docstring"""
 
         self.nodes = nodes
-        self.reactions = reactions
         self.elements = elements
         self.options = options
 
@@ -381,22 +380,8 @@ class Frame(object):
         self.nz = np.copy(nodes.z)
         self.nr = np.copy(nodes.r)
 
-        # reactions
+        self.set_reactions(reactions)
 
-        if len(reactions.node) == 0:
-            self.rnode = np.array([]).astype(np.int32)
-            self.rKx = self.rKy = self.rKz = self.rKtx = self.rKty = self.rKtz = np.array([]).astype(np.float64)
-            rigid = 1
-        else:
-            self.rnode = np.array(reactions.node).astype(np.int32)
-            # convert rather than copy to allow old syntax of integers
-            self.rKx = np.array(reactions.Kx).astype(np.float64)
-            self.rKy = np.array(reactions.Ky).astype(np.float64)
-            self.rKz = np.array(reactions.Kz).astype(np.float64)
-            self.rKtx = np.array(reactions.Ktx).astype(np.float64)
-            self.rKty = np.array(reactions.Kty).astype(np.float64)
-            self.rKtz = np.array(reactions.Ktz).astype(np.float64)
-            rigid = reactions.rigid
         # elements
         self.eelement = np.array(elements.element).astype(np.int32)
         self.eN1 = np.array(elements.N1).astype(np.int32)
@@ -421,18 +406,6 @@ class Frame(object):
 
         # create c objects
         self.c_nodes = C_Nodes(len(self.nnode), ip(self.nnode), dp(self.nx), dp(self.ny), dp(self.nz), dp(self.nr))
-
-        self.c_reactions = C_Reactions(
-            len(self.rnode),
-            ip(self.rnode),
-            dp(self.rKx),
-            dp(self.rKy),
-            dp(self.rKz),
-            dp(self.rKtx),
-            dp(self.rKty),
-            dp(self.rKtz),
-            rigid,
-        )
 
         self.c_elements = C_Elements(
             len(self.eelement),
@@ -500,6 +473,36 @@ class Frame(object):
         ]
 
         self._pyframe3dd.run.restype = c_int
+
+    def set_reactions(self, reactions):
+        # reactions
+        self.reactions = reactions
+        if len(reactions.node) == 0:
+            self.rnode = np.array([]).astype(np.int32)
+            self.rKx = self.rKy = self.rKz = self.rKtx = self.rKty = self.rKtz = np.array([]).astype(np.float64)
+            rigid = 1
+        else:
+            self.rnode = np.array(reactions.node).astype(np.int32)
+            # convert rather than copy to allow old syntax of integers
+            self.rKx = np.array(reactions.Kx).astype(np.float64)
+            self.rKy = np.array(reactions.Ky).astype(np.float64)
+            self.rKz = np.array(reactions.Kz).astype(np.float64)
+            self.rKtx = np.array(reactions.Ktx).astype(np.float64)
+            self.rKty = np.array(reactions.Kty).astype(np.float64)
+            self.rKtz = np.array(reactions.Ktz).astype(np.float64)
+            rigid = reactions.rigid
+
+        self.c_reactions = C_Reactions(
+            len(self.rnode),
+            ip(self.rnode),
+            dp(self.rKx),
+            dp(self.rKy),
+            dp(self.rKz),
+            dp(self.rKtx),
+            dp(self.rKty),
+            dp(self.rKtz),
+            rigid,
+        )
 
     def addLoadCase(self, loadCase):
         self.loadCases.append(loadCase)
@@ -707,7 +710,7 @@ class Frame(object):
                     dp(self.IPLxE[icase]),
                 )
 
-    def run(self):
+    def run(self, nanokay=False):
 
         nCases = len(self.loadCases)  # number of load cases
         nN = len(self.nodes.node)  # number of nodes
@@ -922,9 +925,11 @@ class Frame(object):
         )
 
         nantest = np.isnan(np.c_[fout.Nx, fout.Vy, fout.Vz, fout.Txx, fout.Myy, fout.Mzz])
-        if (exitCode == 182 or exitCode == 183) and not np.any(nantest):
+        if not nanokay and np.any(nantest):
+            raise RuntimeError("Frame3DD did not exit gracefully")
+        elif exitCode == 182 or exitCode == 183:
             pass
-        elif exitCode != 0 or np.any(nantest):
+        elif exitCode != 0:
             raise RuntimeError("Frame3DD did not exit gracefully")
 
         # put mass values back in since tuple is read only
@@ -1194,7 +1199,7 @@ class Frame(object):
         f.write("# End of input data file\n")
         f.close()
 
-    def draw(self):
+    def draw(self, savefig=False, fig_idx=0):
         # Visualization for debugging
         import matplotlib.pyplot as plt
 
@@ -1217,7 +1222,11 @@ class Frame(object):
             zs = np.array([mynodes[e[0]][2], mynodes[e[1]][2]])
             ax.plot(xs, ys, zs, "b-")
         ax.plot(node_array[:, 0], node_array[:, 1], node_array[:, 2], ".k", markersize=10)
-        plt.show()
+
+        if savefig:
+            plt.savefig(f"frame3dd_{fig_idx}.png")
+        else:
+            plt.show()
 
 
 class StaticLoadCase(object):
