@@ -238,7 +238,7 @@ class runFAST_pywrapper(object):
                 output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
                 # Re-make output
-                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut)
             
             else: # fill with -9999s
                 output_dict = {}
