@@ -155,7 +155,10 @@ class PoseOptimizationWEIS(PoseOptimization):
                 indices_strains_spar_cap_ps = range(blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"])
                 wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
 
+        ### CONTROL CONSTRAINTS
         control_constraints = self.opt['constraints']['control']
+        
+        # Flap control
         if control_constraints['flap_control']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
@@ -165,27 +168,54 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2', 
                 lower = control_constraints['flap_control']['min'],
                 upper = control_constraints['flap_control']['max'])    
+        
+        # Rotor overspeed
         if control_constraints['rotor_overspeed']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
             wt_opt.model.add_constraint('aeroelastic.rotor_overspeed',
                 lower = control_constraints['rotor_overspeed']['min'],
                 upper = control_constraints['rotor_overspeed']['max'])
+        
+        # Add PI gains if overspeed is merit_figure or constraint
         if control_constraints['rotor_overspeed']['flag'] or self.opt['merit_figure'] == 'rotor_overspeed':
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
                 upper = 0.0)
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki', 
-                upper = 0.0)    
+                upper = 0.0)  
+        
+        # Nacelle Accelleration magnitude
+        if control_constraints['nacelle_acceleration']['flag']:
+            wt_opt.model.add_constraint('aeroelastic.max_nac_accel',
+                    upper = control_constraints['nacelle_acceleration']['max'])
+        
+        # Max platform pitch
         if control_constraints['Max_PtfmPitch']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Max_PtfmPitch',
                 upper = control_constraints['Max_PtfmPitch']['max'])
+        
+        # Platform pitch motion
         if control_constraints['Std_PtfmPitch']['flag']:
             if self.modeling['Level3']['flag'] != True:
-                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Std_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
+
+        # Blade pitch travel
+        if control_constraints['avg_pitch_travel']['flag']:
+            if self.modeling['Level3']['flag'] != True:
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize avg_pitch_travel constraints.')
+            wt_opt.model.add_constraint('aeroelastic.avg_pitch_travel',
+                upper = control_constraints['avg_pitch_travel']['max'])
+
+        # Blade pitch duty cycle (number of direction changes)
+        if control_constraints['avg_pitch_travel']['flag']:
+            if self.modeling['Level3']['flag'] != True:
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize avg_pitch_travel constraints.')
+            wt_opt.model.add_constraint('aeroelastic.avg_pitch_travel',
+                upper = control_constraints['avg_pitch_travel']['max'])
 
         return wt_opt
 

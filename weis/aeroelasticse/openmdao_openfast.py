@@ -430,7 +430,10 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
 
         # Control outputs
-        self.add_output('rotor_overspeed', val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')  # is this over a set of sims?
+        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during all OpenFAST simulations')  # is this over a set of sims?
+        self.add_output('max_nac_accel',    val=0.0, units='m/s**2', desc='Maximum nacelle acceleration magnitude all OpenFAST simulations')  # is this over a set of sims?
+        self.add_output('avg_pitch_travel',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
+        self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
 
         # Blade outputs
         self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
@@ -1661,6 +1664,9 @@ class FASTLoadCases(ExplicitComponent):
         magnitude_channels = dict( fastwrap.magnitude_channels_default )
         fatigue_channels =  dict( fastwrap.fatigue_channels_default )
 
+        # Nacelle accelleration
+        magnitude_channels['NcIMUTA'] = ['NcIMUTAxs','NcIMUTAzs','NcIMUTAzs']
+
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
         if not modopt['Level3']['from_openfast']:
             for u in ['U','L']:
@@ -1801,7 +1807,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
             outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
-        outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating']:
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
@@ -2177,7 +2183,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
-    def get_control_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+    def get_control_measures(self, sum_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         '''
         calculate control measures:
             - rotor_overspeed
@@ -2186,8 +2192,37 @@ class FASTLoadCases(ExplicitComponent):
             - sum_stats : pd.DataFrame
         '''
 
-        if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-            outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+        # rotor overspeed
+        outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+
+        # nacelle accelleration
+        outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
+
+        # pitch travel and duty cycle
+        t_span = self.fst_vt['Fst']['TMax'] - self.fst_vt['Fst']['TStart']
+
+        tot_travel = 0
+        num_dir_changes = 0
+        for ts in chan_time:
+            for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+                ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
+
+                time_ind = ts['Time'] > self.fst_vt['Fst']['TStart']
+
+                # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
+                tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
+
+                # number of direction changes on each blade
+                num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
+
+        # Normalize by number of blades, time length, and number of sims
+        avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / t_span / len(chan_time)
+        outputs['avg_pitch_travel'] = avg_travel_per_sec
+
+        dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / t_span / len(chan_time)
+        outputs['pitch_duty_cycle'] = dir_change_per_sec
+
+
 
         return outputs, discrete_outputs
 
