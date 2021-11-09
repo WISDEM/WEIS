@@ -1,6 +1,8 @@
 import numpy as np
 import os, shutil, sys, platform
 import copy
+import glob
+from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
@@ -26,6 +28,8 @@ from weis.aeroelasticse.utils import OLAFParams
 from ROSCO_toolbox import control_interface as ROSCO_ci
 from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+from weis.control.dtqp_wrapper          import dtqp_wrapper
+
 
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -41,6 +45,8 @@ elif platform.system() == 'Darwin':
     lib_ext = '.dylib'
 else:
     lib_ext = '.so'
+
+weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 def make_coarse_grid(s_grid, diam):
 
@@ -355,9 +361,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path
+        # If the path is relative, make it an absolute path to base WEIS dir
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+            FAST_directory_base = os.path.join(weis_dir, FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -500,10 +506,12 @@ class FASTLoadCases(ExplicitComponent):
 
         if modopt['Level2']['flag']:
             self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
-            ABCD_list = []
+            self.ABCD_list = []
 
             with open(self.lin_pkl_file_name, 'wb') as handle:
-                pickle.dump(ABCD_list, handle)
+                pickle.dump(self.ABCD_list, handle)
+            
+            self.lin_idx = 0
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         modopt = self.options['modeling_options']
@@ -518,6 +526,10 @@ class FASTLoadCases(ExplicitComponent):
                 'B' : None,
                 'C' : None,
                 'D' : None,
+                'x_ops':None,
+                'u_ops':None,
+                'y_ops':None,
+                'u_h':None,
                 'omega_rpm' : None,
                 'DescCntrlInpt' : None,
                 'DescStates' : None,
@@ -530,6 +542,7 @@ class FASTLoadCases(ExplicitComponent):
                 ABCD_list = pickle.load(handle)
 
             ABCD_list.append(ABCD)
+            self.ABCD_list = ABCD_list
 
             with open(self.lin_pkl_file_name, 'wb') as handle:
                 pickle.dump(ABCD_list, handle)
@@ -568,17 +581,16 @@ class FASTLoadCases(ExplicitComponent):
             # Write OF model and run
             summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
+            # Set up linear turbine model
             if modopt['Level2']['flag']:
                 LinearTurbine = LinearTurbineModel(
                 self.FAST_runDirectory,
                 self.lin_case_name,
-                nlin=modopt['Level2']['linearization']['NLinTimes']
+                nlin=modopt['Level2']['linearization']['NLinTimes'],
+                reduceControls=True
                 )
 
-                # DZ->JJ: the info you seek is in LinearTurbine
-                # LinearTurbine.omega_rpm has the rotor speed at each linearization point
-                # LinearTurbine.Desc* has a description of all the inputs, states, outputs
-                # DZ TODO: post process operating points, do Level2 simulation, etc.
+                # Save linearizations
                 print('Saving ABCD matrices!')
                 ABCD = {
                     'sim_idx' : self.sim_idx,
@@ -586,6 +598,10 @@ class FASTLoadCases(ExplicitComponent):
                     'B' : LinearTurbine.B_ops,
                     'C' : LinearTurbine.C_ops,
                     'D' : LinearTurbine.D_ops,
+                    'x_ops':LinearTurbine.x_ops,
+                    'u_ops':LinearTurbine.u_ops,
+                    'y_ops':LinearTurbine.y_ops,
+                    'u_h':LinearTurbine.u_h,
                     'omega_rpm' : LinearTurbine.omega_rpm,
                     'DescCntrlInpt' : LinearTurbine.DescCntrlInpt,
                     'DescStates' : LinearTurbine.DescStates,
@@ -601,8 +617,14 @@ class FASTLoadCases(ExplicitComponent):
 
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
-
-                print('Saving Operating Points...')
+                    
+                lin_files = glob.glob(os.path.join(self.FAST_runDirectory, '*.lin'))
+                
+                dest = os.path.join(self.FAST_runDirectory, f'copied_lin_files_{self.lin_idx}')
+                Path(dest).mkdir(parents=True, exist_ok=True)
+                for file in lin_files:
+                    shutil.copy2(file, dest)
+                self.lin_idx += 1
 
                 # Shorten output names from linearization output to one like level3 openfast output
                 # This depends on how openfast sets up the linearization output names and may break if that is changed
@@ -616,11 +638,8 @@ class FASTLoadCases(ExplicitComponent):
                     self.FAST_runDirectory,
                     'OutOps.yaml',OutOps)
 
-                # Run linear simulation:
-
-                # Get case list, wind inputs should have already been generated
-                if modopt['Level2']['simulation']['flag']:
-
+                # Set up Level 2 disturbance (simulation or DTQP)
+                if modopt['Level2']['simulation']['flag'] or modopt['Level2']['DTQP']['flag']:
                     # Extract disturbance(s)
                     level2_disturbance = []
                     for case in case_list:
@@ -630,9 +649,20 @@ class FASTLoadCases(ExplicitComponent):
                         tt          = ts_file['t']
                         level2_disturbance.append({'Time':tt, 'Wind': u_h})
 
+                # Run linear simulation:
+
+                # Get case list, wind inputs should have already been generated
+                if modopt['Level2']['simulation']['flag']:
+            
+                    if modopt['Level2']['DTQP']['flag']:
+                        raise Exception('Only DTQP or simulation flag can be set to true in Level2 modeling options')
+
                     # This is going to use the last discon_in file of the linearization set as the simulation file
                     # Currently fine because openfast is executed (or not executed if overwrite=False) after the file writing
-                    discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
+                    if 'DLL_InFile' in self.fst_vt['ServoDyn']:     # if using file inputs
+                        discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
+                    else:       # if using fst_vt inputs from openfast_openmdao
+                        discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
 
                     lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
 
@@ -665,9 +695,21 @@ class FASTLoadCases(ExplicitComponent):
 
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
-        # Post process at both Level 2 and 3
-        self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+                elif modopt['Level2']['DTQP']['flag']:
 
+                    summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
+                        LinearTurbine, 
+                        level2_disturbance, 
+                        self.options['opt_options'], 
+                        self.fst_vt, 
+                        self.la, 
+                        self.magnitude_channels, 
+                        self.FAST_runDirectory
+                    )
+
+            # Post process regardless of level
+            self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+        
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
             try:
@@ -1247,6 +1289,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
             fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
             # Use coarse member nodes for HydroDyn
+
+            # Simplify members if using potential model only
+            if modopt["Level1"]["potential_model_override"] == 2:
+                joints_xyz = np.array([[0,0,0],[0,0,-1]])
+                N1 = np.array([N1[0]])
+                N2 = np.array([N2[0]])
                 
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]

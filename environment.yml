@@ -3,7 +3,7 @@ channels:
   - defaults
 
 dependencies:
-  - cmake
+  - cmake>=3.21.1
   - control
   - coveralls
   - cython

@@ -26,7 +26,7 @@ rpm2RadSec = 2.0*(np.pi)/60.0
 class LinearTurbineModel(object):
 
 
-    def __init__(self,lin_file_dir,lin_file_names,nlin=12,reduceStates=False,fromMat=False,remove_azimuth=True):
+    def __init__(self,lin_file_dir,lin_file_names,nlin=12,reduceStates=False,reduceControls = False,fromMat=False,remove_azimuth=True):
         '''
             inputs:    
                 lin_file_dir (string) - directory of linear file outputs from OpenFAST
@@ -113,8 +113,29 @@ class LinearTurbineModel(object):
                     
                     # figure out minimum number of states for the systems at each operating point
                     P_min = co.minreal(P,tol=1e-7,verbose=False)
+                    
                     n_states[iCase] = P_min.states
+            
+            # Reduce the number of controls
+            if reduceControls:
+                Req_Controls = [
+                    "IfW Extended input: horizontal wind speed (steady/uniform wind), m/s",
+                    "ED Generator torque, Nm",
+                    "ED Extended input: collective blade-pitch command, rad"]
+                n_controls = len(matData['DescCntrlInpt'])
+                DescCntrlInpt = matData['DescCntrlInpt']
+                ReqCtrl_Indices = np.zeros((n_controls,3),dtype = bool)
 
+                Req = np.array([dc in Req_Controls for dc in DescCntrlInpt])
+                B_ops = B_ops[:,Req,:]
+                D_ops = D_ops[:,Req,:]
+                u_ops = u_ops[Req,:]
+
+                # Slice descriptions as well
+                matData['DescCntrlInpt'] = np.array(matData['DescCntrlInpt'])[Req].tolist()
+
+           
+            
             
             # Now loop through and reduce number of states to maximum of n_states
             # This is broken!!  Works fine if reduceStates = False and isn't problematic to have all the extra states...yet
@@ -133,6 +154,7 @@ class LinearTurbineModel(object):
                     self.B_ops[:,:,iCase] = P_red.B
                     self.C_ops[:,:,iCase] = P_red.C
                     self.D_ops[:,:,iCase] = P_red.D
+                    
             
             else:
                 self.A_ops = A_ops
@@ -145,7 +167,8 @@ class LinearTurbineModel(object):
             self.u_ops = u_ops
             self.u_h     = self.u_ops[0]
             self.y_ops = y_ops
-            self.x_ops = x_ops
+            
+            self.x_ops = x_ops[np.squeeze(indStates),:]
 
             # Input/Output Indices
             self.ind_fast_inps     = indInps.squeeze()
@@ -293,9 +316,9 @@ class LinearTurbineModel(object):
 
         # operating points dict
         ops = {}
-        ops['u']    = u_op[self.ind_fast_inps]
+        ops['u']    = u_op
         ops['uh']   = wind_speed_op
-        ops['y']    = y_op[self.ind_fast_outs]
+        ops['y']    = y_op
         ops['x']    = x_op
 
         return ops, P_op
