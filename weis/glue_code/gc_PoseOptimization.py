@@ -254,7 +254,12 @@ class PoseOptimizationWEIS(PoseOptimization):
         if damage_constraints['tower_base']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
-            wt_opt.model.add_constraint('aeroelastic.damage_tower_base',upper = damage_constraints['tower_base']['max'])
+
+            tower_base_damage_max = damage_constraints['tower_base']['max']
+            if damage_constraints['tower_base']['log']:
+                tower_base_damage_max = np.log(tower_base_damage_max)
+
+            wt_opt.model.add_constraint('aeroelastic.damage_tower_base',upper = tower_base_damage_max)
 
         return wt_opt
 

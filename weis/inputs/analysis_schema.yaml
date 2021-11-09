@@ -344,6 +344,10 @@ properties:
                             default: 1.0
                             minimum: 1.e-5
                             maximum: 30.0
+                        log:
+                            type: boolean
+                            default: False
+                            description: Use the logarithm of damage as the constraint.
 
         openfast_failed:
             type: object
