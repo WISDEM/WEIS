@@ -540,7 +540,7 @@ components:
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 500
+                      volume: 325
                       grid: [0.0, 0.05]
                     - variable_flag: True
                       grid: [0.05, 0.4]
@@ -581,7 +581,7 @@ components:
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 519
+                      volume: 325
                       grid: [0.0, 0.05]
                     - variable_flag: True
                       grid: [0.05, 0.4]
