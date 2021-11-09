@@ -161,7 +161,7 @@ class FASTLoadCases(ExplicitComponent):
                 
                 if modopt['flags']['monopile']:
                     n_height_mon = modopt['WISDEM']['FixedBottomSE']['n_height']
-                    n_full_mon   = get_nfull(n_height_tow, nref=modopt['WISDEM']['FixedBotttomSE']['n_refine'])
+                    n_full_mon   = get_nfull(n_height_mon, nref=modopt['WISDEM']['FixedBottomSE']['n_refine'])
                     self.add_input('monopile_z', val=np.zeros(n_height_mon),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
                     self.add_input('monopile_z_full', val=np.zeros(n_full_mon),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
                     self.add_input('monopile_outer_diameter', val=np.zeros(n_height_mon),   units='m',      desc='cylinder diameter at corresponding locations')
@@ -356,9 +356,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to base WEIS dir
+        # If the path is relative, make it an absolute path to current working directory
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(weis_dir, FAST_directory_base)
+            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -1169,6 +1169,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # SubDyn inputs- offshore generic
         if modopt['flags']['offshore']:
+            mgrav = 0.0 if not modopt['flags']['monopile'] else float(inputs['gravity_foundation_mass'])
             if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
             fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
             fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
@@ -1190,7 +1191,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NRigidPropSets'] = 0
             fst_vt['SubDyn']['NCOSMs'] = 0
             fst_vt['SubDyn']['NXPropSets'] = 0
-            fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
+            fst_vt['SubDyn']['NCmass'] = 2 if mgrav > 0.0 else 1
             fst_vt['SubDyn']['CMJointID'] = [itrans+1]
             fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
             fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
@@ -1198,9 +1199,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
             fst_vt['SubDyn']['JMXY'] = fst_vt['SubDyn']['JMXZ'] = fst_vt['SubDyn']['JMYZ'] = [0.0]
             fst_vt['SubDyn']['MCGX'] = fst_vt['SubDyn']['MCGY'] = fst_vt['SubDyn']['MCGZ'] = [0.0]
-            if inputs['gravity_foundation_mass'] > 0.0:
+            if mgrav > 0.0:
                 fst_vt['SubDyn']['CMJointID'] += [1]
-                fst_vt['SubDyn']['JMass'] += [float(inputs['gravity_foundation_mass'])]
+                fst_vt['SubDyn']['JMass'] += [mgrav]
                 fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
                 fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
                 fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
@@ -1219,7 +1220,7 @@ class FASTLoadCases(ExplicitComponent):
             n_members = n_joints - 1
             joints_xyz = np.c_[np.zeros((n_joints,2)), z_coarse]
             d_coarse = np.interp(z_coarse, mono_elev[1:], mono_d[1:])
-            t_coarse = util.sectional_interp(z_coarse, mono_elev[1:], mono_t[1:-1])
+            t_coarse = util.sectional_interp(z_coarse, mono_elev[1:], mono_t[1:])
             N1 = np.arange( n_members, dtype=np.int_ ) + 1
             N2 = np.arange( n_members, dtype=np.int_ ) + 2
             

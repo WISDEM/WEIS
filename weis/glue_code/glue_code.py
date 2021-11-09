@@ -220,7 +220,7 @@ class WindPark(om.Group):
             self.connect('drivese.rna_cm', 'raft.rna_cm')
             self.connect("nacelle.overhang", "raft.turbine_overhang")
             self.connect("nacelle.distance_tt_hub", "raft.drive_height")
-            self.connect('drivese.base_F', 'raft.turbine_Fthrust', src_indices=[0])
+            self.connect('drivese.base_F', 'raft.turbine_Fthrust', src_indices=[0], flat_src_indices=True) # TODO: Multiple DLCs
             self.connect("high_level_tower_props.hub_height", "raft.turbine_hHub")
             self.connect("tower.layer_thickness", "raft.tower_layer_thickness")
             self.connect("tower_grid.s", "raft.turbine_tower_stations")
@@ -267,12 +267,14 @@ class WindPark(om.Group):
                 self.connect("rotorse.rp.powercurve.pitch", "raft.rotor_powercurve_pitch")
 
             if modeling_options["flags"]["tower"]:
-                self.connect('towerse.rho', 'raft.tower_rho')
+                self.connect('towerse.member.rho', 'raft.tower_rho')
                 self.connect('towerse.tower_section_height', 'raft.tower_section_height')
-                self.connect('towerse.tor_stff', 'raft.tower_torsional_stiffness')
-                self.connect('towerse.env.wind.U', 'raft.tower_U')
-                self.connect('tower.reference_axis', 'raft.turbine_tower_rA', src_indices=[0,2])
-                self.connect('tower.reference_axis', 'raft.turbine_tower_rB', src_indices=[-1,2])
+                self.connect('towerse.member.tor_stff', 'raft.tower_torsional_stiffness')
+                self.connect('towerse.z_param',        'raft.wind.z')
+                self.connect("rotorse.rp.gust.V_gust", "raft.Uref")
+                self.connect("high_level_tower_props.hub_height", "raft.zref")
+                self.connect("high_level_tower_props.tower_ref_axis", "raft.turbine_tower_rA", src_indices=om.slicer[0,:])
+                self.connect("high_level_tower_props.tower_ref_axis", "raft.turbine_tower_rB", src_indices=om.slicer[-1,:])
                 
             if modeling_options["flags"]["floating"]:
                 self.connect("floatingse.member_variable_height", "raft.member_variable_height")
@@ -414,9 +416,9 @@ class WindPark(om.Group):
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
                     if modeling_options["flags"]["floating"]:
-                        self.connect('floatingse.tower.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
-                        self.connect('floatingse.tower.fore_aft_modes',     'aeroelastic.fore_aft_modes')
-                        self.connect('floatingse.tower.side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('floatingse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
+                        self.connect('floatingse.fore_aft_modes',     'aeroelastic.fore_aft_modes')
+                        self.connect('floatingse.side_side_modes',    'aeroelastic.side_side_modes')
                     else:
                         self.connect('towerse.tower.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('towerse.tower.fore_aft_modes',     'aeroelastic.fore_aft_modes')
@@ -431,9 +433,9 @@ class WindPark(om.Group):
                     self.connect('fixedse.z_full',                  'aeroelastic.monopile_z_full')
                     self.connect('fixedse.monopile_outer_diameter',    'aeroelastic.monopile_outer_diameter')
                     self.connect('fixedse.monopile_wall_thickness',    'aeroelastic.monopile_wall_thickness')
-                    self.connect('fixedse.E',                       'aeroelastic.monopile_E')
-                    self.connect('fixedse.G',                       'aeroelastic.monopile_G')
-                    self.connect('fixedse.rho',                     'aeroelastic.monopile_rho')
+                    self.connect('fixedse.member.E',                       'aeroelastic.monopile_E')
+                    self.connect('fixedse.member.G',                       'aeroelastic.monopile_G')
+                    self.connect('fixedse.member.rho',                     'aeroelastic.monopile_rho')
                         
                 elif modeling_options['flags']['floating']:
                     self.connect("floatingse.platform_nodes", "aeroelastic.platform_nodes")
@@ -775,12 +777,12 @@ class WindPark(om.Group):
                     self.connect("fixedse.env.qdyn", "fixedse_post.qdyn")
                     self.connect("monopile.height", "fixedse_post.bending_height")
 
-                    self.connect("aeroelastic.monopile_maxMy_Fz", "fixedse_post.tower_Fz")
-                    self.connect("aeroelastic.monopile_maxMy_Fx", "fixedse_post.tower_Vx")
-                    self.connect("aeroelastic.monopile_maxMy_Fy", "fixedse_post.tower_Vy")
-                    self.connect("aeroelastic.monopile_maxMy_Mx", "fixedse_post.tower_Mxx")
-                    self.connect("aeroelastic.monopile_maxMy_My", "fixedse_post.tower_Myy")
-                    self.connect("aeroelastic.monopile_maxMy_Mz", "fixedse_post.tower_Mzz")
+                    self.connect("aeroelastic.monopile_maxMy_Fz", "fixedse_post.cylinder_Fz")
+                    self.connect("aeroelastic.monopile_maxMy_Fx", "fixedse_post.cylinder_Vx")
+                    self.connect("aeroelastic.monopile_maxMy_Fy", "fixedse_post.cylinder_Vy")
+                    self.connect("aeroelastic.monopile_maxMy_Mx", "fixedse_post.cylinder_Mxx")
+                    self.connect("aeroelastic.monopile_maxMy_My", "fixedse_post.cylinder_Myy")
+                    self.connect("aeroelastic.monopile_maxMy_Mz", "fixedse_post.cylinder_Mzz")
 
                 #self.connect('yield_stress',            'tow.sigma_y') # TODO- materials
                 #self.connect('max_taper_ratio',         'max_taper') # TODO- 
@@ -807,11 +809,13 @@ class WindPark(om.Group):
                 self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
 
                 self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
-                if modeling_options['WISDEM']['BOS']['flag']:
-                    if modeling_options['flags']['monopile'] == True or modeling_options['flags']['floating_platform'] == True:
+                if modeling_options["flags"]["bos"]:
+                    if modeling_options['flags']['offshore']:
                         self.connect('orbit.total_capex_kW',    'financese_post.bos_per_kW')
                     else:
                         self.connect('landbosse.bos_capex_kW',  'financese_post.bos_per_kW')
+                else:
+                    self.connect("costs.bos_per_kW", "financese_post.bos_per_kW")
 
             # Inputs to plantfinancese from input yaml
             if modeling_options['flags']['control'] and not modeling_options['Level3']['from_openfast']:
