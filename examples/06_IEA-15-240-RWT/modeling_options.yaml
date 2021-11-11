@@ -11,6 +11,8 @@ WISDEM:
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
         n_span: 60
+    DriveSE:
+        flag: True
     TowerSE:
         flag: True
         wind: PowerWind  # Wind used
@@ -26,10 +28,9 @@ WISDEM:
             shear: True
             geom: True
             tol: 1e-9
-    DriveSE:
+    FixedBottomSE:
         flag: True
-    FloatingSE:
-        flag: True
+        soil_springs: True
     BOS:
         flag: True
 
