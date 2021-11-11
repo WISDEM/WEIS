@@ -25,6 +25,10 @@ from wisdem.glue_code.gc_PoseOptimization   import PoseOptimization as PoseOptim
 def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
     
     ncase  = len(rho)
+    
+    Cost_turbine = np.zeros((ncase,))
+    LCOE = np.zeros((ncase,))
+    
     for i in range(ncase): 
         
         turbine_model["materials"][1]["rho"] = rho[i]
@@ -44,13 +48,35 @@ def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
         result = wt_opt
         MR = wt_opt.get_val('financese.machine_rating',units = 'MW')
         Cost_turbine_KW = wt_opt.get_val('financese.tcc_per_kW', units='USD/MW')[0]
-        Cost_turbine = Cost_turbine_KW*MR
-        LCOE = wt_opt.get_val('financese.lcoe',units = 'USD/KW/h')
+        Cost_turbine[i] = Cost_turbine_KW*MR
+        LCOE[i] = wt_opt.get_val('financese.lcoe',units = 'USD/kW/h')
         #print(LCOE)
-        print('LCOE: {:} USD/KW/h'.format(LCOE))
+        #print('LCOE: {:} USD/KW/h'.format(LCOE))
                
-    return Cost_turbine
+    return LCOE
 
+def OL_grad(turbine_model,modeling_options,analysis_options,plant_vars):
+    
+    n_vars = len(plant_vars)
+    
+    e =np.eye((n_vars))
+    
+    #jac = np.zeros((n_vars,))
+    
+    h = 1e-6 
+    
+    #for i in range(n_vars):
+    
+    xh = plant_vars + h
+    
+    f = Calc_TC(turbine_model, modeling_options, analysis_options, plant_vars)
+    
+    fh = Calc_TC(turbine_model, modeling_options, analysis_options, xh)
+   
+    jac = (fh-f)/h
+    
+    return jac
+      
 
 if __name__ == "__main__":
     
@@ -70,10 +96,12 @@ if __name__ == "__main__":
     modeling_options['Level2']['flag'] = False
     modeling_options['Level3']['flag'] = False
     modeling_options['ROSCO']['flag'] = False
-    #analysis_options['recorder']['flag'] = False
+    analysis_options['recorder']['flag'] = False
     
     
-    rho_s = [7800]
+    des_vars = np.linspace(5000,10000,5)
     
+    Jac = OL_grad(turbine_model, modeling_options, analysis_options, des_vars)
     
-    CT = Calc_TC(turbine_model, modeling_options, analysis_options, rho_s)
+    plt.plot(des_vars,Jac)
+    #CT = Calc_TC(turbine_model, modeling_options, analysis_options, des_vars)

@@ -61,7 +61,7 @@ design_variables:
             lower_bound: 3.87
             upper_bound: 10.0
         layer_thickness:
-            flag: False
+            flag: True
             lower_bound: 4.e-3
             upper_bound: 2.e-1
 
@@ -158,13 +158,13 @@ design_variables:
                 linked_members:
                     # This will set the same ballast for all of the members listed in the same names entry
                     - names: [col1, col2, col3]
-                      flag: False
+                      flag: True
                       lower_bound: 1.0
                       upper_bound: 1.e+6
                 independent_members:
                     # This will set the same ballast for all of the members listed in the same names entry
                     - name: main_col
-                      flag: False
+                      flag: True
                       lower_bound: 1.0
                       upper_bound: 1.e+6
     mooring:
@@ -348,17 +348,19 @@ constraints:
             lower_bound: 2.0
         ecc:
             flag: False
-
+    floating:
+        metacentric_height:
+            flag: True
 driver:
     optimization:
-        flag: False         # Flag to enable optimization
+        flag: True         # Flag to enable optimization
         tol: 1.e-2          # Optimality tolerance
         max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
         max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
         max_iter: 100         # Maximum number of iterations (SLSQP)
         solver: SLSQP       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-3    # Step size for finite differencing
-        form: central       # Finite differencing mode, either forward or central
+        form: forward       # Finite differencing mode, either forward or central
     design_of_experiments:
         flag: False           # Flag to enable design of experiments
         run_parallel: True    # Flag to run using parallel processing
@@ -366,5 +368,5 @@ driver:
         num_samples: 5        # number of samples for (Uniform only)
 
 recorder:
-    flag: False                            # Flag to activate OpenMDAO recorder
+    flag: True                            # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql    # Name of OpenMDAO recorder

@@ -22,7 +22,7 @@ all_derivs = np.load("total_derivs.npy", allow_pickle=True)[()]
 
 # Select a key of interest; an (of, wrt) pair
 key = ("wt.towerse.post1.constr_stress", "wt.wt_init.tower.diameter")
-
+key = ('wt.towerse.post2.constr_stress', 'wt.wt_init.tower.layer_thickness')
 # Collect data to plot later
 step_sizes = []
 deriv_values = []
@@ -36,7 +36,7 @@ print("Step size | Deriv")
 for step_size, deriv in zip(step_sizes, deriv_values):
     print(f"{step_size:06}     {deriv}")
 
-try:
+# try:
     # Plot the step size study results
     import matplotlib.pyplot as plt
 
@@ -48,5 +48,5 @@ try:
     plt.gca().invert_xaxis()
 
     plt.show()
-except:
-    pass
+# except:
+#     pass
