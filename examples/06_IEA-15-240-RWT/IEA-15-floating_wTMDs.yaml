@@ -1174,7 +1174,7 @@ TMDs:
       mass: 350e3
       stiffness: 20.e5
       damping: 2800
-      natural_frequency: 0.4 # rad/s
+      natural_frequency: 0.5 # rad/s
       damping_ratio: 0.5
       Z_DOF: True
     - name: ptfm_TMD2
@@ -1183,7 +1183,7 @@ TMDs:
       mass: 350e3
       stiffness: 20.e5
       damping: 2800
-      natural_frequency: 0.4 # rad/s
+      natural_frequency: 0.5 # rad/s
       damping_ratio: 0.5
       Z_DOF: True
     - name: ptfm_TMD3
@@ -1192,7 +1192,7 @@ TMDs:
       mass: 350e3
       stiffness: 20.e5
       damping: 2800
-      natural_frequency: 0.4 # rad/s
+      natural_frequency: 0.5 # rad/s
       damping_ratio: 0.5
       Z_DOF: True
 
