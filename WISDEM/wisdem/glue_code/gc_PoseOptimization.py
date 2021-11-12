@@ -490,7 +490,7 @@ class PoseOptimization(object):
         drive_opt = self.opt["design_variables"]["drivetrain"]
         float_opt = self.opt["design_variables"]["floating"]
         mooring_opt = self.opt["design_variables"]["mooring"]
-
+        
         # -- Rotor & Blade --
         if rotorD_opt["flag"]:
             wt_opt.model.add_design_var(
@@ -725,7 +725,7 @@ class PoseOptimization(object):
         for idx, material in enumerate(wt_init["materials"]):
             if material["name"] == "steel":
                 tower_material_index = idx
-
+        
         if tower_opt["rho"]["flag"]:
             wt_opt.model.add_design_var(
                 "materials.rho",

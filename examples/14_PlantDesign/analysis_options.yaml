@@ -23,11 +23,15 @@ constraints:
       flag: True
       max: 3
 
+merit_figure: LCOE
+
 driver:
   optimization:
-    flag: False           # Flag to enable optimization
+    flag: True           # Flag to enable optimization
+    solver: SLSQP
+    max_iter: 25
   design_of_experiments:
-    flag: True            # Flag to enable design of experiments
+    flag: False            # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing
     generator: Uniform    # Type of input generator. (Uniform)
     num_samples: 5       # number of samples for (Uniform only)

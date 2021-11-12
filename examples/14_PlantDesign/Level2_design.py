@@ -31,29 +31,44 @@ def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
     
     for i in range(ncase): 
         
-        turbine_model["materials"][1]["rho"] = rho[i]
+        #turbine_model["materials"][1]["rho"] = rho[i]
         myopt = PoseOptimizationWISDEM(turbine_model, modeling_options, analysis_options)
+        wt_opt = om.Problem(model=WindPark(modeling_options=modeling_options, opt_options=analysis_options))
+        
+        wt_opt = myopt.set_driver(wt_opt)
+        wt_opt = myopt.set_design_variables(wt_opt, turbine_model)
+        wt_opt = myopt.set_objective(wt_opt)
+        wt_opt = myopt.set_recorders(wt_opt)
+
+        #ndv = myopt.get_number_design_variables() # doesnt work when rho is a DV
         
         # initialize the open mdao problem
-        wt_opt = om.Problem(model=WindPark(modeling_options=modeling_options, opt_options=analysis_options))
+        
         wt_opt.setup()
         
         # assign the different values for the various subsystems
         wt_opt = yaml2openmdao(wt_opt, modeling_options, turbine_model, analysis_options)
         wt_opt = myopt.set_initial(wt_opt, turbine_model)
-        wt_opt.run_model()
+        
+        wt_opt.run_driver()
         
         modeling_options = modeling_options
         analysis_options = analysis_options
         result = wt_opt
         MR = wt_opt.get_val('financese.machine_rating',units = 'MW')
+        breakpoint()
         Cost_turbine_KW = wt_opt.get_val('financese.tcc_per_kW', units='USD/MW')[0]
         Cost_turbine[i] = Cost_turbine_KW*MR
         LCOE[i] = wt_opt.get_val('financese.lcoe',units = 'USD/kW/h')
+        rho = wt_opt.get_val('floatingse.tower.rho')
         #print(LCOE)
         #print('LCOE: {:} USD/KW/h'.format(LCOE))
-               
+        
     return LCOE
+
+#def pose_wt_model(turbine_model, modeling_options, analysis_options):
+    
+    
 
 def OL_grad(turbine_model,modeling_options,analysis_options,plant_vars):
     
@@ -92,16 +107,18 @@ if __name__ == "__main__":
     turbine_model, modeling_options, analysis_options = wt_ontology.get_input_data()
     
     
+    
+    
     modeling_options['Level1']['flag'] = False
     modeling_options['Level2']['flag'] = False
     modeling_options['Level3']['flag'] = False
     modeling_options['ROSCO']['flag'] = False
-    analysis_options['recorder']['flag'] = False
+    analysis_options['recorder']['flag'] = True
     
     
-    des_vars = np.linspace(5000,10000,5)
+    des_vars = [7800] #np.linspace(5000,10000,5)
     
-    Jac = OL_grad(turbine_model, modeling_options, analysis_options, des_vars)
+    #Jac = OL_grad(turbine_model, modeling_options, analysis_options, des_vars)
     
-    plt.plot(des_vars,Jac)
-    #CT = Calc_TC(turbine_model, modeling_options, analysis_options, des_vars)
+    #plt.plot(des_vars,Jac)
+    CT = Calc_TC(turbine_model, modeling_options, analysis_options, des_vars)
