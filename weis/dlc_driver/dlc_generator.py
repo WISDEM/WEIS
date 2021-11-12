@@ -199,7 +199,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.3, 6.4]
 
         # Get extreme wind speeds
         self.IECwind()
