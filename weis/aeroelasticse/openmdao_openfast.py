@@ -2262,7 +2262,7 @@ class FASTLoadCases(ExplicitComponent):
         for k in range(dlc_generator.n_cases):
             U[k] = dlc_generator.cases[k].URef
             
-            if dlc_generator.cases[k].label in ['1.2', '6.4']:
+            if dlc_generator.cases[k].label in ['1.1', '6.4']:
                 ifat.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
