@@ -5,7 +5,7 @@ RAFT
 
 Welcome to RAFT's online documentation!
 
-RAFT (**R**\ esponse **A**\ mplitudes for **F**\ loating **T**\ urbines) is a 
+RAFT (**R**\ esponse **A**\ mplitudes of **F**\ loating **T**\ urbines) is a 
 Python code for frequency-domain analysis of floating wind turbines. RAFT works in 
 the frequency domain to provide efficient computations of a floating wind 
 system's response spectra accounting for platform hydrodynamics, quasi-static
@@ -36,6 +36,6 @@ WEIS through its OpenMDAO wrapper.
    theory
 
 
-The navigation menu on the left provides more information about RAFT, and
+The pages available in the menu on the left provide more information about RAFT, and
 the RAFT source code is available on GitHub `here <https://github.com/WISDEM/RAFT>`_.
 

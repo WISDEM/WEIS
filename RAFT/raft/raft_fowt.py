@@ -367,7 +367,9 @@ class FOWT():
             
             ph.create_hams_dirs(meshDir)                #
             
-            ph.write_hydrostatic_file(meshDir)          # HAMS needs a hydrostatics file, but it's unused for .1 and .3, so write a blank one
+            # HAMS needs a hydrostatics file, it's unused for .1 and .3,
+            # but HAMS write the .hst file that OpenFAST uses
+            ph.write_hydrostatic_file(meshDir, kHydro=self.C_hydro)          
             
             # prepare frequency settings for HAMS
             dw_HAMS = self.dw_BEM if dw==0 else dw     # frequency increment - allow override if provided

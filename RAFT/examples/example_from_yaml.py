@@ -1,11 +1,9 @@
-# scripty for running RAFT and then comparing results with time series outputs from OpenFAST
+# example script for running RAFT from a YAML input file
 
 import numpy as np
-
 import matplotlib.pyplot as plt
-
-import raft
 import yaml
+import raft
 
 # open the design YAML file and parse it into a dictionary for passing to raft
 with open('VolturnUS-S_example.yaml') as file:
@@ -29,23 +27,4 @@ model.plotResponses()
 # Visualize the system in its most recently evaluated mean offset position
 model.plot(hideGrid=True)
 
-
 plt.show()
-
-#fig, ax = model.plot(hideGrid=True, color=[0,0,0.3,0.5])
-#model.plot(ax=ax, hideGrid=True, color=[0.8,0,0,0.6])
-
-# a separate little hydro analysis with unit waves to see excitation coefficients
-'''
-fowt.calcHydroConstants(dict(wave_spectrum='unit', wave_heading=0)) 
-fig, ax = plt.subplots(6,1,sharex=True)
-for i in range(6):
-    ax[i].plot(model.w/2/np.pi, np.abs(fowt.F_hydro_iner[i,:]))
-ax[-1].set_xlabel('f (Hz)')
-fig.suptitle('F_hydro_iner for unit wave')
-'''
-
-
-
-
-
