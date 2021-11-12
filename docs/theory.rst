@@ -1,7 +1,8 @@
 Theory
 =====================
 
-The theory behind RAFT is in the process of being documented.
+The theory behind RAFT is in the process of being documented. This page will be incrementally updated.
+
 
 Frequency Domain Equations of Motion
 ------------------------------------

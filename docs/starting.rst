@@ -22,14 +22,13 @@ Installation
 ------------
 
 Download/clone and install the `RAFT repository <https://github.com/WISDEM/RAFT>`_ as well as 
-those of MoorPy, pyHAMS, and WISDEM. To install RAFT in development mode, go to its directory 
-and do one of the following from the command line:
+those of MoorPy, pyHAMS, and WISDEM. 
 
-To install for development use:
+To install RAFT for development use:
 
 run ```python setup.py develop``` or ```pip install -e .``` from the command line in the main RAFT directory.
 
-To install for non-development use:
+To install RAFT for non-development use:
 
 run ```python setup.py``` or ```pip install .``` from the command line in the main RAFT directory.
 

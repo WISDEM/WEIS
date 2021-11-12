@@ -763,11 +763,12 @@ class Model():
             ax.set_yticks([])
             ax.set_zticks([])     
             ax.grid(False)       # Hide grid lines
-            plt.grid(b=None)
+            ax.grid(b=None)
             ax.axis('off')
-            plt.box(False)
+            ax.set_frame_on(False)
             
         return fig, ax
+
 
 def runRAFT(input_file, turbine_file=""):
     '''
@@ -802,6 +803,8 @@ def runRAFT(input_file, turbine_file=""):
     model.analyzeCases()
     
     model.plot()
+    
+    model.plotResponses()
     
     #model.preprocess_HAMS("testHAMSoutput", dw=0.1, wMax=10)
     
