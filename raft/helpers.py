@@ -256,6 +256,12 @@ def transformForce(f_in, offset=[], orientation=[]):
     if not len(offset) in [0,3]:
         raise ValueError("offset input if provided must be size 3")
     
+    # prep output
+    if len(f_in) == 6:
+        f = np.array(f_in) 
+    elif len(f_in) == 3:
+        f = np.hstack([f_in, [0,0,0]]) 
+    
     # prep rotation matrix
     if len(orientation) > 0:
         rot = np.array(orientation)
@@ -268,12 +274,11 @@ def transformForce(f_in, offset=[], orientation=[]):
         
     # rotation
     f_in2 = np.array(f_in)
-    f = np.zeros(6)
     if len(orientation) > 0:
         f[:3] = np.matmul(rotMat, f_in2[:3])
         if len(f_in) == 6:
             f[3:] = np.matmul(rotMat, f_in2[3:])
-       
+        
     # translation
     if len(offset) > 0:
         f[3:] += np.cross(offset, f[:3])  # add moment created by offsetting forces
@@ -370,6 +375,18 @@ def rotateMatrix3(Min, rotMat):
         rotation matrix (DCM)
     '''
     return np.matmul( np.matmul(rotMat, Min), rotMat.T )
+
+
+def getRMS(xi, dw):
+    '''Calculates standard deviation or RMS of inputted (complex) response amplitude vector.'''
+    
+    return np.sqrt( np.sum( np.abs(xi)**2 )*dw )
+
+
+def getPSD(xi):
+    '''Calculates power spectral density from inputted (complex) response amplitude vector. Units of [unit]^2/(rad/s)'''
+    
+    return np.abs(xi)**2
 
 
 def JONSWAP(ws, Hs, Tp, Gamma=1.0):
