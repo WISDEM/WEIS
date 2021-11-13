@@ -378,7 +378,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         for i in range(n_af):
             design['turbine']['airfoils'][i]['name'] = discrete_inputs['airfoils_name'][i]
             design['turbine']['airfoils'][i]['relative_thickness'] = inputs['airfoils_r_thick'][i]
-            design['turbine']['airfoils'][i]['data'] = np.c_[inputs['airfoils_aoa'],
+            design['turbine']['airfoils'][i]['data'] = np.c_[inputs['airfoils_aoa'] * raft.helpers.rad2deg(1),
                                                              inputs['airfoils_cl'][i,:,0,0],
                                                              inputs['airfoils_cd'][i,:,0,0],
                                                              inputs['airfoils_cm'][i,:,0,0]]
@@ -554,10 +554,19 @@ class RAFT_OMDAO(om.ExplicitComponent):
             with open('raft_design.pkl', 'wb') as handle:
                 pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
                 
-        # create and run the model
+        # set up the model
         model = raft.Model(design)
         model.analyzeUnloaded()
-        model.analyzeCases()
+        
+        # option to generate seperate HAMS data for level 2 or 3, with higher res settings
+        if False: #preprocessBEM:
+            model.preprocess_HAMS(dw=dwFAST, wMax=wMaxFAST0, dz=dzFAST, da=daFAST)  
+        
+        # option to run level 1 load cases
+        if True: #processCases:
+            model.analyzeCases()
+            
+        # get and process results
         results = model.calcOutputs()
         
         outs = self.list_outputs(out_stream=None)

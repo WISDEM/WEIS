@@ -10,3 +10,5 @@ dist/s
 # HAMS-generated data
 raft/data/cylinder/Output/Hams_format/
 raft/data/cylinder/Output/Hydrostar_format/
+
+.vscode/
