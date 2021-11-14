@@ -2,3 +2,5 @@
 *.pyc
 __pycache__
 MoorPy.egg-info
+
+docs/build
