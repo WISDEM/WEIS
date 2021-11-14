@@ -1,0 +1,45 @@
+------------------- MoorDyn v?.??. Input File ------------------------------------
+MoorDyn input
+FALSE    Echo      - echo the input file data (flag)
+---------------------- LINE DICTIONARY -----------------------------------------------------
+LineType  Diam    MassDenInAir   EA        cIntDamp     EI     Can     Cat    Cdn     Cdt
+(-)       (m)       (kg/m)       (N)        (Pa-s)    (N-m^2)  (-)     (-)    (-)     (-)
+main      0.0200    40.0000    1.00000e+08 -1.0000    0.000  1.000   0.000  1.000   0.000   
+--------------------- ROD DICTIONARY -----------------------------------------------------
+RodType  Diam    MassDenInAir   Can     Cat    Cdn     Cdt 
+(-)       (m)       (kg/m)      (-)     (-)    (-)     (-)  
+----------------------- BODY LIST -----------------------------------
+BodyID      X0   Y0   Z0    r0    p0    y0    Xcg   Ycg   Zcg     M      V        IX       IY       IZ     CdA-x,y,z Ca-x,y,z
+   (-)      (m)  (m)  (m)  (deg) (deg) (deg)  (m)   (m)   (m)    (kg)   (m^3)  (kg-m^2) (kg-m^2) (kg-m^2)   (m^2)      (-)
+    1       0.00  0.00  -20.00 0.00   0.00   0.00   2.50   0.00   0.00     1.00    0.00       0        0        0      0 0 0       0
+---------------------- ROD LIST --------------------
+RodID  Type/BodyID  RodType   Xa   Ya   Za   Xb   Yb   Zb  NumSegs  Flags/Outputs
+(-)      (-)         (-)      (m)  (m)  (m)  (m)  (m)  (m)    (-)      (-)   
+---------------------- POINT LIST -----------------------------------------------------
+Node      Type      X        Y        Z        M      V      FX   FY   FZ   CdA   Ca 
+(-)       (-)      (m)      (m)      (m)      (kg)   (m^3)  (kN) (kN) (kN)  (m2)  ()
+1         Fixed    -30.000000000000000  0.000000000000000    -40.0000    0.00    0.00    0.00  0.00  0.00    0      0
+2         Fixed    15.000000000000000   25.000000000000000   -40.0000    0.00    0.00    0.00  0.00  0.00    0      0
+3         Fixed    15.000000000000000   -25.000000000000000  -40.0000    0.00    0.00    0.00  0.00  0.00    0      0
+4         Connect  0.000000000000000    0.000000000000000    0.0000      0.00    5.00    0.00  0.00  0.00    0      0
+---------------------- LINE LIST -----------------------------------------------------
+Line     LineType  UnstrLen  NumSegs   NodeAnch  NodeFair  Flags/Outputs
+(-)       (-)       (m)        (-)       (-)       (-)       (-)
+1        main       50.00      6          1         4         p
+2        main       50.00      6          2         4         p
+3        main       50.00      6          3         4         p
+---------------------- SOLVER OPTIONS ----------------------------------------
+0.0002   dtM          - time step to use in mooring integration
+3        WaveKin      - wave kinematics flag (1=include(unsupported), 0=neglect, 3=currentprofile.txt)
+3.0e+06  kb           - bottom stiffness
+3.0e+05  cb           - bottom damping
+40.00    WtrDpth      - water depth
+2.0      ICDfac       - factor by which to scale drag coefficients during dynamic relaxation IC gen
+0.01     ICthresh     - threshold for IC convergence
+10       ICTmax       - threshold for IC convergence
+----------------------------OUTPUTS--------------------------------------------
+FairTen1
+FairTen2
+FairTen3
+END
+--------------------- need this line ------------------
