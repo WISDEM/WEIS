@@ -59,7 +59,7 @@ jobs:
         run: |
           conda install -y m2w64-toolchain libpython
 
-      # Install WISDEM
+      # Install WEIS
       - name: Install WEIS
         shell: bash
         run: |
