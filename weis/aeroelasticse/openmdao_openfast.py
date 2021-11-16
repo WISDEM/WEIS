@@ -1017,8 +1017,8 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = 0.
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha0']    = unsteady['alpha0']
-                fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = unsteady['alpha1']
-                fst_vt['AeroDyn15']['af_data'][i][j]['alpha2']    = unsteady['alpha2']
+                fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = max(unsteady['alpha0'], unsteady['alpha1'])
+                fst_vt['AeroDyn15']['af_data'][i][j]['alpha2']    = min(unsteady['alpha0'], unsteady['alpha2'])
                 fst_vt['AeroDyn15']['af_data'][i][j]['eta_e']     = unsteady['eta_e']
                 fst_vt['AeroDyn15']['af_data'][i][j]['C_nalpha']  = unsteady['C_nalpha']
                 fst_vt['AeroDyn15']['af_data'][i][j]['T_f0']      = unsteady['T_f0']
