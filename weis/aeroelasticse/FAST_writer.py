@@ -587,8 +587,8 @@ class InputWriter_OpenFAST(object):
     def write_BeamDynBlade(self):
 
         # bd_blade_file = self.fst_vt['BeamDyn']['BldFile']
-        bd_blade_file = os.path.abspath(os.path.join(self.FAST_runDirectory, self.FAST_namingOut + '_BeamDyn_Blade.dat'))
-        self.fst_vt['BeamDyn']['BldFile'] = bd_blade_file
+        self.fst_vt['BeamDyn']['BldFile'] = self.FAST_namingOut + '_BeamDyn_Blade.dat'
+        bd_blade_file = os.path.abspath(os.path.join(self.FAST_runDirectory, self.fst_vt['BeamDyn']['BldFile']))
         f = open(bd_blade_file, 'w')
 
         f.write('------- BEAMDYN V1.00.* INDIVIDUAL BLADE INPUT FILE --------------------------\n')
@@ -1384,7 +1384,7 @@ class InputWriter_OpenFAST(object):
         
         # Write DISCON input files
         ROSCO_utilities.write_rotor_performance(turbine, txt_filename=txt_filename)
-        ROSCO_utilities.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=txt_filename)
+        ROSCO_utilities.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
 
     def write_HydroDyn(self):
 
