@@ -1,0 +1,40 @@
+MoorDyn v2 Input File 
+Sample for input to MoorPy
+---------------------- LINE TYPES -----------------------------------------------------
+LineType         Diam     MassDen   EA        cIntDamp     EI     Can    Cat    Cdn    Cdt
+   (-)           (m)      (kg/m)    (N)        (Pa-s)    (N-m^2)  (-)    (-)    (-)    (-)
+chain            0.2160   286.56 1.230e+09 -1.000e+00 0.000e+00 1.000   0.000   1.000   0.000  
+----------------------- BODIES -----------------------------------
+BodyID      X0    Y0    Z0     r0     p0     y0    Xcg   Ycg   Zcg     M      V        IX       IY       IZ     CdA  Ca
+ (-)        (m)   (m)   (m)   (deg)  (deg)  (deg)  (m)   (m)   (m)    (kg)   (m^3)  (kg-m^2) (kg-m^2) (kg-m^2) (m^2) (-)
+1Coupled   0.00  0.00  -0.75  -0.00  0.00   0.00   0.00  0.00  0.00  1.0e6   1000.0    0        0        0      0    0
+---------------------- POINTS ---------------------------------------------------------
+Node    Type         X        Y        Z        M      V      FX     FY     FZ    CdA    Ca 
+(-)     (-)         (m)      (m)      (m)      (kg)   (m^3)  (kN)   (kN)   (kN)   (m2)   ()
+1    Fixed          800.00  1385.64  -600.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+2    Body1           10.00    17.32   -21.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+3    Fixed        -1600.00     0.00  -600.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+4    Body1          -20.00     0.00   -21.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+5    Fixed          800.00 -1385.64  -600.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+6    Body1           10.00   -17.32   -21.00   0.00   0.00   0.00   0.00   0.00   0.00   0.00
+---------------------- LINES -----------------------------------------------------
+Line      LineType   UnstrLen  NumSegs  AttachA  AttachB  Outputs
+(-)         (-)       (m)        (-)     (-)      (-)     (-)
+1    chain           1800.000    40       1        2      p
+2    chain           1800.000    40       3        4      p
+3    chain           1800.000    40       5        6      p
+---------------------- OPTIONS ----------------------------------------
+0.0002   dtM          - time step to use in mooring integration
+3        WaveKin      - wave kinematics flag (1=include(unsupported), 0=neglect, 3=currentprofile.txt)
+3.0e+06  kb           - bottom stiffness
+3.0e+05  cb           - bottom damping
+600.00   WtrDpth      - water depth
+2.0      ICDfac       - factor by which to scale drag coefficients during dynamic relaxation IC gen
+0.01     ICthresh     - threshold for IC convergence
+10       ICTmax       - threshold for IC convergence
+----------------------------OUTPUTS--------------------------------------------
+FairTen1
+FairTen2
+FairTen3
+END
+--------------------- need this line ------------------

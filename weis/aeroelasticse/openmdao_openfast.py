@@ -6,7 +6,8 @@ from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from wisdem.commonse.mpi_tools              import MPI
-from wisdem.towerse      import NFREQ, get_nfull
+from wisdem.commonse import NFREQ
+from wisdem.commonse.cylinder_member import get_nfull
 import wisdem.commonse.utilities              as util
 from wisdem.rotorse.rotor_power             import eval_unsteady
 from weis.aeroelasticse.FAST_writer         import InputWriter_OpenFAST
@@ -14,7 +15,6 @@ from weis.aeroelasticse.FAST_reader         import InputReader_OpenFAST
 import weis.aeroelasticse.runFAST_pywrapper as fastwrap
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
-from wisdem.floatingse.member import get_nfull as get_nfull_float
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
@@ -103,14 +103,6 @@ class FASTLoadCases(ExplicitComponent):
             n_freq_blade = int(rotorse_options['n_freq']/2)
             n_pc         = int(rotorse_options['n_pc'])
 
-            n_height_tow = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_tower']
-            n_height_mon = self.options['modeling_options']['WISDEM']['TowerSE']['n_height_monopile']
-            n_height     = self.options['modeling_options']['WISDEM']['TowerSE']['n_height']
-            n_full_tow   = get_nfull(n_height_tow)
-            n_full_mon   = get_nfull(n_height_mon)
-            n_full       = get_nfull(n_height)
-            n_freq_tower = int(NFREQ/2)
-
             self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
             self.n_aoa         = n_aoa     = rotorse_options['n_aoa']# Number of angle of attacks
             self.n_Re          = n_Re      = rotorse_options['n_Re'] # Number of Reynolds, so far hard set at 1
@@ -120,21 +112,6 @@ class FASTLoadCases(ExplicitComponent):
             self.te_ps_var       = rotorse_options['te_ps']
             self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
             self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
-
-            n_height_tow = modopt['WISDEM']['TowerSE']['n_height_tower']
-            n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
-            n_height     = modopt['WISDEM']['TowerSE']['n_height']
-            if modopt['flags']['floating']:
-                n_full_tow   = get_nfull_float(n_height_tow)
-                n_full_mon   = get_nfull_float(n_height_mon)
-                n_full       = get_nfull_float(n_height)
-            else:
-                n_full_tow   = get_nfull(n_height_tow)
-                n_full_mon   = get_nfull(n_height_mon)
-                n_full       = get_nfull(n_height)
-            n_freq_tower = int(NFREQ/2)
-            n_freq_blade = int(rotorse_options['n_freq']/2)
-            n_pc         = int(rotorse_options['n_pc'])
 
             # ElastoDyn Inputs
             # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
@@ -159,30 +136,43 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('max_pitch_rate',         val=0.0,        units='deg/s',          desc='Maximum allowed blade pitch rate')
 
             # tower properties
+            n_height_tow = modopt['WISDEM']['TowerSE']['n_height']
+            n_full_tow   = get_nfull(n_height_tow, nref=modopt['WISDEM']['TowerSE']['n_refine'])
+            n_freq_tower = int(NFREQ/2)
             self.add_input('fore_aft_modes',   val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
             self.add_input('side_side_modes',  val=np.zeros((n_freq_tower,5)),               desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-            self.add_input('mass_den',         val=np.zeros(n_height-1),         units='kg/m',   desc='sectional mass per unit length')
-            self.add_input('foreaft_stff',     val=np.zeros(n_height-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
-            self.add_input('sideside_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
-            self.add_input('tor_stff',    val=np.zeros(n_height-1),         units='N*m**2', desc='torsional stiffness per unit length about the Y_E elastic axis')
+            self.add_input('mass_den',         val=np.zeros(n_height_tow-1),         units='kg/m',   desc='sectional mass per unit length')
+            self.add_input('foreaft_stff',     val=np.zeros(n_height_tow-1),         units='N*m**2', desc='sectional fore-aft bending stiffness per unit length about the Y_E elastic axis')
+            self.add_input('sideside_stff',    val=np.zeros(n_height_tow-1),         units='N*m**2', desc='sectional side-side bending stiffness per unit length about the Y_E elastic axis')
+            self.add_input('tor_stff',    val=np.zeros(n_height_tow-1),         units='N*m**2', desc='torsional stiffness per unit length about the Y_E elastic axis')
             self.add_input('tor_freq',    val=0.0,         units='Hz', desc='First tower torsional frequency')
-            self.add_input('tower_section_height', val=np.zeros(n_height-1), units='m',      desc='parameterized section heights along cylinder')
-            self.add_input('tower_outer_diameter', val=np.zeros(n_height),   units='m',      desc='cylinder diameter at corresponding locations')
-            self.add_input('tower_monopile_z', val=np.zeros(n_height),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
-            self.add_input('tower_monopile_z_full', val=np.zeros(n_full),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+            self.add_input('tower_outer_diameter', val=np.zeros(n_height_tow),   units='m',      desc='cylinder diameter at corresponding locations')
+            self.add_input('tower_z', val=np.zeros(n_height_tow),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+            self.add_input('tower_z_full', val=np.zeros(n_full_tow),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
             self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
             self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
             self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
 
             # These next ones are needed for SubDyn
-            self.add_input('tower_wall_thickness', val=np.zeros(n_height-1), units='m')
-            self.add_input('tower_E', val=np.zeros(n_height-1), units='Pa')
-            self.add_input('tower_G', val=np.zeros(n_height-1), units='Pa')
-            self.add_input('tower_rho', val=np.zeros(n_height-1), units='kg/m**3')
-            self.add_input('transition_piece_mass', val=0.0, units='kg')
-            self.add_input('transition_piece_I', val=np.zeros(3), units='kg*m**2')
-            self.add_input('gravity_foundation_mass', val=0.0, units='kg')
-            self.add_input('gravity_foundation_I', val=np.zeros(3), units='kg*m**2')
+            n_height_mon = n_full_mon = 0
+            if modopt['flags']['offshore']:
+                self.add_input('transition_piece_mass', val=0.0, units='kg')
+                self.add_input('transition_piece_I', val=np.zeros(3), units='kg*m**2')
+                
+                if modopt['flags']['monopile']:
+                    n_height_mon = modopt['WISDEM']['FixedBottomSE']['n_height']
+                    n_full_mon   = get_nfull(n_height_mon, nref=modopt['WISDEM']['FixedBottomSE']['n_refine'])
+                    self.add_input('monopile_z', val=np.zeros(n_height_mon),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+                    self.add_input('monopile_z_full', val=np.zeros(n_full_mon),   units='m',      desc='z-coordinates of tower and monopile used in TowerSE')
+                    self.add_input('monopile_outer_diameter', val=np.zeros(n_height_mon),   units='m',      desc='cylinder diameter at corresponding locations')
+                    self.add_input('monopile_wall_thickness', val=np.zeros(n_height_mon-1), units='m')
+                    self.add_input('monopile_E', val=np.zeros(n_height_mon-1), units='Pa')
+                    self.add_input('monopile_G', val=np.zeros(n_height_mon-1), units='Pa')
+                    self.add_input('monopile_rho', val=np.zeros(n_height_mon-1), units='kg/m**3')
+                    self.add_input('gravity_foundation_mass', val=0.0, units='kg')
+                    self.add_input('gravity_foundation_I', val=np.zeros(3), units='kg*m**2')
+            monlen = max(0, n_height_mon-1)
+            monlen_full = max(0, n_full_mon-1)
 
             # DriveSE quantities
             self.add_input('hub_system_cm',   val=np.zeros(3),             units='m',  desc='center of mass of the hub relative to tower to in yaw-aligned c.s.')
@@ -347,11 +337,16 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('lss_ultstress',   val=1.0, units="Pa",   desc='Low speed shaft Ultimate stress for material')
             self.add_input('lss_axial_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
             self.add_input('lss_shear_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('tower_wohlerexp',   val=np.ones(n_height-1),   desc='Tower-monopile Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('tower_wohlerA',     val=np.ones(n_height-1),   desc='Tower-monopile parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('tower_ultstress',   val=np.ones(n_height-1), units="Pa",   desc='Tower-monopile ultimate stress for material')
-            self.add_input('tower_axial_load2stress',   val=np.ones([n_height-1,6]), units="m**2",  desc='Tower-monopile coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('tower_shear_load2stress',   val=np.ones([n_height-1,6]), units="m**2",  desc='Tower-monopile coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+            self.add_input('tower_wohlerexp',   val=np.ones(n_height_tow-1),   desc='Tower Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+            self.add_input('tower_wohlerA',     val=np.ones(n_height_tow-1),   desc='Tower parameter, A, in S/N curve S=A*N^-(1/m)')
+            self.add_input('tower_ultstress',   val=np.ones(n_height_tow-1), units="Pa",   desc='Tower ultimate stress for material')
+            self.add_input('tower_axial_load2stress',   val=np.ones([n_height_tow-1,6]), units="m**2",  desc='Tower coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+            self.add_input('tower_shear_load2stress',   val=np.ones([n_height_tow-1,6]), units="m**2",  desc='Tower coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+            self.add_input('monopile_wohlerexp',   val=np.ones(monlen),   desc='Tower Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+            self.add_input('monopile_wohlerA',     val=np.ones(monlen),   desc='Tower parameter, A, in S/N curve S=A*N^-(1/m)')
+            self.add_input('monopile_ultstress',   val=np.ones(monlen), units="Pa",   desc='Tower ultimate stress for material')
+            self.add_input('monopile_axial_load2stress',   val=np.ones([monlen,6]), units="m**2",  desc='Tower coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+            self.add_input('monopile_shear_load2stress',   val=np.ones([monlen,6]), units="m**2",  desc='Tower coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
         
 
         # DLC options
@@ -361,9 +356,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to base WEIS dir
+        # If the path is relative, make it an absolute path to current working directory
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(weis_dir, FAST_directory_base)
+            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -470,20 +465,12 @@ class FASTLoadCases(ExplicitComponent):
 
             # Monopile outputs
             self.add_output('max_M1N1MKye',val=0.0, units='kN*m', desc='maximum of My moment of member 1 at node 1 (base of the monopile)')
-            monlen = max(0, n_full_mon-1)
-            self.add_output('monopile_maxMy_Fx', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
-            self.add_output('monopile_maxMy_Fy', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
-            self.add_output('monopile_maxMy_Fz', val=np.zeros(monlen), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
-            self.add_output('monopile_maxMy_Mx', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-            self.add_output('monopile_maxMy_My', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-            self.add_output('monopile_maxMy_Mz', val=np.zeros(monlen), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-
-            self.add_output('tower_monopile_maxMy_Fx', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
-            self.add_output('tower_monopile_maxMy_Fy', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
-            self.add_output('tower_monopile_maxMy_Fz', val=np.zeros(n_full-1), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
-            self.add_output('tower_monopile_maxMy_Mx', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-            self.add_output('tower_monopile_maxMy_My', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
-            self.add_output('tower_monopile_maxMy_Mz', val=np.zeros(n_full-1), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Fx', val=np.zeros(monlen_full), units='kN', desc='distributed force in monopile-aligned x-direction corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Fy', val=np.zeros(monlen_full), units='kN', desc='distributed force in monopile-aligned y-direction corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Fz', val=np.zeros(monlen_full), units='kN', desc='distributed force in monopile-aligned z-direction corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Mx', val=np.zeros(monlen_full), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_My', val=np.zeros(monlen_full), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
+            self.add_output('monopile_maxMy_Mz', val=np.zeros(monlen_full), units='kN*m', desc='distributed moment around tower-aligned x-axis corresponding to max_M1N1MKye')
 
         # Floating outputs
         self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
@@ -894,7 +881,7 @@ class FASTLoadCases(ExplicitComponent):
             raise Exception('The code only supports InflowWind NWindVel == 1')
 
         # Update ElastoDyn Tower Input File
-        twr_elev  = inputs['tower_monopile_z']
+        twr_elev  = inputs['tower_z']
         twr_d     = inputs['tower_outer_diameter']
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
         cd_index  = 0
@@ -921,8 +908,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
 
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
-        n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
-        k_tow_tor = inputs['tor_stff'][n_height_mon:] / np.diff(inputs['tower_monopile_z'][n_height_mon:])
+        k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
         # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the
         # damping to the frequency of the first tower torsional mode- easier than getting the yaw inertia right
@@ -1031,8 +1017,8 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = 0.
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha0']    = unsteady['alpha0']
-                fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = unsteady['alpha1']
-                fst_vt['AeroDyn15']['af_data'][i][j]['alpha2']    = unsteady['alpha2']
+                fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = max(unsteady['alpha0'], unsteady['alpha1'])
+                fst_vt['AeroDyn15']['af_data'][i][j]['alpha2']    = min(unsteady['alpha0'], unsteady['alpha2'])
                 fst_vt['AeroDyn15']['af_data'][i][j]['eta_e']     = unsteady['eta_e']
                 fst_vt['AeroDyn15']['af_data'][i][j]['C_nalpha']  = unsteady['C_nalpha']
                 fst_vt['AeroDyn15']['af_data'][i][j]['T_f0']      = unsteady['T_f0']
@@ -1111,13 +1097,15 @@ class FASTLoadCases(ExplicitComponent):
 
         # SubDyn inputs- monopile and floating
         if modopt['flags']['monopile']:
-            mono_index = twr_index+1 # Duplicate intersection point
-            n_joints = len(twr_d[1:mono_index]) # Omit submerged pile
+            mono_d = inputs['monopile_outer_diameter']
+            mono_t = inputs['monopile_wall_thickness']
+            mono_elev = inputs['monopile_z']
+            n_joints = len(mono_d[1:]) # Omit submerged pile
             n_members = n_joints - 1
             itrans = n_joints - 1
             fst_vt['SubDyn']['JointXss'] = np.zeros( n_joints )
             fst_vt['SubDyn']['JointYss'] = np.zeros( n_joints )
-            fst_vt['SubDyn']['JointZss'] = twr_elev[1:mono_index]
+            fst_vt['SubDyn']['JointZss'] = mono_elev[1:]
             fst_vt['SubDyn']['NReact'] = 1
             fst_vt['SubDyn']['RJointID'] = [1]
             fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]
@@ -1126,11 +1114,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['IJointID'] = [n_joints]
             fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
-            fst_vt['SubDyn']['YoungE1'] = inputs['tower_E'][1:mono_index]
-            fst_vt['SubDyn']['ShearG1'] = inputs['tower_G'][1:mono_index]
-            fst_vt['SubDyn']['MatDens1'] = inputs['tower_rho'][1:mono_index]
-            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(twr_d[1:mono_index])[0] # Don't need deriv
-            fst_vt['SubDyn']['XsecT'] = inputs['tower_wall_thickness'][1:mono_index]
+            fst_vt['SubDyn']['YoungE1'] = inputs['monopile_E'][1:]
+            fst_vt['SubDyn']['ShearG1'] = inputs['monopile_G'][1:]
+            fst_vt['SubDyn']['MatDens1'] = inputs['monopile_rho'][1:]
+            fst_vt['SubDyn']['XsecD'] = util.nodal2sectional(mono_d[1:])[0] # Don't need deriv
+            fst_vt['SubDyn']['XsecT'] = mono_t[1:]
             
             # Find the members where the 9 channels of SubDyn should be placed
             grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
@@ -1181,6 +1169,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # SubDyn inputs- offshore generic
         if modopt['flags']['offshore']:
+            mgrav = 0.0 if not modopt['flags']['monopile'] else float(inputs['gravity_foundation_mass'])
             if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
             fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
             fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
@@ -1202,7 +1191,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NRigidPropSets'] = 0
             fst_vt['SubDyn']['NCOSMs'] = 0
             fst_vt['SubDyn']['NXPropSets'] = 0
-            fst_vt['SubDyn']['NCmass'] = 2 if inputs['gravity_foundation_mass'] > 0.0 else 1
+            fst_vt['SubDyn']['NCmass'] = 2 if mgrav > 0.0 else 1
             fst_vt['SubDyn']['CMJointID'] = [itrans+1]
             fst_vt['SubDyn']['JMass'] = [float(inputs['transition_piece_mass'])]
             fst_vt['SubDyn']['JMXX'] = [inputs['transition_piece_I'][0]]
@@ -1210,9 +1199,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['JMZZ'] = [inputs['transition_piece_I'][2]]
             fst_vt['SubDyn']['JMXY'] = fst_vt['SubDyn']['JMXZ'] = fst_vt['SubDyn']['JMYZ'] = [0.0]
             fst_vt['SubDyn']['MCGX'] = fst_vt['SubDyn']['MCGY'] = fst_vt['SubDyn']['MCGZ'] = [0.0]
-            if inputs['gravity_foundation_mass'] > 0.0:
+            if mgrav > 0.0:
                 fst_vt['SubDyn']['CMJointID'] += [1]
-                fst_vt['SubDyn']['JMass'] += [float(inputs['gravity_foundation_mass'])]
+                fst_vt['SubDyn']['JMass'] += [mgrav]
                 fst_vt['SubDyn']['JMXX'] += [inputs['gravity_foundation_I'][0]]
                 fst_vt['SubDyn']['JMYY'] += [inputs['gravity_foundation_I'][1]]
                 fst_vt['SubDyn']['JMZZ'] += [inputs['gravity_foundation_I'][2]]
@@ -1226,12 +1215,12 @@ class FASTLoadCases(ExplicitComponent):
 
         # HydroDyn inputs
         if modopt['flags']['monopile']:
-            z_coarse = make_coarse_grid(twr_elev[1:mono_index], twr_d[1:mono_index])
+            z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
             n_joints = len(z_coarse)
             n_members = n_joints - 1
             joints_xyz = np.c_[np.zeros((n_joints,2)), z_coarse]
-            d_coarse = np.interp(z_coarse, twr_elev[1:mono_index], twr_d[1:mono_index])
-            t_coarse = util.sectional_interp(z_coarse, twr_elev[1:mono_index], inputs['tower_wall_thickness'][1:mono_index-1])
+            d_coarse = np.interp(z_coarse, mono_elev[1:], mono_d[1:])
+            t_coarse = util.sectional_interp(z_coarse, mono_elev[1:], mono_t[1:])
             N1 = np.arange( n_members, dtype=np.int_ ) + 1
             N2 = np.arange( n_members, dtype=np.int_ ) + 2
             
@@ -1774,36 +1763,35 @@ class FASTLoadCases(ExplicitComponent):
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
             # Fatigue at the tower base
-            n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
             tower_fatigue_base = FatigueParams(load2stress=1.0,
-                                            lifetime=inputs['lifetime'],
-                                            slope=inputs['tower_wohlerexp'][n_height_mon],
-                                            ult_stress=inputs['tower_ultstress'][n_height_mon],
-                                            S_intercept=inputs['tower_wohlerA'][n_height_mon],)
+                                               lifetime=inputs['lifetime'],
+                                               slope=inputs['tower_wohlerexp'][0],
+                                               ult_stress=inputs['tower_ultstress'][0],
+                                               S_intercept=inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
                     for ix, x in enumerate(['xy','z']):
                         idx = 3*ik+2*ix
                         tower_fatigue_ii = tower_fatigue_base.copy()
-                        tower_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][n_height_mon,idx]
+                        tower_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][0,idx]
                         fatigue_channels[f'TwrBs{s}{k}{x}t'] = tower_fatigue_ii
                         magnitude_channels[f'TwrBs{s}{k}{x}t'] = [f'TwrBs{k}{x}t'] if x=='z' else [f'TwrBs{k}xt', f'TwrBs{k}yt']
 
             # Fatigue at monopile base (mudline)
             if modopt['flags']['monopile']:
                 monopile_fatigue_base = FatigueParams(load2stress=1.0,
-                                                    lifetime=inputs['lifetime'],
-                                                    slope=inputs['tower_wohlerexp'][0],
-                                                    ult_stress=inputs['tower_ultstress'][0],
-                                                    S_intercept=inputs['tower_wohlerA'][0])
+                                                      lifetime=inputs['lifetime'],
+                                                      slope=inputs['monopile_wohlerexp'][0],
+                                                      ult_stress=inputs['monopile_ultstress'][0],
+                                                      S_intercept=inputs['monopile_wohlerA'][0])
                 for s in ['Ax','Sh']:
                     sstr = 'axial' if s=='Ax' else 'shear'
                     for ik, k in enumerate(['F','M']):
                         for ix, x in enumerate(['xy','z']):
                             idx = 3*ik+2*ix
                             monopile_fatigue_ii = monopile_fatigue_base.copy()
-                            monopile_fatigue_ii.load2stress = inputs[f'tower_{sstr}_load2stress'][0,idx]
+                            monopile_fatigue_ii.load2stress = inputs[f'monopile_{sstr}_load2stress'][0,idx]
                             fatigue_channels[f'M1N1{s}{k}K{x}e'] = monopile_fatigue_ii
                             magnitude_channels[f'M1N1{s}{k}K{x}e'] = [f'M1N1{k}K{x}e'] if x=='z' else [f'M1N1{k}Kxe', f'M1N1{k}Kye']
 
@@ -1987,17 +1975,12 @@ class FASTLoadCases(ExplicitComponent):
         extreme_table : dict
         """
 
-        modopt = self.options['modeling_options']
-        n_height_tow = modopt['WISDEM']['TowerSE']['n_height_tower']
-        n_full_tow   = get_nfull(n_height_tow)
-
         tower_chans_Fx = ["TwrBsFxt", "TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt", "YawBrFxp"]
         tower_chans_Fy = ["TwrBsFyt", "TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt", "YawBrFyp"]
         tower_chans_Fz = ["TwrBsFzt", "TwHt1FLzt", "TwHt2FLzt", "TwHt3FLzt", "TwHt4FLzt", "TwHt5FLzt", "TwHt6FLzt", "TwHt7FLzt", "TwHt8FLzt", "TwHt9FLzt", "YawBrFzp"]
         tower_chans_Mx = ["TwrBsMxt", "TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt", "YawBrMxp"]
         tower_chans_My = ["TwrBsMyt", "TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt", "YawBrMyp"]
         tower_chans_Mz = ["TwrBsMzt", "TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt", "YawBrMzp"]
-
 
         fatb_max_chan   = "TwrBsMyt"
 
@@ -2019,7 +2002,7 @@ class FASTLoadCases(ExplicitComponent):
         spline_My      = PchipInterpolator(self.Z_out_ED_twr, My)
         spline_Mz      = PchipInterpolator(self.Z_out_ED_twr, Mz)
 
-        z_full = inputs['tower_monopile_z_full'][-n_full_tow:]
+        z_full = inputs['tower_z_full']
         z_sec, _ = util.nodal2sectional(z_full)
         z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
 
@@ -2029,10 +2012,6 @@ class FASTLoadCases(ExplicitComponent):
         outputs['tower_maxMy_Mx'] = spline_Mx(z)
         outputs['tower_maxMy_My'] = spline_My(z)
         outputs['tower_maxMy_Mz'] = spline_Mz(z)
-
-        if not modopt['flags']['monopile']:
-            for k in ['Fx','Fy','Fz','Mx','My','Mz']:
-                outputs[f'tower_monopile_maxMy_{k}'] = outputs[f'tower_maxMy_{k}']
         
         return outputs
 
@@ -2045,10 +2024,6 @@ class FASTLoadCases(ExplicitComponent):
         sum_stats : pd.DataFrame
         extreme_table : dict
         """
-
-        modopt = self.options['modeling_options']
-        n_height_mon = modopt['WISDEM']['TowerSE']['n_height_monopile']
-        n_full_mon   = get_nfull(n_height_mon)
 
         monopile_chans_Fx = []
         monopile_chans_Fy = []
@@ -2090,7 +2065,7 @@ class FASTLoadCases(ExplicitComponent):
         spline_My      = PchipInterpolator(self.Z_out_SD_mpl, My)
         spline_Mz      = PchipInterpolator(self.Z_out_SD_mpl, Mz)
 
-        z_full = inputs['tower_monopile_z_full'][:n_full_mon]
+        z_full = inputs['monopile_z_full']
         z_sec, _ = util.nodal2sectional(z_full)
         z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
 
@@ -2100,9 +2075,6 @@ class FASTLoadCases(ExplicitComponent):
         outputs['monopile_maxMy_Mx'] = spline_Mx(z)
         outputs['monopile_maxMy_My'] = spline_My(z)
         outputs['monopile_maxMy_Mz'] = spline_Mz(z)
-
-        for k in ['Fx','Fy','Fz','Mx','My','Mz']:
-            outputs[f'tower_monopile_maxMy_{k}'] = np.r_[outputs[f'monopile_maxMy_{k}'], outputs[f'tower_maxMy_{k}']]
 
         return outputs
 
