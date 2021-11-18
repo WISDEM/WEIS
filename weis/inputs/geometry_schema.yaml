@@ -179,6 +179,10 @@ properties:
                     type: number
                     unit: non-dimensional
                     default: -1
+                preload_spring:
+                    description: Ensure that equilibrium point of the TMD is at `location` by offseting the location based on the spring constant
+                    type: boolean
+                    default: True
 
                 
 

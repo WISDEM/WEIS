@@ -158,6 +158,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['TMDs']['X_DOF']                  = [tmd['X_DOF'] for  tmd in self.wt_init['TMDs']]
             self.modeling_options['TMDs']['Y_DOF']                  = [tmd['Y_DOF'] for  tmd in self.wt_init['TMDs']]
             self.modeling_options['TMDs']['Z_DOF']                  = [tmd['Z_DOF'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['preload_spring']         = [tmd['preload_spring'] for  tmd in self.wt_init['TMDs']]
 
             # Check that TMD locations map to somewhere valid (tower or platform member)
             self.modeling_options['TMDs']['num_tower_TMDs'] = 0
