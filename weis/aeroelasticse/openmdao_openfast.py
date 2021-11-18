@@ -1647,6 +1647,7 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
+        shutdown_start = np.full(dlc_generator.n_cases, fill_value = 9999)
         WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
@@ -1719,8 +1720,9 @@ class FASTLoadCases(ExplicitComponent):
                     rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
                     pitch_initial[i_case]       = 15
             else:
-                rot_speed_initial[i_case] = 0.
-                pitch_initial[i_case] = 90.
+                rot_speed_initial[i_case]   = 0.
+                pitch_initial[i_case]       = 90.
+                shutdown_start[i_case]      = 0
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
@@ -1754,6 +1756,11 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
+        # Inptus to ServoDyn (parking)
+        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
+        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
+        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
+
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
