@@ -1384,7 +1384,7 @@ class InputWriter_OpenFAST(object):
         
         # Write DISCON input files
         ROSCO_utilities.write_rotor_performance(turbine, txt_filename=txt_filename)
-        ROSCO_utilities.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=self.fst_vt['DISCON_in']['PerfFileName'])
+        ROSCO_utilities.write_DISCON(turbine,controller,param_file=discon_in_file, txt_filename=txt_filename)
 
     def write_HydroDyn(self):
 
