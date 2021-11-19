@@ -587,8 +587,8 @@ class InputWriter_OpenFAST(object):
     def write_BeamDynBlade(self):
 
         # bd_blade_file = self.fst_vt['BeamDyn']['BldFile']
-        bd_blade_file = os.path.abspath(os.path.join(self.FAST_runDirectory, self.FAST_namingOut + '_BeamDyn_Blade.dat'))
-        self.fst_vt['BeamDyn']['BldFile'] = bd_blade_file
+        self.fst_vt['BeamDyn']['BldFile'] = self.FAST_namingOut + '_BeamDyn_Blade.dat'
+        bd_blade_file = os.path.abspath(os.path.join(self.FAST_runDirectory, self.fst_vt['BeamDyn']['BldFile']))
         f = open(bd_blade_file, 'w')
 
         f.write('------- BEAMDYN V1.00.* INDIVIDUAL BLADE INPUT FILE --------------------------\n')
