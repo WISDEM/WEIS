@@ -238,8 +238,8 @@ if __name__ == "__main__":
         
        
     # Linear Model
-    pkl_file = mydir + os.sep + "outputs" + os.sep +  "ABCD_red_matrices.pkl" 
-    pkl_file = mydir + os.sep + 'LinModel_removed_fix.pkl'
+    pkl_file = mydir + os.sep + "outputs" + os.sep + "tower_doe_run" + os.sep + "ABCD_matrices.pkl" 
+    #pkl_file = mydir + os.sep + 'LinModel_removed_fix.pkl'
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)

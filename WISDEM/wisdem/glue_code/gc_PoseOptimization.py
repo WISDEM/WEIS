@@ -29,6 +29,7 @@ class PoseOptimization(object):
             "SLSQP",
             "Nelder-Mead",
             "COBYLA",
+            'trust-constr'
         ]
 
         self.pyoptsparse_methods = [
@@ -240,7 +241,7 @@ class PoseOptimization(object):
         """
 
         opt_options = self.opt["driver"]["optimization"]
-
+        
         # Loop through all of the options provided and set them in the OM driver object
         for key in options_keys:
             if key in opt_options:

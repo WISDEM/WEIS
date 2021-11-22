@@ -190,7 +190,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     filterflag = 0
     
     
-
+    
     if filterflag:                         
         t_f = 1
         dt = tt[2,0]-tt[1,0]
@@ -250,7 +250,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = True
+    OutputCon_flag = False
     
     if OutputCon_flag:
         #Qty = ["ED TwrBsFxt, (kN)"] 

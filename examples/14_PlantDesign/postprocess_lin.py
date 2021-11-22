@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-opt_path = mydir + os.sep + "outputs" 
-pkl_path = opt_path + os.sep+  "ABCD_red_matrices.pkl"
+opt_path = mydir + os.sep + "outputs" + os.sep +"doe_test"
+pkl_path = opt_path + os.sep+  "ABCD_matrices.pkl"
 
 with open(pkl_path, 'rb') as handle:
 
@@ -45,7 +45,7 @@ rho = DVs
 rho = np.floor(rho)
 fig, ax = plt.subplots(1,1,)
 #fig, ax2 = plt.subplots(4,1,)
-for i in range(len(ABCD_list)):
+for i in range(len(ABCD_list)-1):
     u_h = ABCD_list[i]["u_h"]
     u_ops = ABCD_list[i]["u_ops"]
     x_ops = ABCD_list[i]["x_ops"]

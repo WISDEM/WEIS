@@ -21,6 +21,7 @@ from weis.glue_code.glue_code               import WindPark
 from weis.glue_code.gc_ROSCOInputs          import assign_ROSCO_values
 from weis.control.LinearModel               import LinearTurbineModel
 from wisdem.glue_code.gc_PoseOptimization   import PoseOptimization as PoseOptimizationWISDEM
+from weis.glue_code.runWEIS     import run_weis
 
 def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
     
@@ -31,9 +32,13 @@ def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
     
     for i in range(ncase): 
         
+        
+        
         #turbine_model["materials"][1]["rho"] = rho[i]
         myopt = PoseOptimizationWISDEM(turbine_model, modeling_options, analysis_options)
         wt_opt = om.Problem(model=WindPark(modeling_options=modeling_options, opt_options=analysis_options))
+        
+        folder_output = analysis_options["general"]["folder_output"]
         
         wt_opt = myopt.set_driver(wt_opt)
         wt_opt = myopt.set_design_variables(wt_opt, turbine_model)
@@ -56,7 +61,7 @@ def Calc_TC(turbine_model, modeling_options, analysis_options,rho):
         analysis_options = analysis_options
         result = wt_opt
         MR = wt_opt.get_val('financese.machine_rating',units = 'MW')
-        breakpoint()
+        
         Cost_turbine_KW = wt_opt.get_val('financese.tcc_per_kW', units='USD/MW')[0]
         Cost_turbine[i] = Cost_turbine_KW*MR
         LCOE[i] = wt_opt.get_val('financese.lcoe',units = 'USD/kW/h')
@@ -99,26 +104,28 @@ if __name__ == "__main__":
     
     # location of 
     fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
-    fname_wt_input   = mydir + os.sep + "IEA-15-floating.yaml"
+    fname_wt_input   = mydir + os.sep + "IEA-15-floating_C.yaml"
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
     
-    wt_ontology = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_analysis_options)
+    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
     
-    turbine_model, modeling_options, analysis_options = wt_ontology.get_input_data()
+    # wt_ontology = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_analysis_options)
     
-    
-    
-    
-    modeling_options['Level1']['flag'] = False
-    modeling_options['Level2']['flag'] = False
-    modeling_options['Level3']['flag'] = False
-    modeling_options['ROSCO']['flag'] = False
-    analysis_options['recorder']['flag'] = True
+    # turbine_model, modeling_options, analysis_options = wt_ontology.get_input_data()
     
     
-    des_vars = [7800] #np.linspace(5000,10000,5)
     
-    #Jac = OL_grad(turbine_model, modeling_options, analysis_options, des_vars)
     
-    #plt.plot(des_vars,Jac)
-    CT = Calc_TC(turbine_model, modeling_options, analysis_options, des_vars)
+    # modeling_options['Level1']['flag'] = False
+    # modeling_options['Level2']['flag'] = False
+    # modeling_options['Level3']['flag'] = False
+    # modeling_options['ROSCO']['flag'] = True
+    # analysis_options['recorder']['flag'] = True
+    
+    
+    # des_vars = [7800] #np.linspace(5000,10000,5)
+    
+    # #Jac = OL_grad(turbine_model, modeling_options, analysis_options, des_vars)
+    
+    # #plt.plot(des_vars,Jac)
+    # CT = Calc_TC(turbine_model, modeling_options, analysis_options, des_vars)

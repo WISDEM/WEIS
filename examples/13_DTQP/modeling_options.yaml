@@ -127,7 +127,7 @@ DLC_driver:
           wave_height: [8.]
           wave_period: [2.]
           wind_seed: [1,2,3]
-          n_seeds: 2
+          n_seeds: 1
           analysis_time: 700.
           transient_time: 100.
           turbulent_wind:

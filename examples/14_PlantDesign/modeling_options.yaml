@@ -4,6 +4,7 @@ General:
         OF_run_fst: lin
         OF_run_dir: outputs/OLOC
         use_exe: True
+        cores: 1
 
 WISDEM:
     RotorSE:
@@ -98,7 +99,7 @@ ROSCO:
     flag: True
 
 Level2:
-    flag: True
+    flag: False
     simulation:         # could these be included in openfast options?
         flag: True
         TMax: 100.      # run simulations using IEC standards, could share that info
@@ -107,9 +108,9 @@ Level2:
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        wind_speeds: [12, 12.25, 12.5, 12.75, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+        wind_speeds: [15] #[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 12
+        NLinTimes: 1
 
 Level1:
     potential_model_override: 2
@@ -120,13 +121,13 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [9] #[17,18,20,16,15] #[5.8, 9.4732, 13.009, 16.866,19.9968, 15.6765]
+          wind_speed: [20] #[17,18,20,16,15] #[5.8, 9.4732, 13.009, 16.866,19.9968, 15.6765]
           wave_height: [8.]
           wave_period: [2.]
           wind_seeds: [1]
           n_seeds: 1
-          analysis_time: 700.
-          transient_time: 100.
+          analysis_time: 70.
+          transient_time: 30.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True

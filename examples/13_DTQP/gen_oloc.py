@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
     fname_wt_input              = mydir + os.sep + "IEA-15-floating.yaml"
     wt_init                     = sch.load_geometry_yaml(fname_wt_input)
-    breakpoint()
+    
     Turbine_class = wt_init["assembly"]["turbine_class"]
 
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
@@ -157,7 +157,7 @@ if __name__ == '__main__':
         la, 
         magnitude_channels, 
         run_directory,
-        cores = 1
+        cores = 4
         )
 
     print('here')
