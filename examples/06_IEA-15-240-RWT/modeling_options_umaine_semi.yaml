@@ -40,6 +40,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
+        NumCrctn: 1
     linearization:
         Linearize: False
     ElastoDyn:
