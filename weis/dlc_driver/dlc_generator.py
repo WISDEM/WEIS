@@ -252,7 +252,7 @@ class DLCGenerator(object):
             idlc.label = '1.1'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             idlc.PSF = 1.2 * 1.25
             self.cases.append(idlc)
@@ -305,7 +305,7 @@ class DLCGenerator(object):
             idlc.label = '1.2'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             idlc.PSF = 1.
             self.cases.append(idlc)
@@ -356,7 +356,7 @@ class DLCGenerator(object):
             idlc.label = '1.3'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -405,7 +405,7 @@ class DLCGenerator(object):
                 idlc.label = '1.4'
                 if options['analysis_time'] > 0:
                     idlc.analysis_time = options['analysis_time']
-                if options['transient_time'] > 0:
+                if options['transient_time'] >= 0:
                     idlc.transient_time = options['transient_time']
                 idlc.direction_pn = direction
                 self.cases.append(idlc)
@@ -456,7 +456,7 @@ class DLCGenerator(object):
                     idlc.label = '1.5'
                     if options['analysis_time'] > 0:
                         idlc.analysis_time = options['analysis_time']
-                    if options['transient_time'] > 0:
+                    if options['transient_time'] >= 0:
                         idlc.transient_time = options['transient_time']
                     idlc.sigma1 = self.IECturb.NTM(ws)
                     idlc.direction_pn = direction
@@ -507,7 +507,7 @@ class DLCGenerator(object):
             idlc.label = '1.6'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -561,7 +561,7 @@ class DLCGenerator(object):
             idlc.label = '6.1'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -615,7 +615,7 @@ class DLCGenerator(object):
             idlc.label = '6.3'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -672,7 +672,7 @@ class DLCGenerator(object):
             idlc.label = '6.4'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
