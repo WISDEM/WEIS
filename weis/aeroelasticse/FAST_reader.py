@@ -154,7 +154,6 @@ class InputReader_OpenFAST(object):
         self.fst_vt['Fst']['SpdSound']  = float_read(f.readline().split()[0])
         self.fst_vt['Fst']['Patm']      = float_read(f.readline().split()[0])
         self.fst_vt['Fst']['Pvap']      = float_read(f.readline().split()[0])
-        self.fst_vt['Fst']['Pvap']      = float_read(f.readline().split()[0])
         self.fst_vt['Fst']['WtrDpth']   = float_read(f.readline().split()[0])
         self.fst_vt['Fst']['MSL2SWL']   = float_read(f.readline().split()[0])
 
@@ -747,6 +746,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['SpdSound']       = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Patm']           = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Pvap']           = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['FluidDepth']           = float_read(f.readline().split()[0])
 
         # Blade-Element/Momentum Theory Options
         f.readline()
@@ -908,8 +908,8 @@ class InputReader_OpenFAST(object):
                     polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
                     polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
                     polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
-                    polar['alphaUpper']     = float_read(readline_filterComments(f).split()[0])
-                    polar['alphaLower']     = float_read(readline_filterComments(f).split()[0])
+                    # polar['alphaUpper']     = float_read(readline_filterComments(f).split()[0])
+                    # polar['alphaLower']     = float_read(readline_filterComments(f).split()[0])
                     polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
                     polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
                     polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
@@ -1315,6 +1315,12 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['TStCfiles'] = f.readline().split()[0][1:-1]
         self.fst_vt['ServoDyn']['NumSStC'] = int(f.readline().split()[0])
         self.fst_vt['ServoDyn']['SStCfiles'] = f.readline().split()[0][1:-1]
+
+        # Initialize Struct Control trees
+        self.fst_vt['BStC'] = [] * self.fst_vt['ServoDyn']['NumBStC']
+        self.fst_vt['NStC'] = [] * self.fst_vt['ServoDyn']['NumNStC']
+        self.fst_vt['TStC'] = [] * self.fst_vt['ServoDyn']['NumTStC']
+        self.fst_vt['SStC'] = [] * self.fst_vt['ServoDyn']['NumSStC']
 
         # Cable control
         f.readline()
@@ -2229,6 +2235,7 @@ class InputReader_OpenFAST(object):
             
         if self.fst_vt['Fst']['CompServo'] == 1:
             self.read_ServoDyn()
+            # Would read StCs here
             if ROSCO:
                 self.read_DISCON_in()
         hd_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['HydroFile']))
