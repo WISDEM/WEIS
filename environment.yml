@@ -30,6 +30,7 @@ dependencies:
   - scipy
   - seaborn
   - setuptools
+  - slycot
   - smt
   - sortedcontainers
   - swig
