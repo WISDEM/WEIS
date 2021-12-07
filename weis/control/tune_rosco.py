@@ -196,8 +196,8 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
-        rosco_init_options['omega_pc']    = inputs['omega_pc']
-        rosco_init_options['zeta_pc']     = inputs['zeta_pc']
+        rosco_init_options['omega_pc']    = list_check(inputs['omega_pc'], return_bool=False)
+        rosco_init_options['zeta_pc']     = list_check(inputs['zeta_pc'], return_bool=False)
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
         rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
