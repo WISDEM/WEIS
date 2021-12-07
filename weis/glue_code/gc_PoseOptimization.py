@@ -51,6 +51,9 @@ class PoseOptimizationWEIS(PoseOptimization):
         
         elif self.opt['merit_figure'] == 'Std_PtfmPitch':
             wt_opt.model.add_objective('aeroelastic.Std_PtfmPitch')
+        
+        elif self.opt['merit_figure'] == 'Max_PtfmPitch':
+            wt_opt.model.add_objective('aeroelastic.Max_PtfmPitch')
 
         elif self.opt['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
@@ -83,7 +86,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                                                             ref=1.e-7)
         if control_opt['servo']['pitch_control']['stability_margin']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.stability_margin', lower=control_opt['servo']['pitch_control']['stability_margin']['min'],
-                                                            upper=control_opt['servo']['pitch_control']['stability_margin']['min'])
+                                                            upper=control_opt['servo']['pitch_control']['stability_margin']['max'])
         if control_opt['flaps']['te_flap_end']['flag']:
             wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=control_opt['flaps']['te_flap_end']['min_end'],
                                                             upper=control_opt['flaps']['te_flap_end']['max_end'])
