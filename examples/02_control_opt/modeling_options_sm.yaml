@@ -112,8 +112,8 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [16]
           n_seeds: 1
-          analysis_time: 300.0
-          transient_time: 120.0
+          analysis_time: 10.0
+          transient_time: 1.0
           turbulent_wind:
               HubHt: 140
               GridHeight: 220
