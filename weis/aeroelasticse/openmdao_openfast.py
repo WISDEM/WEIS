@@ -420,13 +420,12 @@ class FASTLoadCases(ExplicitComponent):
             self.FAST_lib = 'none'
 
         # Rotor power outputs
-        if modopt['DLC_driver']['n_ws_dlc11'] > 0:
-            self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
-            self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
-            self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
-            self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
-            self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
-            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
+        self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
+        self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
+        self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
+        self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
+        self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
+        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
@@ -1968,8 +1967,10 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['flags']['monopile'] and modopt['Level3']['flag']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
 
+        # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
+        outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
+
         if modopt['DLC_driver']['n_ws_dlc11'] > 0 and bool(self.fst_vt['Fst']['CompAero']):
-            outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
             outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
@@ -2270,13 +2271,23 @@ class FASTLoadCases(ExplicitComponent):
             outputs['pitch_out']   = perf_data['BldPitch1']['mean']
             outputs['AEP']         = AEP
         else:
-            outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
-            outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
-            outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
-            outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
-            if self.fst_vt['Fst']['CompServo'] == 1:
-                outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
-            print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+            # If DLC 1.1 was run
+            if len(stats_pwrcrv['GenPwr']['mean']): 
+                outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
+                outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
+                outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
+                outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
+                if self.fst_vt['Fst']['CompServo'] == 1:
+                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+            else:
+                outputs['Cp_out']      = sum_stats['RtAeroCp']['mean'].mean()
+                outputs['AEP']         = sum_stats['GenPwr']['mean'].mean()
+                outputs['Omega_out']   = sum_stats['RotSpeed']['mean'].mean()
+                outputs['pitch_out']   = sum_stats['BldPitch1']['mean'].mean()
+                if self.fst_vt['Fst']['CompServo'] == 1:
+                    outputs['P_out']       = sum_stats['GenPwr']['mean'][0] * 1.e3
+                print('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
         outputs['V_out']       = np.unique(U)
 
