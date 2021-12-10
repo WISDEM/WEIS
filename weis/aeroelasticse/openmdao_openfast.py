@@ -1306,7 +1306,7 @@ class FASTLoadCases(ExplicitComponent):
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
             if len(idx) > 0:
-                joints_xyz[idx,2] -= 1e-2
+                joints_xyz[idx,2] = 1e-2
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
@@ -1474,36 +1474,28 @@ class FASTLoadCases(ExplicitComponent):
 
                 if StC_i['StC_X_DOF'] and StC_i['StC_Y_DOF'] and not StC_i['StC_Z_DOF']:
                     StC_i['StC_DOF_MODE']   = 2
+                    StC_i['StC_XY_M']       = inputs['TMD_mass'][i_TMD]
 
                 # Compute spring offset for each direction, initializing
                 g = modopt['Level3']['simulation']['Gravity']
                 spring_offset = np.zeros(3)
                 
                 # Set Mass, Stiffness, Damping only in DOFs enabled
-                if StC_i['StC_X_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                if StC_i['StC_X_DOF']:
                     StC_i['StC_X_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_X_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_X_C'] = inputs['TMD_damping'][i_TMD]
-                    spring_offset[0] = StC_i['StC_X_M'] * g / StC_i['StC_X_K']
-                elif StC_i['StC_Y_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                
+                if StC_i['StC_Y_DOF']:
                     StC_i['StC_Y_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_Y_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_Y_C'] = inputs['TMD_damping'][i_TMD]
-                    spring_offset[1] = StC_i['StC_Y_M'] * g / StC_i['StC_Y_K']
 
-                elif StC_i['StC_Z_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                if StC_i['StC_Z_DOF']:
                     StC_i['StC_Z_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_Z_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_Z_C'] = inputs['TMD_damping'][i_TMD]
                     spring_offset[2] = StC_i['StC_Z_M'] * g / StC_i['StC_Z_K']
-
-                elif StC_i['StC_DOF_MODE'] == 2:
-                    StC_i['StC_XY_M']  = inputs['TMD_mass'][i_TMD]
-                    # XY stiffnesses, damping equal for now
-                    StC_i['StC_X_K'] = StC_i['StC_Y_K']  = inputs['TMD_stiffness'][i_TMD]
-                    StC_i['StC_X_C'] = StC_i['StC_Y_C']  = inputs['TMD_damping'][i_TMD]
-                    spring_offset[0] = StC_i['StC_X_M'] * g / StC_i['StC_X_K']
-                    spring_offset[1] = StC_i['StC_Y_M'] * g / StC_i['StC_Y_K']
 
                 # Set position
                 if modopt['TMDs']['preload_spring'][i_TMD]:
