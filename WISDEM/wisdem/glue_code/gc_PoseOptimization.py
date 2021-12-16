@@ -130,13 +130,14 @@ class PoseOptimization(object):
                 self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
                 * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
             )
-        if jacket_opt["outer_diameter"]["flag"]:
-            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
-        if jacket_opt["layer_thickness"]["flag"]:
-            n_DV += (
-                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
-                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
-            )
+        # TODO: FIX THIS
+        # if jacket_opt["outer_diameter"]["flag"]:
+        #    n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        # if jacket_opt["layer_thickness"]["flag"]:
+        #    n_DV += (
+        #        self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        #        * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
+        #    )
         if hub_opt["cone"]["flag"]:
             n_DV += 1
         if hub_opt["hub_diameter"]["flag"]:
@@ -459,6 +460,9 @@ class PoseOptimization(object):
 
         elif self.opt["merit_figure"] == "nacelle_cost":
             wt_opt.model.add_objective("tcc.nacelle_cost", ref=1e6)
+
+        elif self.opt["merit_figure"] == "platform_hull_mass":
+            wt_opt.model.add_objective("floatingse.platform_hull_mass", ref=1e6)
 
         elif self.opt["merit_figure"] == "platform_mass":
             wt_opt.model.add_objective("floatingse.platform_mass", ref=1e6)

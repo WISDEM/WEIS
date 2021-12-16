@@ -273,12 +273,13 @@ class Point():
         # append the stiffness matrix of each line attached to the point
         for lineID,endB in zip(self.attached,self.attachedEndB):
             line = self.sys.lineList[lineID-1]
-            KA, KB = line.getStiffnessMatrix()
+            #KA, KB = line.getStiffnessMatrix()
             
             if endB == 1:                  # assuming convention of end A is attached to the point, so if not,
-                KA, KB = KB, KA            # swap matrices of ends A and B                                
-            
-            K += KA 
+                #KA, KB = KB, KA            # swap matrices of ends A and B                                
+                K += line.KB
+            else:
+                K += line.KA 
             
         # NOTE: can rotate the line's stiffness matrix in either Line.getStiffnessMatrix() or here in Point.getStiffnessA()
         

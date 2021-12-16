@@ -1,5 +1,4 @@
 import numpy as np
-
 import wisdem.inputs as sch
 
 
@@ -90,6 +89,8 @@ class WindTurbineOntologyPython(object):
             raise ValueError("Monopile analysis is requested but no environment input found")
         if flags["jacket"] and not flags["environment"]:
             raise ValueError("Jacket analysis is requested but no environment input found")
+        if flags["jacket"] and flags["monopile"]:
+            raise ValueError("Cannot specify both monopile and jacket support structures")
         if flags["floating_platform"] and not flags["environment"]:
             raise ValueError("Floating analysis is requested but no environment input found")
         if flags["environment"] and not (

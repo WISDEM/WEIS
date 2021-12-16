@@ -3,7 +3,6 @@ import unittest
 import numpy as np
 import openmdao.api as om
 import numpy.testing as npt
-
 import wisdem.floatingse.floating_system as sys
 from wisdem.commonse import gravity as g
 from wisdem.commonse.cylinder_member import NULL, MEMMAX
@@ -104,7 +103,8 @@ class TestPlatform(unittest.TestCase):
         self.inputs["mooring_stiffness"] = 5 * np.eye(6)
         self.inputs["transition_node"] = self.inputs["member5:nodes_xyz"][1, :]
         self.inputs["turbine_mass"] = 1e4
-        self.inputs["turbine_center_of_mass"] = np.array([0, 0, 50])
+        self.inputs["turbine_cg"] = np.array([0, 0, 50])
+        self.inputs["turbine_I"] = 1e6 * np.ones(6)
         self.inputs["transition_piece_mass"] = 1e3
         self.inputs["transition_piece_cost"] = 3e3
         self.inputs["rho_water"] = 1e3
@@ -171,7 +171,6 @@ class TestPlatform(unittest.TestCase):
         npt.assert_equal(self.outputs["platform_centroid"], centroid)
         cg = (6e3 * centroid + 1e3 * np.array([0.0, 0.0, 1.0])) / 7e3
         npt.assert_equal(self.outputs["platform_hull_center_of_mass"], cg)
-        self.assertEqual(self.outputs["platform_mass"], 6e3 + 1e3)
         self.assertEqual(self.outputs["platform_ballast_mass"], 6e2)
         self.assertEqual(self.outputs["platform_hull_mass"], 6e3 + 1e3 - 6e2)
         self.assertEqual(self.outputs["platform_cost"], 6 * 2e3 + 3e3)
@@ -228,6 +227,7 @@ class TestPlatform(unittest.TestCase):
             / self.outputs["system_mass"],
         )
         npt.assert_array_less(self.outputs["platform_I_hull"], self.outputs["platform_I_total"])
+        self.assertEqual(self.outputs["platform_mass"], 6e3 + 1e3 + self.outputs["variable_ballast_mass"])
 
 
 class TestGroup(unittest.TestCase):

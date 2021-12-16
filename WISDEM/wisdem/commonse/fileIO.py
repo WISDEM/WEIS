@@ -93,7 +93,7 @@ def load_data(fname, prob):
     for k in range(len(var_dict)):
         iname = var_dict[k][0]
         iname2 = var_dict[k][1]["prom_name"]
-        value = var_dict[k][1]["value"]
+        value = var_dict[k][1]["val"]
         prob.set_val(iname, value)
         prob.set_val(iname2, value)
 

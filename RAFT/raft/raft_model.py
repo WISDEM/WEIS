@@ -808,6 +808,8 @@ def runRAFT(input_file, turbine_file="", plot=0):
         
         model.plotResponses()
     
+    model.plotResponses()
+    
     #model.preprocess_HAMS("testHAMSoutput", dw=0.1, wMax=10)
     
     plt.show()

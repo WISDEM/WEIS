@@ -150,8 +150,9 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         
         info["HF"] = HF     # solution to be used to start next call (these are the solved variables, may be for anchor if line is reversed)
         info["VF"] = 0.0
-        info["stiffnessB"]  = np.array([[dHF_dXF, 0.0], [0.0, dVF_dZF]])
-        info["stiffnessA"]  = np.array([[dHF_dXF, 0.0], [0.0, dVF_dZF]])
+        info["stiffnessB"]  = np.array([[ dHF_dXF, 0.0], [0.0, dVF_dZF]])
+        info["stiffnessA"]  = np.array([[ dHF_dXF, 0.0], [0.0, dVF_dZF]])
+        info["stiffnessAB"] = np.array([[-dHF_dXF, 0.0], [0.0, 0.0]])
         info["LBot"] = L
         info['ProfileType'] = 0
         info['Zextreme'] = 0
@@ -199,6 +200,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             info["VF"] = VF
             info["stiffnessB"]  = np.array([[0.0, 0.0], [0.0, dVF_dZF]])
             info["stiffnessA"]  = np.array([[0.0, 0.0], [0.0, W]]) 
+            info["stiffnessAB"] = np.array([[0.0, 0.0], [0.0, 0.0]])
             info["LBot"] = L - LHanging
             info['ProfileType'] = 4
             info['Zextreme'] = 0
@@ -234,6 +236,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             info["VF"] = VF
             info["stiffnessB"]  = np.array([[0.0, 0.0], [0.0, W / np.sqrt(2.0*(ZF-CB)/EA_W + 1.0)]])
             info["stiffnessA"]  = np.array([[0.0, 0.0], [0.0, W / np.sqrt(2.0*(  -CB)/EA_W + 1.0)]])
+            info["stiffnessAB"] = np.array([[0.0, 0.0], [0.0, 0.0]])
             info["LBot"] = L - LHanging
             info['ProfileType'] = 5
             info['Zextreme'] = CB
@@ -504,7 +507,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                 
                 Himbalance = fBH2 - fBH1
                 
-                K1 = info1["stiffnessB"]
+                K1 = info1['stiffnessA']    # note: this refers to the upper end of this half of the line (since it is called with Z<0)
                 K2 = info2["stiffnessB"]
                 
                 info['dH_dX'] = K1[0,0] + K2[0,0]  # horizontal stiffness on connection point on seabed between two line portions
@@ -558,16 +561,19 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             K1 = info1['stiffnessA']    # note: this refers to the upper end of this half of the line (since it is called with Z<0)
             K2 = info2['stiffnessB']        
             dH_dX = 1./(1./K1[0,0] + 1./K2[0,0])  # = K1[0,0]*K2[0,0]/(K1[0,0] + K2[0,0])
-            Kmid = infoU['oths']['dH_dX']
+            Kmid = K1[0,0] + K2[0,0]  # horizontal stiffness on connection point on seabed between two line portions
             
-            info['stiffnessA'] = np.array([[ dH_dX                         , K1[0,1] - K1[0,1]/Kmid*K1[0,0]], 
-                                           [K1[1,0] - K1[0,0]/Kmid*K1[1,0] , K1[1,1] - K1[0,1]/Kmid*K1[1,0]]])
+            dxdH = 1.0/Kmid #= 1/(K1[0,0] + K2[0,0])
             
-            info['stiffnessB'] = np.array([[ dH_dX                         , K2[0,1] - K2[0,1]/Kmid*K2[0,0]], 
-                                           [K2[1,0] - K2[0,0]/Kmid*K2[1,0] , K2[1,1] - K2[0,1]/Kmid*K2[1,0]]])
+            info['stiffnessA'] = np.array([[ dH_dX               ,  K1[0,1] *K2[0,0]*dxdH        ], 
+                                           [K1[1,0] *K2[0,0]*dxdH,  K1[1,1] -K1[1,0]*dxdH*K1[0,1]]])
+            
+            info['stiffnessB'] = np.array([[ dH_dX               ,  K2[0,1] *K1[0,0]*dxdH        ], 
+                                           [K2[1,0] *K1[0,0]*dxdH,  K2[1,1] -K2[1,0]*dxdH*K2[0,1]]])
                                      
+            info['stiffnessAB']= np.array([[-K1[0,0] *K2[0,0]*dxdH, -K1[0,1] *K2[0,0]*dxdH ],    # this is the lower-left submatrix, A motions, B reaction forces
+                                           [-K1[0,0] *dxdH*K2[1,0], -K1[0,1] *dxdH*K2[1,0] ]])
 
-            dxdH = 1/Kmid #= 1/(K1[0,0] + K2[0,0])
             
             #                         xA                              zA                             xB                                 zB
             
@@ -722,15 +728,18 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         plt.plot(Xs,Zs)
         
         
-    # from fairlead (upper) end stiffness matrix, get lower end stiffness matrix
+    # get A and AB stiffness matrices for catenary profiles here based on fairlead (B) stiffness matrix
     if ProfileType == 1:
-        info['stiffnessA'] = info['stiffnessB']
+        info['stiffnessA'] = np.array(info['stiffnessB'])
+        info['stiffnessAB'] = -info['stiffnessB']
         
     elif ProfileType in [2,3]:
         if CB == 0.0:
             info['stiffnessA'] = np.array([[info['stiffnessB'][0,0], 0], [0, dV_dZ_s(Tol, HF)]])  # vertical term is very approximate 
+            info['stiffnessAB'] = np.array([[-info['stiffnessB'][0,0], 0], [0, 0]])  # note: A and AB stiffnesses for this case only valid if zero friction
         else:
             info['stiffnessA'] = np.ones([2,2]) * np.nan  # if friction, flag to ensure users don't use this
+            info['stiffnessAB'] = np.ones([2,2]) * np.nan  # if friction, flag to ensure users don't use this
     
     # un-swap line ends if they've been previously swapped, and apply global sign convention 
     # (vertical force positive-up, horizontal force positive from A to B)
@@ -743,11 +752,14 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         FzB =  VA
         
         info["stiffnessA"], info["stiffnessB"] = info["stiffnessB"], info["stiffnessA"]  # swap A and B
+        # note: diagonals of AB matrix do not change 
         
         info["stiffnessA"][0,1] = -info["stiffnessA"][0,1]  # reverse off-diagonal signs
         info["stiffnessA"][1,0] = -info["stiffnessA"][1,0]
         info["stiffnessB"][0,1] = -info["stiffnessB"][0,1]
         info["stiffnessB"][1,0] = -info["stiffnessB"][1,0]
+        info["stiffnessAB"][0,1] = -info["stiffnessAB"][0,1]  # for cross coupling matrix could also maybe transpose? but should be symmetrical so no need
+        info["stiffnessAB"][1,0] = -info["stiffnessAB"][1,0]
         
     else:
         FxA =  HA
@@ -762,12 +774,15 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         FzA = -FzA
         FzB = -FzB
         
-        info["stiffnessA"], info["stiffnessB"] = info["stiffnessB"], info["stiffnessA"]  # swap A and B
+        info["stiffnessA"], info["stiffnessB"] = info["stiffnessB"], info["stiffnessA"]  # swap A and BB
+        # note: diagonals of AB matrix do not change 
         
         info["stiffnessA"][0,1] = -info["stiffnessA"][0,1]  # reverse off-diagonal signs
         info["stiffnessA"][1,0] = -info["stiffnessA"][1,0]
         info["stiffnessB"][0,1] = -info["stiffnessB"][0,1]
         info["stiffnessB"][1,0] = -info["stiffnessB"][1,0]
+        info["stiffnessAB"][0,1] = -info["stiffnessAB"][0,1]
+        info["stiffnessAB"][1,0] = -info["stiffnessAB"][1,0]
         
         # TODO <<< should add more info <<<
 
@@ -906,9 +921,8 @@ def eval_func_cat(X, args):
             
             dZFdVF = ( VF_HF /SQRT1VF_HF2 )/ W + VF_WEA
 
-    # Now compute the tensions at the anchor
 
-    
+    # Now compute the tensions at the anchor    
     if ProfileType==1:          # No portion of the line rests on the seabed
         HA = HF;
         VA = VFMinWL             # note: VF is defined positive when tension pulls downward, while VA is defined positive when tension pulls up
@@ -1042,7 +1056,7 @@ if __name__ == "__main__":
     #(fAH, fAV, fBH, fBV, info) = catenary(205, -3.9, 250, 1229760000.0, 2442, CB=-55, Tol=1e-06, MaxIter=50, plots=3)
     
     
-    (fAH1, fAV1, fBH1, fBV1, info1) = catenary( 400, 50,  590, 1e12, 100.0, CB=-100, Tol=0.001, MaxIter=50, plots=4)
+    (fAH1, fAV1, fBH1, fBV1, info1) = catenary( 400, 100,  470, 1e12, 100.0, CB=-10, Tol=0.001, MaxIter=50, plots=4)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(2306.4589923684835, 1.225862496312402e-05, 1870.0799339749528, 203916714.02425563, 405.04331583394304, CB=0.0, HF0=58487689.78903873, VF0=0.0, Tol=4.000000000000001e-06, MaxIter=50, plots=1)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(459.16880261639346, 0.0004792939078015479, 447.67890341877506, 2533432597.6567926, 5032.201233267459, CB=0.0, HF0=65021800.32966018, VF0=17487.252675845888, Tol=4.000000000000001e-06, MaxIter=50, plots=1)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(0.00040612281105723014, 391.558570722038, 400.0, 3300142385.3140063, 6555.130220040344, CB=-287.441429277962, HF0=2127009.4122708915, VF0=10925834.69512347, Tol=4.000000000000001e-06, MaxIter=100, plots=1)
