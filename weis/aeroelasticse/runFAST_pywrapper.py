@@ -22,7 +22,7 @@ weis_dir = os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__
 lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
 openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
 sys.path.append(openfast_pydir)
-# from openfast_library import FastLibAPI
+from openfast_library import FastLibAPI
 
 mactype = platform.system().lower()
 if mactype in ["linux", "linux2"]:
