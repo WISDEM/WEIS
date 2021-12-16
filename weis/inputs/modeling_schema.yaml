@@ -51,11 +51,11 @@ properties:
                     FAST_exe:
                         type: string
                         default: none
-                        description: Path to FAST executable (e.g. /home/user/OpenFAST/bin/openfast)
+                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast)
                     FAST_lib:
                         type: string
                         default: none
-                        description: Path to FAST dynamic library (e.g. /home/user/OpenFAST/lib/libopenfast.so)
+                        description: Path to FAST dynamic library to override default WEIS value (e.g. /home/user/OpenFAST/lib/libopenfast.so)
                     path2dll:
                         type: string
                         default: none

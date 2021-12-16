@@ -898,7 +898,7 @@ class InputReader_OpenFAST(object):
             self.fst_vt['AeroDyn15']['af_data'][afi] = [None]*polar['NumTabs']
 
             for tab in range(polar['NumTabs']): # For multiple tables
-                polar['Re']             = float_read(readline_filterComments(f).split()[0])
+                polar['Re']             = float_read(readline_filterComments(f).split()[0]) * 1.e+6
                 polar['Ctrl']           = int_read(readline_filterComments(f).split()[0])
                 polar['InclUAdata']     = bool_read(readline_filterComments(f).split()[0])
 

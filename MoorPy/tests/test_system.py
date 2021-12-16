@@ -13,6 +13,75 @@ import matplotlib.pyplot as plt
 
 inCBs = [0, 1.0, 10.0]  # friction coefficients as inputs for test_seabed
 
+
+
+def test_tensions_swap():
+    '''Compares two equivalent catenary mooring lines that are defined in opposite directions.'''
+       
+    ms = mp.System(depth=60)
+
+    ms.lineTypes['chain'] = getLineProps(120, name='chain')    # add a line type
+
+    ms.addPoint(1, [  0, 0, -60])
+    ms.addPoint(1, [100, 10, -30])
+
+    # line sloping up from A to B, and another in the opposite order
+    ms.addLine(120, 'chain', pointA=1, pointB=2)
+    ms.addLine(120, 'chain', pointA=2, pointB=1)
+
+    ms.initialize()
+    
+    # compare tensions
+    assert_allclose(np.hstack([ms.lineList[0].fA, ms.lineList[0].fB]),
+                    np.hstack([ms.lineList[1].fB, ms.lineList[1].fA]), rtol=0, atol=10.0, verbose=True)
+
+
+def test_stiffnesses_swap():
+    '''Compares two equivalent catenary mooring lines that are defined in opposite directions.'''
+       
+    ms = mp.System(depth=60)
+
+    ms.lineTypes['chain'] = getLineProps(120, name='chain')    # add a line type
+
+    ms.addPoint(1, [  0, 0, -60])
+    ms.addPoint(1, [100, 10, -30])
+
+    # line sloping up from A to B, and another in the opposite order
+    ms.addLine(120, 'chain', pointA=1, pointB=2)
+    ms.addLine(120, 'chain', pointA=2, pointB=1)
+
+    ms.initialize()
+    
+    # compare stiffnesses
+    assert_allclose(np.hstack([ms.lineList[0].KA, ms.lineList[0].KB, ms.lineList[0].KAB]),
+                    np.hstack([ms.lineList[1].KB, ms.lineList[1].KA, ms.lineList[1].KAB]), rtol=0, atol=10.0, verbose=True)
+
+
+def test_stiffness_body():
+    '''Tests that the mooring stiffness on a body has the expected relationship to stiffness on points'''
+       
+    ms = mp.System(depth=60)
+
+    ms.lineTypes['chain'] = getLineProps(120, name='chain')    # add a line type
+
+    ms.addPoint(1, [  0, 0, -60])
+    ms.addPoint(1, [100, 10, -30])
+
+    # line sloping up from A to B, and another in the opposite order
+    ms.addLine(120, 'chain', pointA=1, pointB=2)
+    ms.addLine(120, 'chain', pointA=2, pointB=1)
+
+    # create body and attach lines to it
+    ms.addBody(1, [0,0,0,0,0,0])
+    ms.bodyList[0].attachPoint(2, [0, 10, 0])
+
+    ms.initialize()
+    
+    # compare stiffnesses
+    assert_allclose(np.hstack([ms.lineList[0].KA, ms.lineList[0].KB, ms.lineList[0].KAB]),
+                    np.hstack([ms.lineList[1].KB, ms.lineList[1].KA, ms.lineList[1].KAB]), rtol=0, atol=10.0, verbose=True)
+
+
     
 def test_basic():
 
@@ -98,6 +167,41 @@ def test_multiseg():
     # compare tensions
     assert_allclose(np.hstack([ms1.pointList[0].getForces(), ms1.pointList[-1].getForces()]),
                     np.hstack([ms2.pointList[0].getForces(), ms2.pointList[-1].getForces()]), rtol=0, atol=10.0, verbose=True)
+
+
+
+def test_multiseg_seabed():
+    '''Compares a single catenary mooring line with a three-line system where two of the segments are fully along the seabed.'''
+       
+    # single line
+    ms1 = mp.System()
+    ms1.depth = 200    
+    ms1.lineTypes['chain'] = getLineProps(120, name='chain')
+    ms1.addPoint(1, [-800, 0 , -200])                 # anchor point
+    ms1.addPoint(1, [   0, 0 ,    0])                 # fairlead    
+    ms1.addLine(860, 'chain', pointA=1, pointB=2)
+    ms1.initialize()
+    ms1.solveEquilibrium3(tol=0.0001)
+    
+    # three line
+    ms2 = mp.System()
+    ms2.depth = 200    
+    ms2.lineTypes['chain'] = getLineProps(120, name='chain')
+    ms2.addPoint(1, [-800, 0 , -200])                 # anchor point
+    ms2.addPoint(0, [-700, 0 , -200])                 # point along line
+    ms2.addPoint(0, [-600, 0 , -200])                 # point along line
+    ms2.addPoint(1, [   0, 0 ,    0])                 # fairlead    
+    ms2.addLine(100, 'chain', pointA=1, pointB=2)
+    ms2.addLine(100, 'chain', pointA=2, pointB=3)
+    ms2.addLine(660, 'chain', pointA=3, pointB=4)
+    ms2.initialize()
+    ms2.solveEquilibrium3(tol=0.0001)
+    
+    
+    # compare tensions
+    assert_allclose(np.hstack([ms1.pointList[0].getForces(), ms1.pointList[-1].getForces()]),
+                    np.hstack([ms2.pointList[0].getForces(), ms2.pointList[-1].getForces()]), rtol=0, atol=10.0, verbose=True)
+
 
 def test_basicU():
     '''Compares a system with a U-shape line with seabed contact with an equivalent case 
@@ -253,9 +357,8 @@ if __name__ == '__main__':
     print(ms.pointList[2].getStiffnessA())
     '''
     
-
     
-    
+    '''
     # a seabed contact case with single U line
     ms = mp.System()
     ms.depth = 100
@@ -281,5 +384,7 @@ if __name__ == '__main__':
     ms.solveEquilibrium3(tol=0.0001)   
     ms.plot(color=[1,0,0,0.5], ax=ax)
     
-    plt.show()
+    #>>> add a test for stiffnesses at each end of lines that have seaed contact, comparing U shape to two catenary lines. Also look at system-level stiffnes.
     
+    plt.show()
+    '''

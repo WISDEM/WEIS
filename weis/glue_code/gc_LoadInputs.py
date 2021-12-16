@@ -31,14 +31,21 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
+            # OpenFAST prefixes
+            if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
+                self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
+                
+            if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
+                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(os.getcwd(), 'openfast_runs')
+                
             # Find the path to the WEIS controller
-            run_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
+            weis_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
             if platform.system() == 'Windows':
-                path2dll = osp.join(run_dir, 'local','lib','libdiscon.dll')
+                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.dll')
             elif platform.system() == 'Darwin':
-                path2dll = osp.join(run_dir, 'local','lib','libdiscon.dylib')
+                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.dylib')
             else:
-                path2dll = osp.join(run_dir, 'local','lib','libdiscon.so')
+                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.so')
 
             # User-defined control dylib (path2dll)
             if self.modeling_options['General']['openfast_configuration']['path2dll'] == 'none':   #Default option, use above

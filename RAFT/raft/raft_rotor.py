@@ -303,47 +303,6 @@ class Rotor:
 
         return loads, derivs        
 
-    def calcAeroContributions(self, case):
-        '''Calculates stiffness, damping, added mass, and excitation coefficients
-        from rotor aerodynamics. Results are w.r.t. nonrotating hub reference frame
-        and assume constant rotor speed and no controls.
-        '''
-        
-        Uinf = case['wind_speed']  # inflow wind speed (m/s) 
-
-        # extract derivatives of interest, interpolated for the current wind speed
-        dT_dU  = np.interp(Uinf, self.Uhub, self.J["T", "Uhub"     ])
-        #dT_dOm = np.interp(Uinf, self.Uhub, self.J["T", "Omega_rpm"])
-        #dT_dPi = np.interp(Uinf, self.Uhub, self.J["T", "pitch_deg"])
-        #dQ_dU  = np.interp(Uinf, self.Uhub, self.J["Q", "Uhub"     ])
-        #dQ_dOm = np.interp(Uinf, self.Uhub, self.J["Q", "Omega_rpm"])
-        #dQ_dPi = np.interp(Uinf, self.Uhub, self.J["Q", "pitch_deg"])
-        # wish list
-        # dMy_dU  = np.interp(Uinf, self.Uhub, self.J["My", "Uhub"     ])  # overturning moment about hub
-        # dMy_dShearExp =
-        # ...
-
-        # coefficients to be filled in
-        nw = len(self.w)
-        A_aero = np.zeros([6,6,nw])                     # added mass
-        B_aero = np.zeros([6,6,nw])                     # damping
-        C_aero = np.zeros([6,6])                        # stiffness
-        F_aero0= np.zeros(6)                            # steady wind forces/moments
-        F_aero = np.zeros([6,nw])                       # wind excitation spectra in each DOF
-
-        # calculate hub aero coefficients (in nonrotating hub reference frame) - assuming rigid body and no control to start with
-        B_aero[0,0,:] += dT_dU                          # surge damping
-
-        # calculate wind excitation force/moment spectra (in nonrotating hub reference frame)
-        #for i in range(len(self.w)):                    # loop through each frequency component
-        #    F_aero[0,i] = U_amplitude[i]*dT_dU          # surge excitation
-        #    F_aero[7,i] = U_amplitude*dQ_dU            # rotor torque excitation
-
-        # calculate steady aero forces and moments
-        F_aero0 = np.hstack((self.outputs["Fhub"],self.outputs["Mhub"]))
-
-        return A_aero, B_aero, C_aero, F_aero0, F_aero
-
 
     def setControlGains(self,turbine):
         '''
@@ -363,7 +322,7 @@ class Rotor:
             
 
 
-    def calcAeroServoContributions(self, case, ptfm_pitch=0):
+    def calcAeroServoContributions(self, case, ptfm_pitch=0, display=0):
         '''Calculates stiffness, damping, added mass, and excitation coefficients
         from rotor aerodynamics coupled with turbine controls.
         Results are w.r.t. nonrotating hub reference frame.
@@ -377,8 +336,6 @@ class Rotor:
         
         Uinf = case['wind_speed']  # inflow wind speed (m/s) <<< eventually should be consistent with rest of RAFT
         
-        # >>>> make wind spectrum from info in case <<<<<   
-            
         # extract derivatives of interest
         dT_dU  = np.atleast_1d(np.diag(derivs["dT"]["dUinf"]))
         dT_dOm = np.atleast_1d(np.diag(derivs["dT"]["dOmega"])) / rpm2radps
@@ -433,20 +390,20 @@ class Rotor:
         # calculate steady aero forces and moments
         F_aero0 = np.array([loads["T" ][0], loads["Y"  ][0], loads["Z"  ][0],
                             loads["My" ][0], loads["Q" ][0], loads["Mz" ][0] ])
-                            
+        
         # calculate wind excitation force/moment spectra
         _,_,_,S_rot = self.IECKaimal(case)
 
-        self.V_w = S_rot
+        self.V_w = np.sqrt(S_rot)   # convert from power spectral density to complex amplitudes (FFT)
         T_0 = loads["T" ][0]
         T_w1 = dT_dU * self.V_w
-        T_w2 = (E * C * self.V_w) / (1j * self.w)
+        T_w2 = (E * C * self.V_w) / (1j * self.w) * (-1)  # mhall: think this needs the sign reversal
 
         T_ext = T_w1 + T_w2
 
-        # print('here')
-        if False:
-            plt.plot(self.w, self.V_w, label = 'S_rot')
+        if display > 1:
+            '''
+            plt.plot(self.w/2/np.pi, self.V_w, label = 'S_rot')
             plt.yscale('log')
             plt.xscale('log')
 
@@ -456,24 +413,28 @@ class Rotor:
             plt.xlabel('Freq. (Hz)')
             plt.ylabel('PSD')
 
-
-            plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)
+            #plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)
             plt.plot(self.w, np.abs(T_ext))
-            # plt.plot(self.w, abs(T_w2))
+            plt.plot(self.w, abs(T_w2))
+            '''
+            
+            fig,ax = plt.subplots(4,1,sharex=True)
+            ax[0].plot(self.w/2.0/np.pi, self.V_w);  ax[0].set_ylabel('U (m/s)') 
+            ax[1].plot(self.w/2.0/np.pi, T_w1    );  ax[1].set_ylabel('T_w1') 
+            ax[2].plot(self.w/2.0/np.pi, np.real(T_w2),'k')
+            ax[2].plot(self.w/2.0/np.pi, np.imag(T_w2),'k:'); ax[2].set_ylabel('T_w2') 
+            ax[3].plot(self.w/2.0/np.pi, np.real(T_w1+T_w2),'k')
+            ax[3].plot(self.w/2.0/np.pi, np.imag(T_w1+T_w2),'k:'); ax[3].set_ylabel('T_w2+T_w2') 
+            ax[3].set_xlabel('f (Hz)') 
 
-            # plt.show()
 
         f_aero = T_ext  # wind thrust force excitation spectrum
-        
-        #for i in range(nw):                             # loop through each frequency component
-        #    F_aero[0,i] = U_amplitude[i]*dT_dU             # surge excitation
-        #    F_aero[4,i] = U_amplitude[i]*dT_dU*Zhub        # pitch excitation
         
         
         return F_aero0, f_aero, a_aer, b_aer #  B_aero, C_aero, F_aero0, F_aero
         
         
-    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=np.eye(3), azimuth=0):
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=np.eye(3), azimuth=0, color='k'):
         '''Draws the rotor on the passed axes, considering optional platform offset and rotation matrix, and rotor azimuth angle'''
 
         # ----- blade geometry ----------
@@ -521,16 +482,21 @@ class Rotor:
             #for ii in range(m-1):
             #    ax.plot(P2[0, npts*ii:npts*(ii+1)], P2[1, npts*ii:npts*(ii+1)], P2[2, npts*ii:npts*(ii+1)])  
             # draw outline
-            ax.plot(P2[0, 0:-1:npts], P2[1, 0:-1:npts], P2[2, 0:-1:npts], 'k') # leading edge  
-            ax.plot(P2[0, 2:-1:npts], P2[1, 2:-1:npts], P2[2, 2:-1:npts], 'k')  # trailing edge
+            ax.plot(P2[0, 0:-1:npts], P2[1, 0:-1:npts], P2[2, 0:-1:npts], color=color) # leading edge  
+            ax.plot(P2[0, 2:-1:npts], P2[1, 2:-1:npts], P2[2, 2:-1:npts], color=color)  # trailing edge
             
             
         #for j in range(m):
         #    linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color='k'))  # station rings
         #
         #return linebit
-        
+    
+    
     def IECKaimal(self, case):        # 
+        '''Calculates rotor-averaged turbulent wind spectrum based on inputted turbulence intensity or class.'''
+        
+        #TODO: expand commenting, confirm that Rot is power spectrum, skip V,W calcs if not used
+    
         # Set inputs (f, V_ref, HH, Class, Categ, TurbMod, R)
         f = self.w / 2 / np.pi    # frequency in Hz
         HH = self.Zhub
@@ -567,6 +533,8 @@ class Rotor:
         iec_wind.setup()
         
         # Can set iec_wind.I_ref here if wanted, NTM used then
+        if isinstance(case['turbulence'],int):
+            case['turbulence'] = float(case['turbulence'])
         if isinstance(case['turbulence'],float):
             iec_wind.I_ref = case['turbulence']    # this overwrites the value set in setup method
             TurbMod = 'NTM'

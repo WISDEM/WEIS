@@ -4,10 +4,10 @@ comments: Revised example with "super-member" type inputs, including one for the
 
 
 settings:                   # global Settings
-    min_freq     :  0.01    #  [Hz]       lowest frequency to consider, also the frequency bin width 
-    max_freq     :  1.00    #  [Hz]       highest frequency to consider
+    min_freq     :  0.005   #  [Hz]       lowest frequency to consider, also the frequency bin width 
+    max_freq     :  0.40    #  [Hz]       highest frequency to consider
     XiStart      :   0      # sets initial amplitude of each DOF for all frequencies
-    nIter        :   0      # sets how many iterations to perform in Model.solveDynamics()
+    nIter        :  10      # sets how many iterations to perform in Model.solveDynamics()
     
 site:
     water_depth : 200        # [m]      uniform water depth
@@ -17,25 +17,10 @@ site:
     shearExp    : 0.12       #          shear exponent
     
 cases:
-    #wind_speed          :  [10]     # [m/s]
-    #wind_heading        :  0        # (deg)
-    #
-    #turbulence          :  0.1      # (%)   OR   turbine_class, turbulence_category, turbulence_model
-    #
-    #turbine_status      : operating # (Operating, parked, [failures…]?)
-    #yaw_misalign        :  0        # (deg)
-    #
-    #wave_spectrum       : JONSWAP   # (JONSWAP,Regular)
-    #wave_period         : 10        # (peak) period (s)
-    #wave_height         :  4        # (significant) height (m)
-    #wave_heading        :  0        # (deg)
-    
 
     keys : [wind_speed, wind_heading, turbulence, turbine_status, yaw_misalign, wave_spectrum, wave_period, wave_height, wave_heading  ]
     data :  #   m/s        deg    % or e.g. 2B_NTM    string            deg         string          (s)         (m)         (deg)
-        -  [    10,         0,            0.1,       operating,          0,        JONSWAP,          8,          2,           0        ]
-        -  [    12,         0,            0.1,       parked   ,          0,           unit,          9,          4,           0        ]
-        -  [    14,         0,            0.1,       operating,          0,        JONSWAP,         10,          6,           0        ]
+        -  [    12,         0,            0.01,       operating,          0,        JONSWAP,         13.1,        8.5,           0        ]
 
 
 turbine:

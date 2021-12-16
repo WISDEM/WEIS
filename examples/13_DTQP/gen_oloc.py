@@ -128,7 +128,9 @@ if __name__ == '__main__':
         "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
         }
 
-    run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
+    if not os.path.exists(run_directory):
+        os.makedirs(run_directory)
 
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
@@ -138,7 +140,7 @@ if __name__ == '__main__':
         la, 
         magnitude_channels, 
         run_directory,
-        cores = 4
+        cores = 1
         )
 
     print('here')

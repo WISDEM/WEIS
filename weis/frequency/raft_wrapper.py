@@ -2,6 +2,7 @@ import openmdao.api as om
 import numpy as np
 import wisdem.commonse.utilities as util
 from wisdem.commonse.wind_wave_drag import cylinderDrag
+from wisdem.commonse.environment import PowerWind
 from raft.omdao_raft import RAFT_OMDAO
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 
@@ -57,11 +58,13 @@ class RAFT_WEIS(om.Group):
         mooring_opt['nconnections'] = weis_opt['mooring']['n_nodes']
 
 
+        self.add_subsystem('wind', PowerWind(nPoints = turbine_opt['npts']), promotes=['Uref','zref'])
         self.add_subsystem('pre', RAFT_WEIS_Prep(modeling_options=weis_opt), promotes=['*'])
         self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
                                               turbine_options=turbine_opt,
                                               mooring_options=mooring_opt,
                                               member_options=members_opt), promotes=['*'])
+        self.connect('wind.U', 'tower_U')
 
 class RAFT_WEIS_Prep(om.ExplicitComponent):
 
