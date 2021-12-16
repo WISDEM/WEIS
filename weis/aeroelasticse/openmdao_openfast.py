@@ -2385,22 +2385,20 @@ class FASTLoadCases(ExplicitComponent):
             - sum_stats : pd.DataFrame
         '''
 
-        if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            print(sum_stats['PtfmPitch']['std'])   # for debugging
+            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+        else:
             # Let's just average the standard deviation of PtfmPitch for now
             # TODO: weight based on WS distribution, or something else
-            print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
             print(sum_stats['PtfmPitch']['std'])   # for debugging
             outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
-        if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
-            print("sum_stats['PtfmPitch']['max']:")  # for debugging
-            print(sum_stats['PtfmPitch']['max'])  # for debugging
-            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+        outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
-        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            print("sum_stats['PtfmPitch']['std']:")   # for debugging
-            print(sum_stats['PtfmPitch']['std'])   # for debugging
-            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+        
 
         return outputs, discrete_outputs
 
