@@ -266,7 +266,31 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('response_roll RAO', val=np.zeros(nfreq), units='m', desc='Roll RAO')
         self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='m', desc='Yaw RAO')
         self.add_output('response_nacelle acceleration', val=np.zeros(nfreq), units='m/s**2', desc='Nacelle acceleration')
+        self.add_output('response_tower_base_moment_mean', val=np.zeros(nfreq), units='N*m', desc='Tower base moment mean value')
+        self.add_output('response_tower_base_moment_std', val=np.zeros(nfreq), units='N*m', desc='Tower base moment standard deviation')
 
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase']
+        stats = ['avg','std','max','PSD']
+        for n in names:
+            for s in stats:
+                if n in ['AxRNA','Mbase'] and s in ['max','PSD']: continue
+                
+                iout = f'{n}_{s}'
+                
+                myval = 0.0 if s not in ['PSD'] else np.zeros(nfreq)
+                
+                if n in ['surge','sway','heave']:
+                    myunit = 'm'
+                elif n in ['roll','pitch','yaw']:
+                    myunit = 'rad'
+                elif n in ['AxRNA']:
+                    myunit = 'm/s/s'
+                elif n in ['Mbase']:
+                    myunit = 'N*m'
+                    
+                self.add_output('response_'+iout, val=myval, units=myunit)
+
+                
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
         debug_flag = False
@@ -568,7 +592,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
             
         # get and process results
         results = model.calcOutputs()
-        
+
+        # Pattern matching for "responses" annd "properties"
         outs = self.list_outputs(out_stream=None)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
@@ -580,3 +605,14 @@ class RAFT_OMDAO(om.ExplicitComponent):
                     outputs['response_'+name] = np.abs(results['response'][name])
                 else:
                     outputs['response_'+name] = results['response'][name]
+
+        # Pattern matching for other motions and loads
+        # TODO; icase?
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase']
+        stats = ['avg','std','max','PSD']
+        for n in names:
+            for s in stats:
+                if n in ['AxRNA','Mbase'] and s in ['max','PSD']: continue
+                iout = f'{n}_{s}'
+                outputs['response_'+iout] = results[iout]
+                

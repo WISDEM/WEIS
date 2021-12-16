@@ -770,18 +770,19 @@ class Model():
         return fig, ax
 
 
-def runRAFT(input_file, turbine_file=""):
+def runRAFT(input_file, turbine_file="", plot=0):
     '''
     This will set up and run RAFT based on a YAML input file.
     '''
     
-    # open the design YAML file and parse it into a dictionary for passing to raft
-    print("Loading RAFT input file: "+input_file)
-    
-    with open(input_file) as file:
-        design = yaml.load(file, Loader=yaml.FullLoader)
-    
-    print(f"'{design['name']}'")
+    if not isinstance(input_file, dict):
+        # open the design YAML file and parse it into a dictionary for passing to raft
+        print("Loading RAFT input file: "+input_file)
+        with open(input_file) as file:
+            design = yaml.load(file, Loader=yaml.FullLoader)
+    else:
+        design = input_file
+        print(f"'{design['name']}'")
     
     
     depth = float(design['mooring']['water_depth'])
@@ -796,21 +797,24 @@ def runRAFT(input_file, turbine_file=""):
     
     # Create and run the model
     print(" --- making model ---")
-    model = raft.Model(design)  
+    model = Model(design)  
     print(" --- analyizing unloaded ---")
     model.analyzeUnloaded()
     print(" --- analyzing cases ---")
     model.analyzeCases()
     
-    model.plot()
-    
-    model.plotResponses()
+    if plot:
+        model.plot()
+        
+        model.plotResponses()
     
     #model.preprocess_HAMS("testHAMSoutput", dw=0.1, wMax=10)
     
     plt.show()
     
     return model
+
+
     
     
 if __name__ == "__main__":
