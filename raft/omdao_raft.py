@@ -262,22 +262,22 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('response_surge RAO', val=np.zeros(nfreq), units='m', desc='Surge RAO')
         self.add_output('response_sway RAO', val=np.zeros(nfreq), units='m', desc='Sway RAO')
         self.add_output('response_heave RAO', val=np.zeros(nfreq), units='m', desc='Heave RAO')
-        self.add_output('response_pitch RAO', val=np.zeros(nfreq), units='m', desc='Pitch RAO')
-        self.add_output('response_roll RAO', val=np.zeros(nfreq), units='m', desc='Roll RAO')
-        self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='m', desc='Yaw RAO')
+        self.add_output('response_pitch RAO', val=np.zeros(nfreq), units='rad', desc='Pitch RAO')
+        self.add_output('response_roll RAO', val=np.zeros(nfreq), units='rad', desc='Roll RAO')
+        self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='rad', desc='Yaw RAO')
         self.add_output('response_nacelle acceleration', val=np.zeros(nfreq), units='m/s**2', desc='Nacelle acceleration')
-        self.add_output('response_tower_base_moment_mean', val=np.zeros(nfreq), units='N*m', desc='Tower base moment mean value')
-        self.add_output('response_tower_base_moment_std', val=np.zeros(nfreq), units='N*m', desc='Tower base moment standard deviation')
-
-        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase']
-        stats = ['avg','std','max','PSD']
+        # case specific
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
+        stats = ['avg','std','max','PSD','DEL']
         for n in names:
             for s in stats:
-                if n in ['AxRNA','Mbase'] and s in ['max','PSD']: continue
-                
+                if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
                 
-                myval = 0.0 if s not in ['PSD'] else np.zeros(nfreq)
+                if n == 'Tmoor':
+                    myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, 2*nlines, nfreq))
+                else:
+                    myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
                 
                 if n in ['surge','sway','heave']:
                     myunit = 'm'
@@ -288,7 +288,11 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 elif n in ['Mbase']:
                     myunit = 'N*m'
                     
-                self.add_output('response_'+iout, val=myval, units=myunit)
+                self.add_output('stats_'+iout, val=myval, units=myunit)
+        # Other case outputs
+        self.add_output('stats_wind_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wind input')
+        self.add_output('stats_wave_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wave input')
+        
 
                 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -606,13 +610,16 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 else:
                     outputs['response_'+name] = results['response'][name]
 
-        # Pattern matching for other motions and loads
-        # TODO; icase?
-        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase']
-        stats = ['avg','std','max','PSD']
+        # Pattern matching for case-by-case outputs
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
+        stats = ['avg','std','max','PSD','DEL']
         for n in names:
             for s in stats:
-                if n in ['AxRNA','Mbase'] and s in ['max','PSD']: continue
+                if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['response_'+iout] = results[iout]
-                
+                outputs['stats_'+iout] = results['case_metrics'][iout]
+
+        # Other case outputs
+        for n in ['wind_PSD','wave_PSD']:
+            outputs['stats_'+n] = results['case_metrics'][n]
+
