@@ -142,6 +142,7 @@ class FrameAnalysis(om.ExplicitComponent):
         self.add_input("mooring_stiffness", np.zeros((6, 6)), units="N/m")
         self.add_input("variable_ballast_mass", 0.0, units="kg")
         self.add_input("variable_center_of_mass", val=np.zeros(3), units="m")
+        self.add_input("variable_I", np.zeros(6), units="kg*m**2")
 
         self.add_output("platform_base_F", np.zeros((3, n_dlc)), units="N")
         self.add_output("platform_base_M", np.zeros((3, n_dlc)), units="N*m")
@@ -163,6 +164,7 @@ class FrameAnalysis(om.ExplicitComponent):
         I_trans = inputs["transition_piece_I"]
         m_variable = float(inputs["variable_ballast_mass"])
         cg_variable = inputs["variable_center_of_mass"]
+        I_variable = inputs["variable_I"]
 
         fairlead_joints = inputs["mooring_fairlead_joints"]
         mooringF = inputs["mooring_neutral_load"]
@@ -173,8 +175,8 @@ class FrameAnalysis(om.ExplicitComponent):
         nnode = np.where(nodes[:, 0] == NULL)[0][0]
         nodes = nodes[:nnode, :]
         rnode = np.zeros(nnode)  # inputs["platform_Rnode"][:nnode]
-        ihub = np.argmax(nodes[:, 2]) - 1
         itrans = util.closest_node(nodes, inputs["transition_node"])
+        ivariable = util.closest_node(nodes, cg_variable)
 
         N1 = np.int_(inputs["platform_elem_n1"])
         nelem = np.where(N1 == NULL)[0][0]
@@ -202,7 +204,7 @@ class FrameAnalysis(om.ExplicitComponent):
         ind = []
         for k in range(n_attach):
             ind.append(util.closest_node(nodes, fairlead_joints[k, :]))
-        rid = np.array([ind])  # np.array([np.argmin(nodes[:, 2])])
+        rid = np.unique(np.array([ind]))  # np.array([np.argmin(nodes[:, 2])])
 
         Rx = Ry = Rz = Rxx = Ryy = Rzz = RIGID * np.ones(rid.size)
         # Rx, Ry, Rz = [mooringK[0]], [mooringK[1]], [mooringK[2]]
@@ -217,12 +219,11 @@ class FrameAnalysis(om.ExplicitComponent):
         myframe = pyframe3dd.Frame(node_obj, react_obj, elem_obj, opt_obj)
 
         # Added mass
-        cg_add = m_variable * cg_variable / (m_trans + m_variable)
-        cg_add = cg_add.reshape((-1, 1))
+        cg_add = np.zeros((3, 2))
         add_gravity = True
-        mID = np.array([itrans], dtype=np.int_)
-        m_add = np.array([m_trans + m_variable])
-        I_add = I_trans.reshape((-1, 1))
+        mID = np.array([itrans, ivariable], dtype=np.int_)
+        m_add = np.array([m_trans, m_variable])
+        I_add = np.c_[I_trans, I_variable]
         myframe.changeExtraNodeMass(
             mID + 1,
             m_add,
@@ -251,8 +252,8 @@ class FrameAnalysis(om.ExplicitComponent):
             load_obj = pyframe3dd.StaticLoadCase(gx, gy, gz)
 
             Fnode2 = Fnode.copy()
-            Fnode2[ihub, :] += inputs["turbine_F"][:, k]
-            Mnode[ihub, :] = inputs["turbine_M"][:, k]
+            Fnode2[itrans, :] += inputs["turbine_F"][:, k]
+            Mnode[itrans, :] = inputs["turbine_M"][:, k]
             nF = np.where(np.abs(Fnode2).sum(axis=1) > 0.0)[0]
             load_obj.changePointLoads(
                 nF + 1, Fnode2[nF, 0], Fnode2[nF, 1], Fnode2[nF, 2], Mnode[nF, 0], Mnode[nF, 1], Mnode[nF, 2]
@@ -271,6 +272,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
             # Add the load case and run
             myframe.addLoadCase(load_obj)
+
         # myframe.write("system.3dd")
         # myframe.draw()
         displacements, forces, reactions, internalForces, mass, modal = myframe.run()
@@ -362,8 +364,10 @@ class TowerModal(om.ExplicitComponent):
         self.add_input("tower_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("tower_L", np.zeros(n_full - 1), units="m")
 
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
         self.add_input("platform_mass", 0.0, units="kg")
-        self.add_input("variable_ballast_mass", 0.0, units="kg")
         self.add_input("platform_added_mass", np.zeros(6), units="kg")
         self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
         self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -393,10 +397,14 @@ class TowerModal(om.ExplicitComponent):
 
         # ------ reaction data ------------
         # free-free (no reactions)
-        mooringK = np.abs(np.diag(inputs["mooring_stiffness"]))
         rnode = np.array([], dtype=np.int_)
         kx = ky = kz = ktx = kty = ktz = rnode
         reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
+        # rnode = np.array([1], dtype=np.int_)
+        # moorK = np.abs(np.diag(inputs["mooring_stiffness"]))
+        # reactions = pyframe3dd.ReactionData(
+        #    rnode, [moorK[0]], [moorK[1]], [moorK[2]], [moorK[3]], [moorK[4]], [moorK[5]], rigid=RIGID
+        # )
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -428,31 +436,10 @@ class TowerModal(om.ExplicitComponent):
         # initialize frame3dd object
         myframe = pyframe3dd.Frame(nodes, reactions, elements, options)
 
-        # Added mass
-        cg_add = inputs["platform_total_center_of_mass"].reshape((-1, 1))
-        add_gravity = True
-        mID = np.array([0], dtype=np.int_)
-        m_add = inputs["platform_mass"] + inputs["variable_ballast_mass"] + inputs["platform_added_mass"].max()
-        I_add = inputs["platform_I_total"].reshape((-1, 1))
-        myframe.changeExtraNodeMass(
-            mID + 1,
-            m_add,
-            I_add[0, :],
-            I_add[1, :],
-            I_add[2, :],
-            I_add[3, :],
-            I_add[4, :],
-            I_add[5, :],
-            cg_add[0, :],
-            cg_add[1, :],
-            cg_add[2, :],
-            add_gravity,
-        )
-
         # ------- enable dynamic analysis ----------
         Mmethod = 1
         lump = 0
-        shift = -1e3
+        shift = 1e1
         tol = 1e-7
         # Run extra freqs because could get 6 rigid body modes at zero-freq
         myframe.enableDynamics(3 * NFREQ, Mmethod, lump, tol, shift)
@@ -466,30 +453,57 @@ class TowerModal(om.ExplicitComponent):
         load = pyframe3dd.StaticLoadCase(gx, gy, gz)
         myframe.addLoadCase(load)
 
+        # Added mass
+        cg_add = np.c_[inputs["platform_total_center_of_mass"], inputs["rna_cg"]]
+        add_gravity = False
+        mID = np.array([1, n - 1], dtype=np.int_)
+        m_fact = inputs["platform_added_mass"].max() / inputs["platform_mass"]
+        m_add = np.r_[(1 + m_fact) * inputs["platform_mass"], inputs["rna_mass"]].flatten()
+        I_add = np.c_[(1 + m_fact) * inputs["platform_I_total"], inputs["rna_I"]]
+        myframe.changeExtraNodeMass(
+            mID,
+            m_add,
+            I_add[0, :],
+            I_add[1, :],
+            I_add[2, :],
+            I_add[3, :],
+            I_add[4, :],
+            I_add[5, :],
+            cg_add[0, :],
+            cg_add[1, :],
+            cg_add[2, :],
+            add_gravity,
+        )
+
         # Debugging
         # myframe.write('floating_tower_debug.3dd')
         # -----------------------------------
         # run the analysis
-        _, _, _, _, _, modal = myframe.run()
-        freq = modal.freq
-        freq = freq[freq > 1e-1]
+        try:
+            _, _, _, _, _, modal = myframe.run()
 
-        # natural frequncies
-        outputs["f1"] = freq[0]
-        outputs["f2"] = freq[1]
-        outputs["structural_frequencies"] = freq[:NFREQ]
+            # natural frequncies
+            freq = modal.freq
+            freq = freq[freq > 1e-1]
+            if len(freq) >= NFREQ:
+                outputs["f1"] = freq[0]
+                outputs["f2"] = freq[1]
+                outputs["structural_frequencies"] = freq[:NFREQ]
 
-        # Get all mode shapes in batch
-        NFREQ2 = int(NFREQ / 2)
-        freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
-            xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
-        )
-        outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
-        outputs["side_side_freqs"] = freq_y[:NFREQ2]
-        outputs["torsion_freqs"] = freq_z[:NFREQ2]
-        outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
-        outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
-        outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+                # Get all mode shapes in batch
+                NFREQ2 = int(NFREQ / 2)
+                freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+                    xyz[:, 2], modal.freq, modal.xdsp, modal.ydsp, modal.zdsp, modal.xmpf, modal.ympf, modal.zmpf
+                )
+
+                outputs["fore_aft_freqs"] = freq_x[:NFREQ2]
+                outputs["side_side_freqs"] = freq_y[:NFREQ2]
+                outputs["torsion_freqs"] = freq_z[:NFREQ2]
+                outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+                outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
+                outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+        except:
+            pass
 
 
 class FloatingPost(om.ExplicitComponent):
@@ -622,7 +636,7 @@ class FloatingFrame(om.Group):
             U_prom.append(f"env{lc}.Uref")
 
         for k in range(n_member):
-            n_full = get_nfull(opt["floating"]["members"]["n_height"][k])
+            n_full = get_nfull(opt["floating"]["members"]["n_height"][k], nref=2)
             self.add_subsystem(
                 f"memload{k}",
                 MemberLoads(
@@ -638,10 +652,11 @@ class FloatingFrame(om.Group):
 
         self.add_subsystem("frame", FrameAnalysis(options=opt), promotes=["*"])
 
-        tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
-        n_height = tow_opt["n_height"]
-        n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
-        self.add_subsystem("tower", TowerModal(n_full=n_full_tow), promotes=["*"])
+        if self.options["modeling_options"]["flags"]["tower"]:
+            tow_opt = self.options["modeling_options"]["WISDEM"]["TowerSE"]
+            n_height = tow_opt["n_height"]
+            n_full_tow = get_nfull(n_height, nref=tow_opt["n_refine"])
+            self.add_subsystem("tower", TowerModal(n_full=n_full_tow), promotes=["*"])
 
         self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
 

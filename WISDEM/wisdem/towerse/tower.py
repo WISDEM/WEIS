@@ -111,10 +111,11 @@ class TurbineMass(om.ExplicitComponent):
 
         outputs["turbine_mass"] = m_turb = m_rna + m_tow
 
-        cg_rna = R = inputs["rna_cg"] + inputs["joint2"]
+        cg_rna = inputs["rna_cg"] + inputs["joint2"]
         cg_tower = np.r_[0.0, 0.0, inputs["tower_center_of_mass"]]
         outputs["turbine_center_of_mass"] = (m_rna * cg_rna + m_tow * cg_tower) / m_turb
 
+        R = inputs["joint2"]  # rna_I is already at tower top, so R goes to tower top, not rna_cg
         I_tower = util.assembleI(inputs["tower_I_base"])
         I_rna = util.assembleI(inputs["rna_I"]) + m_rna * (np.dot(R, R) * np.eye(3) - np.outer(R, R))
         outputs["turbine_I_base"] = util.unassembleI(I_tower + I_rna)
@@ -138,6 +139,12 @@ class TowerFrame(om.ExplicitComponent):
         shear modulus
     rho_full : numpy array[npts-1], [kg/m**3]
         material density
+    rna_mass : float, [kg]
+        Total tower mass
+    rna_I : numpy array[6], [kg*m**2]
+        Mass moment of inertia of RNA about tower top [xx yy zz xy xz yz]
+    rna_cg : numpy array[3], [m]
+        xyz-location of RNA cg relative to tower top
     rna_F : numpy array[3], [N]
         rna force at tower top from drivetrain analysis
     rna_M : numpy array[3], [N*m]
@@ -217,6 +224,10 @@ class TowerFrame(om.ExplicitComponent):
         self.add_input("section_G", np.zeros(n_full - 1), units="Pa")
         self.add_output("section_L", np.zeros(n_full - 1), units="m")
 
+        # For modal analysis only
+        self.add_input("rna_mass", val=0.0, units="kg")
+        self.add_input("rna_I", np.zeros(6), units="kg*m**2")
+        self.add_input("rna_cg", np.zeros(3), units="m")
         # point loads
         self.add_input("rna_F", np.zeros((3, nLC)), units="N")
         self.add_input("rna_M", np.zeros((3, nLC)), units="N*m")
@@ -318,7 +329,7 @@ class TowerFrame(om.ExplicitComponent):
             rna_F = inputs["rna_F"][:, k]
             rna_M = inputs["rna_M"][:, k]
             load.changePointLoads(
-                np.array([n - 1], dtype=np.int_),  # -1 b/c crash if added at final node
+                np.array([n], dtype=np.int_),  # -1 b/c crash if added at final node
                 np.array([rna_F[0]]),
                 np.array([rna_F[1]]),
                 np.array([rna_F[2]]),
@@ -344,6 +355,27 @@ class TowerFrame(om.ExplicitComponent):
             load.changeTrapezoidalLoads(EL, xx1, xx2, wx1, wx2, xy1, xy2, wy1, wy2, xz1, xz2, wz1, wz2)
 
             self.frame.addLoadCase(load)
+
+        # Add mass for modal analysis only (loads are captured in rna_F & rna_M)
+        mID = np.array([n], dtype=np.int_)  # Cannot add at top node due to bug
+        m_add = inputs["rna_mass"]
+        cg_add = inputs["rna_cg"].reshape((-1, 1))
+        I_add = inputs["rna_I"].reshape((-1, 1))
+        add_gravity = False
+        self.frame.changeExtraNodeMass(
+            mID,
+            m_add,
+            I_add[0, :],
+            I_add[1, :],
+            I_add[2, :],
+            I_add[3, :],
+            I_add[4, :],
+            I_add[5, :],
+            cg_add[0, :],
+            cg_add[1, :],
+            cg_add[2, :],
+            add_gravity,
+        )
 
         # Debugging
         # self.frame.write('tower_debug.3dd')
@@ -508,6 +540,9 @@ class TowerSE(om.Group):
                 "Px",
                 "Py",
                 "Pz",
+                "rna_mass",
+                "rna_cg",
+                "rna_I",
             ],
         )
 

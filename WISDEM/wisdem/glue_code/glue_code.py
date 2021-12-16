@@ -138,9 +138,11 @@ class WT_RNTA(om.Group):
             self.connect("materials.rho", "rotorse.re.precomp.rho")
 
             # Conncetions to rail transport module
-            if opt_options["constraints"]["blade"]["rail_transport"]["flag"]:
+            if (
+                modeling_options["WISDEM"]["RotorSE"]["rail_transport"]
+                or opt_options["constraints"]["blade"]["rail_transport"]["flag"]
+            ):
                 self.connect("blade.high_level_blade_props.blade_ref_axis", "rotorse.re.rail.blade_ref_axis")
-
             # Connections from blade struct parametrization to rotor load anlysis
             self.connect("blade.opt_var.s_opt_spar_cap_ss", "rotorse.rs.constr.s_opt_spar_cap_ss")
             self.connect("blade.opt_var.s_opt_spar_cap_ps", "rotorse.rs.constr.s_opt_spar_cap_ps")
@@ -459,6 +461,9 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.monopile.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.monopile.turbine_M")
 
@@ -484,6 +489,9 @@ class WT_RNTA(om.Group):
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.tower_mass", "fixedse.tower_mass")
                 self.connect("towerse.tower_cost", "fixedse.tower_cost")
+                self.connect("towerse.turbine_mass", "fixedse.turbine_mass")
+                self.connect("towerse.turbine_center_of_mass", "fixedse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "fixedse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
 
@@ -515,12 +523,17 @@ class WT_RNTA(om.Group):
             self.connect("floating.transition_piece_cost", "floatingse.transition_piece_cost")
             if modeling_options["flags"]["tower"]:
                 self.connect("towerse.turbine_mass", "floatingse.turbine_mass")
-                self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_center_of_mass")
+                self.connect("towerse.turbine_center_of_mass", "floatingse.turbine_cg")
+                self.connect("towerse.turbine_I_base", "floatingse.turbine_I")
                 self.connect("towerse.tower.turbine_F", "floatingse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "floatingse.turbine_M")
                 self.connect("towerse.nodes_xyz", "floatingse.tower_xyz")
                 for var in ["A", "Asx", "Asy", "Ixx", "Iyy", "J0", "rho", "E", "G"]:
                     self.connect(f"towerse.section_{var}", f"floatingse.tower_{var}")
+            if modeling_options["flags"]["nacelle"]:
+                self.connect("drivese.rna_I_TT", "floatingse.rna_I")
+                self.connect("drivese.rna_cm", "floatingse.rna_cg")
+                self.connect("drivese.rna_mass", "floatingse.rna_mass")
 
             # Individual member connections
             for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):

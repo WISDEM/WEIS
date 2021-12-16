@@ -90,6 +90,8 @@ class WindTurbineOntologyPython(object):
             raise ValueError("Monopile analysis is requested but no environment input found")
         if flags["jacket"] and not flags["environment"]:
             raise ValueError("Jacket analysis is requested but no environment input found")
+        if flags["jacket"] and flags["monopile"]:
+            raise ValueError("Cannot specify both monopile and jacket support structures")
         if flags["floating_platform"] and not flags["environment"]:
             raise ValueError("Floating analysis is requested but no environment input found")
         if flags["environment"] and not (
@@ -305,6 +307,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["n_ballasts"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_bulkheads"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_axial_joints"] = np.zeros(n_members, dtype=int)
+            ballast_types = []
             for i in range(n_members):
                 self.modeling_options["floating"]["members"]["name"][i] = self.wt_init["components"][
                     "floating_platform"
@@ -421,15 +424,17 @@ class WindTurbineOntologyPython(object):
                         ][k]
                         == False
                     ):
+                        ballast_types.append(
+                            self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"][
+                                "ballasts"
+                            ][k]["material"]
+                        )
                         self.modeling_options["floating"]["members"][
                             "ballast_mat_member_" + self.modeling_options["floating"]["members"]["name"][i]
-                        ][k] = self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"][
-                            "ballasts"
-                        ][
-                            k
-                        ][
-                            "material"
-                        ]
+                        ][k] = ballast_types[-1]
+                    else:
+                        ballast_types.append("variable")
+
                     grid += self.wt_init["components"]["floating_platform"]["members"][i]["internal_structure"][
                         "ballasts"
                     ][k]["grid"]
@@ -458,6 +463,8 @@ class WindTurbineOntologyPython(object):
                     "grid_member_" + self.modeling_options["floating"]["members"]["name"][i]
                 ] = final_grid
                 self.modeling_options["floating"]["members"]["n_height"][i] = len(final_grid)
+
+            self.modeling_options["floating"]["members"]["ballast_types"] = set(ballast_types)
 
             # Store joint info
             self.modeling_options["floating"]["joints"]["name2idx"] = name2idx
