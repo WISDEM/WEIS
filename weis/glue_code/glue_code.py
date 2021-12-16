@@ -815,9 +815,11 @@ class WindPark(om.Group):
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:
 
-                # Compute AEP only if DLC 1.1 is used
+                # Connect computed AEP only if DLC 1.1 is used, otherwise use rotorse
                 if modeling_options['DLC_driver']['n_ws_dlc11'] > 0:
                     self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
+                else:
+                    self.connect('rotorse.rp.AEP', 'financese_post.turbine_aep')
 
                 self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
                 if modeling_options["flags"]["bos"]:

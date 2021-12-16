@@ -129,8 +129,19 @@ class Line():
         self.ypi= self.yp[0,:]
         self.zpi= self.zp[0,:]
         
+        # calculate the dynamic LBot !!!!!!! doesn't work for sloped bathymetry yet !!!!!!!!!!
+        for i in range(len(self.zp[0])):
+            if np.max(self.zp[:,i]) > self.zp[0,0]:
+                inode = i
+                break
+            else:
+                inode = i
+        self.LBotDyn = (inode-1)*self.L/(self.nNodes-1)
+        
         # get length (constant)
         self.L = np.sqrt( (self.xpi[-1]-self.xpi[0])**2 + (self.ypi[-1]-self.ypi[0])**2 + (self.zpi[-1]-self.zpi[0])**2 )
+        # ^^^^^^^ why are we changing the self.L value to not the unstretched length specified in MoorDyn?
+        # moved this below the dynamic LBot calculation because I wanted to use the original self.L
         
         
         # check for tension data <<<<<<<
@@ -389,6 +400,12 @@ class Line():
             list of axes and points on which the line can be plotted
         '''
         
+        if color == 'self':
+            color = self.color  # attempt to allow custom colors
+            lw = self.lw
+        else:
+            lw = 1
+        
         linebit = []  # make empty list to hold plotted lines, however many there are
     
         if self.isRod > 0:
@@ -423,10 +440,10 @@ class Line():
                     rgba = cmap_obj(color_ratio)    # return the rbga values of the colormap of where the node tension is
                     linebit.append(ax.plot(Xs[i:i+2], Ys[i:i+2], Zs[i:i+2], color=rgba, zorder=100))
             else:
-                linebit.append(ax.plot(Xs, Ys, Zs, color=color, zorder=100))
+                linebit.append(ax.plot(Xs, Ys, Zs, color=color, lw=lw, zorder=100))
             
             if shadow:
-                ax.plot(Xs, Ys, np.zeros_like(Xs)-self.sys.depth, color=[0.5, 0.5, 0.5, 0.2], zorder = 1.5) # draw shadow
+                ax.plot(Xs, Ys, np.zeros_like(Xs)-self.sys.depth, color=[0.5, 0.5, 0.5, 0.2], lw=lw, zorder = 1.5) # draw shadow
             
             if endpoints == True:
                 linebit.append(ax.scatter([Xs[0], Xs[-1]], [Ys[0], Ys[-1]], [Zs[0], Zs[-1]], color = color))
@@ -537,13 +554,19 @@ class Line():
             raise LineError("setEndPosition: endB value has to be either 1 or 0")
         
         
-    def staticSolve(self, reset=False, plots=0, tol=0.0001):
+    def staticSolve(self, reset=False, tol=0.0001, profiles=0):
         '''Solves static equilibrium of line. Sets the end forces of the line based on the end points' positions.
 
         Parameters
         ----------
         reset : boolean, optional
             Determines if the previous fairlead force values will be used for the catenary iteration. The default is False.
+
+        tol : float
+            Convergence tolerance for catenary solver measured as absolute error of x and z values in m.
+            
+        profiles : int
+            Values greater than 0 signal for line profile data to be saved (used for plotting, getting distributed tensions, etc).
 
         Raises
         ------
@@ -580,15 +603,15 @@ class Line():
             
         try:
             (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.sys.lineTypes[self.type].EA, self.sys.lineTypes[self.type].w, 
-                                                  CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=plots)   # call line model
+                                                  CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=profiles)   # call line model
         except CatenaryError as error:
             raise LineError(self.number, error.message)
             
         self.th = np.arctan2(dr[1],dr[0])  # probably a more efficient way to handle this <<<
         self.HF = info["HF"]
         self.VF = info["VF"]
-        self.KA = info["stiffnessA"]
-        self.KB = info["stiffnessB"]
+        self.KA2 = info["stiffnessA"]
+        self.KB2 = info["stiffnessB"]
         self.LBot = info["LBot"]
         self.info = info
             
@@ -601,7 +624,32 @@ class Line():
         self.TA = np.sqrt(fAH*fAH + fAV*fAV) # end tensions
         self.TB = np.sqrt(fBH*fBH + fBV*fBV)
         
-        if plots==1:
+        # ----- compute 3d stiffness matrix for both line ends (3 DOF + 3 DOF) -----
+        
+        # solve for required variables to set up the perpendicular stiffness. Keep it horizontal
+        #L_xy = np.linalg.norm(self.rB[:2] - self.rA[:2])
+        #T_xy = np.linalg.norm(self.fB[:2])
+        
+        # create the rotation matrix based on the heading angle that the line is from the horizontal
+        R = rotationMatrix(0,0,self.th)
+        
+        # initialize the line's analytic stiffness matrix in the "in-line" plane then rotate the matrix to be about the global frame [K'] = [R][K][R]^T
+        def from2Dto3Drotated(K2D, Kt):
+            K2 = np.array([[K2D[0,0], 0 , K2D[0,1]],
+                           [  0     , Kt,   0     ],
+                           [K2D[1,0], 0 , K2D[1,1]]])
+            return np.matmul(np.matmul(R, K2), R.T)
+        
+        self.KA  = from2Dto3Drotated(info['stiffnessA'], -fBH/LH)   # stiffness matrix describing reaction force on end A due to motion of end A
+        self.KB  = from2Dto3Drotated(info['stiffnessB'], -fBH/LH)   # stiffness matrix describing reaction force on end B due to motion of end B
+        self.KAB = from2Dto3Drotated(info['stiffnessAB'], fBH/LH)  # stiffness matrix describing reaction force on end B due to motion of end A
+                
+        #self.K6 = np.block([[ from2Dto3Drotated(self.KA),  from2Dto3Drotated(self.KAB.T)],
+        #                    [ from2Dto3Drotated(self.KAB), from2Dto3Drotated(self.KB)  ]])
+        
+        
+        
+        if profiles > 1:
             import matplotlib.pyplot as plt
             plt.plot(info['X'], info['Z'])
             plt.show()
@@ -669,13 +717,13 @@ class Line():
         Kt = T_xy/L_xy
         
         # initialize the line's analytic stiffness matrix in the "in-line" plane
-        KA = np.array([[self.KA[0,0], 0 , self.KA[0,1]],
+        KA = np.array([[self.KA2[0,0], 0 , self.KA2[0,1]],
                        [     0      , Kt,      0      ],
-                       [self.KA[1,0], 0 , self.KA[1,1]]])
+                       [self.KA2[1,0], 0 , self.KA2[1,1]]])
                        
-        KB = np.array([[self.KB[0,0], 0 , self.KB[0,1]],
+        KB = np.array([[self.KB2[0,0], 0 , self.KB2[0,1]],
                        [     0      , Kt,      0      ],
-                       [self.KB[1,0], 0 , self.KB[1,1]]])
+                       [self.KB2[1,0], 0 , self.KB2[1,1]]])
         
         # create the rotation matrix based on the heading angle that the line is from the horizontal
         R = rotationMatrix(0,0,self.th)
@@ -689,6 +737,8 @@ class Line():
     
     def getLineTens(self):
         '''Calls the catenary function to return the tensions of the Line for a quasi-static analysis'''
+
+        # >>> this can probably be done using data already generated by static Solve <<<
 
         depth = self.sys.depth
     
@@ -710,10 +760,65 @@ class Line():
         Ts = info["Te"]
         return Ts
     
-    
+
+    def getTension(self, s):
+        '''Returns tension at a given point along the line
+        
+        Parameters
+        ----------
+        
+        s : scalar or array-like
+            Value or array of values for the arc length along the line from end A to end B at which
+            the information is desired. Positive values are arc length in m, negative values are a
+            relative location where 0 is end A, -1 is end B, and -0.5 is the midpoint.
+        
+        Returns
+        -------
+        
+        tension value(s)
+        
+        '''
+        #if s < 0:
+        #    s = -s*self.L            
+        #if s > self.L:
+        #    raise ValueError('Specified arc length is larger than the line unstretched length.')
+        
+        Te = np.interp(s, self.info['s'], self.info['Te'])
+        
+        return Te
 
 
-
+    def getPosition(self, s):
+        '''Returns position at a given point along the line
+        
+        Parameters
+        ----------
+        
+        s : scalar or array-like
+            Value or array of values for the arc length along the line from end A to end B at which
+            the information is desired. Positive values are arc length in m, negative values are a
+            relative location where 0 is end A, -1 is end B, and -0.5 is the midpoint.
+        
+        Returns
+        -------
+        
+        position vector(s)
+        
+        '''
+        
+        # >>> should be merged with getLineCoords and getCoordinate functionality <<<
+        
+        x = np.interp(s, self.info['s'], self.info['X'])
+        z = np.interp(s, self.info['s'], self.info['Z'])
+        
+        
+        dr =  self.rB - self.rA                 
+        LH = np.hypot(dr[0], dr[1])
+        Xs = self.rA[0] + x*dr[0]/LH
+        Ys = self.rA[1] + x*dr[1]/LH
+        Zs = self.rA[2] + z
+        
+        return np.vstack([ Xs, Ys, Zs])
 
     
     

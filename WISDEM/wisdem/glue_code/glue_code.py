@@ -1,7 +1,6 @@
 import numpy as np
 
 import openmdao.api as om
-
 from wisdem.rotorse.rotor import RotorSE
 from wisdem.towerse.tower import TowerSE
 from wisdem.floatingse.floating import FloatingSE

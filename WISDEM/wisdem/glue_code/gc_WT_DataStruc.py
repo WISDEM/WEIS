@@ -5,8 +5,6 @@ import numpy as np
 from scipy.interpolate import PchipInterpolator, interp1d
 
 import openmdao.api as om
-from scipy.interpolate import PchipInterpolator, interp1d
-
 import wisdem.moorpy.MoorProps as mp
 from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.ccblade.Polar import Polar

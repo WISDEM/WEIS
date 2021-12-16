@@ -414,13 +414,12 @@ class FASTLoadCases(ExplicitComponent):
             self.FAST_lib = 'none'
 
         # Rotor power outputs
-        if modopt['DLC_driver']['n_ws_dlc11'] > 0:
-            self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
-            self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
-            self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
-            self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
-            self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
-            self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
+        self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
+        self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
+        self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
+        self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
+        self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
+        self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
         self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
@@ -1024,8 +1023,8 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['AeroDyn15']['af_data'][i][j]['Ctrl'] = 0.
                 fst_vt['AeroDyn15']['af_data'][i][j]['InclUAdata']= "True"
                 fst_vt['AeroDyn15']['af_data'][i][j]['alpha0']    = unsteady['alpha0']
-                fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = unsteady['alpha1']
-                fst_vt['AeroDyn15']['af_data'][i][j]['alpha2']    = unsteady['alpha2']
+                fst_vt['AeroDyn15']['af_data'][i][j]['alpha1']    = max(unsteady['alpha0'], unsteady['alpha1'])
+                fst_vt['AeroDyn15']['af_data'][i][j]['alpha2']    = min(unsteady['alpha0'], unsteady['alpha2'])
                 fst_vt['AeroDyn15']['af_data'][i][j]['eta_e']     = unsteady['eta_e']
                 fst_vt['AeroDyn15']['af_data'][i][j]['C_nalpha']  = unsteady['C_nalpha']
                 fst_vt['AeroDyn15']['af_data'][i][j]['T_f0']      = unsteady['T_f0']
@@ -1295,7 +1294,7 @@ class FASTLoadCases(ExplicitComponent):
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
             if len(idx) > 0:
-                joints_xyz[idx,2] -= 1e-2
+                joints_xyz[idx,2] = 1e-2
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
@@ -1463,30 +1462,44 @@ class FASTLoadCases(ExplicitComponent):
 
                 if StC_i['StC_X_DOF'] and StC_i['StC_Y_DOF'] and not StC_i['StC_Z_DOF']:
                     StC_i['StC_DOF_MODE']   = 2
-            
-                # Set position
-                StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
-                StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
-                StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                    StC_i['StC_XY_M']       = inputs['TMD_mass'][i_TMD]
+
+                # Compute spring offset for each direction, initializing
+                g = modopt['Level3']['simulation']['Gravity']
+                spring_offset = np.zeros(3)
                 
                 # Set Mass, Stiffness, Damping only in DOFs enabled
-                if StC_i['StC_X_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                if StC_i['StC_X_DOF']:
                     StC_i['StC_X_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_X_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_X_C'] = inputs['TMD_damping'][i_TMD]
-                elif StC_i['StC_Y_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+                
+                if StC_i['StC_Y_DOF']:
                     StC_i['StC_Y_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_Y_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_Y_C'] = inputs['TMD_damping'][i_TMD]
-                elif StC_i['StC_Z_DOF'] and not StC_i['StC_DOF_MODE'] == 2:
+
+                if StC_i['StC_Z_DOF']:
                     StC_i['StC_Z_M'] = inputs['TMD_mass'][i_TMD]
                     StC_i['StC_Z_K'] = inputs['TMD_stiffness'][i_TMD]
                     StC_i['StC_Z_C'] = inputs['TMD_damping'][i_TMD]
-                elif StC_i['StC_DOF_MODE'] == 2:
-                    StC_i['StC_XY_M']  = inputs['TMD_mass'][i_TMD]
-                    # XY stiffnesses, damping equal for now
-                    StC_i['StC_X_K'] = StC_i['StC_Y_K']  = inputs['TMD_stiffness'][i_TMD]
-                    StC_i['StC_X_C'] = StC_i['StC_Y_C']  = inputs['TMD_damping'][i_TMD]
+                    spring_offset[2] = StC_i['StC_Z_M'] * g / StC_i['StC_Z_K']
+
+                # Set position
+                if modopt['TMDs']['preload_spring'][i_TMD]:
+                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0] + spring_offset[0]
+                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1] + spring_offset[1]
+                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2] + spring_offset[2]
+
+                    StC_i['StC_X_DSP']  = -spring_offset[0]
+                    StC_i['StC_Y_DSP']  = -spring_offset[1]
+                    StC_i['StC_Z_DSP']  = -spring_offset[2]
+
+                else:
+                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
+                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
+                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                    
 
                 if modopt['TMDs']['component'][i_TMD] == 'tower':
                     fst_vt['ServoDyn']['NumTStC'] += 1
@@ -1635,6 +1648,7 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
+        shutdown_start = np.full(dlc_generator.n_cases, fill_value = 9999)
         WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
@@ -1707,8 +1721,9 @@ class FASTLoadCases(ExplicitComponent):
                     rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
                     pitch_initial[i_case]       = 15
             else:
-                rot_speed_initial[i_case] = 0.
-                pitch_initial[i_case] = 90.
+                rot_speed_initial[i_case]   = 0.
+                pitch_initial[i_case]       = 90.
+                shutdown_start[i_case]      = 0
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
@@ -1742,6 +1757,11 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
+        # Inptus to ServoDyn (parking)
+        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
+        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
+        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
+
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
@@ -1926,8 +1946,10 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['flags']['monopile'] and modopt['Level3']['flag']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
 
+        # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
+        outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
+
         if modopt['DLC_driver']['n_ws_dlc11'] > 0 and bool(self.fst_vt['Fst']['CompAero']):
-            outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
             outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
@@ -2210,13 +2232,23 @@ class FASTLoadCases(ExplicitComponent):
             outputs['pitch_out']   = perf_data['BldPitch1']['mean']
             outputs['AEP']         = AEP
         else:
-            outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
-            outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
-            outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
-            outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
-            if self.fst_vt['Fst']['CompServo'] == 1:
-                outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
-            print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+            # If DLC 1.1 was run
+            if len(stats_pwrcrv['GenPwr']['mean']): 
+                outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
+                outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
+                outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
+                outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
+                if self.fst_vt['Fst']['CompServo'] == 1:
+                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+            else:
+                outputs['Cp_out']      = sum_stats['RtAeroCp']['mean'].mean()
+                outputs['AEP']         = sum_stats['GenPwr']['mean'].mean()
+                outputs['Omega_out']   = sum_stats['RotSpeed']['mean'].mean()
+                outputs['pitch_out']   = sum_stats['BldPitch1']['mean'].mean()
+                if self.fst_vt['Fst']['CompServo'] == 1:
+                    outputs['P_out']       = sum_stats['GenPwr']['mean'][0] * 1.e3
+                print('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
         outputs['V_out']       = np.unique(U)
 
@@ -2231,7 +2263,7 @@ class FASTLoadCases(ExplicitComponent):
         for k in range(dlc_generator.n_cases):
             U[k] = dlc_generator.cases[k].URef
             
-            if dlc_generator.cases[k].label in ['1.2', '6.4']:
+            if dlc_generator.cases[k].label in ['1.1', '6.4']:
                 ifat.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
@@ -2322,22 +2354,20 @@ class FASTLoadCases(ExplicitComponent):
             - sum_stats : pd.DataFrame
         '''
 
-        if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
+        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            print(sum_stats['PtfmPitch']['std'])   # for debugging
+            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+        else:
             # Let's just average the standard deviation of PtfmPitch for now
             # TODO: weight based on WS distribution, or something else
-            print("sum_stats['PtfmPitch']['std']:")   # for debugging
+            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
             print(sum_stats['PtfmPitch']['std'])   # for debugging
             outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
-        if self.options['opt_options']['constraints']['control']['Max_PtfmPitch']['flag']:
-            print("sum_stats['PtfmPitch']['max']:")  # for debugging
-            print(sum_stats['PtfmPitch']['max'])  # for debugging
-            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+        outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
-        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            print("sum_stats['PtfmPitch']['std']:")   # for debugging
-            print(sum_stats['PtfmPitch']['std'])   # for debugging
-            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+        
 
         return outputs, discrete_outputs
 

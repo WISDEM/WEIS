@@ -1,0 +1,23 @@
+general:
+    folder_output: outputs
+    fname_output: refturb_output
+
+
+# design_variables:
+#     TMDs:
+#         flag: True
+#         groups:
+#             - names: [tower_TMD]
+#               mass:
+#                 lower_bound: 200
+#                 upper_bound: 5628
+
+
+driver:
+  optimization:
+    flag: False           # Flag to enable optimization
+  design_of_experiments:
+    flag: False            # Flag to enable design of experiments
+    run_parallel: False    # Flag to run using parallel processing
+    generator: FullFact    # Type of input generator. (Uniform)
+    num_samples: 2        # number of samples for (Uniform only)
