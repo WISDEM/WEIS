@@ -196,8 +196,8 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
-        rosco_init_options['omega_pc']    = list_check(inputs['omega_pc'], return_bool=False)
-        rosco_init_options['zeta_pc']     = list_check(inputs['zeta_pc'], return_bool=False)
+        rosco_init_options['omega_pc']    = inputs['omega_pc'].tolist()
+        rosco_init_options['zeta_pc']     = inputs['zeta_pc'].tolist()
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
         rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
@@ -339,13 +339,8 @@ class TuneROSCO(ExplicitComponent):
             controller.omega_pc = self.sd.omegas
             controller.zeta_pc = np.ones(len(self.sd.omegas)) * controller.zeta_pc
 
-            print("controller.omega_pc = {}".format(controller.omega_pc))
-            print("controller.zeta_pc = {}".format(controller.zeta_pc))
-
         # Tune Controller!
         controller.tune_controller(WISDEM_turbine)
-        print("controller.pc_gain_schedule.Kp = {}".format(controller.pc_gain_schedule.Kp))
-        print("controller.pc_gain_schedule.Ki = {}".format(controller.pc_gain_schedule.Ki))
 
         # DISCON Parameters
         #   - controller
