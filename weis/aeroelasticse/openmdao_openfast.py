@@ -1962,7 +1962,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating']:
-            outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
+            outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,
                                                                    outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
@@ -2380,7 +2380,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
-    def get_floating_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+    def get_floating_measures(self,sum_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         '''
         calculate floating measures:
             - Std_PtfmPitch (max over all dlcs if constraint, mean otheriwse)
@@ -2391,21 +2391,18 @@ class FASTLoadCases(ExplicitComponent):
         '''
 
         if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
-            print(sum_stats['PtfmPitch']['std'])   # for debugging
             outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
         else:
             # Let's just average the standard deviation of PtfmPitch for now
             # TODO: weight based on WS distribution, or something else
-            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
-            print(sum_stats['PtfmPitch']['std'])   # for debugging
             outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
-        # TODO: add max offset here
-
-        
+        # Max platform offset        
+        for timeseries in chan_time:
+            max_offset_ts = np.sqrt(timeseries['PtfmSurge']**2 + timeseries['PtfmSway']**2).max()
+            outputs['Max_Offset'] = np.r_[outputs['Max_Offset'],max_offset_ts].max()
 
         return outputs, discrete_outputs
 
