@@ -51,6 +51,7 @@ class RAFT_WEIS(om.Group):
         members_opt['shape'] = ['circ']*members_opt['nmembers']
         members_opt['scalar_thicknesses'] = members_opt['scalar_diameters'] = [False]*members_opt['nmembers']
         members_opt['scalar_coefficients'] = [False]*members_opt['nmembers']
+        members_opt['n_ballast_type'] = len(weis_opt["floating"]["members"]["ballast_types"])
 
         mooring_opt = {}
         mooring_opt['nlines'] = weis_opt['mooring']['n_lines']
@@ -248,9 +249,9 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             l_fill = np.zeros(s_grid.size-1)
             rho_fill = np.zeros(s_grid.size-1)
             for ii in range(s_ballast.shape[0]):
-                iball = np.where(s_ballast[ii,0] >= s_grid)[0][0]
+                iball = np.where(s_ballast[ii,0] >= s_grid)[0][-1]
                 rho_fill[iball] = rho_ballast[ii]
-                l_fill[iball] = h_ballast[ii] if rho_ballast[ii] < 1100.0 else var_height[k]
+                l_fill[iball] = h_ballast[ii] if rho_ballast[ii] > 1100.0 else var_height[k]
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
 

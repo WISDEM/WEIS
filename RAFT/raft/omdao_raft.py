@@ -45,6 +45,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         member_scalar_t = members_opt['scalar_thicknesses']
         member_scalar_d = members_opt['scalar_diameters']
         member_scalar_coeff = members_opt['scalar_coefficients']
+        n_ballast_type = members_opt['n_ballast_type']
 
         mooring_opt = self.options['mooring_options']
         nlines = mooring_opt['nlines']
@@ -235,14 +236,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
         # outputs
         # properties
-        nballast = np.sum(member_npts_rho_fill)
         self.add_output('properties_tower mass', units='kg', desc='Tower mass')
         self.add_output('properties_tower CG', val=np.zeros(ndim), units='m', desc='Tower center of gravity')
         self.add_output('properties_substructure mass', val=0.0, units='kg', desc='Substructure mass')
         self.add_output('properties_substructure CG', val=np.zeros(ndim), units='m', desc='Substructure center of gravity')
         self.add_output('properties_shell mass', val=0.0, units='kg', desc='Shell mass')
-        self.add_output('properties_ballast mass', val=np.zeros(nballast), units='m', desc='Ballast mass')
-        self.add_output('properties_ballast densities', val=np.zeros(nballast), units='kg', desc='Ballast densities')
+        self.add_output('properties_ballast mass', val=np.zeros(n_ballast_type), units='m', desc='Ballast mass')
+        self.add_output('properties_ballast densities', val=np.zeros(n_ballast_type), units='kg', desc='Ballast densities')
         self.add_output('properties_total mass', val=0.0, units='kg', desc='Total mass of system')
         self.add_output('properties_total CG', val=np.zeros(ndim), units='m', desc='Total system center of gravity')
         self.add_output('properties_roll inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Roll inertia sub CG')
