@@ -766,7 +766,7 @@ class FOWT():
         results['Mbase_avg'][iCase] = m_turbine*self.g * hArm*np.sin(Xi0[4]) + transformForce(self.F_aero0, offset=[0,0,-hArm])[4] # mean moment from weight and thrust
         results['Mbase_std'][iCase] = dynamic_moment_RMS
         results['Mbase_PSD'][iCase,:] = getPSD(dynamic_moment)
-        #results['Mbase_max'][iCase]
+        results['Mbase_max'][iCase] = results['Mbase_avg'][iCase] + 3*results['Mbase_std'][iCase]
         #results['Mbase_DEL'][iCase]
         
         

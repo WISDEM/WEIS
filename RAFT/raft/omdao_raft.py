@@ -130,6 +130,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input("rho_water", val=1025.0, units="kg/m**3", desc="Density of sea water")
         self.add_input("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
         self.add_input("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+        self.add_input('rated_rotor_speed', val=0.0, units='rpm',  desc='rotor rotation speed at rated')
 
         # DLCs
         self.add_discrete_input('raft_dlcs', val=[[]]*n_cases, desc='DLC case table for RAFT with each row a new case and headings described by the keys')
@@ -294,12 +295,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('stats_wave_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wave input')
         
         # Aggregate outputs
-        self.add_output('max_offset', val = 0, desc = 'Maximum distance in surge/sway direction', units = 'm') 
+        self.add_output('Max_Offset', val = 0, desc = 'Maximum distance in surge/sway direction', units = 'm') 
         self.add_output('heave_avg', val = 0, desc = 'Average heave over all cases', units = 'm') 
-        self.add_output('max_pitch', val = 0, desc = 'Maximum platform pitch over all cases', units = 'deg') 
+        self.add_output('Max_PtfmPitch', val = 0, desc = 'Maximum platform pitch over all cases', units = 'deg') 
+        self.add_output('Std_PtfmPitch', val = 0, desc = 'Average platform pitch std. over all cases', units = 'deg') 
         self.add_output('max_nacelle_Ax', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
-        self.add_output('max_gen_speed', val = 0, desc = 'Maximum generator speed over all cases', units = 'rpm') 
-        self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'Nm') 
+        self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
+        self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
                 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -630,11 +632,12 @@ class RAFT_OMDAO(om.ExplicitComponent):
             outputs['stats_'+n] = results['case_metrics'][n]
 
         # Compute some aggregate outputs manually
-        outputs['max_offset'] = np.sqrt(outputs['stats_surge_max']**2 + outputs['stats_sway_max']**2).max()
+        outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max']**2 + outputs['stats_sway_max']**2).max()
         outputs['heave_avg'] = outputs['stats_heave_avg'].mean()
-        outputs['max_pitch'] = outputs['stats_pitch_max'].max()
+        outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'].max()
+        outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'].mean()
         outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_max'].max()
-        outputs['max_gen_speed'] = outputs['stats_omega_max'].max() * design['turbine']['gear_ratio']
+        outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
         print('here')
 

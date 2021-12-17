@@ -483,6 +483,7 @@ class FASTLoadCases(ExplicitComponent):
         # Floating outputs
         self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
         self.add_output('Std_PtfmPitch', val=0.0, units='deg', desc='standard deviation of platform pitch angle')
+        self.add_output('Max_Offset', val=0.0, units='m', desc='Maximum distance in surge/sway direction')
 
         # Fatigue output
         self.add_output('damage_blade_root_sparU', val=0.0, desc="Miner's rule cumulative damage to upper spar cap at blade root")
@@ -2366,6 +2367,8 @@ class FASTLoadCases(ExplicitComponent):
             outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+
+        # TODO: add max offset here
 
         
 

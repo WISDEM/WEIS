@@ -349,14 +349,29 @@ properties:
                                 default: False
                                 description: Use the logarithm of damage as the constraint.
 
-        openfast_failed:
-            type: object
-            default: {}
-            properties:
-                flag:
-                    type: boolean
-                    description: Constrain design to one where OpenFAST simulations don't fail_value
-                    default: False
+            openfast_failed:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain design to one where OpenFAST simulations don't fail_value
+                        default: False
+
+            Max_Offset:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain maximum offset of platform from equilibrium point
+                        default: False
+                    max:
+                        type: number
+                        default: 20
+                        minimum: 0.0
+                        maximum: 20000.0
+                        unit: m
 
     
 

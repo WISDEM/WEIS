@@ -242,6 +242,8 @@ class WindPark(om.Group):
             self.connect('rotorse.rp.powercurve.rated_V',       'raft.Vrated')
             self.connect('control.V_in',                    'raft.V_cutin')
             self.connect('control.V_out',                   'raft.V_cutout')
+            self.connect('rotorse.rp.powercurve.rated_Omega',     'raft.rated_rotor_speed')
+
             if modeling_options["flags"]["blade"]:
                 self.connect("configuration.n_blades", "raft.nBlades")
                 self.connect("hub.cone", "raft.precone")

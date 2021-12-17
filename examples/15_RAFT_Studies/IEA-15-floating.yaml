@@ -581,10 +581,10 @@ components:
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 400
-                      grid: [0.0, 0.10]
+                      volume: 800
+                      grid: [0.0, 0.25]
                     - variable_flag: True
-                      grid: [0.10, 0.4]
+                      grid: [0.25, 0.4]
               axial_joints:
                 - name: col1_upper_pontoon
                   grid: 0.987
