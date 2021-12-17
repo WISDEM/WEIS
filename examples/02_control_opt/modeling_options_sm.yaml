@@ -73,7 +73,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         RdtnMod: 1
         PotMod: 1
         DiffQTF: 0
-        PotFile: /Users/nabbas/Documents/WindEnergyToolbox/WEIS/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
     InflowWind:
         RefHt: 150.0
@@ -97,7 +97,7 @@ ROSCO:
     Kp_float: -10
     linmodel_tuning:
         type: robust #'robust or simulation'
-        linfile_path: /Users/nabbas/Documents/WindEnergyToolbox/WEIS/ROSCO/Test_Cases/IEA-15-240-RWT-UMaineSemi/linearizations
+        linfile_path: ../../ROSCO/Test_Cases/IEA-15-240-RWT-UMaineSemi/linearizations
         lintune_outpath: rs_outfiles
         load_parallel: True
         stability_margin: 0.1
