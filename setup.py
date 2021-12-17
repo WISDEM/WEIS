@@ -3,9 +3,8 @@ import sys
 import platform
 import multiprocessing
 from distutils.core import run_setup
-from setuptools import find_packages
-from numpy.distutils.command.build_ext import build_ext
-from numpy.distutils.core import setup, Extension
+from setuptools import find_packages, setup, Extension
+from setuptools.command.build_ext import build_ext
 from io import open
 
 # Global constants
