@@ -293,7 +293,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('stats_wind_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wind input')
         self.add_output('stats_wave_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wave input')
         
-
+        # Aggregate outputs
+        self.add_output('max_offset', val = 0, desc = 'Maximum distance in surge/sway direction', units = 'm') 
+        self.add_output('heave_avg', val = 0, desc = 'Average heave over all cases', units = 'm') 
+        self.add_output('max_pitch', val = 0, desc = 'Maximum platform pitch over all cases', units = 'deg') 
+        self.add_output('max_nacelle_Ax', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
+        self.add_output('max_gen_speed', val = 0, desc = 'Maximum generator speed over all cases', units = 'rpm') 
+        self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'Nm') 
                 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -622,4 +628,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:
             outputs['stats_'+n] = results['case_metrics'][n]
+
+        # Compute some aggregate outputs manually
+        outputs['max_offset'] = np.sqrt(outputs['stats_surge_max']**2 + outputs['stats_sway_max']**2).max()
+        outputs['heave_avg'] = outputs['stats_heave_avg'].mean()
+        outputs['max_pitch'] = outputs['stats_pitch_max'].max()
+        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_max'].max()
+        outputs['max_gen_speed'] = outputs['stats_omega_max'].max() * design['turbine']['gear_ratio']
+        outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
+        print('here')
 
