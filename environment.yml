@@ -23,7 +23,7 @@ dependencies:
   - pyside2
   - pytest
   - pytest-cov
-  - python
+#  - python
   - python-benedict
   - pyyaml
   - ruamel_yaml
