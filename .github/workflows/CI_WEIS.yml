@@ -35,7 +35,7 @@ jobs:
           python-version: 3.8
           conda-channels: conda-forge
           activate-conda: true
-      - run: conda env update -n base --file environment.yml
+      - run: conda env update --file environment.yml
 
       #- name: Show custom environment
       #  shell: bash
@@ -65,8 +65,8 @@ jobs:
             conda list
 
       # Debugging session
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
           
       # Install WEIS
       - name: Install WEIS
