@@ -101,9 +101,6 @@ ROSCO:
         lintune_outpath: rs_outfiles
         load_parallel: True
         stability_margin: 0.1
-        omega_pc:
-            max: 0.2
-            min: 0.0
 
 
 
