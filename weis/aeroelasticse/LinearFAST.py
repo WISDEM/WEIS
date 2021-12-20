@@ -139,17 +139,16 @@ class LinearFAST(runFAST_pywrapper_batch):
         else:       # if using fst_vt inputs from openfast_openmdao
             rosco_inputs = self.fst_vt['DISCON_in']
 
-        # TODO: check this in below rated wind_speeds
         k_opt           = rosco_inputs['VS_Rgn2K']/ (30 / np.pi)**2  # openfast units
-        omega_rated_rpm = rosco_inputs['PC_RefSpd'] * 30 / np.pi * .9  # rpm, include slip percent
+        omega_rated_rpm = rosco_inputs['PC_RefSpd'] * 30 / np.pi * 0.9  # rpm, offset so torque not active above rated, someday do a pseudo setpoint-smoother here
 
         if k_opt * omega_rated_rpm ** 2 > rosco_inputs['VS_RtTq']:
             print('LinearFAST WARNING: need to rescale VS_Rgn2K to be legal in openfast')
-            k_opt = rosco_inputs['VS_RtTq'] / omega_rated_rpm ** 2
+            k_opt = 0.99 * rosco_inputs['VS_RtTq'] / omega_rated_rpm ** 2  # include slight reduction in k_opt so it always works
 
-        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[omega_rated_rpm], 'group':0}  # convert to rpm and use 95% of rated
+        case_inputs[("ServoDyn","VS_RtGnSp")] = {'vals':[omega_rated_rpm], 'group':0}  
         case_inputs[("ServoDyn","VS_RtTq")] = {'vals':[rosco_inputs['VS_RtTq']], 'group':0}
-        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[k_opt] , 'group':0}  # reduce so k\omega^2 < VS_RtTq
+        case_inputs[("ServoDyn","VS_Rgn2K")] = {'vals':[k_opt] , 'group':0}  
         case_inputs[("ServoDyn","VS_SlPc")] = {'vals':[10.], 'group':0}
 
         # set initial pitch to fine pitch
