@@ -9,7 +9,7 @@ from ROSCO_toolbox import controller as ROSCO_controller
 from ROSCO_toolbox import turbine as ROSCO_turbine
 from ROSCO_toolbox.inputs.validation import load_rosco_yaml
 from ROSCO_toolbox.linear.robust_scheduling import rsched_driver
-from ROSCO_toolbox.utilities import list_check
+from ROSCO_toolbox.utilities import list_check, DISCON_dict
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
@@ -234,13 +234,16 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rated_rotor_speed   = float(inputs['rated_rotor_speed'])
         WISDEM_turbine.rated_power  = float(inputs['rated_power'])
         WISDEM_turbine.rated_torque = float(inputs['rated_torque']) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency'])
+        WISDEM_turbine.max_torque   = WISDEM_turbine.rated_torque * 1.1  # TODO: make this an input if studying constant power
         WISDEM_turbine.v_rated      = float(inputs['rated_rotor_speed'])*float(inputs['R']) / float(inputs['tsr_operational'])
         WISDEM_turbine.v_min        = float(inputs['v_min'])
         WISDEM_turbine.v_max        = float(inputs['v_max'])
         WISDEM_turbine.max_pitch_rate   = float(inputs['max_pitch_rate'])
+        WISDEM_turbine.min_pitch_rate   = -float(inputs['max_pitch_rate'])
         WISDEM_turbine.TSR_operational  = float(inputs['tsr_operational'])
         WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'])
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
+        WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
         # Floating Feedback Filters
         rosco_init_options['twr_freq']      = float(inputs['twr_freq'])
@@ -304,6 +307,10 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
             WISDEM_turbine.bld_flapwise_damp = self.modeling_options['ROSCO']['Bld_FlpDamp']
 
+        else: 
+            WISDEM_turbine.bld_flapwise_freq = 0 
+            WISDEM_turbine.bld_flapwise_damp = 1 
+
         # Instantiate controller
         controller = ROSCO_controller.Controller(rosco_init_options)
 
@@ -343,67 +350,10 @@ class TuneROSCO(ExplicitComponent):
         controller.tune_controller(WISDEM_turbine)
 
         # DISCON Parameters
-        #   - controller
-        ROSCO_input = {}
-        ROSCO_input['LoggingLevel'] = controller.LoggingLevel
-        ROSCO_input['F_LPFType'] = controller.F_LPFType
-        ROSCO_input['F_NotchType'] = controller.F_NotchType
-        ROSCO_input['IPC_ControlMode'] = controller.IPC_ControlMode
-        ROSCO_input['VS_ControlMode'] = controller.VS_ControlMode
-        ROSCO_input['PC_ControlMode'] = controller.PC_ControlMode
-        ROSCO_input['Y_ControlMode'] = controller.Y_ControlMode
-        ROSCO_input['SS_Mode'] = controller.SS_Mode
-        ROSCO_input['WE_Mode'] = controller.WE_Mode
-        ROSCO_input['PS_Mode'] = controller.PS_Mode
-        ROSCO_input['SD_Mode'] = controller.SD_Mode
-        ROSCO_input['Fl_Mode'] = controller.Fl_Mode
-        ROSCO_input['Flp_Mode'] = controller.Flp_Mode
-        ROSCO_input['F_LPFDamping'] = controller.F_LPFDamping
-        ROSCO_input['F_SSCornerFreq'] = controller.ss_cornerfreq
-        ROSCO_input['PC_GS_angles'] = controller.pitch_op_pc
-        ROSCO_input['PC_GS_KP'] = controller.pc_gain_schedule.Kp
-        ROSCO_input['PC_GS_KI'] = controller.pc_gain_schedule.Ki
-        ROSCO_input['PC_MaxPit'] = controller.max_pitch
-        ROSCO_input['PC_MinPit'] = controller.min_pitch
-        ROSCO_input['IPC_Ki'] = float(inputs['IPC_Ki1p'])
-        ROSCO_input['VS_MinOMSpd'] = controller.vs_minspd
-        ROSCO_input['VS_Rgn2K'] = controller.vs_rgn2K
-        ROSCO_input['VS_RefSpd'] = controller.vs_refspd
-        ROSCO_input['VS_KP'] = controller.vs_gain_schedule.Kp
-        ROSCO_input['VS_KI'] = controller.vs_gain_schedule.Ki
-        ROSCO_input['SS_VSGain'] = controller.ss_vsgain
-        ROSCO_input['SS_PCGain'] = controller.ss_pcgain
-        ROSCO_input['WE_FOPoles_N'] = len(controller.v)
-        ROSCO_input['WE_FOPoles_v'] = controller.v
-        ROSCO_input['WE_FOPoles'] = controller.A
-        ROSCO_input['ps_wind_speeds'] = controller.v
-        ROSCO_input['PS_BldPitchMin'] = controller.ps_min_bld_pitch
-        ROSCO_input['SD_MaxPit'] = controller.sd_maxpit + 0.1
-        ROSCO_input['SD_CornerFreq'] = controller.sd_cornerfreq
-        ROSCO_input['Fl_Kp'] = controller.Kp_float
-        ROSCO_input['Flp_Kp'] = controller.Kp_flap
-        ROSCO_input['Flp_Ki'] = controller.Ki_flap
-        ROSCO_input['Flp_MaxPit'] = controller.flp_maxpit
-        ROSCO_input['Flp_Angle'] = 0.
-        
-        # - turbine
-        ROSCO_input['WE_BladeRadius'] = WISDEM_turbine.rotor_radius
+        ROSCO_input = DISCON_dict(WISDEM_turbine,controller)
+
+        # Cp table info
         ROSCO_input['v_rated'] = float(inputs['v_rated'])
-        ROSCO_input['F_FlpCornerFreq']  = [float(inputs['flap_freq']) * 2 * np.pi / 3., 0.7]
-        ROSCO_input['F_LPFCornerFreq']  = float(inputs['edge_freq']) * 2 * np.pi / 4.
-        ROSCO_input['F_NotchCornerFreq'] = float(inputs['twr_freq'])
-        ROSCO_input['F_FlCornerFreq'] = [float(inputs['ptfm_freq']), 0.707] 
-        ROSCO_input['PC_MaxRat'] = WISDEM_turbine.max_pitch_rate
-        ROSCO_input['PC_MinRat'] = -WISDEM_turbine.max_pitch_rate
-        ROSCO_input['VS_MaxRat'] = WISDEM_turbine.max_torque_rate
-        ROSCO_input['PC_RefSpd'] = WISDEM_turbine.rated_rotor_speed * WISDEM_turbine.Ng
-        ROSCO_input['VS_RtPwr'] = WISDEM_turbine.rated_power
-        ROSCO_input['VS_RtTq'] = WISDEM_turbine.rated_torque
-        ROSCO_input['VS_MaxTq'] = WISDEM_turbine.rated_torque * 1.1
-        ROSCO_input['VS_TSRopt'] = WISDEM_turbine.TSR_operational
-        ROSCO_input['WE_RhoAir'] = WISDEM_turbine.rho
-        ROSCO_input['WE_GearboxRatio'] = WISDEM_turbine.Ng
-        ROSCO_input['WE_Jtot'] = WISDEM_turbine.J
         ROSCO_input['Cp_pitch_initial_rad'] = self.pitch_vector
         ROSCO_input['Cp_TSR_initial'] = self.tsr_vector
         ROSCO_input['Cp_table'] = WISDEM_turbine.Cp_table
