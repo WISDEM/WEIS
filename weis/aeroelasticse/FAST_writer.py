@@ -1306,8 +1306,8 @@ class InputWriter_OpenFAST(object):
         turbine.Cq_table                = self.fst_vt['DISCON_in']['Cq_table']
         turbine.pitch_initial_rad       = self.fst_vt['DISCON_in']['Cp_pitch_initial_rad']
         turbine.TSR_initial             = self.fst_vt['DISCON_in']['Cp_TSR_initial']
-        turbine.TurbineName             = self.fst_vt['description']
-        
+        turbine.TurbineName             = 'WEIS Turbine'
+
         # Define DISCON infile paths
         self.fst_vt['ServoDyn']['DLL_InFile'] = self.FAST_namingOut + '_DISCON.IN'
         discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
