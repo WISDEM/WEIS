@@ -6,7 +6,7 @@ design_variables:
     servo:
       pitch_control:
           omega:
-            flag: True
+            flag: False
             min: 0.1
             max: 0.5
           zeta:
@@ -36,7 +36,7 @@ constraints:
 
 driver:
   optimization:
-    flag: False
+    flag: True
     tol: 1.e-2            # Optimality tolerance
     max_major_iter: 2     # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
@@ -45,7 +45,7 @@ driver:
     step_size: 1.e-3      # Step size for finite differencing
     form: forward         # Finite differencing mode, either forward or central
   design_of_experiments:
-    flag: True            # Flag to enable design of experiments
+    flag: False            # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing
     generator: LatinHypercube    # Type of input generator. (Uniform)
     num_samples: 2        # number of samples for (Uniform only)

@@ -89,7 +89,7 @@ ROSCO:
     tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
     zeta_pc: 1.2
     omega_pc: 0.2
-    U_pc: [12, 13, 14, 15, 18]
+    U_pc: [12]
     zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     omega_vs: 0.12  
     twr_freq: 3.2
