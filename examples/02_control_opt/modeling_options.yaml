@@ -73,7 +73,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         RdtnMod: 1
         PotMod: 1
         DiffQTF: 0
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
     InflowWind:
         RefHt: 150.0
