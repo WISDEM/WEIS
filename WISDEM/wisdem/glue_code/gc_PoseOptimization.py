@@ -429,7 +429,7 @@ class PoseOptimization(object):
             wt_opt.model.add_objective("rotorse.re.precomp.blade_mass", ref=1.0e4)
 
         elif self.opt["merit_figure"] == "LCOE":
-            wt_opt.model.add_objective("financese.lcoe", ref=0.1)
+            wt_opt.model.add_objective("financese_post.lcoe", ref=0.1)
 
         elif self.opt["merit_figure"] == "blade_tip_deflection":
             wt_opt.model.add_objective("tcons.tip_deflection_ratio")

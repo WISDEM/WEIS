@@ -72,7 +72,7 @@ class PlatformFrame(om.ExplicitComponent):
         self.add_output("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
         self.add_output("platform_elem_sigma_y", NULL * np.ones(NELEM_MAX), units="Pa")
-        self.add_discrete_output("platform_elem_memid", [-1] * NELEM_MAX)
+        self.add_output("platform_elem_memid", -1 * np.ones(NELEM_MAX))
         self.add_output("platform_displacement", 0.0, units="m**3")
         self.add_output("platform_center_of_buoyancy", np.zeros(3), units="m")
         self.add_output("platform_hull_center_of_mass", np.zeros(3), units="m")
@@ -88,13 +88,13 @@ class PlatformFrame(om.ExplicitComponent):
 
         self.node_mem2glob = {}
 
-    def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def compute(self, inputs, outputs):
         # Seems like we have to run this each time as numbering can change during optimization
         self.node_mem2glob = {}
         self.set_connectivity(inputs, outputs)
 
         self.set_node_props(inputs, outputs)
-        self.set_element_props(inputs, outputs, discrete_inputs, discrete_outputs)
+        self.set_element_props(inputs, outputs)
 
     def set_connectivity(self, inputs, outputs):
         # Load in number of members
@@ -180,7 +180,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_Fnode"] = NULL * np.ones((NNODES_MAX, 3))
         outputs["platform_Fnode"][:nnode, :] = Fnode
 
-    def set_element_props(self, inputs, outputs, discrete_inputs, discrete_outputs):
+    def set_element_props(self, inputs, outputs):
         # Load in number of members
         opt = self.options["options"]
         n_member = opt["floating"]["members"]["n_members"]
@@ -314,7 +314,7 @@ class PlatformFrame(om.ExplicitComponent):
         outputs["platform_elem_E"][:nelem] = elem_E
         outputs["platform_elem_G"][:nelem] = elem_G
         outputs["platform_elem_sigma_y"][:nelem] = elem_sigy
-        discrete_outputs["platform_elem_memid"] = elem_memid
+        outputs["platform_elem_memid"][:nelem] = elem_memid
 
         outputs["platform_ballast_mass"] = m_ball
         outputs["platform_hull_mass"] = mass - m_ball
