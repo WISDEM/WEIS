@@ -28,9 +28,9 @@ import openmdao.api as om
 from wisdem.plant_financese.plant_finance import PlantFinance
 
 
-def Calc_rho(mydir):
+def Calc_DV(mydir):
     
-    sql_path = mydir + os.sep + "outputs" + os.sep + "log_opt_FF.sql"
+    sql_path = mydir + os.sep + "outputs" + os.sep + "EAB_sens" + os.sep + "log_opt.sql"
     
     cr = om.CaseReader(sql_path)
     
@@ -65,12 +65,12 @@ def Calc_LCOE(Turbine_Cost,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf):
         prob.set_val("turbine_number", 1)
         prob.set_val("opex_per_kW", opex_per_kW, units="USD/kW/yr")
         prob.set_val("fixed_charge_rate", fcr)
-        prob.set_val("bos_per_kW", bos_per_kW, units="USD/kW")
+        prob.set_val("bos_per_kW", bos_per_kW[i]/MR, units="USD/MW")
         prob.set_val("wake_loss_factor", wlf)
-        prob.set_val("turbine_aep", AEP[i], units="MW*h")
+        prob.set_val("turbine_aep", AEP[i], units="kW*h")
         
         prob.run_model()
-        lcoe[i] = prob.get_val('lcoe')
+        lcoe[i] = prob.get_val('lcoe',units = 'USD/kW/h')
         
     prob.model.list_inputs(units=True)
     prob.model.list_outputs(units=True)
@@ -103,11 +103,12 @@ def Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options,rho):
     ncase  = len(rho)
     
     Turbine_Cost = np.zeros((ncase,))
+    bos_Cost = np.zeros((ncase,))
     
     for i in range(ncase): 
         
 
-        TM["materials"][1]["rho"] = rho[i]
+        TM["components"]["floating_platform"]["members"][0]["internal_structure"]["ballasts"][0]["volume"] = rho[i]
         myopt = PoseOptimizationWISDEM(TM, MO, AO)
         #breakpoint()
         # initialize the open mdao problem
@@ -123,11 +124,11 @@ def Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options,rho):
 
         MR = wt_opt.get_val('financese.machine_rating',units = 'MW')
         Cost_turbine_MW = wt_opt.get_val('financese.tcc_per_kW', units='USD/MW')[0]
-        
+        bos = wt_opt.get_val('financese.bos_per_kW', units='USD/MW')[0]
         Turbine_Cost[i] = Cost_turbine_MW*MR
-        
-        
-    return Turbine_Cost,MR,opex_per_kW,bos_per_kW,fcr,wlf
+        bos_Cost[i] = bos*MR
+      
+    return Turbine_Cost,MR,opex_per_kW,bos_Cost,fcr,wlf
 
 def Calc_AEP(summary_stats,dlc_generator,Turbine_class):
     
@@ -232,14 +233,15 @@ if __name__ == "__main__":
         if ind.any():
             u_h[ind] = u_h[ind] - off
         
-        print(np.mean(u_h))
+        print(np.max(u_h));print(np.min(u_h));
         tt = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
+        plt.plot(tt,u_h)
         
-       
+     
     # Linear Model
-    pkl_file = mydir + os.sep + "outputs" + os.sep + "tower_doe_run" + os.sep + "ABCD_matrices.pkl" 
-    #pkl_file = mydir + os.sep + 'LinModel_removed_fix.pkl'
+    pkl_file = mydir + os.sep + "outputs" + os.sep + "DV3" + os.sep + "ABCD_matrices.pkl" 
+    #pkl_file = mydir + os.sep + 'ABCD_matrices.pkl'
     
     with open(pkl_file,"rb") as handle:
         ABCD_list = pickle.load(handle)
@@ -266,13 +268,16 @@ if __name__ == "__main__":
     AEP = np.zeros((n_cases,)) 
     
     # Evaluate the cost
-    #rho = Calc_rho(mydir)
+    DV = Calc_DV(mydir)
     #rho = [7800,7800,7800,7800,7800]
     
-    #TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, rho)
+    #TC,MR,opex_per_kW,bos_per_kW,fcr,wlf = Calc_TC(fname_wt_input, fname_modeling_options, fname_analysis_options, DV)
     
+    #with n as 2*2:
+    for n in range(1):
+        
+        n = 0
     
-    for n in range(n_cases):
         ABCD = ABCD_list[n]
         
         LinearTurbine = dict2class(ABCD)
@@ -284,23 +289,49 @@ if __name__ == "__main__":
         fst_vt, 
         la, 
         magnitude_channels, 
-        run_directory
+        run_directory,
+        cores = 1
         )
-          
-        
+              
+            
         AEP[n] = Calc_AEP(summary_stats,dlc_generator,Turbine_class)
         
         
     # LCOE = Calc_LCOE(TC,AEP,MR,opex_per_kW,bos_per_kW,fcr,wlf)
     
     # fig,ax = plt.subplots(1,1)
-    # ax.plot(rho,LCOE,'*-',linewidth = 2,markersize = 10)
-    # ax.set_xlabel('rho [kg/m**3]')
-    # ax.set_ylabel('LCOE [USD/kW/h]')
-    # ax.set_title('LCOE vs Tower Density')
+    # ax.plot(DV,LCOE,'*-',linewidth = 2,markersize = 10)
+    # ax.set_xlabel('Ballast Volume [m**3]',fontsize = 16)
+    # ax.set_ylabel('LCOE [USD/kW/h]',fontsize = 16)
+    # ax.set_title('LCOE vs Ballast Volume',fontsize = 12)
+    # ax.tick_params(axis='x', labelsize=12)
+    # ax.tick_params(axis='y', labelsize=12)
     
     # fig,ax = plt.subplots(1,1)
-    # ax.plot(rho,AEP,'*-',linewidth = 2,markersize = 10)
-    # ax.set_xlabel('rho [kg/m**3]')
-    # ax.set_ylabel('AEP [kWh]')
-    # ax.set_title(' AEP vs Tower Desity')
+    # ax.plot(DV,AEP,'*-',linewidth = 2,markersize = 10)
+    # ax.set_xlabel('Ballast Volume [m**3]',fontsize = 16)
+    # ax.set_ylabel('AEP [kWh]',fontsize = 16)
+    # ax.set_title(' AEP vs Ballast Volume',fontsize = 12)
+    # ax.tick_params(axis='x', labelsize=12)
+    # ax.tick_params(axis='y', labelsize=12)
+    
+    saveflag = False
+    
+    if saveflag:
+        Results = {'LCOE':LCOE,
+            'AEP':AEP,
+            'DV':DV,
+            'stats':summary_stats,
+            'TC':TC,
+            'bos_per_kW':bos_per_kW,
+            'DLC':dlc_generator,
+            'class':Turbine_class,
+            'opex_per_kW':opex_per_kW,
+            'fcr':fcr,
+            'wlf':wlf
+            }
+        
+        sname = mydir + os.sep + "outputs" + os.sep + 'Q7_plots' + os.sep+ 'Q7results_pen.pkl'
+        
+        with open(sname,'wb') as handle:
+            pickle.dump(Results,handle)

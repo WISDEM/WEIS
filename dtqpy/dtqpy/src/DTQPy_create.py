@@ -44,5 +44,5 @@ def DTQPy_create(setup,opts):
     lb,ub = DTQPy_create_bnds(setup.LB,setup.UB,internal)
     
     
-   
+    
     return H,f,c,A,b,Aeq,beq,lb,ub,setup,internal,opts

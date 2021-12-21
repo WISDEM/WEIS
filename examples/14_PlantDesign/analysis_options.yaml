@@ -1,11 +1,11 @@
 general:
-    folder_output: outputs/doe_test2
+    folder_output: outputs/DV3
     fname_output: iea15mw
     
 design_variables:
   tower:
     rho:
-      flag: True
+      flag: False
       lower_bound: 5000.
       upper_bound: 10000.
     E:
@@ -24,14 +24,50 @@ design_variables:
       flag: False
       lower_bound: 4e-3
       upper_bound: 2e-1
+      
+  floating:
+        members:
+            flag: True
+            groups:
+                - names: [main_column]
+                  ballast:
+                      lower_bound: 350
+                      upper_bound: 650
+                - names: [column1]
+                  ballast:
+                      lower_bound: 350
+                      upper_bound: 650
+                - names: [column2]
+                  ballast:
+                      lower_bound: 350
+                      upper_bound: 650
+                # - names: [column3]
+                #   ballast:
+                #       lower_bound: 350
+                #       upper_bound: 650
+            
 
 constraints:
   tower:
     height_constraint:
       flag: False
-      lower_bound: 1.e-2
-      upper_bound: 1.e-2
-    
+      lower_bound: 0.01
+      upper_bound: 0.01
+    stress:
+      flag: False
+    global_buckling:
+      flag: False
+    shell_buckling:
+      flag: False
+  floating:
+        buoyancy:
+            flag: False
+        fixed_ballast_capacity:
+            flag: False
+        variable_ballast_capacity:
+            flag: False
+        metacentric_height:
+            flag: False
   control:
     rotor_overspeed:
       flag: False
@@ -39,21 +75,21 @@ constraints:
       max: 0.2
     Max_PtfmPitch:
       flag: False
-      max: 3
+      max: 6
 
 merit_figure: LCOE
 
 driver:
   optimization:
-    flag: True         # Flag to enable optimization
-    solver: trust-constr
-    max_iter: 2000
+    flag: True       # Flag to enable optimization
+    solver: LN_COBYLA
+    max_iter: 100
     #form: forward
   design_of_experiments:
     flag: False            # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing
-    generator: FullFact    # Type of input generator. (Uniform)
-    num_samples: 3       # number of samples for (Uniform only)
+    generator: FullFact   # Type of input generator. (Uniform)
+    num_samples: 5       # number of samples for (Uniform only)
 
 recorder:
     flag: True             # Flag to activate OpenMDAO recorder

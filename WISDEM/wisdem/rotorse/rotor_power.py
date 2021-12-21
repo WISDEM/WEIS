@@ -958,7 +958,7 @@ class AEP(ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
-
+        
         lossFactor = inputs["lossFactor"]
         P = inputs["P"]
         CDF_V = inputs["CDF_V"]

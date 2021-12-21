@@ -73,6 +73,7 @@ class PlantFinance(om.ExplicitComponent):
         c_bos_turbine = bos_per_kW * t_rating
         c_opex_turbine = opex_per_kW * t_rating
         
+        
         # Run a few checks on the inputs
         if n_turbine == 0:
             raise ValueError(
@@ -131,7 +132,7 @@ class PlantFinance(om.ExplicitComponent):
         lcoe = (icc * fcr + c_opex) / nec  # changed per COE report
         outputs["lcoe"] = lcoe
         outputs["plant_aep"] = park_aep
-
+        
         self.J = {}
         self.J["lcoe", "tcc_per_kW"] = dicc_dcturb * fcr / nec
         self.J["lcoe", "turbine_number"] = -dnec_dnturb * lcoe / nec

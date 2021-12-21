@@ -2126,9 +2126,9 @@ class FASTLoadCases(ExplicitComponent):
             if dlc_generator.cases[i_case].label == '1.1':
                 idx_pwrcrv = np.append(idx_pwrcrv, i_case)
                 U = np.append(U, dlc_generator.cases[i_case].URef)
-
+                
         stats_pwrcrv = sum_stats.iloc[idx_pwrcrv].copy()
-
+        
         # Calculate AEP and Performance Data
         if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
             pp = PowerProduction(discrete_inputs['turbine_class'])

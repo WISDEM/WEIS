@@ -250,20 +250,20 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = False
+    OutputCon_flag = True
     
     if OutputCon_flag:
         #Qty = ["ED TwrBsFxt, (kN)"] 
         Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
         
         #b = [4000] 
-        b = [4000,30000]
+        b = [5000,35000]
         
         Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,b,yw)
 
     # lambda function to find the values of lambda function at specific indices
     indexat = lambda expr,index: expr[index,:]
-
+    
     # get shape
     nws,nx,nu = np.shape(Bw)
 
@@ -271,12 +271,13 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     ub = np.ones((nx,1))*np.inf
     lb = -np.ones((nx,1))*np.inf
     
-
+    
     # set ub values for PtfmPitch and Genspeed
     for const in constraints:
         if const in DescStates:
             iConst = DescStates.index(const)
             ub[iConst] = constraints[const][1]      # max, min would be index 0
+            #lb[iConst] = 0
         elif const in DescOutputs:
             iConst = DescOutputs.index(const)
             # do other output constraint things
@@ -346,7 +347,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     lx = 0
 
-    L = [LQ_objective() for n in range(5)]
+    L = [LQ_objective() for n in range(6)]
 
     # uRu
     L[lx].left = 1
@@ -361,11 +362,13 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     lx = lx+1
     
-    # L[lx].left = 2;
-    # L[lx].right = 2;
-    # L1 = np.zeros((nx,nx))
-    # L1[iPtfmPitch,iPtfmPitch] = -1
-    # L[lx].matrix = L1
+    L[lx].left = 2;
+    L[lx].right = 2;
+    L1 = np.zeros((nx,nx))
+    L1[iPtfmPitch,iPtfmPitch] = 0
+    L[lx].matrix = L1
+    
+    lx = lx+1
 
     # uPX
     L[lx].left = 1
@@ -415,6 +418,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     s.Scaling = scale
     s.t0 = t0
     s.tf = tf
+    s.ScaleObjective = True
     
     [T,Ul,Xl,P,F,internal,opts] = DTQPy_solve(s,opts)
 
@@ -445,8 +449,8 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     Qty_p = 'SrvD GenPwr, (kW)'
     Yindp = DescOutput.index(Qty_p)
     
-    Y[:,Yindp] *= 10**(-3)
-
+    #Y[:,Yindp] *= 10**(-3)
+    
     # plot
     if plot:
         fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
@@ -483,7 +487,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         ax2.set_xlim([t0,tf])
         ax2.set_title('Gen Speed [rad/s]')
         
-        ax3.plot(T,Y[:,Yindp]*1000)
+        ax3.plot(T,Y[:,Yindp])
         ax3.set_xlim([t0,tf])
         ax3.set_title(Qty_p)
         

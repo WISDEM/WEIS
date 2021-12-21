@@ -30,7 +30,7 @@ def DTQPy_SOLVER_ipopt(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     
     # set specific solver options
     optOptions = {'max_iter':solver.maxiters,'tol':solver.tolerence,'print_level':1,
-                'file_print_level':5,'dual_inf_tol':np.sqrt(solver.tolerence)}
+                'file_print_level':5,'dual_inf_tol':float(np.sqrt(solver.tolerence))}
    
     
     # obtain the number of linear equality/inequality constraints
@@ -117,7 +117,7 @@ def DTQPy_SOLVER_ipopt(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
         )
     
     # setup IPOPT problem
-    opt = IPOPT(args.opt,options = optOptions)
+    opt = IPOPT(args,options = optOptions)
     
     # solve the problem
     sol = opt(optProb,sens = prob.Sens)

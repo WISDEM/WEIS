@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     # location of 
     fname_modeling_options = mydir + os.sep + "modeling_options.yaml"
-    fname_wt_input   = mydir + os.sep + "IEA-15-floating_C.yaml"
+    fname_wt_input   = mydir + os.sep + "IEA-15-floating.yaml"
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
     
     wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)

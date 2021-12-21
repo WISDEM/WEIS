@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from dtqpy.src.DTQPy_oloc import DTQPy_oloc
+from dtqpy.src.DTQPy_static import DTQPy_static
 import multiprocessing as mp
 
 radps2rpm = 30 / np.pi
@@ -61,7 +62,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
 
     # Control constraints that are supported
     control_const = analysis_options['constraints']['control']
-
+    
     # Rotor overspeed
     if control_const['rotor_overspeed']['flag']:
         desc = 'ED First time derivative of Variable speed generator DOF (internal DOF index = DOF_GeAz), rad/s'
@@ -69,15 +70,22 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
             dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] ]
         else:
             raise Exception('rotor_overspeed constraint is set, but ED GenSpeed is not a state in the LinearModel')
-
+    else:
+        desc = 'ED First time derivative of Variable speed generator DOF (internal DOF index = DOF_GeAz), rad/s'
+        dtqp_constraints[desc] = [-np.inf,(1 + 0.2) * fst_vt['DISCON_in']['PC_RefSpd'] ]
+        
     if control_const['Max_PtfmPitch']['flag']:
         desc = 'ED Platform pitch tilt rotation DOF (internal DOF index = DOF_P), rad'
         if desc in LinearTurbine.DescStates:
             dtqp_constraints[desc] = [-np.inf,control_const['Max_PtfmPitch']['max'] * np.deg2rad(1)]
         else:
             raise Exception('Max_PtfmPitch constraint is set, but ED PtfmPitch is not a state in the LinearModel')
-            
-
+    else:
+        desc = 'ED Platform pitch tilt rotation DOF (internal DOF index = DOF_P), rad'
+        dtqp_constraints[desc] = [-np.inf,8 * np.deg2rad(1)]
+        
+        
+    
     ### Loop throught and call DTQP for each disturbance
     case_names = case_naming(len(level2_disturbances),'oloc')
 
@@ -143,8 +151,13 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         
 # Wrapper for actually running dtqp with a single input, useful for running in parallel
 def run_dtqp(dtqp_input):
-    T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
-
+    nl = len(dtqp_input['LinearTurbine'].u_h)
+    
+    if nl>1:
+        T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+    elif nl ==1:
+        T,U,X,Y = DTQPy_static(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+   
     # Shorten output names from linearization output to one like level3 openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed
     OutList     = [out_name.split()[1][:-1] for out_name in dtqp_input['LinearTurbine'].DescOutput]

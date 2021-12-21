@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/OLOC
+        OF_run_dir: outputs/OLOC/EAB_sens
         use_exe: True
         cores: 1
 
@@ -99,18 +99,20 @@ ROSCO:
     flag: True
 
 Level2:
-    flag: False
+    flag: True
     simulation:         # could these be included in openfast options?
-        flag: True
+        flag: False
         TMax: 100.      # run simulations using IEC standards, could share that info
+    DTQP:
+        flag: True
     linearization:
         TMax: 1600.
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        wind_speeds: [15] #[12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+        wind_speeds: [15] #[3,4,5,6,7,8,9,10,11,12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 1
+        NLinTimes: 3
 
 Level1:
     potential_model_override: 2
@@ -121,13 +123,13 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [20] #[17,18,20,16,15] #[5.8, 9.4732, 13.009, 16.866,19.9968, 15.6765]
+          wind_speed: [5.8, 9.4732, 13.009,16.866,19.9968,15.6765]  # [14,15,16] #[5.8, 9.4732, 13.009,16.866,19.9968,15.6765] 
           wave_height: [8.]
           wave_period: [2.]
-          wind_seeds: [1]
+          #wind_seeds: [3,4] #[1,2,3,4,5]
           n_seeds: 1
-          analysis_time: 70.
-          transient_time: 30.
+          analysis_time: 700.
+          transient_time: 100.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True

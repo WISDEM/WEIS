@@ -10,6 +10,7 @@ import numpy as np
 from dtqpy.src.DTQPy_create import DTQPy_create
 from dtqpy.src.solver.DTQPy_SOLVER import DTQPy_SOLVER
 from dtqpy.src.DTQPy_scalingLinear import DTQPy_scalingLinear
+from dtqpy.src.DTQPy_scaleObjective import DTQPy_scaleObjective
 
 def DTQPy_multiphase(setup,opts):
     
@@ -21,10 +22,25 @@ def DTQPy_multiphase(setup,opts):
     else:
         Scaleflag = False
     
+    
+    if setup.ScaleObjective:
+        [H,f,C] = DTQPy_scaleObjective(H,f,internal.nx)
         
     
     
     [X,F,internal,opts] = DTQPy_SOLVER(H,f,A,b,Aeq,beq,lb,ub,internal,opts)
+    
+    if F == None:
+        raise Exception("The optimization problem was not solved. Check log for more details")
+    else:
+        if setup.ScaleObjective:
+            # unscale objective
+            H = H*10**C; f = f*10**C;
+            
+            # evaluate objective value
+            F = 0.5*np.dot(X,H.dot(X)) + (f.T).dot(X) + c
+        else:
+            F = F+c
     
     
     if Scaleflag :
@@ -32,10 +48,7 @@ def DTQPy_multiphase(setup,opts):
         X = X.reshape(-1,1)
         X = X*(SM) + SC
     
-    if F == None:
-        raise Exception("The optimization problem was not solved. Check log for more details")
-    else:
-        F = F+c
+    
     
     nt = internal.nt;nu = internal.nu; ny = internal.ny; npl = internal.npl
     
