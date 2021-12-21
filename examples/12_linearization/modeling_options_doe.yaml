@@ -2,9 +2,8 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/openfast
-        use_exe: True
-        FAST_exe: /Users/nabbas//Documents/WindEnergyToolbox/WEIS/OpenFAST/install/bin/openfast
+        OF_run_dir: outputs/12_linearization_DOE
+
 WISDEM:
     RotorSE:
         flag: True
