@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-opt_path = mydir + os.sep + "outputs" + os.sep +"DV3"
+opt_path = mydir + os.sep + "outputs" + os.sep +"DV1_sens1"
 pkl_path = opt_path + os.sep+  "ABCD_matrices.pkl"
 
 with open(pkl_path, 'rb') as handle:
@@ -35,6 +35,7 @@ for idx, case in enumerate(driver_cases):
         #print(key)
         #print(dvs[key])
         DVs.append(dvs[key])
+    A_plot.append(ABCD_list[idx]['x_ops'][0])
     #print()
     #print("A matrix")
     #print(ABCD_list[idx]['A'])
@@ -44,7 +45,13 @@ for idx, case in enumerate(driver_cases):
 
 ind = ABCD_list[0]['DescOutput'].index('ED TwrBsFxt, (kN)')
 
-DV = np.reshape(DVs,(idx+1,3),order = 'C')
+DV = np.reshape(DVs,(idx+1,1),order = 'C')
+
+A_plot = np.rad2deg(A_plot)
+
+PP = np.hstack([DV,A_plot])
+
+plt.plot(PP[:,0],PP[:,1],'*-')
 
 # n_sample = len(driver_cases); ndvs = len(dvs)
 

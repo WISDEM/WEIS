@@ -97,7 +97,7 @@ def DTQPy_static(LinearModels,disturbance,constraints,plot=False):
     opts = options()
 
     opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-4
+    opts.solver.tolerence = 1e-5
     opts.solver.maxiters = 150
     opts.solver.function = 'ipopt'
     
