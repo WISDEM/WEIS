@@ -82,7 +82,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
             raise Exception('Max_PtfmPitch constraint is set, but ED PtfmPitch is not a state in the LinearModel')
     else:
         desc = 'ED Platform pitch tilt rotation DOF (internal DOF index = DOF_P), rad'
-        dtqp_constraints[desc] = [-np.inf,8 * np.deg2rad(1)]
+        dtqp_constraints[desc] = [-np.inf,10 * np.deg2rad(1)]
         
         
     

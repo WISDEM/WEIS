@@ -137,7 +137,23 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     # wind speeds
     ws = LinearModels.u_h
-
+    
+    reduce_flag = True
+    
+    nw,nx,nu = np.shape(Bw)
+    
+    if reduce_flag:
+        nx_new = np.zeros((nx),dtype = 'bool')
+        nx_new[0:5] = True
+        
+        Aw = Aw[:,nx_new,:]; Aw = Aw[:,:,nx_new]
+        Bw = Bw[:,nx_new,:]
+        Cw = Cw[:,:,nx_new]
+    
+        xw = xw[nx_new,:]
+        
+    nw,nx,nu = np.shape(Bw)
+ 
     # construct LPV models
     # A matrix   
     A_op_pp = PchipInterpolator(ws, Aw, axis = 0)
@@ -203,8 +219,8 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     opts = options()
 
     opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-10
-    opts.solver.maxiters = 150
+    opts.solver.tolerence = 1e-6
+    opts.solver.maxiters = 50
     opts.solver.function = 'ipopt'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
@@ -365,7 +381,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     L[lx].left = 2;
     L[lx].right = 2;
     L1 = np.zeros((nx,nx))
-    L1[iPtfmPitch,iPtfmPitch] = 0
+    L1[iPtfmPitch,iPtfmPitch] = -1e9
     L[lx].matrix = L1
     
     lx = lx+1
