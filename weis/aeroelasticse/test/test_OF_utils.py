@@ -53,6 +53,8 @@ class TestOFutils(unittest.TestCase):
         fst_vt['AeroDyn15', 'TwrAero'] = False
         fst_vt['ServoDyn', 'DLL_FileName'] = osp.join(weis_dir, 'local', 'lib', f'libdiscon{libext}')
         fst_vt['Fst','CompMooring'] = 0
+        fst_vt['ServoDyn','PCMode'] = 0
+        fst_vt['ServoDyn','VSContrl'] = 0
         fast_writer.update(fst_update=fst_vt)
         with self.subTest('Writing', i=1):
             try:
