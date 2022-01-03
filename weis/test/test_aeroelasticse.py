@@ -55,8 +55,8 @@ class TestGeneral(unittest.TestCase):
         case_inputs[("Fst","OutFileFmt")]       = {'vals':[1], 'group':0}
         case_inputs[("Fst","DT_Out")]           = {'vals':[0.01], 'group':0}
         case_inputs[("ElastoDyn","GenDOF")]     = {'vals':['True'], 'group':0}
-        case_inputs[("ServoDyn","PCMode")]      = {'vals':[0], 'group':0}
-        case_inputs[("ServoDyn","VSContrl")]    = {'vals':[0], 'group':0}
+        case_inputs[("ServoDyn","PCMode")]      = {'vals':[5], 'group':0}
+        case_inputs[("ServoDyn","VSContrl")]    = {'vals':[5], 'group':0}
         case_inputs[("InflowWind","WindType")]  = {'vals':[1], 'group':0}
         case_inputs[("InflowWind","HWindSpeed")]= {'vals': wind_speeds, 'group': 1}
         case_inputs[("Fst","OutFileFmt")]       = {'vals':[0], 'group':0}
