@@ -3,6 +3,10 @@ name: CI_WEIS
 # We run CI on push commits on all branches
 on: [push, pull_request]
 
+# Specify FORTRAN compiler
+env:
+  FC: gfortran
+
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -50,7 +54,7 @@ jobs:
         # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
         # Mpi only seems to work with the shell command though, so instead rely on system compilers
         run: |
-          conda install -y petsc4py mpi4py openmpi
+          conda install -y petsc4py mpi4py openmpi compilers
           python -c "import platform; print(platform.node())"
 
       # Install dependencies of WISDEM specific to windows
