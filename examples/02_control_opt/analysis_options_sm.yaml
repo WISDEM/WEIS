@@ -21,7 +21,7 @@ design_variables:
             flag: False
             max: 0.4
           stability_margin:
-            flag: True
+            flag: False
             min: 0.0
             max: 0.15
 
@@ -36,7 +36,7 @@ constraints:
 
 driver:
   optimization:
-    flag: True
+    flag: False
     tol: 1.e-2            # Optimality tolerance
     max_major_iter: 2     # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
