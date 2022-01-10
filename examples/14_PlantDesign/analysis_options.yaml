@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/DV1_sens1
+    folder_output: outputs/DV1_save
     fname_output: iea15mw
     
 design_variables:
@@ -35,8 +35,8 @@ design_variables:
                       upper_bound: 650
                 # - names: [column1]
                 #   ballast:
-                #       lower_bound: 450
-                #       upper_bound: 550
+                #       lower_bound: 350
+                #       upper_bound: 650
                 # - names: [column2]
                 #   ballast:
                 #       lower_bound: 350
@@ -81,15 +81,15 @@ merit_figure: LCOE
 
 driver:
   optimization:
-    flag: False       # Flag to enable optimization
-    solver: LN_COBYLA
+    flag: False      # Flag to enable optimization
+    solver: SLSQP
     max_iter: 100
     #form: forward
   design_of_experiments:
     flag: True            # Flag to enable design of experiments
-    run_parallel: False    # Flag to run using parallel processing
-    generator: FullFact   # Type of input generator. (Uniform)
-    num_samples: 15       # number of samples for (Uniform only)
+    run_parallel: True    # Flag to run using parallel processing
+    generator: Uniform #FullFact   # Type of input generator. (Uniform)
+    num_samples: 1      # number of samples for (Uniform only)
 
 recorder:
     flag: True             # Flag to activate OpenMDAO recorder

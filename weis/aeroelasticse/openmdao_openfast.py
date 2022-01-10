@@ -227,7 +227,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
             self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
             self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-            self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
+            self.add_input("platform_elem_memid", np.ones(NELEM_MAX))
             self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
             self.add_input("platform_mass", 0.0, units="kg")
             self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -537,6 +537,8 @@ class FASTLoadCases(ExplicitComponent):
                 'StateDerivOrder' : None,
                 'ind_fast_inps' : None,
                 'ind_fast_outs' : None,
+                'AEP': None,
+                'LCOE':None
                 }
             with open(self.lin_pkl_file_name, 'rb') as handle:
                 ABCD_list = pickle.load(handle)
@@ -608,7 +610,7 @@ class FASTLoadCases(ExplicitComponent):
                     'DescOutput' : LinearTurbine.DescOutput,
                     'StateDerivOrder' : LinearTurbine.StateDerivOrder,
                     'ind_fast_inps' : LinearTurbine.ind_fast_inps,
-                    'ind_fast_outs' : LinearTurbine.ind_fast_outs,
+                    'ind_fast_outs' : LinearTurbine.ind_fast_outs
                     }
                 with open(self.lin_pkl_file_name, 'rb') as handle:
                     ABCD_list = pickle.load(handle)
@@ -709,7 +711,16 @@ class FASTLoadCases(ExplicitComponent):
 
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
-        
+            
+            # Save AEP value to pickle file
+            with open(self.lin_pkl_file_name, 'rb') as handle:
+                    ABCD_list = pickle.load(handle)
+
+            ABCD_list[self.sim_idx]['AEP'] = outputs['AEP']
+
+            with open(self.lin_pkl_file_name, 'wb') as handle:
+                pickle.dump(ABCD_list, handle)
+            
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
             try:

@@ -339,7 +339,7 @@ class WindPark(om.Group):
             if not modeling_options['Level3']['from_openfast']:
                 self.add_subsystem('tcons_post',     TurbineConstraints(modeling_options = modeling_options))
                 self.add_subsystem('financese_post', PlantFinance(verbosity=modeling_options['General']['verbosity']))
-            
+                
             # Post-processing
             self.add_subsystem('outputs_2_screen_weis',  Outputs_2_Screen(modeling_options = modeling_options, opt_options = opt_options))
             if opt_options['opt_flag']:
@@ -823,11 +823,11 @@ class WindPark(om.Group):
 
             if modeling_options['DLC_driver']['n_ws_dlc11'] > 0:
                 self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
-
+                
             # Connections to outputs to screen
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
-
+              
                 self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
                 self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
 

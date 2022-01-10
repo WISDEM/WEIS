@@ -21,6 +21,52 @@ from dtqpy.src.DTQPy_solve import DTQPy_solve
 
 def BuildLambda(Ax):
         return lambda t: Ax(t)
+    
+    
+def ModelClipping(Aw,Bw,Cw,Dw,xw,u_h):
+    
+    # get number of linearized models
+    nl = len(u_h)
+    
+    # find the models with pp > 6 deg
+    ind_clip = np.rad2deg(xw[0,:]) > 6 
+    
+    ind_original = np.arange(nl)
+    
+    if ind_clip.any():
+        
+        # fixing index
+        ind_fix = ind_original[ind_clip][0]-1
+        
+        
+        for ind in range(nl):
+            
+            if ind_clip[ind]:
+                
+                Aw[ind,:,:] = Aw[ind_fix,:,:]
+                Bw[ind,:,:] = Bw[ind_fix,:,:]
+                Cw[ind,:,:] = Cw[ind_fix,:,:]
+                Dw[ind,:,:] = Dw[ind_fix,:,:]
+                
+                xw[:,ind] = xw[:,ind_fix]
+                
+                
+    nl,nx,nu = np.shape(Bw)
+
+    nx_new = np.zeros((nx),dtype = 'bool')
+    nx_new[0:5] = True
+    
+    
+    Aw = Aw[:,nx_new,:]; Aw = Aw[:,:,nx_new]
+    Bw = Bw[:,nx_new,:]
+    Cw = Cw[:,:,nx_new]
+    
+    xw = xw[nx_new,:]
+    
+    return Aw,Bw,Cw,Dw,xw,u_h
+    
+    
+    
 
 def TVmat2cell(f,time):
     """
@@ -138,19 +184,22 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     # wind speeds
     ws = LinearModels.u_h
     
-    reduce_flag = True
+    # clip the model and reduce it
+    Aw,Bw,Cw,Dw,xw,ws = ModelClipping(Aw, Bw, Cw, Dw, xw, ws)
     
-    nw,nx,nu = np.shape(Bw)
+    # reduce_flag = True
     
-    if reduce_flag:
-        nx_new = np.zeros((nx),dtype = 'bool')
-        nx_new[0:5] = True
+    # nw,nx,nu = np.shape(Bw)
+    
+    # if reduce_flag:
+    #     nx_new = np.zeros((nx),dtype = 'bool')
+    #     nx_new[0:5] = True
         
-        Aw = Aw[:,nx_new,:]; Aw = Aw[:,:,nx_new]
-        Bw = Bw[:,nx_new,:]
-        Cw = Cw[:,:,nx_new]
+    #     Aw = Aw[:,nx_new,:]; Aw = Aw[:,:,nx_new]
+    #     Bw = Bw[:,nx_new,:]
+    #     Cw = Cw[:,:,nx_new]
     
-        xw = xw[nx_new,:]
+    #     xw = xw[nx_new,:]
         
     nw,nx,nu = np.shape(Bw)
  
@@ -219,8 +268,8 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     opts = options()
 
     opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-6
-    opts.solver.maxiters = 50
+    opts.solver.tolerence = 1e-8
+    opts.solver.maxiters = 150
     opts.solver.function = 'ipopt'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)

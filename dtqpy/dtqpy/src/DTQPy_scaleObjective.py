@@ -20,7 +20,7 @@ def DTQPy_scaleObjective(H,f,nx):
     fx = floor(log10(np.abs((f.T).dot(X))))
     
     # find scaling value
-    C = np.min([Hx,fx])
+    C = 11 #np.min([Hx,fx])
     
     # scale
     H = H/10**C
