@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-opt_path = mydir + os.sep + "outputs" + os.sep +"DV4_single_slsqp2"
+opt_path = mydir + os.sep + "outputs" + os.sep +"BaDi1_COBYLA_single"
 pkl_path = opt_path + os.sep+  "ABCD_matrices.pkl"
 
 with open(pkl_path, 'rb') as handle:
@@ -15,9 +15,9 @@ with open(pkl_path, 'rb') as handle:
     ABCD_list = pickle.load(handle)
   
 print("Information available in the pickle file:")
-#for key in ABCD_list[0]:
-    #print(key)
-#print()    
+for key in ABCD_list[0]:
+    print(key)
+print()    
 
 cr = om.CaseReader(opt_path+ os.sep +"log_opt.sql")
 

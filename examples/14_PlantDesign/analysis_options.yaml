@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/DV1_save
+    folder_output: outputs/DV1_test
     fname_output: iea15mw
     
 design_variables:
@@ -33,6 +33,9 @@ design_variables:
                   ballast:
                       lower_bound: 350
                       upper_bound: 650
+                  # diameter:
+                  #     lower_bound: 0.1
+                  #     upper_bound: 100.0
                 # - names: [column1]
                 #   ballast:
                 #       lower_bound: 350
@@ -81,12 +84,12 @@ merit_figure: LCOE
 
 driver:
   optimization:
-    flag: False      # Flag to enable optimization
-    solver: SLSQP
+    flag: True      # Flag to enable optimization
+    solver: LN_COBYLA
     max_iter: 100
     #form: forward
   design_of_experiments:
-    flag: True            # Flag to enable design of experiments
+    flag: False            # Flag to enable design of experiments
     run_parallel: True    # Flag to run using parallel processing
     generator: Uniform #FullFact   # Type of input generator. (Uniform)
     num_samples: 1      # number of samples for (Uniform only)
