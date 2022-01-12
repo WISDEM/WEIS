@@ -9,7 +9,7 @@ os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 try:
     from numpy.distutils.misc_util import Configuration
     import numpy.distutils.core
-    from numpy.distutils.core import setup
+    from setuptools import setup
 except:
     raise ImportError('pyOptSparse requires numpy version 1.0 or later')
 
