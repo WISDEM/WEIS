@@ -141,7 +141,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
-        wt_opt = assign_ROSCO_values(wt_opt, modeling_options)
+        wt_opt = assign_ROSCO_values(wt_opt, modeling_options, opt_options)
         if modeling_options['flags']['TMDs']:
             wt_opt = assign_TMD_values(wt_opt, wt_init, opt_options)
 
