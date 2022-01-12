@@ -1,0 +1,56 @@
+general:
+    folder_output: outputs
+    fname_output: iea15mw
+design_variables:
+  control:
+    servo:
+      pitch_control:
+          omega:
+            flag: False
+            min: 0.1
+            max: 0.5
+          zeta:
+            flag: False
+            min: 0.1
+            max: 3.0
+          Kp_float:
+            flag: False
+            min: -40
+            max: 0
+          ptfm_freq:
+            flag: False
+            max: 0.4
+          stability_margin:
+            flag: False
+            min: 0.0
+            max: 0.15
+
+merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+constraints:
+  control:
+    rotor_overspeed:
+      flag: True
+      min: 0.0
+      max: 0.2
+
+driver:
+  optimization:
+    flag: False
+    tol: 1.e-2            # Optimality tolerance
+    max_major_iter: 2     # Maximum number of major design iterations (SNOPT)
+    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+    max_iter: 1          # Maximum number of iterations (SLSQP)
+    solver: SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    step_size: 1.e-3      # Step size for finite differencing
+    form: forward         # Finite differencing mode, either forward or central
+  design_of_experiments:
+    flag: False            # Flag to enable design of experiments
+    run_parallel: False    # Flag to run using parallel processing
+    generator: LatinHypercube    # Type of input generator. (Uniform)
+    num_samples: 2        # number of samples for (Uniform only)
+    criterion: center
+
+recorder:
+    flag: True             # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

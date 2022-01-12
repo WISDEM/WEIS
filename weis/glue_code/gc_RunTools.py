@@ -20,7 +20,10 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('DEL_RootMyb',   val=0.0, units = 'N*m')
         self.add_input('DEL_TwrBsMyt',  val=0.0, units = 'N*m')
         self.add_input('Std_PtfmPitch', val=0.0, units = 'deg')
-        n_PC = len(modeling_options['ROSCO']['U_pc'])
+        if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
+            n_PC = 1
+        else:
+            n_PC = len(modeling_options['ROSCO']['U_pc'])
         self.add_input('omega_pc',      val=np.zeros(n_PC), units = 'rad/s')
         self.add_input('zeta_pc',       val=np.zeros(n_PC))
         self.add_input('Kp_float',      val=0.0, units = 's')

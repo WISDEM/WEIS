@@ -1,14 +1,14 @@
-def assign_ROSCO_values(wt_opt, modeling_options):
+def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     # ROSCO tuning parameters
     rosco_init_options = modeling_options['ROSCO']
 
     # Pitch regulation
     wt_opt['tune_rosco_ivc.omega_pc']      = rosco_init_options['omega_pc']
     wt_opt['tune_rosco_ivc.zeta_pc']       = rosco_init_options['zeta_pc']
-    if not (len(rosco_init_options['omega_pc']) == \
-        len(rosco_init_options['zeta_pc']) == \
-        len(rosco_init_options['U_pc'])):
-        raise Exception('omega_pc, zeta_pc, and U_pc must have the same number of elements in the modeling options')
+    # if not (len(rosco_init_options['omega_pc']) == \
+    #     len(rosco_init_options['zeta_pc']) == \
+    #     len(rosco_init_options['U_pc'])):
+    #     raise Exception('omega_pc, zeta_pc, and U_pc must have the same number of elements in the modeling options')
 
     # Torque control
     wt_opt['tune_rosco_ivc.omega_vs']      = rosco_init_options['omega_vs']
@@ -26,6 +26,10 @@ def assign_ROSCO_values(wt_opt, modeling_options):
     # if rosco_init_options['IPC_ControlMode']:
     #     wt_opt['tune_rosco_ivc.IPC_KI']      = control['IPC']['IPC_gain_1P']
     
+    # Robust controller tuning
+    if opt_options['design_variables']['control']['servo']['pitch_control']['stability_margin']['flag']:
+        wt_opt['tune_rosco_ivc.stability_margin'] = rosco_init_options['linmodel_tuning']['stability_margin']
+        wt_opt['tune_rosco_ivc.omega_pc_max'] = rosco_init_options['linmodel_tuning']['omega_pc']['max']
     # other optional parameters
     wt_opt['tune_rosco_ivc.max_pitch']     = rosco_init_options['max_pitch']
     wt_opt['tune_rosco_ivc.min_pitch']     = rosco_init_options['min_pitch']

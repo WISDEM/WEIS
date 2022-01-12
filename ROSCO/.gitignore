@@ -11,6 +11,7 @@ Source/Release/
 *build*
 Makefile
 */install/*
+*test_out*
 
 # Archive
 Scripts/CompileDISCONHereCopyRun\.cmd
@@ -59,6 +60,7 @@ _build
 *.85
 *.i90
 *local*
+*build*
 
 # Binaries
 *.dylib

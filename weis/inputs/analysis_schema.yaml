@@ -160,6 +160,24 @@ properties:
                                                 default: 1.5
                                                 minimum: 0.00001
                                                 unit: rad/s
+                                    stability_margin:
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.01
+                                                minimum: 0.0
+                                                maximum: 1.0
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 0.01
+                                                minimum: 0.0
+                                                maximum: 1.0
+                                                unit: none
+
                             torque_control:
                                 type: object
                                 default: {}
@@ -200,6 +218,7 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
+                            
 
     constraints:
         # GB: These all need gammas or safety factors

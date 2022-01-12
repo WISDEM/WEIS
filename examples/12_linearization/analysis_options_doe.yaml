@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/tower_doe
+    folder_output: outputs
     fname_output: iea15mw
     
 design_variables:
@@ -12,6 +12,19 @@ design_variables:
       flag: False
       lower_bound: 100.e9
       upper_bound: 300.e9
+  floating:
+    members:
+        flag: False
+        groups:
+            - names: [column1, column2, column3]
+              ballast:
+                  lower_bound: 400
+                  upper_bound: 600
+            # - names: [main_column]
+            #   ballast:
+            #       lower_bound: 400
+            #       upper_bound: 600
+
   mooring:
     line_mass_density_coeff:  # 6177.3485 is the nominal value
       flag: False
@@ -22,7 +35,7 @@ design_variables:
       lower_bound: 29.4889e9
       upper_bound: 29.4889e9
     line_length:  # unstretched length in meters
-      flag: True
+      flag: False
       lower_bound: 875.
       upper_bound: 900.
 
@@ -30,10 +43,10 @@ driver:
   optimization:
     flag: False           # Flag to enable optimization
   design_of_experiments:
-    flag: True            # Flag to enable design of experiments
-    run_parallel: False    # Flag to run using parallel processing
+    flag: False            # Flag to enable design of experiments
+    run_parallel: True    # Flag to run using parallel processing
     generator: FullFact    # Type of input generator. (Uniform)
-    num_samples: 2        # number of samples for (Uniform only)
+    num_samples: 1        # number of samples for (Uniform only)
 
 recorder:
     flag: True             # Flag to activate OpenMDAO recorder

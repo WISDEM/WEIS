@@ -7,6 +7,7 @@ from setuptools import find_packages
 from numpy.distutils.command.build_ext import build_ext
 from numpy.distutils.core import setup, Extension
 from io import open
+import subprocess
 
 # Global constants
 ncpus = multiprocessing.cpu_count()
@@ -132,7 +133,7 @@ for pkg in ['WISDEM','ROSCO','pCrunch','pyHAMS','MoorPy','RAFT','pyoptsparse','d
     os.chdir(pkg)
     if pkg == 'pyoptsparse':
         # Build pyOptSparse specially
-        run_setup('setup.py', script_args=['install'])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])
     else:
         run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
     # subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])  # This option runs `pip install -e .` on each package
