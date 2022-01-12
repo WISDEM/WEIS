@@ -289,6 +289,7 @@ CONTAINS
         !------------------- IPC CONSTANTS -----------------------
         CALL ReadEmptyLine(UnControllerParameters,CurLine) 
         CALL ParseInput(UnControllerParameters,CurLine,'IPC_IntSat',accINFILE(1),CntrPar%IPC_IntSat,ErrVar)
+        CALL ParseAry(UnControllerParameters, CurLine, 'IPC_KP', CntrPar%IPC_KP, 2, accINFILE(1), ErrVar )
         CALL ParseAry(UnControllerParameters, CurLine, 'IPC_KI', CntrPar%IPC_KI, 2, accINFILE(1), ErrVar )
         CALL ParseAry(UnControllerParameters, CurLine, 'IPC_aziOffset', CntrPar%IPC_aziOffset, 2, accINFILE(1), ErrVar )
         CALL ParseInput(UnControllerParameters,CurLine,'IPC_CornerFreqAct',accINFILE(1),CntrPar%IPC_CornerFreqAct,ErrVar)
@@ -629,11 +630,15 @@ CONTAINS
         ENDIF
 
         ! Flp_Mode
-        IF ((CntrPar%Flp_Mode < 0) .OR. (CntrPar%Flp_Mode > 2)) THEN
+        IF ((CntrPar%Flp_Mode < 0) .OR. (CntrPar%Flp_Mode > 3)) THEN
             ErrVar%aviFAIL = -1
-            ErrVar%ErrMsg  = 'Flp_Mode must be 0, 1, or 2.'
+            ErrVar%ErrMsg  = 'Flp_Mode must be 0, 1, 2, or 3.'
         ENDIF
 
+        IF ((CntrPar%IPC_ControlMode > 0) .AND. (CntrPar%Flp_Mode > 0)) THEN
+            ErrVar%aviFAIL = -1
+            ErrVar%ErrMsg   = 'ROSCO does not currently support IPC_ControlMode and Flp_Mode > 0'
+        ENDIF
         !------- FILTERS ----------------------------------------------------------
         
         ! F_LPFCornerFreq
