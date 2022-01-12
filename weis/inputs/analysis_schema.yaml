@@ -349,14 +349,14 @@ properties:
                                 default: False
                                 description: Use the logarithm of damage as the constraint.
 
-        openfast_failed:
-            type: object
-            default: {}
-            properties:
-                flag:
-                    type: boolean
-                    description: Constrain design to one where OpenFAST simulations don't fail_value
-                    default: False
+            openfast_failed:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain design to one where OpenFAST simulations don't fail_value
+                        default: False
 
     
 
