@@ -212,7 +212,7 @@ class WindPark(om.Group):
                 self.connect('tune_rosco_ivc.Flp_zeta',     'sse_tune.tune_rosco.Flp_zeta')
 
         if modeling_options['Level1']['flag']:
-            self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options))
+            self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))
 
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.connect('configuration.turb_class',        'raft.turbulence_class')

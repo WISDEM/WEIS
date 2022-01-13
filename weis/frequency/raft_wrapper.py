@@ -10,23 +10,23 @@ class RAFT_WEIS(om.Group):
 
     def initialize(self):
         self.options.declare('modeling_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
         # Stuff WEIS options into RAFT options structure
         weis_opt = self.options['modeling_options']
+        analysis_options = self.options['analysis_options']
 
         raft_opt = {}
+        # Level 1 options from WEIS
+        for key in weis_opt['Level1']:
+            raft_opt[key] = weis_opt['Level1'][key]
 
-        raft_opt['min_freq'] = min_freq = weis_opt['Level1']['min_freq']
-        raft_opt['max_freq'] = max_freq = weis_opt['Level1']['max_freq']
+        # Other options needed for RAFT
+        min_freq = weis_opt['Level1']['min_freq']
+        max_freq = weis_opt['Level1']['max_freq']
         frequencies = np.arange(min_freq, max_freq+0.5*min_freq, min_freq)
         raft_opt['nfreq'] = len(frequencies)
-
-        raft_opt['potModMaster'] = weis_opt['Level1']['potential_model_override']
-        raft_opt['XiStart'] = weis_opt['Level1']['xi_start']
-        raft_opt['nIter'] = weis_opt['Level1']['nIter']
-        raft_opt['dlsMax'] = weis_opt['Level1']['dls_max']
-        raft_opt['min_freq_BEM'] = weis_opt['Level1']['min_freq_BEM']
         raft_opt['n_cases'] = weis_opt['DLC_driver']['n_cases']
 
         turbine_opt = {}
@@ -64,7 +64,8 @@ class RAFT_WEIS(om.Group):
         self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
                                               turbine_options=turbine_opt,
                                               mooring_options=mooring_opt,
-                                              member_options=members_opt), promotes=['*'])
+                                              member_options=members_opt,
+                                              analysis_options=analysis_options), promotes=['*'])
         self.connect('wind.U', 'tower_U')
 
 class RAFT_WEIS_Prep(om.ExplicitComponent):

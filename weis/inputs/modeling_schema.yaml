@@ -133,6 +133,20 @@ properties:
                 minimum: 0.0
                 maximum: 2.0
                 description: lowest frequency and frequency interval to use in BEM analysis
+            trim_ballast:
+                type: boolean
+                default: False
+                description: Use RAFT to trim ballast so that average heave is near 0
+            heave_tol:
+                type: number
+                default: 1
+                minimum: 0
+                description: Heave tolerance for trim_ballast
+                units: m
+            save_designs:
+                type: boolean
+                default: False
+                description: Save RAFT design iterations in <outputs>/raft_designs
     Level3: &ofmodopt
         type: object
         default: {}
