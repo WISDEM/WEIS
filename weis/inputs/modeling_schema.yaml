@@ -134,9 +134,9 @@ properties:
                 maximum: 2.0
                 description: lowest frequency and frequency interval to use in BEM analysis
             trim_ballast:
-                type: boolean
-                default: False
-                description: Use RAFT to trim ballast so that average heave is near 0
+                type: integer
+                default: 0
+                description: Use RAFT to trim ballast so that average heave is near 0 (0 - no trim, 1 - adjust compartment fill values, 2 - adjust ballast density, recommended for now)
             heave_tol:
                 type: number
                 default: 1
