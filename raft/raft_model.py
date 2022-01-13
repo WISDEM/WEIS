@@ -5,8 +5,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import yaml
-import pickle5 as pickle
-
+try:
+    import pickle5 as pickle
+except:
+    import pickle
 import moorpy as mp
 import raft.raft_fowt  as fowt
 from raft.helpers import *
@@ -102,7 +104,7 @@ class Model():
     """
 
 
-    def analyzeUnloaded(self, ballast=False, heave_tol = 1):
+    def analyzeUnloaded(self, ballast=0, heave_tol = 1):
         '''This calculates the system properties under undloaded coonditions: equilibrium positions, natural frequencies, etc.
         
         ballast: flag to ballast the FOWTs to achieve a certain heave offset'''
@@ -955,8 +957,7 @@ class Model():
         # total up the ballast volume
         ballast_volume = 0.0        
         for member in fowt.memberList:
-            if member.rho_fill > 0:     # find the first member in the memberList that has ballast
-                ballast_volume += sum(member.vfill)
+            ballast_volume += sum(member.vfill)
         
         # ensure there isn't no ballast volume
         if ballast_volume <= 0:
@@ -965,7 +966,7 @@ class Model():
         # calculate required change in ballast densities to zero heave offset
         delta_rho_fill = sumFz/fowt.g/ballast_volume
         
-        print(f"adjusting fill density by {delta_rho_fill:.3f} kg/m over {ballast_volume:.3f} m3 of ballast")
+        print(f" Adjusting fill density by {delta_rho_fill:.3f} kg/m over {ballast_volume:.3f} m3 of ballast")
         
         # apply the change to each member's fill densities
         for member in fowt.memberList:
