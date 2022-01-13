@@ -38,6 +38,7 @@ pH  = (design['platform']['members'][2]['rA'][2]-T)*2
 
 lower = 0.75
 upper = 1.25
+ballast = True
 
 ccDs = [ccD*lower, ccD, ccD*upper]
 ocDs = [ocD*lower, ocD, ocD*upper]
@@ -89,7 +90,7 @@ for a in ccDs:
                     print(f'RUNNING {a}-{b}-{c}-{d}-{e}')
                     print('------')
                     
-                    model = runRAFT(design, ballast=True, rho_fill_adj=10)
+                    model = runRAFT(design, ballast=ballast)
                     
                     (mass, displ, gmt, offset, pitch) = getOutputs(model)
                     M[ccDs.index(a),ocDs.index(b),Ts.index(c),ocRs.index(d),pHs.index(e)] = mass
@@ -102,7 +103,7 @@ for a in ccDs:
 '''
 sweep = dict(mass=M, displ=pV, gmt=GMT, offset=XY, pitch=P)
 
-with open(f'sweep-{lower}-{upper}.pkl', 'wb') as pfile:
+with open(f'sweep_{lower}-{upper}_ballast={ballast}.pkl', 'wb') as pfile:
     pickle.dump(sweep, pfile)
 '''
 with open(f'sweep-{lower}-{upper}.pkl', 'rb') as pfile:
@@ -122,7 +123,7 @@ fig, ax = plt.subplots(4,4, figsize=(24,16))
 
 F = np.zeros([len(ocRs),len(pHs)])
 
-
+title = False
 
 pontoon_heights, outer_column_radii = np.meshgrid(pHs, ocRs)
 
@@ -134,7 +135,7 @@ pHocR = ax[0,0].contourf(pontoon_heights, outer_column_radii, F)
 cbar = fig.colorbar(pHocR, ax=ax[0,0], label='Platform Mass (kg)')
 ax[0,0].set_ylabel('Outer Column Radius (m)')
 ax[0,0].set_xlabel('Pontoon Height (m)')
-ax[0,0].set_title('Platform Mass pH vs. ocR')
+if title: ax[0,0].set_title('Platform Mass pH vs. ocR')
 
 
 pontoon_heights, drafts = np.meshgrid(pHs, Ts)
@@ -147,7 +148,7 @@ pHT = ax[0,1].contourf(pontoon_heights, drafts, F)
 cbar = fig.colorbar(pHT, ax=ax[0,1], label='Platform Mass (kg)')
 ax[0,1].set_ylabel('Draft (m)')
 ax[0,1].set_xlabel('Pontoon Height (m)')
-ax[0,1].set_title('Platform Mass pH vs. T')
+if title: ax[0,1].set_title('Platform Mass pH vs. T')
 
 
 pontoon_heights, outer_column_diameters = np.meshgrid(pHs, ocDs)
@@ -160,7 +161,7 @@ pHocD = ax[0,2].contourf(pontoon_heights, outer_column_diameters, F)
 cbar = fig.colorbar(pHocD, ax=ax[0,2], label='Platform Mass (kg)')
 ax[0,2].set_ylabel('Outer Column Diameter (m)')
 ax[0,2].set_xlabel('Pontoon Height (m)')
-ax[0,2].set_title('Platform Mass pH vs. ocD')
+if title: ax[0,2].set_title('Platform Mass pH vs. ocD')
 
 pontoon_heights, center_column_diameters = np.meshgrid(pHs, ccDs)
 
@@ -172,7 +173,7 @@ pHccD = ax[0,3].contourf(pontoon_heights, center_column_diameters, F)
 cbar = fig.colorbar(pHccD, ax=ax[0,3], label='Platform Mass (kg)')
 ax[0,3].set_ylabel('Center Column Diameter (m)')
 ax[0,3].set_xlabel('Pontoon Height (m)')
-ax[0,3].set_title('Platform Mass pH vs. ccD')
+if title: ax[0,3].set_title('Platform Mass pH vs. ccD')
 
 # --------------
 
@@ -186,7 +187,7 @@ ocRpH = ax[1,0].contourf(outer_column_radii,pontoon_heights, F)
 cbar = fig.colorbar(ocRpH, ax=ax[1,0], label='Platform Mass (kg)')
 ax[1,0].set_xlabel('Outer Column Radius (m)')
 ax[1,0].set_ylabel('Pontoon Height (m)')
-ax[1,0].set_title('Platform Mass ocR vs. pH')
+if title: ax[1,0].set_title('Platform Mass ocR vs. pH')
 
 
 outer_column_radii, drafts = np.meshgrid(ocRs, Ts)
@@ -199,7 +200,7 @@ ocRT = ax[1,1].contourf(outer_column_radii, drafts, F)
 cbar = fig.colorbar(ocRT, ax=ax[1,1], label='Platform Mass (kg)')
 ax[1,1].set_ylabel('Draft (m)')
 ax[1,1].set_xlabel('Outer Column Radius (m)')
-ax[1,1].set_title('Platform Mass ocR vs. T')
+if title: ax[1,1].set_title('Platform Mass ocR vs. T')
 
 
 outer_column_radii, outer_column_diameters = np.meshgrid(ocRs, ocDs)
@@ -212,7 +213,7 @@ ocRocD = ax[1,2].contourf(outer_column_radii, outer_column_diameters, F)
 cbar = fig.colorbar(ocRocD, ax=ax[1,2], label='Platform Mass (kg)')
 ax[1,2].set_ylabel('Outer Column Diameter (m)')
 ax[1,2].set_xlabel('Outer Column Radius (m)')
-ax[1,2].set_title('Platform Mass ocR vs. ocD')
+if title: ax[1,2].set_title('Platform Mass ocR vs. ocD')
 
 outer_column_radii, center_column_diameters = np.meshgrid(ocRs, ccDs)
 
@@ -224,7 +225,7 @@ ocRccD = ax[1,3].contourf(outer_column_radii, center_column_diameters, F)
 cbar = fig.colorbar(ocRccD, ax=ax[1,3], label='Platform Mass (kg)')
 ax[1,3].set_ylabel('Center Column Diameter (m)')
 ax[1,3].set_xlabel('Outer Column Radius (m)')
-ax[1,3].set_title('Platform Mass ocR vs. ccD')
+if title: ax[1,3].set_title('Platform Mass ocR vs. ccD')
 
 
 # --------------
@@ -239,7 +240,7 @@ TpH = ax[2,0].contourf(drafts, pontoon_heights, F)
 cbar = fig.colorbar(TpH, ax=ax[2,0], label='Platform Mass (kg)')
 ax[2,0].set_xlabel('Draft (m)')
 ax[2,0].set_ylabel('Pontoon Height (m)')
-ax[2,0].set_title('Platform Mass T vs. pH')
+if title: ax[2,0].set_title('Platform Mass T vs. pH')
 
 
 drafts, outer_column_radii = np.meshgrid(Ts, ocRs)
@@ -252,7 +253,7 @@ TocR = ax[2,1].contourf(drafts, outer_column_radii, F)
 cbar = fig.colorbar(TocR, ax=ax[2,1], label='Platform Mass (kg)')
 ax[2,1].set_xlabel('Draft (m)')
 ax[2,1].set_ylabel('Outer Column Radius (m)')
-ax[2,1].set_title('Platform Mass T vs. ocR')
+if title: ax[2,1].set_title('Platform Mass T vs. ocR')
 
 
 drafts, outer_column_diameters = np.meshgrid(Ts, ocDs)
@@ -265,7 +266,7 @@ TocD = ax[2,2].contourf(drafts, outer_column_diameters, F)
 cbar = fig.colorbar(TocD, ax=ax[2,2], label='Platform Mass (kg)')
 ax[2,2].set_ylabel('Outer Column Diameter (m)')
 ax[2,2].set_xlabel('Draft (m)')
-ax[2,2].set_title('Platform Mass T vs. ocD')
+if title: ax[2,2].set_title('Platform Mass T vs. ocD')
 
 drafts, center_column_diameters = np.meshgrid(Ts, ccDs)
 
@@ -277,7 +278,7 @@ TccD = ax[2,3].contourf(drafts, center_column_diameters, F)
 cbar = fig.colorbar(TccD, ax=ax[2,3], label='Platform Mass (kg)')
 ax[2,3].set_ylabel('Center Column Diameter (m)')
 ax[2,3].set_xlabel('Draft (m)')
-ax[2,3].set_title('Platform Mass T vs. ccD')
+if title: ax[2,3].set_title('Platform Mass T vs. ccD')
 
 
 # --------------
@@ -292,7 +293,7 @@ ocDpH = ax[3,0].contourf(outer_column_diameters, pontoon_heights, F)
 cbar = fig.colorbar(ocDpH, ax=ax[3,0], label='Platform Mass (kg)')
 ax[3,0].set_xlabel('Outer Column Diameter (m)')
 ax[3,0].set_ylabel('Pontoon Height (m)')
-ax[3,0].set_title('Platform Mass ocD vs. pH')
+if title: ax[3,0].set_title('Platform Mass ocD vs. pH')
 
 
 outer_column_diameters, outer_column_radii = np.meshgrid(ocDs, ocRs)
@@ -305,7 +306,7 @@ ocDocR = ax[3,1].contourf(outer_column_diameters, outer_column_radii, F)
 cbar = fig.colorbar(ocDocR, ax=ax[3,1], label='Platform Mass (kg)')
 ax[3,1].set_xlabel('Outer Column Diameter (m)')
 ax[3,1].set_ylabel('Outer Column Radius (m)')
-ax[3,1].set_title('Platform Mass ocD vs. ocR')
+if title: ax[3,1].set_title('Platform Mass ocD vs. ocR')
 
 
 outer_column_diameters, drafts = np.meshgrid(ocDs, Ts)
@@ -318,7 +319,7 @@ ocDT = ax[3,2].contourf(outer_column_diameters, drafts, F)
 cbar = fig.colorbar(ocDT, ax=ax[3,2], label='Platform Mass (kg)')
 ax[3,2].set_xlabel('Outer Column Diameter (m)')
 ax[3,2].set_ylabel('Draft (m)')
-ax[3,2].set_title('Platform Mass ocD vs. T')
+if title: ax[3,2].set_title('Platform Mass ocD vs. T')
 
 outer_column_diameters, center_column_diameters = np.meshgrid(ocDs, ccDs)
 
@@ -330,7 +331,7 @@ ocDccD = ax[3,3].contourf(outer_column_diameters, center_column_diameters, F)
 cbar = fig.colorbar(ocDccD, ax=ax[3,3], label='Platform Mass (kg)')
 ax[3,3].set_ylabel('Center Column Diameter (m)')
 ax[3,3].set_xlabel('Outer Column Diameter (m)')
-ax[3,3].set_title('Platform Mass ocD vs. ccD')
+if title: ax[3,3].set_title('Platform Mass ocD vs. ccD')
 
 
 

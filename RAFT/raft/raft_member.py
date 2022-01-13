@@ -336,6 +336,7 @@ class Member:
         
         mass_center = 0                                 # total sum of mass the center of mass of the member [kg-m]
         mshell = 0                                      # total mass of the shell material only of the member [kg]
+        self.vfill = []                                 # list of ballast volumes in each submember [m^3] - stored in the object for later access
         mfill = []                                      # list of ballast masses in each submember [kg]
         pfill = []                                      # list of ballast densities in each submember [kg]
         self.M_struc = np.zeros([6,6])                  # member mass/inertia matrix [kg, kg-m, kg-m^2]
@@ -350,6 +351,7 @@ class Member:
                 mass = 0
                 center = np.zeros(3)
                 m_shell = 0
+                v_fill = 0
                 m_fill = 0
                 rho_fill = 0
             else:
@@ -459,6 +461,7 @@ class Member:
             # add/append terms
             mass_center += mass*center                  # total sum of mass the center of mass of the member [kg-m]
             mshell += m_shell                           # total mass of the shell material only of the member [kg]
+            self.vfill.append(v_fill)                        # list of ballast volumes in each submember [m^3]
             mfill.append(m_fill)                        # list of ballast masses in each submember [kg]
             pfill.append(rho_fill)                     # list of ballast densities in each submember [kg]
 
@@ -852,10 +855,10 @@ class Member:
             #linebit.append(ax.plot(Xs[[2*i,2*i+2]],Ys[[2*i,2*i+2]],Zs[[2*i,2*i+2]]      , color='k'))  # end A edges
             #linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color='k'))  # end B edges
 
-            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color=color, lw=0.5))  # side edges
+            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color=color, lw=0.5, zorder=2))  # side edges
 
         for j in range(m):
-            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color=color, lw=0.5))  # station rings
+            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color=color, lw=0.5, zorder=2))  # station rings
 
 
         # plot nodes if asked
