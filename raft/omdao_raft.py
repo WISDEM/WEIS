@@ -1,6 +1,7 @@
 import openmdao.api as om
 import raft
 import numpy as np
+import pickle, os
 
 ndim = 3
 ndof = 6
@@ -14,11 +15,14 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.options.declare('turbine_options')
         self.options.declare('mooring_options')
         self.options.declare('member_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
 
         # unpack options
         modeling_opt = self.options['modeling_options']
+        analysis_options = self.options['analysis_options']
+        
         nfreq = modeling_opt['nfreq']
         n_cases = modeling_opt['n_cases']
 
@@ -302,15 +306,18 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('max_nacelle_Ax', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
         self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
         self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
+
+        self.i_design = 0
+        if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
+            os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
                 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        debug_flag = False
-        
         turbine_opt = self.options['turbine_options']
         mooring_opt = self.options['mooring_options']
         members_opt = self.options['member_options']
         modeling_opt = self.options['modeling_options']
+        analysis_options = self.options['analysis_options']
 
         #turbine_npts = turbine_opt['npts']
 
@@ -336,7 +343,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['comments'] = ['none']
         
         design['settings'] = {}
-        design['settings']['XiStart'] = float(modeling_opt['XiStart'])
+        design['settings']['XiStart'] = float(modeling_opt['xi_start'])
         design['settings']['min_freq'] = float(modeling_opt['min_freq'])
         design['settings']['max_freq'] = float(modeling_opt['max_freq'])
         design['settings']['nIter'] = int(modeling_opt['nIter'])
@@ -437,8 +444,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # Platform members
         design['platform'] = {}
-        design['platform']['potModMaster'] = int(modeling_opt['potModMaster'])
-        design['platform']['dlsMax'] = float(modeling_opt['dlsMax'])
+        design['platform']['potModMaster'] = int(modeling_opt['potential_model_override'])
+        design['platform']['dlsMax'] = float(modeling_opt['dls_max'])
         design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
         design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):
@@ -585,14 +592,19 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['cases']['data'] = discrete_inputs['raft_dlcs']
 
         # Debug
-        if debug_flag:
-            import pickle
-            with open('raft_design.pkl', 'wb') as handle:
+        if modeling_opt['save_designs']:
+            with open(
+                os.path.join(analysis_options['general']['folder_output'],
+                f'raft_design_{self.i_design}.pkl'), 'wb') as handle:
                 pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            self.i_design += 1
                 
         # set up the model
         model = raft.Model(design)
-        model.analyzeUnloaded()
+        model.analyzeUnloaded(
+            ballast= modeling_opt['trim_ballast'], 
+            heave_tol = modeling_opt['heave_tol']
+            )
         
         # option to generate seperate HAMS data for level 2 or 3, with higher res settings
         if False: #preprocessBEM:
@@ -639,3 +651,4 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_max'].max()
         outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
+        print('here')
