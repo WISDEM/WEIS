@@ -120,12 +120,14 @@ class Model():
         # calculate the system's constant properties
         #self.calcSystemConstantProps()
         for fowt in self.fowtList:
+        
+            # apply any ballast adjustment if requested
             if ballast == 1:
                 self.adjustBallast(fowt, heave_tol=heave_tol)  
             elif ballast == 2:
-                self.adjustBallastDensity(fowt)
-                
-            # if a ballast adjustment is not desired, carry on normally
+                self.adjustBallastDensity(fowt)        
+            
+            # compute FOWT static and constant hydrodynamic properties
             fowt.calcStatics()
             #fowt.calcBEM()
             fowt.calcHydroConstants(dict(wave_spectrum='still', wave_heading=0))
@@ -948,7 +950,17 @@ class Model():
         
         print("Adjusting ballast to trim heave.")
         
-        # check initial offset
+        # check for any instances of zero-density ballast and ensure the corresponding fill length is zero        
+        for member in fowt.memberList:
+            if type(member.l_fill) is float:  # if there is only one section of ballast in the member            
+                if member.rho_fill == 0.0:
+                    member.l_fill = 0.0
+            else:
+                for i in len(l_fill):
+                    if member.rho_fill[i] == 0.0:
+                        member.l_fill[i] = 0.0
+        
+        # compute ballast and check initial offset
         fowt.calcStatics()
         sumFz = -fowt.M_struc[0,0]*fowt.g + fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2]
         heave = sumFz/(fowt.rho_water*fowt.g*fowt.body.AWP)        
@@ -959,7 +971,7 @@ class Model():
         for member in fowt.memberList:
             ballast_volume += sum(member.vfill)
         
-        # ensure there isn't no ballast volume
+        # ensure there isn't zero ballast volume
         if ballast_volume <= 0:
             raise Exception("adjustBallastDenity can only be used for platforms that have some ballast volume.")
         
@@ -968,11 +980,17 @@ class Model():
         
         print(f" Adjusting fill density by {delta_rho_fill:.3f} kg/m over {ballast_volume:.3f} m3 of ballast")
         
-        # apply the change to each member's fill densities
+        # apply the change to each ballasted (sub)member's fill densities
         for member in fowt.memberList:
-            member.rho_fill += delta_rho_fill
+            if type(member.l_fill) is float:  # if there is only one section of ballast in the member            
+                if member.l_fill > 0.0:
+                    member.rho_fill += delta_rho_fill
+            else:
+                for i in len(l_fill):
+                    if member.l_fill[i] > 0.0:
+                        member.rho_fill[i] += delta_rho_fill
         
-        # check adjusted offset
+        # recompute ballast and check adjusted offset
         fowt.calcStatics()
         sumFz = -fowt.M_struc[0,0]*fowt.g + fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2]
         heave = sumFz/(fowt.rho_water*fowt.g*fowt.body.AWP)
