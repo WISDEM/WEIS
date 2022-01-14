@@ -32,7 +32,8 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('zeta_vs',       val=0.0)
         self.add_input('Flp_omega',     val=0.0, units='rad/s')
         self.add_input('Flp_zeta',      val=0.0)
-        self.add_input('IPC_Ki1p',      val=0.0, units='rad/(N*m)')
+        self.add_input('IPC_Kp1p',      val=0.0, units='s')
+        self.add_input('IPC_Ki1p',      val=0.0,)
         self.add_input('tip_deflection',val=0.0, units='m')
         self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
         self.add_input('rotor_overspeed',val=0.0)
@@ -67,7 +68,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
             
             # IPC
-            if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['flag']:
+            if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Kp']:
+                print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Kp1p'][0]))
+            if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Ki']:
                 print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
            
             # Flaps

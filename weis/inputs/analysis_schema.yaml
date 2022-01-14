@@ -217,8 +217,46 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    flag: *flag
-                            
+                                    Kp: 
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.0
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: s
+                                            max:
+                                                type: number
+                                                default: 0.0
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: s
+                                            ref: &ipc_ref
+                                                type: number 
+                                                default: 1.e-8
+                                                minimum: 1.e-10
+                                                maximum: 1.e-5
+                                    Ki: 
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.0
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 1.e-7
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: none
+                                            ref: *ipc_ref
 
     constraints:
         # GB: These all need gammas or safety factors
