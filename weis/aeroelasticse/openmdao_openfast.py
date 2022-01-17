@@ -1954,7 +1954,7 @@ class FASTLoadCases(ExplicitComponent):
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
 
-        if modopt['flags']['floating']:
+        if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
                                                                    outputs, discrete_outputs)
 

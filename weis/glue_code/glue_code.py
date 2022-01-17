@@ -50,7 +50,10 @@ class WindPark(om.Group):
         self.add_subsystem('dac_ivc',dac_ivc)
 
         tune_rosco_ivc = om.IndepVarComp()
-        n_PC = len(modeling_options['ROSCO']['U_pc'])
+        if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
+            n_PC = 1
+        else:
+            n_PC = len(modeling_options['ROSCO']['U_pc'])
         tune_rosco_ivc.add_output('omega_pc',         val=np.zeros(n_PC), units='rad/s',     desc='Pitch controller natural frequency')
         tune_rosco_ivc.add_output('zeta_pc',          val=np.zeros(n_PC),                    desc='Pitch controller damping ratio')
         tune_rosco_ivc.add_output('omega_vs',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
@@ -58,6 +61,8 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
         tune_rosco_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
         tune_rosco_ivc.add_output('IPC_Ki1p',         val=0.0, units='rad/(N*m)', desc='Individual pitch controller 1p gain')
+        tune_rosco_ivc.add_output('stability_margin', val=0.0,                    desc='Stability margin for robust tuning')
+        tune_rosco_ivc.add_output('omega_pc_max',     val=0.0,                    desc='Maximum allowable omega for robust tuning')
         # optional inputs - not connected right now!!
         tune_rosco_ivc.add_output('max_pitch',        val=0.0, units='rad',       desc='Maximum pitch angle , {default = 90 degrees}')
         tune_rosco_ivc.add_output('min_pitch',        val=0.0, units='rad',       desc='Minimum pitch angle [rad], {default = 0 degrees}')
@@ -201,6 +206,8 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
+            self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
+            self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
 
             # Someday, if we want to get ptfm_freq from Level 1, we'd switch that here
             self.connect('tune_rosco_ivc.ptfm_freq',        'sse_tune.tune_rosco.ptfm_freq')

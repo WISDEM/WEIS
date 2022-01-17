@@ -8,18 +8,18 @@ Here, we give an overview of the structure of the ROSCO controller and how the c
 
 -----
 
-File Structure
---------------
+ROSCO File Structure
+---------------------
 The primary functions of the ROSCO toolbox are separated into several files. They include the following:
 
-    * :code:`DISCON.f90` is the primary driver function. 
-    * :code:`ReadSetParameters.f90` primarily handles file I/O and the Bladed Interface.
-    * :code:`ROSCO_Types.f90` allocates variables in memory.
-    * :code:`Constants.f90` establishes some global constants.
-    * :code:`Controllers.f90` contains the primary controller algorithms (e.g. blade pitch control)
-    * :code:`ControllerBlocks.f90` contains additional control features that are not necessarily primary controllers (e.g. wind speed estimator)
-    * :code:`Filters.f90` contains the various filter implementations.
-    * :code:`Functions.f90` contains various functions used in the controller.
+* :code:`DISCON.f90` is the primary driver function. 
+* :code:`ReadSetParameters.f90` primarily handles file I/O and the Bladed Interface.
+* :code:`ROSCO_Types.f90` allocates variables in memory.
+* :code:`Constants.f90` establishes some global constants.
+* :code:`Controllers.f90` contains the primary controller algorithms (e.g. blade pitch control)
+* :code:`ControllerBlocks.f90` contains additional control features that are not necessarily primary controllers (e.g. wind speed estimator)
+* :code:`Filters.f90` contains the various filter implementations.
+* :code:`Functions.f90` contains various functions used in the controller.
 
 .. _discon_in: 
 
@@ -114,6 +114,14 @@ Examples of the DISCON.IN file are found in each of the Test Cases in the ROSCO 
     - :code:`F_FlCornerFreq`
     - Float Float
     - Corner frequency and damping ratio for the second order low pass filter of the tower-top fore-aft motion for floating feedback control [rad/s, -].
+  * -
+    - :code:`F_WECornerFreq`
+    - Float
+    - Corner frequency (-3dB point) in the first order low pass filter for the wind speed estimate [rad/s].
+  * -
+    - :code:`F_FlHighPassFreq`
+    - Float
+    -  Natural frequency of first-order high-pass filter for nacelle fore-aft motion [rad/s]..
   * -
     - :code:`F_FlpCornerFreq`
     - Float Float
