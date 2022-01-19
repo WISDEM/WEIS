@@ -202,8 +202,8 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
         rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
-            rosco_init_options['omega_flp'] = inputs['Flp_omega']
-            rosco_init_options['zeta_flp']  = inputs['Flp_zeta']
+            rosco_init_options['omega_flp'] = float(inputs['Flp_omega'])
+            rosco_init_options['zeta_flp']  = float(inputs['Flp_zeta'])
         else:
             rosco_init_options['omega_flp'] = 0.0
             rosco_init_options['zeta_flp']  = 0.0
