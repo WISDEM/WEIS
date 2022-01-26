@@ -1486,7 +1486,7 @@ properties:
                     criterion:
                         type: string
                         description: Descriptor of sampling method for LatinHypercube generator
-                        default: None
+                        default: center
                         enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
                     iterations:
                         type: integer
