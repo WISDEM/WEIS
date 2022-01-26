@@ -956,7 +956,7 @@ class Model():
                 if member.rho_fill == 0.0:
                     member.l_fill = 0.0
             else:
-                for i in len(l_fill):
+                for i in range(len(member.l_fill)):
                     if member.rho_fill[i] == 0.0:
                         member.l_fill[i] = 0.0
         
@@ -986,7 +986,7 @@ class Model():
                 if member.l_fill > 0.0:
                     member.rho_fill += delta_rho_fill
             else:
-                for i in len(l_fill):
+                for i in range(len(member.l_fill)):
                     if member.l_fill[i] > 0.0:
                         member.rho_fill[i] += delta_rho_fill
         
