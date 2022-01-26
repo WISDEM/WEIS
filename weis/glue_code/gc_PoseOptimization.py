@@ -281,11 +281,11 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = control_constraints['avg_pitch_travel']['max'])
 
         # Blade pitch duty cycle (number of direction changes)
-        if control_constraints['avg_pitch_travel']['flag']:
+        if control_constraints['pitch_duty_cycle']['flag']:
             if self.modeling['Level3']['flag'] != True:
-                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize avg_pitch_travel constraints.')
-            wt_opt.model.add_constraint('aeroelastic.avg_pitch_travel',
-                upper = control_constraints['avg_pitch_travel']['max'])
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize pitch_duty_cycle constraints.')
+            wt_opt.model.add_constraint('aeroelastic.pitch_duty_cycle',
+                upper = control_constraints['pitch_duty_cycle']['max'])
 
         # OpenFAST failure
         if self.opt['constraints']['openfast_failed']['flag']:
