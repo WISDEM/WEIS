@@ -594,7 +594,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Debug
         if modeling_opt['save_designs']:
             with open(
-                os.path.join(analysis_options['general']['folder_output'],
+                os.path.join(analysis_options['general']['folder_output'],'raft_designs',
                 f'raft_design_{self.i_design}.pkl'), 'wb') as handle:
                 pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
             self.i_design += 1
@@ -648,7 +648,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs['heave_avg'] = outputs['stats_heave_avg'].mean()
         outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'].max()
         outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'].mean()
-        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_max'].max()
+        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'].max()
         outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
         print('here')
