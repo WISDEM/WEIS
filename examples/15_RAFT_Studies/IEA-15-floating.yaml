@@ -541,14 +541,16 @@ components:
                     - variable_flag: False
                       material: slurry
                       volume: 325
-                      grid: [0.0, 0.1]
-                    - variable_flag: True
-                      grid: [0.1, 0.4]
+                      grid: [0.0, 1.0]
+                    # - variable_flag: True
+                    #   grid: [0.25, 0.4]
                 bulkhead:
                     material: steel
                     thickness:
-                        grid:   [0.00, 0.25, 0.50, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
-                        values: [0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35]
+                        grid:   [0.00, 1.00]
+                        values: [0.35, 0.35]
+                        # grid:   [0.00, 0.25, 0.50, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
+                        # values: [0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35]
               axial_joints:
                 - name: main_upper_pontoon
                   grid: 0.987
@@ -576,12 +578,12 @@ components:
                 bulkhead:
                     material: steel
                     thickness:
-                        grid: [0.0, 0.05, 0.2, 1.0]
-                        values: [0.075, 0.075, 0.075, 0.075]
+                        grid: [0.0, 1.0]
+                        values: [0.075, 0.075]
                 ballasts:
                     - variable_flag: False
                       material: slurry
-                      volume: 800
+                      volume: 300
                       grid: [0.0, 0.25]
                     - variable_flag: True
                       grid: [0.25, 0.4]
