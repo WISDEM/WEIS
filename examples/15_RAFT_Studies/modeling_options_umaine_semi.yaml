@@ -77,6 +77,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 Level1:
     flag: True
     potential_model_override: 0
+    trim_ballast: 2
+    heave_tol: 1
+    save_designs: True
 
 ROSCO:
     flag: True
@@ -87,9 +90,9 @@ ROSCO:
     F_NotchType: 2
     Fl_Mode: 2 
     tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
-    zeta_pc: [1,1]
-    omega_pc: [0.2,0.2]
-    U_pc: [12,18]
+    zeta_pc: [1]
+    omega_pc: [0.2]
+    U_pc: [12]
     zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     omega_vs: 0.12  
     twr_freq: 3.2
