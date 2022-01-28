@@ -1,5 +1,8 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: lin
+        OF_run_dir: outputs/12_linearization_DOE
 
 WISDEM:
     RotorSE:
@@ -68,7 +71,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-        ElastoDynBlade:
+    ElastoDynBlade:
         BldFlDmp1: 3.0
         BldFlDmp2: 3.0
         BldEdDmp1: 3.0
@@ -103,17 +106,15 @@ Level2:
     linearization:
         TMax: 60.
         DT: 0.01
-        TrimGain: 1e-3
+        TrimGain: 1e-4
         TrimTol: 1e-2
-        wind_speeds: [8.]
-        DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 1
+        wind_speeds: [12.]
+        DOFs: ['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF', 'PtfmSgDOF']
+        NLinTimes: 12
 
+Level1:
+    potential_model_override: 2
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: lin
-        OF_run_dir: outputs/tower_doe
-        use_exe: True
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2

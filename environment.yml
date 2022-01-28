@@ -20,6 +20,7 @@ dependencies:
   - openpyxl
   - pandas
   - pip
+  - pyoptsparse
   - pyside2
   - pytest
   - pytest-cov
@@ -28,6 +29,7 @@ dependencies:
   - ruamel_yaml
   - scipy
   - setuptools
+  - simpy
   - slycot
   - smt
   - sortedcontainers
@@ -37,7 +39,6 @@ dependencies:
     - fatpack
     - jsonmerge
     - marmot-agents
-    - simpy
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
