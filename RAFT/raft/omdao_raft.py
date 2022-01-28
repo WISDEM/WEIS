@@ -307,6 +307,12 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
         self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
 
+        # Combined outputs for OpenFAST
+        self.add_output("platform_total_center_of_mass", np.zeros(3), units="m")
+        self.add_output("platform_displacement", 0.0, desc='Volumetric platform displacement', units='m**3')
+        self.add_output("platform_mass", 0.0, units="kg")
+        self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
+        
         self.i_design = 0
         if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
             os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
@@ -651,4 +657,14 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'].max()
         outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
+        
+        # Combined outputs for OpenFAST, TODO: clean up and move to wrapper
+        outputs['platform_displacement'] = model.fowtList[0].V
+        outputs["platform_total_center_of_mass"] = outputs['properties_substructure CG']
+        outputs["platform_mass"] = outputs["properties_substructure mass"]
+        # Note: Inertia calculated for each case
+        outputs["platform_I_total"][:3] = np.r_[outputs['properties_roll inertia at subCG'][0],
+                                           outputs['properties_pitch inertia at subCG'][0],
+                                           outputs['properties_yaw inertia at subCG'][0]]
+
         print('here')

@@ -457,10 +457,14 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                     self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    self.connect("floatingse.platform_mass", "aeroelastic.platform_mass")
-                    self.connect("floatingse.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
-                    self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
-                    self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
+                    if True:
+                        ptfm_data_source = 'floatingse'
+                    else:
+                        ptfm_data_source = 'raft'
+                    self.connect(f"{ptfm_data_source}.platform_mass", "aeroelastic.platform_mass")
+                    self.connect(f"{ptfm_data_source}.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
+                    self.connect(f"{ptfm_data_source}.platform_I_total", "aeroelastic.platform_I_total")
+                    self.connect(f"{ptfm_data_source}.platform_displacement", "aeroelastic.platform_displacement")
                     self.connect("floating.transition_node", "aeroelastic.transition_node")
 
                     for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):

@@ -12,8 +12,8 @@ class PoseOptimizationWEIS(PoseOptimization):
             self.solve_component = 'aeroelastic'
 
         self.level_flags = np.array([modeling_options[level]['flag'] for level in ['Level1','Level2','Level3']])
-        if sum(self.level_flags) > 1:
-            raise Exception('Only one level in WEIS can be enabled at the same time')
+        # if sum(self.level_flags) > 1:
+            # raise Exception('Only one level in WEIS can be enabled at the same time')
 
         super(PoseOptimizationWEIS, self).__init__(wt_init, modeling_options, analysis_options)
         
