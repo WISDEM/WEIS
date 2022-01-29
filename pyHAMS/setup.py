@@ -51,9 +51,9 @@ if not intel_flag:
         pass
     
 if intel_flag:
-    myargs = ['-mkl']
-    mylib = []
-    mylink = ['-mkl']
+    myargs = ['-qmkl']
+    mylib = ['mkl_rt']
+    mylink = []
 else:
     myargs = ['-fno-align-commons','-fdec-math']
     mylib = ['lapack']
