@@ -60,7 +60,7 @@ else:
     mylink = []
 
 pyhamsExt = Extension('pyhams.libhams', sources=[os.path.join(root_dir,m) for m in f90src],
-                      extra_f90_compile_args=['-O3','-m64','-fPIC','-g',]+myargs,
+                      extra_compile_args=['-O3','-m64','-fPIC','-g','-std=c11']+myargs,
                       libraries=mylib,
                       extra_link_args=['-fopenmp']+mylink)
 extlist = [] if platform.system() == 'Windows' else [pyhamsExt]
