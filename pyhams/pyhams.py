@@ -124,7 +124,7 @@ def create_hams_dirs(baseDir=None):
     outputDirWamit = osp.join(baseDir, 'Output/Wamit_format')
 
     if osp.isdir(inputDir) is not True:
-        os.mkdir(inputDir)
+        os.makedirs(inputDir)
     if osp.isdir(outputDirHams) is not True:
         os.makedirs(outputDirHams)
     if osp.isdir(outputDirHydrostar) is not True:
@@ -297,7 +297,7 @@ def write_control_file(projectDir=None, waterDepth=50.0, incFLim=1, iFType=3, oF
     f.write(f'    Minimum_heading         {minHeading}D0\n')
     f.write(f'    Heading_step            {dHeading}D0\n')
     f.write('   #End Definition of Wave Headings\n\n')
-    f.write(f'    Reference_body_center   {refBodyCenter[0]:.3f} {refBodyCenter[1]:.3f} {refBodyCenter[2]:.3f}\n')
+    f.write(f'    Reference_body_center   {refBodyCenter[0]:.3f}         {refBodyCenter[1]:.3f}         {refBodyCenter[2]:.3f}\n')
     f.write(f'    Reference_body_length   {refBodyLen}D0\n')
     f.write('    Wave-diffrac-solution   2\n')
     f.write(f'    If_remove_irr_freq      {irr}\n')

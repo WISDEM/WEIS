@@ -51,7 +51,7 @@ if not intel_flag:
         pass
     
 if intel_flag:
-    myargs = ['-qmkl']
+    myargs = ['-mkl']
     mylib = ['mkl_rt']
     mylink = []
 else:
