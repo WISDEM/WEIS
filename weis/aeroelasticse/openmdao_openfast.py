@@ -1962,8 +1962,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
-                                                                   outputs, discrete_outputs)
+            outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
         if any(summary_stats['openfast_failed']['mean'] > 0):
