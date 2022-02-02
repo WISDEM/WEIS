@@ -1613,8 +1613,8 @@ class FASTLoadCases(ExplicitComponent):
                     rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
                     pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
                 else:
-                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
-                    pitch_initial[i_case]       = 15
+                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi / fst_vt['ElastoDyn']['GBRatio']
+                    pitch_initial[i_case]       = 10
             else:
                 rot_speed_initial[i_case] = 0.
                 pitch_initial[i_case] = 90.
