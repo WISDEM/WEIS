@@ -38,7 +38,7 @@ def ModelClipping(Aw,Bw,Cw,Dw,xw,u_h):
         # fixing index
         ind_fix = ind_original[ind_clip][0]-1
         
-        
+        # clip models
         for ind in range(nl):
             
             if ind_clip[ind]:
@@ -50,9 +50,10 @@ def ModelClipping(Aw,Bw,Cw,Dw,xw,u_h):
                 
                 xw[:,ind] = xw[:,ind_fix]
                 
-                
+    # get shape            
     nl,nx,nu = np.shape(Bw)
-
+    
+    # reduce the model
     nx_new = np.zeros((nx),dtype = 'bool')
     nx_new[0:5] = True
     
@@ -187,20 +188,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     # clip the model and reduce it
     Aw,Bw,Cw,Dw,xw,ws = ModelClipping(Aw, Bw, Cw, Dw, xw, ws)
     
-    # reduce_flag = True
-    
-    # nw,nx,nu = np.shape(Bw)
-    
-    # if reduce_flag:
-    #     nx_new = np.zeros((nx),dtype = 'bool')
-    #     nx_new[0:5] = True
-        
-    #     Aw = Aw[:,nx_new,:]; Aw = Aw[:,:,nx_new]
-    #     Bw = Bw[:,nx_new,:]
-    #     Cw = Cw[:,:,nx_new]
-    
-    #     xw = xw[nx_new,:]
-        
+    # get shape
     nw,nx,nu = np.shape(Bw)
  
     # construct LPV models
@@ -254,8 +242,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     filterflag = 0
     
-    
-    
+     
     if filterflag:                         
         t_f = 1
         dt = tt[2,0]-tt[1,0]
@@ -268,9 +255,9 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     opts = options()
 
     opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-8
-    opts.solver.maxiters = 150
-    opts.solver.function = 'ipopt'
+    opts.solver.tolerence = 1e-4
+    opts.solver.maxiters = 150000
+    opts.solver.function = 'osqp'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
     W_pp = PchipInterpolator(np.squeeze(tt),np.squeeze(Wind_speed))
@@ -282,7 +269,6 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     DXoDt_fun = lambda t: (-DXo_fun(W_fun(t)).T*DW_fun(t)).T
 
-    
 
     ## Disc2 cont
 
@@ -315,15 +301,17 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     r = Xo_fun(ws)
     
     # Constraints generated from output
-    OutputCon_flag = True
+    OutputCon_flag = False
     
     if OutputCon_flag:
-        #Qty = ["ED TwrBsFxt, (kN)"] 
+        
+        # quantities
         Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
         
-        #b = [4000] 
+        # upper limit
         b = [5000,35000]
         
+        # create constraints
         Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,b,yw)
 
     # lambda function to find the values of lambda function at specific indices
@@ -419,18 +407,13 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     L[lx].right = 1
     L[lx].matrix = np.diag([0,R1,R2])
     
-    
-    # L[lx].left = 0;
-    # L[lx].right = 0;
-    # L00 = np.empty((1,1),dtype = 'O'); L00[0,0] = lambda t: 6 - PP_fun(W_fun(t))
-    # L[lx].matrix = L00
 
     lx = lx+1
     
     L[lx].left = 2;
     L[lx].right = 2;
     L1 = np.zeros((nx,nx))
-    L1[iPtfmPitch,iPtfmPitch] = -1e9
+    L1[iPtfmPitch,iPtfmPitch] = 1e9
     L[lx].matrix = L1
     
     lx = lx+1
@@ -464,9 +447,8 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     L4mat[0,0] = lambda t: GP_fun(W_fun(t))
     L[lx].matrix = L4mat
 
-    # 
+    # scaling
     scale = Scaling(right = 1, matrix = np.array([1,1e-16,1e-4]))
-
 
     # setup
     s = setup()
@@ -480,11 +462,15 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     s.Lagrange = L
     s.UB = UB
     s.LB = LB
-    s.Scaling = scale
     s.t0 = t0
     s.tf = tf
-    s.ScaleObjective = True
     
+    # scaling is not needed for osqp
+    if opts.solver.function == 'ipopt':
+        s.ScaleObjective = True
+        s.Scaling = scale
+    
+    # solve
     [T,Ul,Xl,P,F,internal,opts] = DTQPy_solve(s,opts)
 
     # calculate offset

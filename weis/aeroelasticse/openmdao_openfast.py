@@ -537,8 +537,7 @@ class FASTLoadCases(ExplicitComponent):
                 'StateDerivOrder' : None,
                 'ind_fast_inps' : None,
                 'ind_fast_outs' : None,
-                'AEP': None,
-                'LCOE':None
+                'AEP': None
                 }
             with open(self.lin_pkl_file_name, 'rb') as handle:
                 ABCD_list = pickle.load(handle)

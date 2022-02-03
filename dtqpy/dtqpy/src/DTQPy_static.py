@@ -97,7 +97,7 @@ def DTQPy_static(LinearModels,disturbance,constraints,plot=False):
     opts = options()
 
     opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-5
+    opts.solver.tolerence = 1e-6
     opts.solver.maxiters = 150
     opts.solver.function = 'ipopt'
     
@@ -188,14 +188,7 @@ def DTQPy_static(LinearModels,disturbance,constraints,plot=False):
     L4mat = np.empty((1,1))
     L4mat[0,0] = GP_static
     L[lx].matrix = L4mat
-    
-    # lx = lx+1
-    # L[lx].left = 2
-    # L[lx].right = 2
-    # L5mat = np.zeros((nx,nx))
-    # L5mat[iPtfmPitch,iPtfmPitch] = 1e5
-    # L[lx].matrix = L5mat
-    
+      
      # UB,LB
     UB = [Simple_Bounds() for n in range(3)]
     LB = [Simple_Bounds() for n in range(3)]

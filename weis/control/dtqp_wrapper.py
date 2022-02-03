@@ -151,8 +151,11 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         
 # Wrapper for actually running dtqp with a single input, useful for running in parallel
 def run_dtqp(dtqp_input):
+    
+    # get number of linearized models
     nl = len(dtqp_input['LinearTurbine'].u_h)
     
+    # if nl ==1, run DTQPy_static else run DTQPy_oloc
     if nl>1:
         T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
     elif nl ==1:

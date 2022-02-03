@@ -18,7 +18,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
-
+    
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
     # Otherwise, initialize the WindPark system normally. Get the rank number for parallelization. We only print output files using the root processor.
     myopt = PoseOptimizationWEIS(wt_init, modeling_options, opt_options)
@@ -52,6 +52,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
         elif modeling_options['Level2']['flag']:
+            
+            if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+                n_DV = 1
+            
+            
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
             else:
