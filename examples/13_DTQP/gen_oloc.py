@@ -9,22 +9,9 @@ from weis.aeroelasticse.CaseGen_General import case_naming
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
-import matplotlib.pyplot as plt
+
 
 import numpy as np
-
-class dict2class(object):
-    
-    def __init__(self,my_dict):
-        
-        for key in my_dict:
-            setattr(self,key,my_dict[key])
-            
-        self.A_ops = self.A
-        self.B_ops = self.B
-        self.C_ops = self.C
-        self.D_ops = self.D
-
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
@@ -37,8 +24,6 @@ if __name__ == '__main__':
 
     fname_wt_input              = mydir + os.sep + "IEA-15-floating.yaml"
     wt_init                     = sch.load_geometry_yaml(fname_wt_input)
-    
-    Turbine_class = wt_init["assembly"]["turbine_class"]
 
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
     analysis_options            = sch.load_analysis_yaml(fname_analysis_options)
@@ -100,8 +85,8 @@ if __name__ == '__main__':
         
         tt          = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
-        #plt.plot(tt,u_h)
-    
+
+
     # Linear Model
     
     # number of linear wind speeds and other options below assume that you haven't changed 
@@ -111,14 +96,11 @@ if __name__ == '__main__':
     lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
-    lin_pickle = mydir + os.sep + "outputs"+os.sep + "LinTurbine_fix.pkl"
-    
+    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
 
     if True and os.path.exists(lin_pickle):
         with open(lin_pickle,"rb") as pkl_file:
             LinearTurbine = pickle.load(pkl_file)
-        if isinstance(LinearTurbine,list):
-            LinearTurbine = dict2class(LinearTurbine[0])
     
     else:   # load the model and run MBC3
         LinearTurbine = LinearTurbineModel(
@@ -146,9 +128,10 @@ if __name__ == '__main__':
         "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
         }
 
-    run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
-    
-    
+    run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
+    if not os.path.exists(run_directory):
+        os.makedirs(run_directory)
+
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
         level2_disturbance, 
@@ -157,9 +140,8 @@ if __name__ == '__main__':
         la, 
         magnitude_channels, 
         run_directory,
-        cores = 4
+        cores = 1
         )
 
     print('here')
-    
     
