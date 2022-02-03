@@ -399,6 +399,7 @@ class TowerFrame(om.ExplicitComponent):
         outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
         outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+        
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["tower_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
@@ -515,7 +516,7 @@ class TowerSE(om.Group):
         temp_opt["n_ballasts"] = [0]
         self.add_subsystem(
             "member",
-            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=NREFINE),
+            mem.MemberStandard(column_options=temp_opt, idx=0, n_mat=n_mat, n_refine=mod_opt["n_refine"]),
             promotes=promlist,
         )
 

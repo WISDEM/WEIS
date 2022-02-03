@@ -23,7 +23,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
 
     # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-
+    
     # Normalize for Elastodyn
     if y.ndim > 1:
         p6 = p6[2:, :]
@@ -38,6 +38,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
         # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
         normval = np.maximum(p6.sum(), 1e-5)
         p6 /= normval
+        
 
     return p6
 
@@ -45,6 +46,11 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
 def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     # Number of frequencies and modes
     nfreq = len(freqs)
+    print('here is r')
+    print(r)
+    
+    print('freqs')
+    print(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
@@ -64,22 +70,29 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     iy = 0
     iz = 0
     imode = np.argmax(mpfs, axis=1)
+    print('full imode')
+    print(imode)
+    print('mpfs')
+    print(mpfs)
     for m in range(nfreq):
         if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
             continue
         if imode[m] == 0:
+            print('in imode 0')
             if ix >= nfreq2:
                 continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
         elif imode[m] == 1:
+            print('in imode 1')
             if iy >= nfreq2:
                 continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
         elif imode[m] == 2:
+            print('in imode 2')
             if iz >= nfreq2:
                 continue
             mshapes_z[iz, :] = zpolys[m, :]
