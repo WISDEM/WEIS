@@ -1,0 +1,59 @@
+name: CI_pyHAMS
+
+# We run CI on push commits and pull requests on all branches
+on: [push, pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+    build_pip:
+        name: Pip Build (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: False
+            matrix:
+                os: ["ubuntu-latest"]
+                python-version: [3.8, 3.9]
+
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                  python-version: ${{ matrix.python-version }}
+                
+            - name: Pip Install Dependencies
+              shell: bash -l {0}
+              run: |
+                  python -m pip install --upgrade pip install pytest numpy
+
+            - name: Pip Install pyHAMS
+              shell: bash -l {0}
+              run: |
+                  pip install -e .
+
+
+    build_conda:
+        name: Conda Build (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: False
+            matrix:
+                os: ["ubuntu-latest"]
+                python-version: [3.8, 3.9]
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: conda-incubator/setup-miniconda@v2
+              # https://github.com/marketplace/actions/setup-miniconda
+              with:
+                  miniconda-version: "latest"
+                  auto-update-conda: true
+                  python-version: ${{ matrix.python-version }}
+                  environment-file: environment.yml
+
+            # Install 
+            - name: Conda Install pyHAMS
+              shell: pwsh
+              run: |
+                  python setup.py develop
+
