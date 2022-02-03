@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""""
+"""
 Solves Schittkowski's TP109 constraint problem.
     min 	3.0*x1+1.*10**(-6)*x1**3+0.522074*10**(-6)*x2**3+2.0*x2 
     s.t.    -(x4-x3+0.550) <= 0
@@ -32,7 +32,7 @@ from numpy import sin, cos
 from pyoptsparse import Optimization, OPT
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--opt",help="optimizer",type=str, default='SNOPT')
+parser.add_argument("--opt",help="optimizer",type=str, default='SLSQP')
 parser.add_argument('--optOptions', type=str, help='Options for the optimizer', default="{}")
 args = parser.parse_args()
 exec('optOptions=%s'% args.optOptions)
@@ -57,7 +57,6 @@ def objfunc(xdict):
     fcon[7] = x[4]*x[6]*cos(x[3] - 0.25) + x[5]*x[6]*cos(x[3] - x[2] - 0.25) - 2*c*x[6]**2 - 22.938*a + 0.7533e-3*a*x[6]**2
     fcon[8] = x[3] - x[2] + 0.55
     fcon[9] = x[2] - x[3] + 0.55
-    
     if USE_LINEAR:
         funcs['con'] = fcon[0:8]
     else:

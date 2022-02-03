@@ -1,25 +1,18 @@
-import os
 import numpy as np
 import openmdao.api as om
 import pickle
 
 
-mydir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-opt_path = mydir + os.sep + "outputs" + os.sep + "rho_debug" 
-pkl_path = opt_path + os.sep+  "ABCD_matrices.pkl"
-
-with open(pkl_path, 'rb') as handle:
-
+with open("tower_doe/ABCD_matrices.pkl", 'rb') as handle:
     ABCD_list = pickle.load(handle)
-  
+    
 print("Information available in the pickle file:")
 for key in ABCD_list[0]:
     print(key)
 print()    
 
 
-cr = om.CaseReader(opt_path+ os.sep +"log_opt.sql")
+cr = om.CaseReader("tower_doe/log_opt.sql")
 
 driver_cases = cr.get_cases('driver')
 
