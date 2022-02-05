@@ -470,11 +470,18 @@ class MonopileFrame(om.ExplicitComponent):
         cg_turb = inputs["turbine_cg"].flatten()
         I_turb = inputs["turbine_I"].flatten()
         # Note, need len()-1 because Frame3DD crashes if mass add at end
-        midx = np.array([n - 1, n - 2, 1], dtype=np.int_)
-        m_add = np.array([m_turb, m_trans, m_grav])
-        mI = np.c_[I_turb, I_trans, I_grav]
-        mrho = np.c_[cg_turb, np.zeros(3), np.zeros(3)]
-        add_gravity = [False, True, True]
+        if tower_flag:
+            midx = np.array([n, n_mono, 1], dtype=np.int_)
+            m_add = np.r_[m_rna, m_trans, m_grav]
+            mI = np.c_[I_rna, I_trans, I_grav]
+            mrho = np.c_[cg_rna, np.zeros(3), np.zeros(3)]
+            add_gravity = [False, True, True]
+        else:
+            midx = np.array([n_mono - 1, n_mono - 2, 1], dtype=np.int_)
+            m_add = np.r_[m_turb, m_trans, m_grav]
+            mI = np.c_[I_turb, I_trans, I_grav]
+            mrho = np.c_[cg_turb, np.zeros(3), np.zeros(3)]
+            add_gravity = [False, True, True]
         self.frame.changeExtraNodeMass(
             midx,
             m_add,
@@ -513,6 +520,21 @@ class MonopileFrame(om.ExplicitComponent):
         outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
         outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+
+        if tower_flag:
+            freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z = util.get_xyz_mode_shapes(
+                z[-n_tow:],
+                modal.freq,
+                modal.xdsp[:, -n_tow:],
+                modal.ydsp[:, -n_tow:],
+                modal.zdsp[:, -n_tow:],
+                modal.xmpf,
+                modal.ympf,
+                modal.zmpf,
+            )
+            outputs["tower_fore_aft_modes"] = mshapes_x[:NFREQ2, :]
+            outputs["tower_side_side_modes"] = mshapes_y[:NFREQ2, :]
+            outputs["tower_torsion_modes"] = mshapes_z[:NFREQ2, :]
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["monopile_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
