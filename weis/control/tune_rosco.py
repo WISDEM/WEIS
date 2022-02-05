@@ -209,7 +209,7 @@ class TuneROSCO(ExplicitComponent):
         #
         rosco_init_options['max_pitch']   = float(inputs['max_pitch'])
         rosco_init_options['min_pitch']   = float(inputs['min_pitch'])
-        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd']) * float(inputs['gear_ratio'])
+        rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'])
         rosco_init_options['ss_vsgain']   = float(inputs['ss_vsgain'])
         rosco_init_options['ss_pcgain']   = float(inputs['ss_pcgain'])
         rosco_init_options['ps_percent']  = float(inputs['ps_percent'])
@@ -229,11 +229,11 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rotor_radius = float(inputs['R'])
         WISDEM_turbine.Ng           = float(inputs['gear_ratio'])
         # Incoming value already has gearbox eff included, so have to separate it out
-        WISDEM_turbine.GenEff       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        WISDEM_turbine.GenEff       = float(inputs['generator_efficiency'] / inputs['gearbox_efficiency']) * 100.
         WISDEM_turbine.GBoxEff      = float(inputs['gearbox_efficiency']) * 100.
         WISDEM_turbine.rated_rotor_speed   = float(inputs['rated_rotor_speed'])
         WISDEM_turbine.rated_power  = float(inputs['rated_power'])
-        WISDEM_turbine.rated_torque = float(inputs['rated_torque']) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency'])
+        WISDEM_turbine.rated_torque = float(inputs['rated_torque']) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency']) * 100
         WISDEM_turbine.max_torque   = WISDEM_turbine.rated_torque * 1.1  # TODO: make this an input if studying constant power
         WISDEM_turbine.v_rated      = float(inputs['rated_rotor_speed'])*float(inputs['R']) / float(inputs['tsr_operational'])
         WISDEM_turbine.v_min        = float(inputs['v_min'])
@@ -579,7 +579,7 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['gear_ratio'             ] = self.turbine.Ng
         outputs['rated_rotor_speed'      ] = self.turbine.rated_rotor_speed
         outputs['rated_power'            ] = self.turbine.rated_power
-        outputs['rated_torque'           ] = self.turbine.rated_torque
+        outputs['rated_torque'           ] = self.turbine.rated_torque * self.turbine.Ng / self.turbine.GBoxEff
         outputs['v_rated'                ] = self.turbine.v_rated
         outputs['v_min'                  ] = self.turbine.v_min
         outputs['v_max'                  ] = self.turbine.v_max
@@ -590,7 +590,7 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['flap_freq'              ] = self.turbine.bld_flapwise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
         outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
         outputs['gearbox_efficiency'     ] = self.turbine.GBoxEff / 100
-        outputs['generator_efficiency'   ] = self.turbine.GenEff
+        outputs['generator_efficiency'   ] = self.turbine.GenEff * outputs['gearbox_efficiency'     ] / 100
         outputs['TowerHt'                ] = self.turbine.TowerHt
         outputs['hub_height'             ] = self.turbine.hubHt
 

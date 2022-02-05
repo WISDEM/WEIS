@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: RAAW
-        OF_run_dir: outputs/control_opt/openfast_out_RAAW
+        OF_run_dir: /Users/dzalkind/Tools/WEIS-2/outputs/02_RAAW_DOE
         save_timeseries: True
         save_iterations: True
         use_exe: True
@@ -91,6 +91,11 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
 ROSCO:
     flag: True
+    VS_ControlMode: 3
+    WE_Mode: 2
+    min_pitch:          -0.002617993877991494    # Minimum pitch angle [rad], {default = 0 degrees}
+    vs_minspd:          0.778067780539072 # 7.43 rpm # None                  # Minimum rotor speed [rad/s], {default = 0 rad/s}
+    ps_percent:         0.78                  # Percent peak shaving  [%, <= 1 ], {default = 80%}
     # SD_Mode: 0
     # PS_Mode: 1
     # ps_percent: 0.85
@@ -98,9 +103,9 @@ ROSCO:
     # F_NotchType: 2
     # Fl_Mode: 2 
     tuning_yaml: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/ROSCO/RAAW_rosco_BD.yaml
-    # zeta_pc: [1,1]
-    # omega_pc: [0.2,0.2]
-    # U_pc: [12,18]
+    zeta_pc: [1,1]
+    omega_pc: [0.2,0.2]
+    U_pc: [12,18]
     # zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     # omega_vs: 0.12  
     # twr_freq: 3.2
@@ -113,4 +118,4 @@ DLC_driver:
         - DLC: "12.1"
           wind_file: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/Performance/steps_simpack.wnd
           transient_time: 0.
-          analysis_time: 1000.
+          analysis_time: 20.

@@ -486,6 +486,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('damage_monopile_base', val=0.0, desc="Miner's rule cumulative damage at monopile base")
 
         self.add_discrete_output('fst_vt_out', val={})
+        self.add_discrete_output('ts_out_dir', val={})
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
@@ -1848,7 +1849,7 @@ class FASTLoadCases(ExplicitComponent):
             self.save_timeseries(chan_time)
 
         if modopt['General']['openfast_configuration']['save_iterations']:
-            self.save_iterations(summary_stats,DELs)
+            self.save_iterations(summary_stats,DELs,discrete_outputs)
 
     def get_blade_loading(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
@@ -2331,7 +2332,7 @@ class FASTLoadCases(ExplicitComponent):
             output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
             output.df.to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
 
-    def save_iterations(self,summ_stats,DELs):
+    def save_iterations(self,summ_stats,DELs,discrete_outputs):
         '''
         Save summary stats, DELs of each iteration
         '''
@@ -2344,3 +2345,9 @@ class FASTLoadCases(ExplicitComponent):
         # Save dataframes as pickles
         summ_stats.to_pickle(os.path.join(save_dir,'summary_stats.p'))
         DELs.to_pickle(os.path.join(save_dir,'DELs.p'))
+
+        # Save fst_vt as pickle
+        with open(os.path.join(save_dir,'fst_vt.p'), 'wb') as f:
+            pickle.dump(self.fst_vt,f)
+
+        discrete_outputs['ts_out_dir'] = save_dir
