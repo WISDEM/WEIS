@@ -916,6 +916,18 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        
+        print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
+        print(inputs['fore_aft_modes'][0, :])
+        print(inputs['fore_aft_modes'][1, :])
+        print(inputs['side_side_modes'][0, :])
+        print(inputs['side_side_modes'][1, :])
+        
+        print(fst_vt['ElastoDynTower']['TwFAM1Sh'])
+        print(fst_vt['ElastoDynTower']['TwFAM2Sh'])
+        print(fst_vt['ElastoDynTower']['TwSSM1Sh'])
+        print(fst_vt['ElastoDynTower']['TwSSM2Sh'])
+        
 
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
@@ -1659,8 +1671,8 @@ class FASTLoadCases(ExplicitComponent):
         WaveHd = np.zeros(dlc_generator.n_cases)
         WaveGamma = np.zeros(dlc_generator.n_cases)
         WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
-        TMax = np.zeros(dlc_generator.n_cases)
-        TStart = np.zeros(dlc_generator.n_cases)
+        self.TMax = np.zeros(dlc_generator.n_cases)
+        self.TStart = np.zeros(dlc_generator.n_cases)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1735,15 +1747,15 @@ class FASTLoadCases(ExplicitComponent):
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
             WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
-            TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
-            TStart[i_case] = dlc_generator.cases[i_case].transient_time
+            self.TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
 
 
         # Parameteric inputs
         case_inputs = {}
         # Main fst
-        case_inputs[("Fst","TMax")] = {'vals':TMax, 'group':1}
-        case_inputs[("Fst","TStart")] = {'vals':TStart, 'group':1}
+        case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
+        case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
@@ -1962,8 +1974,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
-                                                                   outputs, discrete_outputs)
+            outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
         if any(summary_stats['openfast_failed']['mean'] > 0):
@@ -2353,15 +2364,18 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 
         # pitch travel and duty cycle
-        t_span = self.fst_vt['Fst']['TMax'] - self.fst_vt['Fst']['TStart']
-
+        tot_time = 0
         tot_travel = 0
         num_dir_changes = 0
-        for ts in chan_time:
+        for i_ts, ts in enumerate(chan_time):
+            t_span = self.TMax[i_ts] - self.TStart[i_ts]
             for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
                 ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
 
-                time_ind = ts['Time'] > self.fst_vt['Fst']['TStart']
+                time_ind = ts['Time'] > self.TStart[i_ts]
+
+                # total time
+                tot_time += t_span
 
                 # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
                 tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
@@ -2370,10 +2384,10 @@ class FASTLoadCases(ExplicitComponent):
                 num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
         # Normalize by number of blades, time length, and number of sims
-        avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / t_span / len(chan_time)
+        avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
         outputs['avg_pitch_travel'] = avg_travel_per_sec
 
-        dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / t_span / len(chan_time)
+        dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
         outputs['pitch_duty_cycle'] = dir_change_per_sec
 
 
