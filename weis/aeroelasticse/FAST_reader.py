@@ -746,7 +746,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['SpdSound']       = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Patm']           = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Pvap']           = float_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['FluidDepth']           = float_read(f.readline().split()[0])
+        #self.fst_vt['AeroDyn15']['FluidDepth']           = float_read(f.readline().split()[0])
 
         # Blade-Element/Momentum Theory Options
         f.readline()
@@ -774,8 +774,8 @@ class InputReader_OpenFAST(object):
         f.readline()
         self.fst_vt['AeroDyn15']['UAMod']                  = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['FLookup']                = bool_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['UAStartRad']                = float_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['UAEndRad']                = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['UAStartRad']             = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['UAEndRad']               = float_read(f.readline().split()[0])
 
         # Airfoil Information
         f.readline()

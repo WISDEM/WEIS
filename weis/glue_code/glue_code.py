@@ -292,8 +292,8 @@ class WindPark(om.Group):
 
                 for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                     idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                    self.connect(f"floating.memgrp{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
-                    self.connect(f"floating.memgrp{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
+                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
+                    self.connect(f"floating.memgrid{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
                     self.connect(f"floatingse.member{k}.height", f"raft.member{k}:height")
                     self.connect(f"floatingse.member{k}.rho", f"raft.member{k}:rho")
                     self.connect(f"floating.memgrp{idx}.s", f"raft.platform_member{k+1}_stations")
@@ -432,7 +432,11 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
-                    if modeling_options["flags"]["floating"]:
+                    if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
+                        self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
+                        self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
+                        self.connect('fixedse.tower_side_side_modes',    'aeroelastic.side_side_modes')
+                    elif modeling_options["flags"]["floating"]:
                         self.connect('floatingse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('floatingse.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('floatingse.side_side_modes',    'aeroelastic.side_side_modes')
