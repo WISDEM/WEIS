@@ -2389,12 +2389,13 @@ class Floating(om.Group):
             for i, kgrp in enumerate(float_opt["members"]["groups"]):
                 memname = kgrp["names"][0]
                 idx = floating_init_options["members"]["name2idx"][memname]
-                if idx == k:                
-                    if float_opt['members']['groups'][i]['diameter']['constant']:
-                        ivc.add_output("outer_diameter_in", val=0., units="m")
-                    else:
-                        ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                    diameter_assigned = True
+                if idx == k:  
+                    if 'diameter' in float_opt['members']['groups'][i]:
+                        if float_opt['members']['groups'][i]['diameter']['constant']:
+                            ivc.add_output("outer_diameter_in", val=0., units="m")
+                        else:
+                            ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
+                        diameter_assigned = True
                     
             if not diameter_assigned:
                 ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
