@@ -1798,7 +1798,6 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
-        fastBatch.keep_time         = modopt['General']['openfast_configuration']['save_timeseries']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']

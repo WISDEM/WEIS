@@ -111,7 +111,6 @@ class runFAST_pywrapper(object):
         self.fst_vt             = {}
         self.case               = {}     # dictionary of variable values to change
         self.channels           = {}     # dictionary of output channels to change
-        self.keep_time          = False
         self.use_exe            = False  # use openfast executable instead of library, helpful for debugging sometimes
         self.goodman            = False
         self.magnitude_channels = magnitude_channels_default
@@ -195,8 +194,6 @@ class runFAST_pywrapper(object):
 
             # if save_file: write_fast
             os.chdir(orig_dir)
-
-            if not self.keep_time: output_dict = None
 
         else: # use executable
             wrapper = FAST_wrapper()
@@ -289,7 +286,6 @@ class runFAST_pywrapper_batch(object):
         self.channels           = {}
 
         self.overwrite_outfiles = True
-        self.keep_time          = False
 
         self.goodman            = False
         self.magnitude_channels = magnitude_channels_default
@@ -332,7 +328,6 @@ class runFAST_pywrapper_batch(object):
             case_data['use_exe']            = self.use_exe
             case_data['allow_fails']        = self.allow_fails
             case_data['fail_value']         = self.fail_value
-            case_data['keep_time']          = self.keep_time
             case_data['goodman']            = self.goodman
             case_data['magnitude_channels'] = self.magnitude_channels
             case_data['fatigue_channels']   = self.fatigue_channels
@@ -464,7 +459,7 @@ def evaluate(indict):
     # Could probably do this with vars(fast), but this gives tighter control
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
-                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time',
+                  'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles',
                   'goodman','magnitude_channels','fatigue_channels','post','use_exe','allow_fails','fail_value']
     
     fast = runFAST_pywrapper()
