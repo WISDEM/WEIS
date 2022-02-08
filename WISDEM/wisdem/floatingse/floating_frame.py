@@ -423,8 +423,9 @@ class TowerModal(om.ExplicitComponent):
         E = inputs["tower_E"]
         G = inputs["tower_G"]
         rho = inputs["tower_rho"]
-
+        
         elements = pyframe3dd.ElementData(element, N1, N2, Area, Asx, Asy, J0, Ixx, Iyy, E, G, roll, rho)
+        
         # -----------------------------------
 
         # ------ options ------------
@@ -489,6 +490,9 @@ class TowerModal(om.ExplicitComponent):
                 outputs["f1"] = freq[0]
                 outputs["f2"] = freq[1]
                 outputs["structural_frequencies"] = freq[:NFREQ]
+                
+                # myframe.draw(savefig=True)
+                
 
                 # Get all mode shapes in batch
                 NFREQ2 = int(NFREQ / 2)

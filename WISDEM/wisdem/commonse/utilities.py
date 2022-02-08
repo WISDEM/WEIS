@@ -38,7 +38,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
 
     # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-
+    
     # Normalize for Elastodyn
     # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
@@ -53,6 +53,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval
+        
 
     return p6
 

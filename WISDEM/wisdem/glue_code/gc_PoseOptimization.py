@@ -180,7 +180,10 @@ class PoseOptimization(object):
                 n_grid = len(self.modeling["floating"]["members"]["grid_member_" + memname])
                 n_layers = self.modeling["floating"]["members"]["n_layers"][memidx]
                 if "diameter" in kgrp:
-                    n_DV += n_grid
+                    if "constant" in kgrp["diameter"]:
+                        n_DV += 1
+                    else:
+                        n_DV += n_grid
                 if "thickness" in kgrp:
                     n_DV += n_grid * n_layers
                 if "ballast" in kgrp:
