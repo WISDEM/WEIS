@@ -916,7 +916,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
-
+        
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
@@ -2360,7 +2360,7 @@ class FASTLoadCases(ExplicitComponent):
             for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
                 ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
 
-                time_ind = ts['Time'] > self.TStart[i_ts]
+                time_ind = ts['Time'] >= self.TStart[i_ts]
 
                 # total time
                 tot_time += t_span
@@ -2371,7 +2371,7 @@ class FASTLoadCases(ExplicitComponent):
                 # number of direction changes on each blade
                 num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
-        # Normalize by number of blades, time length, and number of sims
+        # Normalize by number of blades, total time
         avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
         outputs['avg_pitch_travel'] = avg_travel_per_sec
 

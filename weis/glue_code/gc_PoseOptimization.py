@@ -88,6 +88,8 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         elif self.opt['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
+        elif self.opt['merit_figure'] == 'weis_lcoe':
+            wt_opt.model.add_objective('financese_post.lcoe')
         else:
             super(PoseOptimizationWEIS, self).set_objective(wt_opt)
                 
