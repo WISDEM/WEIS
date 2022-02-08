@@ -779,6 +779,10 @@ properties:
                                             properties:
                                                 lower_bound: *dbound
                                                 upper_bound: *dbound
+                                                constant:
+                                                    type: boolean
+                                                    description: Should the diameters be constant
+                                                    default: False
                                         thickness:
                                             type: object
                                             description: Thickness optimization of member group

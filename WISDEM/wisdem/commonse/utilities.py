@@ -61,11 +61,6 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
 def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf, idx0=None, base_slope0=True, expect_all=True):
     # Number of frequencies and modes
     nfreq = len(freqs)
-    print('here is r')
-    print(r)
-    
-    print('freqs')
-    print(freqs)
 
     # Get mode shapes in batch
     mpfs = np.abs(np.c_[xmpf, ympf, zmpf])
