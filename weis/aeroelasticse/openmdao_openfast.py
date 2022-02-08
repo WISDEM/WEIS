@@ -2360,7 +2360,7 @@ class FASTLoadCases(ExplicitComponent):
             for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
                 ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
 
-                time_ind = ts['Time'] > self.TStart[i_ts]
+                time_ind = ts['Time'] >= self.TStart[i_ts]
 
                 # total time
                 tot_time += t_span
@@ -2371,7 +2371,7 @@ class FASTLoadCases(ExplicitComponent):
                 # number of direction changes on each blade
                 num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
-        # Normalize by number of blades, time length, and number of sims
+        # Normalize by number of blades, total time
         avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
         outputs['avg_pitch_travel'] = avg_travel_per_sec
 
