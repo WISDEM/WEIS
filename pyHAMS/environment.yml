@@ -1,0 +1,11 @@
+name: test
+
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python
+  - setuptools
+  - numpy
+  - pip
