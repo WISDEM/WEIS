@@ -917,18 +917,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
         
-        print('$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$')
-        print(inputs['fore_aft_modes'][0, :])
-        print(inputs['fore_aft_modes'][1, :])
-        print(inputs['side_side_modes'][0, :])
-        print(inputs['side_side_modes'][1, :])
-        
-        print(fst_vt['ElastoDynTower']['TwFAM1Sh'])
-        print(fst_vt['ElastoDynTower']['TwFAM2Sh'])
-        print(fst_vt['ElastoDynTower']['TwSSM1Sh'])
-        print(fst_vt['ElastoDynTower']['TwSSM2Sh'])
-        
-
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
