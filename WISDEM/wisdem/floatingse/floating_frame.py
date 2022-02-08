@@ -6,7 +6,6 @@ import wisdem.commonse.utilization_dnvgl as util_dnvgl
 import wisdem.commonse.utilization_constraints as util_con
 from wisdem.commonse import NFREQ, gravity
 from wisdem.commonse.cylinder_member import NULL, MEMMAX, MemberLoads, get_nfull
-import traceback
 
 NNODES_MAX = 1000
 NELEM_MAX = 1000
@@ -398,20 +397,14 @@ class TowerModal(om.ExplicitComponent):
 
         # ------ reaction data ------------
         # free-free (no reactions)
-#         rnode = np.array([], dtype=np.int_)
-#         kx = np.array([], dtype=np.int_)
-#         ky = np.array([], dtype=np.int_)
-#         kz = np.array([], dtype=np.int_)
-#         ktx = np.array([], dtype=np.int_)
-#         kty = np.array([], dtype=np.int_)
-#         ktz = np.array([], dtype=np.int_)
-#         reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
-        
-        rnode = np.array([1], dtype=np.int_)
-        moorK = np.abs(np.diag(inputs["mooring_stiffness"]))
-        reactions = pyframe3dd.ReactionData(
-           rnode, [moorK[0]], [moorK[1]], [moorK[2]], [moorK[3]], [moorK[4]], [moorK[5]], rigid=RIGID
-        )
+        rnode = np.array([], dtype=np.int_)
+        kx = ky = kz = ktx = kty = ktz = rnode
+        reactions = pyframe3dd.ReactionData(rnode, kx, ky, kz, ktx, kty, ktz, rigid=RIGID)
+        # rnode = np.array([1], dtype=np.int_)
+        # moorK = np.abs(np.diag(inputs["mooring_stiffness"]))
+        # reactions = pyframe3dd.ReactionData(
+        #    rnode, [moorK[0]], [moorK[1]], [moorK[2]], [moorK[3]], [moorK[4]], [moorK[5]], rigid=RIGID
+        # )
         # -----------------------------------
 
         # ------ frame element data ------------
@@ -498,7 +491,7 @@ class TowerModal(om.ExplicitComponent):
                 outputs["f2"] = freq[1]
                 outputs["structural_frequencies"] = freq[:NFREQ]
                 
-                myframe.draw(savefig=True)
+                # myframe.draw(savefig=True)
                 
 
                 # Get all mode shapes in batch
@@ -522,7 +515,6 @@ class TowerModal(om.ExplicitComponent):
                 outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
                 outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
         except:
-            traceback.print_exc()
             pass
 
 
