@@ -1511,10 +1511,10 @@ class InputReader_OpenFAST(object):
 
         # PLATFORM ADDITIONAL STIFFNESS AND DAMPING
         f.readline()
-        self.fst_vt['HydroDyn']['AddF0']         = np.array([[float(idx) for idx in f.readline().strip().split()[0]] for i in range(6)])
-        self.fst_vt['HydroDyn']['AddCLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
-        self.fst_vt['HydroDyn']['AddBLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
-        self.fst_vt['HydroDyn']['AddBQuad']      = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddF0']         = np.array([[float_read(idx) for idx in f.readline().strip().split()[0]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddCLin']       = np.array([[float_read(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddBLin']       = np.array([[float_read(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddBQuad']      = np.array([[float_read(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
 
         #AXIAL COEFFICIENTS
         f.readline()
