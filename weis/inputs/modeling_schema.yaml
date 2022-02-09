@@ -2505,7 +2505,7 @@ properties:
                         default: 0.
                         unit: deg
                         description: Amplitude for for cosine cycling of flap signal (AfC = AfC_Amp*cos(Azimuth+phase)+AfC_mean) (-) [used only with AfCmode==1]
-                    AfC_phase:
+                    AfC_Phase:
                         type: number
                         default: 0.
                         unit: deg
