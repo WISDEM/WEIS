@@ -14,7 +14,7 @@ class setup:
                  Lagrange = [], Mayer = [],Lquadratic = [],Llinear = [],Lconstant = [],Mquadratic = [],
                  Mlinear = [],Mconstant = [], 
                  UB = [], LB = [], Y = [], Z = [],Scaling = [],
-                 t0 = 0,tf = None,auxdata = None ):
+                 t0 = 0,tf = None,auxdata = None,ScaleObjective = False ):
         
         self.A = A; self.B = B; self.G = G; self.d = d;
         
@@ -24,7 +24,7 @@ class setup:
         self.t0 = t0; self.tf = tf;
         self.UB = UB; self.LB = LB
         self.Y = Y; self.Z = Z;self.Scaling = Scaling
-        self.auxdata = auxdata
+        self.auxdata = auxdata;self.ScaleObjective = ScaleObjective
         
         
     def ListClass(self,Class_Name,Class_Type):
