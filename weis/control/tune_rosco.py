@@ -319,7 +319,7 @@ class TuneROSCO(ExplicitComponent):
             # Scheduling options
             scheduling_options = { 'driver': 'optimization',
                             'windspeed': rosco_init_options['U_pc'],
-                            'stability_margin': inputs['stability_margin'],
+                            'stability_margin': inputs['stability_margin'][0],
                             'omega': [0.01, inputs['omega_pc'][0]], # two inputs denotes a range for a design variable
                             'k_float': [controller.Kp_float]}    # one input denotes a set value
 
@@ -344,6 +344,7 @@ class TuneROSCO(ExplicitComponent):
 
             # Re-define ROSCO tuning parameters
             controller.omega_pc = self.sd.omegas
+            print('Robust tuning omegas = {}'.format(controller.omega_pc))
             controller.zeta_pc = np.ones(len(self.sd.omegas)) * controller.zeta_pc
 
         # Tune Controller!
