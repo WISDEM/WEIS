@@ -44,6 +44,10 @@ properties:
                         type: boolean
                         default: False
                         description: Save openfast output timeseries
+                    keep_time:
+                        type: boolean
+                        default: True
+                        description: Keep timeseries in openmdao_openfast for post-processing
                     save_iterations:
                         type: boolean
                         default: False

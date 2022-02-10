@@ -1798,7 +1798,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
-        fastBatch.keep_time         = modopt['General']['openfast_configuration']['save_timeseries']
+        fastBatch.keep_time         = modopt['General']['openfast_configuration']['keep_time']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
@@ -2352,31 +2352,34 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 
         # pitch travel and duty cycle
-        tot_time = 0
-        tot_travel = 0
-        num_dir_changes = 0
-        for i_ts, ts in enumerate(chan_time):
-            t_span = self.TMax[i_ts] - self.TStart[i_ts]
-            for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
-                ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
+        if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
+            tot_time = 0
+            tot_travel = 0
+            num_dir_changes = 0
+            for i_ts, ts in enumerate(chan_time):
+                t_span = self.TMax[i_ts] - self.TStart[i_ts]
+                for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+                    ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
 
-                time_ind = ts['Time'] >= self.TStart[i_ts]
+                    time_ind = ts['Time'] >= self.TStart[i_ts]
 
-                # total time
-                tot_time += t_span
+                    # total time
+                    tot_time += t_span
 
-                # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
-                tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
+                    # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
+                    tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
 
-                # number of direction changes on each blade
-                num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
+                    # number of direction changes on each blade
+                    num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
-        # Normalize by number of blades, total time
-        avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
-        outputs['avg_pitch_travel'] = avg_travel_per_sec
+            # Normalize by number of blades, total time
+            avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
+            outputs['avg_pitch_travel'] = avg_travel_per_sec
 
-        dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
-        outputs['pitch_duty_cycle'] = dir_change_per_sec
+            dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
+            outputs['pitch_duty_cycle'] = dir_change_per_sec
+        else:
+            print('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
 
 
