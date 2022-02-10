@@ -1965,8 +1965,9 @@ class FASTLoadCases(ExplicitComponent):
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
-        if any(summary_stats['openfast_failed']['mean'] > 0):
-            outputs['openfast_failed'] = 2
+        if modopt['Level3']['flag']:
+            if any(summary_stats['openfast_failed']['mean'] > 0):
+                outputs['openfast_failed'] = 2
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
