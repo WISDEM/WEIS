@@ -16,7 +16,7 @@ bemExt = Extension(
     extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
 pyframeExt = Extension(
-    "wisdem.pyframe3dd._pyframe3dd", 
+    "wisdem.pyframe3dd._pyframe3dd",
     sources=glob.glob(os.path.join("wisdem", "pyframe3dd", "src", "*.c")),
     extra_compile_args=["-O2", "-fPIC", "-std=c11"],
 )
@@ -29,7 +29,7 @@ precompExt = Extension(
 # Top-level setup
 setup(
     name="WISDEM",
-    version="3.5.0",
+    version="3.5.1",
     description="Wind-Plant Integrated System Design & Engineering Model",
     long_description="""WISDEM is a Python package for conducting multidisciplinary analysis and
     optimization of wind turbines and plants.  It is built on top of NASA's OpenMDAO library.""",
@@ -43,7 +43,6 @@ setup(
         "openmdao>=3.4",
         "openpyxl",
         "pandas",
-        "pyside2",
         "pytest",
         "python-benedict",
         "pyyaml",
