@@ -272,7 +272,11 @@ class PoseOptimization(object):
             opt_options = self.opt["driver"]["optimization"]
             step_size = self._get_step_size()
 
-            wt_opt.model.approx_totals(method="fd", step=step_size, form=opt_options["form"])
+            if opt_options["step_calc"] == 'None':
+                step_calc = None
+            else:
+                step_calc = opt_options["step_calc"]
+            wt_opt.model.approx_totals(method="fd", step=step_size, form=opt_options["form"], step_calc=step_calc)
 
             # Set optimization solver and options. First, Scipy's SLSQP and COBYLA
             if opt_options["solver"] in self.scipy_methods:
@@ -1013,13 +1017,13 @@ class PoseOptimization(object):
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.outer_diameter",
+                        f"floating.memgrp{idx}.outer_diameter_in",
                         lower=kgrp["diameter"]["lower_bound"],
                         upper=kgrp["diameter"]["upper_bound"],
                     )
                 if "thickness" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.layer_thickness",
+                        f"floating.memgrp{idx}.layer_thickness_in",
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )
@@ -1365,7 +1369,7 @@ class PoseOptimization(object):
 
         elif monopile_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.monopile.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=monopile_constr["frequency_1"]["lower_bound"],
                 upper=monopile_constr["frequency_1"]["upper_bound"],
@@ -1391,7 +1395,7 @@ class PoseOptimization(object):
 
         elif jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.jacket.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=jacket_constr["frequency_1"]["lower_bound"],
                 upper=jacket_constr["frequency_1"]["upper_bound"],
