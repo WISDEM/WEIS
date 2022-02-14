@@ -1490,19 +1490,12 @@ class FASTLoadCases(ExplicitComponent):
                     spring_offset[2] = StC_i['StC_Z_M'] * g / StC_i['StC_Z_K']
 
                 # Set position
+                StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
+                StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
+                StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                
                 if modopt['TMDs']['preload_spring'][i_TMD]:
-                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0] + spring_offset[0]
-                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1] + spring_offset[1]
-                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2] + spring_offset[2]
-
-                    StC_i['StC_X_DSP']  = -spring_offset[0]
-                    StC_i['StC_Y_DSP']  = -spring_offset[1]
-                    StC_i['StC_Z_DSP']  = -spring_offset[2]
-
-                else:
-                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
-                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
-                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                    StC_i['StC_Z_PreLd']  = "gravity"
                     
 
                 if modopt['TMDs']['component'][i_TMD] == 'tower':

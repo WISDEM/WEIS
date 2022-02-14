@@ -109,25 +109,27 @@ DLC_driver:
         wave_height_50: 10.68
         wave_period_50: 14.2
     DLCs:
-        - DLC: "1.1"
+        # - DLC: "1.1"
         #   wind_speed: [24]
         #   wave_height: [9]
         #   wave_period: [14]
-          n_seeds: 6
-          analysis_time: 600
-          transient_time: 120
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 300
-              GridWidth: 300
-        - DLC: "1.3"
-          n_seeds: 6
-        - DLC: "1.4"
-        - DLC: "1.5"
+        #   n_seeds: 6
+        #   analysis_time: 600
+        #   transient_time: 120
+        #   turbulent_wind:
+        #       HubHt: 140
+        #       GridHeight: 300
+        #       GridWidth: 300
+        # - DLC: "1.3"
+        #   n_seeds: 6
+        # - DLC: "1.4"
+        # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 6
-        - DLC: "6.1"
-          n_seeds: 6
-        - DLC: "6.3"
-          n_seeds: 6
+          wind_speed: [12]
+          transient_time: 0.
+          analysis_time: 10.
+        # - DLC: "6.1"
+        #   n_seeds: 6
+        # - DLC: "6.3"
+        #   n_seeds: 6
 
