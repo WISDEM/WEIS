@@ -5,6 +5,7 @@ General:
         OF_run_dir: outputs/control_opt/openfast_out
         save_timeseries: True
         save_iterations: True
+        use_exe: True
 
 WISDEM:
     RotorSE:

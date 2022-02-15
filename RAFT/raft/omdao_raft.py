@@ -452,6 +452,9 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['platform'] = {}
         design['platform']['potModMaster'] = int(modeling_opt['potential_model_override'])
         design['platform']['dlsMax'] = float(modeling_opt['dls_max'])
+        # lowest BEM freq needs to be just below RAFT min_freq
+        if float(modeling_opt['min_freq_BEM']) >= modeling_opt['min_freq']:
+            modeling_opt['min_freq_BEM'] = modeling_opt['min_freq'] - 1e-7
         design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
         design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):

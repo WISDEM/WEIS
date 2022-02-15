@@ -3,33 +3,26 @@ general:
     fname_output: refturb_output
 
 
-# design_variables:
-#     TMDs:
-#         flag: True
-#         groups:
-# #             - names: [tower_TMD]
-# #               mass:
-# #                 lower_bound: 200
-# #                 upper_bound: 5628
-# #                 initial: 500
-# #                 const_omega: True
-# #                 const_zeta: True
-#             - names: [ptfm_TMD1,ptfm_TMD2,ptfm_TMD3]
-#               natural_frequency:
-#                   lower_bound: 0.3
-#                   upper_bound: 1.5
-#                   initial: 0.5
-#                   const_zeta: True  
-#               # damping_ratio:
-#               #     lower_bound: 0.01
-#               #     upper_bound: 0.25
-#               #     initial: 0.1
-#               mass:
-#                 lower_bound: 20e3
-#                 upper_bound: 500e3
-#                 initial: 200e3
-#                 const_omega: True
-#                 const_zeta: True
+design_variables:
+    TMDs:
+        flag: True
+        groups:
+            - names: [ptfm_TMD1,ptfm_TMD2,ptfm_TMD3]
+              natural_frequency:
+                  lower_bound: 0.3
+                  upper_bound: 1.5
+                  initial: 0.5
+                  const_zeta: True  
+              damping_ratio:
+                  lower_bound: 0.01
+                  upper_bound: 0.25
+                  initial: 0.1
+              mass:
+                lower_bound: 20e3
+                upper_bound: 500e3
+                initial: 200e3
+                const_omega: True
+                const_zeta: True
 
 constraints:
   control:
@@ -52,9 +45,9 @@ merit_figure: Std_PtfmPitch  # Merit figure of the optimization problem. The opt
 
 driver:
   optimization:
-    flag: False           # Flag to enable optimization
+    flag: True           # Flag to enable optimization
     tol: 1.e-2            # Optimality tolerance
-    max_iter: 4          # Maximum number of iterations (SLSQP)
+    max_iter: 2          # Maximum number of iterations (SLSQP)
     solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     form: forward         # Finite differencing mode, either forward or central
   design_of_experiments:

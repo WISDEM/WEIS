@@ -697,6 +697,9 @@ class FASTLoadCases(ExplicitComponent):
                         output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
+                        
+                        # Overwrite timeseries with simulated data instead of saved linearization timeseries
+                        chan_time = ct
 
                 elif modopt['Level2']['DTQP']['flag']:
 
@@ -709,6 +712,8 @@ class FASTLoadCases(ExplicitComponent):
                         self.magnitude_channels, 
                         self.FAST_runDirectory
                     )
+
+                    # TODO: pull chan_time out of here
 
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
@@ -1500,19 +1505,12 @@ class FASTLoadCases(ExplicitComponent):
                     spring_offset[2] = StC_i['StC_Z_M'] * g / StC_i['StC_Z_K']
 
                 # Set position
+                StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
+                StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
+                StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                
                 if modopt['TMDs']['preload_spring'][i_TMD]:
-                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0] + spring_offset[0]
-                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1] + spring_offset[1]
-                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2] + spring_offset[2]
-
-                    StC_i['StC_X_DSP']  = -spring_offset[0]
-                    StC_i['StC_Y_DSP']  = -spring_offset[1]
-                    StC_i['StC_Z_DSP']  = -spring_offset[2]
-
-                else:
-                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
-                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
-                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                    StC_i['StC_Z_PreLd']  = "gravity"
                     
 
                 if modopt['TMDs']['component'][i_TMD] == 'tower':
@@ -1808,6 +1806,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
+        fastBatch.keep_time         = modopt['General']['openfast_configuration']['keep_time']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
@@ -1974,8 +1973,9 @@ class FASTLoadCases(ExplicitComponent):
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
-        if any(summary_stats['openfast_failed']['mean'] > 0):
-            outputs['openfast_failed'] = 2
+        if modopt['Level3']['flag']:
+            if any(summary_stats['openfast_failed']['mean'] > 0):
+                outputs['openfast_failed'] = 2
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
@@ -2361,31 +2361,34 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 
         # pitch travel and duty cycle
-        tot_time = 0
-        tot_travel = 0
-        num_dir_changes = 0
-        for i_ts, ts in enumerate(chan_time):
-            t_span = self.TMax[i_ts] - self.TStart[i_ts]
-            for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
-                ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
+        if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
+            tot_time = 0
+            tot_travel = 0
+            num_dir_changes = 0
+            for i_ts, ts in enumerate(chan_time):
+                t_span = self.TMax[i_ts] - self.TStart[i_ts]
+                for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+                    ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
 
-                time_ind = ts['Time'] >= self.TStart[i_ts]
+                    time_ind = ts['Time'] >= self.TStart[i_ts]
 
-                # total time
-                tot_time += t_span
+                    # total time
+                    tot_time += t_span
 
-                # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
-                tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
+                    # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
+                    tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
 
-                # number of direction changes on each blade
-                num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
+                    # number of direction changes on each blade
+                    num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
-        # Normalize by number of blades, total time
-        avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
-        outputs['avg_pitch_travel'] = avg_travel_per_sec
+            # Normalize by number of blades, total time
+            avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
+            outputs['avg_pitch_travel'] = avg_travel_per_sec
 
-        dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
-        outputs['pitch_duty_cycle'] = dir_change_per_sec
+            dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
+            outputs['pitch_duty_cycle'] = dir_change_per_sec
+        else:
+            print('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
 
 

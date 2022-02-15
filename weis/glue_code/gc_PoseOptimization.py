@@ -6,10 +6,10 @@ class PoseOptimizationWEIS(PoseOptimization):
     def __init__(self, wt_init, modeling_options, analysis_options):
         
         # Set solve component for some optimization constraints, and merit figures (RAFT or openfast)
-        if modeling_options['Level1']['flag']:
-            self.solve_component = 'raft'
-        else:
+        if modeling_options['Level3']['flag']:
             self.solve_component = 'aeroelastic'
+        else:
+            self.solve_component = 'raft'
 
         self.level_flags = np.array([modeling_options[level]['flag'] for level in ['Level1','Level2','Level3']])
         # if sum(self.level_flags) > 1:
