@@ -92,15 +92,17 @@ properties:
             min_freq:
                 type: number
                 description: Minimum frequency to evaluate (frequencies will be min_freq:min_freq:max_freq)
-                default: 0.1
+                default: 0.0159
                 minimum: 0.0
                 maximum: 1e3
+                units: Hz
             max_freq:
                 type: number
                 description: Maximum frequency to evaluate (frequencies will be min_freq:min_freq:max_freq)
-                default: 2.0
+                default: 0.3183
                 minimum: 0.0
                 maximum: 1e3
+                units: Hz
             potential_bem_members:
                 type: array
                 description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
@@ -133,10 +135,11 @@ properties:
                 description: Maximum node splitting section amount
             min_freq_BEM:
                 type: number
-                default: 0.1
+                default: 0.0159
                 minimum: 0.0
                 maximum: 2.0
                 description: lowest frequency and frequency interval to use in BEM analysis
+                units: Hz
             trim_ballast:
                 type: integer
                 default: 0
