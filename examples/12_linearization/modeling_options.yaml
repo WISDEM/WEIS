@@ -99,6 +99,7 @@ ROSCO:
     omega_vs: 0.2
     zeta_pc: [1]
     omega_pc: [0.2]
+
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?
@@ -115,7 +116,14 @@ Level2:
         NLinTimes: 2
 
 Level1:
+    flag: True
     potential_model_override: 2
+    trim_ballast: 2
+    heave_tol: 1
+    save_designs: True
+    # min_freq: 0.0080001
+    # min_freq_BEM: 0.008
+    # max_freq: 0.7958
 
 DLC_driver:
     DLCs:
