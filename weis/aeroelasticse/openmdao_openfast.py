@@ -696,6 +696,9 @@ class FASTLoadCases(ExplicitComponent):
                         output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
+                        
+                        # Overwrite timeseries with simulated data instead of saved linearization timeseries
+                        chan_time = ct
 
                 elif modopt['Level2']['DTQP']['flag']:
 
@@ -708,6 +711,8 @@ class FASTLoadCases(ExplicitComponent):
                         self.magnitude_channels, 
                         self.FAST_runDirectory
                     )
+
+                    # TODO: pull chan_time out of here
 
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)

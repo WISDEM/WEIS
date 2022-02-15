@@ -222,6 +222,7 @@ class runFAST_pywrapper(object):
                     else:
                         raise Exception('OpenFAST Failed! Please check the run logs.')
             else:
+                failed = False
                 print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
             if not failed:
