@@ -10,9 +10,7 @@ from pCrunch.io import OpenFASTOutput
 from weis.aeroelasticse.CaseGen_General import case_naming
 
 
-
-def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
-
+def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
     ''' 
     Convert weis information to DTQP and vice versa
     Catch errors to ensure we are using DTQP in a way that it is able to be used
@@ -21,6 +19,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     Inputs:         LinearTurbine:  LinearTurbineModel object
                     level2_disturbances: list of disturbance dicts with Time and Wind keys
                     analysis_options: weis analysis options with constraints, merit figures
+                    modeling_options: weis modeling options with DTQP options
                     fst_vt: dict with OpenFAST/ROSCO variables
                     loads_analysis: pCrunch LoadsAnalysis object
                     magnitude_channels: dict for pCrunch
@@ -67,7 +66,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     if control_const['rotor_overspeed']['flag']:
         desc = 'ED First time derivative of Variable speed generator DOF (internal DOF index = DOF_GeAz), rad/s'
         if desc in LinearTurbine.DescStates:
-            dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] ]
+            dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] + 0.01 ]
         else:
             raise Exception('rotor_overspeed constraint is set, but ED GenSpeed is not a state in the LinearModel')
     else:
@@ -102,6 +101,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         dtqp_input['case_name']             = case_names[i_oloc]
         dtqp_input['run_dir']               = run_dir
         dtqp_input['magnitude_channels']    = magnitude_channels
+        dtqp_input['dtqp_options']          = modeling_options['Level2']['DTQP']
 
         dtqp_input_list.append(dtqp_input)
 
@@ -174,8 +174,8 @@ def run_dtqp(dtqp_input):
     OutData['Time'] = T.flatten()
 
     output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
-    #output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
-    
+    output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
+
     return output
 
 

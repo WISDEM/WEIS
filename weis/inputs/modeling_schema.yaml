@@ -2860,6 +2860,19 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run a DTQP optimization at level 2
+                    nt:
+                        type: number
+                        default: 5000
+                        description: Number of timesteps in DTQP timeseries optimization
+                    maxiters:
+                        type: number
+                        default: 1500
+                        description: Maximum number of DTQP optimization iterations
+                    tolerance:
+                        type: number
+                        default: 1.E-10
+                        description: Tolerance of DTQP optimization
+
             #InflowWind: *ofinflowwind
             #AeroDyn: *ofaerodyn
             #ElastoDyn: *ofelastodyn
@@ -3420,3 +3433,23 @@ properties:
                 type: string
                 description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model
                 default: none
+                description: ROSCO_Toolbox control tuning yaml used to load initial turbine parameters. Used in controls-only optimization.
+                default: unused
+
+    OL2CL:
+        type: object
+        default: {}
+        decription: Options for WEIS open loop to closed loop control optimization
+        properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run open loop to closed loop optimization
+            trajectory_dir:
+                type: string
+                default: unused
+                description: Directory where open loop control trajectories are located
+            save_error:
+                type: boolean
+                default: True
+                description: Save error timeseries?

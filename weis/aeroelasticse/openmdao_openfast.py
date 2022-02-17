@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os, shutil, sys, platform
 import copy
 import glob
@@ -30,6 +31,8 @@ from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
+from weis.aeroelasticse.CaseGen_General import case_naming
+
 
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -499,6 +502,10 @@ class FASTLoadCases(ExplicitComponent):
 
         # Simulation output
         self.add_output('openfast_failed', val=0.0, desc="Numerical value for whether any openfast runs failed. 0 if false, 2 if true")
+        
+        # Open loop to closed loop error
+        if self.options['modeling_options']['OL2CL']['flag']:
+            self.add_output('OL2CL_pitch', val=0.0, desc="Open loop to closed loop avarege error")
 
         self.add_discrete_output('fst_vt_out', val={})
 
@@ -707,6 +714,7 @@ class FASTLoadCases(ExplicitComponent):
                         LinearTurbine, 
                         level2_disturbance, 
                         self.options['opt_options'], 
+                        self.options['modeling_options'], 
                         self.fst_vt, 
                         self.la, 
                         self.magnitude_channels, 
@@ -1404,6 +1412,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
             fst_vt['MoorDyn']['Type'] = mooropt["node_type"][:]
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
+            # hack here
+            fst_vt['MoorDyn']['X'][:3] *= -1
+
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
             fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
@@ -1984,6 +1995,10 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(summary_stats,DELs)
 
+        # Open loop to closed loop error, move this to before save_timeseries when finished
+        if modopt['OL2CL']['flag']:
+            outputs = self.get_OL2CL_error(chan_time,outputs)
+
     def get_blade_loading(self, sum_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs):
         """
         Find the spanwise loading along the blade span.
@@ -2419,6 +2434,39 @@ class FASTLoadCases(ExplicitComponent):
             outputs['Max_Offset'] = np.r_[outputs['Max_Offset'],max_offset_ts].max()
 
         return outputs, discrete_outputs
+
+    def get_OL2CL_error(self,chan_time,outputs):
+        ol_case_names = [os.path.join(
+            weis_dir,
+            self.options['modeling_options']['OL2CL']['trajectory_dir'],
+            case_name + '.p'
+        ) for case_name in case_naming(self.options['modeling_options']['DLC_driver']['n_cases'],'oloc')]
+
+        rms_pitch_error = np.full(len(chan_time),fill_value=1000.)
+        for i_ts, timeseries in enumerate(chan_time):
+            # Get closed loop timeseries
+            cl_output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
+            cl_ts = cl_output.df
+
+            # Get open loop timeseries
+            ol_ts = pd.read_pickle(ol_case_names[i_ts])
+
+            # resample OL timeseries to match closed loop timeseries
+            ol_resample = np.interp(cl_ts['Time'],ol_ts['Time'],ol_ts['BldPitch1'])
+
+            # difference between open loop and closed loop (deg.)
+            pitch_error = cl_ts['BldPitch1'] - ol_resample
+
+            rms_pitch_error[i_ts] = np.sqrt(np.mean(pitch_error**2))
+
+            if self.options['modeling_options']['OL2CL']['save_error']:
+                save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber),'timeseries')
+                pitch_error.to_pickle(os.path.join(save_dir,'pitch_error_'+ str(i_ts) + '.p'))
+
+        # Average over DLCs and return, TODO: weight in future?  only works for a few wind speeds currently
+        outputs['OL2CL_pitch'] = np.mean(rms_pitch_error)
+        return outputs
+
 
     def get_ac_axis(self, inputs):
         

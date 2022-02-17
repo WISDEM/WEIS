@@ -2,8 +2,9 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/IEA_level2_dtqp_6
+        OF_run_dir: outputs/IEA_level2_ol2cl
         use_exe: True
+        save_timeseries: True
 
 WISDEM:
     RotorSE:
@@ -38,10 +39,10 @@ WISDEM:
         flag: True
         
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
-    flag: False
+    flag: True
     OutFileFmt: 3
     simulation:
-        TMax: 1.
+        TMax: 600.
         DT: 0.01
         CompElast: 1
         CompInflow: 1
@@ -49,28 +50,28 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompServo: 1
         CompHydro: 1
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
     linearization:
         Linearize: False
     ElastoDyn:
         flag: True
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : True
-        TwSSDOF1 : True
-        TwSSDOF2 : True
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
         PtfmSgDOF: False
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
-        PtfmPDOF : False
+        PtfmPDOF : True
         PtfmYDOF : False
         ElastoDynBlade:
         BldFlDmp1: 3.0
@@ -96,9 +97,25 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
 ROSCO:
     flag: True
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 2
+    Fl_Mode: 2 
+    zeta_pc: [1]
+    omega_pc: [0.2]
+    U_pc: [12]
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    twr_freq: 3.2
+    ptfm_freq: 0.2
+    Kp_float: -10
+
+
 
 Level2:
-    flag: True
+    flag: False
     simulation:         # could these be included in openfast options?
         flag: False
         TMax: 100.      # run simulations using IEC standards, could share that info
@@ -112,7 +129,7 @@ Level2:
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 12
     DTQP:
-        flag: True
+        flag: False
         nt: 3000
         maxiters: 1500
         tolerance: 1e-5
@@ -120,8 +137,11 @@ Level2:
 Level1:
     potential_model_override: 2
 
-   
+OL2CL:
+    flag: True
+    trajectory_dir: /Users/dzalkind/Tools/WEIS-1/examples/13_DTQP/outputs/IEA_level2_dtqp_6/
 
+# These should match modeling_options.yaml used to generate DTQP results
 DLC_driver:
     DLCs:
         - DLC: "1.1"
@@ -139,3 +159,4 @@ DLC_driver:
               IECturbc: B
               RefHt: 150.0
               PLExp: 0.11
+

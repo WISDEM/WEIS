@@ -156,7 +156,7 @@ def Generate_AddtionalConstraints(DescOutput,Cw,Dw,ws,W_fun,time,Qty,b,yw):
     
 
 
-def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
+def DTQPy_oloc(LinearModels,disturbance,constraints,dtqp_options,plot=False):
     '''
         Function to compute the open loop optimal control of a linear turbine model, given
         a disturbance and constraints
@@ -164,6 +164,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         Inputs:         LinearModels:  LinearTurbineModel object specified in weis/control
                         disturbance: dictionary with Time and Wind fields
                         constraints: dictionary with key as OpenFAST state or output, value is a list with lower and upper bounds
+                        dtqp_options: dictionary with DTQP options
                         plot: boolean flag whether to plot outputs
     '''
     
@@ -242,7 +243,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     filterflag = 0
     
-     
+    
     if filterflag:                         
         t_f = 1
         dt = tt[2,0]-tt[1,0]
@@ -254,9 +255,9 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     opts = options()
 
-    opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-4
-    opts.solver.maxiters = 150000
+    opts.dt.nt = dtqp_options['nt']
+    opts.solver.tolerence = dtqp_options['tolerance']
+    opts.solver.maxiters = dtqp_options['maxiters']
     opts.solver.function = 'osqp'
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
@@ -323,7 +324,6 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     # initialize
     ub = np.ones((nx,1))*np.inf
     lb = -np.ones((nx,1))*np.inf
-    
     
     # set ub values for PtfmPitch and Genspeed
     for const in constraints:
