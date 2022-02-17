@@ -188,6 +188,9 @@ class runFAST_pywrapper(object):
                 output_dict[channel] = openfastlib.output_values[:,i]
             del(openfastlib)
             
+            # Add channel to indicate failed run
+            output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
+
             output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
@@ -219,6 +222,7 @@ class runFAST_pywrapper(object):
                     else:
                         raise Exception('OpenFAST Failed! Please check the run logs.')
             else:
+                failed = False
                 print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
             if not failed:
@@ -360,7 +364,7 @@ class runFAST_pywrapper_batch(object):
             dl[_name] = _dl
             dam[_name] = _dam
             ct.append(_ct)
-        
+            
         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         return summary_stats, extreme_table, DELs, Damage, ct
@@ -394,7 +398,7 @@ class runFAST_pywrapper_batch(object):
             dl[_name] = _dl
             dam[_name] = _dam
             ct.append(_ct)
-
+            
         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         return summary_stats, extreme_table, DELs, Damage, ct

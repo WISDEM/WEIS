@@ -78,6 +78,7 @@ class FOWT():
             mi['dlsMax'] = dlsMax
 
             headings = getFromDict(mi, 'heading', shape=-1, default=0.)
+            mi['headings'] = headings   # differentiating the list of headings/copies of a member from the individual member's heading
             if np.isscalar(headings):
                 mi['heading'] = headings
                 self.memberList.append(Member(mi, self.nw))
@@ -367,7 +368,9 @@ class FOWT():
             
             ph.create_hams_dirs(meshDir)                #
             
-            ph.write_hydrostatic_file(meshDir)          # HAMS needs a hydrostatics file, but it's unused for .1 and .3, so write a blank one
+            # HAMS needs a hydrostatics file, it's unused for .1 and .3,
+            # but HAMS write the .hst file that OpenFAST uses
+            ph.write_hydrostatic_file(meshDir, kHydro=self.C_hydro)          
             
             # prepare frequency settings for HAMS
             dw_HAMS = self.dw_BEM if dw==0 else dw     # frequency increment - allow override if provided
@@ -763,6 +766,7 @@ class FOWT():
         # fill in metrics
         results['Mbase_avg'][iCase] = m_turbine*self.g * hArm*np.sin(Xi0[4]) + transformForce(self.F_aero0, offset=[0,0,-hArm])[4] # mean moment from weight and thrust
         results['Mbase_std'][iCase] = dynamic_moment_RMS
+        results['Mbase_max'][iCase] = results['Mbase_avg'][iCase] + 3 * results['Mbase_std'][iCase]
         results['Mbase_PSD'][iCase,:] = getPSD(dynamic_moment)
         #results['Mbase_max'][iCase]
         #results['Mbase_DEL'][iCase]

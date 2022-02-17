@@ -439,7 +439,10 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('loads_azimuth', val=0.0, units='deg', desc='azimuthal angle')
 
         # Control outputs
-        self.add_output('rotor_overspeed', val=0.0, desc='Maximum percent overspeed of the rotor during an OpenFAST simulation')  # is this over a set of sims?
+        self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during all OpenFAST simulations')  # is this over a set of sims?
+        self.add_output('max_nac_accel',    val=0.0, units='m/s**2', desc='Maximum nacelle acceleration magnitude all OpenFAST simulations')  # is this over a set of sims?
+        self.add_output('avg_pitch_travel',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
+        self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
 
         # Blade outputs
         self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
@@ -483,6 +486,7 @@ class FASTLoadCases(ExplicitComponent):
         # Floating outputs
         self.add_output('Max_PtfmPitch', val=0.0, desc='Maximum platform pitch angle over a set of OpenFAST simulations')
         self.add_output('Std_PtfmPitch', val=0.0, units='deg', desc='standard deviation of platform pitch angle')
+        self.add_output('Max_Offset', val=0.0, units='m', desc='Maximum distance in surge/sway direction')
 
         # Fatigue output
         self.add_output('damage_blade_root_sparU', val=0.0, desc="Miner's rule cumulative damage to upper spar cap at blade root")
@@ -692,6 +696,9 @@ class FASTLoadCases(ExplicitComponent):
                         output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
+                        
+                        # Overwrite timeseries with simulated data instead of saved linearization timeseries
+                        chan_time = ct
 
                 elif modopt['Level2']['DTQP']['flag']:
 
@@ -704,6 +711,8 @@ class FASTLoadCases(ExplicitComponent):
                         self.magnitude_channels, 
                         self.FAST_runDirectory
                     )
+
+                    # TODO: pull chan_time out of here
 
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
@@ -912,7 +921,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
-
+        
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
@@ -1486,19 +1495,12 @@ class FASTLoadCases(ExplicitComponent):
                     spring_offset[2] = StC_i['StC_Z_M'] * g / StC_i['StC_Z_K']
 
                 # Set position
+                StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
+                StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
+                StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                
                 if modopt['TMDs']['preload_spring'][i_TMD]:
-                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0] + spring_offset[0]
-                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1] + spring_offset[1]
-                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2] + spring_offset[2]
-
-                    StC_i['StC_X_DSP']  = -spring_offset[0]
-                    StC_i['StC_Y_DSP']  = -spring_offset[1]
-                    StC_i['StC_Z_DSP']  = -spring_offset[2]
-
-                else:
-                    StC_i['StC_P_X']  = modopt['TMDs']['location'][i_TMD][0]
-                    StC_i['StC_P_Y']  = modopt['TMDs']['location'][i_TMD][1]
-                    StC_i['StC_P_Z']  = modopt['TMDs']['location'][i_TMD][2]
+                    StC_i['StC_Z_PreLd']  = "gravity"
                     
 
                 if modopt['TMDs']['component'][i_TMD] == 'tower':
@@ -1655,8 +1657,8 @@ class FASTLoadCases(ExplicitComponent):
         WaveHd = np.zeros(dlc_generator.n_cases)
         WaveGamma = np.zeros(dlc_generator.n_cases)
         WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
-        TMax = np.zeros(dlc_generator.n_cases)
-        TStart = np.zeros(dlc_generator.n_cases)
+        self.TMax = np.zeros(dlc_generator.n_cases)
+        self.TStart = np.zeros(dlc_generator.n_cases)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1731,15 +1733,15 @@ class FASTLoadCases(ExplicitComponent):
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
             WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
-            TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
-            TStart[i_case] = dlc_generator.cases[i_case].transient_time
+            self.TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
 
 
         # Parameteric inputs
         case_inputs = {}
         # Main fst
-        case_inputs[("Fst","TMax")] = {'vals':TMax, 'group':1}
-        case_inputs[("Fst","TStart")] = {'vals':TStart, 'group':1}
+        case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
+        case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
@@ -1794,7 +1796,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
-        fastBatch.keep_time         = modopt['General']['openfast_configuration']['save_timeseries']
+        fastBatch.keep_time         = modopt['General']['openfast_configuration']['keep_time']
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
@@ -1810,6 +1812,9 @@ class FASTLoadCases(ExplicitComponent):
         # TODO: Stress Concentration Factor?
         magnitude_channels = dict( fastwrap.magnitude_channels_default )
         fatigue_channels =  dict( fastwrap.fatigue_channels_default )
+
+        # Nacelle accelleration
+        magnitude_channels['NcIMUTA'] = ['NcIMUTAxs','NcIMUTAzs','NcIMUTAzs']
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
         if not modopt['Level3']['from_openfast']:
@@ -1952,15 +1957,15 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['DLC_driver']['n_ws_dlc11'] > 0 and bool(self.fst_vt['Fst']['CompAero']):
             outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
-        outputs, discrete_outputs = self.get_control_measures(summary_stats, inputs, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs, discrete_outputs = self.get_floating_measures(summary_stats, inputs, discrete_inputs,
-                                                                   outputs, discrete_outputs)
+            outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
-        if any(summary_stats['openfast_failed']['mean'] > 0):
-            outputs['openfast_failed'] = 2
+        if modopt['Level3']['flag']:
+            if any(summary_stats['openfast_failed']['mean'] > 0):
+                outputs['openfast_failed'] = 2
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
@@ -2330,7 +2335,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
-    def get_control_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+    def get_control_measures(self, sum_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         '''
         calculate control measures:
             - rotor_overspeed
@@ -2339,12 +2344,47 @@ class FASTLoadCases(ExplicitComponent):
             - sum_stats : pd.DataFrame
         '''
 
-        if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
-            outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+        # rotor overspeed
+        outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+
+        # nacelle accelleration
+        outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
+
+        # pitch travel and duty cycle
+        if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
+            tot_time = 0
+            tot_travel = 0
+            num_dir_changes = 0
+            for i_ts, ts in enumerate(chan_time):
+                t_span = self.TMax[i_ts] - self.TStart[i_ts]
+                for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+                    ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
+
+                    time_ind = ts['Time'] >= self.TStart[i_ts]
+
+                    # total time
+                    tot_time += t_span
+
+                    # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
+                    tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
+
+                    # number of direction changes on each blade
+                    num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
+
+            # Normalize by number of blades, total time
+            avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
+            outputs['avg_pitch_travel'] = avg_travel_per_sec
+
+            dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
+            outputs['pitch_duty_cycle'] = dir_change_per_sec
+        else:
+            print('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
+
+
 
         return outputs, discrete_outputs
 
-    def get_floating_measures(self,sum_stats,inputs, discrete_inputs, outputs, discrete_outputs):
+    def get_floating_measures(self,sum_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         '''
         calculate floating measures:
             - Std_PtfmPitch (max over all dlcs if constraint, mean otheriwse)
@@ -2355,19 +2395,18 @@ class FASTLoadCases(ExplicitComponent):
         '''
 
         if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
-            print(sum_stats['PtfmPitch']['std'])   # for debugging
             outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
         else:
             # Let's just average the standard deviation of PtfmPitch for now
             # TODO: weight based on WS distribution, or something else
-            # print("sum_stats['PtfmPitch']['std']:")   # for debugging
-            print(sum_stats['PtfmPitch']['std'])   # for debugging
             outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
-        
+        # Max platform offset        
+        for timeseries in chan_time:
+            max_offset_ts = np.sqrt(timeseries['PtfmSurge']**2 + timeseries['PtfmSway']**2).max()
+            outputs['Max_Offset'] = np.r_[outputs['Max_Offset'],max_offset_ts].max()
 
         return outputs, discrete_outputs
 

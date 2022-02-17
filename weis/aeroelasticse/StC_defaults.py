@@ -17,6 +17,7 @@ def default_StC_vt():
     StC['StC_X_DSP'] = 0    #    - StC X initial displacement (m) [relative to at rest position]
     StC['StC_Y_DSP'] = 0    #    - StC Y initial displacement (m) [relative to at rest position]
     StC['StC_Z_DSP'] = 0    #    - StC Z initial displacement (m) [relative to at rest position; used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]
+    StC['StC_Z_PreLd'] = "none"    #    - StC Z initial displacement (m) [relative to at rest position; used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]
     # ---------------------- StC CONFIGURATION -------------------------------------- [used only when StC_DOF_MODE=1 or 2]
     StC['StC_X_PSP'] = 0    #    - Positive stop position (maximum X mass displacement) (m)
     StC['StC_X_NSP'] = 0    #    - Negative stop position (minimum X mass displacement) (m)

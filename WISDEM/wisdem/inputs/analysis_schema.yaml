@@ -779,6 +779,10 @@ properties:
                                             properties:
                                                 lower_bound: *dbound
                                                 upper_bound: *dbound
+                                                constant:
+                                                    type: boolean
+                                                    description: Should the diameters be constant
+                                                    default: False
                                         thickness:
                                             type: object
                                             description: Thickness optimization of member group
@@ -1492,7 +1496,7 @@ properties:
                     criterion:
                         type: string
                         description: Descriptor of sampling method for LatinHypercube generator
-                        default: None
+                        default: center
                         enum: [None, center, c, maximin, m, centermaximin, cm, correelation, corr]
                     iterations:
                         type: integer

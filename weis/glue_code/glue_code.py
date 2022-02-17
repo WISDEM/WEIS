@@ -219,7 +219,7 @@ class WindPark(om.Group):
                 self.connect('tune_rosco_ivc.Flp_zeta',     'sse_tune.tune_rosco.Flp_zeta')
 
         if modeling_options['Level1']['flag']:
-            self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options))
+            self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))
 
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.connect('configuration.turb_class',        'raft.turbulence_class')
@@ -249,6 +249,8 @@ class WindPark(om.Group):
             self.connect('rotorse.rp.powercurve.rated_V',       'raft.Vrated')
             self.connect('control.V_in',                    'raft.V_cutin')
             self.connect('control.V_out',                   'raft.V_cutout')
+            self.connect('rotorse.rp.powercurve.rated_Omega',     'raft.rated_rotor_speed')
+
             if modeling_options["flags"]["blade"]:
                 self.connect("configuration.n_blades", "raft.nBlades")
                 self.connect("hub.cone", "raft.precone")
@@ -290,8 +292,8 @@ class WindPark(om.Group):
 
                 for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                     idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                    self.connect(f"floating.memgrp{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
-                    self.connect(f"floating.memgrp{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
+                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
+                    self.connect(f"floating.memgrid{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
                     self.connect(f"floatingse.member{k}.height", f"raft.member{k}:height")
                     self.connect(f"floatingse.member{k}.rho", f"raft.member{k}:rho")
                     self.connect(f"floating.memgrp{idx}.s", f"raft.platform_member{k+1}_stations")
@@ -430,7 +432,11 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
-                    if modeling_options["flags"]["floating"]:
+                    if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
+                        self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
+                        self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
+                        self.connect('fixedse.tower_side_side_modes',    'aeroelastic.side_side_modes')
+                    elif modeling_options["flags"]["floating"]:
                         self.connect('floatingse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('floatingse.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('floatingse.side_side_modes',    'aeroelastic.side_side_modes')
@@ -462,10 +468,14 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                     self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    self.connect("floatingse.platform_mass", "aeroelastic.platform_mass")
-                    self.connect("floatingse.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
-                    self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
-                    self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
+                    if True:
+                        ptfm_data_source = 'floatingse'
+                    else:
+                        ptfm_data_source = 'raft'
+                    self.connect(f"{ptfm_data_source}.platform_mass", "aeroelastic.platform_mass")
+                    self.connect(f"{ptfm_data_source}.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
+                    self.connect(f"{ptfm_data_source}.platform_I_total", "aeroelastic.platform_I_total")
+                    self.connect(f"{ptfm_data_source}.platform_displacement", "aeroelastic.platform_displacement")
                     self.connect("floating.transition_node", "aeroelastic.transition_node")
 
                     for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):

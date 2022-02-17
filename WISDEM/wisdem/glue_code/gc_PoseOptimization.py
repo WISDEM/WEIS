@@ -180,7 +180,10 @@ class PoseOptimization(object):
                 n_grid = len(self.modeling["floating"]["members"]["grid_member_" + memname])
                 n_layers = self.modeling["floating"]["members"]["n_layers"][memidx]
                 if "diameter" in kgrp:
-                    n_DV += n_grid
+                    if "constant" in kgrp["diameter"]:
+                        n_DV += 1
+                    else:
+                        n_DV += n_grid
                 if "thickness" in kgrp:
                     n_DV += n_grid * n_layers
                 if "ballast" in kgrp:
@@ -1013,13 +1016,13 @@ class PoseOptimization(object):
 
                 if "diameter" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.outer_diameter",
+                        f"floating.memgrp{idx}.outer_diameter_in",
                         lower=kgrp["diameter"]["lower_bound"],
                         upper=kgrp["diameter"]["upper_bound"],
                     )
                 if "thickness" in kgrp:
                     wt_opt.model.add_design_var(
-                        f"floating.memgrp{idx}.layer_thickness",
+                        f"floating.memgrp{idx}.layer_thickness_in",
                         lower=kgrp["thickness"]["lower_bound"],
                         upper=kgrp["thickness"]["upper_bound"],
                     )
@@ -1365,7 +1368,7 @@ class PoseOptimization(object):
 
         elif monopile_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.monopile.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=monopile_constr["frequency_1"]["lower_bound"],
                 upper=monopile_constr["frequency_1"]["upper_bound"],
@@ -1391,7 +1394,7 @@ class PoseOptimization(object):
 
         elif jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
-                "fixedse.jacket.structural_frequencies",
+                "fixedse.structural_frequencies",
                 indices=[0],
                 lower=jacket_constr["frequency_1"]["lower_bound"],
                 upper=jacket_constr["frequency_1"]["upper_bound"],
@@ -1456,13 +1459,13 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("floatingse.constr_anchor_lateral", lower=0.0)
 
         if float_constr["stress"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_stress", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_platform_stress", upper=1.0)
 
         if float_constr["shell_buckling"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_shell_buckling", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_platform_shell_buckling", upper=1.0)
 
         if float_constr["global_buckling"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_system_global_buckling", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_platform_global_buckling", upper=1.0)
 
         return wt_opt
 
