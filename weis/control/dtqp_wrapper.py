@@ -88,7 +88,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
     ### Loop throught and call DTQP for each disturbance
     case_names = case_naming(len(level2_disturbances),'oloc')
 
-    plot = True
+    plot = False
 
     dtqp_input_list = []
     
@@ -133,12 +133,8 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
         et[_name] = _et
         dl[_name] = _dl
         dam[_name] = _dam
-        #ct.append(OutData)
-        
-
-        #output.df.to_pickle(os.path.join(run_dir,case_names[i_oloc]+'.p'))
-
-        # ct.append(OutData)
+        ct.append(output)
+    
 
 
     summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
@@ -146,7 +142,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
     # Calculate AEP
     
 
-    return summary_stats, extreme_table, DELs, Damage
+    return summary_stats, extreme_table, DELs, Damage, ct
 
         
 # Wrapper for actually running dtqp with a single input, useful for running in parallel
@@ -157,9 +153,20 @@ def run_dtqp(dtqp_input):
     
     # if nl ==1, run DTQPy_static else run DTQPy_oloc
     if nl>1:
-        T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+        T,U,X,Y = DTQPy_oloc(
+            dtqp_input['LinearTurbine'],
+            dtqp_input['dist'],
+            dtqp_input['dtqp_constraints'],
+            dtqp_input['dtqp_options'],
+            plot=dtqp_input['plot']
+            )
     elif nl ==1:
-        T,U,X,Y = DTQPy_static(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+        T,U,X,Y = DTQPy_static(
+            dtqp_input['LinearTurbine'],
+            dtqp_input['dist'],
+            dtqp_input['dtqp_constraints'],
+            dtqp_input['dtqp_options'],
+            plot=dtqp_input['plot'])
    
     # Shorten output names from linearization output to one like level3 openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed
