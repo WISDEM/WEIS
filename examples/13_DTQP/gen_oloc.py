@@ -9,6 +9,7 @@ from weis.aeroelasticse.CaseGen_General import case_naming
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+import pandas as pd
 
 
 import numpy as np
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
-    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
+    lin_pickle = mydir + os.sep + "LinearTurbine_22.pkl"
 
     if True and os.path.exists(lin_pickle):
         with open(lin_pickle,"rb") as pkl_file:
@@ -131,6 +132,10 @@ if __name__ == '__main__':
     run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
     if not os.path.exists(run_directory):
         os.makedirs(run_directory)
+
+    # save disturbances
+    for i_dist, dist in enumerate(level2_disturbance):
+        pd.DataFrame(dist).to_pickle(os.path.join(run_directory,f'dist_{i_dist}.p'))
 
     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
         LinearTurbine, 
