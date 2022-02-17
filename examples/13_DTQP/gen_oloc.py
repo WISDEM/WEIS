@@ -142,7 +142,7 @@ if __name__ == '__main__':
     for i_dist, dist in enumerate(level2_disturbance):
         pd.DataFrame(dist).to_pickle(os.path.join(run_directory,f'dist_{i_dist}.p'))
 
-    summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
+    summary_stats, extreme_table, DELs, Damage, chan_time = dtqp_wrapper(
         LinearTurbine, 
         level2_disturbance, 
         analysis_options, 
@@ -154,5 +154,7 @@ if __name__ == '__main__':
         cores = 1
         )
 
-    print('here')
+    # Save each timeseries as a pickled dataframe
+    for i_ts, timeseries in enumerate(chan_time):
+        timeseries.df.to_pickle(os.path.join(run_directory,FAST_namingOut + '_' + str(i_ts) + '.p'))
     
