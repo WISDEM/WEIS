@@ -77,11 +77,10 @@ if __name__ == '__main__':
         
         
         off = max(u_h) - 25
-        ind = u_h > 25;
+        ind = u_h > 25
         
         # remove any windspeeds > 25 m/s
-        if ind.any():
-            u_h[ind] = u_h[ind] - off
+        u_h[ind] = 25
         
         
         tt          = ts_file['t']
