@@ -2872,6 +2872,11 @@ properties:
                         type: number
                         default: 1.E-4
                         description: Tolerance of DTQP optimization
+                    function:
+                        type: string
+                        enum: ['osqp','ipopt']
+                        default: 'osqp'
+                        description: Solver used for DTQP optimization
 
             #InflowWind: *ofinflowwind
             #AeroDyn: *ofaerodyn
