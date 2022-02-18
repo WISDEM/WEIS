@@ -121,7 +121,6 @@ results/
 # Turbsim
 wind/
 
-# BEM
 BEM/
-
 none/
+steady_state/

@@ -1,15 +1,17 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: lin
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_3
+        OF_run_fst: ol2cl
+        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_OL2CL_0
         use_exe: True
+        save_timeseries: True
+        save_iterations: True
 
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
+        n_pitch_perf_surfaces: 25
+        n_tsr_perf_surfaces: 25
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -33,14 +35,13 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-    BOS:
-        flag: True
+    # BOS:
+    #     flag: True
         
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
-    flag: False
-    OutFileFmt: 3
+    flag: True
     simulation:
-        TMax: 1.
+        TMax: 600.
         DT: 0.01
         CompElast: 1
         CompInflow: 1
@@ -48,56 +49,68 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompServo: 1
         CompHydro: 1
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
         flag: True
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : True
-        TwSSDOF1 : True
-        TwSSDOF2 : True
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
         PtfmSgDOF: False
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
-        PtfmPDOF : False
+        PtfmPDOF : True
         PtfmYDOF : False
-        ElastoDynBlade:
-        BldFlDmp1: 3.0
-        BldFlDmp2: 3.0
-        BldEdDmp1: 3.0
-    ServoDyn:
-        YawSpr: 4.6273E+10
-        YawDamp: 3.9088E+07
     HydroDyn:
-        WaveTMax: 1 #3630
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
-        WvLowCOffD: 0.0
-        WvHiCOffD: 3.04292
         WaveSeed1: 123456789
-        AddBQuad1: [923000.0,   0.0,        0.0,        0.0,            -8920000.0,     0.0]
-        AddBQuad2: [0.0,        923000.0,   0.0,        8920000.0,      0.0,            0.0]
-        AddBQuad3: [0.0,        0.0,        2300000.0,  0.0,            0.0,            0.0]
-        AddBQuad4: [0.0,        8920000.0,  0.0,        16800000000.0,  0.0,            0.0]
-        AddBQuad5: [-8920000.0, 0.0,        0.0,        0.0,            16800000000.0,  0.0]
-        AddBQuad6: [0.0,        0.0,        0.0,        0.0,            0.0,            48000000000.0]
+        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
+        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
+        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
+        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
+        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
+        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
+Level1:
+    flag: False
+    potential_model_override: 2
+    trim_ballast: 2
+    heave_tol: 1
+    save_designs: True
+
 ROSCO:
     flag: True
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 2
+    Fl_Mode: 2 
+    zeta_pc: [1]
+    omega_pc: [0.2]
+    U_pc: [12]
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    twr_freq: 3.2
+    ptfm_freq: 0.2
+    Kp_float: -10
+
 
 Level2:
-    flag: True
+    flag: False
     simulation:         # could these be included in openfast options?
         flag: False
         TMax: 100.      # run simulations using IEC standards, could share that info
@@ -111,17 +124,16 @@ Level2:
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 12
     DTQP:
-        flag: True
-        # function: ipopt
-        # nt: 3000
-        # maxiters: 1500
-        # tolerance: 1e-5
+        flag: False
+        nt: 3000
+        maxiters: 1500
+        tolerance: 1e-5
 
-Level1:
-    potential_model_override: 2
+OL2CL:
+    flag: True
+    trajectory_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_1
 
-   
-
+# These should match modeling_options.yaml used to generate DTQP results
 DLC_driver:
     DLCs:
         - DLC: "1.1"
@@ -129,10 +141,11 @@ DLC_driver:
           wind_speed: [15,18,21]
           n_seeds: 1
           analysis_time: 600.
-          transient_time: 100.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True
               IECturbc: B
               RefHt: 150.0
               PLExp: 0.11
+

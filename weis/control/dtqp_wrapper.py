@@ -10,9 +10,7 @@ from pCrunch.io import OpenFASTOutput
 from weis.aeroelasticse.CaseGen_General import case_naming
 
 
-
-def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
-
+def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
     ''' 
     Convert weis information to DTQP and vice versa
     Catch errors to ensure we are using DTQP in a way that it is able to be used
@@ -21,6 +19,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     Inputs:         LinearTurbine:  LinearTurbineModel object
                     level2_disturbances: list of disturbance dicts with Time and Wind keys
                     analysis_options: weis analysis options with constraints, merit figures
+                    modeling_options: weis modeling options with DTQP options
                     fst_vt: dict with OpenFAST/ROSCO variables
                     loads_analysis: pCrunch LoadsAnalysis object
                     magnitude_channels: dict for pCrunch
@@ -67,7 +66,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     if control_const['rotor_overspeed']['flag']:
         desc = 'ED First time derivative of Variable speed generator DOF (internal DOF index = DOF_GeAz), rad/s'
         if desc in LinearTurbine.DescStates:
-            dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] ]
+            dtqp_constraints[desc] = [-np.inf,(1 + control_const['rotor_overspeed']['max']) * fst_vt['DISCON_in']['PC_RefSpd'] + 0.01 ]
         else:
             raise Exception('rotor_overspeed constraint is set, but ED GenSpeed is not a state in the LinearModel')
     else:
@@ -89,7 +88,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     ### Loop throught and call DTQP for each disturbance
     case_names = case_naming(len(level2_disturbances),'oloc')
 
-    plot = True
+    plot = False
 
     dtqp_input_list = []
     
@@ -102,6 +101,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         dtqp_input['case_name']             = case_names[i_oloc]
         dtqp_input['run_dir']               = run_dir
         dtqp_input['magnitude_channels']    = magnitude_channels
+        dtqp_input['dtqp_options']          = modeling_options['Level2']['DTQP']
 
         dtqp_input_list.append(dtqp_input)
 
@@ -133,12 +133,8 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
         et[_name] = _et
         dl[_name] = _dl
         dam[_name] = _dam
-        #ct.append(OutData)
-        
-
-        #output.df.to_pickle(os.path.join(run_dir,case_names[i_oloc]+'.p'))
-
-        # ct.append(OutData)
+        ct.append(output)
+    
 
 
     summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
@@ -146,7 +142,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,fst_vt,loads
     # Calculate AEP
     
 
-    return summary_stats, extreme_table, DELs, Damage
+    return summary_stats, extreme_table, DELs, Damage, ct
 
         
 # Wrapper for actually running dtqp with a single input, useful for running in parallel
@@ -157,9 +153,20 @@ def run_dtqp(dtqp_input):
     
     # if nl ==1, run DTQPy_static else run DTQPy_oloc
     if nl>1:
-        T,U,X,Y = DTQPy_oloc(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+        T,U,X,Y = DTQPy_oloc(
+            dtqp_input['LinearTurbine'],
+            dtqp_input['dist'],
+            dtqp_input['dtqp_constraints'],
+            dtqp_input['dtqp_options'],
+            plot=dtqp_input['plot']
+            )
     elif nl ==1:
-        T,U,X,Y = DTQPy_static(dtqp_input['LinearTurbine'],dtqp_input['dist'],dtqp_input['dtqp_constraints'],plot=dtqp_input['plot'])
+        T,U,X,Y = DTQPy_static(
+            dtqp_input['LinearTurbine'],
+            dtqp_input['dist'],
+            dtqp_input['dtqp_constraints'],
+            dtqp_input['dtqp_options'],
+            plot=dtqp_input['plot'])
    
     # Shorten output names from linearization output to one like level3 openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed
@@ -174,8 +181,8 @@ def run_dtqp(dtqp_input):
     OutData['Time'] = T.flatten()
 
     output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
-    #output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
-    
+    output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
+
     return output
 
 

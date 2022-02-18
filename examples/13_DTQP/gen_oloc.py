@@ -9,6 +9,7 @@ from weis.aeroelasticse.CaseGen_General import case_naming
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+import pandas as pd
 
 
 import numpy as np
@@ -52,7 +53,7 @@ if __name__ == '__main__':
 
     # generate wind files
     FAST_namingOut = 'oloc'
-    wind_directory = 'outputs/oloc/wind'
+    wind_directory = '/Users/dzalkind/Tools/WEIS-1/examples/13_DTQP/outputs/oloc/wind'
     if not os.path.exists(wind_directory):
         os.makedirs(wind_directory)
     rotorD = wt_init['assembly']['rotor_diameter']
@@ -76,11 +77,10 @@ if __name__ == '__main__':
         
         
         off = max(u_h) - 25
-        ind = u_h > 25;
+        ind = u_h > 25
         
         # remove any windspeeds > 25 m/s
-        if ind.any():
-            u_h[ind] = u_h[ind] - off
+        u_h[ind] = 25
         
         
         tt          = ts_file['t']
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
-    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
+    lin_pickle = mydir + os.sep + "LinearTurbine_22.pkl"
 
     if True and os.path.exists(lin_pickle):
         with open(lin_pickle,"rb") as pkl_file:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     
     else:   # load the model and run MBC3
         LinearTurbine = LinearTurbineModel(
-                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_AR'),  # directory where linearizations are
+                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_full'),  # directory where linearizations are
                     lin_case_name,
                     nlin=modeling_options['Level2']['linearization']['NLinTimes'],
                     reduceControls = True
@@ -128,14 +128,24 @@ if __name__ == '__main__':
         "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
         }
 
-    run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
+    if os.path.isabs(modeling_options['General']['openfast_configuration']['OF_run_dir']):
+        run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    else:
+        run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
+    run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    
     if not os.path.exists(run_directory):
         os.makedirs(run_directory)
 
-    summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
+    # save disturbances
+    for i_dist, dist in enumerate(level2_disturbance):
+        pd.DataFrame(dist).to_pickle(os.path.join(run_directory,f'dist_{i_dist}.p'))
+
+    summary_stats, extreme_table, DELs, Damage, chan_time = dtqp_wrapper(
         LinearTurbine, 
         level2_disturbance, 
         analysis_options, 
+        modeling_options,
         fst_vt, 
         la, 
         magnitude_channels, 
@@ -143,5 +153,7 @@ if __name__ == '__main__':
         cores = 1
         )
 
-    print('here')
+    # Save each timeseries as a pickled dataframe
+    for i_ts, timeseries in enumerate(chan_time):
+        timeseries.df.to_pickle(os.path.join(run_directory,FAST_namingOut + '_' + str(i_ts) + '.p'))
     
