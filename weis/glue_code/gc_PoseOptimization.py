@@ -20,9 +20,9 @@ class PoseOptimizationWEIS(PoseOptimization):
             n_add += 1
         if self.opt['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
             n_add += 1
-        if self.opt['design_variables']['control']['servo']['flap_control']['omega']['flag']:
+        if self.opt['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag']:
             n_add += 1
-        if self.opt['design_variables']['control']['servo']['flap_control']['zeta']['flag']:
+        if self.opt['design_variables']['control']['servo']['flap_control']['flp_tau']['flag']:
             n_add += 1
         if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
             n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
@@ -105,11 +105,11 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=control_opt['flaps']['te_flap_ext']['min'],
                                                             upper=control_opt['flaps']['te_flap_ext']['max'])
         if 'flap_control' in control_opt['servo']:
-            if control_opt['servo']['flap_control']['omega']['flag']:
+            if control_opt['servo']['flap_control']['flp_kp_norm']['flag']:
                 wt_opt.model.add_design_var('tune_rosco_ivc.flp_kp_norm', 
                                     lower=control_opt['servo']['flap_control']['flp_kp_norm']['min'], 
                                     upper=control_opt['servo']['flap_control']['flp_kp_norm']['max'])
-            if control_opt['servo']['flap_control']['zeta']['flag']:
+            if control_opt['servo']['flap_control']['flp_tau']['flag']:
                 wt_opt.model.add_design_var('tune_rosco_ivc.flp_tau', 
                                     lower=control_opt['servo']['flap_control']['flp_tau']['min'], 
                                     upper=control_opt['servo']['flap_control']['flp_tau']['max'])
@@ -174,15 +174,15 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
 
         control_constraints = self.opt['constraints']['control']
-        if control_constraints['flap_control']['flag']:
-            if self.modeling['Level3']['flag'] != True:
-                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff1',
-                lower = control_constraints['flap_control']['min'],
-                upper = control_constraints['flap_control']['max'])
-            wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2', 
-                lower = control_constraints['flap_control']['min'],
-                upper = control_constraints['flap_control']['max'])    
+        # if control_constraints['flap_control']['flag']:
+        #     if self.modeling['Level3']['flag'] != True:
+        #         raise Exception('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
+        #     wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff1',
+        #         lower = control_constraints['flap_control']['min'],
+        #         upper = control_constraints['flap_control']['max'])
+        #     wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff2', 
+        #         lower = control_constraints['flap_control']['min'],
+        #         upper = control_constraints['flap_control']['max'])    
         if control_constraints['rotor_overspeed']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize rotor overspeed constraints.')
