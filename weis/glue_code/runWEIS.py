@@ -9,7 +9,7 @@ from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 
-fd_methods = ['SLSQP','SNOPT']
+fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
