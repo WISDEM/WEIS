@@ -37,8 +37,20 @@ class FAST_wrapper(object):
         olddir = os.getcwd()
         os.chdir(self.FAST_directory)
 
+        run_idx = 0
         start = time.time()
-        _ = subprocess.run(exec_str, check=True)
+        while run_idx < 2:
+            try:
+                subprocess.run(exec_str, check=True)
+                run_idx = 2
+            except subprocess.CalledProcessError as e:
+                if e.returncode > 1 and run_idx < 1: # This might have failed because of a temporary library access issue, retry
+                    print('Error running OpenFAST, retrying.')
+                    run_idx += 1
+                else: # Bad OpenFAST inputs, or we've already retried
+                    print('OpenFAST Failed: {}'.format(e))
+                    run_idx = 2
+                
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
 
