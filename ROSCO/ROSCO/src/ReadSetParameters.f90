@@ -399,7 +399,7 @@ CONTAINS
         ! Read open loop input, if desired
         IF (CntrPar%OL_Mode == 1) THEN
             OL_String = ''      ! Display string
-            OL_Count  = 0
+            OL_Count  = 1
             IF (CntrPar%Ind_BldPitch > 0) THEN
                 OL_String   = TRIM(OL_String)//' BldPitch '
                 OL_Count    = OL_Count + 1
@@ -417,16 +417,27 @@ CONTAINS
 
             PRINT *, 'ROSCO: Implementing open loop control for'//TRIM(OL_String)
             CALL Read_OL_Input(CntrPar%OL_Filename,110_IntKi,OL_Count,CntrPar%OL_Channels, ErrVar)
+            PRINT *, "Finished reading OL_Input"
+
+            PRINT *, "CntrPar%Ind_Breakpoint: ", CntrPar%Ind_Breakpoint
 
             CntrPar%OL_Breakpoints = CntrPar%OL_Channels(:,CntrPar%Ind_Breakpoint)
+
+            PRINT *, "CntrPar%Ind_BldPitch: ", CntrPar%Ind_BldPitch
 
             IF (CntrPar%Ind_BldPitch > 0) THEN
                 CntrPar%OL_BldPitch = CntrPar%OL_Channels(:,CntrPar%Ind_BldPitch)
             ENDIF
 
+            PRINT *, "CntrPar%Ind_GenTq: ", CntrPar%Ind_GenTq
+
+
             IF (CntrPar%Ind_GenTq > 0) THEN
                 CntrPar%OL_GenTq = CntrPar%OL_Channels(:,CntrPar%Ind_GenTq)
             ENDIF
+
+            PRINT *, "CntrPar%Ind_YawRate: ", CntrPar%Ind_YawRate
+
 
             IF (CntrPar%Ind_YawRate > 0) THEN
                 CntrPar%OL_YawRate = CntrPar%OL_Channels(:,CntrPar%Ind_YawRate)
@@ -545,9 +556,9 @@ CONTAINS
         !------- DEBUG ------------------------------------------------------------
 
         ! LoggingLevel
-        IF ((CntrPar%LoggingLevel < 0) .OR. (CntrPar%LoggingLevel > 2)) THEN
+        IF ((CntrPar%LoggingLevel < 0) .OR. (CntrPar%LoggingLevel > 3)) THEN
             ErrVar%aviFAIL = -1
-            ErrVar%ErrMsg  = 'LoggingLevel must be 0, 1, or 2.'
+            ErrVar%ErrMsg  = 'LoggingLevel must be 0 - 3.'
         ENDIF
 
         !------- CONTROLLER FLAGS -------------------------------------------------
@@ -774,6 +785,16 @@ CONTAINS
         IF (CntrPar%IPC_KI(2) < 0.0)  THEN
             ErrVar%aviFAIL = -1
             ErrVar%ErrMsg  = 'IPC_KI(2) must be zero or greater than zero.'
+        ENDIF
+
+        IF (CntrPar%IPC_KI(1) < 0.0)  THEN
+            ErrVar%aviFAIL = -1
+            ErrVar%ErrMsg  = 'IPC_KP(1) must be zero or greater than zero.'
+        ENDIF
+        
+        IF (CntrPar%IPC_KI(2) < 0.0)  THEN
+            ErrVar%aviFAIL = -1
+            ErrVar%ErrMsg  = 'IPC_KP(2) must be zero or greater than zero.'
         ENDIF
 
         !------- VS TORQUE CONTROL ------------------------------------------------
@@ -1672,15 +1693,12 @@ SUBROUTINE Read_OL_Input(OL_InputFileName, Unit_OL_Input, NumChannels, Channels,
     CHARACTER(1024)                                         :: Line              ! Temp variable for reading whole line from file
     INTEGER(IntKi)                                          :: NumComments
     INTEGER(IntKi)                                          :: NumDataLines
-    INTEGER(IntKi)                                          :: NumCols 
     REAL(DbKi)                                              :: TmpData(NumChannels+1)  ! Temp variable for reading all columns from a line
     CHARACTER(15)                                           :: NumString
 
     INTEGER(IntKi)                                          :: I,J
 
     CHARACTER(*),               PARAMETER                   :: RoutineName = 'ReadControlParameterFileSub'
-
-    NumCols             = NumChannels + 1
 
     !-------------------------------------------------------------------------------------------------
     ! Read from input file, borrowed (read: copied) from (Open)FAST team...thanks!
@@ -1706,7 +1724,7 @@ SUBROUTINE Read_OL_Input(OL_InputFileName, Unit_OL_Input, NumChannels, Channels,
         
         ELSE
             ! Do all the stuff!
-
+            PRINT *, "Find number of comment lines"
             !-------------------------------------------------------------------------------------------------
             ! Find the number of comment lines
             !-------------------------------------------------------------------------------------------------
@@ -1723,18 +1741,19 @@ SUBROUTINE Read_OL_Input(OL_InputFileName, Unit_OL_Input, NumChannels, Channels,
         
             END DO !WHILE
 
+            PRINT *, "Find number of data lines"
             !-------------------------------------------------------------------------------------------------
             ! Find the number of data lines
             !-------------------------------------------------------------------------------------------------
 
             NumDataLines = 0
 
-            READ(LINE,*,IOSTAT=IOS) ( TmpData(I), I=1,NumCols ) ! this line was read when we were figuring out the comment lines; let's make sure it contains
+            READ(LINE,*,IOSTAT=IOS) ( TmpData(I), I=1,NumChannels ) ! this line was read when we were figuring out the comment lines; let's make sure it contains
 
             DO WHILE (IOS == 0)  ! read the rest of the file (until an error occurs)
                 NumDataLines = NumDataLines + 1
                 
-                READ(Unit_OL_Input,*,IOSTAT=IOS) ( TmpData(I), I=1,NumCols )
+                READ(Unit_OL_Input,*,IOSTAT=IOS) ( TmpData(I), I=1,NumChannels )
             
             END DO !WHILE
         
@@ -1747,6 +1766,9 @@ SUBROUTINE Read_OL_Input(OL_InputFileName, Unit_OL_Input, NumChannels, Channels,
                 CLOSE(Unit_OL_Input)
             END IF
 
+            PRINT *, "About to allocate"
+            PRINT *, "NumDataLines: ", NumDataLines
+            PRINT *, "NumChannels: ", NumChannels
             !-------------------------------------------------------------------------------------------------
             ! Allocate arrays for the uniform wind data
             !-------------------------------------------------------------------------------------------------
@@ -1756,20 +1778,21 @@ SUBROUTINE Read_OL_Input(OL_InputFileName, Unit_OL_Input, NumChannels, Channels,
             ! Rewind the file (to the beginning) and skip the comment lines
             !-------------------------------------------------------------------------------------------------
 
+            PRINT *, "Rewinding"
             REWIND( Unit_OL_Input )
 
             DO I=1,NumComments
                 READ(Unit_OL_Input,'( A )',IOSTAT=IOS) LINE
             END DO !I
         
-
+            PRINT *, "Reading"
             !-------------------------------------------------------------------------------------------------
             ! Read the data arrays
             !-------------------------------------------------------------------------------------------------
         
             DO I=1,NumDataLines
             
-                READ(Unit_OL_Input,*,IOSTAT=IOS) ( TmpData(J), J=1,NumCols )
+                READ(Unit_OL_Input,*,IOSTAT=IOS) ( TmpData(J), J=1,NumChannels )
 
                 IF (IOS > 0) THEN
                     CLOSE(Unit_OL_Input)
