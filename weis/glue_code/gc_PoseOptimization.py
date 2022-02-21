@@ -20,8 +20,10 @@ class PoseOptimizationWEIS(PoseOptimization):
             n_add += 1
         if self.opt['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
             n_add += 1
-        if self.opt['design_variables']['control']['servo']['flap_control']['flag']:
-            n_add += 2
+        if self.opt['design_variables']['control']['servo']['flap_control']['omega']['flag']:
+            n_add += 1
+        if self.opt['design_variables']['control']['servo']['flap_control']['zeta']['flag']:
+            n_add += 1
         if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
             n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
@@ -57,6 +59,11 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         elif self.opt['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
+
+        elif self.opt['merit_figure'] == 'LCOE_weis':
+            wt_opt.model.add_objective('financese_post.lcoe', ref=.1)
+
+            
         else:
             super(PoseOptimizationWEIS, self).set_objective(wt_opt)
                 
@@ -80,11 +87,11 @@ class PoseOptimizationWEIS(PoseOptimization):
         if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
             wt_opt.model.add_design_var('tune_rosco_ivc.zeta_vs', lower=control_opt['servo']['torque_control']['zeta']['min'], 
                                                            upper=control_opt['servo']['torque_control']['zeta_max'])
-        if control_opt['servo']['ipc_control']['Kp']:
+        if control_opt['servo']['ipc_control']['Kp']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Kp1p', lower=control_opt['servo']['ipc_control']['Kp']['min'],
                                                             upper=control_opt['servo']['ipc_control']['Kp']['max'],
                                                             ref=control_opt['servo']['ipc_control']['Kp']['ref'])
-        if control_opt['servo']['ipc_control']['Ki']:
+        if control_opt['servo']['ipc_control']['Ki']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Ki1p', lower=control_opt['servo']['ipc_control']['Ki']['min'],
                                                             upper=control_opt['servo']['ipc_control']['Ki']['max'],
                                                             ref=control_opt['servo']['ipc_control']['Kp']['ref'])
@@ -92,19 +99,20 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_design_var('tune_rosco_ivc.stability_margin', lower=control_opt['servo']['pitch_control']['stability_margin']['min'],
                                                             upper=control_opt['servo']['pitch_control']['stability_margin']['max'])
         if control_opt['flaps']['te_flap_end']['flag']:
-            wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=control_opt['flaps']['te_flap_end']['min_end'],
-                                                            upper=control_opt['flaps']['te_flap_end']['max_end'])
+            wt_opt.model.add_design_var('dac_ivc.te_flap_end', lower=control_opt['flaps']['te_flap_end']['min'],
+                                                            upper=control_opt['flaps']['te_flap_end']['max'])
         if control_opt['flaps']['te_flap_ext']['flag']:
-            wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=control_opt['flaps']['te_flap_ext']['minimum'],
-                                                            upper=control_opt['flaps']['te_flap_ext']['maximum'])
+            wt_opt.model.add_design_var('dac_ivc.te_flap_ext', lower=control_opt['flaps']['te_flap_ext']['min'],
+                                                            upper=control_opt['flaps']['te_flap_ext']['max'])
         if 'flap_control' in control_opt['servo']:
-            if control_opt['servo']['flap_control']['flag']:
+            if control_opt['servo']['flap_control']['omega']['flag']:
                 wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', 
-                                    lower=control_opt['servo']['flap_control']['omega_min'], 
-                                    upper=control_opt['servo']['flap_control']['omega_max'])
+                                    lower=control_opt['servo']['flap_control']['omega']['min'], 
+                                    upper=control_opt['servo']['flap_control']['omega']['max'])
+            if control_opt['servo']['flap_control']['zeta']['flag']:
                 wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', 
-                                    lower=control_opt['servo']['flap_control']['zeta_min'], 
-                                    upper=control_opt['servo']['flap_control']['zeta_max'])
+                                    lower=control_opt['servo']['flap_control']['zeta']['min'], 
+                                    upper=control_opt['servo']['flap_control']['zeta']['max'])
 
         if control_opt['ps_percent']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.ps_percent', lower=control_opt['ps_percent']['lower_bound'],
@@ -142,7 +150,7 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         if blade_constr["strains_spar_cap_ss"]["flag"]:
             # Remove generic WISDEM one
-            name = 'rs.constr.constr_max_strainU_spar'
+            name = 'rotorse.rs.constr.constr_max_strainU_spar'
             if name in wt_opt.model._responses:
                 wt_opt.model._responses.pop( name )
             if name in wt_opt.model._static_responses:
@@ -157,7 +165,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
             ):
                 # Remove generic WISDEM one
-                name = 'rs.constr.constr_max_strainL_spar'
+                name = 'rotorse.rs.constr.constr_max_strainL_spar'
                 if name in wt_opt.model._responses:
                     wt_opt.model._responses.pop( name )
                 if name in wt_opt.model._static_responses:
@@ -196,6 +204,11 @@ class PoseOptimizationWEIS(PoseOptimization):
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_PtfmPitch constraints.')
             wt_opt.model.add_constraint('aeroelastic.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
+        if control_constraints['Max_TwrBsMyt']['flag']:
+            if self.modeling['Level3']['flag'] != True:
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
+            wt_opt.model.add_constraint('aeroelastic.max_TwrBsMyt_ratio', 
+                upper = 1.0)
 
         return wt_opt
 
