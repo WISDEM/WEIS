@@ -3,7 +3,7 @@ import os, sys, subprocess
 import copy
 from openmdao.api import ExplicitComponent
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
-from wisdem.ccblade.Polar import Polar
+from wisdem.ccblade.Polar import Polar, _find_alpha0
 import csv  # for exporting airfoil polar tables
 import matplotlib.pyplot as plt
 import time
@@ -16,7 +16,7 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
     #This function is used to create and run xfoil simulations for a given set of airfoil coordinates
 
     # Set initial parameters needed in xfoil
-    numNodes   = 310 # number of panels to use (260...but increases if needed)
+    numNodes   = 260 # number of panels to use (260...but increases if needed)
     #dist_param = 0.15 # TE/LE panel density ratio (0.15)
     dist_param = 0.12 #This is current value that i am trying to help with convergence (!bem)
     #IterLimit = 100 # Maximum number of iterations to try and get to convergence
@@ -148,9 +148,23 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
         except:
             flap_polar = []  # in case no convergence was achieved
 
+        # Check for linear region
+        try:
+            window = [-30, 30]
+            alpha0 = _find_alpha0(np.array(flap_polar[:,0]), np.array(flap_polar[:,1]), window)
+            lin_region_len = len(np.where(flap_polar[:,0] < alpha0)[0])
+            lin_region_len_idx = np.where(flap_polar[:,0] < alpha0)[0][-1]
+            if lin_region_len_idx == 0:
+                lin_region_len = 0 
+                raise IndexError('Invalid index for linear region.')
+        except IndexError:
+            lin_region_len = 0
+            
+        if lin_region_len < 1:
+            print('Error: No linear region detected for XFOIL run on p{}'.format(pid))
 
         # Error handling (re-run simulations with more panels if there is not enough data in polars)
-        if np.size(flap_polar) < 3: # This case is if there are convergence issues at the lowest angles of attack
+        if np.size(flap_polar) < 3 or lin_region_len < 1: # This case is if there are convergence issues or bad angles of attack
             plen = 0
             a0 = 0
             a1 = 0
@@ -174,7 +188,7 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
             # AoA_min = -9
             # AoA_max = 25
             # if numNodes > 480:
-            if runNum > 6:
+            if runNum > 10:
                 # Warning('NO convergence in XFoil achieved!')
                 print('No convergence in XFOIL achieved on p{}!'.format(pid))
                 if not os.path.exists('xfoil_errorfiles'):
