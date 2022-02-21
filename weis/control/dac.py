@@ -351,6 +351,10 @@ class RunXFOIL(ExplicitComponent):
                             self.flap_profiles[i]['flap_angles'].append([])
                             self.flap_profiles[i]['flap_angles'][ind] = fa # Putting in flap angles to blade for each profile (can be used for debugging later)
 
+                        import pickle
+                        f = open('flap_profiles.pkl', 'wb')
+                        pickle.dump(self.flap_profiles, f)
+                        f.close()
                         # # ** The code below will plot the first three flap deflection profiles (in the case where there are only 3 this will correspond to max negative, zero, and max positive deflection cases)
                         # font = {'family': 'Times New Roman',
                         #         'weight': 'normal',

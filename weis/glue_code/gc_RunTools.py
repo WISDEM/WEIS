@@ -30,8 +30,8 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('ptfm_freq',     val=0.0, units = 'rad/s')
         self.add_input('omega_vs',      val=0.0, units='rad/s')
         self.add_input('zeta_vs',       val=0.0)
-        self.add_input('Flp_omega',     val=0.0, units='rad/s')
-        self.add_input('Flp_zeta',      val=0.0)
+        self.add_input('flp_kp_norm',   val=0.0)
+        self.add_input('flp_tau',       val=0.0, units='s')
         self.add_input('IPC_Kp1p',      val=0.0, units='s')
         self.add_input('IPC_Ki1p',      val=0.0,)
         self.add_input('tip_deflection',val=0.0, units='m')
@@ -64,8 +64,8 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('Floating Feedback: Kp_float = {:2.3f}, ptfm_freq = {:2.3f}'.format(inputs['Kp_float'][0], inputs['ptfm_freq'][0]))
             
             # Flap control
-            if self.options['opt_options']['design_variables']['control']['servo']['flap_control']['omega']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['flap_control']['zeta']['flag']:
-                print('Flap PI gain inputs: flp_omega = {:2.3f}, flp_zeta = {:2.3f}'.format(inputs['Flp_omega'][0], inputs['Flp_zeta'][0]))
+            if self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag']:
+                print('Flap PI gain inputs: flp_kp_norm = {:2.3f}, flp_tau = {:2.3f}'.format(inputs['flp_kp_norm'][0], inputs['flp_tau'][0]))
             
             # IPC
             if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Kp']:

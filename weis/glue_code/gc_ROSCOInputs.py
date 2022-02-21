@@ -17,10 +17,10 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     # Flap control params
     if rosco_init_options['Flp_Mode'] > 0:
         try:
-            wt_opt['tune_rosco_ivc.Flp_omega']      = rosco_init_options['omega_flp']
-            wt_opt['tune_rosco_ivc.Flp_zeta']       = rosco_init_options['zeta_flp']
+            wt_opt['tune_rosco_ivc.flp_kp_norm']      = rosco_init_options['flp_kp_norm']
+            wt_opt['tune_rosco_ivc.flp_tau']       = rosco_init_options['flp_tau']
         except:
-            raise Exception('If Flp_Mode > 0, you must set omega_flp, zeta_flp in the modeling options')
+            raise Exception('If Flp_Mode > 0, you must set flp_kp_norm, flp_tau in the modeling options')
 
     # IPC 
     if rosco_init_options['IPC_ControlMode']:

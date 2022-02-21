@@ -106,13 +106,13 @@ class PoseOptimizationWEIS(PoseOptimization):
                                                             upper=control_opt['flaps']['te_flap_ext']['max'])
         if 'flap_control' in control_opt['servo']:
             if control_opt['servo']['flap_control']['omega']['flag']:
-                wt_opt.model.add_design_var('tune_rosco_ivc.Flp_omega', 
-                                    lower=control_opt['servo']['flap_control']['omega']['min'], 
-                                    upper=control_opt['servo']['flap_control']['omega']['max'])
+                wt_opt.model.add_design_var('tune_rosco_ivc.flp_kp_norm', 
+                                    lower=control_opt['servo']['flap_control']['flp_kp_norm']['min'], 
+                                    upper=control_opt['servo']['flap_control']['flp_kp_norm']['max'])
             if control_opt['servo']['flap_control']['zeta']['flag']:
-                wt_opt.model.add_design_var('tune_rosco_ivc.Flp_zeta', 
-                                    lower=control_opt['servo']['flap_control']['zeta']['min'], 
-                                    upper=control_opt['servo']['flap_control']['zeta']['max'])
+                wt_opt.model.add_design_var('tune_rosco_ivc.flp_tau', 
+                                    lower=control_opt['servo']['flap_control']['flp_tau']['min'], 
+                                    upper=control_opt['servo']['flap_control']['flp_tau']['max'])
 
         if control_opt['ps_percent']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.ps_percent', lower=control_opt['ps_percent']['lower_bound'],

@@ -188,39 +188,39 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    omega: 
+                                    flp_kp_norm: 
                                         type: object
                                         default: {}
                                         properties:
                                             flag: *flag
                                             min:
                                                 type: number
-                                                default: 0.1
+                                                default: 0.05
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: none
                                             max: 
                                                 type: number
-                                                default: 0.7
+                                                default: 1.0
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: none
-                                    zeta: 
+                                    flp_tau: 
                                         type: object
                                         default: {}
                                         properties:
                                             flag: *flag
                                             min:
                                                 type: number
-                                                default: 0.4
+                                                default: 5
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: none
                                             max:
                                                 type: number
-                                                default: 1.5
+                                                default: 15
                                                 minimum: 0.0
-                                                maximum: 10.0
+                                                maximum: 30.0
                                                 unit: none
                             ipc_control:
                                 type: object

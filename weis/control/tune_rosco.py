@@ -172,8 +172,8 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('zeta_vs',           val=0.0,                                    desc='Generator torque controller damping ratio')
         self.add_input('omega_vs',          val=0.0,            units='rad/s',          desc='Generator torque controller natural frequency')
         if rosco_init_options['Flp_Mode'] > 0:
-            self.add_input('Flp_omega',     val=0.0,            units='rad/s',          desc='Flap controller natural frequency')
-            self.add_input('Flp_zeta',      val=0.0,                                    desc='Flap controller damping ratio')
+            self.add_input('flp_kp_norm',   val=0.0,                                    desc='Flap controller normalized gain')
+            self.add_input('flp_tau',       val=0.0,            units='s',              desc='Flap controller integral gain time constant')
         self.add_input('IPC_Kp1p',          val=0.0,            units='s',              desc='Individual pitch controller 1p proportional gain')
         self.add_input('IPC_Ki1p',          val=0.0,                                    desc='Individual pitch controller 1p integral gain')
         # Outputs for constraints and optimizations
@@ -202,8 +202,8 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
         rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
-            rosco_init_options['omega_flp'] = float(inputs['Flp_omega'])
-            rosco_init_options['zeta_flp']  = float(inputs['Flp_zeta'])
+            rosco_init_options['flp_kp_norm'] = float(inputs['flp_kp_norm'])
+            rosco_init_options['flp_tau']  = float(inputs['flp_tau'])
         else:
             rosco_init_options['omega_flp'] = 0.0
             rosco_init_options['zeta_flp']  = 0.0
@@ -309,7 +309,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.span     = inputs['r'] 
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
-            WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
+            WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi * 6
             WISDEM_turbine.bld_flapwise_damp = self.modeling_options['ROSCO']['Bld_FlpDamp']
 
         else: 
