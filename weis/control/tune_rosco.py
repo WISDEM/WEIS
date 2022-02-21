@@ -213,8 +213,8 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['ss_vsgain']   = float(inputs['ss_vsgain'])
         rosco_init_options['ss_pcgain']   = float(inputs['ss_pcgain'])
         rosco_init_options['ps_percent']  = float(inputs['ps_percent'])
-        rosco_init_options['IPC_Kp1p']    = float(inputs['IPC_Kp1p'])
-        rosco_init_options['IPC_Ki1p']    = float(inputs['IPC_Ki1p'])
+        rosco_init_options['IPC_Kp1p']    = max(0.0, float(inputs['IPC_Kp1p']))
+        rosco_init_options['IPC_Ki1p']    = max(0.0, float(inputs['IPC_Ki1p']))
         rosco_init_options['IPC_Kp2p']    = 0.0 # 2P optimization is not currently supported
         rosco_init_options['IPC_Kp2p']    = 0.0
 
