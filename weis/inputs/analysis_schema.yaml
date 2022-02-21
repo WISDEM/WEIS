@@ -195,13 +195,13 @@ properties:
                                             flag: *flag
                                             min:
                                                 type: number
-                                                default: 0.05
+                                                default: 0.01
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: none
                                             max: 
                                                 type: number
-                                                default: 1.0
+                                                default: 5.0
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: none
@@ -214,13 +214,13 @@ properties:
                                                 type: number
                                                 default: 5
                                                 minimum: 0.0
-                                                maximum: 10.0
+                                                maximum: 100.0
                                                 unit: none
                                             max:
                                                 type: number
-                                                default: 15
+                                                default: 30
                                                 minimum: 0.0
-                                                maximum: 30.0
+                                                maximum: 100.0
                                                 unit: none
                             ipc_control:
                                 type: object
