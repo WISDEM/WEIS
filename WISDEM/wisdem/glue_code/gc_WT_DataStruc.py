@@ -1,12 +1,11 @@
 import copy
 import logging
 
-import numpy as np
+import openmdao.api as om
 from scipy.interpolate import PchipInterpolator, interp1d
 
-import openmdao.api as om
+import numpy as np
 import wisdem.moorpy.MoorProps as mp
-from scipy.interpolate import PchipInterpolator, interp1d
 from wisdem.ccblade.Polar import Polar
 from wisdem.commonse.utilities import arc_length, arc_length_deriv
 from wisdem.rotorse.parametrize_rotor import ComputeReynolds, ParametrizeBladeAero, ParametrizeBladeStruct
@@ -507,7 +506,10 @@ class WindTurbineOntologyOpenMDAO(om.Group):
 
         # Floating substructure inputs
         if modeling_options["flags"]["floating_platform"]:
-            self.add_subsystem("floating", Floating(floating_init_options=modeling_options["floating"], opt_options=self.options["opt_options"]))
+            self.add_subsystem(
+                "floating",
+                Floating(floating_init_options=modeling_options["floating"], opt_options=self.options["opt_options"]),
+            )
             self.add_subsystem("mooring", Mooring(options=modeling_options))
             self.connect("floating.joints_xyz", "mooring.joints_xyz")
 
@@ -2354,7 +2356,7 @@ class Floating(om.Group):
 
     def setup(self):
         floating_init_options = self.options["floating_init_options"]
-        float_opt = self.options["opt_options"]['design_variables']['floating']
+        float_opt = self.options["opt_options"]["design_variables"]["floating"]
         n_joints = floating_init_options["joints"]["n_joints"]
         n_members = floating_init_options["members"]["n_members"]
 
@@ -2384,22 +2386,22 @@ class Floating(om.Group):
             ivc = self.add_subsystem(f"memgrp{k}", om.IndepVarComp())
             ivc.add_output("s_in", val=np.zeros(n_geom))
             ivc.add_output("s", val=np.zeros(n_height))
-            
+
             diameter_assigned = False
             for i, kgrp in enumerate(float_opt["members"]["groups"]):
                 memname = kgrp["names"][0]
                 idx = floating_init_options["members"]["name2idx"][memname]
-                if idx == k:  
-                    if 'diameter' in float_opt['members']['groups'][i]:
-                        if float_opt['members']['groups'][i]['diameter']['constant']:
-                            ivc.add_output("outer_diameter_in", val=0., units="m")
+                if idx == k:
+                    if "diameter" in float_opt["members"]["groups"][i]:
+                        if float_opt["members"]["groups"][i]["diameter"]["constant"]:
+                            ivc.add_output("outer_diameter_in", val=0.0, units="m")
                         else:
                             ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
                         diameter_assigned = True
-                    
+
             if not diameter_assigned:
                 ivc.add_output("outer_diameter_in", val=np.zeros(n_geom), units="m")
-                
+
             ivc.add_discrete_output("layer_materials", val=[""] * n_layers)
             ivc.add_output("layer_thickness_in", val=np.zeros((n_layers, n_geom)), units="m")
             ivc.add_output("bulkhead_grid", val=np.zeros(n_bulkheads))
