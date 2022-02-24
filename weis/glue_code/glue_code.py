@@ -468,10 +468,10 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                     self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    if True:
-                        ptfm_data_source = 'floatingse'
-                    else:
+                    if modeling_options['Level1']['flag']:
                         ptfm_data_source = 'raft'
+                    else:
+                        ptfm_data_source = 'floatingse'
                     self.connect(f"{ptfm_data_source}.platform_mass", "aeroelastic.platform_mass")
                     self.connect(f"{ptfm_data_source}.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
                     self.connect(f"{ptfm_data_source}.platform_I_total", "aeroelastic.platform_I_total")
