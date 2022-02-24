@@ -311,8 +311,8 @@ class PoseOptimizationWEIS(PoseOptimization):
                 )
                 
         # Tower constraints
-        tower_opt = self.opt["design_variables"]["blade"]
-        tower_constr = self.opt["constraints"]["blade"]
+        tower_opt = self.opt["design_variables"]["tower"]
+        tower_constr = self.opt["constraints"]["tower"]
         if tower_constr["global_buckling"]["flag"]:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_global_buckling'
