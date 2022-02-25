@@ -46,7 +46,7 @@ class FAST_wrapper(object):
                 failed = False
                 run_idx = 2
             except subprocess.CalledProcessError as e:
-                if e.returncode == 127 and run_idx < 1: # This probably failed because of a temporary library access issue, retry
+                if e.returncode > 1 and run_idx < 1: # This probably failed because of a temporary library access issue, retry
                     print('Error loading OpenFAST libraries, retrying.')
                     failed = False
                     run_idx += 1
@@ -54,6 +54,10 @@ class FAST_wrapper(object):
                     print('OpenFAST Failed: {}'.format(e))
                     failed = True
                     run_idx = 2
+            except:
+                print('OpenFAST Failed: {}'.format(e))
+                failed = True
+                run_idx = 2
                 
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
