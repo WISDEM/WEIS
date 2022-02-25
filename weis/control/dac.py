@@ -3,7 +3,7 @@ import os, sys, subprocess
 import copy
 from openmdao.api import ExplicitComponent
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
-from wisdem.ccblade.Polar import Polar, _find_alpha0
+from wisdem.ccblade.Polar import Polar, _find_alpha0, _find_slope, _alpha_window_in_bounds
 import csv  # for exporting airfoil polar tables
 import matplotlib.pyplot as plt
 import time
@@ -150,14 +150,20 @@ def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, 
 
         # Check for linear region
         try:
-            window = [-30, 30]
+            window = _alpha_window_in_bounds(flap_polar[:,0],[-30, 30])
             alpha0 = _find_alpha0(np.array(flap_polar[:,0]), np.array(flap_polar[:,1]), window)
+            window2 = [alpha0, alpha0+4]
+            window2 = _alpha_window_in_bounds(flap_polar[:,0], [alpha0, alpha0 + 4])
+            # Max and Safety checks
+            s1, _ = _find_slope(flap_polar[:,0], flap_polar[:,1], xi=alpha0, window=window2, method="max")
+            if len(flap_polar[:,1]) > 10:
+                s2, _ = _find_slope(flap_polar[:,0], flap_polar[:,1], xi=alpha0, window=window2, method="finitediff_1c")
             lin_region_len = len(np.where(flap_polar[:,0] < alpha0)[0])
             lin_region_len_idx = np.where(flap_polar[:,0] < alpha0)[0][-1]
-            if lin_region_len_idx == 0:
+            if lin_region_len_idx < 1:
                 lin_region_len = 0 
                 raise IndexError('Invalid index for linear region.')
-        except IndexError:
+        except (IndexError, TypeError):
             lin_region_len = 0
             
         if lin_region_len < 1:
@@ -312,12 +318,23 @@ class RunXFOIL(ExplicitComponent):
 
         # If trailing edge flaps are present, compute the perturbed profiles with XFOIL
         self.flap_profiles = [{} for i in range(self.n_span)]
-        outputs['span_start'] = inputs['span_end'] - inputs['span_ext']
         if self.n_te_flaps > 0:
             try:
                 from scipy.ndimage import gaussian_filter
             except:
                 print('Cannot import the library gaussian_filter from scipy. Please check the conda environment and potential conflicts between numpy and scipy')
+            
+            # Make sure flaps are viable
+            if inputs['span_end'] > 1.0:
+                print('WARNING: TE Flap end is off the blade! Moving it to the end of the blade.')
+            if self.options['opt_options']['design_variables']['control']['flaps']['te_flap_end']['flag']: 
+                np.clip(inputs['span_end'], 
+                        self.options['opt_options']['design_variables']['control']['flaps']['te_flap_end']['min'], 
+                        self.options['opt_options']['design_variables']['control']['flaps']['te_flap_end']['max']
+                        )
+
+            outputs['span_start'] = inputs['span_end'] - inputs['span_ext']
+
             xfoil_kw = {}
             if MPI:
                 xfoil_kw['MPI_run'] = True
@@ -351,10 +368,13 @@ class RunXFOIL(ExplicitComponent):
                             self.flap_profiles[i]['flap_angles'].append([])
                             self.flap_profiles[i]['flap_angles'][ind] = fa # Putting in flap angles to blade for each profile (can be used for debugging later)
 
-                        import pickle
-                        f = open('flap_profiles.pkl', 'wb')
-                        pickle.dump(self.flap_profiles, f)
-                        f.close()
+
+                        if False:
+                            import pickle
+                            f = open('flap_profiles.pkl', 'wb')
+                            pickle.dump(self.flap_profiles, f)
+                            f.close()
+                            
                         # # ** The code below will plot the first three flap deflection profiles (in the case where there are only 3 this will correspond to max negative, zero, and max positive deflection cases)
                         # font = {'family': 'Times New Roman',
                         #         'weight': 'normal',
@@ -790,7 +810,14 @@ def get_flap_polars(run_xfoil_params, afi):
             data = runXfoil(xfoil_path, flap_profiles[afi]['coords'][:, 0, ind],flap_profiles[afi]['coords'][:, 1, ind],Re_loc_af[0, ind], **xfoil_kw)
 
             oldpolar= Polar(Re_loc_af[0,ind], data[:,0],data[:,1],data[:,2],data[:,4]) # data[:,0] is alpha, data[:,1] is Cl, data[:,2] is Cd, data[:,4] is Cm
-            polar3d = oldpolar.correction3D(rR,cr,run_xfoil_params['tsr']) # Apply 3D corrections (made sure to change the r/R, c/r, and tsr values appropriately when calling AFcorrections())
+            try:
+                polar3d = oldpolar.correction3D(rR,cr,run_xfoil_params['tsr']) # Apply 3D corrections (made sure to change the r/R, c/r, and tsr values appropriately when calling AFcorrections())
+            except IndexError:
+                for key in run_xfoil_params:
+                    print('{} = {}'.format(key, run_xfoil_params[key]))
+                print('XFOIL DATA: {}'.format(data))
+                raise
+
             cdmax   = np.max(data[:,2]) # Keep the same max Cd as before
             polar   = polar3d.extrapolate(cdmax) # Extrapolate polars for alpha between -180 deg and 180 deg
 
