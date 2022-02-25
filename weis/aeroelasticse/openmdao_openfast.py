@@ -726,14 +726,15 @@ class FASTLoadCases(ExplicitComponent):
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
             
-            # Save AEP value to pickle file
-            with open(self.lin_pkl_file_name, 'rb') as handle:
-                    ABCD_list = pickle.load(handle)
+            # Save AEP value to linear pickle file
+            if modopt['Level2']['flag']:
+                with open(self.lin_pkl_file_name, 'rb') as handle:
+                        ABCD_list = pickle.load(handle)
 
-            ABCD_list[self.sim_idx]['AEP'] = outputs['AEP']
+                ABCD_list[self.sim_idx]['AEP'] = outputs['AEP']
 
-            with open(self.lin_pkl_file_name, 'wb') as handle:
-                pickle.dump(ABCD_list, handle)
+                with open(self.lin_pkl_file_name, 'wb') as handle:
+                    pickle.dump(ABCD_list, handle)
         
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
