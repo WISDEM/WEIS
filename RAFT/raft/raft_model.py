@@ -231,73 +231,77 @@ class Model():
             
         # loop through each case
         for iCase in range(nCases):
-        
+       
             print(f"\n--------------------- Running Case {iCase+1} ----------------------")
             print(self.design['cases']['data'][iCase])
         
             # form dictionary of case parameters
             case = dict(zip( self.design['cases']['keys'], self.design['cases']['data'][iCase]))   
 
-            # get initial FOWT values assuming no offset
-            for fowt in self.fowtList:
-                fowt.Xi0 = np.zeros(6)      # zero platform offsets
-                fowt.calcTurbineConstants(case, ptfm_pitch=0.0)
-                fowt.calcHydroConstants(case)
-            
-            # calculate platform offsets and mooring system equilibrium state
-            self.calcMooringAndOffsets()
-            
-            # update values based on offsets if applicable
-            for fowt in self.fowtList:
-                fowt.calcTurbineConstants(case, ptfm_pitch=fowt.Xi0[4])
-                # fowt.calcHydroConstants(case)  (hydrodynamics don't account for offset, so far)
-            
-            # (could solve mooring and offsets a second time, but likely overkill)
-            
-            # solve system dynamics
-            self.solveDynamics(case)
-            
-            # process outputs that are specific to the floating unit       
-            self.fowtList[0].saveTurbineOutputs(self.results['case_metrics'], case, iCase, fowt.Xi0, self.Xi[0:6,:])            
- 
-            # process mooring tension outputs
-            nLine = int(len(self.T_moor)/2)
-            T_moor_amps = np.zeros([2*nLine, self.nw], dtype=complex) 
-            for iw in range(self.nw):
-                T_moor_amps[:,iw] = np.matmul(self.J_moor, self.Xi[:,iw])   # FFT of mooring tensions
-            
-            self.results['case_metrics']['Tmoor_avg'][iCase,:] = self.T_moor
-            for iT in range(2*nLine):
-                TRMS = getRMS(T_moor_amps[iT,:], self.w[0]) # estimated mooring line RMS tension [N]
-                self.results['case_metrics']['Tmoor_std'][iCase,iT] = TRMS
-                self.results['case_metrics']['Tmoor_max'][iCase,iT] = self.T_moor[iT] + 3*TRMS
-                self.results['case_metrics']['Tmoor_PSD'][iCase,iT,:] = getPSD(T_moor_amps[iT,:]) # PSD in N^2/(rad/s)
-                #self.results['case_metrics']['Tmoor_DEL'][iCase,iT] = 
-        
-            if display > 0:
-        
-                metrics = self.results['case_metrics']
-            
-                # print statistics table
-                print(f"-------------------- Case {iCase+1} Statistics --------------------")
-                print("Response channel     Average     RMS         Maximum")
-                print(f"surge (m)          {metrics['surge_avg'][iCase] :10.2e}  {metrics['surge_std'][iCase] :10.2e}  {metrics['surge_max'][iCase] :10.2e}")
-                print(f"sway (m)           {metrics['sway_avg' ][iCase] :10.2e}  {metrics['sway_std' ][iCase] :10.2e}  {metrics['sway_max' ][iCase] :10.2e}")
-                print(f"heave (m)          {metrics['heave_avg'][iCase] :10.2e}  {metrics['heave_std'][iCase] :10.2e}  {metrics['heave_max'][iCase] :10.2e}")
-                print(f"roll (deg)         {metrics['roll_avg' ][iCase] :10.2e}  {metrics['roll_std' ][iCase] :10.2e}  {metrics['roll_max' ][iCase] :10.2e}")
-                print(f"pitch (deg)        {metrics['pitch_avg'][iCase] :10.2e}  {metrics['pitch_std'][iCase] :10.2e}  {metrics['pitch_max'][iCase] :10.2e}")
-                print(f"yaw (deg)          {metrics[  'yaw_avg'][iCase] :10.2e}  {metrics[  'yaw_std'][iCase] :10.2e}  {metrics['yaw_max'  ][iCase] :10.2e}")
-                print(f"nacelle acc. (m/s) {metrics['AxRNA_avg'][iCase] :10.2e}  {metrics['AxRNA_std'][iCase] :10.2e}  {metrics['AxRNA_max'][iCase] :10.2e}")
-                print(f"tower bending (Nm) {metrics['Mbase_avg'][iCase] :10.2e}  {metrics['Mbase_std'][iCase] :10.2e}  {metrics['Mbase_max'][iCase] :10.2e}")
+            if 'NTM' in case['turbulence'] or 'ETM' in case['turbulence'] or 'EWM' in case['turbulence']:
+                # get initial FOWT values assuming no offset
+                for fowt in self.fowtList:
+                    fowt.Xi0 = np.zeros(6)      # zero platform offsets
+                    fowt.calcTurbineConstants(case, ptfm_pitch=0.0)
+                    fowt.calcHydroConstants(case)
                 
-                print(f"rotor speed (RPM)  {metrics['omega_avg'][iCase] :10.2e}  {metrics['omega_std'][iCase] :10.2e}  {metrics['omega_max'][iCase] :10.2e}")
-                print(f"blade pitch (deg)  {metrics['bPitch_avg'][iCase] :10.2e}  {metrics['bPitch_std'][iCase] :10.2e} ")
-                print(f"rotor power        {metrics['power_avg'][iCase] :10.2e} ")
-                for i in range(nLine):
-                    j = i+nLine
-                    #print(f"line {i} tension A  {metrics['Tmoor_avg'][iCase,i]:10.2e}  {metrics['Tmoor_std'][iCase,i]:10.2e}  {metrics['Tmoor_max'][iCase,i]:10.2e}")
-                    print(f"line {i} tension (N) {metrics['Tmoor_avg'][iCase,j]:10.2e}  {metrics['Tmoor_std'][iCase,j]:10.2e}  {metrics['Tmoor_max'][iCase,j]:10.2e}")
-                print(f"-----------------------------------------------------------")
+                # calculate platform offsets and mooring system equilibrium state
+                self.calcMooringAndOffsets()
+                
+                # update values based on offsets if applicable
+                for fowt in self.fowtList:
+                    fowt.calcTurbineConstants(case, ptfm_pitch=fowt.Xi0[4])
+                    # fowt.calcHydroConstants(case)  (hydrodynamics don't account for offset, so far)
+                
+                # (could solve mooring and offsets a second time, but likely overkill)
+                
+                # solve system dynamics
+                self.solveDynamics(case)
+                
+                # process outputs that are specific to the floating unit       
+                self.fowtList[0].saveTurbineOutputs(self.results['case_metrics'], case, iCase, fowt.Xi0, self.Xi[0:6,:])            
+    
+                # process mooring tension outputs
+                nLine = int(len(self.T_moor)/2)
+                T_moor_amps = np.zeros([2*nLine, self.nw], dtype=complex) 
+                for iw in range(self.nw):
+                    T_moor_amps[:,iw] = np.matmul(self.J_moor, self.Xi[:,iw])   # FFT of mooring tensions
+                
+                self.results['case_metrics']['Tmoor_avg'][iCase,:] = self.T_moor
+                for iT in range(2*nLine):
+                    TRMS = getRMS(T_moor_amps[iT,:], self.w[0]) # estimated mooring line RMS tension [N]
+                    self.results['case_metrics']['Tmoor_std'][iCase,iT] = TRMS
+                    self.results['case_metrics']['Tmoor_max'][iCase,iT] = self.T_moor[iT] + 3*TRMS
+                    self.results['case_metrics']['Tmoor_PSD'][iCase,iT,:] = getPSD(T_moor_amps[iT,:]) # PSD in N^2/(rad/s)
+                    #self.results['case_metrics']['Tmoor_DEL'][iCase,iT] = 
+            
+                if display > 0:
+            
+                    metrics = self.results['case_metrics']
+                
+                    # print statistics table
+                    print(f"-------------------- Case {iCase+1} Statistics --------------------")
+                    print("Response channel     Average     RMS         Maximum")
+                    print(f"surge (m)          {metrics['surge_avg'][iCase] :10.2e}  {metrics['surge_std'][iCase] :10.2e}  {metrics['surge_max'][iCase] :10.2e}")
+                    print(f"sway (m)           {metrics['sway_avg' ][iCase] :10.2e}  {metrics['sway_std' ][iCase] :10.2e}  {metrics['sway_max' ][iCase] :10.2e}")
+                    print(f"heave (m)          {metrics['heave_avg'][iCase] :10.2e}  {metrics['heave_std'][iCase] :10.2e}  {metrics['heave_max'][iCase] :10.2e}")
+                    print(f"roll (deg)         {metrics['roll_avg' ][iCase] :10.2e}  {metrics['roll_std' ][iCase] :10.2e}  {metrics['roll_max' ][iCase] :10.2e}")
+                    print(f"pitch (deg)        {metrics['pitch_avg'][iCase] :10.2e}  {metrics['pitch_std'][iCase] :10.2e}  {metrics['pitch_max'][iCase] :10.2e}")
+                    print(f"yaw (deg)          {metrics[  'yaw_avg'][iCase] :10.2e}  {metrics[  'yaw_std'][iCase] :10.2e}  {metrics['yaw_max'  ][iCase] :10.2e}")
+                    print(f"nacelle acc. (m/s) {metrics['AxRNA_avg'][iCase] :10.2e}  {metrics['AxRNA_std'][iCase] :10.2e}  {metrics['AxRNA_max'][iCase] :10.2e}")
+                    print(f"tower bending (Nm) {metrics['Mbase_avg'][iCase] :10.2e}  {metrics['Mbase_std'][iCase] :10.2e}  {metrics['Mbase_max'][iCase] :10.2e}")
+                    
+                    print(f"rotor speed (RPM)  {metrics['omega_avg'][iCase] :10.2e}  {metrics['omega_std'][iCase] :10.2e}  {metrics['omega_max'][iCase] :10.2e}")
+                    print(f"blade pitch (deg)  {metrics['bPitch_avg'][iCase] :10.2e}  {metrics['bPitch_std'][iCase] :10.2e} ")
+                    print(f"rotor power        {metrics['power_avg'][iCase] :10.2e} ")
+                    for i in range(nLine):
+                        j = i+nLine
+                        #print(f"line {i} tension A  {metrics['Tmoor_avg'][iCase,i]:10.2e}  {metrics['Tmoor_std'][iCase,i]:10.2e}  {metrics['Tmoor_max'][iCase,i]:10.2e}")
+                        print(f"line {i} tension (N) {metrics['Tmoor_avg'][iCase,j]:10.2e}  {metrics['Tmoor_std'][iCase,j]:10.2e}  {metrics['Tmoor_max'][iCase,j]:10.2e}")
+                    print(f"-----------------------------------------------------------")
+
+            else:
+                print('RAFT WARNING: case not run')
 
         
 
