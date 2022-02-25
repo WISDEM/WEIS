@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import platform
+import multiprocessing as mp
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
@@ -81,9 +82,15 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
                         self.modeling_options['Level1']['flag'] = True
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, 'BEM','Output','Wamit_format','Buoy')
+                        pid = mp.current_process().pid
+                        bemDir = os.path.join(self.analysis_options['general']['folder_output'],'BEM','p{}'.format(mp.current_process().pid))
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, bemDir,'Output','Wamit_format','Buoy')
+                        
 
                     else:
+                        if self.modeling_options['Level1']['runPyHAMS']:
+                            print('Found existing potential model: {}\n    - Trying to use this instead of running PyHAMS.'.format(potpath))
+                            self.modeling_options['Level1']['runPyHAMS'] = False
                         if osp.exists( potpath+'.1' ):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath(potpath)
                         elif osp.exists( osp.join(cwd, potpath+'.1') ):

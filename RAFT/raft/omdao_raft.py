@@ -2,6 +2,8 @@ import openmdao.api as om
 import raft
 import numpy as np
 import pickle, os
+import multiprocessing as mp
+import copy
 
 ndim = 3
 ndof = 6
@@ -314,8 +316,9 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
         
         self.i_design = 0
-        if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
-            os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
+        if modeling_opt['save_designs']:
+            if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
+                os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
                 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -621,13 +624,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # option to run level 1 load cases
         if True: #processCases:
-            model.analyzeCases()
+            meshDir = os.path.join(analysis_options['general']['folder_output'],'BEM','p{}'.format(mp.current_process().pid))
+            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=meshDir)
             
         # get and process results
         results = model.calcOutputs()
-
         # Pattern matching for "responses" annd "properties"
-        outs = self.list_outputs(out_stream=None)
+        outs = self.list_outputs(out_stream=None, all_procs=True)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
@@ -638,6 +641,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
                     outputs['response_'+name] = np.abs(results['response'][name])
                 else:
                     outputs['response_'+name] = results['response'][name]
+
 
         # Pattern matching for case-by-case outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
@@ -660,7 +664,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'].max()
         outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
-        
         # Combined outputs for OpenFAST, TODO: clean up and move to wrapper
         outputs['platform_displacement'] = model.fowtList[0].V
         outputs["platform_total_center_of_mass"] = outputs['properties_substructure CG']
@@ -669,5 +672,3 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs["platform_I_total"][:3] = np.r_[outputs['properties_roll inertia at subCG'][0],
                                            outputs['properties_pitch inertia at subCG'][0],
                                            outputs['properties_yaw inertia at subCG'][0]]
-
-        print('here')

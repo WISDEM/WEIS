@@ -272,7 +272,7 @@ class SSFit_Excitation(object):
             print('here')
             f.write('{}\n'.format('SS_Fitting v1.00.01: State-Spaces Matrices obtained using Time Domain method, on ' + now.strftime('%b-%d-%Y %H:%M:%S')))
             f.write('{}\t\t\t\t\t\t\t{}\n'.format(self.WaveDir,'%Wave heading angle'))
-            f.write('{}\t\t\t\t\t\t{}\n'.format(np.array_str(np.array(self.tc))[1:-1],'%time offset (tc)'))
+            f.write('{}\t\t\t\t\t\t{}\n'.format(np.array_str(np.array(self.tc)),'%time offset (tc)'))
             f.write('{}\t\t\t\t\t\t\t{}\n'.format(A_global.shape[0], '%Total Excitation States'))
             f.write('{}\t\t\t{}\n'.format(np.array_str(states_per_dof)[1:-1], '%Excitation States per DoF'))
 
@@ -450,8 +450,11 @@ class WAMIT_Out(object):
             Kbar = wamOuts['X_re'] + 1j*wamOuts['X_imag']
 
             # Interpolate based on direction
-            fDir    = interpolate.interp1d(wamOuts['direction_diff'],Kbar,axis=0)
-            Kbar_dir = fDir(self.heading)
+            if Kbar.shape[0] > 1:
+                fDir    = interpolate.interp1d(wamOuts['direction_diff'],Kbar,axis=0)
+                Kbar_dir = fDir(self.heading)
+            else:
+                Kbar_dir = Kbar[0]
 
             # Scale
             L       = 1
