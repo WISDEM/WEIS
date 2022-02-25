@@ -246,14 +246,14 @@ class runFAST_pywrapper(object):
             
             else: # fill with -9999s
                 output_dict = {}
-                output_dict['Time'] = np.arange(0,self.fst_vt['Fst']['TMax'],self.fst_vt['Fst']['DT'])
+                output_dict['Time'] = np.arange(self.fst_vt['Fst']['TStart'],self.fst_vt['Fst']['TMax'],self.fst_vt['Fst']['DT'])
                 for module in self.fst_vt['outlist']:
                     for channel in self.fst_vt['outlist'][module]:
                         if self.fst_vt['outlist'][module][channel]:
-                            output_dict[channel] = np.full(len(output_dict['Time']),fill_value=self.fail_value) 
+                            output_dict[channel] = np.full(len(output_dict['Time']),fill_value=self.fail_value, dtype=np.uint8) 
 
                 # Add channel to indicate failed run
-                output_dict['openfast_failed'] = np.ones(len(output_dict['Time']))
+                output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
 
                 output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
