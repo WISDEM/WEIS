@@ -1199,10 +1199,6 @@ TMDs:
       Z_DOF: True
       preload_spring: True
 
-<<<<<<< HEAD
-
-=======
->>>>>>> a3aa5de3eae5dc9c46625dbf21dc49f1bf3da446
 environment:
     air_density: 1.225
     air_dyn_viscosity: 1.81e-5
