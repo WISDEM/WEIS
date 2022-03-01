@@ -75,7 +75,7 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
         tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
-        tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rad/s',     desc='Tower natural frequency')
+        tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rps',     desc='Tower natural frequency')
         tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
         tune_rosco_ivc.add_output('Kp_float',         val=0.0, units='s',         desc='Floating feedback gain')
 
@@ -205,7 +205,7 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
             self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
-            self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
+            # self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
             self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
 
@@ -436,14 +436,18 @@ class WindPark(om.Group):
                         self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('fixedse.tower_side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('fixedse.f1',         'sse_tune.tune_rosco.twr_freq')
+
                     elif modeling_options["flags"]["floating"]:
                         self.connect('floatingse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('floatingse.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('floatingse.side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('floatingse.f1',         'sse_tune.tune_rosco.twr_freq')
                     else:
                         self.connect('towerse.tower.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('towerse.tower.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('towerse.tower.side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('towerse.f1',         'sse_tune.tune_rosco.twr_freq')
                         
                 if modeling_options['flags']['monopile']:
                     self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass')

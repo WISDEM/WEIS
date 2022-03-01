@@ -164,7 +164,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('omega_pc',          val=np.zeros(n_PC),        units='rad/s',           desc='Pitch controller natural frequency')
         self.add_input('stability_margin',  val=0.0,                                            desc='Maximum stability margin for robust scheduling')
         self.add_input('omega_pc_max',      val=0.0,                                            desc='Maximum allowable omega margin for robust scheduling')
-        self.add_input('twr_freq',          val=0.0,        units='rad/s',                      desc='Tower natural frequency')
+        self.add_input('twr_freq',          val=0.0,        units='Hz',                         desc='Tower natural frequency')
         self.add_input('ptfm_freq',         val=0.0,        units='rad/s',                      desc='Platform natural frequency')
         self.add_output('VS_Kp',            val=0.0,        units='s',                          desc='Generator torque control proportional gain at first point in schedule')
         self.add_output('VS_Ki',            val=0.0,                                            desc='Generator torque control integral gain at first point in schedule')
@@ -246,7 +246,7 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
         # Floating Feedback Filters
-        rosco_init_options['twr_freq']      = float(inputs['twr_freq'])
+        rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
         rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
 
         # Load Cp tables
