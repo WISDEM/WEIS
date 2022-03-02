@@ -1,0 +1,133 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: lin
+        OF_run_dir: outputs/12_linearization_DOE
+
+WISDEM:
+    RotorSE:
+        flag: True
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+        n_span: 60
+    TowerSE:
+        flag: True
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        soil_springs: True
+        gravity_foundation: False
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    BOS:
+        flag: True
+        
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: False
+    OutFileFmt: 3
+    simulation:
+        TMax: 1.
+        DT: 0.01
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 1
+        CompIce: 0
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        flag: True
+        FlapDOF1: True
+        FlapDOF2: True
+        EdgeDOF: True
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: False
+        PtfmSwDOF: False
+        PtfmHvDOF: False
+        PtfmRDOF : False
+        PtfmPDOF : False
+        PtfmYDOF : False
+    ElastoDynBlade:
+        BldFlDmp1: 3.0
+        BldFlDmp2: 3.0
+        BldEdDmp1: 3.0
+    ServoDyn:
+        YawSpr: 4.6273E+10
+        YawDamp: 3.9088E+07
+    HydroDyn:
+        WaveTMax: 1 #3630
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WvLowCOffD: 0.0
+        WvHiCOffD: 3.04292
+        WaveSeed1: 123456789
+        AddBQuad1: [923000.0,   0.0,        0.0,        0.0,            -8920000.0,     0.0]
+        AddBQuad2: [0.0,        923000.0,   0.0,        8920000.0,      0.0,            0.0]
+        AddBQuad3: [0.0,        0.0,        2300000.0,  0.0,            0.0,            0.0]
+        AddBQuad4: [0.0,        8920000.0,  0.0,        16800000000.0,  0.0,            0.0]
+        AddBQuad5: [-8920000.0, 0.0,        0.0,        0.0,            16800000000.0,  0.0]
+        AddBQuad6: [0.0,        0.0,        0.0,        0.0,            0.0,            48000000000.0]
+        PotMod: 1
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
+        SimpMembers: True
+
+ROSCO:
+    flag: True
+
+Level2:
+    flag: True
+    simulation:         # could these be included in openfast options?
+        TMax: 700.      # run simulations using IEC standards, could share that info
+        CompMooring: 1
+    linearization:
+        TMax: 60.
+        DT: 0.01
+        TrimGain: 1e-4
+        TrimTol: 1e-2
+        wind_speeds: [12.]
+        DOFs: ['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF', 'PtfmSgDOF']
+        NLinTimes: 12
+
+Level1:
+    potential_model_override: 2
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          ws_bin_size: 2
+          wind_speed: [7.]
+          wave_height: [8.]
+          wave_period: [2.]
+          wind_seeds: [1]
+          n_seeds: 1
+          analysis_time: 5.
+          transient_time: 5.
+          turbulent_wind:
+              HubHt: 150.0
+              Clockwise: True
+              IECturbc: B
+              RefHt: 150.0
+              PLExp: 0.11

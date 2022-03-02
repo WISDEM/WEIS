@@ -20,10 +20,10 @@ opt = {}
 
 opt['modeling'] = {}
 opt['modeling']['nfreq'] = len(w)
-opt['modeling']['potModMaster'] = True
-opt['modeling']['XiStart'] = False
-opt['modeling']['nIter'] = False
-opt['modeling']['dlsMax'] = False
+opt['modeling']['potModMaster'] = 1
+opt['modeling']['XiStart'] = 0.1    # default
+opt['modeling']['nIter'] = 15       # default
+opt['modeling']['dlsMax'] = 5.0     # default
 
 opt['turbine'] = {}
 opt['turbine']['npts'] = 11
@@ -61,7 +61,6 @@ prob.setup()
 # inputs
 # -------------------------
 prob['frequency_range'] = w
-prob['potModMaster'] = 1
 
 # -------------------------
 # turbine

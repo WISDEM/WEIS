@@ -73,9 +73,7 @@ class Body:
 
         self.attachedR = []  # ID numbers of any Rods attached to the Body (not yet implemented)
 
-        self.sharedLineTheta = []
-        self.fairR = 0.0
-
+        self.R = np.eye(3)  # body orientation rotation matrix
         # print("Created Body "+str(self.number))
 
     def attachPoint(self, pointID, rAttach):
@@ -125,9 +123,11 @@ class Body:
                 f"Body setPosition method requires an argument of size 6, but size {len(r6):d} was provided"
             )
 
+        self.R = rotationMatrix(self.r6[3], self.r6[4], self.r6[5])  # update body rotation matrix
+
         # update the position of any attached Points
         for PointID, rPointRel in zip(self.attachedP, self.rPointRel):
-            rPoint = transformPosition(rPointRel, r6)
+            rPoint = np.matmul(self.R, rPointRel) + self.r6[:3]  # rPoint = transformPosition(rPointRel, r6)
             self.sys.pointList[PointID - 1].setPosition(rPoint)
 
         if self.sys.display > 3:
@@ -247,7 +247,7 @@ class Body:
             self.sys.solveEquilibrium3(tol=tol)  # find equilibrium of mooring system given this Body's new position
             f6_2 = self.getForces(lines_only=True)  # get the net 6DOF forces/moments from any attached lines
 
-            K[i, :] = -(f6_2 - f6) / dx  # get stiffness in this DOF via finite difference and add to matrix column
+            K[:, i] = -(f6_2 - f6) / dx  # get stiffness in this DOF via finite difference and add to matrix column
 
         # ----------------- restore the system back to previous positions ------------------
         self.setPosition(X1)  # set position to linearization point
@@ -287,6 +287,7 @@ class Body:
                 K3, H
             )  # only add up one off-diagonal sub-matrix for now, then we'll mirror at the end
             K[3:, 3:] += np.matmul(np.matmul(H, K3), H.T) + np.matmul(getH(f3), H.T)
+            # K[3:,3:] += np.matmul(np.matmul(H, K3), H.T) - np.matmul( getH(f3), H)  # <<< should be the same
 
         K[3:, :3] = K[:3, 3:].T  # copy over other off-diagonal sub-matrix
 
@@ -357,11 +358,18 @@ class Body:
         ry = transformPosition(np.array([0, 5, 0]), self.r6)
         rz = transformPosition(np.array([0, 0, 5]), self.r6)
 
+        linebit[0][0].set_data_3d([self.r6[0], rx[0]], [self.r6[1], rx[1]], [self.r6[2], rx[2]])
+        linebit[1][0].set_data_3d([self.r6[0], ry[0]], [self.r6[1], ry[1]], [self.r6[2], ry[2]])
+        linebit[2][0].set_data_3d([self.r6[0], rz[0]], [self.r6[1], rz[1]], [self.r6[2], rz[2]])
+        """
         linebit[0][0].set_data([self.r6[0], rx[0]], [self.r6[1], rx[1]])
         linebit[0][0].set_3d_properties([self.r6[2], rx[2]])
         linebit[1][0].set_data([self.r6[0], ry[0]], [self.r6[1], ry[1]])
         linebit[1][0].set_3d_properties([self.r6[2], ry[2]])
         linebit[2][0].set_data([self.r6[0], rz[0]], [self.r6[1], rz[1]])
         linebit[2][0].set_3d_properties([self.r6[2], rz[2]])
-
+        """
         return linebit
+
+
+#

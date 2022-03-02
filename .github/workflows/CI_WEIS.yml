@@ -35,7 +35,7 @@ jobs:
           python-version: 3.8
           conda-channels: conda-forge
           activate-conda: true
-      - run: conda env update -n base --file environment.yml
+      - run: conda env update --file environment.yml
 
       #- name: Show custom environment
       #  shell: bash
@@ -58,8 +58,17 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython
+
+      - name: Show custom environment
+        shell: bash
+        run: |
+            conda list
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  uses: mxschmitt/action-tmate@v3
           
-      # Install WISDEM
+      # Install WEIS
       - name: Install WEIS
         shell: bash
         run: |
@@ -76,10 +85,6 @@ jobs:
         shell: bash
         run: |
           pytest weis --cov-config=.coverageac --cov=weis
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
       
       # Run coveralls
       - name: Run coveralls

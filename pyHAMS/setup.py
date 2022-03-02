@@ -5,6 +5,8 @@ import setuptools #import setup
 from numpy.distutils.core import setup, Extension
 import os
 import platform
+import sys
+import sysconfig
 
 os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 
@@ -35,10 +37,32 @@ f90src = ['WavDynMods.f90',
           ]
 root_dir = os.path.join('pyhams','src')
 
+intel_flag = sysconfig.get_config_var('FC') == 'ifort'
+
+if not intel_flag:
+    for a in sys.argv:
+        intel_flag = intel_flag or a.find('intel')>=0
+
+if not intel_flag:
+    try:
+        if os.environ['FC'] == 'ifort':
+            intel_flag = True
+    except KeyError:
+        pass
+    
+if intel_flag:
+    myargs = ['-mkl']
+    mylib = []
+    mylink = ['-mkl']
+else:
+    myargs = ['-fno-align-commons','-fdec-math']
+    mylib = ['lapack']
+    mylink = []
+
 pyhamsExt = Extension('pyhams.libhams', sources=[os.path.join(root_dir,m) for m in f90src],
-                      extra_f90_compile_args=['-O3','-m64','-fPIC','-fno-align-commons','-fdec-math'],
-                      libraries=['lapack'],
-                      extra_link_args=['-fopenmp'])
+                      extra_f90_compile_args=['-O3','-m64','-fPIC','-g',]+myargs,
+                      libraries=mylib,
+                      extra_link_args=['-fopenmp']+mylink)
 extlist = [] if platform.system() == 'Windows' else [pyhamsExt]
 
 setup(

@@ -13,8 +13,7 @@ import os, time, sys
 
 ## File management
 run_dir = os.path.dirname(os.path.realpath(__file__)) + os.sep
-wisdem_examples        = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "WISDEM", "examples")
-fname_wt_input         = os.path.join(wisdem_examples, "02_reference_turbines", "IEA-15-240-RWT.yaml")
+fname_wt_input         = os.path.join(os.path.dirname(os.path.dirname(run_dir)), "06_IEA-15-240-RWT", "IEA-15-240-RWT.yaml")
 fname_modeling_options = run_dir + "modeling_options.yaml"
 fname_analysis_options = run_dir + "analysis_options.yaml"
 
@@ -27,7 +26,7 @@ print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters"
 
 # Construct a dict with values to overwrite
 overridden_values = {}
-overridden_values["rotorse.wt_class.V_mean_overwrite"] = 11.5
+overridden_values["rotorse.wt_class.V_mean"] = 11.5
 
 # Run the modified simulation with the overwritten values
 wt_opt, modeling_options, opt_options = run_weis(

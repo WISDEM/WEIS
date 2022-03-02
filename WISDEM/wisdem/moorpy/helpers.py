@@ -35,6 +35,14 @@ class SolveError(Error):
         self.message = message
 
 
+# Generic MoorPy error
+class MoorPyError(Error):
+    """Derived error class for MoorPy. Contains an error message"""
+
+    def __init__(self, message):
+        self.message = str(message)
+
+
 def printMat(mat):
     """Prints a matrix to a format that is specified
 
@@ -227,6 +235,7 @@ def dsolve2(
     step_func=None,
     args=[],
     tol=0.0001,
+    ytol=0,
     maxIter=20,
     Xmin=[],
     Xmax=[],
@@ -234,6 +243,7 @@ def dsolve2(
     dX_last=[],
     stepfac=4,
     display=0,
+    dodamping=False,
 ):
     """
     PARAMETERS
@@ -252,6 +262,8 @@ def dsolve2(
     tol : float or array
         If scalar, the*relative* convergence tolerance (applied to step size components, dX).
         If an array, must be same size as X, and specifies an absolute convergence threshold for each variable.
+    ytol: float, optional
+        If specified, this is the absolute error tolerance that must be satisfied. This overrides the tol setting which otherwise works based on x values.
     Xmin, Xmax
         Bounds. by default start bounds at infinity
     a_max
@@ -271,6 +283,8 @@ def dsolve2(
     dXlist = np.zeros([maxIter, N])
     dXlist2 = np.zeros([maxIter, N])
 
+    damper = 1.0  # used to add a relaxation/damping factor to reduce the step size and combat instability
+
     # check the target Y value input
     if len(Ytarget) == N:
         Ytarget = np.array(Ytarget, dtype=np.float_)
@@ -280,10 +294,11 @@ def dsolve2(
         raise TypeError("Ytarget must be of same length as X0")
 
     # ensure all tolerances are positive
-    if np.isscalar(tol) and tol <= 0.0:
-        raise ValueError("tol value passed to dsovle2 must be positive")
-    elif not np.isscalar(tol) and any(tol <= 0):
-        raise ValueError("every tol entry passed to dsovle2 must be positive")
+    if ytol == 0:  # if not using ytol
+        if np.isscalar(tol) and tol <= 0.0:
+            raise ValueError("tol value passed to dsovle2 must be positive")
+        elif not np.isscalar(tol) and any(tol <= 0):
+            raise ValueError("every tol entry passed to dsovle2 must be positive")
 
     # if a step function wasn't provided, provide a default one
     if step_func == None:
@@ -356,6 +371,8 @@ def dsolve2(
         # compute error
         err = Y - Ytarget
 
+        if display == 2:
+            print(f"  new iteration #{iter} with RMS error {np.linalg.norm(err):8.3e}")
         if display > 2:
             print(f"  new iteration #{iter} with X={X} and Y={Y}")
 
@@ -420,6 +437,7 @@ def dsolve2(
         # also avoid extreme accelerations in the same direction
         for i in range(N):
 
+            # should update the following for ytol >>>
             if abs(dX_last[i]) > tols[i]:  # only worry about accelerations if the last step was non-negligible
 
                 dX_max = (
@@ -445,8 +463,23 @@ def dsolve2(
                             print(f"     now dX will be {dX}")
 
         dXlist[iter, :] = dX
-        if iter == 196:
-            breakpoint()
+        # if iter==196:
+        # breakpoint()
+
+        # add damping if cyclic behavior is detected at the halfway point
+        if dodamping and iter == int(0.5 * maxIter):
+            if display > 2:
+                print(f"dsolve2 is at iteration {iter} (50% of maxIter)")
+
+            for j in range(2, iter - 1):
+                iterc = iter - j
+                if all(np.abs(X - Xs[iterc, :]) < tols):
+                    print(f"dsolve2 is going in circles detected at iteration {iter}")
+                    print(f"last similar point was at iteration {iterc}")
+                    damper = damper * 0.9
+                    break
+
+        dX = damper * dX
 
         # enforce bounds
         for i in range(N):
@@ -459,7 +492,7 @@ def dsolve2(
 
         dXlist2[iter, :] = dX
         # check for convergence
-        if all(np.abs(dX) < tols):
+        if (ytol == 0 and all(np.abs(dX) < tols)) or (ytol > 0 and all(np.abs(err) < ytol)):
 
             if display > 0:
                 print(

@@ -1,6 +1,6 @@
 # WISDEM&reg;
 
-[![Build Status](https://travis-ci.com/WISDEM/WISDEM.svg?branch=develop)](https://travis-ci.com/WISDEM/WISDEM)
+[![Actions Status](https://github.com/WISDEM/WISDEM/workflows/CI_WISDEM/badge.svg?branch=develop)](https://github.com/WISDEM/WISDEM/actions)
 [![Coverage Status](https://coveralls.io/repos/github/WISDEM/WISDEM/badge.svg?branch=develop)](https://coveralls.io/github/WISDEM/WISDEM?branch=develop)
 [![Documentation Status](https://readthedocs.org/projects/wisdem/badge/?version=master)](https://wisdem.readthedocs.io/en/master/?badge=master)
 
@@ -32,7 +32,7 @@ The core modules draw upon some utility packages, which are typically compiled c
 * _Airfoil Preppy_ is a tool to handle airfoil polar data
 * _CCBlade_ is the BEM module of WISDEM
 * _pyFrame3DD_ brings libraries to handle various coordinate transformations
-* _pyMAP_ provides a python interface to MAP++, a quasi-static mooring line model
+* _MoorPy_ is a quasi-static mooring line model
 * [_pyOptSparse_](https://github.com/mdolab/pyoptsparse) provides some additional optimization algorithms to OpenMDAO
 
 
@@ -45,27 +45,20 @@ The installation instructions below use the environment name, "wisdem-env," but 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
         conda config --add channels conda-forge
-        conda create -y --name wisdem-env python=3.7
+        conda create -y --name wisdem-env python=3.8
         conda activate wisdem-env
 
-2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM as a conda package to easily satisfy all dependencies, but then removing the WISDEM conda package and reinstalling from the Github source code.  Note the differences between Windows and Mac/Linux build systems:
+2.  In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer / editable* mode using the instructions here.  If you really just want to use WISDEM as a library and lean on the documentation, you can always do `conda install wisdem` and be done.  Note the differences between Windows and Mac/Linux build systems. For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
-        conda install -y wisdem git jupyter
-        conda remove --force wisdem
-        conda install compilers                   # (Mac / Linux only)
-        conda install m2w64-toolchain libpython   # (Windows only)
-        pip install simpy marmot-agents nlopt
+        conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers swig
+        conda install -y pyoptsparse                 # (Linux only)
+        conda install -y compilers pyoptsparse       # (Mac only)
+        conda install -y m2w64-toolchain libpython   # (Windows only)
+        pip install marmot-agents
         git clone https://github.com/WISDEM/WISDEM.git
         cd WISDEM
+        git checkout develop                         # If you want to switch WISDEM branches
         python setup.py develop
-
-
-3. OPTIONAL: Install pyOptSparse, a package that provides a handful of additional optimization solvers and has OpenMDAO support:
-
-        git clone https://github.com/evan-gaertner/pyoptsparse.git
-        cd pyoptsparse
-        python setup.py install
-        cd ..
 
 
 **NOTE:** To use WISDEM again after installation is complete, you will always need to activate the conda environment first with `conda activate wisdem-env`

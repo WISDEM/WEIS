@@ -8,6 +8,8 @@ WISDEM:
         n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
     TowerSE:
         flag: True
     DriveSE:
@@ -19,7 +21,8 @@ WISDEM:
 
 Level1:
     flag: True
-    frequencies: [0.1, 1.0]
+    min_freq: 0.1
+    max_freq: 2.0
     potential_bem_members: [spar]
     
 Level3:

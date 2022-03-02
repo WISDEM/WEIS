@@ -35,7 +35,7 @@ jobs:
           python-version: 3.8
           conda-channels: conda-forge
           activate-conda: true
-      - run: conda env update -n base --file environment.yml
+      - run: conda env update --file environment.yml
 
       #- name: Show custom environment
       #  shell: bash
@@ -59,7 +59,7 @@ jobs:
         run: |
           conda install -y m2w64-toolchain libpython
 
-      # Install WISDEM
+      # Install WEIS
       - name: Install WEIS
         shell: bash
         run: |

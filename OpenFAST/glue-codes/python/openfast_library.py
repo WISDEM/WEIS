@@ -8,15 +8,17 @@ from ctypes import (
     c_char,
     c_bool
 )
+import os
+from typing import List
 import numpy as np
 
 
 class FastLibAPI(CDLL):
-    def __init__(self, library_path, input_file_name, t_max):
+
+    def __init__(self, library_path: str, input_file_name: str):
         super().__init__(library_path)
         self.library_path = library_path
-        self.input_file_name = input_file_name
-        self.t_max = t_max
+        self.input_file_name = create_string_buffer(os.path.abspath(input_file_name).encode('utf-8'))
 
         self._initialize_routines()
 
@@ -24,13 +26,12 @@ class FastLibAPI(CDLL):
         self.n_turbines = c_int(1)
         self.i_turb = c_int(0)
         self.dt = c_double(0.0)
+        self.t_max = c_double(0.0)
         self.abort_error_level = c_int(99)
+        self.end_early = c_bool(False)
         self.num_outs = c_int(0)
         self._channel_names = create_string_buffer(20 * 4000)
         self.output_array = None
-
-        self.error_status = c_int(0)
-        self.error_message = create_string_buffer(1025)
 
         # The inputs are meant to be from Simulink.
         # If < 8, FAST_SetExternalInputs simply returns,
@@ -38,9 +39,11 @@ class FastLibAPI(CDLL):
         ### MAKE THIS 8 OR 11
         self._num_inputs = c_int(8)
         self._inp_array = (c_double * 10)(0.0, )  # 10 is hard-coded in FAST_Library as MAXInitINPUTS
+        self._inp_array[0] = -1.0  # Sensor type - 
 
         self.output_values = None
         self.ended = False
+
 
     def _initialize_routines(self):
         self.FAST_AllocateTurbines.argtypes = [
@@ -52,15 +55,16 @@ class FastLibAPI(CDLL):
 
         self.FAST_Sizes.argtype = [
             POINTER(c_int),         # iTurb IN
-            POINTER(c_double),      # TMax IN
-            POINTER(c_double),      # InitInpAry IN; 10 is hard coded in the C++ interface
             POINTER(c_char),        # InputFileName_c IN
             POINTER(c_int),         # AbortErrLev_c OUT
             POINTER(c_int),         # NumOuts_c OUT
             POINTER(c_double),      # dt_c OUT
+            POINTER(c_double),      # tmax_c OUT
             POINTER(c_int),         # ErrStat_c OUT
             POINTER(c_char),        # ErrMsg_c OUT
-            POINTER(c_char)         # ChannelNames_c OUT
+            POINTER(c_char),        # ChannelNames_c OUT
+            POINTER(c_double),      # TMax OPTIONAL IN
+            POINTER(c_double)       # InitInpAry OPTIONAL IN
         ]
         self.FAST_Sizes.restype = c_int
 
@@ -81,6 +85,7 @@ class FastLibAPI(CDLL):
             POINTER(c_int),         # NumOutputs_c IN
             POINTER(c_double),      # InputAry IN
             POINTER(c_double),      # OutputAry OUT
+            POINTER(c_bool),        # EndSimulationEarly OUT
             POINTER(c_int),         # ErrStat_c OUT
             POINTER(c_char)         # ErrMsg_c OUT
         ]
@@ -98,35 +103,38 @@ class FastLibAPI(CDLL):
         ]
         self.FAST_End.restype = c_int
 
-    @property
-    def fatal_error(self):
-        return self.error_status.value >= self.abort_error_level.value
+
+    def fatal_error(self, error_status) -> bool:
+        return error_status.value >= self.abort_error_level.value
+
 
     def fast_init(self):
+        _error_status = c_int(0)
+        _error_message = create_string_buffer(1025)
+
         self.FAST_AllocateTurbines(
             byref(self.n_turbines),
-            byref(self.error_status),
-            self.error_message
+            byref(_error_status),
+            _error_message
         )
-        if self.fatal_error:
-            print(f"Error {self.error_status.value}: {self.error_message.value}")
-            return
+        if self.fatal_error(_error_status):
+            raise RuntimeError(f"Error {_error_status.value}: {_error_message.value}")
 
         self.FAST_Sizes(
             byref(self.i_turb),
-            byref(self.t_max),
-            byref(self._inp_array),
             self.input_file_name,
             byref(self.abort_error_level),
             byref(self.num_outs),
             byref(self.dt),
-            byref(self.error_status),
-            self.error_message,
-            self._channel_names
+            byref(self.t_max),
+            byref(_error_status),
+            _error_message,
+            self._channel_names,
+            None,   # Optional arguments must pass C-Null pointer; with ctypes, use None.
+            None    # Optional arguments must pass C-Null pointer; with ctypes, use None.
         )
-        if self.fatal_error:
-            print(f"Error {self.error_status.value}: {self.error_message.value}")
-            return
+        if self.fatal_error(_error_status):
+            raise RuntimeError(f"Error {_error_status.value}: {_error_message.value}")
 
         # Allocate the data for the outputs
         # NOTE: The ctypes array allocation (output_array) must be after the output_values
@@ -134,21 +142,24 @@ class FastLibAPI(CDLL):
         self.output_values = np.empty( (self.total_time_steps, self.num_outs.value) )
         self.output_array = (c_double * self.num_outs.value)(0.0, )
 
+
     def fast_sim(self):
+        _error_status = c_int(0)
+        _error_message = create_string_buffer(1025)
+
         self.FAST_Start(
             byref(self.i_turb),
             byref(self._num_inputs),
             byref(self.num_outs),
             byref(self._inp_array),
             byref(self.output_array),
-            byref(self.error_status),
-            self.error_message
+            byref(_error_status),
+            _error_message
         )
         self.output_values[0] = self.output_array[:]
-        if self.fatal_error:
+        if self.fatal_error(_error_status):
             self.fast_deinit()
-            print(f"Error {self.error_status.value}: {self.error_message.value}")
-            return
+            raise RuntimeError(f"Error {_error_status.value}: {_error_message.value}")
 
         for i in range( 1, self.total_time_steps ):
             self.FAST_Update(
@@ -157,16 +168,22 @@ class FastLibAPI(CDLL):
                 byref(self.num_outs),
                 byref(self._inp_array),
                 byref(self.output_array),
-                byref(self.error_status),
-                self.error_message
+                byref(self.end_early),
+                byref(_error_status),
+                _error_message
             )
             self.output_values[i] = self.output_array[:]
-            if self.fatal_error:
+            if self.fatal_error(_error_status):
                 self.fast_deinit()
-                print(f"Error {self.error_status.value}: {self.error_message.value}")
-                return
-        
+                raise RuntimeError(f"Error {_error_status.value}: {_error_message.value}")
+            if self.end_early:
+                break
+
+
     def fast_deinit(self):
+        _error_status = c_int(0)
+        _error_message = create_string_buffer(1025)
+
         if not self.ended:
             self.ended = True
 
@@ -179,26 +196,27 @@ class FastLibAPI(CDLL):
 
             # Deallocate the Turbine array
             self.FAST_DeallocateTurbines(
-                byref(self.error_status),
-                self.error_message
+                byref(_error_status),
+                _error_message
             )
-            if self.fatal_error:
-                print(f"Error {self.error_status.value}: {self.error_message.value}")
-                return
+            if self.fatal_error(_error_status):
+                raise RuntimeError(f"Error {_error_status.value}: {_error_message.value}")
 
     def fast_run(self):
         self.fast_init()
-        if self.fatal_error: return
         self.fast_sim()
-        if self.fatal_error: return
         self.fast_deinit()
+
 
     @property
     def total_time_steps(self):
         return int(self.t_max.value / self.dt.value) + 1
 
+
     @property
-    def output_channel_names(self):
+    def output_channel_names(self) -> List:
+        if len(self._channel_names.value.split()) == 0:
+            return []
         output_channel_names = self._channel_names.value.split()
         output_channel_names = [n.decode('UTF-8') for n in output_channel_names]        
         return output_channel_names

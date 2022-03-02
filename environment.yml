@@ -3,13 +3,13 @@ channels:
   - defaults
 
 dependencies:
-  - cmake
+  - cmake>=3.21.1
   - control
   - coveralls
   - cython
   - dill
   - git
-  - Jinja2<3.0
+  - Jinja2
   - jsonschema
   - make
   - pip
@@ -20,15 +20,17 @@ dependencies:
   - openpyxl
   - pandas
   - pip
+  - pyoptsparse
   - pyside2
   - pytest
   - pytest-cov
-  - python
+  - python-benedict
   - pyyaml
   - ruamel_yaml
   - scipy
-  - seaborn
   - setuptools
+  - simpy
+  - slycot
   - smt
   - sortedcontainers
   - swig
@@ -37,7 +39,6 @@ dependencies:
     - fatpack
     - jsonmerge
     - marmot-agents
-    - simpy
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

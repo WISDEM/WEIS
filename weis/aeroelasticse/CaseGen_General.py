@@ -1,29 +1,6 @@
 import os, itertools
 import numpy as np
-from weis.aeroelasticse.Util.FileTools import save_yaml
-
-def save_case_matrix_direct(case_list, dir_matrix):
-    ### assumes all elements of the list are dict for that case that has the same keys!
-    if not os.path.exists(dir_matrix):
-            os.makedirs(dir_matrix)
-    ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
-    case = case_list[0]
-    for key in case.keys():
-        k = key[0]
-        ofh.write("%s  " % k)
-    ofh.write("\n")
-    for key in case.keys():
-        k = key[1]
-        ofh.write("%s  " % k)
-    ofh.write("\n")
-    for i in range(len(case_list)):
-        case = case_list[i]
-        for key in case.keys():
-            ofh.write(str(case[key]))
-            ofh.write("  ")
-        ofh.write("\n")
-    ofh.close()
-
+from weis.aeroelasticse.FileTools import save_yaml
 
 def save_case_matrix(matrix_out, change_vars, dir_matrix):
     # save matrix file
@@ -54,7 +31,7 @@ def save_case_matrix(matrix_out, change_vars, dir_matrix):
         text_out.append(row_str)
 
     if not os.path.exists(dir_matrix):
-            os.makedirs(dir_matrix)
+        os.makedirs(dir_matrix)
     ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
     for row in text_out:
         ofh.write(row)
@@ -183,20 +160,3 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
 
 
     return case_list, case_name
-
-
-if __name__ == "__main__":
-
-    case_inputs = {}
-    case_inputs[("Fst","TMax")] = {'vals':[10.], 'group':0}
-    case_inputs[("InflowWind","WindType")] = {'vals':[1], 'group':0}
-
-    case_inputs[("InflowWind","HWindSpeed")] = {'vals':[8., 9., 10., 11., 12.], 'group':1}
-    case_inputs[("ElastoDyn","RotSpeed")] = {'vals':[9.156, 10.296, 11.431, 11.89, 12.1], 'group':1}
-    case_inputs[("ElastoDyn","BlPitch1")] = {'vals':[0., 0., 0., 0., 3.823], 'group':1}
-    case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
-    case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-
-    case_inputs[("ElastoDyn","GenDOF")] = {'vals':['True','False'], 'group':2}
-
-    case_list, case_name = CaseGen_General(case_inputs, 'C:/Users/egaertne/WISDEM/AeroelasticSE/src/AeroelasticSE/', 'testing')

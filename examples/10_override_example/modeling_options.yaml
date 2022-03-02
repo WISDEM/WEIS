@@ -8,6 +8,8 @@ WISDEM:
         n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
     TowerSE:
         flag: True
         wind: PowerWind  # Wind used
@@ -30,5 +32,10 @@ WISDEM:
     BOS:
         flag: True
 
+Level1: # Options for WEIS fidelity level 1 = frequency domain
+    flag: False
+Level2: # Options for WEIS fidelity level 2 = linear time domain
+    flag: False
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
+

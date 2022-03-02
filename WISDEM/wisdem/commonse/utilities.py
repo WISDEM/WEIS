@@ -30,12 +30,14 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6]):
         # p6 = np.zeros((5, y.shape[1]))
         # for k in range(y.shape[1]):
         #    p6[:, k], _ = curve_fit(mode_fit, xn, y[:, k])
-        normval = np.maximum(p6.sum(axis=0), 1e-6)
+        # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
+        normval = np.maximum(np.sum(p6, axis=0), 1e-5)
         p6 /= normval[np.newaxis, :]
     else:
         p6 = p6[2:]
-        # p6, _ = curve_fit(mode_fit, xn, y)
-        p6 /= p6.sum()
+        # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
+        normval = np.maximum(p6.sum(), 1e-5)
+        p6 /= normval
 
     return p6
 
@@ -61,23 +63,23 @@ def get_xyz_mode_shapes(r, freqs, xdsp, ydsp, zdsp, xmpf, ympf, zmpf):
     ix = 0
     iy = 0
     iz = 0
+    imode = np.argmax(mpfs, axis=1)
     for m in range(nfreq):
-        if mpfs[m, :].max() < 1e-11:
+        if np.isnan(freqs[m]) or freqs[m] < 1e-1 or mpfs[m, :].max() < 1e-11:
             continue
-        imode = np.argmax(mpfs[m, :])
-        if imode == 0:
+        if imode[m] == 0:
             if ix >= nfreq2:
                 continue
             mshapes_x[ix, :] = xpolys[m, :]
             freq_x[ix] = freqs[m]
             ix += 1
-        elif imode == 1:
+        elif imode[m] == 1:
             if iy >= nfreq2:
                 continue
             mshapes_y[iy, :] = ypolys[m, :]
             freq_y[iy] = freqs[m]
             iy += 1
-        elif imode == 2:
+        elif imode[m] == 2:
             if iz >= nfreq2:
                 continue
             mshapes_z[iz, :] = zpolys[m, :]
@@ -254,11 +256,15 @@ def linspace_with_deriv(start, stop, num):
     return y, dy_dstart, dy_dstop
 
 
-def sectionalInterp(xi, x, y):
+def sectional_interp(xi, x, y):
     epsilon = 1e-11
     xx = np.c_[x[:-1], x[1:] - epsilon].flatten()
     yy = np.c_[y, y].flatten()
     return np.interp(xi, xx, yy)
+
+
+def sectionalInterp(xi, x, y):
+    return sectional_interp(xi, x, y)
 
 
 def interp_with_deriv(x, xp, yp):
@@ -557,7 +563,7 @@ def closest_node(nodemat, inode):
     return np.sqrt(np.sum((xyz - inode[np.newaxis, :]) ** 2, axis=1)).argmin()
 
 
-def nodal2sectional(x):
+def nodal2sectional(x, axis=0):
     """Averages nodal data to be length-1 vector of sectional data
 
     INPUTS:
@@ -568,9 +574,19 @@ def nodal2sectional(x):
     -------
     y   : float vector,  sectional data
     """
-    y = 0.5 * (x[:-1] + x[1:])
-    dy = np.c_[0.5 * np.eye(y.size), np.zeros(y.size)]
-    dy[np.arange(y.size), 1 + np.arange(y.size)] = 0.5
+    if x.ndim == 1:
+        y = 0.5 * (x[:-1] + x[1:])
+        dy = np.c_[0.5 * np.eye(y.size), np.zeros(y.size)]
+        dy[np.arange(y.size), 1 + np.arange(y.size)] = 0.5
+    elif x.ndim == 2 and axis == 0:
+        y = 0.5 * (x[:-1, :] + x[1:, :])
+        dy = None
+    elif x.ndim == 2 and axis == 1:
+        y = 0.5 * (x[:, :-1] + x[:, 1:])
+        dy = None
+    else:
+        raise ValueError("Only 2 dimensions supported")
+
     return y, dy
 
 

@@ -13,7 +13,7 @@ import pandas as pd
 import multiprocessing as mp 
 
 import openmdao.api as om
-from weis.aeroelasticse.Util import FileTools
+from weis.aeroelasticse import FileTools
 
 def load_OMsql(log):
     print('loading {}'.format(log))
