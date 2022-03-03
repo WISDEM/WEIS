@@ -1677,6 +1677,10 @@ class FASTLoadCases(ExplicitComponent):
         WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
         self.TMax = np.zeros(dlc_generator.n_cases)
         self.TStart = np.zeros(dlc_generator.n_cases)
+        dlc_label = [''] * dlc_generator.n_cases
+        wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
+        mean_wind_speed = np.zeros(dlc_generator.n_cases)
+
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1753,6 +1757,9 @@ class FASTLoadCases(ExplicitComponent):
             WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
             self.TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
             self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
+            dlc_label[i_case] = dlc_generator.cases[i_case].label
+            wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
+            mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
 
 
         # Parameteric inputs
@@ -1781,11 +1788,22 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
         case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
         case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
-
+        
+        # DLC Label add these for the case matrix and delete from the case_list
+        case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
+        case_inputs[("DLC","WindSeed")] = {'vals':wind_seed, 'group':1}
+        case_inputs[("DLC","MeanWS")] = {'vals':mean_wind_speed, 'group':1}
+        fst_vt['DLC'] = []
 
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
         channels= self.output_channels(fst_vt)
+
+        # Now delete the DLC-based case_inputs because they don't play nicely with aeroelasticse
+        for case in case_list:
+            for key in list(case):
+                if key[0] == 'DLC':
+                    del case[key]
         
         
         # FAST wrapper setup
