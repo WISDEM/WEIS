@@ -142,7 +142,7 @@ class Model():
         # TODO: add printing of summary info here - mass, stiffnesses, etc
 
     
-    def analyzeCases(self, display=0):
+    def analyzeCases(self, display=0, runPyHAMS=True, meshDir=os.path.join(os.getcwd(),'BEM')):
         '''This runs through all the specified load cases, building a dictionary of results.'''
         
         nCases = len(self.design['cases']['data'])
@@ -227,7 +227,9 @@ class Model():
         # calculate the system's constant properties
         for fowt in self.fowtList:
             fowt.calcStatics()
-            fowt.calcBEM()
+
+        if runPyHAMS:
+            fowt.calcBEM(meshDir=meshDir)
             
         # loop through each case
         for iCase in range(nCases):

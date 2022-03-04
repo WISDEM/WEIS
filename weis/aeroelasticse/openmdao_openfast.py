@@ -514,7 +514,16 @@ class FASTLoadCases(ExplicitComponent):
         self.sim_idx = -1
 
         if modopt['Level2']['flag']:
-            self.lin_pkl_file_name = os.path.join(self.options['opt_options']['general']['folder_output'], 'ABCD_matrices.pkl')
+            if MPI:
+                rank = MPI.COMM_WORLD.Get_rank()
+                lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin', 'rank_{}'.format(rank))
+                if not os.path.exists(lin_pkl_dir):
+                    os.makedirs(lin_pkl_dir)
+                self.lin_pkl_file_name = os.path.join(lin_pkl_dir, 'ABCD_matrices.pkl')
+            else:
+                lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin')
+                self.lin_pkl_file_name = os.path.join(lin_pkl_dir, 'ABCD_matrices.pkl')
+
             self.ABCD_list = []
 
             with open(self.lin_pkl_file_name, 'wb') as handle:
@@ -593,12 +602,16 @@ class FASTLoadCases(ExplicitComponent):
 
             # Set up linear turbine model
             if modopt['Level2']['flag']:
-                LinearTurbine = LinearTurbineModel(
-                self.FAST_runDirectory,
-                self.lin_case_name,
-                nlin=modopt['Level2']['linearization']['NLinTimes'],
-                reduceControls=True
-                )
+                try: 
+                    LinearTurbine = LinearTurbineModel(
+                    self.FAST_runDirectory,
+                    self.lin_case_name,
+                    nlin=modopt['Level2']['linearization']['NLinTimes'],
+                    reduceControls=True
+                    )
+                except FileNotFoundError as e:
+                    print('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
+                    return
 
                 # Save linearizations
                 print('Saving ABCD matrices!')
@@ -1383,6 +1396,27 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
+            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['Level2']['flag'] and modopt['Level1']['runPyHAMS']:
+                fst_vt['HydroDyn']['ExctnMod'] = 1
+                fst_vt['HydroDyn']['RdtnMod'] = 1
+                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+
+                from weis.ss_fitting.SS_FitTools import SSFit_Excitation, FDI_Fitting
+                print('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
+                exctn_fit = SSFit_Excitation(HydroFile=fst_vt['HydroDyn']['PotFile'])
+                rad_fit = FDI_Fitting(HydroFile=fst_vt['HydroDyn']['PotFile'])
+                exctn_fit.writeMats()
+                rad_fit.fit()
+                rad_fit.outputMats()
+                if True:
+                    fig_list = rad_fit.visualizeFits()
+                    
+                    if not os.path.exists(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit')):
+                        os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'))
+
+                    for i_fig, fig in enumerate(fig_list):
+                        fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
+
             # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
             if fst_vt['HydroDyn']['PtfmMass_Init']:
                 fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
@@ -1813,6 +1847,7 @@ class FASTLoadCases(ExplicitComponent):
 
             # Use openfast binary until library works
             fastBatch                           = LinearFAST(**linearization_options)
+            fastBatch.FAST_runDirectory         = self.FAST_runDirectory
             fastBatch.FAST_lib                  = None      # linearization not working with library
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
@@ -1825,11 +1860,11 @@ class FASTLoadCases(ExplicitComponent):
             self.lin_case_name                  = lin_case_name
         else:
             fastBatch                           = fastwrap.runFAST_pywrapper_batch()
+            fastBatch.FAST_runDirectory         = self.FAST_runDirectory
             fastBatch.case_list                 = case_list
             fastBatch.case_name_list            = case_name     
         
         fastBatch.channels          = channels
-        fastBatch.FAST_runDirectory = self.FAST_runDirectory
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
         fastBatch.keep_time         = modopt['General']['openfast_configuration']['keep_time']

@@ -10,7 +10,7 @@ from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
 
-fd_methods = ['SLSQP','SNOPT']
+fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
@@ -26,7 +26,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     if MPI:
         n_DV = myopt.get_number_design_variables()
-        
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
@@ -85,7 +84,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
             rank    = MPI.COMM_WORLD.Get_rank()
             if rank < len(color_map):
-                color_i = color_map[rank]
+                try:
+                    color_i = color_map[rank]
+                except IndexError:
+                    raise ValueError('The number of finite differencing variables is {} and the correct number of cores were not allocated'.format(n_FD))
             else:
                 color_i = max(color_map) + 1
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)

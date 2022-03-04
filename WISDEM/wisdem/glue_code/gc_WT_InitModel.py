@@ -971,7 +971,7 @@ def assign_jacket_values(wt_opt, modeling_options, jacket):
 
 def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
 
-    float_opt = opt_options['design_variables']['floating']
+    float_opt = opt_options["design_variables"]["floating"]
     floating_init_options = modeling_options["floating"]
     n_joints = floating_init_options["joints"]["n_joints"]
     # Loop through joints and assign location values to openmdao entry
@@ -1010,10 +1010,12 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
         for j, kgrp in enumerate(float_opt["members"]["groups"]):
             memname = kgrp["names"][0]
             idx2 = floating_init_options["members"]["name2idx"][memname]
-            if idx == idx2:                
-                wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"]["outer_diameter"]["values"][0]
+            if idx == idx2:
+                wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
+                    "outer_diameter"
+                ]["values"][0]
                 diameter_assigned = True
-                
+
         if not diameter_assigned:
             wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = np.interp(
                 grid_geom,
