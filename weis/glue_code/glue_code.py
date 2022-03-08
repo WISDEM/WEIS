@@ -205,7 +205,6 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
             self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
-            # self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
             self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
 
@@ -832,6 +831,7 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
                 self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
                 self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
+                self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq')
             
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:

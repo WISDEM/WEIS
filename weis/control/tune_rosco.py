@@ -518,6 +518,7 @@ class ROSCO_Turbine(ExplicitComponent):
 
         inps = load_rosco_yaml(parameter_filename)
         self.turbine_params         = inps['turbine_params']
+        self.control_params         = inps['controller_params']
 
         FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
         FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
@@ -551,6 +552,7 @@ class ROSCO_Turbine(ExplicitComponent):
         self.add_output('generator_efficiency', val=1.0,                             desc='Generator efficiency')
         self.add_output('TowerHt',           val=1.0,        units='m',              desc='Tower height')
         self.add_output('hub_height',        val=1.0,        units='m',              desc='Hub height')
+        self.add_output('twr_freq',          val=0.0,        units='Hz',                         desc='Tower natural frequency')
 
         # 
         self.add_output('max_pitch',         val=0.0,        units='rad',            desc='')
@@ -594,6 +596,7 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['generator_efficiency'   ] = self.turbine.GenEff
         outputs['TowerHt'                ] = self.turbine.TowerHt
         outputs['hub_height'             ] = self.turbine.hubHt
+        outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table
