@@ -336,6 +336,18 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.e+8
                                 unit: kN*m
+                    DEL_TwrBsMyt:
+                        type: object
+                        description: Maximum platform pitch displacement
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max: 
+                                type: number
+                                default: 1.e+5
+                                minimum: 0.0
+                                maximum: 1.e+8
+                                unit: kN*m
     merit_figure:
         type: string
         description: Objective function / merit figure for optimization

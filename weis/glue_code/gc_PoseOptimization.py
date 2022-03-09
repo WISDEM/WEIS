@@ -209,6 +209,11 @@ class PoseOptimizationWEIS(PoseOptimization):
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
             wt_opt.model.add_constraint('aeroelastic.max_TwrBsMyt_ratio', 
                 upper = 1.0)
+        if control_constraints['DEL_TwrBsMyt']['flag']:
+            if self.modeling['Level3']['flag'] != True:
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
+            wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt_ratio', 
+                upper = 1.0)
 
         return wt_opt
 
