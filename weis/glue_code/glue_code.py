@@ -446,7 +446,7 @@ class WindPark(om.Group):
                         self.connect('towerse.tower.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('towerse.tower.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('towerse.tower.side_side_modes',    'aeroelastic.side_side_modes')
-                        self.connect('towerse.f1',         'sse_tune.tune_rosco.twr_freq')
+                        self.connect('towerse.tower.f1',         'sse_tune.tune_rosco.twr_freq')
                         
                 if modeling_options['flags']['monopile']:
                     self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass')
