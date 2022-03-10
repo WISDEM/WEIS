@@ -453,7 +453,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('max_TwrBsMyt_ratio',val=0.0,  desc='ratio of maximum of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
-        self.add_output('DEL_TwrBsMyt_ratio',val=0.0, , desc='ratio of damage equivalent load of tower base bending moment in fore-aft direction to maximum allowable bending moment')
+        self.add_output('DEL_TwrBsMyt_ratio',val=0.0, desc='ratio of damage equivalent load of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         
         # Tower outputs
         if not self.options['modeling_options']['Level3']['from_openfast']:
