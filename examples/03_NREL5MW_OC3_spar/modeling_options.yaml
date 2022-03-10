@@ -25,7 +25,7 @@ WISDEM:
 
 Level1:
     flag: False
-    potential_model_override: 2
+    potential_model_override: 0
     potential_bem_members: [spar]
     min_freq_BEM: 0.1
     min_freq: 0.1
@@ -34,7 +34,7 @@ Level1:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        DT: 0.005
+        DT: 0.001
         CompElast: 1
         CompInflow: 1
         CompAero: 2
@@ -79,7 +79,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         ExctnMod: 1
         RdtnMod: 1
-        RdtnDT: 0.005
+        RdtnDT: 0.001
         # PotFile: HydroData/Spar
         PtfmMass_Init: 7.462e6
 
