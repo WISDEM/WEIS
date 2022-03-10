@@ -1894,18 +1894,21 @@ class FASTLoadCases(ExplicitComponent):
 
         # Return moments around x and y and axial force along blade span at instance of largest flapwise bending moment at each node
         My_chans = ["RootMyb", "Spn1MLyb", "Spn2MLyb", "Spn3MLyb", "Spn4MLyb", "Spn5MLyb", "Spn6MLyb", "Spn7MLyb", "Spn8MLyb", "Spn9MLyb"]
+        Mx_chans = ["RootMxb", "Spn1MLxb", "Spn2MLxb", "Spn3MLxb", "Spn4MLxb", "Spn5MLxb", "Spn6MLxb", "Spn7MLxb", "Spn8MLxb", "Spn9MLxb"]
+        Fz_chans = ["RootFzb", "Spn1FLzb", "Spn2FLzb", "Spn3FLzb", "Spn4FLzb", "Spn5FLzb", "Spn6FLzb", "Spn7FLzb", "Spn8FLzb", "Spn9FLzb"]
+            
         Fz = []
         Mx = []
         My = []
-        for My_chan in My_chans:
+        for My_chan,Mx_chan,Fz_chan in zip(My_chans, Mx_chans, Fz_chans):
             if self.n_blades == 2:
                 bld_idx_max = np.argmax([max(sum_stats[My_chan+'1']['max']), max(sum_stats[My_chan+'2']['max'])])
             else:
                 bld_idx_max = np.argmax([max(sum_stats[My_chan+'1']['max']), max(sum_stats[My_chan+'2']['max']), max(sum_stats[My_chan+'3']['max'])])
             My_max_chan = My_chan + str(bld_idx_max+1)
-            Fz.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][My_chan+str(bld_idx_max+1)])
-            Mx.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][My_chan+str(bld_idx_max+1)])
             My.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][My_chan+str(bld_idx_max+1)])
+            Mx.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][Mx_chan+str(bld_idx_max+1)])
+            Fz.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][Fz_chan+str(bld_idx_max+1)])
 
 
         if np.any(np.isnan(Fz)):
