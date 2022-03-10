@@ -8,8 +8,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 20
-        n_tsr_perf_surfaces: 20
+        n_pitch_perf_surfaces: 10
+        n_tsr_perf_surfaces: 10
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -25,7 +25,7 @@ WISDEM:
 
 Level1:
     flag: False
-    potential_model_override: 0
+    potential_model_override: 1
     potential_bem_members: [spar]
     min_freq_BEM: 0.1
     min_freq: 0.1
@@ -34,7 +34,7 @@ Level1:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        DT: 0.001
+        DT: 0.0125
         CompElast: 1
         CompInflow: 1
         CompAero: 2
@@ -44,6 +44,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompMooring: 3
         CompIce: 0
         SttsTime: 10.0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
@@ -79,9 +80,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         ExctnMod: 1
         RdtnMod: 1
-        RdtnDT: 0.001
+        RdtnDT: 0.0125
         # PotFile: HydroData/Spar
-        PtfmMass_Init: 7.462e6
+        # PtfmMass_Init: 7.462e6
 
 ROSCO:
     flag: True
@@ -99,12 +100,12 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [10., 12.]
-          wave_height: [3., 4.]
-          wave_period: [1., 2.]
+          wind_speed: [10.]
+          wave_height: [3.]
+          wave_period: [1.]
           n_seeds: 1
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 200.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 90.0
               GridHeight: 178.0
