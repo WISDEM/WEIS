@@ -162,6 +162,9 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["spar_cap_ss"] == layer_name:
                         ilayer = i
+
+            if ilayer is None:
+                raise KeyError("Suction side spar cap layer not found")
             axsc.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -218,6 +221,9 @@ def create_all_plots(
                     layer_name = modeling_options["WISDEM"]["RotorSE"]["layer_name"][i]
                     if modeling_options["WISDEM"]["RotorSE"]["te_ss"] == layer_name:
                         ilayer = i
+
+            if ilayer is None:
+                raise KeyError("Suction side TE layer not found")
             axte.plot(
                 yaml_data["blade.outer_shape_bem.s"],
                 yaml_data["blade.ps.layer_thickness_param"][ilayer, :] * 1e3,
@@ -289,14 +295,14 @@ def create_all_plots(
         for idx, (yaml_data, label) in enumerate(zip(list_of_sims, list_of_labels)):
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.rs.frame.strainU_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.strains.strainU_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
                 label=label,
             )
             axeps.plot(
                 yaml_data["blade.outer_shape_bem.s"],
-                yaml_data["rotorse.rs.frame.strainL_spar"] * 1.0e6,
+                yaml_data["rotorse.rs.strains.strainL_spar"] * 1.0e6,
                 "-",
                 color=colors[idx],
             )
