@@ -525,6 +525,8 @@ class FASTLoadCases(ExplicitComponent):
                 self.lin_pkl_file_name = os.path.join(lin_pkl_dir, 'ABCD_matrices.pkl')
 
             self.ABCD_list = []
+            path = '.'.join(self.lin_pkl_file_name.split('.')[:-1])
+            os.makedirs(path, exist_ok=True)
 
             with open(self.lin_pkl_file_name, 'wb') as handle:
                 pickle.dump(self.ABCD_list, handle)
@@ -953,6 +955,12 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+        
+        print('OF modes are printed here')
+        print(fst_vt['ElastoDynTower']['TwFAM1Sh'])
+        print(fst_vt['ElastoDynTower']['TwFAM2Sh'])
+        print(fst_vt['ElastoDynTower']['TwSSM1Sh'])
+        print(fst_vt['ElastoDynTower']['TwSSM2Sh'])
         
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
