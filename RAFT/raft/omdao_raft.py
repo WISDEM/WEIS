@@ -603,16 +603,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
         design['cases']['data'] = discrete_inputs['raft_dlcs']
 
-        # # Remove non-spectral cases, also parked cases for now
-        # turb_ind = design['cases']['keys'].index('turbulence')
-        # raft_cases = []
-        # for i_case, case in enumerate(design['cases']['data']):
-        #     if ('ETM' in case[turb_ind] or 'NTM' in case[turb_ind]):        # only ETM and NTM for now, figure out EWM later
-        #         if case not in raft_cases:                                  # remove duplicates
-        #             raft_cases.append(case)
-        
-        # design['cases']['data'] = raft_cases
-
         # Debug
         if modeling_opt['save_designs']:
             with open(
