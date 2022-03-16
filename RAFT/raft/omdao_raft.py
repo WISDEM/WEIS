@@ -4,6 +4,7 @@ import numpy as np
 import pickle, os
 import multiprocessing as mp
 import copy
+from itertools import compress
 
 ndim = 3
 ndof = 6
@@ -273,7 +274,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('response_roll RAO', val=np.zeros(nfreq), units='rad', desc='Roll RAO')
         self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='rad', desc='Yaw RAO')
         self.add_output('response_nacelle acceleration', val=np.zeros(nfreq), units='m/s**2', desc='Nacelle acceleration')
-        # case specific
+        # case specific, note: only DLCs supported in RAFT will have non-zero outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
         stats = ['avg','std','max','PSD','DEL']
         for n in names:
@@ -455,7 +456,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['platform'] = {}
         design['platform']['potModMaster'] = int(modeling_opt['potential_model_override'])
         design['platform']['dlsMax'] = float(modeling_opt['dls_max'])
-        # lowest BEM freq needs to be just below RAFT min_freq
+        # lowest BEM freq needs to be just below RAFT min_freq because of interpolation in RAFT
         if float(modeling_opt['min_freq_BEM']) >= modeling_opt['min_freq']:
             modeling_opt['min_freq_BEM'] = modeling_opt['min_freq'] - 1e-7
         design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
@@ -599,9 +600,16 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['mooring']['anchor_types'][0]['max_lateral_load'] = 1e5
 
         # DLCs
+        # Only give RAFT valid RAFT cases, spectral wind
+        turb_ind = discrete_inputs['raft_dlcs_keys'].index('turbulence')
+        turb_type = [case_data[turb_ind] for case_data in discrete_inputs['raft_dlcs']]
+        turb_mask = [
+            ('NTM' in tt or 'ETM' in tt or 'EWM' in tt)
+             for tt in turb_type]
+
         design['cases'] = {}
         design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
-        design['cases']['data'] = discrete_inputs['raft_dlcs']
+        design['cases']['data'] = list(compress(discrete_inputs['raft_dlcs'],turb_mask))    # filter cases by turb_mask
 
         # Debug
         if modeling_opt['save_designs']:
@@ -646,25 +654,27 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Pattern matching for case-by-case outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
         stats = ['avg','std','max','PSD','DEL']
+        turb_mask = np.array(turb_mask)
         for n in names:
             for s in stats:
                 if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['stats_'+iout] = results['case_metrics'][iout]
+                outputs['stats_'+iout][turb_mask] = results['case_metrics'][iout]
 
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:
-            outputs['stats_'+n] = results['case_metrics'][n]
+            outputs['stats_'+n][turb_mask,:] = results['case_metrics'][n]
 
         # Compute some aggregate outputs manually
-        outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max']**2 + outputs['stats_sway_max']**2).max()
-        outputs['heave_avg'] = outputs['stats_heave_avg'].mean()
-        outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'].max()
-        outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'].mean()
-        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'].max()
-        outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
-        outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
-        # Combined outputs for OpenFAST, TODO: clean up and move to wrapper
+        outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max'][turb_mask]**2 + outputs['stats_sway_max'][turb_mask]**2).max()
+        outputs['heave_avg'] = outputs['stats_heave_avg'][turb_mask].mean()
+        outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'][turb_mask].max()
+        outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'][turb_mask].mean()
+        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'][turb_mask].max()
+        outputs['rotor_overspeed'] = (outputs['stats_omega_max'][turb_mask].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
+        outputs['max_tower_base'] = outputs['stats_Mbase_max'][turb_mask].max()
+        
+        # Combined outputs for OpenFAST
         outputs['platform_displacement'] = model.fowtList[0].V
         outputs["platform_total_center_of_mass"] = outputs['properties_substructure CG']
         outputs["platform_mass"] = outputs["properties_substructure mass"]
