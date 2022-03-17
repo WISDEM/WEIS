@@ -5,10 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import yaml
-try:
-    import pickle5 as pickle
-except:
-    import pickle
+import pickle as pickle
+
 import moorpy as mp
 import raft.raft_fowt  as fowt
 from raft.helpers import *
@@ -123,8 +121,10 @@ class Model():
         
             # apply any ballast adjustment if requested
             if ballast == 1:
+                print('adjusting ballast fill levels')
                 self.adjustBallast(fowt, heave_tol=heave_tol)  
             elif ballast == 2:
+                print('adjusting ballast densities')
                 self.adjustBallastDensity(fowt)        
             
             # compute FOWT static and constant hydrodynamic properties
@@ -239,7 +239,8 @@ class Model():
         
             # form dictionary of case parameters
             case = dict(zip( self.design['cases']['keys'], self.design['cases']['data'][iCase]))   
-
+            
+            '''
             # get initial FOWT values assuming no offset
             for fowt in self.fowtList:
                 fowt.Xi0 = np.zeros(6)      # zero platform offsets
@@ -255,6 +256,8 @@ class Model():
                 # fowt.calcHydroConstants(case)  (hydrodynamics don't account for offset, so far)
             
             # (could solve mooring and offsets a second time, but likely overkill)
+            '''            
+            self.solveStatics(case)
             
             # solve system dynamics
             self.solveDynamics(case)
@@ -369,7 +372,7 @@ class Model():
         self.J_moor = J_moor        # jacobian of mooring line tensions w.r.t. coupled DOFs
         self.F_moor = F_moor
         self.T_moor = T_moor
-
+        
         # store results
         self.results['means'] = {}   # signal this data is available by adding a section to the results dictionary
         self.results['means']['aero force'  ] = self.fowtList[0].F_aero0
@@ -487,6 +490,26 @@ class Model():
         self.results['eigen']['frequencies'] = fns
         self.results['eigen']['modes'      ] = modes
   
+    
+    def solveStatics(self, case):
+
+        # get initial FOWT values assuming no offset
+        for fowt in self.fowtList:
+            fowt.Xi0 = np.zeros(6)      # zero platform offsets
+            fowt.calcTurbineConstants(case, ptfm_pitch=0.0)
+            fowt.calcHydroConstants(case)
+        
+        # calculate platform offsets and mooring system equilibrium state
+        self.calcMooringAndOffsets()
+        
+        # update values based on offsets if applicable
+        for fowt in self.fowtList:
+            fowt.calcTurbineConstants(case, ptfm_pitch=fowt.Xi0[4])
+            # fowt.calcHydroConstants(case)  (hydrodynamics don't account for offset, so far)
+        
+        # (could solve mooring and offsets a second time, but likely overkill)
+        # self.calcMooringAndOffsets()
+  
 
     def solveDynamics(self, case, tol=0.01, conv_plot=0, RAO_plot=0):
         '''After all constant parts have been computed, call this to iterate through remaining terms
@@ -514,6 +537,7 @@ class Model():
         # TEMPORARY <<<<
         #fowt.B_aero[0,4,:] = 0.0
         #fowt.B_aero[4,0,:] = 0.0
+        fowt.F_aero = fowt.F_aero*0 # <<<< a separate solve needs to be added for wind-driven response <<<< 
 
         # sum up all linear (non-varying) matrices up front
         M_lin = fowt.A_aero + fowt.M_struc[:,:,None] + fowt.A_BEM + fowt.A_hydro_morison[:,:,None] # mass
@@ -768,7 +792,7 @@ class Model():
 
        # if axes not passed in, make a new figure
         if ax == None:    
-            fig, ax = self.ms.plot(color=color)
+            fig, ax = self.ms.plot(color=color, xbounds=[-500,500], ybounds=[-500,500], zbounds=[-200,200])
         else:
             fig = ax.get_figure()
             self.ms.plot(ax=ax, color=color)
@@ -1001,6 +1025,57 @@ class Model():
         
         # return adjustment
         return delta_rho_fill
+    
+    
+    def adjustWISDEM(self, old_wisdem_file, new_wisdem_file):
+        '''
+        This loads an existing WISDEM input file and adjusts the ballast in the members in WISDEM based on 
+        a RAFT model that was created based on the original WISDEM model
+        '''
+        
+        # read in the wisdem file that you want to adjust and save it as a wisdem_design dictionary
+        import ruamel_yaml as ry
+        reader = ry.YAML(typ="safe", pure=True)
+        with open(old_wisdem_file, "r", encoding="utf-8") as f:
+            wisdem_design = reader.load(f)
+        
+        fowt = model.fowtList[0]
+        membersRAFT = fowt.memberList       # list of members in the RAFT model
+        membersWISDEM = wisdem_design['components']['floating_platform']['members']     # list of members in the WISDEM model
+        
+        # Main adjuster section:
+        # Loop through each member in WISDEM and make adjustments based on the data in RAFT
+        # For right now, this only changes the ballast fill levels
+        for wisdem_member in membersWISDEM:
+            if 'ballasts' in wisdem_member['internal_structure'].keys():    # skip the wisdem member if there is no ballast section
+                for raft_member in membersRAFT:
+                    # determine if the raft_member is the same type as the current wisdem member (they don't have great identifiers to relate)
+                    # first, find the bottom joint of the current wisdem member
+                    for joint in wisdem_design['components']['floating_platform']['joints']:
+                        if wisdem_member['joint1']==joint['name']:  # find the name of the bottom 
+                            # if that joint's location is the same as the raft member's bottom node location AND both the wisdem member and the raft member have the same diameter
+                            if str(joint['location'][2])[0:5] == str(raft_member.rA[2])[0:5] and wisdem_member['outer_shape']['outer_diameter']['values'][0]==raft_member.d[0]:
+                                # adjust the volume of the wisdem member based on the similar raft member's fill level
+                                
+                                # assume the diameter is constant along the member's length in both WISDEM and RAFT
+                                area = np.pi * ((raft_member.d[0]-2*raft_member.t[0])/2)**2
+                                # update the volume of the wisdem member based on the l_fill value in RAFT
+                                wisdem_member['internal_structure']['ballasts'][0]['volume'] = float(area*raft_member.l_fill[0])
+                                
+                                break   # stop looping through the rest of the joints
+                    break   # stop looping through the rest of the raft members
+        
+        # save the adjusted wisdem design dictionary into a new wisdem yaml file
+        yaml = ry.YAML()
+        yaml.default_flow_style = None
+        yaml.width = float("inf")
+        yaml.indent(mapping=4, sequence=6, offset=3)
+        yaml.allow_unicode = False
+        with open(new_wisdem_file, "w", encoding="utf-8") as f:
+            yaml.dump(wisdem_design, f)
+
+
+
 
 
 
@@ -1044,14 +1119,14 @@ def runRAFT(input_file, turbine_file="", plot=0, ballast=False):
     if plot:
         model.plot()
         
-        model.plotResponses()
+        #model.plotResponses()
     
     #model.preprocess_HAMS("testHAMSoutput", dw=0.1, wMax=10)
     
     plt.show()
     
     return model
-
+    
 
     
     
@@ -1060,8 +1135,10 @@ if __name__ == "__main__":
     
     #model = runRAFT(os.path.join(raft_dir,'designs/DTU10MW.yaml'))
     #model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S.yaml'), ballast=True)
-    model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S - Copy.yaml'), ballast=2)
+    #model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S - Copy.yaml'), ballast=2)
     #model = runRAFT(os.path.join(raft_dir,'designs/OC3spar.yaml'))
     #model = runRAFT(os.path.join(raft_dir,'raft/raft_design.pkl'), ballast=True)
     #model = runRAFT(os.path.join(raft_dir,'raft/raft_design_0.pkl'), ballast=True)
+    model = runRAFT(os.path.join(raft_dir,'raft/raft_design_opt_22.pkl'), ballast=True, plot=0)
     fowt = model.fowtList[0]
+    model.adjustWISDEM('opt_22.yaml', 'opt_22a.yaml')

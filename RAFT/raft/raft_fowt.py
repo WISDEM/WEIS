@@ -65,7 +65,7 @@ class FOWT():
         self.da_BEM  = getFromDict(design['platform'], 'da_BEM', default=2.0)
         
         
-        self.aeroMod = getFromDict(design['turbine'], 'aeroMod', default=1)  # flag for aerodynamics (0=off, 1=on)
+        self.aeroServoMod = getFromDict(design['turbine'], 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
         
         
         # member-based platform description
@@ -97,8 +97,8 @@ class FOWT():
         # mooring system connection
         self.body = mpb                                              # reference to Body in mooring system corresponding to this turbine
 
-        if 'yaw_stiffness' in design['turbine']:
-            self.yawstiff = design['turbine']['yaw_stiffness']       # If you're modeling OC3 spar, for example, import the manual yaw stiffness needed by the bridle config
+        if 'yaw_stiffness' in design['platform']:
+            self.yawstiff = design['platform']['yaw_stiffness']       # If you're modeling OC3 spar, for example, import the manual yaw stiffness needed by the bridle config
         else:
             self.yawstiff = 0
 
@@ -446,7 +446,7 @@ class FOWT():
         self.F_aero0 = np.zeros([6])                                # mean aerodynamic forces and moments
         
         # only compute the aerodynamics if enabled and windspeed is nonzero
-        if self.aeroMod > 0 and case['wind_speed'] > 0.0:
+        if self.aeroServoMod > 0 and case['wind_speed'] > 0.0:
         
             F_aero0, f_aero, a_aero, b_aero = self.rotor.calcAeroServoContributions(case, ptfm_pitch=ptfm_pitch)  # get values about hub
             
@@ -541,8 +541,9 @@ class FOWT():
                             v_i = v_i * (0.5*mem.dls[il] - mem.r[il,2]) / mem.dls[il]  # scale volume by the portion that is under water
                             
                          
-                        # added mass
-                        Amat = rho*v_i *( Ca_q*mem.qMat + Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
+                        # added mass (axial term explicitly excluded here - we aren't dealing with chains)
+                        Amat = rho*v_i *( Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
+                        #Amat = rho*v_i *( Ca_q*mem.qMat + Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
 #                        print(f"Member side added mass diagonals are {Amat[0,0]:6.2e} {Amat[1,1]:6.2e} {Amat[2,2]:6.2e}")
 
                         self.A_hydro_morison += translateMatrix3to6DOF(Amat, mem.r[il,:])    # add to global added mass matrix for Morison members
@@ -797,7 +798,7 @@ class FOWT():
         '''
 
         # rotor-related outputs are only available if aerodynamics modeling is enabled
-        if self.aeroMod > 0 and case['wind_speed'] > 0.0:
+        if self.aeroServoMod > 1 and case['wind_speed'] > 0.0:
             # rotor speed (rpm)
             # spectra
             phi_w   = self.rotor.C * (XiHub - self.rotor.V_w / (1j *self.w))

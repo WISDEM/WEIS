@@ -2,7 +2,6 @@ import openmdao.api as om
 import raft
 import numpy as np
 import pickle, os
-import multiprocessing as mp
 import copy
 from itertools import compress
 
