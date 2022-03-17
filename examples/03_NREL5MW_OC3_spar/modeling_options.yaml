@@ -20,12 +20,13 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
+        rank_and_file: True
     BOS:
         flag: True
 
 Level1:
     flag: False
-    potential_model_override: 1
+    potential_model_override: 0
     potential_bem_members: [spar]
     min_freq_BEM: 0.1
     min_freq: 0.1
@@ -53,7 +54,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         EdgeDOF: True
         TeetDOF: False
         DrTrDOF: False 
-        GenDOF: False
+        GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
         TwFADOF2 : True
