@@ -632,8 +632,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # option to run level 1 load cases
         if True: #processCases:
-            meshDir = os.path.join(analysis_options['general']['folder_output'],'BEM','p{}'.format(mp.current_process().pid))
-            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=meshDir)
+            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=modeling_opt['BEM_dir'])
             
         # get and process results
         results = model.calcOutputs()

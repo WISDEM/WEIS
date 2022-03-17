@@ -6,6 +6,7 @@ import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
+from wisdem.commonse.mpi_tools              import MPI
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
@@ -26,6 +27,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.set_opt_flags()
 
     def set_weis_data(self):
+
+        # BEM dir, all levels
+        base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = os.path.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = os.path.join(base_run_dir,'BEM')
+
+        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
@@ -82,8 +94,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
                         self.modeling_options['Level1']['flag'] = True
-                        pid = mp.current_process().pid
-                        bemDir = os.path.join(self.analysis_options['general']['folder_output'],'BEM','p{}'.format(mp.current_process().pid))
                         self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, bemDir,'Output','Wamit_format','Buoy')
                         
 
