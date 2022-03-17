@@ -843,6 +843,8 @@ class MonopileSE(om.Group):
                 "tower_fore_aft_modes",
                 "tower_side_side_modes",
                 "tower_torsion_modes",
+                "f1",
+                "f2",
             ],
         )
 
