@@ -384,7 +384,7 @@ class FASTLoadCases(ExplicitComponent):
             self.FAST_namingOut = self.FAST_InputFile
         self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
         if not os.path.exists(self.FAST_runDirectory):
-            os.makedirs(self.FAST_runDirectory)
+            os.makedirs(self.FAST_runDirectory, exist_ok=True)
         if not os.path.exists(self.wind_directory):
             os.mkdir(self.wind_directory)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
@@ -518,7 +518,7 @@ class FASTLoadCases(ExplicitComponent):
                 rank = MPI.COMM_WORLD.Get_rank()
                 lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin', 'rank_{}'.format(rank))
                 if not os.path.exists(lin_pkl_dir):
-                    os.makedirs(lin_pkl_dir)
+                    os.makedirs(lin_pkl_dir, exist_ok=True)
                 self.lin_pkl_file_name = os.path.join(lin_pkl_dir, 'ABCD_matrices.pkl')
             else:
                 lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin')
@@ -1414,8 +1414,7 @@ class FASTLoadCases(ExplicitComponent):
                 if True:
                     fig_list = rad_fit.visualizeFits()
                     
-                    if not os.path.exists(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit')):
-                        os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'))
+                    os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'), exist_ok=True)
 
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
@@ -2604,8 +2603,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Make iteration directory
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber),'timeseries')
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
         # Save each timeseries as a pickled dataframe
         for i_ts, timeseries in enumerate(chan_time):
@@ -2619,8 +2617,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Make iteration directory
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
         # Save dataframes as pickles
         summ_stats.to_pickle(os.path.join(save_dir,'summary_stats.p'))
