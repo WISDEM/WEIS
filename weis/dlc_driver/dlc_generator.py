@@ -108,11 +108,16 @@ class DLCGenerator(object):
         return wind_speeds
 
     def get_wind_seeds(self, options, wind_speeds):
+        if 'yaw_misalign' in options:
+            n_yaw_ms = len(options['yaw_misalign'])
+        else:
+            n_yaw_ms = 1
+        
         if len(options['wind_seed']) > 0:
             wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
         else:
-            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds), dtype=int)
-            wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
+            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms, dtype=int)
+            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms)
 
         return wind_speeds, wind_seeds
 
@@ -229,6 +234,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         # Counter for wind seed
         i_WiSe=0
         # Counters for wave conditions
@@ -248,6 +259,7 @@ class DLCGenerator(object):
             idlc.wave_period = wave_Tp[i_Tp]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
             idlc.turbulent_wind = True
             idlc.label = '1.1'
             if options['analysis_time'] > 0:
@@ -529,7 +541,12 @@ class DLCGenerator(object):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        yaw_misalign_deg = np.array([-8., 8.] * options['n_seeds'])
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [-8., 8.]
+        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
         if len(wave_Hs)==0:
             wave_Hs = self.wave_Hs50
         if len(wave_Tp)==0:
@@ -583,7 +600,12 @@ class DLCGenerator(object):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        yaw_misalign_deg = np.array([-20., 20.] * options['n_seeds'])
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [-20., 20.]
+        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
         if len(wave_Hs)==0:
             wave_Hs = self.wave_Hs1
         if len(wave_Tp)==0:

@@ -1717,6 +1717,7 @@ class FASTLoadCases(ExplicitComponent):
         dlc_label = [''] * dlc_generator.n_cases
         wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
         mean_wind_speed = np.zeros(dlc_generator.n_cases)
+        yaw_misalignment = np.zeros(dlc_generator.n_cases)
 
 
         for i_case in range(dlc_generator.n_cases):
@@ -1797,6 +1798,7 @@ class FASTLoadCases(ExplicitComponent):
             dlc_label[i_case] = dlc_generator.cases[i_case].label
             wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
             mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
+            yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
 
 
         # Parameteric inputs
@@ -1815,6 +1817,8 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+        # Yaw offset
+        case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
         # Inputs to HydroDyn
         case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
         case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
