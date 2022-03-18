@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/ex_03_debug
+        OF_run_dir: outputs/03_NREL5MW_OC3_spar
         use_exe: True
 
 WISDEM:
