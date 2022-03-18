@@ -707,10 +707,10 @@ def fx_mbc3(FileNames, verbose=True, removeTwrAzimuth=False):
     # print('new_seq_dof2 ', new_seq_dof2)
     # print('new_seq_dof1 ', new_seq_dof1)
     # print('dummy ', dummy, ' nb ', nb)
-    nb = max(nb,nb2);
-    if (nb==0):
-        print('*** fx_mbc3: no states were found, so assuming turbine has 3 blades. ***')
-        nb = 3
+    #nb = max(nb,nb2);
+    #if (nb==0):
+    #    print('*** fx_mbc3: no states were found, so assuming turbine has 3 blades. ***')
+    #    nb = 3
 
 
     new_seq_states=np.concatenate((new_seq_dof2, new_seq_dof2+matData['ndof2']))
@@ -729,7 +729,7 @@ def fx_mbc3(FileNames, verbose=True, removeTwrAzimuth=False):
         if matData['n_RotTripletStates2'] + matData['n_RotTripletStates1'] < 1:
             print('*** There are no rotating states. MBC transformation, therefore, cannot be performed.');
         # perhaps just warn and perform eigenanalysis anyway?
-        if (matData['n_RotTripletStates2']*nb > matData['ndof2']):
+        elif (matData['n_RotTripletStates2']*nb > matData['ndof2']):
             print('**ERROR: the rotating second-order dof exceeds the total num of second-order dof');
         elif (matData['n_RotTripletStates1']*nb > matData['ndof1']):
             print('**ERROR: the rotating first-order dof exceeds the total num of first-order dof');
