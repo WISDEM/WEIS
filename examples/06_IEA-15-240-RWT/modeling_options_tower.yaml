@@ -1,0 +1,112 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    solver_maxiter: 2
+    openfast_configuration:
+        OF_run_fst: IEA_w_TMD
+        OF_run_dir: outputs/IEA_w_TMD_11
+        save_iterations: True
+        save_timeseries: True
+        use_exe: True
+
+WISDEM:
+    RotorSE:
+        flag: True
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: True
+        n_refine: 5
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    # BOS:
+    #     flag: True
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.01
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 3
+        CompIce: 0
+        OutFileFmt: 3
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: True
+        FlapDOF2: True
+        EdgeDOF: True
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+    HydroDyn:
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WaveSeed1: 123456789
+        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
+        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
+        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
+        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
+        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
+        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
+        PotMod: 1
+        # WaveMod: 0
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+
+Level1:
+    flag: False
+    potential_model_override: 2
+
+ROSCO:
+    flag: True
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 2
+    Fl_Mode: 2 
+    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
+    zeta_pc: [1,1]
+    omega_pc: [0.2,0.2]
+    U_pc: [12,18]
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    twr_freq: 3.2
+    ptfm_freq: 0.2
+    Kp_float: -10
+    
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          wind_speed: [12] #,16,20,24]
+          wave_height: [6] #,7,8,9]
+          wave_period: [11] #,12,13,14]
+          n_seeds: 1
+          analysis_time: 10.
+          transient_time: 10.
+          turbulent_wind:
+              HubHt: 140
+              GridHeight: 300
+              GridWidth: 300
+

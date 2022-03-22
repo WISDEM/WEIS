@@ -1,10 +1,12 @@
 import os
 import os.path as osp
 import platform
+import multiprocessing as mp
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
+from wisdem.commonse.mpi_tools              import MPI
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
@@ -25,6 +27,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.set_opt_flags()
 
     def set_weis_data(self):
+
+        # BEM dir, all levels
+        base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = os.path.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = os.path.join(base_run_dir,'BEM')
+
+        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
@@ -81,9 +94,13 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
                         self.modeling_options['Level1']['flag'] = True
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, 'BEM','Output','Wamit_format','Buoy')
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, bemDir,'Output','Wamit_format','Buoy')
+                        
 
                     else:
+                        if self.modeling_options['Level1']['runPyHAMS']:
+                            print('Found existing potential model: {}\n    - Trying to use this instead of running PyHAMS.'.format(potpath))
+                            self.modeling_options['Level1']['runPyHAMS'] = False
                         if osp.exists( potpath+'.1' ):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath(potpath)
                         elif osp.exists( osp.join(cwd, potpath+'.1') ):
@@ -131,6 +148,13 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         else:
             self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
 
+        self.modeling_options['flags']['TMDs'] = False
+        if 'TMDs' in self.wt_init:
+            if self.modeling_options['Level3']['flag']:
+                self.modeling_options['flags']['TMDs'] = True
+            else:
+                raise Exception("TMDs in Levels 1 and 2 are not supported yet")
+
 
     def set_openmdao_vectors_control(self):
         # Distributed aerodynamic control devices along blade
@@ -141,6 +165,50 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['WISDEM']['RotorSE']['n_tab']   = 3
             else:
                 raise Exception('A distributed aerodynamic control device is provided in the yaml input file, but not supported by wisdem.')
+
+        if 'TMDs' in self.wt_init:
+            n_TMDs = len(self.wt_init['TMDs'])
+            self.modeling_options['TMDs'] = {}
+            self.modeling_options['TMDs']['n_TMDs']                 = n_TMDs
+            # TODO: come back and check how many of these need to be modeling options
+            self.modeling_options['TMDs']['name']                   = [tmd['name'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['component']              = [tmd['component'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['location']               = [tmd['location'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['mass']                   = [tmd['mass'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['stiffness']              = [tmd['stiffness'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['damping']                = [tmd['damping'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['natural_frequency']      = [tmd['natural_frequency'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['damping_ratio']          = [tmd['damping_ratio'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['X_DOF']                  = [tmd['X_DOF'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['Y_DOF']                  = [tmd['Y_DOF'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['Z_DOF']                  = [tmd['Z_DOF'] for  tmd in self.wt_init['TMDs']]
+            self.modeling_options['TMDs']['preload_spring']         = [tmd['preload_spring'] for  tmd in self.wt_init['TMDs']]
+
+            # Check that TMD locations map to somewhere valid (tower or platform member)
+            self.modeling_options['TMDs']['num_tower_TMDs'] = 0
+            self.modeling_options['TMDs']['num_ptfm_TMDs']  = 0
+            
+            for i_TMD, component in enumerate(self.modeling_options['TMDs']['component']):
+                if self.modeling_options['flags']['floating'] and component in self.modeling_options['floating']['members']['name']:
+                    self.modeling_options['TMDs']['num_ptfm_TMDs'] += 1
+                elif component == 'tower':
+                    self.modeling_options['TMDs']['num_tower_TMDs'] += 1
+                else:
+                    raise Exception('Invalid TMD component mapping for {} on {}'.format(
+                        self.modeling_options['TMDs']['name'][i_TMD],component))      
+
+            # Set TMD group  mapping: list of length n_groups, with i_TMDs in each group
+            # Loop through TMD names, assign to own group if not in an analysis group
+            if 'TMDs' in self.analysis_options['design_variables']:
+                tmd_group_map = []
+                tmd_names = self.modeling_options['TMDs']['name']
+                
+                for i_group, tmd_group in enumerate(self.analysis_options['design_variables']['TMDs']['groups']):
+                    tmds_in_group_i = [tmd_names.index(tmd_name) for tmd_name in tmd_group['names']]
+
+                    tmd_group_map.append(tmds_in_group_i)
+                
+                self.modeling_options['TMDs']['group_mapping'] = tmd_group_map
 
     def update_ontology_control(self, wt_opt):
         # Update controller

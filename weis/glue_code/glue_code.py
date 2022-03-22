@@ -20,6 +20,8 @@ from weis.aeroelasticse.utils import RotorLoadsDeflStrainsWEIS
 from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 from weis.frequency.raft_wrapper import RAFT_WEIS
+from weis.control.tmd import TMD_group
+
 
 class WindPark(om.Group):
     # Openmdao group to run the analysis of the wind turbine
@@ -73,7 +75,7 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('sd_cornerfreq',    val=0.0, units='rad/s',     desc='Cutoff Frequency for first order low-pass filter for blade pitch angle [rad/s], {default = 0.41888 ~ time constant of 15s}')
         tune_rosco_ivc.add_output('Kp_flap',          val=0.0, units='s',         desc='Proportional term of the PI controller for the trailing-edge flaps')
         tune_rosco_ivc.add_output('Ki_flap',          val=0.0,                    desc='Integral term of the PI controller for the trailing-edge flaps')
-        tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rad/s',     desc='Tower natural frequency')
+        tune_rosco_ivc.add_output('twr_freq',         val=3.2, units='rps',     desc='Tower natural frequency')
         tune_rosco_ivc.add_output('ptfm_freq',        val=0.2, units='rad/s',     desc='Platform natural frequency')
         tune_rosco_ivc.add_output('Kp_float',         val=0.0, units='s',         desc='Floating feedback gain')
 
@@ -203,7 +205,6 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
             self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
-            self.connect('tune_rosco_ivc.twr_freq',         'sse_tune.tune_rosco.twr_freq')
             self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
             self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
 
@@ -217,7 +218,7 @@ class WindPark(om.Group):
                 self.connect('tune_rosco_ivc.Flp_zeta',     'sse_tune.tune_rosco.Flp_zeta')
 
         if modeling_options['Level1']['flag']:
-            self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options))
+            self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))
 
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
             self.connect('configuration.turb_class',        'raft.turbulence_class')
@@ -247,6 +248,8 @@ class WindPark(om.Group):
             self.connect('rotorse.rp.powercurve.rated_V',       'raft.Vrated')
             self.connect('control.V_in',                    'raft.V_cutin')
             self.connect('control.V_out',                   'raft.V_cutout')
+            self.connect('rotorse.rp.powercurve.rated_Omega',     'raft.rated_rotor_speed')
+
             if modeling_options["flags"]["blade"]:
                 self.connect("configuration.n_blades", "raft.nBlades")
                 self.connect("hub.cone", "raft.precone")
@@ -288,8 +291,8 @@ class WindPark(om.Group):
 
                 for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                     idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                    self.connect(f"floating.memgrp{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
-                    self.connect(f"floating.memgrp{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
+                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
+                    self.connect(f"floating.memgrid{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
                     self.connect(f"floatingse.member{k}.height", f"raft.member{k}:height")
                     self.connect(f"floatingse.member{k}.rho", f"raft.member{k}:rho")
                     self.connect(f"floating.memgrp{idx}.s", f"raft.platform_member{k+1}_stations")
@@ -314,6 +317,13 @@ class WindPark(om.Group):
                             'transverse_added_mass','tangential_added_mass','transverse_drag','tangential_drag']:
                     self.connect(f'mooring.line_{var}', f'raft.line_{var}')
 
+        # TMD connections to openmdao_openfast
+        if modeling_options['flags']['TMDs']:
+            self.add_subsystem('TMDs',  TMD_group(modeling_options = modeling_options, opt_options = opt_options))
+
+            self.connect('TMDs.mass',               'aeroelastic.TMD_mass')
+            self.connect('TMDs.stiffness',          'aeroelastic.TMD_stiffness')
+            self.connect('TMDs.damping',            'aeroelastic.TMD_damping')
 
         if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
@@ -367,7 +377,6 @@ class WindPark(om.Group):
             self.connect('control.V_in',                    'aeroelastic.V_cutin')
             self.connect('control.V_out',                   'aeroelastic.V_cutout')
             self.connect('env.shear_exp',                   'aeroelastic.shearExp')
-
             
             # Connections to aeroelasticse
             if not modeling_options['Level3']['from_openfast']:
@@ -422,14 +431,22 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
-                    if modeling_options["flags"]["floating"]:
+                    if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
+                        self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
+                        self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
+                        self.connect('fixedse.tower_side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('fixedse.f1',         'sse_tune.tune_rosco.twr_freq')
+
+                    elif modeling_options["flags"]["floating"]:
                         self.connect('floatingse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('floatingse.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('floatingse.side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('floatingse.f1',         'sse_tune.tune_rosco.twr_freq')
                     else:
                         self.connect('towerse.tower.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('towerse.tower.fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('towerse.tower.side_side_modes',    'aeroelastic.side_side_modes')
+                        self.connect('towerse.tower.f1',         'sse_tune.tune_rosco.twr_freq')
                         
                 if modeling_options['flags']['monopile']:
                     self.connect('monopile.transition_piece_mass',  'aeroelastic.transition_piece_mass')
@@ -454,10 +471,14 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                     self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    self.connect("floatingse.platform_mass", "aeroelastic.platform_mass")
-                    self.connect("floatingse.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
-                    self.connect("floatingse.platform_I_total", "aeroelastic.platform_I_total")
-                    self.connect("floatingse.platform_displacement", "aeroelastic.platform_displacement")
+                    if modeling_options['Level1']['flag']:
+                        ptfm_data_source = 'raft'
+                    else:
+                        ptfm_data_source = 'floatingse'
+                    self.connect(f"{ptfm_data_source}.platform_mass", "aeroelastic.platform_mass")
+                    self.connect(f"{ptfm_data_source}.platform_total_center_of_mass", "aeroelastic.platform_total_center_of_mass")
+                    self.connect(f"{ptfm_data_source}.platform_I_total", "aeroelastic.platform_I_total")
+                    self.connect(f"{ptfm_data_source}.platform_displacement", "aeroelastic.platform_displacement")
                     self.connect("floating.transition_node", "aeroelastic.transition_node")
 
                     for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
@@ -810,10 +831,16 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
                 self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
                 self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
-
+                self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq')
+            
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:
-                self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
+
+                # Connect computed AEP only if DLC 1.1 is used, otherwise use rotorse
+                if modeling_options['DLC_driver']['n_ws_dlc11'] > 0:
+                    self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
+                else:
+                    self.connect('rotorse.rp.AEP', 'financese_post.turbine_aep')
 
                 self.connect('tcc.turbine_cost_kW',     'financese_post.tcc_per_kW')
                 if modeling_options["flags"]["bos"]:
@@ -861,3 +888,5 @@ class WindPark(om.Group):
                 self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen_weis.Flp_zeta')
                 self.connect('tune_rosco_ivc.IPC_Ki1p',        'outputs_2_screen_weis.IPC_Ki1p')
                 self.connect('dac_ivc.te_flap_end',            'outputs_2_screen_weis.te_flap_end')
+                if modeling_options['OL2CL']['flag']:
+                    self.connect('aeroelastic.OL2CL_pitch',      'outputs_2_screen_weis.OL2CL_pitch')

@@ -218,7 +218,77 @@ properties:
                                 default: {}
                                 properties:
                                     flag: *flag
-                            
+            TMDs:
+                type: object
+                description: Design variables associated with TMDs
+                default: {}
+                properties:
+                    flag: *flag
+                    groups:
+                        type: array
+                        description: Sets of members that share the same design
+                        default: []
+                        items:
+                            type: object
+                            default: {}
+                            properties:
+                                names:
+                                    type: array
+                                    description: TMD names of those that are linked
+                                    items:
+                                        type: string
+                                mass:
+                                    type: object
+                                    description: Mass optimization of TMD group
+                                    properties:
+                                        lower_bound: &bound
+                                            type: number
+                                            default: 20000
+                                        upper_bound: *bound
+                                        initial: &initial
+                                            type: number
+                                            default: 100
+                                            description: Initial condition of TMD group
+                                        const_omega:
+                                            type: boolean
+                                            default: False
+                                            description: Keep the natural frequency constant while the mass changes?
+                                        const_zeta:
+                                            type: boolean
+                                            default: False
+                                            description: Keep the damping ratio constant while the mass changes?
+                                stiffness:
+                                    type: object
+                                    description: Stiffness optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+                                damping:
+                                    type: object
+                                    description: Damping optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+                                natural_frequency:
+                                    type: object
+                                    description: Natural frequency optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+                                        const_zeta:
+                                            type: boolean
+                                            default: False
+                                            description: Keep the damping ratio constant while the natural frequency changes?
+                                damping_ratio:
+                                    type: object
+                                    description: Damping ratio optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
 
     constraints:
         # GB: These all need gammas or safety factors
@@ -277,6 +347,87 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
+                    nacelle_acceleration:
+                        type: object
+                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 3.2667
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: m/s^2
+                    avg_pitch_travel:
+                        type: object
+                        description: Average pitch travel per second
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 5
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg/s
+                    pitch_duty_cycle:
+                        type: object
+                        description: Number of pitch direction changes per second of simulation
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 5
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg/s
+            damage:
+                type: object
+                default: {}
+                properties:
+                    tower_base:
+                        type: object
+                        description: Tower base damage constraint
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 1.0
+                                minimum: 1.e-5
+                                maximum: 30.0
+                            log:
+                                type: boolean
+                                default: False
+                                description: Use the logarithm of damage as the constraint.
+
+            openfast_failed:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain design to one where OpenFAST simulations don't fail_value
+                        default: False
+
+            Max_Offset:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain maximum offset of platform from equilibrium point
+                        default: False
+                    max:
+                        type: number
+                        default: 20
+                        minimum: 0.0
+                        maximum: 20000.0
+                        unit: m
+
+    
 
     merit_figure:
         type: string

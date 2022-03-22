@@ -1,6 +1,7 @@
 # RAFT's floating wind turbine class
 
 import os
+import shutil
 import numpy as np
 from scipy.interpolate import interp1d
 
@@ -9,6 +10,8 @@ import raft.member2pnl as pnl
 from raft.helpers import *
 from raft.raft_member import Member
 from raft.raft_rotor import Rotor
+
+import multiprocessing as mp
 
 # deleted call to ccblade in this file, since it is called in raft_rotor
 # also ignoring changes to solveEquilibrium3 in raft_model and the re-addition of n=len(stations) in raft_member, based on raft_patch
@@ -62,7 +65,7 @@ class FOWT():
         self.da_BEM  = getFromDict(design['platform'], 'da_BEM', default=2.0)
         
         
-        self.aeroMod = getFromDict(design['turbine'], 'aeroMod', default=1)  # flag for aerodynamics (0=off, 1=on)
+        self.aeroServoMod = getFromDict(design['turbine'], 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
         
         
         # member-based platform description
@@ -78,6 +81,7 @@ class FOWT():
             mi['dlsMax'] = dlsMax
 
             headings = getFromDict(mi, 'heading', shape=-1, default=0.)
+            mi['headings'] = headings   # differentiating the list of headings/copies of a member from the individual member's heading
             if np.isscalar(headings):
                 mi['heading'] = headings
                 self.memberList.append(Member(mi, self.nw))
@@ -93,8 +97,8 @@ class FOWT():
         # mooring system connection
         self.body = mpb                                              # reference to Body in mooring system corresponding to this turbine
 
-        if 'yaw_stiffness' in design['turbine']:
-            self.yawstiff = design['turbine']['yaw_stiffness']       # If you're modeling OC3 spar, for example, import the manual yaw stiffness needed by the bridle config
+        if 'yaw_stiffness' in design['platform']:
+            self.yawstiff = design['platform']['yaw_stiffness']       # If you're modeling OC3 spar, for example, import the manual yaw stiffness needed by the bridle config
         else:
             self.yawstiff = 0
 
@@ -314,7 +318,7 @@ class FOWT():
 
 
 
-    def calcBEM(self, dw=0, wMax=0, wInf=10.0, dz=0, da=0):
+    def calcBEM(self, dw=0, wMax=0, wInf=10.0, dz=0, da=0, meshDir=os.path.join(os.getcwd(),'BEM')):
         '''This generates a mesh for the platform and runs a BEM analysis on it
         using pyHAMS. It can also write adjusted .1 and .3 output files suitable
         for use with OpenFAST.
@@ -358,8 +362,6 @@ class FOWT():
 
         # only try to save a mesh and run HAMS if some members DO have potMod=True
         if len(panels) > 0:
-
-            meshDir = os.path.join(os.getcwd(), 'BEM')
             
             pnl.writeMesh(nodes, panels, oDir=os.path.join(meshDir,'Input')) # generate a mesh file in the HAMS .pnl format
             
@@ -367,7 +369,9 @@ class FOWT():
             
             ph.create_hams_dirs(meshDir)                #
             
-            ph.write_hydrostatic_file(meshDir)          # HAMS needs a hydrostatics file, but it's unused for .1 and .3, so write a blank one
+            # HAMS needs a hydrostatics file, it's unused for .1 and .3,
+            # but HAMS write the .hst file that OpenFAST uses
+            ph.write_hydrostatic_file(meshDir, kHydro=self.C_hydro)          
             
             # prepare frequency settings for HAMS
             dw_HAMS = self.dw_BEM if dw==0 else dw     # frequency increment - allow override if provided
@@ -418,6 +422,7 @@ class FOWT():
                 #breakpoint()
                 raise Exception("NaN values detected in HAMS calculations for excitation. Check the geometry.")
             
+                
             # TODO: add support for multiple wave headings <<<
             # note: RAFT will only be using finite-frequency potential flow coefficients
             
@@ -441,7 +446,7 @@ class FOWT():
         self.F_aero0 = np.zeros([6])                                # mean aerodynamic forces and moments
         
         # only compute the aerodynamics if enabled and windspeed is nonzero
-        if self.aeroMod > 0 and case['wind_speed'] > 0.0:
+        if self.aeroServoMod > 0 and case['wind_speed'] > 0.0:
         
             F_aero0, f_aero, a_aero, b_aero = self.rotor.calcAeroServoContributions(case, ptfm_pitch=ptfm_pitch)  # get values about hub
             
@@ -536,8 +541,9 @@ class FOWT():
                             v_i = v_i * (0.5*mem.dls[il] - mem.r[il,2]) / mem.dls[il]  # scale volume by the portion that is under water
                             
                          
-                        # added mass
-                        Amat = rho*v_i *( Ca_q*mem.qMat + Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
+                        # added mass (axial term explicitly excluded here - we aren't dealing with chains)
+                        Amat = rho*v_i *( Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
+                        #Amat = rho*v_i *( Ca_q*mem.qMat + Ca_p1*mem.p1Mat + Ca_p2*mem.p2Mat )  # local added mass matrix
 #                        print(f"Member side added mass diagonals are {Amat[0,0]:6.2e} {Amat[1,1]:6.2e} {Amat[2,2]:6.2e}")
 
                         self.A_hydro_morison += translateMatrix3to6DOF(Amat, mem.r[il,:])    # add to global added mass matrix for Morison members
@@ -763,6 +769,7 @@ class FOWT():
         # fill in metrics
         results['Mbase_avg'][iCase] = m_turbine*self.g * hArm*np.sin(Xi0[4]) + transformForce(self.F_aero0, offset=[0,0,-hArm])[4] # mean moment from weight and thrust
         results['Mbase_std'][iCase] = dynamic_moment_RMS
+        results['Mbase_max'][iCase] = results['Mbase_avg'][iCase] + 3 * results['Mbase_std'][iCase]
         results['Mbase_PSD'][iCase,:] = getPSD(dynamic_moment)
         #results['Mbase_max'][iCase]
         #results['Mbase_DEL'][iCase]
@@ -791,7 +798,7 @@ class FOWT():
         '''
 
         # rotor-related outputs are only available if aerodynamics modeling is enabled
-        if self.aeroMod > 0 and case['wind_speed'] > 0.0:
+        if self.aeroServoMod > 1 and case['wind_speed'] > 0.0:
             # rotor speed (rpm)
             # spectra
             phi_w   = self.rotor.C * (XiHub - self.rotor.V_w / (1j *self.w))

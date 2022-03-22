@@ -14,7 +14,7 @@ from scipy.interpolate      import PchipInterpolator
 from scipy.special          import modstruve, iv
 
 
-from raft.helpers                import rotationMatrix
+from raft.helpers                import rotationMatrix, getFromDict
 
 from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
 
@@ -57,7 +57,13 @@ class Rotor:
         self.pitch_deg = np.array(turbine['wt_ops']['pitch_op'])
         self.I_drivetrain = float(turbine['I_drivetrain'])
 
-
+        self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
+        
+		# Add parked pitch, rotor speed, assuming fully shut down by 40% above cut-out
+        self.Uhub = np.r_[self.Uhub, self.Uhub.max()*1.4, 100]
+        self.Omega_rpm = np.r_[self.Omega_rpm, 0, 0]
+        self.pitch_deg = np.r_[self.pitch_deg, 90, 90]
+		
         # Set default control gains
         self.kp_0 = np.zeros_like(self.Uhub)
         self.ki_0 = np.zeros_like(self.Uhub)       
@@ -216,7 +222,7 @@ class Rotor:
         yaw_misalign
             turbine yaw misalignment angle [deg]
         '''
-        
+
         # find turbine operating point at the provided wind speed
         Omega_rpm = np.interp(Uhub, self.Uhub, self.Omega_rpm)  # rotor speed [rpm]
         pitch_deg = np.interp(Uhub, self.Uhub, self.pitch_deg)  # blade pitch angle [deg]
@@ -309,7 +315,7 @@ class Rotor:
         Use flipped sign version of ROSCO
         '''
 
-        # Convert gain-scheduling wrt pitch to wind speed
+        # Convert gain-scheduling wrt pitch to wind speed, Add zero gains for parked "control"
         pc_angles = np.array(turbine['pitch_control']['GS_Angles']) * rad2deg
         self.kp_0 = np.interp(self.pitch_deg,pc_angles,turbine['pitch_control']['GS_Kp'],left=0,right=0)
         self.ki_0 = np.interp(self.pitch_deg,pc_angles,turbine['pitch_control']['GS_Ki'],left=0,right=0)
@@ -344,92 +350,105 @@ class Rotor:
         dQ_dOm = np.atleast_1d(np.diag(derivs["dQ"]["dOmega"])) / rpm2radps
         dQ_dPi = np.atleast_1d(np.diag(derivs["dQ"]["dpitch"])) * rad2deg
 
-        # Pitch control gains at Uinf (Uinf), flip sign to translate ROSCO convention to this one
-        self.kp_beta    = -np.interp(Uinf, self.Uhub, self.kp_0) 
-        self.ki_beta    = -np.interp(Uinf, self.Uhub, self.ki_0) 
-
-        # Torque control gains, need to get these from somewhere
-        kp_tau = self.kp_tau * (self.kp_beta == 0)  #     -38609162.66552     ! VS_KP				- Proportional gain for generator PI torque controller [1/(rad/s) Nm]. (Only used in the transitional 2.5 region if VS_ControlMode =/ 2)
-        ki_tau = self.kp_tau  * (self.kp_beta == 0)   #    -4588245.18720      ! VS_KI	
-        
-        a_aer = np.zeros_like(self.w)
-        b_aer = np.zeros_like(self.w)
-        C   = np.zeros_like(self.w,dtype=np.complex_)
-        C2  = np.zeros_like(self.w,dtype=np.complex_)
-        D   = np.zeros_like(self.w,dtype=np.complex_)
-        E   = np.zeros_like(self.w,dtype=np.complex_)
-
-        # Roots of characteristic equation, helps w/ debugging
-        p = np.array([-self.I_drivetrain, (dQ_dOm + self.kp_beta * dQ_dPi - self.Ng * kp_tau), self.ki_beta* dQ_dPi - self.Ng * ki_tau])
-        r = np.roots(p)
-
-        for iw, omega in enumerate(self.w):
-            
-            # Denominator of control transfer function
-            D[iw] = self.I_drivetrain * omega**2 + (dQ_dOm + self.kp_beta * dQ_dPi - self.Ng * kp_tau) * 1j * omega + self.ki_beta* dQ_dPi - self.Ng * ki_tau
-
-            # control transfer function
-            C[iw] = 1j * omega * (dQ_dU - self.k_float * dQ_dPi / self.Zhub) / D[iw]
-
-            # Thrust transfer function
-            E[iw] = ((dT_dOm + self.kp_beta * dT_dPi) * 1j * omega + self.ki_beta * dT_dPi )
-
-            # alternative for debugging
-            C2[iw] = C[iw] / (1j * omega)
-
-            # Complex aero damping
-            T = 1j * omega * (dT_dU - self.k_float * dT_dPi / self.Zhub) - ( E[iw] * C[iw])
-
-            # Aerodynamic coefficients
-            a_aer[iw] = -(1/omega**2) * np.real(T)
-            b_aer[iw] = (1/omega) * np.imag(T)
-        
-        # Save transfer functions required for output
-        self.C = C
-                
         # calculate steady aero forces and moments
         F_aero0 = np.array([loads["T" ][0], loads["Y"  ][0], loads["Z"  ][0],
                             loads["My" ][0], loads["Q" ][0], loads["Mz" ][0] ])
-        
-        # calculate wind excitation force/moment spectra
-        _,_,_,S_rot = self.IECKaimal(case)
 
+        # calculate rotor-averaged turbulent wind spectrum
+        _,_,_,S_rot = self.IECKaimal(case)   # PSD [(m/s)^2/rad]
         self.V_w = np.sqrt(S_rot)   # convert from power spectral density to complex amplitudes (FFT)
-        T_0 = loads["T" ][0]
-        T_w1 = dT_dU * self.V_w
-        T_w2 = (E * C * self.V_w) / (1j * self.w) * (-1)  # mhall: think this needs the sign reversal
 
-        T_ext = T_w1 + T_w2
 
-        if display > 1:
-            '''
-            plt.plot(self.w/2/np.pi, self.V_w, label = 'S_rot')
-            plt.yscale('log')
-            plt.xscale('log')
+        # no-control option
+        if self.aeroServoMod == 1:  
 
-            plt.xlim([1e-2,10])
-            plt.grid('True')
+            a_aer  = np.zeros(len(self.w)) 
+            b_aer  = np.zeros(len(self.w)) + dT_dU
 
-            plt.xlabel('Freq. (Hz)')
-            plt.ylabel('PSD')
-
-            #plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)
-            plt.plot(self.w, np.abs(T_ext))
-            plt.plot(self.w, abs(T_w2))
-            '''
+            f_aero =  dT_dU * np.sqrt(S_rot)
             
-            fig,ax = plt.subplots(4,1,sharex=True)
-            ax[0].plot(self.w/2.0/np.pi, self.V_w);  ax[0].set_ylabel('U (m/s)') 
-            ax[1].plot(self.w/2.0/np.pi, T_w1    );  ax[1].set_ylabel('T_w1') 
-            ax[2].plot(self.w/2.0/np.pi, np.real(T_w2),'k')
-            ax[2].plot(self.w/2.0/np.pi, np.imag(T_w2),'k:'); ax[2].set_ylabel('T_w2') 
-            ax[3].plot(self.w/2.0/np.pi, np.real(T_w1+T_w2),'k')
-            ax[3].plot(self.w/2.0/np.pi, np.imag(T_w1+T_w2),'k:'); ax[3].set_ylabel('T_w2+T_w2') 
-            ax[3].set_xlabel('f (Hz)') 
-
-
-        f_aero = T_ext  # wind thrust force excitation spectrum
+        # control option
+        elif self.aeroServoMod == 2:  
         
+            # Pitch control gains at Uinf (Uinf), flip sign to translate ROSCO convention to this one
+            self.kp_beta    = -np.interp(Uinf, self.Uhub, self.kp_0) 
+            self.ki_beta    = -np.interp(Uinf, self.Uhub, self.ki_0) 
+
+            # Torque control gains, need to get these from somewhere
+            kp_tau = self.kp_tau * (self.kp_beta == 0)  #     -38609162.66552     ! VS_KP				- Proportional gain for generator PI torque controller [1/(rad/s) Nm]. (Only used in the transitional 2.5 region if VS_ControlMode =/ 2)
+            ki_tau = self.kp_tau  * (self.kp_beta == 0)   #    -4588245.18720      ! VS_KI	
+            
+            a_aer = np.zeros_like(self.w)
+            b_aer = np.zeros_like(self.w)
+            C   = np.zeros_like(self.w,dtype=np.complex_)
+            C2  = np.zeros_like(self.w,dtype=np.complex_)
+            D   = np.zeros_like(self.w,dtype=np.complex_)
+            E   = np.zeros_like(self.w,dtype=np.complex_)
+
+            # Roots of characteristic equation, helps w/ debugging
+            p = np.array([-self.I_drivetrain, (dQ_dOm + self.kp_beta * dQ_dPi - self.Ng * kp_tau), self.ki_beta* dQ_dPi - self.Ng * ki_tau])
+            r = np.roots(p)
+
+            for iw, omega in enumerate(self.w):
+                
+                # Denominator of control transfer function
+                D[iw] = self.I_drivetrain * omega**2 + (dQ_dOm + self.kp_beta * dQ_dPi - self.Ng * kp_tau) * 1j * omega + self.ki_beta* dQ_dPi - self.Ng * ki_tau
+
+                # control transfer function
+                C[iw] = 1j * omega * (dQ_dU - self.k_float * dQ_dPi / self.Zhub) / D[iw]
+
+                # Thrust transfer function
+                E[iw] = ((dT_dOm + self.kp_beta * dT_dPi) * 1j * omega + self.ki_beta * dT_dPi )
+
+                # alternative for debugging
+                C2[iw] = C[iw] / (1j * omega)
+
+                # Complex aero damping
+                T = 1j * omega * (dT_dU - self.k_float * dT_dPi / self.Zhub) - ( E[iw] * C[iw])
+
+                # Aerodynamic coefficients
+                a_aer[iw] = -(1/omega**2) * np.real(T)
+                b_aer[iw] = (1/omega) * np.imag(T)
+            
+            # Save transfer functions required for output
+            self.C = C
+            
+            # calculate wind excitation force/moment spectra
+            T_0 = loads["T" ][0]
+            T_w1 = dT_dU * self.V_w
+            T_w2 = (E * C * self.V_w) / (1j * self.w) * (-1)  # mhall: think this needs the sign reversal
+
+            T_ext = T_w1 + T_w2
+
+            if display > 1:
+                '''
+                plt.plot(self.w/2/np.pi, self.V_w, label = 'S_rot')
+                plt.yscale('log')
+                plt.xscale('log')
+
+                plt.xlim([1e-2,10])
+                plt.grid('True')
+
+                plt.xlabel('Freq. (Hz)')
+                plt.ylabel('PSD')
+
+                #plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)
+                plt.plot(self.w, np.abs(T_ext))
+                plt.plot(self.w, abs(T_w2))
+                '''
+                
+                fig,ax = plt.subplots(4,1,sharex=True)
+                ax[0].plot(self.w/2.0/np.pi, self.V_w);  ax[0].set_ylabel('U (m/s)') 
+                ax[1].plot(self.w/2.0/np.pi, T_w1    );  ax[1].set_ylabel('T_w1') 
+                ax[2].plot(self.w/2.0/np.pi, np.real(T_w2),'k')
+                ax[2].plot(self.w/2.0/np.pi, np.imag(T_w2),'k:'); ax[2].set_ylabel('T_w2') 
+                ax[3].plot(self.w/2.0/np.pi, np.real(T_w1+T_w2),'k')
+                ax[3].plot(self.w/2.0/np.pi, np.imag(T_w1+T_w2),'k:'); ax[3].set_ylabel('T_w2+T_w2') 
+                ax[3].set_xlabel('f (Hz)') 
+
+
+            f_aero = T_ext  # wind thrust force excitation spectrum
+            
         
         return F_aero0, f_aero, a_aer, b_aer #  B_aero, C_aero, F_aero0, F_aero
         
@@ -482,8 +501,8 @@ class Rotor:
             #for ii in range(m-1):
             #    ax.plot(P2[0, npts*ii:npts*(ii+1)], P2[1, npts*ii:npts*(ii+1)], P2[2, npts*ii:npts*(ii+1)])  
             # draw outline
-            ax.plot(P2[0, 0:-1:npts], P2[1, 0:-1:npts], P2[2, 0:-1:npts], color=color) # leading edge  
-            ax.plot(P2[0, 2:-1:npts], P2[1, 2:-1:npts], P2[2, 2:-1:npts], color=color)  # trailing edge
+            ax.plot(P2[0, 0:-1:npts], P2[1, 0:-1:npts], P2[2, 0:-1:npts], color=color, lw=0.4, zorder=2) # leading edge  
+            ax.plot(P2[0, 2:-1:npts], P2[1, 2:-1:npts], P2[2, 2:-1:npts], color=color, lw=0.4, zorder=2)  # trailing edge
             
             
         #for j in range(m):
@@ -517,7 +536,7 @@ class Rotor:
                     break
             
             if not Class:
-                raise Exception("Turbulence class must start with I, II, III, or IV, while you wrote " + case['turbulence'])
+                raise Exception(f"Turbulence class must start with I, II, III, or IV: case['turbulence'] = {case['turbulence']}")
             else:
                 Categ = char
                 iec_wind.Turbulence_Class = Categ
@@ -525,7 +544,7 @@ class Rotor:
             try:
                 TurbMod = case['turbulence'].split('_')[1]
             except:
-                raise Exception("Error reading the turbulence model. You wrote " + case['turbulence'])
+                raise Exception(f"Error reading the turbulence model: {case['turbulence']}")
 
             iec_wind.Turbine_Class = Class
         
@@ -545,7 +564,7 @@ class Rotor:
         elif TurbMod == 'ETM':
             sigma_1 = iec_wind.ETM(V_ref)
         elif TurbMod == 'EWM':
-            sigma_1 = iec_wind.EWM(V_ref)
+            sigma_1 = iec_wind.EWM(V_ref)[0]
         else:
             raise Exception("Wind model must be either NTM, ETM, or EWM. While you wrote " + TurbMod)
 
