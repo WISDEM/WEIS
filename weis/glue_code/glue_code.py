@@ -379,6 +379,9 @@ class WindPark(om.Group):
             self.connect('env.shear_exp',                   'aeroelastic.shearExp')
             
             # Connections to aeroelasticse
+            self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
+            self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
+
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
                 self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
@@ -520,8 +523,6 @@ class WindPark(om.Group):
                 self.connect('configuration.rated_power',       'aeroelastic.control_ratedPower')
                 self.connect('control.max_TS',                  'aeroelastic.control_maxTS')
                 self.connect('control.maxOmega',                'aeroelastic.control_maxOmega')
-                self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
-                self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
                 self.connect('sse_tune.aeroperf_tables.pitch_vector','aeroelastic.pitch_vector')
                 self.connect('sse_tune.aeroperf_tables.tsr_vector', 'aeroelastic.tsr_vector')
                 self.connect('sse_tune.aeroperf_tables.U_vector', 'aeroelastic.U_vector')
