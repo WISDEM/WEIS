@@ -1,7 +1,6 @@
 # RAFT's support structure member class
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from raft.helpers import *
 
@@ -40,10 +39,11 @@ class Member:
         
 
         # heading feature for rotation members about the z axis (used for rotated patterns)
-        heading = getFromDict(mi, 'heading', default=0.0)            # rotation about z axis to apply to the member [deg]
-        if heading != 0.0:
-            c = np.cos(np.deg2rad(heading))
-            s = np.sin(np.deg2rad(heading))
+        self.headings = getFromDict(mi, 'headings', shape=-1, default=0.0)
+        self.heading = getFromDict(mi, 'heading', default=0.0)            # rotation about z axis to apply to the member [deg]
+        if self.heading != 0.0:
+            c = np.cos(np.deg2rad(self.heading))
+            s = np.sin(np.deg2rad(self.heading))
             rotMat = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
             self.rA = np.matmul(rotMat, self.rA)
             self.rB = np.matmul(rotMat, self.rB)
@@ -81,10 +81,14 @@ class Member:
 
 
         self.t         = getFromDict(mi, 't', shape=n)               # shell thickness of the nodes [m]
-
+        
         self.l_fill    = getFromDict(mi, 'l_fill'  , shape=-1, default=0.0)   # length of member (from end A to B) filled with ballast [m]
         self.rho_fill  = getFromDict(mi, 'rho_fill', shape=-1, default=0.0)   # density of ballast in member [kg/m^3]
-
+        
+        if isinstance(self.l_fill, np.ndarray):
+            if len(self.l_fill) != n-1 or len(self.rho_fill) != n-1:
+                raise ValueError(f'The number of stations ({n}) should always be 1 greater than the number of ballast sections, l_fill ({len(self.l_fill)}) and rho_fill ({len(self.rho_fill)})')
+            
         self.rho_shell = getFromDict(mi, 'rho_shell', default=8500.) # shell mass density [kg/m^3]
 
 
@@ -332,6 +336,7 @@ class Member:
         
         mass_center = 0                                 # total sum of mass the center of mass of the member [kg-m]
         mshell = 0                                      # total mass of the shell material only of the member [kg]
+        self.vfill = []                                 # list of ballast volumes in each submember [m^3] - stored in the object for later access
         mfill = []                                      # list of ballast masses in each submember [kg]
         pfill = []                                      # list of ballast densities in each submember [kg]
         self.M_struc = np.zeros([6,6])                  # member mass/inertia matrix [kg, kg-m, kg-m^2]
@@ -346,6 +351,7 @@ class Member:
                 mass = 0
                 center = np.zeros(3)
                 m_shell = 0
+                v_fill = 0
                 m_fill = 0
                 rho_fill = 0
             else:
@@ -455,6 +461,7 @@ class Member:
             # add/append terms
             mass_center += mass*center                  # total sum of mass the center of mass of the member [kg-m]
             mshell += m_shell                           # total mass of the shell material only of the member [kg]
+            self.vfill.append(v_fill)                        # list of ballast volumes in each submember [m^3]
             mfill.append(m_fill)                        # list of ballast masses in each submember [kg]
             pfill.append(rho_fill)                     # list of ballast densities in each submember [kg]
 
@@ -848,10 +855,10 @@ class Member:
             #linebit.append(ax.plot(Xs[[2*i,2*i+2]],Ys[[2*i,2*i+2]],Zs[[2*i,2*i+2]]      , color='k'))  # end A edges
             #linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color='k'))  # end B edges
 
-            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color=color, lw=0.5))  # side edges
+            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color=color, lw=0.5, zorder=2))  # side edges
 
         for j in range(m):
-            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color=color, lw=0.5))  # station rings
+            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color=color, lw=0.5, zorder=2))  # station rings
 
 
         # plot nodes if asked

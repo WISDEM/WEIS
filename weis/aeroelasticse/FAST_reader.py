@@ -143,6 +143,19 @@ class InputReader_OpenFAST(object):
         self.fst_vt['Fst']['CompSub'] = int(f.readline().split()[0])
         self.fst_vt['Fst']['CompMooring'] = int(f.readline().split()[0])
         self.fst_vt['Fst']['CompIce'] = int(f.readline().split()[0])
+        self.fst_vt['Fst']['MHK'] = int(f.readline().split()[0])
+
+        # Environmental conditions
+        f.readline()
+        self.fst_vt['Fst']['Gravity']   = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['AirDens']   = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['WtrDens']   = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['KinVisc']   = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['SpdSound']  = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['Patm']      = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['Pvap']      = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['WtrDpth']   = float_read(f.readline().split()[0])
+        self.fst_vt['Fst']['MSL2SWL']   = float_read(f.readline().split()[0])
 
         # Input Files (input_files)
         f.readline()
@@ -221,10 +234,6 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ElastoDyn']['Echo'] = bool_read(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['Method']  = int(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['DT'] = float_read(f.readline().split()[0])
-
-        # Environmental Condition (envir_cond)
-        f.readline()
-        self.fst_vt['ElastoDyn']['Gravity'] = float_read(f.readline().split()[0])
 
         # Degrees of Freedom (dof)
         f.readline()
@@ -737,7 +746,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['SpdSound']       = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Patm']           = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Pvap']           = float_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['FluidDepth']     = float_read(f.readline().split()[0])
+        #self.fst_vt['AeroDyn15']['FluidDepth']           = float_read(f.readline().split()[0])
 
         # Blade-Element/Momentum Theory Options
         f.readline()
@@ -765,6 +774,8 @@ class InputReader_OpenFAST(object):
         f.readline()
         self.fst_vt['AeroDyn15']['UAMod']                  = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['FLookup']                = bool_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['UAStartRad']             = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['UAEndRad']               = float_read(f.readline().split()[0])
 
         # Airfoil Information
         f.readline()
@@ -897,6 +908,8 @@ class InputReader_OpenFAST(object):
                     polar['alpha0']     = float_read(readline_filterComments(f).split()[0])
                     polar['alpha1']     = float_read(readline_filterComments(f).split()[0])
                     polar['alpha2']     = float_read(readline_filterComments(f).split()[0])
+                    # polar['alphaUpper']     = float_read(readline_filterComments(f).split()[0])
+                    # polar['alphaLower']     = float_read(readline_filterComments(f).split()[0])
                     polar['eta_e']      = float_read(readline_filterComments(f).split()[0])
                     polar['C_nalpha']   = float_read(readline_filterComments(f).split()[0])
                     polar['T_f0']       = float_read(readline_filterComments(f).split()[0])
@@ -1285,6 +1298,13 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['YawManRat'] = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['NacYawF']   = float_read(f.readline().split()[0])
 
+        # Aero flow control
+        f.readline()
+        self.fst_vt['ServoDyn']['AfCmode']      = int(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['AfC_Mean']     = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['AfC_Amp']      = float_read(f.readline().split()[0])
+        self.fst_vt['ServoDyn']['AfC_Phase']    = float_read(f.readline().split()[0])
+
         # Structural Control
         f.readline()
         self.fst_vt['ServoDyn']['NumBStC']  = int(f.readline().split()[0])
@@ -1295,6 +1315,16 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['TStCfiles'] = f.readline().split()[0][1:-1]
         self.fst_vt['ServoDyn']['NumSStC'] = int(f.readline().split()[0])
         self.fst_vt['ServoDyn']['SStCfiles'] = f.readline().split()[0][1:-1]
+
+        # Initialize Struct Control trees
+        self.fst_vt['BStC'] = [] * self.fst_vt['ServoDyn']['NumBStC']
+        self.fst_vt['NStC'] = [] * self.fst_vt['ServoDyn']['NumNStC']
+        self.fst_vt['TStC'] = [] * self.fst_vt['ServoDyn']['NumTStC']
+        self.fst_vt['SStC'] = [] * self.fst_vt['ServoDyn']['NumSStC']
+
+        # Cable control
+        f.readline()
+        self.fst_vt['ServoDyn']['CCmode']  = int(f.readline().split()[0])
 
         # Bladed Interface and Torque-Speed Look-Up Table (bladed_interface)
         f.readline()
@@ -1482,10 +1512,10 @@ class InputReader_OpenFAST(object):
 
         # PLATFORM ADDITIONAL STIFFNESS AND DAMPING
         f.readline()
-        self.fst_vt['HydroDyn']['AddF0']         = np.array([[float(idx) for idx in f.readline().strip().split()[0]] for i in range(6)])
-        self.fst_vt['HydroDyn']['AddCLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
-        self.fst_vt['HydroDyn']['AddBLin']       = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
-        self.fst_vt['HydroDyn']['AddBQuad']      = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddF0']         = np.array([[float_read(idx) for idx in f.readline().strip().split()[0]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddCLin']       = np.array([[float_read(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddBLin']       = np.array([[float_read(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
+        self.fst_vt['HydroDyn']['AddBQuad']      = np.array([[float_read(idx) for idx in f.readline().strip().split()[:6]] for i in range(6)])
 
         #AXIAL COEFFICIENTS
         f.readline()
@@ -2205,6 +2235,7 @@ class InputReader_OpenFAST(object):
             
         if self.fst_vt['Fst']['CompServo'] == 1:
             self.read_ServoDyn()
+            # Would read StCs here
             if ROSCO:
                 self.read_DISCON_in()
         hd_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['HydroFile']))

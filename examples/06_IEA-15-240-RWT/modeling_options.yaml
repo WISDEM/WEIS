@@ -1,5 +1,7 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
 
 WISDEM:
     RotorSE:

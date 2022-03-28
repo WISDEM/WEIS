@@ -1,5 +1,7 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
 
 WISDEM:
     RotorSE:
@@ -16,6 +18,7 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
+        rank_and_file: True
     BOS:
         flag: True
 
@@ -31,6 +34,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompSub: 0
         CompMooring: 3
         CompIce: 0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
