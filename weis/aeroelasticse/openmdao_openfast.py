@@ -826,13 +826,13 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
-            fst_vt['AeroDyn15']['IndToler'] = 'default'
+            fst_vt['AeroDyn15']['IndToler'] = 'Default'
         if fst_vt['AeroDyn15']['DTAero'] == 0.:
-            fst_vt['AeroDyn15']['DTAero'] = 'default'
+            fst_vt['AeroDyn15']['DTAero'] = 'Default'
         if fst_vt['AeroDyn15']['OLAF']['DTfvw'] == 0.:
-            fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'default'
+            fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'Default'
         if fst_vt['ElastoDyn']['DT'] == 0.:
-            fst_vt['ElastoDyn']['DT'] = 'default'
+            fst_vt['ElastoDyn']['DT'] = 'Default'
 
         return fst_vt
 
@@ -929,7 +929,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             raise Exception('The code only supports InflowWind NWindVel == 1')
 
-        # Update ElastoDyn Tower Input File
+        # Update AeroDyn Tower Input File starting one station above ground to avoid error because the wind grid hits the ground
         twr_elev  = inputs['tower_z']
         twr_d     = inputs['tower_outer_diameter']
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
@@ -942,15 +942,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrDiam']   = twr_d[twr_index:]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
         fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
+        fst_vt['AeroDyn15']['tau1_const'] = 0.24 * float(inputs['Rtip']) # estimated using a=0.3 and U0=7.5
 
-        z_tow = twr_elev[twr_index:]
+        z_tow = twr_elev
         z_sec, _ = util.nodal2sectional(z_tow)
         sec_loc = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
         fst_vt['ElastoDynTower']['NTwInpSt'] = len(sec_loc)
         fst_vt['ElastoDynTower']['HtFract']  = sec_loc
-        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den'][twr_index:]
-        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff'][twr_index:]
-        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff'][twr_index:]
+        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
+        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
+        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
         fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
