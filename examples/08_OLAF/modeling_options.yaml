@@ -1,6 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-
+    openfast_file_management:
+        OF_run_fst: BAR0
+        OF_run_dir: temp/BAR0
+        
 WISDEM:
     RotorSE:
         flag: True
@@ -67,9 +70,6 @@ ROSCO:
     SDMode: 0
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: BAR0
-        OF_run_dir: temp/BAR0
     DLCs:
         - DLC: "1.1"
           wind_speed: [ 8. ]

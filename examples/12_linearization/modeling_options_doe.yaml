@@ -1,6 +1,6 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    openfast_configuration:
+    openfast_file_management:
         OF_run_fst: lin
         OF_run_dir: outputs/12_linearization_DOE
 

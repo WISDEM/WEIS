@@ -1,6 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-
+    openfast_file_management:
+        OF_run_fst: NREL5MW_OC3_spar
+        OF_run_dir: temp/NREL5MW_OC3_spar
+        
 WISDEM:
     RotorSE:
         flag: True
@@ -63,9 +66,6 @@ ROSCO:
     flag: True
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: temp/NREL5MW_OC3_spar
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 5
