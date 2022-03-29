@@ -1,6 +1,6 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    openfast_file_management:
+    openfast_configuration:
         OF_run_fst: NREL5MW_OC3_spar
         OF_run_dir: temp/NREL5MW_OC3_spar
         

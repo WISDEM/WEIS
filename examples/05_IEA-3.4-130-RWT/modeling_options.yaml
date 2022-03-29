@@ -1,6 +1,6 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    openfast_file_management:
+    openfast_configuration:
       OF_run_fst: IEA34 # Name of the OpenFAST output files
       OF_run_dir: temp/iea34 # Path to folder with the OpenFAST output files
 
