@@ -1152,7 +1152,7 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FWShedVorticity'], 'FWShedVorticity','Include shed vorticity in the far wake {default: false}\n'))
         f.write('------------------- WAKE REGULARIZATIONS AND DIFFUSION -----------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DiffusionMethod'], 'DiffusionMethod','Diffusion method to account for viscous effects {0: None, 1: Core Spreading, "default": 0}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','Method to determine the regularization parameters {0:  Manual, 1: Optimized, default: 0 }\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','Method to determine the regularization parameters {0: Constant, 1: Optimized, 2: Chord-scaled, 3: dr-scaled, default: 0 }\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegFunction'], 'RegFunction','Viscous diffusion function {0: None, 1: Rankine, 2: LambOseen, 3: Vatistas, 4: Denominator, "default": 3} (switch)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegMethod'], 'WakeRegMethod','Wake regularization method {1: Constant, 2: Stretching, 3: Age, default: 1} (switch)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegFactor'], 'WakeRegFactor','Wake regularization factor (m)\n'))
@@ -1486,7 +1486,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('---------------------- MEMBER JOINTS -------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NJoints'], 'NJoints', '- Number of joints (-)   [must be exactly 0 or at least 2]\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['JointID', 'Jointxi', 'Jointyi', 'Jointzi', 'JointAxID', 'JointOvrlp']])+'   [JointOvrlp= 0: do nothing at joint, 1: eliminate overlaps by calculating super member]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['JointID', 'Jointxi', 'Jointyi', 'Jointzi', 'JointAxID', 'JointOvrlp']])+'  ! [JointOvrlp= 0: do nothing at joint, 1: eliminate overlaps by calculating super member]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(m)', '(m)', '(-)', '(switch)']])+'\n')
         for i in range(self.fst_vt['HydroDyn']['NJoints']):
             ln = []
@@ -1578,7 +1578,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('-------------------- MEMBERS -------------------------------------------------\n')
         f.write('{:<11d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NMembers'], 'NMembers', '- Number of members (-)\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'MJointID1', 'MJointID2', 'MPropSetID1', 'MPropSetID2', 'MDivSize', 'MCoefMod', 'PropPot']])+'   [MCoefMod=1: use simple coeff table, 2: use depth-based coeff table, 3: use member-based coeff table] [ PropPot/=0 if member is modeled with potential-flow theory]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'MJointID1', 'MJointID2', 'MPropSetID1', 'MPropSetID2', 'MDivSize', 'MCoefMod', 'PropPot']])+' !  [MCoefMod=1: use simple coeff table, 2: use depth-based coeff table, 3: use member-based coeff table] [ PropPot/=0 if member is modeled with potential-flow theory]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(-)', '(-)', '(-)', '(m)', '(switch)', '(flag)']])+'\n')
         for i in range(self.fst_vt['HydroDyn']['NMembers']):
             ln = []
@@ -1695,7 +1695,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')        
         f.write('------------------- BASE REACTION JOINTS: 1/0 for Locked/Free DOF @ each Reaction Node ---------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NReact'], 'NReact', '- Number of Joints with reaction forces; be sure to remove all rigid motion DOFs of the structure  (else det([K])=[0])\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['RJointID', 'RctTDXss', 'RctTDYss', 'RctTDZss', 'RctRDXss', 'RctRDYss', 'RctRDZss','SSIfile']])+' [Global Coordinate System]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['RJointID', 'RctTDXss', 'RctTDYss', 'RctTDZss', 'RctRDXss', 'RctRDYss', 'RctRDZss','SSIfile']])+' ! [Global Coordinate System]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)', '(string)']])+'\n')
         for i in range(self.fst_vt['SubDyn']['NReact']):
             ln = []
@@ -1710,7 +1710,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('------- INTERFACE JOINTS: 1/0 for Locked (to the TP)/Free DOF @each Interface Joint (only Locked-to-TP implemented thus far (=rigid TP)) ---------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NInterf'], 'NInterf', '- Number of interface joints locked to the Transition Piece (TP):  be sure to remove all rigid motion dofs\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['IJointID', 'ItfTDXss', 'ItfTDYss', 'ItfTDZss', 'ItfRDXss', 'ItfRDYss', 'ItfRDZss']])+' [Global Coordinate System]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['IJointID', 'ItfTDXss', 'ItfTDYss', 'ItfTDZss', 'ItfRDXss', 'ItfRDYss', 'ItfRDZss']])+' ! [Global Coordinate System]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)']])+'\n')
         for i in range(self.fst_vt['SubDyn']['NInterf']):
             ln = []
@@ -1833,7 +1833,7 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutSFmt'], 'OutSFmt', '- Output format for header strings in the <rootname>.SD.out file\n'))
         f.write('------------------------- MEMBER OUTPUT LIST ------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NMOutputs'], 'NMOutputs', '- Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'NOutCnt', 'NodeCnt']])+'[NOutCnt=how many nodes to get output for [< 10]; NodeCnt are local ordinal numbers from the start of the member, and must be >=1 and <= NDiv+1] If NMOutputs=0 leave blank as well.\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'NOutCnt', 'NodeCnt']])+' ! [NOutCnt=how many nodes to get output for [< 10]; NodeCnt are local ordinal numbers from the start of the member, and must be >=1 and <= NDiv+1] If NMOutputs=0 leave blank as well.\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)','(-)','(-)']])+'\n')
         for i in range(self.fst_vt['SubDyn']['NMOutputs']):
             ln = []
