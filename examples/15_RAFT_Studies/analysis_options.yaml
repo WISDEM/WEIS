@@ -30,9 +30,11 @@ design_variables:
             diameter:
                 lower_bound: 9.375
                 upper_bound: 15.625
+                constant: True
             thickness:
                 lower_bound: 0.05
                 upper_bound: 0.25
+                constant: True
           # - names: [Y_pontoon_lower1, Y_pontoon_lower2, Y_pontoon_lower3]
           #   diameter:
           #     lower_bound: 7.5

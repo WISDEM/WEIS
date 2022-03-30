@@ -1617,7 +1617,7 @@ properties:
                         type: integer
                         minimum: 0
                         maximum: 50
-                        default: 5
+                        default: 10
                         description: Order of interpolation (basis) function (-)
                     UsePitchAct:
                         type: boolean
@@ -2146,7 +2146,7 @@ properties:
                     GuyanDamp6: *guyan_damp
                     SumPrint:
                         type: boolean
-                        default: True
+                        default: False
                         description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
                     OutCOSM:
                         type: boolean

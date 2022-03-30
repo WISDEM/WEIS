@@ -384,7 +384,7 @@ class FASTLoadCases(ExplicitComponent):
             self.FAST_namingOut = self.FAST_InputFile
         self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
         if not os.path.exists(self.FAST_runDirectory):
-            os.makedirs(self.FAST_runDirectory)
+            os.makedirs(self.FAST_runDirectory, exist_ok=True)
         if not os.path.exists(self.wind_directory):
             os.mkdir(self.wind_directory)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
@@ -518,7 +518,7 @@ class FASTLoadCases(ExplicitComponent):
                 rank = MPI.COMM_WORLD.Get_rank()
                 lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin', 'rank_{}'.format(rank))
                 if not os.path.exists(lin_pkl_dir):
-                    os.makedirs(lin_pkl_dir)
+                    os.makedirs(lin_pkl_dir, exist_ok=True)
                 self.lin_pkl_file_name = os.path.join(lin_pkl_dir, 'ABCD_matrices.pkl')
             else:
                 lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin')
@@ -826,13 +826,13 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
-            fst_vt['AeroDyn15']['IndToler'] = 'default'
+            fst_vt['AeroDyn15']['IndToler'] = 'Default'
         if fst_vt['AeroDyn15']['DTAero'] == 0.:
-            fst_vt['AeroDyn15']['DTAero'] = 'default'
+            fst_vt['AeroDyn15']['DTAero'] = 'Default'
         if fst_vt['AeroDyn15']['OLAF']['DTfvw'] == 0.:
-            fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'default'
+            fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'Default'
         if fst_vt['ElastoDyn']['DT'] == 0.:
-            fst_vt['ElastoDyn']['DT'] = 'default'
+            fst_vt['ElastoDyn']['DT'] = 'Default'
 
         return fst_vt
 
@@ -929,7 +929,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             raise Exception('The code only supports InflowWind NWindVel == 1')
 
-        # Update ElastoDyn Tower Input File
+        # Update AeroDyn Tower Input File starting one station above ground to avoid error because the wind grid hits the ground
         twr_elev  = inputs['tower_z']
         twr_d     = inputs['tower_outer_diameter']
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
@@ -942,15 +942,16 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrDiam']   = twr_d[twr_index:]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
         fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
+        fst_vt['AeroDyn15']['tau1_const'] = 0.24 * float(inputs['Rtip']) # estimated using a=0.3 and U0=7.5
 
-        z_tow = twr_elev[twr_index:]
+        z_tow = twr_elev
         z_sec, _ = util.nodal2sectional(z_tow)
         sec_loc = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
         fst_vt['ElastoDynTower']['NTwInpSt'] = len(sec_loc)
         fst_vt['ElastoDynTower']['HtFract']  = sec_loc
-        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den'][twr_index:]
-        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff'][twr_index:]
-        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff'][twr_index:]
+        fst_vt['ElastoDynTower']['TMassDen'] = inputs['mass_den']
+        fst_vt['ElastoDynTower']['TwFAStif'] = inputs['foreaft_stff']
+        fst_vt['ElastoDynTower']['TwSSStif'] = inputs['sideside_stff']
         fst_vt['ElastoDynTower']['TwFAM1Sh'] = inputs['fore_aft_modes'][0, :]  / sum(inputs['fore_aft_modes'][0, :])
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
@@ -1414,8 +1415,7 @@ class FASTLoadCases(ExplicitComponent):
                 if True:
                     fig_list = rad_fit.visualizeFits()
                     
-                    if not os.path.exists(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit')):
-                        os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'))
+                    os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'), exist_ok=True)
 
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
@@ -2612,8 +2612,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Make iteration directory
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber),'timeseries')
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
         # Save each timeseries as a pickled dataframe
         for i_ts, timeseries in enumerate(chan_time):
@@ -2627,8 +2626,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Make iteration directory
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
+        os.makedirs(save_dir, exist_ok=True)
 
         # Save dataframes as pickles
         summ_stats.to_pickle(os.path.join(save_dir,'summary_stats.p'))
