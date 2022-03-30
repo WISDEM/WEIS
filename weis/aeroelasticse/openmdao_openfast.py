@@ -82,7 +82,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
+        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
 
@@ -1724,7 +1724,11 @@ class FASTLoadCases(ExplicitComponent):
             if dlc_generator.cases[i_case].turbulent_wind:
                 # Assign values common to all DLCs
                 # Wind turbulence class
-                dlc_generator.cases[i_case].IECturbc = wt_class
+                if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case
+                    dlc_generator.cases[i_case].IECturbc = str(dlc_generator.cases[i_case].IECturbc)
+                    dlc_generator.cases[i_case].IEC_WindType = 'NTM'
+                else:
+                    dlc_generator.cases[i_case].IECturbc = wt_class
                 # Reference height for wind speed
                 dlc_generator.cases[i_case].RefHt = hub_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)

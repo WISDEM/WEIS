@@ -562,7 +562,8 @@ class DLCGenerator(object):
         i_WaH=0
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
-            idlc.URef = self.V_e50
+            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
+                idlc.URef = self.V_e50
             idlc.yaw_misalign = yaw_ms
             idlc.RandSeed1 = wind_seeds[i_WiSe]
             idlc.wave_seed1 = wave_seeds[i_WaSe]
@@ -621,7 +622,8 @@ class DLCGenerator(object):
         i_WaH=0
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
-            idlc.URef = self.V_e1
+            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
+                idlc.URef = self.V_e1
             idlc.yaw_misalign = yaw_ms
             idlc.RandSeed1 = wind_seeds[i_WiSe]
             idlc.wave_seed1 = wave_seeds[i_WaSe]
