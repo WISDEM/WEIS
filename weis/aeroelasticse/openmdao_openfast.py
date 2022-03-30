@@ -1742,7 +1742,8 @@ class FASTLoadCases(ExplicitComponent):
                 # Width of wind grid, same of height
                 dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
                 # Power law exponent of wind shear
-                dlc_generator.cases[i_case].PLExp = PLExp
+                if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
+                    dlc_generator.cases[i_case].PLExp = PLExp
                 # Length of wind grids
                 dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
 

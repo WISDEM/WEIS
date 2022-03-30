@@ -3219,8 +3219,8 @@ properties:
                                     description: Jet height [m] (used only for JET velocity profile, valid 70-490 m)
                                 PLExp:
                                     type: number
-                                    default: 0.2
-                                    description: Power law exponent [-] (or 'default')
+                                    default: -1
+                                    description: Power law exponent [-] (or 'default'), if default (-1), the environment option shear_exp will be used for all DLCs
                                 Z0:
                                     type: string
                                     default: default
