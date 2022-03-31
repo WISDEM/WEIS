@@ -9,6 +9,7 @@ import scipy.linalg as scp
 import mmap
 import re,os
 import pandas as pd
+import sys
 # import plotCampbellData as pCD
 
 def getScaleFactors(DescStates, TowerLen, BladeLen):
@@ -948,12 +949,16 @@ def fx_mbc3(FileNames, verbose=True, removeTwrAzimuth=False):
 
 
 def runMBC(FileNames, NLinTimes=None, removeTwrAzimuth=False):
+    '''
+    FileNames are .fst files
+    '''
     CampbellData={}
     HubRad=None;TipRad=None;
     BladeLen=None; TowerHt=None
     dataFound=False;
     for i in range(len(FileNames)):
         basename=os.path.splitext(os.path.basename(FileNames[i]))[0]
+        dirname = os.path.dirname(FileNames[i])
         with open(FileNames[i]) as f:
             datafile = f.readlines()
 
@@ -961,7 +966,7 @@ def runMBC(FileNames, NLinTimes=None, removeTwrAzimuth=False):
             for line in datafile:
                 if 'EDFile' in line:
                     EDFile=line.split()[0].replace('"','')
-                    with open(EDFile) as edfile:
+                    with open(os.path.join(dirname,EDFile)) as edfile:
                         for edline in edfile:
                             if 'HubRad' in  edline:
                                 HubRad=float(edline.split()[0])
@@ -987,7 +992,7 @@ def runMBC(FileNames, NLinTimes=None, removeTwrAzimuth=False):
             print('NLinTimes should be greater than 0!')
             sys.exit()
             
-        linFileNames=[basename+'.'+format(x, 'd')+'.lin' for x in range(1,NLinTimes+1)]
+        linFileNames=[os.path.join(dirname,f'{basename}.{x:d}.lin') for x in range(1,NLinTimes+1)]
 
         print('Processing ', FileNames[i], ' file!')
         MBC_data,getMatData,FAST_linData=fx_mbc3(linFileNames, removeTwrAzimuth=removeTwrAzimuth)
