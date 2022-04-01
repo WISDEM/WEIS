@@ -1718,6 +1718,9 @@ class FASTLoadCases(ExplicitComponent):
         wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
         mean_wind_speed = np.zeros(dlc_generator.n_cases)
         yaw_misalignment = np.zeros(dlc_generator.n_cases)
+        aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
+        wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
+        comp_servo = np.full(dlc_generator.n_cases, fill_value = 1)
 
 
         for i_case in range(dlc_generator.n_cases):
@@ -1791,6 +1794,10 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_initial[i_case]   = 0.
                 pitch_initial[i_case]       = 90.
                 shutdown_start[i_case]      = 0
+                aero_mod[i_case]            = 1
+                wake_mod[i_case]            = 0
+                comp_servo[i_case]            = 0
+                
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
@@ -1811,6 +1818,7 @@ class FASTLoadCases(ExplicitComponent):
         # Main fst
         case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
         case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
+        case_inputs[("Fst","CompServo")] = {'vals':comp_servo, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
@@ -1834,7 +1842,10 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
         case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
         case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
-        
+        # Inputs to AeroDyn (parking)
+        case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
+        case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+
         # DLC Label add these for the case matrix and delete from the case_list
         case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
         case_inputs[("DLC","WindSeed")] = {'vals':wind_seed, 'group':1}
