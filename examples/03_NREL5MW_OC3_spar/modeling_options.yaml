@@ -112,7 +112,6 @@ DLC_driver:
               GridHeight: 178.0
               GridWidth: 178.0
               Clockwise: True
-              IECturbc: B
               RefHt: 90.0
               PLExp: 0.11
 
