@@ -1720,7 +1720,6 @@ class FASTLoadCases(ExplicitComponent):
         yaw_misalignment = np.zeros(dlc_generator.n_cases)
         aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
-        comp_servo = np.full(dlc_generator.n_cases, fill_value = 1)
 
 
         for i_case in range(dlc_generator.n_cases):
@@ -1796,8 +1795,7 @@ class FASTLoadCases(ExplicitComponent):
                 shutdown_start[i_case]      = 0
                 aero_mod[i_case]            = 1
                 wake_mod[i_case]            = 0
-                comp_servo[i_case]            = 0
-                
+
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
@@ -1818,7 +1816,6 @@ class FASTLoadCases(ExplicitComponent):
         # Main fst
         case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
         case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
-        case_inputs[("Fst","CompServo")] = {'vals':comp_servo, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
