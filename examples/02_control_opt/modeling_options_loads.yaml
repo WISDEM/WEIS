@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA15
-        OF_run_dir: outputs/iea_loads
+        OF_run_dir: outputs/shutdown_play
         save_timeseries: True
         save_iterations: True
         use_exe: True
@@ -75,6 +75,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         DiffQTF: 0
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+    ServoDyn:
+        PitManRat(1): 2.
+        PitManRat(2): 2.
+        PitManRat(3): 2.
 
     InflowWind:
         RefHt: 150.0
@@ -100,21 +104,22 @@ ROSCO:
 
 DLC_driver:
     DLCs:
-        - DLC: "1.1"
+        # - DLC: "1.1"
+        #   n_seeds: 6
+        #   analysis_time: 10.
+        #   yaw_misalign: [-8, 0, 8]
+        #   transient_time: 0.1
+        #   turbulent_wind:
+        #       HubHt: 140
+        #       GridHeight: 220
+        #       GridWidth: 220
+        #       AnalysisTime: 5.
+        - DLC: "5.1"
+          wind_speed: [12]
           n_seeds: 6
-          analysis_time: 10.
-          yaw_misalign: [-8, 0, 8]
-          transient_time: 0.1
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 220
-              GridWidth: 220
-              AnalysisTime: 5.
-        - DLC: "1.1"
-          wind_speed: [10,12,14]
-          n_seeds: 6
-          analysis_time: 10.
-          transient_time: 0.1
+          analysis_time: 150.
+          shutdown_time: 70.
+          transient_time: 0.0
           turbulent_wind:
               HubHt: 140
               GridHeight: 220

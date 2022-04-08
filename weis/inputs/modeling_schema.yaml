@@ -3050,6 +3050,13 @@ properties:
                             maximum: 1.e+4
                             default: 120.
                             description: This is the length of the simulation where outputs will be discarded. Its default is 120 seconds (2 minutes) for all simulations. The total simulation time is the sum of analysis_time and transient_time
+                        shutdown_time:
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1.e+5
+                            default: 9999
+                            description: Time when shutdown occurs in DLC 5.1
                         turbulent_wind:
                             type: object
                             default: {}

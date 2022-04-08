@@ -1705,7 +1705,7 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
-        shutdown_start = np.full(dlc_generator.n_cases, fill_value = 9999)
+        shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
         WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
@@ -1781,7 +1781,7 @@ class FASTLoadCases(ExplicitComponent):
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
         for i_case in range(dlc_generator.n_cases):
-            if dlc_generator.cases[i_case].turbine_status == 'operating':
+            if 'operating' in dlc_generator.cases[i_case].turbine_status:
                 # We have initial conditions from WISDEM
                 if ('U' in inputs) and ('Omega' in inputs) and ('pitch' in inputs):
                     rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
@@ -1789,10 +1789,13 @@ class FASTLoadCases(ExplicitComponent):
                 else:
                     rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
                     pitch_initial[i_case]       = 15
+
+                if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
+                    shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
             else:
                 rot_speed_initial[i_case]   = 0.
                 pitch_initial[i_case]       = 90.
-                shutdown_start[i_case]      = 0
+                shutdown_time[i_case]      = 0
                 aero_mod[i_case]            = 1
                 wake_mod[i_case]            = 0
 
@@ -1835,10 +1838,11 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
-        # Inptus to ServoDyn (parking)
-        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
-        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
-        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
+        # Inputs to ServoDyn (parking), PitManRat and BlPitchF are ServoDyn modeling_options
+        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
+        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
+        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
+
         # Inputs to AeroDyn (parking)
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}

@@ -18,6 +18,7 @@ class DLCInstance(object):
         self.probability = 0.0
         self.analysis_time = 600.
         self.transient_time = 120.
+        self.shutdown_time = 9999.
         self.IEC_WindType = 'NTM'
         self.turbine_status = 'operating'
         self.wave_spectrum = 'JONSWAP'
@@ -204,7 +205,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.3, 6.4]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4]
 
         # Get extreme wind speeds
         self.IECwind()
@@ -521,6 +522,60 @@ class DLCGenerator(object):
                 idlc.analysis_time = options['analysis_time']
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
+            self.cases.append(idlc)
+            if len(wind_seeds)>1:
+                i_WiSe+=1
+            if len(wave_seeds)>1:
+                i_WaSe+=1
+            if len(wind_heading)>1:
+                i_WiH+=1
+            if len(wave_Hs)>1:
+                i_Hs+=1
+            if len(wave_Tp)>1:
+                i_Tp+=1
+            if len(wave_gamma)>1:
+                i_WG+=1
+            if len(wave_heading)>1:
+                i_WaH+=1
+
+    def generate_5p1(self, options):
+        # Power production normal turbulence model - severe sea state
+        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
+        if len(wave_Hs)==0:
+            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
+        if len(wave_Tp)==0:
+            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Counter for wind seed
+        i_WiSe=0
+        # Counters for wave conditions
+        i_WaSe=0
+        i_Hs=0
+        i_Tp=0
+        i_WiH=0
+        i_WG=0
+        i_WaH=0
+        for ws in wind_speeds:
+            idlc = DLCInstance(options=options)
+            idlc.URef = ws
+            idlc.RandSeed1 = wind_seeds[i_WiSe]
+            idlc.wave_seed1 = wave_seeds[i_WaSe]
+            idlc.wind_heading = wind_heading[i_WiH]
+            idlc.wave_height = wave_Hs[i_Hs]
+            idlc.wave_period = wave_Tp[i_Tp]
+            idlc.wave_gamma = wave_gamma[i_WG]
+            idlc.wave_heading = wave_heading[i_WaH]
+            idlc.turbulent_wind = True
+            idlc.label = '5.1'
+            idlc.turbine_status = 'operating-shutdown'
+            if options['analysis_time'] > 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+            if options['shutdown_time'] > options['analysis_time']:
+                raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({options['shutdown_time']}) option is greater than the analysis_time ({options['analysis_time']})")
+            else:
+                idlc.shutdown_time = options['shutdown_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
                 i_WiSe+=1
