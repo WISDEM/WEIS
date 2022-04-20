@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA15
-        OF_run_dir: outputs/shutdown_play
+        OF_run_dir: outputs/elisa_shutdown
         save_timeseries: True
         save_iterations: True
         use_exe: True
@@ -36,11 +36,13 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompInflow: 1
         CompAero: 2
         CompServo: 1
-        CompHydro: 0
+        CompHydro: 1
         CompSub: 0
-        CompMooring: 0
+        CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
+        Gravity: 9.81
+        # WtrDpth: 35
     linearization:
         Linearize: False
     ElastoDyn:
@@ -51,17 +53,17 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
-        TwFADOF1 : False
-        TwFADOF2 : False
-        TwSSDOF1 : False
-        TwSSDOF2 : False
-        PtfmSgDOF: False
-        PtfmSwDOF: False
-        PtfmHvDOF: False
-        PtfmRDOF : False
-        PtfmPDOF : False
-        PtfmYDOF : False
-        TwrNodes: 50
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+        TwrNodes: 20
     HydroDyn:
         WaveSeed1: 123456789
         WaveSeed2: 1011121314
@@ -73,12 +75,15 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         WvSumQTF: True
         RdtnMod: 1
         PotMod: 1
+        ExctnMod: 1
         DiffQTF: 0
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
     ServoDyn:
         PitManRat(1): 2.
         PitManRat(2): 2.
         PitManRat(3): 2.
+    SubDyn:
+        SDdeltaT: 0.005
 
     InflowWind:
         RefHt: 150.0
@@ -89,34 +94,49 @@ ROSCO:
     PS_Mode: 1
     ps_percent: 0.85
     F_LPFType: 2
-    F_NotchType: 2
-    Fl_Mode: 2 
-    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
-    zeta_pc: [1,1]
-    omega_pc: [0.2,0.2]
+    F_NotchType: 0
+    Fl_Mode: 0 
+    tuning_yaml: /Users/dzalkind/Projects/Esteyco/esteyco_models/ROSCO/IEA15MW-Monopile.yaml
+    zeta_pc: [1]
+    omega_pc: [0.2]
     U_pc: [12,18]
     zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     omega_vs: 0.12  
-    twr_freq: 3.2
-    ptfm_freq: 0.2
-    Kp_float: -10
+    vs_minspd:          0.523598775
+    # twr_freq: 3.2
+    # ptfm_freq: 0.2
+    # Kp_float: -10
 
 
 DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
     DLCs:
         # - DLC: "1.1"
+        # #   n_seeds: 1
+        # #   wind_speed: [12]
+        # - DLC: "1.3"
         #   n_seeds: 6
-        #   analysis_time: 10.
-        #   yaw_misalign: [-8, 0, 8]
-        #   transient_time: 0.1
-        #   turbulent_wind:
-        #       HubHt: 140
-        #       GridHeight: 220
-        #       GridWidth: 220
-        #       AnalysisTime: 5.
+        # - DLC: "1.4"
+        # - DLC: "1.5"
+        # - DLC: "1.6"
+        #   n_seeds: 6
+        # - DLC: "6.3"
+        #   n_seeds: 6
         - DLC: "5.1"
           wind_speed: [12]
-          n_seeds: 6
+          n_seeds: 2
+          n_azimuth: 3
           analysis_time: 150.
           shutdown_time: 70.
           transient_time: 0.0
@@ -125,3 +145,5 @@ DLC_driver:
               GridHeight: 220
               GridWidth: 220
               AnalysisTime: 5.
+
+

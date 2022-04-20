@@ -1706,6 +1706,7 @@ class FASTLoadCases(ExplicitComponent):
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
         shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
+        azimuth_init = np.full(dlc_generator.n_cases, fill_value = 0)
         WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
@@ -1792,6 +1793,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
                     shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
+                    azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
             else:
                 rot_speed_initial[i_case]   = 0.
                 pitch_initial[i_case]       = 90.
@@ -1825,11 +1827,12 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
         case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
-        # Initial conditions for rotor speed and pitch
+        # Initial conditions for rotor speed, pitch, and azimuth
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+        case_inputs[("ElastoDyn","Azimuth")] = {'vals':azimuth_init, 'group':1}
         # Yaw offset
         case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
         # Inputs to HydroDyn

@@ -2932,6 +2932,12 @@ properties:
                             minimum: 1
                             maximum: 100
                             description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.
+                        n_azimuth:
+                            type: integer
+                            default: 1
+                            minimum: 1
+                            maximum: 100
+                            description: Number of azimuth initial conditions to use (primarily during DLC 5.1)
                         wind_seed:
                             type: array
                             default: []

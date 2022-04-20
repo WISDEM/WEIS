@@ -30,6 +30,7 @@ class DLCInstance(object):
         self.wave_seed1 = 0
         self.label = '' # For 1.1/Custom
         self.PSF = 1.35 # Partial Safety Factor
+        self.azimuth_init = 0.0
 
         if not options is None:
             self.default_turbsim_props(options)
@@ -117,8 +118,8 @@ class DLCGenerator(object):
         if len(options['wind_seed']) > 0:
             wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
         else:
-            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms, dtype=int)
-            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms)
+            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms * options['n_azimuth'], dtype=int)
+            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms * options['n_azimuth'])
 
         return wind_speeds, wind_seeds
 
@@ -546,6 +547,11 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set azimuth start positions, tile so length is same as wind_seeds
+        azimuth_inits = np.tile(
+            np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
+            int(len(wind_seeds)/options['n_azimuth'])
+            )
         # Counter for wind seed
         i_WiSe=0
         # Counters for wave conditions
@@ -565,6 +571,7 @@ class DLCGenerator(object):
             idlc.wave_period = wave_Tp[i_Tp]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.azimuth_init = azimuth_inits[i_WiSe]
             idlc.turbulent_wind = True
             idlc.label = '5.1'
             idlc.turbine_status = 'operating-shutdown'
