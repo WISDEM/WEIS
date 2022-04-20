@@ -1827,6 +1827,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
         case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
+        case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[hub_height], 'group':0}
         # Initial conditions for rotor speed, pitch, and azimuth
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
