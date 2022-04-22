@@ -117,6 +117,8 @@ class runFAST_pywrapper(object):
         self.magnitude_channels = magnitude_channels_default
         self.fatigue_channels   = fatigue_channels_default
         self.la                 = None # Will be initialized on first run through
+        self.allow_fails        = False
+        self.fail_value         = 9999
         
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
 
@@ -186,6 +188,9 @@ class runFAST_pywrapper(object):
                 output_dict[channel] = openfastlib.output_values[:,i]
             del(openfastlib)
             
+            # Add channel to indicate failed run
+            output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
+
             output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
@@ -201,26 +206,58 @@ class runFAST_pywrapper(object):
             wrapper.FAST_InputFile = os.path.split(writer.FAST_InputFileOut)[1]
             wrapper.FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
 
+            wrapper.allow_fails = self.allow_fails
+            wrapper.fail_value  = self.fail_value
+
             FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
             FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
 
             #check if OpenFAST is set not to overwrite existing output files, TODO: move this further up in the workflow for minor computation savings
             if self.overwrite_outfiles or (not self.overwrite_outfiles and not (os.path.exists(FAST_Output) or os.path.exists(FAST_Output_txt))):
-                wrapper.execute()
+                failed = wrapper.execute()
+                if failed:
+                    print('OpenFAST Failed! Please check the run logs.')
+                    if self.allow_fails:
+                        print(f'OpenFAST failures are allowed. All outputs set to {self.fail_value}')
+                    else:
+                        raise Exception('OpenFAST Failed! Please check the run logs.')
             else:
+                failed = False
                 print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
-            if os.path.exists(FAST_Output):
-                output = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
-            elif os.path.exists(FAST_Output_txt):
-                output = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
-                
-            output.read()
+            if not failed:
+                if os.path.exists(FAST_Output):
+                    output_init = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
+                elif os.path.exists(FAST_Output_txt):
+                    output_init = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
+                    
+                output_init.read()
 
-            # Make output dict
-            output_dict = {}
-            for i, channel in enumerate(output.channels):
-                output_dict[channel] = output.df[channel].to_numpy()
+                # Make output dict
+                output_dict = {}
+                for i, channel in enumerate(output_init.channels):
+                    output_dict[channel] = output_init.df[channel].to_numpy()
+
+                # Add channel to indicate failed run
+                output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
+
+                # Re-make output
+                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut)
+            
+            else: # fill with -9999s
+                output_dict = {}
+                output_dict['Time'] = np.arange(self.fst_vt['Fst']['TStart'],self.fst_vt['Fst']['TMax'],self.fst_vt['Fst']['DT'])
+                for module in self.fst_vt['outlist']:
+                    for channel in self.fst_vt['outlist'][module]:
+                        if self.fst_vt['outlist'][module][channel]:
+                            output_dict[channel] = np.full(len(output_dict['Time']),fill_value=self.fail_value, dtype=np.uint8) 
+
+                # Add channel to indicate failed run
+                output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
+
+                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+
+
 
         # Trim Data
         if self.fst_vt['Fst']['TStart'] > 0.0:
@@ -260,6 +297,8 @@ class runFAST_pywrapper_batch(object):
         self.fatigue_channels   = fatigue_channels_default
         self.la                 = None
         self.use_exe            = False
+        self.allow_fails        = False
+        self.fail_value         = 9999
         
         self.post               = None
 
@@ -292,6 +331,8 @@ class runFAST_pywrapper_batch(object):
             case_data['channels']           = self.channels
             case_data['overwrite_outfiles'] = self.overwrite_outfiles
             case_data['use_exe']            = self.use_exe
+            case_data['allow_fails']        = self.allow_fails
+            case_data['fail_value']         = self.fail_value
             case_data['keep_time']          = self.keep_time
             case_data['goodman']            = self.goodman
             case_data['magnitude_channels'] = self.magnitude_channels
@@ -323,7 +364,7 @@ class runFAST_pywrapper_batch(object):
             dl[_name] = _dl
             dam[_name] = _dam
             ct.append(_ct)
-        
+            
         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         return summary_stats, extreme_table, DELs, Damage, ct
@@ -357,7 +398,7 @@ class runFAST_pywrapper_batch(object):
             dl[_name] = _dl
             dam[_name] = _dam
             ct.append(_ct)
-
+            
         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         return summary_stats, extreme_table, DELs, Damage, ct
@@ -425,7 +466,7 @@ def evaluate(indict):
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
                   'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time',
-                  'goodman','magnitude_channels','fatigue_channels','post','use_exe']
+                  'goodman','magnitude_channels','fatigue_channels','post','use_exe','allow_fails','fail_value']
     
     fast = runFAST_pywrapper()
     for k in indict:

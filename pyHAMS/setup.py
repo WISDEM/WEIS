@@ -49,18 +49,21 @@ if not intel_flag:
             intel_flag = True
     except KeyError:
         pass
-    
+
+myargs = ['-O3','-m64','-fPIC','-g']
+mycargs = ['-std=c11']
 if intel_flag:
-    myargs = ['-mkl']
-    mylib = []
-    mylink = ['-mkl']
+    myfargs = ['-mkl']
+    mylib = ['mkl_rt']
+    mylink = []
 else:
-    myargs = ['-fno-align-commons','-fdec-math']
+    myfargs = ['-fno-align-commons','-fdec-math']
     mylib = ['lapack']
     mylink = []
 
 pyhamsExt = Extension('pyhams.libhams', sources=[os.path.join(root_dir,m) for m in f90src],
-                      extra_f90_compile_args=['-O3','-m64','-fPIC','-g',]+myargs,
+                      extra_compile_args=mycargs+myargs,
+                      extra_f90_compile_args=myfargs+myargs,
                       libraries=mylib,
                       extra_link_args=['-fopenmp']+mylink)
 extlist = [] if platform.system() == 'Windows' else [pyhamsExt]

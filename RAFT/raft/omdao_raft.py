@@ -1,6 +1,9 @@
 import openmdao.api as om
 import raft
 import numpy as np
+import pickle, os
+import copy
+from itertools import compress
 
 ndim = 3
 ndof = 6
@@ -14,11 +17,14 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.options.declare('turbine_options')
         self.options.declare('mooring_options')
         self.options.declare('member_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
 
         # unpack options
         modeling_opt = self.options['modeling_options']
+        analysis_options = self.options['analysis_options']
+        
         nfreq = modeling_opt['nfreq']
         n_cases = modeling_opt['n_cases']
 
@@ -45,6 +51,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         member_scalar_t = members_opt['scalar_thicknesses']
         member_scalar_d = members_opt['scalar_diameters']
         member_scalar_coeff = members_opt['scalar_coefficients']
+        n_ballast_type = members_opt['n_ballast_type']
 
         mooring_opt = self.options['mooring_options']
         nlines = mooring_opt['nlines']
@@ -129,6 +136,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_input("rho_water", val=1025.0, units="kg/m**3", desc="Density of sea water")
         self.add_input("mu_air", val=1.81e-5, units="kg/(m*s)", desc="Dynamic viscosity of air")
         self.add_input("shear_exp", val=0.2, desc="Shear exponent of the wind.")
+        self.add_input('rated_rotor_speed', val=0.0, units='rpm',  desc='rotor rotation speed at rated')
 
         # DLCs
         self.add_discrete_input('raft_dlcs', val=[[]]*n_cases, desc='DLC case table for RAFT with each row a new case and headings described by the keys')
@@ -235,14 +243,13 @@ class RAFT_OMDAO(om.ExplicitComponent):
 
         # outputs
         # properties
-        nballast = np.sum(member_npts_rho_fill)
         self.add_output('properties_tower mass', units='kg', desc='Tower mass')
         self.add_output('properties_tower CG', val=np.zeros(ndim), units='m', desc='Tower center of gravity')
         self.add_output('properties_substructure mass', val=0.0, units='kg', desc='Substructure mass')
         self.add_output('properties_substructure CG', val=np.zeros(ndim), units='m', desc='Substructure center of gravity')
         self.add_output('properties_shell mass', val=0.0, units='kg', desc='Shell mass')
-        self.add_output('properties_ballast mass', val=np.zeros(nballast), units='m', desc='Ballast mass')
-        self.add_output('properties_ballast densities', val=np.zeros(nballast), units='kg', desc='Ballast densities')
+        self.add_output('properties_ballast mass', val=np.zeros(n_ballast_type), units='m', desc='Ballast mass')
+        self.add_output('properties_ballast densities', val=np.zeros(n_ballast_type), units='kg', desc='Ballast densities')
         self.add_output('properties_total mass', val=0.0, units='kg', desc='Total mass of system')
         self.add_output('properties_total CG', val=np.zeros(ndim), units='m', desc='Total system center of gravity')
         self.add_output('properties_roll inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Roll inertia sub CG')
@@ -262,19 +269,64 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('response_surge RAO', val=np.zeros(nfreq), units='m', desc='Surge RAO')
         self.add_output('response_sway RAO', val=np.zeros(nfreq), units='m', desc='Sway RAO')
         self.add_output('response_heave RAO', val=np.zeros(nfreq), units='m', desc='Heave RAO')
-        self.add_output('response_pitch RAO', val=np.zeros(nfreq), units='m', desc='Pitch RAO')
-        self.add_output('response_roll RAO', val=np.zeros(nfreq), units='m', desc='Roll RAO')
-        self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='m', desc='Yaw RAO')
+        self.add_output('response_pitch RAO', val=np.zeros(nfreq), units='rad', desc='Pitch RAO')
+        self.add_output('response_roll RAO', val=np.zeros(nfreq), units='rad', desc='Roll RAO')
+        self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='rad', desc='Yaw RAO')
         self.add_output('response_nacelle acceleration', val=np.zeros(nfreq), units='m/s**2', desc='Nacelle acceleration')
+        # case specific, note: only DLCs supported in RAFT will have non-zero outputs
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
+        stats = ['avg','std','max','PSD','DEL']
+        for n in names:
+            for s in stats:
+                if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
+                iout = f'{n}_{s}'
+                
+                if n == 'Tmoor':
+                    myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, 2*nlines, nfreq))
+                else:
+                    myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
+                
+                if n in ['surge','sway','heave']:
+                    myunit = 'm'
+                elif n in ['roll','pitch','yaw']:
+                    myunit = 'rad'
+                elif n in ['AxRNA']:
+                    myunit = 'm/s/s'
+                elif n in ['Mbase']:
+                    myunit = 'N*m'
+                    
+                self.add_output('stats_'+iout, val=myval, units=myunit)
+        # Other case outputs
+        self.add_output('stats_wind_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wind input')
+        self.add_output('stats_wave_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wave input')
+        
+        # Aggregate outputs
+        self.add_output('Max_Offset', val = 0, desc = 'Maximum distance in surge/sway direction', units = 'm') 
+        self.add_output('heave_avg', val = 0, desc = 'Average heave over all cases', units = 'm') 
+        self.add_output('Max_PtfmPitch', val = 0, desc = 'Maximum platform pitch over all cases', units = 'deg') 
+        self.add_output('Std_PtfmPitch', val = 0, desc = 'Average platform pitch std. over all cases', units = 'deg') 
+        self.add_output('max_nacelle_Ax', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
+        self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
+        self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
 
+        # Combined outputs for OpenFAST
+        self.add_output("platform_total_center_of_mass", np.zeros(3), units="m")
+        self.add_output("platform_displacement", 0.0, desc='Volumetric platform displacement', units='m**3')
+        self.add_output("platform_mass", 0.0, units="kg")
+        self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
+        
+        self.i_design = 0
+        if modeling_opt['save_designs']:
+            if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
+                os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
+                
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
-        debug_flag = False
-        
         turbine_opt = self.options['turbine_options']
         mooring_opt = self.options['mooring_options']
         members_opt = self.options['member_options']
         modeling_opt = self.options['modeling_options']
+        analysis_options = self.options['analysis_options']
 
         #turbine_npts = turbine_opt['npts']
 
@@ -300,7 +352,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['comments'] = ['none']
         
         design['settings'] = {}
-        design['settings']['XiStart'] = float(modeling_opt['XiStart'])
+        design['settings']['XiStart'] = float(modeling_opt['xi_start'])
         design['settings']['min_freq'] = float(modeling_opt['min_freq'])
         design['settings']['max_freq'] = float(modeling_opt['max_freq'])
         design['settings']['nIter'] = int(modeling_opt['nIter'])
@@ -401,8 +453,11 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # Platform members
         design['platform'] = {}
-        design['platform']['potModMaster'] = int(modeling_opt['potModMaster'])
-        design['platform']['dlsMax'] = float(modeling_opt['dlsMax'])
+        design['platform']['potModMaster'] = int(modeling_opt['potential_model_override'])
+        design['platform']['dlsMax'] = float(modeling_opt['dls_max'])
+        # lowest BEM freq needs to be just below RAFT min_freq because of interpolation in RAFT
+        if float(modeling_opt['min_freq_BEM']) >= modeling_opt['min_freq']:
+            modeling_opt['min_freq_BEM'] = modeling_opt['min_freq'] - 1e-7
         design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
         design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):
@@ -544,19 +599,31 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['mooring']['anchor_types'][0]['max_lateral_load'] = 1e5
 
         # DLCs
+        # Only give RAFT valid RAFT cases, spectral wind
+        turb_ind = discrete_inputs['raft_dlcs_keys'].index('turbulence')
+        turb_type = [case_data[turb_ind] for case_data in discrete_inputs['raft_dlcs']]
+        case_mask = [
+            ('NTM' in tt or 'ETM' in tt or 'EWM' in tt)
+             for tt in turb_type]
+
         design['cases'] = {}
         design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
-        design['cases']['data'] = discrete_inputs['raft_dlcs']
+        design['cases']['data'] = list(compress(discrete_inputs['raft_dlcs'],case_mask))    # filter cases by case_mask
 
         # Debug
-        if debug_flag:
-            import pickle
-            with open('raft_design.pkl', 'wb') as handle:
+        if modeling_opt['save_designs']:
+            with open(
+                os.path.join(analysis_options['general']['folder_output'],'raft_designs',
+                f'raft_design_{self.i_design}.pkl'), 'wb') as handle:
                 pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            self.i_design += 1
                 
         # set up the model
         model = raft.Model(design)
-        model.analyzeUnloaded()
+        model.analyzeUnloaded(
+            ballast= modeling_opt['trim_ballast'], 
+            heave_tol = modeling_opt['heave_tol']
+            )
         
         # option to generate seperate HAMS data for level 2 or 3, with higher res settings
         if False: #preprocessBEM:
@@ -564,12 +631,12 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # option to run level 1 load cases
         if True: #processCases:
-            model.analyzeCases()
+            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=modeling_opt['BEM_dir'])
             
         # get and process results
         results = model.calcOutputs()
-        
-        outs = self.list_outputs(out_stream=None)
+        # Pattern matching for "responses" annd "properties"
+        outs = self.list_outputs(out_stream=None, all_procs=True)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
@@ -580,3 +647,36 @@ class RAFT_OMDAO(om.ExplicitComponent):
                     outputs['response_'+name] = np.abs(results['response'][name])
                 else:
                     outputs['response_'+name] = results['response'][name]
+
+
+        # Pattern matching for case-by-case outputs
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
+        stats = ['avg','std','max','PSD','DEL']
+        case_mask = np.array(case_mask)
+        for n in names:
+            for s in stats:
+                if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
+                iout = f'{n}_{s}'
+                outputs['stats_'+iout][case_mask] = results['case_metrics'][iout]
+
+        # Other case outputs
+        for n in ['wind_PSD','wave_PSD']:
+            outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
+
+        # Compute some aggregate outputs manually
+        outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max'][case_mask]**2 + outputs['stats_sway_max'][case_mask]**2).max()
+        outputs['heave_avg'] = outputs['stats_heave_avg'][case_mask].mean()
+        outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'][case_mask].max()
+        outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'][case_mask].mean()
+        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'][case_mask].max()
+        outputs['rotor_overspeed'] = (outputs['stats_omega_max'][case_mask].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
+        outputs['max_tower_base'] = outputs['stats_Mbase_max'][case_mask].max()
+        
+        # Combined outputs for OpenFAST
+        outputs['platform_displacement'] = model.fowtList[0].V
+        outputs["platform_total_center_of_mass"] = outputs['properties_substructure CG']
+        outputs["platform_mass"] = outputs["properties_substructure mass"]
+        # Note: Inertia calculated for each case
+        outputs["platform_I_total"][:3] = np.r_[outputs['properties_roll inertia at subCG'][0],
+                                           outputs['properties_pitch inertia at subCG'][0],
+                                           outputs['properties_yaw inertia at subCG'][0]]

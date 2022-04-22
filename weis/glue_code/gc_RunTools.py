@@ -37,6 +37,8 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
         self.add_input('rotor_overspeed',val=0.0)
         self.add_input('Max_PtfmPitch',val=0.0)
+        if modeling_options['OL2CL']['flag']:
+            self.add_input('OL2CL_pitch',   val=0.0, units = 'deg')
 
     def compute(self, inputs, outputs):
         print('########################################')
@@ -82,6 +84,8 @@ class Outputs_2_Screen(om.ExplicitComponent):
                 print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))
             if self.options['opt_options']['merit_figure'] == 'Std_PtfmPitch':
                 print('Std_PtfmPitch: {:<8.10f} deg.'.format(inputs['Std_PtfmPitch'][0]))
+            if self.options['opt_options']['merit_figure'] == 'OL2CL_pitch':
+                print('RMS Pitch Error (OL2CL): {:<8.10f} deg.'.format(inputs['OL2CL_pitch'][0]))
             # Print constraints
             if self.options['opt_options']['constraints']['control']['rotor_overspeed']['flag']:
                 print('rotor_overspeed: {:<8.10f} %'.format(inputs['rotor_overspeed'][0]*100))

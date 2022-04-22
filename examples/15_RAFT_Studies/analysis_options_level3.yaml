@@ -1,0 +1,75 @@
+general:
+    folder_output: /Users/dzalkind/Tools/WEIS-4/examples/15_RAFT_Studies/OF_comp_3
+    fname_output: refturb_output
+
+
+# design_variables:
+  # control:
+  #   servo:
+  #     pitch_control:
+  #       omega:
+  #         flag: True
+  #         min: 0.1
+  #         max: 0.5
+
+  # floating:
+  #   joints:
+  #     flag: True
+  #     # z_coordinate:
+  #     #     - names: [main_keel, col1_keel, col2_keel, col3_keel]
+  #     #       lower_bound: -40.0
+  #     #       upper_bound: -15.0
+  #     r_coordinate:
+  #         - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
+  #           lower_bound: 38.8125
+  #           upper_bound: 64.6875
+  #   members:
+  #       flag: True
+  #       groups:
+  #         - names: [column1,column2,column3]
+  #           diameter:
+  #               lower_bound: 9.375
+  #               upper_bound: 15.625
+    #     groups:
+    #       - names: [main_column]
+    #         diameter:
+    #           lower_bound: 7.5
+    #           upper_bound: 12.5
+          
+
+
+constraints:
+  control:
+    rotor_overspeed:
+      flag: True
+      min: 0.0
+      max: 0.25
+    Max_PtfmPitch:
+      flag: True
+      max: 5.5
+    Std_PtfmPitch:
+      flag: False
+      max: 2.
+  Max_Offset:
+    flag: True
+    max: 30.
+
+merit_figure: platform_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+
+driver:
+  optimization:
+    flag: False           # Flag to enable optimization
+    solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    tol: 1.e-2            # Optimality tolerance
+    max_iter: 100          # Maximum number of iterations (SLSQP)
+  # design_of_experiments:
+  #   flag: True            # Flag to enable design of experiments
+  #   run_parallel: False    # Flag to run using parallel processing
+  #   generator: LatinHypercube    # Type of input generator. (Uniform)
+  #   num_samples: 12        # number of samples for (Uniform only)
+
+recorder:
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder
+    includes: ['*raft*','*floating*','*platform*']

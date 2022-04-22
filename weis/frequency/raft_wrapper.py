@@ -10,23 +10,23 @@ class RAFT_WEIS(om.Group):
 
     def initialize(self):
         self.options.declare('modeling_options')
+        self.options.declare('analysis_options')
 
     def setup(self):
         # Stuff WEIS options into RAFT options structure
         weis_opt = self.options['modeling_options']
+        analysis_options = self.options['analysis_options']
 
         raft_opt = {}
+        # Level 1 options from WEIS
+        for key in weis_opt['Level1']:
+            raft_opt[key] = weis_opt['Level1'][key]
 
-        raft_opt['min_freq'] = min_freq = weis_opt['Level1']['min_freq']
-        raft_opt['max_freq'] = max_freq = weis_opt['Level1']['max_freq']
+        # Other options needed for RAFT
+        min_freq = weis_opt['Level1']['min_freq']
+        max_freq = weis_opt['Level1']['max_freq']
         frequencies = np.arange(min_freq, max_freq+0.5*min_freq, min_freq)
         raft_opt['nfreq'] = len(frequencies)
-
-        raft_opt['potModMaster'] = weis_opt['Level1']['potential_model_override']
-        raft_opt['XiStart'] = weis_opt['Level1']['xi_start']
-        raft_opt['nIter'] = weis_opt['Level1']['nIter']
-        raft_opt['dlsMax'] = weis_opt['Level1']['dls_max']
-        raft_opt['min_freq_BEM'] = weis_opt['Level1']['min_freq_BEM']
         raft_opt['n_cases'] = weis_opt['DLC_driver']['n_cases']
 
         turbine_opt = {}
@@ -51,6 +51,7 @@ class RAFT_WEIS(om.Group):
         members_opt['shape'] = ['circ']*members_opt['nmembers']
         members_opt['scalar_thicknesses'] = members_opt['scalar_diameters'] = [False]*members_opt['nmembers']
         members_opt['scalar_coefficients'] = [False]*members_opt['nmembers']
+        members_opt['n_ballast_type'] = len(weis_opt["floating"]["members"]["ballast_types"])
 
         mooring_opt = {}
         mooring_opt['nlines'] = weis_opt['mooring']['n_lines']
@@ -63,7 +64,8 @@ class RAFT_WEIS(om.Group):
         self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
                                               turbine_options=turbine_opt,
                                               mooring_options=mooring_opt,
-                                              member_options=members_opt), promotes=['*'])
+                                              member_options=members_opt,
+                                              analysis_options=analysis_options), promotes=['*'])
         self.connect('wind.U', 'tower_U')
 
 class RAFT_WEIS_Prep(om.ExplicitComponent):
@@ -248,9 +250,9 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             l_fill = np.zeros(s_grid.size-1)
             rho_fill = np.zeros(s_grid.size-1)
             for ii in range(s_ballast.shape[0]):
-                iball = np.where(s_ballast[ii,0] >= s_grid)[0][0]
+                iball = np.where(s_ballast[ii,0] >= s_grid)[0][-1]
                 rho_fill[iball] = rho_ballast[ii]
-                l_fill[iball] = h_ballast[ii] if rho_ballast[ii] < 1100.0 else var_height[k]
+                l_fill[iball] = inputs[f"member{k}:height"] * h_ballast[ii] if rho_ballast[ii] > 1100.0 else var_height[k]
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
 
@@ -294,7 +296,11 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         # Build case table for RAFT
         raft_cases = [[]]*dlc_generator.n_cases
         for i, icase in enumerate(dlc_generator.cases):
-            turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{icase.IEC_WindType[-3:]}'
+            if 'EWM' in icase.IEC_WindType:
+                wind_type = 'EWM'
+            else:
+                wind_type = icase.IEC_WindType[-3:]
+            turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{wind_type}'
             opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
             waveStr = 'JONSWAP' #icase.wave_spectrum
             raft_cases[i] = [icase.URef,
