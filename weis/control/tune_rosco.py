@@ -596,7 +596,7 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['generator_efficiency'   ] = self.turbine.GenEff * outputs['gearbox_efficiency'     ] / 100
         outputs['TowerHt'                ] = self.turbine.TowerHt
         outputs['hub_height'             ] = self.turbine.hubHt
-        outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
+        outputs['twr_freq'               ] = self.turbine_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table
