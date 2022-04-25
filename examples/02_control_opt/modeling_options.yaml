@@ -2,11 +2,11 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: RAAW
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-2/outputs/02_RAAW_DOE
+        OF_run_dir: /Users/dzalkind/Tools/WEIS-2/outputs/02_RAAW_IPC
         save_timeseries: True
         save_iterations: True
         use_exe: True
-        FAST_exe: /Users/dzalkind/Tools/openfast-raaw/build/glue-codes/openfast/openfast
+        # FAST_exe: /Users/dzalkind/Tools/openfast-raaw/build/glue-codes/openfast/openfast
 
 WISDEM:
     RotorSE:
@@ -30,7 +30,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
     openfast_file: RAAW.fst
-    openfast_dir: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/OpenFAST_3p0
+    openfast_dir: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/OpenFAST_3p1
     simulation:
         DT: 0.0125
         # CompElast: 1
@@ -115,7 +115,9 @@ ROSCO:
 
 DLC_driver:
     DLCs:
-        - DLC: "12.1"
-          wind_file: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/Performance/steps_simpack.wnd
-          transient_time: 0.
-          analysis_time: 20.
+        - DLC: "1.1"
+          wind_speed: [8,10,12,14,16,18]
+          n_seeds: 1
+        #   wind_file: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/Performance/steps_simpack.wnd
+        #   transient_time: 0.
+        #   analysis_time: 20.
