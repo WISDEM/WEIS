@@ -206,7 +206,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4, 6.5]
 
         # Get extreme wind speeds
         self.IECwind()
@@ -756,6 +756,66 @@ class DLCGenerator(object):
             if idlc.turbine_status == 'operating':
                 idlc.turbine_status = 'parked-still'
             idlc.label = '6.4'
+            if options['analysis_time'] > 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+            self.cases.append(idlc)
+            if len(wind_seeds)>1:
+                i_WiSe+=1
+            if len(wave_seeds)>1:
+                i_WaSe+=1
+            if len(wind_heading)>1:
+                i_WiH+=1
+            if len(wave_Hs)>1:
+                i_Hs+=1
+            if len(wave_Tp)>1:
+                i_Tp+=1
+            if len(wave_gamma)>1:
+                i_WG+=1
+            if len(wave_heading)>1:
+                i_WaH+=1
+
+    def generate_6p5(self, options):
+        # Parked (standing still or idling) - extreme wind model 500-year return period - ultimate loads
+        options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
+        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [-8., 8.]
+        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
+        if len(wave_Hs)==0:
+            wave_Hs = self.wave_Hs1
+        if len(wave_Tp)==0:
+            wave_Tp = self.wave_Tp1
+        # Counter for wind seed
+        i_WiSe=0
+        # Counters for wave conditions
+        i_WaSe=0
+        i_Hs=0
+        i_Tp=0
+        i_WiH=0
+        i_WG=0
+        i_WaH=0
+        for yaw_ms in yaw_misalign_deg:
+            idlc = DLCInstance(options=options)
+            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
+                idlc.URef = self.V_e50 * 1.125
+            idlc.yaw_misalign = yaw_ms
+            idlc.RandSeed1 = wind_seeds[i_WiSe]
+            idlc.wave_seed1 = wave_seeds[i_WaSe]
+            idlc.wind_heading = wind_heading[i_WiH]
+            idlc.wave_height = wave_Hs[i_Hs]
+            idlc.wave_period = wave_Tp[i_Tp]
+            idlc.wave_gamma = wave_gamma[i_WG]
+            idlc.wave_heading = wave_heading[i_WaH]
+            idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
+            idlc.turbulent_wind = True
+            if idlc.turbine_status == 'operating':
+                idlc.turbine_status = 'parked-still'
+            idlc.label = '6.5'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
             if options['transient_time'] >= 0:
