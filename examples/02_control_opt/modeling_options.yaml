@@ -1,12 +1,11 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: RAAW
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-2/outputs/02_RAAW_IPC
+        OF_run_fst: IEA15
+        OF_run_dir: outputs/control_opt/openfast_out
         save_timeseries: True
         save_iterations: True
         use_exe: True
-        # FAST_exe: /Users/dzalkind/Tools/openfast-raaw/build/glue-codes/openfast/openfast
 
 WISDEM:
     RotorSE:
@@ -29,95 +28,85 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
-    openfast_file: RAAW.fst
-    openfast_dir: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/OpenFAST_3p1
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     simulation:
         DT: 0.0125
-        # CompElast: 1
-        # CompInflow: 1
-        # CompAero: 2
-        # CompServo: 1
-        # CompHydro: 1
-        # CompSub: 0
-        # CompMooring: 0
-        # CompIce: 0
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 3
+        CompIce: 0
         OutFileFmt: 3
-        DT_UJac: 1.5
-        InterpOrder: '1'
     linearization:
         Linearize: False
-    ServoDyn:
-        GenModel: 2
-    AeroDyn:
-        TwrShadow: 0
-        tau1_const: 4
     ElastoDyn:
         FlapDOF1: True
         FlapDOF2: True
         EdgeDOF: True
         TeetDOF: False
-        DrTrDOF: True 
+        DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
         TwFADOF2 : True
         TwSSDOF1 : True
         TwSSDOF2 : True
-        PtfmSgDOF: False
-        PtfmSwDOF: False
-        PtfmHvDOF: False
-        PtfmRDOF : False
-        PtfmPDOF : False
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
         PtfmYDOF : False
-        # TwrNodes: 50
-    # HydroDyn:
-    #     WaveSeed1: 123456789
-    #     WaveSeed2: 1011121314
-    #     AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
-    #     WaveMod: 2
-    #     WaveTMax: 850
-    #     WvLowCOff: 0.111527
-    #     WvHiCOff: 0.783827
-    #     WvSumQTF: True
-    #     RdtnMod: 1
-    #     PotMod: 1
-    #     DiffQTF: 0
-        # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        TwrNodes: 50
+    HydroDyn:
+        WaveSeed1: 123456789
+        WaveSeed2: 1011121314
+        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+        WaveMod: 2
+        WaveTMax: 850
+        WvLowCOff: 0.111527
+        WvHiCOff: 0.783827
+        WvSumQTF: True
+        RdtnMod: 1
+        PotMod: 1
+        DiffQTF: 0
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
     InflowWind:
-        RefHt_Uni: 120
-        RefLength: 130.
-
+        RefHt: 150.0
     
 ROSCO:
     flag: True
-    VS_ControlMode: 3
-    WE_Mode: 2
-    min_pitch:          -0.002617993877991494    # Minimum pitch angle [rad], {default = 0 degrees}
-    vs_minspd:          0.778067780539072 # 7.43 rpm # None                  # Minimum rotor speed [rad/s], {default = 0 rad/s}
-    ps_percent:         0.78                  # Percent peak shaving  [%, <= 1 ], {default = 80%}
-    # SD_Mode: 0
-    # PS_Mode: 1
-    # ps_percent: 0.85
-    # F_LPFType: 2
-    # F_NotchType: 2
-    # Fl_Mode: 2 
-    tuning_yaml: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/ROSCO/RAAW_rosco_BD.yaml
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 2
+    Fl_Mode: 2 
+    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
     zeta_pc: [1,1]
     omega_pc: [0.2,0.2]
     U_pc: [12,18]
-    # zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
-    # omega_vs: 0.12  
-    # twr_freq: 3.2
-    # ptfm_freq: 0.2
-    # Kp_float: -10
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    twr_freq: 3.2
+    ptfm_freq: 0.2
+    Kp_float: -10
 
 
 DLC_driver:
     DLCs:
         - DLC: "1.1"
-          wind_speed: [8,10,12,14,16,18]
+          wind_speed: [16]
           n_seeds: 1
-        #   wind_file: /Users/dzalkind/Projects/RAAW/RAAW_OpenFAST/Performance/steps_simpack.wnd
-        #   transient_time: 0.
-        #   analysis_time: 20.
+          analysis_time: 10.
+          transient_time: 0.1
+          turbulent_wind:
+              HubHt: 140
+              GridHeight: 220
+              GridWidth: 220
+              AnalysisTime: 5.
