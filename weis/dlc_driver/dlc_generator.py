@@ -28,6 +28,7 @@ class DLCInstance(object):
         self.RandSeed1 = 0
         self.wave_seed1 = 0
         self.label = '' # For 1.1/Custom
+        self.wind_file = ''
         self.PSF = 1.35 # Partial Safety Factor
 
         if not options is None:
@@ -199,7 +200,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.3, 6.4]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4, 12.1]
 
         # Get extreme wind speeds
         self.IECwind()
@@ -689,6 +690,20 @@ class DLCGenerator(object):
                 i_WG+=1
             if len(wave_heading)>1:
                 i_WaH+=1
+
+    def generate_12p1(self, options):
+        # Pass through uniform wind input
+        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        idlc = DLCInstance(options=options)
+        idlc.label = '12.1'
+        idlc.IEC_WindType = 'Custom'
+        idlc.wind_file = options['wind_file']
+        if options['analysis_time'] >= 0:
+            idlc.analysis_time = options['analysis_time']
+        if options['transient_time'] >= 0:
+            idlc.transient_time = options['transient_time']
+
+        self.cases.append(idlc)
 
 
 if __name__ == "__main__":
