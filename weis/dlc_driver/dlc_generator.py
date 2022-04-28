@@ -397,6 +397,11 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set azimuth start positions, tile so length is same as wind_seeds
+        azimuth_inits = np.tile(
+            np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
+            int(len(wind_speeds)/options['n_azimuth'])
+            )
         # Counters for wave conditions
         i_WaSe=0
         i_Hs=0

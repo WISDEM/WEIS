@@ -2931,7 +2931,7 @@ properties:
                             default: 1
                             minimum: 1
                             maximum: 100
-                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.
+                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.  If DLC 1.4, number of waves seeds.
                         n_azimuth:
                             type: integer
                             default: 1
