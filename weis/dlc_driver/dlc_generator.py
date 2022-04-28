@@ -28,6 +28,7 @@ class DLCInstance(object):
         self.RandSeed1 = 0
         self.wave_seed1 = 0
         self.label = '' # For 1.1/Custom
+        self.wind_file = ''
         self.PSF = 1.35 # Partial Safety Factor
 
         if not options is None:
@@ -199,7 +200,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4, 12.1]
 
         # Get extreme wind speeds
         self.IECwind()
@@ -252,7 +253,7 @@ class DLCGenerator(object):
             idlc.label = '1.1'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             idlc.PSF = 1.2 * 1.25
             self.cases.append(idlc)
@@ -305,7 +306,7 @@ class DLCGenerator(object):
             idlc.label = '1.2'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             idlc.PSF = 1.
             self.cases.append(idlc)
@@ -356,7 +357,7 @@ class DLCGenerator(object):
             idlc.label = '1.3'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -405,7 +406,7 @@ class DLCGenerator(object):
                 idlc.label = '1.4'
                 if options['analysis_time'] > 0:
                     idlc.analysis_time = options['analysis_time']
-                if options['transient_time'] > 0:
+                if options['transient_time'] >= 0:
                     idlc.transient_time = options['transient_time']
                 idlc.direction_pn = direction
                 self.cases.append(idlc)
@@ -456,7 +457,7 @@ class DLCGenerator(object):
                     idlc.label = '1.5'
                     if options['analysis_time'] > 0:
                         idlc.analysis_time = options['analysis_time']
-                    if options['transient_time'] > 0:
+                    if options['transient_time'] >= 0:
                         idlc.transient_time = options['transient_time']
                     idlc.sigma1 = self.IECturb.NTM(ws)
                     idlc.direction_pn = direction
@@ -507,9 +508,7 @@ class DLCGenerator(object):
             idlc.label = '1.6'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            else:
-                idlc.analysis_time = 3600.
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -529,9 +528,9 @@ class DLCGenerator(object):
 
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
-
+        options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        yaw_misalign_deg = np.array([-8., 8.])
+        yaw_misalign_deg = np.array([-8., 8.] * options['n_seeds'])
         if len(wave_Hs)==0:
             wave_Hs = self.wave_Hs50
         if len(wave_Tp)==0:
@@ -563,7 +562,7 @@ class DLCGenerator(object):
             idlc.label = '6.1'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -583,9 +582,9 @@ class DLCGenerator(object):
 
     def generate_6p3(self, options):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
-
+        options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        yaw_misalign_deg = np.array([-20., 20.])
+        yaw_misalign_deg = np.array([-20., 20.] * options['n_seeds'])
         if len(wave_Hs)==0:
             wave_Hs = self.wave_Hs1
         if len(wave_Tp)==0:
@@ -617,7 +616,7 @@ class DLCGenerator(object):
             idlc.label = '6.3'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -674,7 +673,7 @@ class DLCGenerator(object):
             idlc.label = '6.4'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] > 0:
+            if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
             if len(wind_seeds)>1:
@@ -691,6 +690,20 @@ class DLCGenerator(object):
                 i_WG+=1
             if len(wave_heading)>1:
                 i_WaH+=1
+
+    def generate_12p1(self, options):
+        # Pass through uniform wind input
+        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        idlc = DLCInstance(options=options)
+        idlc.label = '12.1'
+        idlc.IEC_WindType = 'Custom'
+        idlc.wind_file = options['wind_file']
+        if options['analysis_time'] >= 0:
+            idlc.analysis_time = options['analysis_time']
+        if options['transient_time'] >= 0:
+            idlc.transient_time = options['transient_time']
+
+        self.cases.append(idlc)
 
 
 if __name__ == "__main__":

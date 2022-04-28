@@ -21,6 +21,53 @@ from dtqpy.src.DTQPy_solve import DTQPy_solve
 
 def BuildLambda(Ax):
         return lambda t: Ax(t)
+    
+    
+def ModelClipping(Aw,Bw,Cw,Dw,xw,u_h):
+    
+    # get number of linearized models
+    nl = len(u_h)
+    
+    # find the models with pp > 6 deg
+    ind_clip = np.rad2deg(xw[0,:]) > 6 
+    
+    ind_original = np.arange(nl)
+    
+    if ind_clip.any():
+        
+        # fixing index
+        ind_fix = ind_original[ind_clip][0]-1
+        
+        # clip models
+        for ind in range(nl):
+            
+            if ind_clip[ind]:
+                
+                Aw[ind,:,:] = Aw[ind_fix,:,:]
+                Bw[ind,:,:] = Bw[ind_fix,:,:]
+                Cw[ind,:,:] = Cw[ind_fix,:,:]
+                Dw[ind,:,:] = Dw[ind_fix,:,:]
+                
+                xw[:,ind] = xw[:,ind_fix]
+                
+    # get shape            
+    nl,nx,nu = np.shape(Bw)
+    
+    # reduce the model
+    nx_new = np.zeros((nx),dtype = 'bool')
+    nx_new[0:5] = True
+    
+    
+    Aw = Aw[:,nx_new,:]; Aw = Aw[:,:,nx_new]
+    Bw = Bw[:,nx_new,:]
+    Cw = Cw[:,:,nx_new]
+    
+    xw = xw[nx_new,:]
+    
+    return Aw,Bw,Cw,Dw,xw,u_h
+    
+    
+    
 
 def TVmat2cell(f,time):
     """
@@ -62,30 +109,46 @@ def TVmat2cell(f,time):
     return A
 
 def Generate_AddtionalConstraints(DescOutput,Cw,Dw,ws,W_fun,time,Qty,b,yw):
-    indQty = DescOutput.index(Qty)
     
-    Cqty = Cw[:,indQty,:]
-    Dqty = Dw[:,indQty,:]
-    Yoqty = yw[indQty,:]
+    # get the number of constraints 
+    n_con = len(Qty)
     
+    if len(Qty) == len(b):
+        pass
+    else:
+        raise Exception("The number of constraints and the maximum values are not equal")
+        
+    # initialize
+    Z = [Simple_Linear_Constraints() for n in range(n_con)]
     
-    Cind_pp = PchipInterpolator(ws,Cqty.T,axis = 1)
-    Dind_pp = PchipInterpolator(ws,Dqty.T,axis = 1)
-    Yoind_pp = PchipInterpolator(ws,Yoqty, axis = 1)
-    
-    Cind_op = lambda w: Cind_pp(w)
-    Dind_op = lambda w: Dind_pp(w)
-    Yoind_op = lambda w: Yoind_pp(w)
-    
-    Z = [Simple_Linear_Constraints() for n in range(1)]
-
-    linearZ = [Simple_Bounds() for n in range(2)]
-    
-    linearZ[0].right = 2; linearZ[0].matrix = TVmat2cell(lambda t: Cind_op(W_fun(t)),time)
-    linearZ[1].right = 1; linearZ[1].matrix = TVmat2cell(lambda t: Dind_op(W_fun(t)),time)
-    
-    Z[0].linear = linearZ
-    Z[0].b = lambda t: b - Yoind_op(W_fun(t))
+    for i in range(n_con):
+        
+        # Get the index for the quantity
+        indQty = DescOutput.index(Qty[i])
+        
+        # Get corresponding columns in the C and D matrices
+        Cqty = Cw[:,indQty,:]
+        Dqty = Dw[:,indQty,:]
+        Yoqty = yw[indQty,:]
+        
+        # generate interpolating functions
+        Cind_pp = PchipInterpolator(ws,Cqty.T,axis = 1)
+        Dind_pp = PchipInterpolator(ws,Dqty.T,axis = 1)
+        Yoind_pp = PchipInterpolator(ws,Yoqty, axis = 1)
+        
+        Cind_op = lambda w: Cind_pp(w)
+        Dind_op = lambda w: Dind_pp(w)
+        Yoind_op = lambda w: Yoind_pp(w)
+        
+        # initialize 
+        linearZ = [Simple_Bounds() for n in range(2)]
+        
+        # assign
+        linearZ[0].right = 2; linearZ[0].matrix = TVmat2cell(lambda t: Cind_op(W_fun(t)),time)
+        linearZ[1].right = 1; linearZ[1].matrix = TVmat2cell(lambda t: Dind_op(W_fun(t)),time)
+        
+        Z[i].linear = linearZ
+        Z[i].b = lambda t: b[i] - Yoind_op(W_fun(t))
     
     
     
@@ -93,7 +156,7 @@ def Generate_AddtionalConstraints(DescOutput,Cw,Dw,ws,W_fun,time,Qty,b,yw):
     
 
 
-def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
+def DTQPy_oloc(LinearModels,disturbance,constraints,dtqp_options,plot=False):
     '''
         Function to compute the open loop optimal control of a linear turbine model, given
         a disturbance and constraints
@@ -101,6 +164,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         Inputs:         LinearModels:  LinearTurbineModel object specified in weis/control
                         disturbance: dictionary with Time and Wind fields
                         constraints: dictionary with key as OpenFAST state or output, value is a list with lower and upper bounds
+                        dtqp_options: dictionary with DTQP options
                         plot: boolean flag whether to plot outputs
     '''
     
@@ -121,7 +185,13 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     # wind speeds
     ws = LinearModels.u_h
-
+    
+    # clip the model and reduce it
+    Aw,Bw,Cw,Dw,xw,ws = ModelClipping(Aw, Bw, Cw, Dw, xw, ws)
+    
+    # get shape
+    nw,nx,nu = np.shape(Bw)
+ 
     # construct LPV models
     # A matrix   
     A_op_pp = PchipInterpolator(ws, Aw, axis = 0)
@@ -174,8 +244,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     filterflag = 0
     
     
-
-    if filterflag:
+    if filterflag:                         
         t_f = 1
         dt = tt[2,0]-tt[1,0]
         nb = int(np.floor(t_f/dt))
@@ -186,10 +255,10 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     opts = options()
 
-    opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-10
-    opts.solver.maxiters = 1500
-    opts.solver.function = 'pyoptsparse'
+    opts.dt.nt = dtqp_options['nt']
+    opts.solver.tolerence = dtqp_options['tolerance']
+    opts.solver.maxiters = dtqp_options['maxiters']
+    opts.solver.function = dtqp_options['function']  # ipopt
 
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
     W_pp = PchipInterpolator(np.squeeze(tt),np.squeeze(Wind_speed))
@@ -201,7 +270,6 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     DXoDt_fun = lambda t: (-DXo_fun(W_fun(t)).T*DW_fun(t)).T
 
-    
 
     ## Disc2 cont
 
@@ -211,6 +279,9 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     # Generator speed function
     GS_fun = BuildFunction(ws,xw[iGenSpeed,:])
+    
+    # Ptfm pitch fun
+    PP_fun = BuildFunction(ws,xw[iPtfmPitch,:])
 
     # -1*GS function
     GSn_fun = BuildFunction(ws,-xw[iGenSpeed,:])
@@ -234,25 +305,32 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     OutputCon_flag = False
     
     if OutputCon_flag:
-        Qty = "ED TwrBsFxt, (kN)"
         
-        Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,5000,yw)
+        # quantities
+        Qty = ["ED TwrBsFxt, (kN)", "ED TwrBsMxt, (kN-m)"]
+        
+        # upper limit
+        b = [5000,35000]
+        
+        # create constraints
+        Z = Generate_AddtionalConstraints(DescOutput, Cw, Dw, ws, W_fun, time, Qty,b,yw)
 
     # lambda function to find the values of lambda function at specific indices
     indexat = lambda expr,index: expr[index,:]
-
+    
     # get shape
     nws,nx,nu = np.shape(Bw)
 
     # initialize
     ub = np.ones((nx,1))*np.inf
     lb = -np.ones((nx,1))*np.inf
-
+    
     # set ub values for PtfmPitch and Genspeed
     for const in constraints:
         if const in DescStates:
             iConst = DescStates.index(const)
             ub[iConst] = constraints[const][1]      # max, min would be index 0
+            #lb[iConst] = 0
         elif const in DescOutputs:
             iConst = DescOutputs.index(const)
             # do other output constraint things
@@ -293,7 +371,7 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     
     UBs = X0_n - Xo_fun(W_fun(0))[None].T
     LBs = X0_n - Xo_fun(W_fun(0))[None].T
-
+    
     # UB,LB
     UB = [Simple_Bounds() for n in range(3)]
     LB = [Simple_Bounds() for n in range(3)]
@@ -322,13 +400,22 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
     lx = 0
 
-    L = [LQ_objective() for n in range(5)]
+    L = [LQ_objective() for n in range(6)]
 
     # uRu
     L[lx].left = 1
     L[lx].right = 1
     L[lx].matrix = np.diag([0,R1,R2])
+    
 
+    lx = lx+1
+    
+    L[lx].left = 2;
+    L[lx].right = 2;
+    L1 = np.zeros((nx,nx))
+    L1[iPtfmPitch,iPtfmPitch] = 1e9
+    L[lx].matrix = L1
+    
     lx = lx+1
 
     # uPX
@@ -360,9 +447,8 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     L4mat[0,0] = lambda t: GP_fun(W_fun(t))
     L[lx].matrix = L4mat
 
-    # 
+    # scaling
     scale = Scaling(right = 1, matrix = np.array([1,1e-16,1e-4]))
-
 
     # setup
     s = setup()
@@ -376,10 +462,15 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
     s.Lagrange = L
     s.UB = UB
     s.LB = LB
-    s.Scaling = scale
     s.t0 = t0
     s.tf = tf
     
+    # scaling is not needed for osqp
+    if opts.solver.function == 'ipopt':
+        s.ScaleObjective = True
+        s.Scaling = scale
+    
+    # solve
     [T,Ul,Xl,P,F,internal,opts] = DTQPy_solve(s,opts)
 
     # calculate offset
@@ -406,8 +497,11 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         yl[i,:] = np.squeeze(np.dot(C,xl.T) + np.dot(D,ul.T)) 
         
     Y = yl + Yo_off
-            
-
+    Qty_p = 'SrvD GenPwr, (kW)'
+    Yindp = DescOutput.index(Qty_p)
+    
+    #Y[:,Yindp] *= 10**(-3)
+    
     # plot
     if plot:
         fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
@@ -431,13 +525,9 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
 
         fig.subplots_adjust(hspace = 0.65)
         
+        # plot states
+        fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
         
-        if OutputCon_flag:
-            fig2, ((ax1,ax2,ax3)) = plt.subplots(3,1)
-        else:
-            fig2, ((ax1,ax2)) = plt.subplots(2,1)
-                
-
         # PtfmPitch
         ax1.plot(T,np.rad2deg(X[:,iPtfmPitch]))
         ax1.set_xlim([t0,tf])
@@ -448,16 +538,33 @@ def DTQPy_oloc(LinearModels,disturbance,constraints,plot=False):
         ax2.set_xlim([t0,tf])
         ax2.set_title('Gen Speed [rad/s]')
         
-        if OutputCon_flag:
-            Yind = DescOutput.index(Qty)
-            ax3.plot(T,Y[:,Yind])
-            ax3.set_xlim([t0,tf])
-            ax3.set_title(Qty)
-
+        ax3.plot(T,Y[:,Yindp])
+        ax3.set_xlim([t0,tf])
+        ax3.set_title(Qty_p)
+        
         fig2.subplots_adjust(hspace = 0.65)
         
+        if OutputCon_flag:
+            
+            n_con = len(Qty)
+            
+            fig3,ax = plt.subplots(n_con,1)
+            
+            for i in range(n_con):    
+                if n_con == 1:
+                    Yind = DescOutput.index(Qty[i])
+                    ax.plot(T,Y[:,Yind])
+                    ax.set_xlim([t0,tf])
+                    ax.set_title(Qty[i])
+                else:   
+                    Yind = DescOutput.index(Qty[i])
+                    ax[i].plot(T,Y[:,Yind])
+                    ax[i].set_xlim([t0,tf])
+                    ax[i].set_title(Qty[i])
+            fig3.subplots_adjust(hspace = 0.65)
+
         plt.show()
-   
+    
     return T,U,X,Y
     
 

@@ -2,7 +2,8 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: temp/NREL5MW_OC3_spar
+        OF_run_dir: outputs/03_NREL5MW_OC3_spar
+        use_exe: True
 
 WISDEM:
     RotorSE:
@@ -19,11 +20,12 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
+        rank_and_file: True
     BOS:
         flag: True
 
 Level1:
-    flag: True
+    flag: False
     potential_model_override: 0
     potential_bem_members: [spar]
     min_freq_BEM: 0.1
@@ -43,6 +45,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompMooring: 3
         CompIce: 0
         SttsTime: 10.0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
@@ -51,7 +54,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         EdgeDOF: True
         TeetDOF: False
         DrTrDOF: False 
-        GenDOF: False
+        GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
         TwFADOF2 : True
@@ -79,8 +82,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         ExctnMod: 1
         RdtnMod: 1
         RdtnDT: 0.0125
-        #PotFile: HydroData/Spar
-        PtfmMass_Init: 7.462e6
+        PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar
+        # PtfmMass_Init: 7.462e6
 
 ROSCO:
     flag: True
@@ -98,12 +101,12 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [14., 16.]
-          wave_height: [7., 8.]
-          wave_period: [1., 2.]
+          wind_speed: [14.]
+          wave_height: [7.]
+          wave_period: [1.]
           n_seeds: 1
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 20.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 90.0
               GridHeight: 178.0

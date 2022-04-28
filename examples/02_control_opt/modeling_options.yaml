@@ -2,9 +2,10 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA15
-        OF_run_dir: outputs/control_opt/openfast_out
+        OF_run_dir: outputs/02_control_opt
         save_timeseries: True
         save_iterations: True
+        use_exe: True
 
 WISDEM:
     RotorSE:

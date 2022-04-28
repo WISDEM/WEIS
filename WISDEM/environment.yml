@@ -14,7 +14,7 @@ dependencies:
   - mpi4py
   - nlopt
   - numpy
-  - openmdao
+  - openmdao>=3.4, <3.17
   - openpyxl
   - pandas
   - pip
@@ -29,6 +29,7 @@ dependencies:
   - setuptools
   - simpy
   - sortedcontainers
+  - statsmodels
   - swig
   - pip:
     - marmot-agents

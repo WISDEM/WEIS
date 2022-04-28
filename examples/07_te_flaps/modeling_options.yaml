@@ -1,6 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-
+    openfast_configuration:
+        OF_run_fst: BAR10
+        OF_run_dir: temp/BAR10
+        
 WISDEM:
     RotorSE:
         flag: True
@@ -48,9 +51,6 @@ ROSCO:
     zeta_vs: 1.0
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: BAR10
-        OF_run_dir: temp/BAR10
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 5

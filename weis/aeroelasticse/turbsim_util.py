@@ -265,6 +265,10 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         gusts = IEC_CoherentGusts()
         gusts.D = rotorD
         gusts.HH = hub_height
+        gusts.dt = dlc_generator.cases[i_case].TimeStep
+        gusts.TStart = dlc_generator.cases[i_case].transient_time
+        gusts.TF = dlc_generator.cases[i_case].analysis_time
+        gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
         wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
         wind_file_type = 2
 

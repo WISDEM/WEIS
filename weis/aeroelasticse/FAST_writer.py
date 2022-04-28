@@ -165,6 +165,10 @@ class InputWriter_OpenFAST(object):
             if 'DISCON_in' in self.fst_vt and ROSCO:
                 self.write_DISCON_in()
             self.write_ServoDyn()
+            for i_TStC, TStC in enumerate(self.fst_vt['TStC']):
+                self.write_StC(TStC,self.fst_vt['ServoDyn']['TStCfiles'][i_TStC])
+            for i_SStC, SStC in enumerate(self.fst_vt['SStC']):
+                self.write_StC(SStC,self.fst_vt['ServoDyn']['SStCfiles'][i_SStC])
         
         if self.fst_vt['Fst']['CompHydro'] == 1:
             self.write_HydroDyn()
@@ -211,6 +215,17 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['CompSub'], 'CompSub', '- Compute sub-structural dynamics (switch) {0=None; 1=SubDyn; 2=External Platform MCKF}\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['CompMooring'], 'CompMooring', '- Compute mooring system (switch) {0=None; 1=MAP++; 2=FEAMooring; 3=MoorDyn; 4=OrcaFlex}\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['CompIce'], 'CompIce', '- Compute ice loads (switch) {0=None; 1=IceFloe; 2=IceDyn}\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['MHK'], 'MHK', '- MHK turbine type (switch) {0=Not an MHK turbine; 1=Fixed MHK turbine; 2=Floating MHK turbine}\n'))
+        f.write('---------------------- ENVIRONMENTAL CONDITIONS --------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['Gravity'], 'Gravity', '- Gravitational acceleration (m/s^2)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['AirDens'], 'AirDens', '- Air density (kg/m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['WtrDens'], 'WtrDens', '- Water density (kg/m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['KinVisc'], 'KinVisc', '- Kinematic viscosity of working fluid (m^2/s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['SpdSound'], 'SpdSound', '- Speed of sound in working fluid (m/s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['Patm'], 'Patm', '- Atmospheric pressure (Pa) [used only for an MHK turbine cavitation check]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['Pvap'], 'Pvap', '- Vapour pressure of working fluid (Pa) [used only for an MHK turbine cavitation check]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['WtrDpth'], 'WtrDpth', '- Water depth (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['MSL2SWL'], 'MSL2SWL', '- Offset between still-water level and mean sea level (m) [positive upward]\n'))        
         f.write('---------------------- INPUT FILES ---------------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['Fst']['EDFile']+'"', 'EDFile', '- Name of file containing ElastoDyn input parameters (quoted string)\n'))
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['Fst']['BDBldFile(1)']+'"', 'BDBldFile(1)', '- Name of file containing BeamDyn input parameters for blade 1 (quoted string)\n'))
@@ -268,8 +283,6 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['Echo'], 'Echo', '- Echo input data to "<RootName>.ech" (flag)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['Method'], 'Method', '- Integration method: {1: RK4, 2: AB4, or 3: ABM4} (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['DT'], 'DT', 'Integration time step (s)\n'))
-        f.write('---------------------- ENVIRONMENTAL CONDITION ---------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['Gravity'], 'Gravity', '- Gravitational acceleration (m/s^2)\n'))
         f.write('---------------------- DEGREES OF FREEDOM --------------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['FlapDOF1'], 'FlapDOF1', '- First flapwise blade mode DOF (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['FlapDOF2'], 'FlapDOF2', '- Second flapwise blade mode DOF (flag)\n'))
@@ -720,12 +733,11 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['CompAA'], 'CompAA', '- Flag to compute AeroAcoustics calculation [only used when WakeMod=1 or 2]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AA_InputFile'], 'AA_InputFile', '- AeroAcoustics input file [used only when CompAA=true]\n'))
         f.write('======  Environmental Conditions  ===================================================================\n')
-        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AirDens'], 'AirDens', '- Air density (kg/m^3)\n'))
-        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['KinVisc'], 'KinVisc', '- Kinematic air viscosity (m^2/s)\n'))
-        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SpdSound'], 'SpdSound', '- Speed of sound (m/s)\n'))
-        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['Patm'], 'Patm', '- Atmospheric pressure (Pa) [used only when CavitCheck=True]\n'))
-        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['Pvap'], 'Pvap', '- Vapour pressure of fluid (Pa) [used only when CavitCheck=True]\n'))
-        f.write('{: 2.15e} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FluidDepth'], 'FluidDepth', '- Water depth above mid-hub height (m) [used only when CavitCheck=True]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AirDens'], 'AirDens', '- Air density (kg/m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['KinVisc'], 'KinVisc', '- Kinematic air viscosity (m^2/s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SpdSound'], 'SpdSound', '- Speed of sound (m/s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['Patm'], 'Patm', '- Atmospheric pressure (Pa) [used only when CavitCheck=True]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['Pvap'], 'Pvap', '- Vapour pressure of fluid (Pa) [used only when CavitCheck=True]\n'))
         f.write('======  Blade-Element/Momentum Theory Options  ====================================================== [used only when WakeMod=1]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SkewMod'], 'SkewMod', '- Type of skewed-wake correction model (switch) {1=uncoupled, 2=Pitt/Peters, 3=coupled} [unused when WakeMod=0 or 3]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SkewModFactor'], 'SkewModFactor', '- Constant used in Pitt/Peters skewed wake model {or "default" is 15/32*pi} (-) [used only when SkewMod=2; unused when WakeMod=0 or 3]\n'))
@@ -745,6 +757,8 @@ class InputWriter_OpenFAST(object):
         f.write('======  Beddoes-Leishman Unsteady Airfoil Aerodynamics Options  ===================================== [used only when AFAeroMod=2]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAMod'], 'UAMod', "- Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minnema/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]\n"))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FLookup'], 'FLookup', "- Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]\n"))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAStartRad'], 'UAStartRad', "- Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n"))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAEndRad'], 'UAEndRad', "- Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n"))
         f.write('======  Airfoil Information =========================================================================\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AFTabMod'], 'AFTabMod', '- Interpolation method for multiple airfoil tables {1=1D interpolation on AoA (first table only); 2=2D interpolation on AoA and Re; 3=2D interpolation on AoA and UserProp} (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['InCol_Alfa'], 'InCol_Alfa', '- The column in the airfoil tables that contains the angle of attack (-)\n'))
@@ -1138,7 +1152,7 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FWShedVorticity'], 'FWShedVorticity','Include shed vorticity in the far wake {default: false}\n'))
         f.write('------------------- WAKE REGULARIZATIONS AND DIFFUSION -----------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DiffusionMethod'], 'DiffusionMethod','Diffusion method to account for viscous effects {0: None, 1: Core Spreading, "default": 0}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','Method to determine the regularization parameters {0:  Manual, 1: Optimized, default: 0 }\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','Method to determine the regularization parameters {0: Constant, 1: Optimized, 2: Chord-scaled, 3: dr-scaled, default: 0 }\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegFunction'], 'RegFunction','Viscous diffusion function {0: None, 1: Rankine, 2: LambOseen, 3: Vatistas, 4: Denominator, "default": 3} (switch)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegMethod'], 'WakeRegMethod','Wake regularization method {1: Constant, 2: Stretching, 3: Age, default: 1} (switch)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegFactor'], 'WakeRegFactor','Wake regularization factor (m)\n'))
@@ -1231,15 +1245,22 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['TYawManS'], 'TYawManS', '- Time to start override yaw maneuver and end standard yaw control (s)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['YawManRat'], 'YawManRat', '- Yaw maneuver rate (in absolute value) (deg/s)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['NacYawF'], 'NacYawF', '- Final yaw angle for override yaw maneuvers (degrees)\n'))
+        f.write('---------------------- Aerodynamic Flow Control -------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfCmode'], 'AfCmode', '- Airfoil control mode {0- none, 1- cosine wave cycle, 4- user-defined from Simulink/Labview, 5- user-defined from Bladed-style DLL}\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Mean'], 'AfC_Mean', '- Mean level for sinusoidal cycling or steady value (-) [used only with AfCmode==1]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Amp'], 'AfC_Amp', '- Amplitude for for cosine cycling of flap signal (AfC = AfC_Amp*cos(Azimuth+phase)+AfC_mean) (-) [used only with AfCmode==1]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Phase'], 'AfC_phase', '- Phase relative to the blade azimuth (0 is vertical) for for cosine cycling of flap signal (deg) [used only with AfCmode==1]\n'))
         f.write('---------------------- STRUCTURAL CONTROL ---------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['NumBStC'], 'NumBStC', '- Number of blade structural controllers (integer)\n'))
-        f.write('{!s:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['BStCfiles']+'"', 'BStCfiles', '- Name of the file for blade tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format('"' + '" "'.join(self.fst_vt['ServoDyn']['BStCfiles']) + '"', 'BStCfiles', '- Name of the file for blade tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['NumNStC'], 'NumNStC', '- Number of nacelle structural controllers (integer)\n'))
-        f.write('{!s:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['NStCfiles']+'"', 'NStCfiles', '- Name of the file for nacelle tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format('"' + '" "'.join(self.fst_vt['ServoDyn']['NStCfiles']) + '"', 'NStCfiles', '- Name of the file for nacelle tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['NumTStC'], 'NumTStC', '- Number of tower structural controllers (integer)\n'))
-        f.write('{!s:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['TStCfiles']+'"', 'TStCfiles', '- Name of the file for tower tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format('"' + '" "'.join(self.fst_vt['ServoDyn']['TStCfiles']) + '"', 'TStCfiles', '- Name of the file for tower tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['NumSStC'], 'NumSStC', '- Number of sbustructure structural controllers (integer)\n'))
-        f.write('{!s:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['SStCfiles']+'"', 'SStCfiles', '- Name of the file for sbustructure tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format('"' + '" "'.join(self.fst_vt['ServoDyn']['SStCfiles']) + '"', 'SStCfiles', '- Name of the file for sbustructure tuned mass damper (quoted string) [unused when CompNTMD is false]\n'))
+        f.write('---------------------- CABLE CONTROL ---------------------------------------- \n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['CCmode'], 'CCmode', '- Cable control mode {0- none, 4- user-defined from Simulink/Labview, 5- user-defineAfC_phased from Bladed-style DLL}\n'))
         f.write('---------------------- BLADED INTERFACE ---------------------------------------- [used only with Bladed Interface]\n')
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['DLL_FileName']+'"', 'DLL_FileName', '- Name/location of the dynamic library {.dll [Windows] or .so [Linux]} in the Bladed-DLL format (-) [used only with Bladed Interface]\n'))
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['ServoDyn']['DLL_InFile']+'"', 'DLL_InFile', '- Name of input file sent to the DLL (-) [used only with Bladed Interface]\n'))
@@ -1465,7 +1486,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('---------------------- MEMBER JOINTS -------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NJoints'], 'NJoints', '- Number of joints (-)   [must be exactly 0 or at least 2]\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['JointID', 'Jointxi', 'Jointyi', 'Jointzi', 'JointAxID', 'JointOvrlp']])+'   [JointOvrlp= 0: do nothing at joint, 1: eliminate overlaps by calculating super member]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['JointID', 'Jointxi', 'Jointyi', 'Jointzi', 'JointAxID', 'JointOvrlp']])+'  ! [JointOvrlp= 0: do nothing at joint, 1: eliminate overlaps by calculating super member]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(m)', '(m)', '(-)', '(switch)']])+'\n')
         for i in range(self.fst_vt['HydroDyn']['NJoints']):
             ln = []
@@ -1557,7 +1578,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('-------------------- MEMBERS -------------------------------------------------\n')
         f.write('{:<11d} {:<11} {:}'.format(self.fst_vt['HydroDyn']['NMembers'], 'NMembers', '- Number of members (-)\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'MJointID1', 'MJointID2', 'MPropSetID1', 'MPropSetID2', 'MDivSize', 'MCoefMod', 'PropPot']])+'   [MCoefMod=1: use simple coeff table, 2: use depth-based coeff table, 3: use member-based coeff table] [ PropPot/=0 if member is modeled with potential-flow theory]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'MJointID1', 'MJointID2', 'MPropSetID1', 'MPropSetID2', 'MDivSize', 'MCoefMod', 'PropPot']])+' !  [MCoefMod=1: use simple coeff table, 2: use depth-based coeff table, 3: use member-based coeff table] [ PropPot/=0 if member is modeled with potential-flow theory]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(-)', '(-)', '(-)', '(m)', '(switch)', '(flag)']])+'\n')
         for i in range(self.fst_vt['HydroDyn']['NMembers']):
             ln = []
@@ -1674,7 +1695,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')        
         f.write('------------------- BASE REACTION JOINTS: 1/0 for Locked/Free DOF @ each Reaction Node ---------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NReact'], 'NReact', '- Number of Joints with reaction forces; be sure to remove all rigid motion DOFs of the structure  (else det([K])=[0])\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['RJointID', 'RctTDXss', 'RctTDYss', 'RctTDZss', 'RctRDXss', 'RctRDYss', 'RctRDZss','SSIfile']])+' [Global Coordinate System]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['RJointID', 'RctTDXss', 'RctTDYss', 'RctTDZss', 'RctRDXss', 'RctRDYss', 'RctRDZss','SSIfile']])+' ! [Global Coordinate System]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)', '(string)']])+'\n')
         for i in range(self.fst_vt['SubDyn']['NReact']):
             ln = []
@@ -1689,7 +1710,7 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('------- INTERFACE JOINTS: 1/0 for Locked (to the TP)/Free DOF @each Interface Joint (only Locked-to-TP implemented thus far (=rigid TP)) ---------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NInterf'], 'NInterf', '- Number of interface joints locked to the Transition Piece (TP):  be sure to remove all rigid motion dofs\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['IJointID', 'ItfTDXss', 'ItfTDYss', 'ItfTDZss', 'ItfRDXss', 'ItfRDYss', 'ItfRDZss']])+' [Global Coordinate System]\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['IJointID', 'ItfTDXss', 'ItfTDYss', 'ItfTDZss', 'ItfRDXss', 'ItfRDYss', 'ItfRDZss']])+' ! [Global Coordinate System]\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)', '(flag)']])+'\n')
         for i in range(self.fst_vt['SubDyn']['NInterf']):
             ln = []
@@ -1812,7 +1833,7 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutSFmt'], 'OutSFmt', '- Output format for header strings in the <rootname>.SD.out file\n'))
         f.write('------------------------- MEMBER OUTPUT LIST ------------------------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NMOutputs'], 'NMOutputs', '- Number of members whose forces/displacements/velocities/accelerations will be output (-) [Must be <= 9].\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'NOutCnt', 'NodeCnt']])+'[NOutCnt=how many nodes to get output for [< 10]; NodeCnt are local ordinal numbers from the start of the member, and must be >=1 and <= NDiv+1] If NMOutputs=0 leave blank as well.\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['MemberID', 'NOutCnt', 'NodeCnt']])+' ! [NOutCnt=how many nodes to get output for [< 10]; NodeCnt are local ordinal numbers from the start of the member, and must be >=1 and <= NDiv+1] If NMOutputs=0 leave blank as well.\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)','(-)','(-)']])+'\n')
         for i in range(self.fst_vt['SubDyn']['NMOutputs']):
             ln = []
@@ -1964,7 +1985,109 @@ class InputWriter_OpenFAST(object):
         f.write('END\n')
         f.write('------------------------- need this line --------------------------------------\n')
 
-        f.close()        
+        f.close()
+        
+        
+    def write_StC(self,StC_vt,StC_filename):
+
+        stc_file = os.path.join(self.FAST_runDirectory, StC_filename)
+        f = open(stc_file, 'w')
+        
+        f.write('------- STRUCTURAL CONTROL (StC) INPUT FILE ----------------------------\n')
+        f.write('Generated with AeroElasticSE FAST driver within WEIS\n')
+        
+        f.write('---------------------- SIMULATION CONTROL --------------------------------------\n')
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['Echo'], 'Echo', '- Echo input data to "<rootname>.SD.ech" (flag)\n'))
+        
+        f.write('---------------------- StC DEGREES OF FREEDOM ----------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_DOF_MODE'], 'StC_DOF_MODE', '- DOF mode (switch) {0: No StC or TLCD DOF; 1: StC_X_DOF, StC_Y_DOF, and/or StC_Z_DOF (three independent StC DOFs); 2: StC_XY_DOF (Omni-Directional StC); 3: TLCD; 4: Prescribed force/moment time series}\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['StC_X_DOF'], 'StC_X_DOF', '- DOF on or off for StC X (flag) [Used only when StC_DOF_MODE=1]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['StC_Y_DOF'], 'StC_Y_DOF', '- DOF on or off for StC Y (flag) [Used only when StC_DOF_MODE=1]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['StC_Z_DOF'], 'StC_Z_DOF', '- DOF on or off for StC Z (flag) [Used only when StC_DOF_MODE=1]\n'))
+        
+        f.write('---------------------- StC LOCATION ------------------------------------------- [relative to the reference origin of component attached to]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_P_X'], 'StC_P_X', '- At rest X position of StC (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_P_Y'], 'StC_P_Y', '- At rest Y position of StC (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_P_Z'], 'StC_P_Z', '- At rest Z position of StC (m)\n'))
+        
+        f.write('---------------------- StC INITIAL CONDITIONS --------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_DSP'], 'StC_X_DSP', '- StC X initial displacement (m) [relative to at rest position]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_DSP'], 'StC_Y_DSP', '- StC Y initial displacement (m) [relative to at rest position]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_DSP'], 'StC_Z_DSP', '- StC Z initial displacement (m) [relative to at rest position; used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['StC_Z_PreLd'], 'StC_Z_PreLd', '- StC Z pre-load (N) {"gravity" to offset for gravity load; "none" or 0 to turn off} [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        
+        f.write('---------------------- StC CONFIGURATION -------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_PSP'], 'StC_X_PSP', '- Positive stop position (maximum X mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_NSP'], 'StC_X_NSP', '- Negative stop position (minimum X mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_PSP'], 'StC_Y_PSP', '- Positive stop position (maximum Y mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_NSP'], 'StC_Y_NSP', '- Negative stop position (minimum Y mass displacement) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_PSP'], 'StC_Z_PSP', '- Positive stop position (maximum Z mass displacement) (m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_NSP'], 'StC_Z_NSP', '- Negative stop position (minimum Z mass displacement) (m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        
+        f.write('---------------------- StC MASS, STIFFNESS, & DAMPING ------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_M'], 'StC_X_M', '- StC X mass (kg) [must equal StC_Y_M for StC_DOF_MODE = 2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_M'], 'StC_Y_M', '- StC Y mass (kg) [must equal StC_X_M for StC_DOF_MODE = 2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_M'], 'StC_Z_M', '- StC Z mass (kg) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_XY_M'], 'StC_XY_M', '- StC Z mass (kg) [used only when StC_DOF_MODE=2]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_K'], 'StC_X_K', '- StC X stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_K'], 'StC_Y_K', '- StC Y stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_K'], 'StC_Z_K', '- StC Z stiffness (N/m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C'], 'StC_X_C', '- StC X damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_C'], 'StC_Y_C', '- StC Y damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_C'], 'StC_Z_C', '- StC Z damping (N/(m/s)) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_KS'], 'StC_X_KS', '- Stop spring X stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_KS'], 'StC_Y_KS', '- Stop spring Y stiffness (N/m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_KS'], 'StC_Z_KS', '- Stop spring Z stiffness (N/m) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_CS'], 'StC_X_CS', '- Stop spring X damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_CS'], 'StC_Y_CS', '- Stop spring Y damping (N/(m/s))\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_CS'], 'StC_Z_CS', '- Stop spring Z damping (N/(m/s)) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        
+        f.write('---------------------- StC USER-DEFINED SPRING FORCES ------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['Use_F_TBL'], 'Use_F_TBL', '- Use spring force from user-defined table (flag)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['NKInpSt'], 'NKInpSt', '- Number of spring force input stations\n'))
+        
+        f.write('---------------------- StC SPRING FORCES TABLE -------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('X                F_X               Y              F_Y              Z              F_Z\n')
+        f.write('(m)               (N)              (m)             (N)             (m)             (N)\n')
+        table = StC_vt['SpringForceTable']
+        for x, f_x, y, f_y, z, f_z in zip(table['X'],table['F_X'],table['Y'],table['F_Y'],table['Z'],table['F_Z']):
+            row = [x, f_x, y, f_y, z, f_z]
+            f.write(' '.join(['{: 2.8e}'.format(val) for val in row])+'\n')
+        
+        f.write('---------------------- StructCtrl CONTROL -------------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CMODE'],     'StC_CMODE',        '- Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CChan'],     'StC_CChan',        '- Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_SA_MODE'],   'StC_SA_MODE',      '- Semi-Active control mode {1: velocity-based ground hook control; 2: Inverse velocity-based ground hook control; 3: displacement-based ground hook control 4: Phase difference Algorithm with Friction Force 5: Phase difference Algorithm with Damping Force} (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_HIGH'],  'StC_X_C_HIGH',     '- StC X high damping for ground hook control\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_LOW'],   'StC_X_C_LOW',      '- StC X low damping for ground hook control\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_C_HIGH'],  'StC_Y_C_HIGH',     '- StC Y high damping for ground hook control\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_C_LOW'],   'StC_Y_C_LOW',      '- StC Y low damping for ground hook control\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_C_HIGH'],  'StC_Z_C_HIGH',     '- StC Z high damping for ground hook control [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_C_LOW'],   'StC_Z_C_LOW',      '- StC Z low damping for ground hook control  [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_BRAKE'], 'StC_X_C_BRAKE',    '- StC X high damping for braking the StC (Don''t use it now. should be zero)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Y_C_BRAKE'], 'StC_Y_C_BRAKE',    '- StC Y high damping for braking the StC (Don''t use it now. should be zero)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_Z_C_BRAKE'], 'StC_Z_C_BRAKE',    '- StC Z high damping for braking the StC (Don''t use it now. should be zero) [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]\n'))
+
+        f.write('---------------------- TLCD --------------------------------------------------- [used only when StC_DOF_MODE=3]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['L_X'], 'L_X', '- X TLCD total length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['B_X'], 'B_X', '- X TLCD horizontal length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['area_X'], 'area_X', '- X TLCD cross-sectional area of vertical column (m^2)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['area_ratio_X'], 'area_ratio_X', '- X TLCD cross-sectional area ratio (vertical column area divided by horizontal column area) (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['headLossCoeff_X'], 'headLossCoeff_X', '- X TLCD head loss coeff (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['rho_X'], 'rho_X', '- X TLCD liquid density (kg/m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['L_Y'], 'L_Y', '- Y TLCD total length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['B_Y'], 'B_Y', '- Y TLCD horizontal length (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['area_Y'], 'area_Y', '- Y TLCD cross-sectional area of vertical column (m^2)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['area_ratio_Y'], 'area_ratio_Y', '- Y TLCD cross-sectional area ratio (vertical column area divided by horizontal column area) (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['headLossCoeff_Y'], 'headLossCoeff_Y', '- Y TLCD head loss coeff (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['rho_Y'], 'rho_Y', '- Y TLCD liquid density (kg/m^3)\n'))
+        
+        f.write('---------------------- PRESCRIBED TIME SERIES --------------------------------- [used only when StC_DOF_MODE=4]\n')
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['PrescribedForcesCoord'], 'PrescribedForcesCoord',    '- Prescribed forces are in global or local coordinates (switch) {1: global; 2: local}\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(StC_vt['PrescribedForcesFile'], 'PrescribedForcesFile', '- Time series force and moment (7 columns of time, FX, FY, FZ, MX, MY, MZ)\n'))
+        f.write('-------------------------------------------------------------------------------\n')
+
+        f.close()
 
 if __name__=="__main__":
 
@@ -1989,5 +2112,18 @@ if __name__=="__main__":
     fastout.FAST_namingOut = 'iea15'
     fastout.update(fst_update=fst_update)
     fastout.execute()
+
+    # import pickle
+    # with open('fst_vt.pkl','rb') as f:
+    #     fst_vt = pickle.load(f)
+
+    # fastout = InputWriter_OpenFAST()
+    # fastout.FAST_runDirectory = 'none'
+
+    # fst_vt['TStC'][0]['NKInpSt']      = 2
+
+    # for i_TStC, TStC in enumerate(fst_vt['TStC']):
+    #     fastout.write_StC(TStC,fst_vt['ServoDyn']['TStCfiles'][i_TStC])
+    # print('here')
 
 

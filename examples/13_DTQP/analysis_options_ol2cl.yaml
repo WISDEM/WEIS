@@ -1,0 +1,46 @@
+general:
+    folder_output: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_1
+    fname_output: iea15mw
+    
+design_variables:
+  control:
+    servo:
+      pitch_control:
+          omega:
+            flag: True
+            min: 0.1
+            max: 0.5
+          zeta:
+            flag: True
+            min: 0.1
+            max: 3.0
+          Kp_float:
+            flag: False
+            min: -40
+            max: 0
+          ptfm_freq:
+            flag: False
+            max: 0.4
+
+merit_figure: OL2CL_pitch
+
+driver:
+  optimization:
+    flag: True           # Flag to enable optimization
+    tol: 1.e-2            # Optimality tolerance
+    max_major_iter: 2     # Maximum number of major design iterations (SNOPT)
+    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+    # max_iter: 2          # Maximum number of iterations (SLSQP)
+    solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    step_size: 1.e-3      # Step size for finite differencing
+    form: forward         # Finite differencing mode, either forward or central
+  design_of_experiments:
+    flag: False            # Flag to enable design of experiments
+    run_parallel: False    # Flag to run using parallel processing
+    generator: FullFact    # Type of input generator. (Uniform)
+    num_samples: 5       # number of samples for (Uniform only)
+
+recorder:
+    flag: True             # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder
+    just_dvs: True          

@@ -30,6 +30,9 @@ from ROSCO_toolbox.ofTools.case_gen.CaseGen_General     import CaseGen_General
 this_dir          = os.path.dirname(os.path.abspath(__file__))
 rosco_dir         = os.path.dirname(this_dir)
 example_out_dir   = os.path.join(this_dir,'examples_out')
+example_out_dir = os.path.join(this_dir,'examples_out')
+if not os.path.isdir(example_out_dir):
+  os.makedirs(example_out_dir)
 
 # Load yaml file (Open Loop Case)
 parameter_filename = os.path.join(rosco_dir,'Tune_Cases/IEA15MW_OL.yaml')
@@ -40,11 +43,11 @@ turbine_params      = inps['turbine_params']
 controller_params   = inps['controller_params']
 
 # Set up open loop input
-olc = ROSCO_controller.OpenLoopControl(t_max=300)
+olc = ROSCO_controller.OpenLoopControl(t_max=20)
 olc.interp_timeseries(
   'blade_pitch', 
-  [0,40,80,120], 
-  [0,0,0.0873,0.1396] , 
+  [0,20], 
+  [0,0.0873] , 
   'sigma'
   )
 olc.const_timeseries(
@@ -104,6 +107,11 @@ txt_filename=os.path.join(this_dir,path_params['FAST_directory'],path_params['ro
 )
 for discon_input in discon_vt:
     case_inputs[('DISCON_in',discon_input)] = {'vals': [discon_vt[discon_input]], 'group': 0}
+
+case_inputs[('Fst','TMax')] = {'vals': [20], 'group': 0}
+case_inputs[('InflowWind','HWindSpeed')] = {'vals': [10], 'group': 0}
+case_inputs[('ElastoDyn','HWindSpeed')] = {'vals': [5.], 'group': 0}
+case_inputs[('DISCON_in','LoggingLevel')] = {'vals': [3], 'group': 0}
 
 # Generate cases
 run_dir = os.path.join(example_out_dir,'14_OL_Sim')

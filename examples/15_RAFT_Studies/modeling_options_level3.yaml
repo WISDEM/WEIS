@@ -1,0 +1,126 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: IEA_w_TMD
+        OF_run_dir: outputs/15_level3_comp_1
+        save_iterations: True
+        save_timeseries: True
+        use_exe: True
+        allow_fails: True
+        fail_value: 9999
+
+WISDEM:
+    RotorSE:
+        flag: True
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: True
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    # BOS:
+    #     flag: True
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.01
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 3
+        CompIce: 0
+        OutFileFmt: 3
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: True
+        FlapDOF2: True
+        EdgeDOF: True
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+    HydroDyn:
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+        WaveSeed1: 123456789
+        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
+        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
+        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
+        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
+        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
+        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
+        PotMod: 1
+        # WaveMod: 0
+        # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+
+Level1:
+    flag: False
+    potential_model_override: 2
+    trim_ballast: 2
+    heave_tol: 1
+    save_designs: True
+
+ROSCO:
+    flag: True
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 2
+    Fl_Mode: 2 
+    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
+    zeta_pc: [1]
+    omega_pc: [0.2]
+    U_pc: [12]
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    twr_freq: 3.2
+    ptfm_freq: 0.2
+    Kp_float: -10
+    
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
+        wave_height_NSS: [0.83, 0.88, 0.94, 1.03, 1.16, 1.34, 1.57, 1.86, 2.22, 2.62, 3.07]
+        wave_period_NSS: [6.9, 6.96, 7.02, 7.12, 7.25, 7.43, 7.66, 7.94, 8.27, 8.63, 9.01]
+        wave_height_SSS: [6.3, 8, 8, 8.1, 8.5, 8.5, 9.8, 9.8, 9.8, 9.8, 9.9]
+        wave_period_SSS: [11.5, 12.7, 12.7, 12.8, 13.1, 13.1, 14.1, 14.1, 14.1, 14.1, 14.1]
+        wave_height_1: 6.98
+        wave_period_1: 11.7
+        wave_height_50: 10.68
+        wave_period_50: 14.2
+    DLCs:
+        - DLC: "1.1"
+          n_seeds: 6
+        - DLC: "1.3"
+          n_seeds: 6
+        - DLC: "1.4"
+        - DLC: "1.5"
+        - DLC: "1.6"
+          n_seeds: 6
+        - DLC: "6.1"
+          n_seeds: 6
+        - DLC: "6.3"
+          n_seeds: 6
+
