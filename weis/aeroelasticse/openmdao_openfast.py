@@ -1733,7 +1733,8 @@ class FASTLoadCases(ExplicitComponent):
                 else:
                     dlc_generator.cases[i_case].IECturbc = wt_class
                 # Reference height for wind speed
-                dlc_generator.cases[i_case].RefHt = hub_height
+                if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].RefHt = hub_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
                 dlc_generator.cases[i_case].HubHt = hub_height
                 # Height of wind grid, it stops 1 mm above the ground
