@@ -508,6 +508,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_output('OL2CL_pitch', val=0.0, desc="Open loop to closed loop avarege error")
 
         self.add_discrete_output('fst_vt_out', val={})
+        self.add_discrete_output('ts_out_dir', val={})
 
         # Iteration counter for openfast calls. Initialize at -1 so 0 after first call
         self.of_inumber = -1
@@ -1788,7 +1789,7 @@ class FASTLoadCases(ExplicitComponent):
                     rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
                     pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
                 else:
-                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi
+                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi / fst_vt['ElastoDyn']['GBRatio']
                     pitch_initial[i_case]       = 15
 
                 if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
@@ -2071,7 +2072,7 @@ class FASTLoadCases(ExplicitComponent):
             self.save_timeseries(chan_time)
 
         if modopt['General']['openfast_configuration']['save_iterations']:
-            self.save_iterations(summary_stats,DELs)
+            self.save_iterations(summary_stats,DELs,discrete_outputs)
 
         # Open loop to closed loop error, move this to before save_timeseries when finished
         if modopt['OL2CL']['flag']:
@@ -2636,7 +2637,7 @@ class FASTLoadCases(ExplicitComponent):
             output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
             output.df.to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
 
-    def save_iterations(self,summ_stats,DELs):
+    def save_iterations(self,summ_stats,DELs,discrete_outputs):
         '''
         Save summary stats, DELs of each iteration
         '''
@@ -2648,3 +2649,9 @@ class FASTLoadCases(ExplicitComponent):
         # Save dataframes as pickles
         summ_stats.to_pickle(os.path.join(save_dir,'summary_stats.p'))
         DELs.to_pickle(os.path.join(save_dir,'DELs.p'))
+
+        # Save fst_vt as pickle
+        with open(os.path.join(save_dir,'fst_vt.p'), 'wb') as f:
+            pickle.dump(self.fst_vt,f)
+
+        discrete_outputs['ts_out_dir'] = save_dir
