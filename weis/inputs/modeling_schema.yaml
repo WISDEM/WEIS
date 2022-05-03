@@ -2968,8 +2968,7 @@ properties:
                                 maximum: 180.0
                         yaw_misalign:
                             type: array
-                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: [0.]
+                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed. Default depends on DLC, specified in dlc_generator.
                             items:
                                 type: number
                                 unit: deg
