@@ -2,7 +2,7 @@ name: IEA 15MW Offshore Reference Turbine, with taped chord tip design
 
 assembly:
     turbine_class: I
-    turbulence_class: C
+    turbulence_class: B
     drivetrain: direct_drive
     rotor_orientation: Upwind
     number_of_blades: 3
