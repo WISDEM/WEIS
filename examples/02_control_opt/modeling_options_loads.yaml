@@ -136,29 +136,30 @@ DLC_driver:
         #   n_seeds: 6
         # - DLC: "6.3"
         #   n_seeds: 6
-        # - DLC: "5.1"
-        #   wind_speed: [12]
-        #   n_seeds: 2
-        #   n_azimuth: 3
-        #   analysis_time: 150.
-        #   shutdown_time: 70.
-        #   transient_time: 0.0
+        - DLC: "5.1"
+          wind_speed: [12]
+          n_seeds: 1
+          n_azimuth: 3
+          analysis_time: 150.
+          shutdown_time: 70.
+          transient_time: 0.0
         #   turbulent_wind:
         #       HubHt: 140
         #       GridHeight: 220
         #       GridWidth: 220
         #       AnalysisTime: 5.
-        # - DLC: "6.5"
-        #   yaw_misalign: [-8.,8.]
-        #   wave_height: [12.57]
-        #   wave_period: [16.0]
-        #   transient_time: 0.0
-        #   wave_gamma: [1.2]
-        #   analysis_time: 10.
-        #   turbulent_wind:
-        #       HubHt: 140
-        #       GridHeight: 220
-        #       GridWidth: 220
-        #       URef: 54.8339
+        - DLC: "6.5"
+          yaw_misalign: [-8.,8.]
+          wave_height: [12.57]
+          wave_period: [16.0]
+          transient_time: 0.0
+          wave_gamma: [1.2]
+          analysis_time: 10.
+          turbulent_wind:
+              HubHt: 140
+              GridHeight: 220
+              GridWidth: 220
+              URef: 54.8339
+              PLExp: 0.12
 
 
