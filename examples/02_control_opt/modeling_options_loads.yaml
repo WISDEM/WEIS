@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA15
-        OF_run_dir: outputs/dlc14_waveaz
+        OF_run_dir: outputs/02_loads
         save_timeseries: True
         save_iterations: True
         use_exe: True
@@ -96,7 +96,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 0
     Fl_Mode: 0 
-    tuning_yaml: /Users/dzalkind/Projects/Esteyco/esteyco_models/ROSCO/IEA15MW-Monopile.yaml
+    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
     zeta_pc: [1]
     omega_pc: [0.2]
     U_pc: [12,18]
