@@ -1794,7 +1794,6 @@ class FASTLoadCases(ExplicitComponent):
 
                 if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
                     shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
-                    azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
             else:
                 rot_speed_initial[i_case]   = 0.
                 pitch_initial[i_case]       = 90.
@@ -1809,12 +1808,16 @@ class FASTLoadCases(ExplicitComponent):
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
             WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
+
+            # Other case info
             self.TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
             self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
             dlc_label[i_case] = dlc_generator.cases[i_case].label
             wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
             mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
             yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
+            azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
+
 
 
         # Parameteric inputs

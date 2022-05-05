@@ -405,6 +405,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         # Set azimuth start positions, tile so length is same as wind_seeds
         azimuth_inits = np.tile(
             np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
@@ -427,6 +433,8 @@ class DLCGenerator(object):
                 idlc.wave_period = wave_Tp[i_Tp]
                 idlc.wave_gamma = wave_gamma[i_WG]
                 idlc.wave_heading = wave_heading[i_WaH]
+                idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
+                idlc.azimuth_init = azimuth_inits[i_WaSe]
                 idlc.IEC_WindType = 'ECD'
                 idlc.turbulent_wind = False
                 idlc.label = '1.4'
@@ -458,6 +466,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         directions = ['p', 'n']
         shears=['h', 'v']
         # Counters for wave conditions
@@ -478,6 +492,7 @@ class DLCGenerator(object):
                     idlc.wave_period = wave_Tp[i_Tp]
                     idlc.wave_gamma = wave_gamma[i_WG]
                     idlc.wave_heading = wave_heading[i_WaH]
+                    idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
                     idlc.IEC_WindType = 'EWS'
                     idlc.turbulent_wind = False
                     idlc.label = '1.5'
@@ -511,6 +526,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_SSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_SSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         # Counter for wind seed
         i_WiSe=0
         # Counters for wave conditions
@@ -530,6 +551,7 @@ class DLCGenerator(object):
             idlc.wave_period = wave_Tp[i_Tp]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
             idlc.turbulent_wind = True
             idlc.label = '1.6'
             if options['analysis_time'] > 0:
