@@ -145,7 +145,6 @@ DLC_driver:
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True
-              IECturbc: B
               RefHt: 150.0
               PLExp: 0.11
 
