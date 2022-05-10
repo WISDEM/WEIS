@@ -3008,6 +3008,16 @@ properties:
                                 minItems: 1
                                 minimum: 0.0
                                 maximum: 100.0
+                        current:
+                            type: array
+                            description: Water current. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_height is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
+                            default: []
+                            items:
+                                type: number
+                                unit: m/s
+                                minItems: 1
+                                minimum: 0.0
+                                maximum: 100.0
                         wave_heading:
                             type: array
                             description: Heading of the waves with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
@@ -3380,6 +3390,39 @@ properties:
                             minimum: 0.0
                             maximum: 1000.0
                             uniqueItems: false
+                    current_NSS:
+                        type: array
+                        description: Array of currents for NSS conditional to wind speed
+                        default: [0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.30]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    current_fatigue:
+                        type: array
+                        description: Array of currents for fatigue conditional to wind speed
+                        default: [0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.30]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    current_SSS:
+                        type: array
+                        description: Array of currnents for SSS conditional to wind speed
+                        default: [0.20, 0.24, 0.28, 0.32, 0.36, 0.40, 0.44, 0.48, 0.52, 0.56, 0.60]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
                     wave_height_fatigue:
                         type: array
                         description: Array of Hs for fatigue computations conditional to wind speed
@@ -3429,6 +3472,20 @@ properties:
                             description: Wave height with 50-year occurrence, used in DLC 6.1
                             default: 15.
                             unit: m
+                            minimum: 0.0
+                            maximum: 100.0
+                    current_1:
+                            type: number
+                            description: Current with 1-year occurrence, used in DLC 6.3
+                            default: 0.75
+                            unit: m/s
+                            minimum: 0.0
+                            maximum: 100.0
+                    current_50:
+                            type: number
+                            description: Current with 50-year occurrence, used in DLC 6.1
+                            default: 1.3
+                            unit: m/s
                             minimum: 0.0
                             maximum: 100.0
                     wave_period50:
