@@ -1,4 +1,11 @@
-In this example, we can linearize WEIS models using OpenFAST
+There are multiple examples in this folder focused on running WEIS at level 3 (nonlinear OpenFAST) using the IEA 15MW wind turbine as the testbed geometry.
+
+`weis_driver.py` runs an analysis (not optimization) of the monopile version of the IEA 15MW.
+`weis_driver_umaine_semi.py` performs an optimization of the IEA 15MW equipped with the UMaine VolturnUS-S floating platform.
+`weis_driver_TMDs.py` performs an optimization of the tuned mass damper (TMD) properties for the floating platform version of IEA 15MW.
+`weis_driver_tower_DVs.py` performs a tower sizing optimization of the floating platform version of IEA 15MW with TMDs included.
+ 
+
 
 # WEIS Linearizations
 To linearize a WEIS model using OpenFAST, run
