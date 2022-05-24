@@ -1827,9 +1827,9 @@ class FASTLoadCases(ExplicitComponent):
         constrained_wave[np.array([c.constrained_wave for c in dlc_generator.cases])] = 2
 
         # Current
-        CurMod = np.zeros(dlc_generator.n_cases)
+        CurrMod = np.zeros(dlc_generator.n_cases,dtype=int)
         CurrSSV0 = np.array([c.current for c in dlc_generator.cases])
-        CurMod[CurrSSV0 > 0] = 1
+        CurrMod[CurrSSV0 > 0] = 1
 
         
         # Parameteric inputs
@@ -1875,7 +1875,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("SeaState","ConstWaveMod")] = {'vals':constrained_wave, 'group':1}
         case_inputs[("SeaState","CrestHmax")] = {'vals':1.86 * WaveHs, 'group':1}  # unused if ConstWaveMod=0
         case_inputs[("SeaState","CrestTime")] = {'vals':(self.TMax + self.TStart)/2, 'group':1} # midpoint of analysis time
-        case_inputs[("SeaState","CurrMod")] = {'vals':CurMod, 'group':1} 
+        case_inputs[("SeaState","CurrMod")] = {'vals':CurrMod, 'group':1} 
         case_inputs[("SeaState","CurrDIV")] = {'vals':CurrSSV0, 'group':1} 
         case_inputs[("SeaState","CurrDIDir")] = {'vals':WaveHd, 'group':1}    # both current directions aligned with wave direction 
         case_inputs[("SeaState","CurrNSDir")] = {'vals':WaveHd, 'group':1} 
