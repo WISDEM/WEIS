@@ -1916,7 +1916,6 @@ properties:
                         type: number
                         minimum: 0.0
                         maximum: 1e3
-                        default: 0.0125
                         unit: s
                         description: Time step for wave radiation kernel calculations, use 0.0 for default (sec) [only used when PotMod=1; DT<=RdtnDT<=0.1 recommended; determines RdtnOmegaMax=Pi/RdtnDT in the cosine transform]
                     MnDrift:

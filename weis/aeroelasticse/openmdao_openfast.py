@@ -1828,8 +1828,8 @@ class FASTLoadCases(ExplicitComponent):
 
         # Current
         CurrMod = np.zeros(dlc_generator.n_cases,dtype=int)
-        CurrSSV0 = np.array([c.current for c in dlc_generator.cases])
-        CurrMod[CurrSSV0 > 0] = 1
+        CurrDIV = np.array([c.current for c in dlc_generator.cases])
+        CurrMod[CurrDIV > 0] = 1
 
         
         # Parameteric inputs
