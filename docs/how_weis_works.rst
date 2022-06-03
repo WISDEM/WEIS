@@ -9,6 +9,10 @@ The analysis_options.yaml determine how to run simulations, either a single run 
 
 A full description of the inputs can be found `here <https://github.com/WISDEM/WEIS/tree/master/weis/inputs>`_ (will point to rst when available).
 
+.. image:: images/WEIS_Stack.png
+  :width: 400
+  :alt: Stack of software tools contained in WEIS
+
 WEIS is `"glued" <https://github.com/WISDEM/WEIS/blob/master/weis/glue_code/glue_code.py>`_ together using `openmdao <https://openmdao.org/>`_ components and groups.
 
 WEIS works best by running `examples <https://github.com/WISDEM/WEIS/tree/master/examples>`_:
@@ -21,3 +25,7 @@ WEIS works best by running `examples <https://github.com/WISDEM/WEIS/tree/master
 More documentation specific to these examples can be found there, with more to follow.
 
 This documentation only covers a summary of WEIS's functionality.  WEIS can be adapted to solve a wide variety of problems.  If you have questions or would like to discuss WEIS's functionality further, please email dzalkind (at) nrel (dot) gov. 
+
+.. image:: images/WEIS_Flow.png
+  :width: 400
+  :alt: Stack of software tools contained in WEIS
