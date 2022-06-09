@@ -250,7 +250,7 @@ class DLCGenerator(object):
 
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _, _ = self.get_metocean(options)
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
         if len(wave_Hs)==0:
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
