@@ -1174,8 +1174,7 @@ class FASTLoadCases(ExplicitComponent):
             # Find the members where the 9 channels of SubDyn should be placed
             grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
             n_channels = 9
-            grid_target = np.linspace(0., 1., n_channels)
-            # Take the first node for every member, except for last one
+            grid_target = np.linspace(0., 0.999999999, n_channels)
             idx_out = [np.where(grid_i >= grid_joints_monopile)[0][-1] for grid_i in grid_target]
             idx_out = np.unique(idx_out)
             fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
