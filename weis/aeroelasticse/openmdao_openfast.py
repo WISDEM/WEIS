@@ -1265,6 +1265,9 @@ class FASTLoadCases(ExplicitComponent):
         # HydroDyn inputs
         if modopt['flags']['monopile']:
             z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
+            # Don't want any nodes near zero for annoying hydrodyn errors
+            idx0 = np.intersect1d(np.where(z_coarse>-0.5), np.where(z_coarse<0.5))
+            z_coarse = np.delete(z_coarse, idx0) 
             n_joints = len(z_coarse)
             n_members = n_joints - 1
             joints_xyz = np.c_[np.zeros((n_joints,2)), z_coarse]
@@ -1337,7 +1340,7 @@ class FASTLoadCases(ExplicitComponent):
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
             if len(idx) > 0:
-                joints_xyz[idx,2] = 1e-2
+                joints_xyz[idx,2] += 1e-2
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
