@@ -500,7 +500,7 @@ def create_all_plots(
     if zs.min() < -5.0:
         ax2.plot(vx, np.zeros(2), color="b", linestyle="--")
         ax2.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
-        ax2.plot(vx, 20 * np.ones(2), color="g", linestyle="--")
+        ax2.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
     ax2.set_xlim(vx)
     if mult_flag:
         ax2.legend(fontsize=font_size)
