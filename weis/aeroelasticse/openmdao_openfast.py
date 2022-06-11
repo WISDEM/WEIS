@@ -1176,10 +1176,10 @@ class FASTLoadCases(ExplicitComponent):
             n_channels = 9
             grid_target = np.linspace(0., 1., n_channels)
             # Take the first node for every member, except for last one
-            idx_out = [np.argmin(abs(grid_joints_monopile-grid_i)) for grid_i in grid_target]
-            fst_vt['SubDyn']['NMOutputs'] = n_channels
+            idx_out = [np.where(grid_i >= grid_joints_monopile)[0][-1] for grid_i in grid_target]
+            idx_out = np.unique(idx_out)
+            fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
             fst_vt['SubDyn']['MemberID_out'] = [idx+1 for idx in idx_out]
-            fst_vt['SubDyn']['MemberID_out'][-1] -= 1
             fst_vt['SubDyn']['NOutCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
             fst_vt['SubDyn']['NodeCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
             fst_vt['SubDyn']['NodeCnt'][-1] = 2
