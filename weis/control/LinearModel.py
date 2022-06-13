@@ -109,7 +109,7 @@ class LinearTurbineModel(object):
                 if reduceStates:
                     if not iCase:
                         n_states = np.zeros((n_lin_cases,1),dtype=int)
-                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase],remove_useless=False)
+                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase])
                     
                     # figure out minimum number of states for the systems at each operating point
                     P_min = co.minreal(P,tol=1e-7,verbose=False)
@@ -147,7 +147,7 @@ class LinearTurbineModel(object):
                         self.C_ops = np.zeros((len(indOuts),max(n_states)[0],n_lin_cases))
                         self.D_ops = np.zeros((len(indOuts),len(indInps),n_lin_cases))
 
-                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase],remove_useless=False)
+                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase])
                     P_red = co.balred(P,max(n_states)[0],method='matchdc')         # I don't know why it's not reducing to max(n_states), must add 2
                     # P_red = co.minreal(P,tol=1e-7,verbose=False)         # I don't know why it's not reducing to max(n_states), must add 2
                     self.A_ops[:,:,iCase] = P_red.A
@@ -308,7 +308,7 @@ class LinearTurbineModel(object):
             x_op    = self.x_ops[:,0]            
 
         # NOTE: co.StateSpace() will remove states sometimes! This kwarg may be changed, was different here: https://github.com/python-control/python-control/blob/master/control/statesp.py
-        P_op                = co.StateSpace(A,B,C,D,remove_useless=False)
+        P_op                = co.StateSpace(A,B,C,D)
         if reduce_states:
             P_op            = co.minreal(P_op,tol=1e-7,verbose=False)
         P_op.InputName      = self.DescCntrlInpt

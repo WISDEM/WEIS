@@ -1174,12 +1174,11 @@ class FASTLoadCases(ExplicitComponent):
             # Find the members where the 9 channels of SubDyn should be placed
             grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
             n_channels = 9
-            grid_target = np.linspace(0., 1., n_channels)
-            # Take the first node for every member, except for last one
-            idx_out = [np.argmin(abs(grid_joints_monopile-grid_i)) for grid_i in grid_target]
-            fst_vt['SubDyn']['NMOutputs'] = n_channels
+            grid_target = np.linspace(0., 0.999999999, n_channels)
+            idx_out = [np.where(grid_i >= grid_joints_monopile)[0][-1] for grid_i in grid_target]
+            idx_out = np.unique(idx_out)
+            fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
             fst_vt['SubDyn']['MemberID_out'] = [idx+1 for idx in idx_out]
-            fst_vt['SubDyn']['MemberID_out'][-1] -= 1
             fst_vt['SubDyn']['NOutCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
             fst_vt['SubDyn']['NodeCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
             fst_vt['SubDyn']['NodeCnt'][-1] = 2
@@ -1266,6 +1265,9 @@ class FASTLoadCases(ExplicitComponent):
         # HydroDyn inputs
         if modopt['flags']['monopile']:
             z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
+            # Don't want any nodes near zero for annoying hydrodyn errors
+            idx0 = np.intersect1d(np.where(z_coarse>-0.5), np.where(z_coarse<0.5))
+            z_coarse = np.delete(z_coarse, idx0) 
             n_joints = len(z_coarse)
             n_members = n_joints - 1
             joints_xyz = np.c_[np.zeros((n_joints,2)), z_coarse]
@@ -1338,7 +1340,7 @@ class FASTLoadCases(ExplicitComponent):
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
             if len(idx) > 0:
-                joints_xyz[idx,2] = 1e-2
+                joints_xyz[idx,2] += 1e-2
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
