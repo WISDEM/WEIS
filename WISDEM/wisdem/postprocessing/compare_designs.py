@@ -500,7 +500,7 @@ def create_all_plots(
     if zs.min() < -5.0:
         ax2.plot(vx, np.zeros(2), color="b", linestyle="--")
         ax2.plot(vx, -water_depth * np.ones(2), color=brown, linestyle="--")
-        ax2.plot(vx, 20 * np.ones(2), color="g", linestyle="--")
+        ax2.plot(vx, h_trans * np.ones(2), color="g", linestyle="--")
     ax2.set_xlim(vx)
     if mult_flag:
         ax2.legend(fontsize=font_size)
@@ -826,7 +826,7 @@ def run(list_of_sims, list_of_labels, modeling_options, analysis_options):
         "Rated pitch": ["control.rated_pitch", "deg"],
         "Rated thrust": ["rotorse.rp.powercurve.rated_T", "kN"],
         "Rated torque": ["rotorse.rp.powercurve.rated_Q", "kN*m"],
-        "Blade mass": ["rotorse.re.precomp.blade_mass", "kg"],
+        "Blade mass": ["rotorse.rs.bjs.blade_mass", "kg"],
         "Blade cost": ["rotorse.re.precomp.total_blade_cost", "USD"],
         "Tip defl": ["tcons.tip_deflection", "m"],
         "Tip defl ratio": ["tcons.tip_deflection_ratio", None],

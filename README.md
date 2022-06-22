@@ -3,7 +3,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/WISDEM/WEIS/badge.svg?branch=develop)](https://coveralls.io/github/WISDEM/WEIS?branch=develop)
 [![Actions Status](https://github.com/WISDEM/WEIS/workflows/CI_WEIS/badge.svg?branch=develop)](https://github.com/WISDEM/WEIS/actions)
 [![Documentation Status](https://readthedocs.org/projects/weis/badge/?version=develop)](https://weis.readthedocs.io/en/develop/?badge=develop)
-
+[![DOI](https://zenodo.org/badge/289320573.svg)](https://zenodo.org/badge/latestdoi/289320573)
 
 WEIS, Wind Energy with Integrated Servo-control, performs multifidelity co-design of wind turbines. WEIS is a framework that combines multiple NREL-developed tools to enable design optimization of floating offshore wind turbines.
 
@@ -40,7 +40,7 @@ The core WEIS modules are:
 
 ## Installation
 
-On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). 
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not supported.
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable.
 
@@ -49,18 +49,19 @@ The installation instructions below use the environment name, "weis-env," but an
         module purge
         module load conda        
 
-1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
+1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
 
         conda config --add channels conda-forge
         conda create -y --name weis-env python=3.8       # (you can install an environment at a predefined path by switching "--name weis-env" with "--prefix path/weis-env")
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
+        sudo apt update.                                 # (WSL only, assuming Ubuntu)
     
-2.  Use conda to install the build dependencies.  Note the differences between Windows and Mac/Linux build systems. Skip to point #3 if you are on the DOE HPC system Eagle
+2.  Use conda to install the build dependencies.  Note the differences between Windows and Mac/build systems. Skip to point #3 if you are on the DOE HPC system Eagle
 
         conda install -y cmake cython control dill git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pyoptsparse pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy slycot smt sortedcontainers swig
-        conda install -y petsc4py mpi4py                 # (Mac / Linux only)   
-        conda install -y compilers                       # (Mac only)   
-        conda install -y m2w64-toolchain libpython       # (Windows only)
+        conda install -y petsc4py mpi4py                                           
+        conda install -y compilers                                              # (Mac only)   
+        sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y         # (WSL only, assuming Ubuntu)
         pip install marmot-agents jsonmerge fatpack
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
