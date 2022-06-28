@@ -1,11 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: BAR_USC_flaps
-        OF_run_dir: dac_outputs/openfast_out
-        save_timeseries: True
-        save_iterations: False
-
+        OF_run_fst: BAR10
+        OF_run_dir: temp/BAR10
+        
 WISDEM:
     RotorSE:
         flag: True

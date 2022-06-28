@@ -348,6 +348,88 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.e+8
                                 unit: kN*m
+                    nacelle_acceleration:
+                        type: object
+                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 3.2667
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: m/s^2
+                    avg_pitch_travel:
+                        type: object
+                        description: Average pitch travel per second
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 5
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg/s
+                    pitch_duty_cycle:
+                        type: object
+                        description: Number of pitch direction changes per second of simulation
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 5
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg/s
+            damage:
+                type: object
+                default: {}
+                properties:
+                    tower_base:
+                        type: object
+                        description: Tower base damage constraint
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 1.0
+                                minimum: 1.e-5
+                                maximum: 30.0
+                            log:
+                                type: boolean
+                                default: False
+                                description: Use the logarithm of damage as the constraint.
+
+            openfast_failed:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain design to one where OpenFAST simulations don't fail_value
+                        default: False
+
+            Max_Offset:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain maximum offset of platform from equilibrium point
+                        default: False
+                    max:
+                        type: number
+                        default: 20
+                        minimum: 0.0
+                        maximum: 20000.0
+                        unit: m
+
+    
+
     merit_figure:
         type: string
         description: Objective function / merit figure for optimization

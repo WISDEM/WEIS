@@ -44,6 +44,10 @@ properties:
                         type: boolean
                         default: False
                         description: Save openfast output timeseries
+                    keep_time:
+                        type: boolean
+                        default: True
+                        description: Keep timeseries in openmdao_openfast for post-processing
                     save_iterations:
                         type: boolean
                         default: False
@@ -59,7 +63,15 @@ properties:
                     path2dll:
                         type: string
                         default: none
-                        description: Path to controller shared library to override default WEIS value (e.g. /home/user/myturbines/libdiscon.so)
+                        description: Path to controller shared library (e.g. /home/user/myturbines/libdiscon.so)
+                    allow_fails:
+                        type: boolean
+                        default: False
+                        description: Allow WEIS to continue if OpenFAST fails?  All outputs will be filled with fail_value. Use with caution!
+                    fail_value:
+                        type: number
+                        default: -9999
+                        decription: All OpenFAST outputs will be filled with this if the simulation fails. 
             goodman_correction:
                 type: boolean
                 default: False
@@ -80,15 +92,17 @@ properties:
             min_freq:
                 type: number
                 description: Minimum frequency to evaluate (frequencies will be min_freq:min_freq:max_freq)
-                default: 0.1
+                default: 0.0159
                 minimum: 0.0
                 maximum: 1e3
+                units: Hz
             max_freq:
                 type: number
                 description: Maximum frequency to evaluate (frequencies will be min_freq:min_freq:max_freq)
-                default: 2.0
+                default: 0.3183
                 minimum: 0.0
                 maximum: 1e3
+                units: Hz
             potential_bem_members:
                 type: array
                 description: List of submerged member names to model with potential flow boundary element methods.  Members not listed here will be modeled with strip theory
@@ -121,10 +135,29 @@ properties:
                 description: Maximum node splitting section amount
             min_freq_BEM:
                 type: number
-                default: 0.1
+                default: 0.0159
                 minimum: 0.0
                 maximum: 2.0
                 description: lowest frequency and frequency interval to use in BEM analysis
+                units: Hz
+            trim_ballast:
+                type: integer
+                default: 0
+                description: Use RAFT to trim ballast so that average heave is near 0 (0 - no trim, 1 - adjust compartment fill values, 2 - adjust ballast density, recommended for now)
+            heave_tol:
+                type: number
+                default: 1
+                minimum: 0
+                description: Heave tolerance for trim_ballast
+                units: m
+            save_designs:
+                type: boolean
+                default: False
+                description: Save RAFT design iterations in <outputs>/raft_designs
+            runPyHAMS:
+                type: boolean
+                default: True
+                description: Flag to run pyHAMS
     Level3: &ofmodopt
         type: object
         default: {}
@@ -218,6 +251,52 @@ properties:
                         enum: [0,1,2]
                         default: 0
                         description: Compute ice loads (switch) {0=None; 1=IceFloe; 2=IceDyn}
+                    MHK:
+                        type: integer
+                        enum: [0,1,2]
+                        default: 0
+                        description: MHK turbine type (switch) {0=Not an MHK turbine; 1=Fixed MHK turbine; 2=Floating MHK turbine}
+                    Gravity:
+                        type: number
+                        default: 9.81
+                        minimum: 0.0
+                        maximum: 100.0
+                        unit: m / s**2
+                        description: Gravitational acceleration (m/s^2)
+                    AirDens:
+                        type: number
+                        default: 1.225
+                        description: Air density (kg/m^3)
+                        unit: kg/m**3
+                    WtrDens:
+                        type: number
+                        default: 1025
+                        description: Water density (kg/m^3)
+                        unit: kg/m**3
+                    KinVisc:
+                        type: number
+                        default: 1.464E-05
+                        description: Kinematic viscosity of working fluid (m^2/s)
+                    SpdSound:
+                        type: number
+                        default: 335
+                        description: Speed of sound in working fluid (m/s)
+                    Patm:
+                        type: number
+                        default: 103500
+                        description: Atmospheric pressure (Pa) [used only for an MHK turbine cavitation check]
+                    Pvap:
+                        type: number
+                        default: 1700
+                        description: Vapour pressure of working fluid (Pa) [used only for an MHK turbine cavitation check]
+                    WtrDpth:
+                        type: number
+                        default: 300
+                        description: Water depth (m)
+                    MSL2SWL:
+                        type: number
+                        default: 0
+                        description: Offset between still-water level and mean sea level (m) [positive upward]
                     EDFile:
                         type: string
                         default: none
@@ -885,6 +964,14 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
+                    UAStartRad:
+                        type: number
+                        default: 0
+                        description: Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
+                    UAEndRad:
+                        type: number
+                        default: 1
+                        description: Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
                     AFTabMod:
                         type: integer
                         enum: [1,2,3]
@@ -955,13 +1042,6 @@ properties:
                         maximum: 10.0
                         unit: s
                         description: Integration time step, 0.0 for default (s)
-                    Gravity:
-                        type: number
-                        default: 9.81
-                        minimum: 0.0
-                        maximum: 100.0
-                        unit: m / s**2
-                        description: Gravitational acceleration (m/s^2)
                     FlapDOF1:
                         type: boolean
                         default: True
@@ -1537,7 +1617,7 @@ properties:
                         type: integer
                         minimum: 0
                         maximum: 50
-                        default: 5
+                        default: 10
                         description: Order of interpolation (basis) function (-)
                     UsePitchAct:
                         type: boolean
@@ -1581,7 +1661,7 @@ properties:
                         description: Model for stretching incident wave kinematics to instantaneous free surface {0 = none=no stretching, 1 = vertical stretching, 2 = extrapolation stretching, 3 = Wheeler stretching} (switch) [unused when WaveMod=0 or when PotMod/=0]
                     WaveTMax:
                         type: number
-                        default: 850.0
+                        default: 3600
                         minimum: 0.0
                         maximum: 1e5
                         unit: s
@@ -1688,11 +1768,11 @@ properties:
                             maxItems: 9
                     WvDiffQTF:
                         type: boolean
-                        default: True
+                        default: False
                         description: Full difference-frequency 2nd-order wave kinematics (flag)
                     WvSumQTF:
                         type: boolean
-                        default: True
+                        default: False
                         description: Full summation-frequency  2nd-order wave kinematics (flag)
                     WvLowCOffD:
                         type: number
@@ -2066,7 +2146,7 @@ properties:
                     GuyanDamp6: *guyan_damp
                     SumPrint:
                         type: boolean
-                        default: True
+                        default: False
                         description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
                     OutCOSM:
                         type: boolean
@@ -2435,6 +2515,32 @@ properties:
                         default: 0.
                         unit: deg
                         description: Final yaw angle for override yaw maneuvers (degrees)
+                    AfCmode:
+                        type: integer
+                        enum: [0,1,4,5]
+                        default: 0
+                        description: Airfoil control mode {0- none, 1- cosine wave cycle, 4- user-defined from Simulink/Labview, 5- user-defined from Bladed-style DLL}
+                    AfC_Mean:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Mean level for sinusoidal cycling or steady value (-) [used only with AfCmode==1]
+                    AfC_Amp:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: Amplitude for for cosine cycling of flap signal (AfC = AfC_Amp*cos(Azimuth+phase)+AfC_mean) (-) [used only with AfCmode==1]
+                    AfC_Phase:
+                        type: number
+                        default: 0.
+                        unit: deg
+                        description: AfC_phase - Phase relative to the blade azimuth (0 is vertical) for for cosine cycling of flap signal (deg) [used only with AfCmode==1]
+                    CCmode:
+                        type: integer
+                        enum: [0,4,5]
+                        default: 0
+                        unit: deg
+                        description: Cable control mode {0- none, 4- user-defined from Simulink/Labview, 5- user-defineAfC_phased from Bladed-style DLL}
                     CompNTMD:
                         type: boolean
                         default: False
@@ -2758,6 +2864,24 @@ properties:
                         type: boolean
                         default: False
                         description: Whether or not to run a DTQP optimization at level 2
+                    nt:
+                        type: number
+                        default: 1000
+                        description: Number of timesteps in DTQP timeseries optimization
+                    maxiters:
+                        type: number
+                        default: 150000
+                        description: Maximum number of DTQP optimization iterations
+                    tolerance:
+                        type: number
+                        default: 1.E-4
+                        description: Tolerance of DTQP optimization
+                    function:
+                        type: string
+                        enum: ['osqp','ipopt']
+                        default: 'osqp'
+                        description: Solver used for DTQP optimization
+
             #InflowWind: *ofinflowwind
             #AeroDyn: *ofaerodyn
             #ElastoDyn: *ofelastodyn
@@ -2782,7 +2906,7 @@ properties:
                         DLC:
                             type: string
                             default: '1.1'
-                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', 'Custom']
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '12.1', 'Custom']
                             description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
@@ -2807,7 +2931,13 @@ properties:
                             default: 1
                             minimum: 1
                             maximum: 100
-                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.
+                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.  If DLC 1.4, number of waves seeds.
+                        n_azimuth:
+                            type: integer
+                            default: 1
+                            minimum: 1
+                            maximum: 100
+                            description: Number of azimuth initial conditions to use (primarily during DLC 5.1)
                         wind_seed:
                             type: array
                             default: []
@@ -2838,8 +2968,7 @@ properties:
                                 maximum: 180.0
                         yaw_misalign:
                             type: array
-                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: [0.]
+                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed. Default depends on DLC, specified in dlc_generator.
                             items:
                                 type: number
                                 unit: deg
@@ -2926,6 +3055,16 @@ properties:
                             maximum: 1.e+4
                             default: 120.
                             description: This is the length of the simulation where outputs will be discarded. Its default is 120 seconds (2 minutes) for all simulations. The total simulation time is the sum of analysis_time and transient_time
+                        shutdown_time:
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1.e+5
+                            default: 9999
+                            description: Time when shutdown occurs in DLC 5.1
+                        wind_file:
+                            type: string
+                            description: File path of custom wind file
                         turbulent_wind:
                             type: object
                             default: {}
@@ -3082,16 +3221,21 @@ properties:
                                 URef:
                                     type: number
                                     unit: m/s
-                                    default: 1
+                                    default: -1
                                     description: Mean (total) velocity at the reference height [m/s] (or 'default' for JET velocity profile) [must be 1-hr mean for API model; otherwise is the mean over AnalysisTime seconds]
+                                IECturbc:
+                                    type: number
+                                    unit: '(-)'
+                                    default: -1
+                                    description: Turbulence intensity (fraction) for custom DLCs, if default (-1), the class letter will be used
                                 ZJetMax:
                                     type: string
                                     default: default
                                     description: Jet height [m] (used only for JET velocity profile, valid 70-490 m)
                                 PLExp:
                                     type: number
-                                    default: 0.2
-                                    description: Power law exponent [-] (or 'default')
+                                    default: -1
+                                    description: Power law exponent [-] (or 'default'), if default (-1), the environment option shear_exp will be used for all DLCs
                                 Z0:
                                     type: string
                                     default: default
@@ -3318,3 +3462,21 @@ properties:
                 type: string
                 description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model
                 default: none
+
+    OL2CL:
+        type: object
+        default: {}
+        decription: Options for WEIS open loop to closed loop control optimization
+        properties:
+            flag:
+                type: boolean
+                default: False
+                description: Whether or not to run open loop to closed loop optimization
+            trajectory_dir:
+                type: string
+                default: unused
+                description: Directory where open loop control trajectories are located
+            save_error:
+                type: boolean
+                default: True
+                description: Save error timeseries?

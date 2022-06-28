@@ -14,7 +14,6 @@ WISDEM:
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
-        n_span: 60
     TowerSE:
         flag: True
         wind: PowerWind  # Wind used
@@ -34,8 +33,9 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-    BOS:
-        flag: True
+        rank_and_file: True
+    # BOS:
+    #     flag: True
         
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
@@ -100,23 +100,31 @@ ROSCO:
     omega_vs: 0.2
     zeta_pc: [1]
     omega_pc: [0.2]
+
 Level2:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: True
-        TMax: 20.      # run simulations using IEC standards, could share that info
+        TMax: 600.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 600.
+        TMax: 700.
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        wind_speeds: [14.]
+        wind_speeds: [14.,16.]
         rated_offset: 0.75
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 2
 
 Level1:
+    flag: True
     potential_model_override: 2
+    trim_ballast: 2
+    heave_tol: 1
+    save_designs: True
+    # min_freq: 0.0080001
+    # min_freq_BEM: 0.008
+    # max_freq: 0.7958
 
 DLC_driver:
     DLCs:
@@ -127,11 +135,10 @@ DLC_driver:
           wave_period: [2.]
           wind_seeds: [1]
           n_seeds: 1
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 600.
+          transient_time: 100.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True
-              IECturbc: B
               RefHt: 150.0
               PLExp: 0.11

@@ -8,6 +8,7 @@ from weis.glue_code.glue_code         import WindPark
 from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
+from weis.control.tmd                 import assign_TMD_values
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 
@@ -25,7 +26,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     if MPI:
         n_DV = myopt.get_number_design_variables()
-        
         # Extract the number of cores available
         max_cores = MPI.COMM_WORLD.Get_size()
 
@@ -52,6 +52,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
         elif modeling_options['Level2']['flag']:
+        
+            if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+                n_DV = 1
+        
+        
             if max_cores > 2. * n_DV:
                 n_FD = n_DV
             else:
@@ -79,7 +84,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
             rank    = MPI.COMM_WORLD.Get_rank()
             if rank < len(color_map):
-                color_i = color_map[rank]
+                try:
+                    color_i = color_map[rank]
+                except IndexError:
+                    raise ValueError('The number of finite differencing variables is {} and the correct number of cores were not allocated'.format(n_FD))
             else:
                 color_i = max(color_map) + 1
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
@@ -141,6 +149,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # Load initial wind turbine data from wt_initial to the openmdao problem
         wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
         wt_opt = assign_ROSCO_values(wt_opt, modeling_options, opt_options)
+        if modeling_options['flags']['TMDs']:
+            wt_opt = assign_TMD_values(wt_opt, wt_init, opt_options)
+
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
@@ -188,7 +199,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
             # Remove the fst_vt key from the dictionary and write out the modeling options
             modeling_options['General']['openfast_configuration']['fst_vt'] = {}
-            wt_initial.write_ontology(wt_opt, froot_out)
+            if not modeling_options['Level3']['from_openfast']:
+                wt_initial.write_ontology(wt_opt, froot_out)
             wt_initial.write_options(froot_out)
             
             # Save data to numpy and matlab arrays

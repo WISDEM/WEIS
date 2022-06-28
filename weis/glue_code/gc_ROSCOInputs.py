@@ -41,7 +41,7 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     
     if rosco_init_options['Fl_Mode']:
         try:
-            wt_opt['tune_rosco_ivc.twr_freq']      = rosco_init_options['twr_freq']
+            # wt_opt['tune_rosco_ivc.twr_freq']      = rosco_init_options['twr_freq']
             wt_opt['tune_rosco_ivc.ptfm_freq']     = rosco_init_options['ptfm_freq']
             if 'Kp_float' in rosco_init_options:
                 wt_opt['tune_rosco_ivc.Kp_float']      = rosco_init_options['Kp_float']

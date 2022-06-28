@@ -30,6 +30,8 @@ class IEC_CoherentGusts():
             self.ECD(dlc, wind_file_name)
         elif dlc.IEC_WindType == 'EWS':
             self.EWS(dlc, wind_file_name)
+        elif dlc.IEC_WindType == 'Custom':
+            wind_file_name = dlc.wind_file
         else:
             raise Exception('The gust ' + dlc.IEC_WindType + ' is not supported by WEIS')
 

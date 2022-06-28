@@ -31,9 +31,6 @@ Level3:
     flag: False
     
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: temp/NREL5MW_OC3_spar
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
@@ -48,7 +45,6 @@ DLC_driver:
               GridHeight: 178.0
               GridWidth: 178.0
               Clockwise: True
-              IECturbc: B
               RefHt: 90.0
               PLExp: 0.11
 

@@ -1,6 +1,9 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-
+    openfast_configuration:
+        OF_run_fst: IEA15
+        OF_run_dir: temp/IEA15
+        
 WISDEM:
     RotorSE:
         flag: True
@@ -61,9 +64,6 @@ ROSCO:
     flag: True
 
 DLC_driver:
-    openfast_file_management:
-        OF_run_fst: IEA15
-        OF_run_dir: temp/IEA15
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 5

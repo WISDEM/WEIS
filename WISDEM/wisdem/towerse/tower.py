@@ -3,8 +3,6 @@ import openmdao.api as om
 import wisdem.commonse.utilities as util
 import wisdem.pyframe3dd.pyframe3dd as pyframe3dd
 import wisdem.commonse.cylinder_member as mem
-
-# from wisdem.commonse.utilization_eurocode import hoopStressEurocode
 from wisdem.commonse import NFREQ, gravity
 
 RIGID = 1e30
@@ -309,11 +307,10 @@ class TowerFrame(om.ExplicitComponent):
         self.frame = pyframe3dd.Frame(nodes, reactions, elements, options)
 
         # ------- enable dynamic analysis ----------
-        Mmethod = 1
         lump = 0
         shift = 0.0
         # Run twice the number of modes to ensure that we can ignore the torsional modes and still get the desired number of fore-aft, side-side modes
-        self.frame.enableDynamics(2 * NFREQ, Mmethod, lump, frame3dd_opt["tol"], shift)
+        self.frame.enableDynamics(2 * NFREQ, frame3dd_opt["modal_method"], lump, frame3dd_opt["tol"], shift)
         # ----------------------------
 
         # ------ static load case 1 ------------
@@ -399,6 +396,7 @@ class TowerFrame(om.ExplicitComponent):
         outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
         outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
+        
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["tower_deflection"] = np.sqrt(displacements.dx ** 2 + displacements.dy ** 2).T
