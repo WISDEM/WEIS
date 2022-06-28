@@ -4698,10 +4698,9 @@ SUBROUTINE ValidateModeShapeCoeffs( Coeffs, ShpDesc, ErrStat, ErrMsg )
    CHARACTER(*),             INTENT(IN)     :: ShpDesc                             !< Description of the mode shape for the error message
    INTEGER(IntKi),           INTENT(OUT)    :: ErrStat                             !< Error status
    CHARACTER(*),             INTENT(OUT)    :: ErrMsg                              !< Error message
-   
+
       ! local variables
    REAL(ReKi)                               :: Displ                               ! Blade tip/tower top displacement for a mode shape
-   REAL(ReKi)                               :: tol                               
 
 
       ! Check that the mode shape coefficients add to 1.0:
@@ -4709,15 +4708,9 @@ SUBROUTINE ValidateModeShapeCoeffs( Coeffs, ShpDesc, ErrStat, ErrMsg )
    Displ = SUM( Coeffs )
 ! bjj this new check seems to be a bit too restrictive for the input data:
 !   IF ( .NOT. EqualRealNos( Displ, 1.0_ReKi ) ) THEN
-   IF (maxval( Coeffs ) > 1e4_ReKi )THEN ! Large coefficients might cause problems with precision
-      tol = 0.01_ReKi
-   ELSE
-      tol = 0.0015_ReKi
-   ENDIF
-
-   IF ( ABS( Displ - 1.0_ReKi ) > tol ) THEN
+   IF ( ABS( Displ - 1.0_ReKi ) > 0.0015_ReKi ) THEN
       ErrStat = ErrID_Fatal
-      ErrMsg  = ' Mode shape coefficients for '//TRIM(ShpDesc)//' must add to 1.0 but they equal'//TRIM( Num2LStr( Displ ))//'.'
+      ErrMsg  = ' Mode shape coefficients for '//TRIM(ShpDesc)//' must add to 1.0.'
    ELSE
       ErrStat = ErrID_None
       ErrMsg  = ''
