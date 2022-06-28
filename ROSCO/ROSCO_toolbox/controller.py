@@ -60,7 +60,11 @@ class Controller():
         self.PS_Mode            = controller_params['PS_Mode']
         self.SD_Mode            = controller_params['SD_Mode']
         self.Fl_Mode            = controller_params['Fl_Mode']
+        self.TD_Mode            = controller_params['TD_Mode']
         self.Flp_Mode           = controller_params['Flp_Mode']
+        self.PA_Mode           = controller_params['PA_Mode']
+        self.Ext_Mode           = controller_params['Ext_Mode']
+        self.ZMQ_Mode           = controller_params['ZMQ_Mode']
 
         # Necessary parameters
         self.U_pc = list_check(controller_params['U_pc'], return_bool=False)
@@ -85,6 +89,7 @@ class Controller():
         self.Ki_ipc1p           = controller_params['IPC_Ki1p']
         self.Kp_ipc2p           = controller_params['IPC_Kp2p']
         self.Ki_ipc2p           = controller_params['IPC_Kp2p']
+        self.IPC_Vramp         = controller_params['IPC_Vramp']
 
         #  Optional parameters without defaults
         if self.Flp_Mode > 0:
@@ -125,6 +130,7 @@ class Controller():
         self.f_we_cornerfreq        = controller_params['filter_params']['f_we_cornerfreq']
         self.f_fl_highpassfreq      = controller_params['filter_params']['f_fl_highpassfreq']
         self.f_ss_cornerfreq        = controller_params['filter_params']['f_ss_cornerfreq']
+        self.f_yawerr               = controller_params['filter_params']['f_yawerr']
         self.f_sd_cornerfreq        = controller_params['filter_params']['f_sd_cornerfreq']
 
         # Open loop parameters: set up and error catching
@@ -145,6 +151,11 @@ class Controller():
             if not os.path.exists(self.OL_Filename):
                 raise Exception(f'Open-loop control set up, but the open loop file {self.OL_Filename} does not exist')
             
+
+        # Pitch actuator parameters
+        self.PA_Mode = controller_params['PA_Mode']
+        self.PA_CornerFreq = controller_params['PA_CornerFreq']
+        self.PA_Damping = controller_params['PA_Damping']
 
         # Save controller_params for later (direct passthrough)
         self.controller_params = controller_params
@@ -179,6 +190,8 @@ class Controller():
         Ng = turbine.Ng                         # Gearbox ratio (-)
         rated_rotor_speed = turbine.rated_rotor_speed               # Rated rotor speed (rad/s)
 
+        # ------------- Saturation Limits --------------- #
+        turbine.max_torque = turbine.rated_torque * self.controller_params['max_torque_factor']
 
         # -------------Define Operation Points ------------- #
         TSR_rated = rated_rotor_speed*R/turbine.v_rated  # TSR at rated
@@ -315,8 +328,13 @@ class Controller():
         else:
             self.sd_maxpit = pitch_op[-1]
 
+        # Set IPC ramp inputs if not already defined
+        if max(self.IPC_Vramp) == 0.0:
+            self.IPC_Vramp = [turbine.v_rated*0.8, turbine.v_rated]
+
         # Store some variables
         self.v              = v                                  # Wind speed (m/s)
+        self.v_above_rated  = v_above_rated
         self.v_below_rated  = v_below_rated
         self.pitch_op       = pitch_op
         self.pitch_op_pc    = pitch_op[-len(v_above_rated)+1:]
