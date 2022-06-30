@@ -268,7 +268,7 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI and self.options['modeling_options']['Level3']['flag'] and self.options['opt_options']['driver']['optimization']['flag']:
+        if MPI and self.options['modeling_options']['Level3']['flag'] and not self.options['opt_options']['driver']['optimization']['flag']:
             self.mpi_comm_map_down = self.options['modeling_options']['General']['openfast_configuration']['mpi_comm_map_down']
 
         # Inputs blade outer shape
