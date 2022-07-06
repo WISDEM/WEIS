@@ -2987,6 +2987,10 @@ properties:
                             description: Status of the turbine, it can be either operating, parked-idling, or parked-still. Each DLC come with its default turbine status specified by the standards.
                             default: operating
                             enum: ['operating','parked-idling','parked-still']
+                        constrained_wave:
+                            type: boolean
+                            description: Use ConstWaveMod in this DLC
+                            default: false
                         wave_period:
                             type: array
                             description: Period between waves. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_period is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).

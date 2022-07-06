@@ -30,7 +30,7 @@ class DLCInstance(object):
         self.sigma1 = '' # Standard deviation of the wind
         self.RandSeed1 = 0
         self.wave_seed1 = 0
-        self.constrained_wave = False
+        self.constrained_wave = options['constrained_wave']
         self.label = '' # For 1.1/Custom
         self.wind_file = ''
         self.PSF = 1.35 # Partial Safety Factor
@@ -784,6 +784,7 @@ class DLCGenerator(object):
             idlc.current = current[i_Cu]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.sea_level_offset = sea_level_offset[i_WiSe]
             idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
             idlc.turbulent_wind = True
             if idlc.turbine_status == 'operating':
@@ -915,7 +916,6 @@ class DLCGenerator(object):
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
             idlc.sea_level_offset = sea_level_offset[i_SL]
-            idlc.constrained_wave = True
             idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
             idlc.turbulent_wind = True
             if idlc.turbine_status == 'operating':
