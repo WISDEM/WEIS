@@ -835,12 +835,11 @@ class PoseOptimization(object):
             )
 
         # -- Jacket --
-        if jacket_opt["r_foot"]["flag"]:
+        if jacket_opt["foot_head_ratio"]["flag"]:
             wt_opt.model.add_design_var(
-                "jacket.r_foot",
-                lower=jacket_opt["r_foot"]["lower_bound"],
-                upper=jacket_opt["r_foot"]["upper_bound"],
-                ref=5.0,
+                "jacket.foot_head_ratio",
+                lower=jacket_opt["foot_head_ratio"]["lower_bound"],
+                upper=jacket_opt["foot_head_ratio"]["upper_bound"],
             )
 
         if jacket_opt["r_head"]["flag"]:
@@ -1176,7 +1175,9 @@ class PoseOptimization(object):
                 )
         if blade_constr["t_sc_joint"]["flag"] and self.modeling["WISDEM"]["RotorSE"]["bjs"]:
             if blade_opt["structure"]["spar_cap_ss"]["flag"] or blade_opt["structure"]["spar_cap_ps"]["flag"]:
-                wt_opt.model.add_constraint("rotorse.rs.bjs.t_sc_ratio_joint", upper=1.0)  # TODO add sparcap width and thickness. Could pack into array if upper can. Or just do two separately. Fine if they are always enforced together
+                wt_opt.model.add_constraint(
+                    "rotorse.rs.bjs.t_sc_ratio_joint", upper=1.0
+                )  # TODO add sparcap width and thickness. Could pack into array if upper can. Or just do two separately. Fine if they are always enforced together
             else:
                 print(
                     "WARNING: the ratio of joint-required to nominal spar cap thickness is enforced, but spar caps thickness is not an active design variable. The constraint is not enforced."
@@ -1301,6 +1302,7 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("tcons.constr_tower_f_NPmargin", upper=0.0)
 
         elif tower_constr["frequency_1"]["flag"]:
+            # Cannot set both 1P/3P and hard freq values, so else-if statement here
             varstr = (
                 "floatingse.structural_frequencies"
                 if self.modeling["flags"]["floating"]
@@ -1341,7 +1343,7 @@ class PoseOptimization(object):
         if monopile_constr["thickness_slope"]["flag"]:
             wt_opt.model.add_constraint("fixedse.thickness_slope", upper=1.0)
 
-        elif monopile_constr["frequency_1"]["flag"]:
+        if monopile_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
                 "fixedse.structural_frequencies",
                 indices=[0],
@@ -1367,7 +1369,10 @@ class PoseOptimization(object):
         if jacket_constr["shell_buckling"]["flag"]:
             wt_opt.model.add_constraint("fixedse.constr_shell_buckling", upper=1.0)
 
-        elif jacket_constr["frequency_1"]["flag"]:
+        if jacket_constr["tower_diameter_coupling"]["flag"]:
+            wt_opt.model.add_constraint("fixedse.constr_diam_consistency", upper=1.0)
+
+        if jacket_constr["frequency_1"]["flag"]:
             wt_opt.model.add_constraint(
                 "fixedse.structural_frequencies",
                 indices=[0],
@@ -1401,10 +1406,12 @@ class PoseOptimization(object):
             wt_opt.model.add_constraint("floatingse.constr_fixed_margin", upper=1.0)
 
         if float_constr["variable_ballast_capacity"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.constr_variable_margin", upper=1.0)
+            wt_opt.model.add_constraint("floatingse.constr_variable_margin", lower=0.0, upper=1.0)
 
         if float_constr["metacentric_height"]["flag"]:
-            wt_opt.model.add_constraint("floatingse.metacentric_height", lower=0.0)
+            wt_opt.model.add_constraint(
+                "floatingse.metacentric_height", lower=float_constr["metacentric_height"]["lower_bound"]
+            )
 
         if float_constr["freeboard_margin"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_freeboard_heel_margin", upper=1.0)
@@ -1441,6 +1448,14 @@ class PoseOptimization(object):
 
         if float_constr["global_buckling"]["flag"]:
             wt_opt.model.add_constraint("floatingse.constr_platform_global_buckling", upper=1.0)
+
+        for modestr in ["surge", "sway", "heave", "roll", "pitch", "yaw"]:
+            if float_constr[f"{modestr}_period"]["flag"]:
+                wt_opt.model.add_constraint(
+                    f"floatingse.{modestr}_period",
+                    lower=float_constr[f"{modestr}_period"]["lower_bound"],
+                    upper=float_constr[f"{modestr}_period"]["upper_bound"],
+                )
 
         return wt_opt
 

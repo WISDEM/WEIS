@@ -106,7 +106,21 @@ DLC_driver:
           analysis_time: 10.
           transient_time: 0.1
           turbulent_wind:
-              HubHt: 140
+              HubHt: 142
+              RefHt: 142
               GridHeight: 220
               GridWidth: 220
-              AnalysisTime: 5.
+        - DLC: "6.1"
+          analysis_time: 10.
+          transient_time: 0.1
+          turbulent_wind:
+              HubHt: 142
+              RefHt: 142
+              GridHeight: 220
+              GridWidth: 220
+              URef: 46.789
+              PLExp: 0.14
+              IECturbc: 0.12
+              
+
+              

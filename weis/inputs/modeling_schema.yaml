@@ -2906,7 +2906,7 @@ properties:
                         DLC:
                             type: string
                             default: '1.1'
-                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', '12.1','Custom']
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '12.1', 'Custom']
                             description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
@@ -2931,7 +2931,13 @@ properties:
                             default: 1
                             minimum: 1
                             maximum: 100
-                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.
+                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.  If DLC 1.4, number of waves seeds.
+                        n_azimuth:
+                            type: integer
+                            default: 1
+                            minimum: 1
+                            maximum: 100
+                            description: Number of azimuth initial conditions to use (primarily during DLC 5.1)
                         wind_seed:
                             type: array
                             default: []
@@ -2962,8 +2968,7 @@ properties:
                                 maximum: 180.0
                         yaw_misalign:
                             type: array
-                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: [0.]
+                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed. Default depends on DLC, specified in dlc_generator.
                             items:
                                 type: number
                                 unit: deg
@@ -3050,6 +3055,13 @@ properties:
                             maximum: 1.e+4
                             default: 120.
                             description: This is the length of the simulation where outputs will be discarded. Its default is 120 seconds (2 minutes) for all simulations. The total simulation time is the sum of analysis_time and transient_time
+                        shutdown_time:
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1.e+5
+                            default: 9999
+                            description: Time when shutdown occurs in DLC 5.1
                         wind_file:
                             type: string
                             description: File path of custom wind file
@@ -3209,16 +3221,21 @@ properties:
                                 URef:
                                     type: number
                                     unit: m/s
-                                    default: 1
+                                    default: -1
                                     description: Mean (total) velocity at the reference height [m/s] (or 'default' for JET velocity profile) [must be 1-hr mean for API model; otherwise is the mean over AnalysisTime seconds]
+                                IECturbc:
+                                    type: number
+                                    unit: '(-)'
+                                    default: -1
+                                    description: Turbulence intensity (fraction) for custom DLCs, if default (-1), the class letter will be used
                                 ZJetMax:
                                     type: string
                                     default: default
                                     description: Jet height [m] (used only for JET velocity profile, valid 70-490 m)
                                 PLExp:
                                     type: number
-                                    default: 0.2
-                                    description: Power law exponent [-] (or 'default')
+                                    default: -1
+                                    description: Power law exponent [-] (or 'default'), if default (-1), the environment option shear_exp will be used for all DLCs
                                 Z0:
                                     type: string
                                     default: default

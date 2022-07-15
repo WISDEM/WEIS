@@ -589,18 +589,17 @@ properties:
                 description: Design variables associated with the jacket
                 default: {}
                 properties:
-                    r_foot:
+                    foot_head_ratio:
                         type: object
-                        description: Adjust the radius of the jacket foot.
+                        description: Adjust the ratio of the jacket foot (bottom) radius to that of the head (top)
                         default: {}
                         properties:
                             flag: *flag
                             lower_bound: &rfootbound
                                 type: number
-                                minimum: 0.1
+                                minimum: 1.0
                                 maximum: 100.0
-                                default: 5.0
-                                unit: m
+                                default: 1.5
                                 description: Design variable bound
                             upper_bound: *rfootbound
                     r_head:
@@ -1282,6 +1281,11 @@ properties:
                         description: Ensures hydrostatic stability with a positive metacentric height
                         properties:
                             flag: *flag
+                            lower_bound:
+                                type: number
+                                default: 10.0
+                                minimum: 0.0
+                                unit: meter
                     freeboard_margin:
                         type: object
                         default: {}
@@ -1339,7 +1343,23 @@ properties:
                     stress: *vonmises
                     global_buckling: *globalb
                     shell_buckling: *shellb
-
+                    surge_period: &period
+                        type: object
+                        default: {}
+                        description: Ensure that the rigid body period stays within bounds
+                        properties:
+                            flag: *flag
+                            lower_bound: &periodminmax
+                                type: number
+                                default: 1.0
+                                minimum: 0.01
+                                unit: s
+                            upper_bound: *periodminmax
+                    sway_period: *period
+                    heave_period: *period
+                    roll_period: *period
+                    pitch_period: *period
+                    yaw_period: *period
 
     merit_figure:
         type: string
