@@ -90,6 +90,10 @@ properties:
                 unit: years
                 minimum: 0
                 default: 25.0
+            marine_hydro:
+                type: boolean
+                description: Is this a marine hydrokinetic turbine assembly?
+                default: False
     components:
         type: object
         default: {}
