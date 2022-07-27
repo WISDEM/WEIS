@@ -1922,18 +1922,19 @@ class FASTLoadCases(ExplicitComponent):
         magnitude_channels['NcIMUTA'] = ['NcIMUTAxs','NcIMUTAzs','NcIMUTAzs']
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
+        # Convert ultstress and S_intercept values to kPa with 1e-3 factor
         if not modopt['Level3']['from_openfast']:
             for u in ['U','L']:
                 blade_fatigue_root = FatigueParams(load2stress=1.0,
                                                 lifetime=inputs['lifetime'],
                                                 slope=inputs[f'blade_spar{u}_wohlerexp'],
-                                                ult_stress=inputs[f'blade_spar{u}_ultstress'],
-                                                S_intercept=inputs[f'blade_spar{u}_wohlerA'])
+                                                ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
+                                                S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
                 blade_fatigue_te = FatigueParams(load2stress=1.0,
                                                 lifetime=inputs['lifetime'],
                                                 slope=inputs[f'blade_te{u}_wohlerexp'],
-                                                ult_stress=inputs[f'blade_te{u}_ultstress'],
-                                                S_intercept=inputs[f'blade_te{u}_wohlerA'])
+                                                ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
+                                                S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
                 
                 for k in range(1,self.n_blades+1):
                     blade_root_Fz = blade_fatigue_root.copy()
@@ -1967,11 +1968,12 @@ class FASTLoadCases(ExplicitComponent):
                     magnitude_channels[f'Spn2te{u}_MLyb{k}'] = [f'Spn2MLyb{k}']
 
             # Low speed shaft fatigue
+            # Convert ultstress and S_intercept values to kPa with 1e-3 factor
             lss_fatigue = FatigueParams(load2stress=1.0,
                                         lifetime=inputs['lifetime'],
                                         slope=inputs['lss_wohlerexp'],
-                                        ult_stress=inputs['lss_ultstress'],
-                                        S_intercept=inputs['lss_wohlerA'])        
+                                        ult_stress=1e-3*inputs['lss_ultstress'],
+                                        S_intercept=1e-3*inputs['lss_wohlerA'])        
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -1986,11 +1988,12 @@ class FASTLoadCases(ExplicitComponent):
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
             # Fatigue at the tower base
+            # Convert ultstress and S_intercept values to kPa with 1e-3 factor
             tower_fatigue_base = FatigueParams(load2stress=1.0,
                                                lifetime=inputs['lifetime'],
                                                slope=inputs['tower_wohlerexp'][0],
-                                               ult_stress=inputs['tower_ultstress'][0],
-                                               S_intercept=inputs['tower_wohlerA'][0])
+                                               ult_stress=1e-3*inputs['tower_ultstress'][0],
+                                               S_intercept=1e-3*inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -2002,6 +2005,7 @@ class FASTLoadCases(ExplicitComponent):
                         magnitude_channels[f'TwrBs{s}{k}{x}t'] = [f'TwrBs{k}{x}t'] if x=='z' else [f'TwrBs{k}xt', f'TwrBs{k}yt']
 
             # Fatigue at monopile base (mudline)
+            # No need to convert to kPa here since SubDyn reports in N already
             if modopt['flags']['monopile']:
                 monopile_fatigue_base = FatigueParams(load2stress=1.0,
                                                       lifetime=inputs['lifetime'],
@@ -2059,8 +2063,7 @@ class FASTLoadCases(ExplicitComponent):
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
 
-        if modopt['DLC_driver']['n_ws_dlc11'] > 0 and bool(self.fst_vt['Fst']['CompAero']):
-            outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
@@ -2282,7 +2285,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # # Get the maximum of signal M1N1MKye
         outputs["max_M1N1MKye"] = np.max(sum_stats[max_chan]['max'])
-        # # Return forces and moments along tower height at instance of largest fore-aft tower base moment
+        # # Return forces and moments along monopile at instance of largest fore-aft tower base moment
         Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
         Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
         Fz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fz]
@@ -2302,12 +2305,13 @@ class FASTLoadCases(ExplicitComponent):
         z_sec, _ = util.nodal2sectional(z_full)
         z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
 
-        outputs['monopile_maxMy_Fx'] = spline_Fx(z)
-        outputs['monopile_maxMy_Fy'] = spline_Fy(z)
-        outputs['monopile_maxMy_Fz'] = spline_Fz(z)
-        outputs['monopile_maxMy_Mx'] = spline_Mx(z)
-        outputs['monopile_maxMy_My'] = spline_My(z)
-        outputs['monopile_maxMy_Mz'] = spline_Mz(z)
+        # SubDyn reports in N, but ElastoDyn and units here report in kN, so scale by 0.001
+        outputs['monopile_maxMy_Fx'] = 1e-3*spline_Fx(z)
+        outputs['monopile_maxMy_Fy'] = 1e-3*spline_Fy(z)
+        outputs['monopile_maxMy_Fz'] = 1e-3*spline_Fz(z)
+        outputs['monopile_maxMy_Mx'] = 1e-3*spline_Mx(z)
+        outputs['monopile_maxMy_My'] = 1e-3*spline_My(z)
+        outputs['monopile_maxMy_Mz'] = 1e-3*spline_Mz(z)
 
         return outputs
 
@@ -2377,7 +2381,7 @@ class FASTLoadCases(ExplicitComponent):
         for k in range(dlc_generator.n_cases):
             U[k] = dlc_generator.cases[k].URef
             
-            if dlc_generator.cases[k].label in ['1.1', '6.4']:
+            if dlc_generator.cases[k].label in ['1.2', '6.4', '7.2']:
                 ifat.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
