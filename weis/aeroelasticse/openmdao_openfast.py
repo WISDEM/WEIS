@@ -1726,7 +1726,7 @@ class FASTLoadCases(ExplicitComponent):
 
 
         for i_case in range(dlc_generator.n_cases):
-            if dlc_generator.cases[i_case].turbulent_wind:
+            if dlc_generator.cases[i_case].turbulent:
                 # Assign values common to all DLCs
                 # Wind turbulence class
                 if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case

@@ -3011,7 +3011,7 @@ properties:
                                 minItems: 1
                                 minimum: 0.0
                                 maximum: 100.0
-                        current:
+                        current_speed:
                             type: array
                             description: Water current. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_height is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
                             default: []
@@ -3078,7 +3078,7 @@ properties:
                         wind_file:
                             type: string
                             description: File path of custom wind file
-                        turbulent_wind:
+                        turbsim_inputs:
                             type: object
                             default: {}
                             description: These are all inputs to TurbSim. These inputs usually do not need to be set unless you are trying to customize a DLC
