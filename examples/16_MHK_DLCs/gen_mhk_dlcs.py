@@ -69,6 +69,7 @@ if __name__ == '__main__':
             wind_type = 'EWM'
         else:
             wind_type = icase.IEC_WindType[-3:]
+        turb_class = wt_init['assembly']['turbulence_class']
         turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{wind_type}'
         opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
         waveStr = 'JONSWAP' #icase.wave_spectrum
@@ -80,8 +81,14 @@ if __name__ == '__main__':
                             waveStr,
                             max(1.0, icase.wave_period),
                             max(1.0, icase.wave_height),
-                            icase.wave_heading]
+                            icase.wave_heading,
+                            icase.current]
 
+    with open('/Users/dzalkind/Tools/WEIS-4/examples/16_MHK_DLCs/raft_cases.txt','w') as f:
+        keys=['wind_speed', 'wind_heading', 'turbulence','turbine_status', 'yaw_misalign', 'wave_spectrum','wave_period', 'wave_height', 'wave_heading']
+        f.write("{}\n".format('\t'.join(keys)))
+        for rc in raft_cases:
+            f.write("{}\n".format('\t'.join([str(r) for r in rc])))
 
     # # generate wind files
     # FAST_namingOut = 'oloc'
