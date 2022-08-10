@@ -26,6 +26,7 @@ dependencies:
   - pytest-cov
   - python-benedict
   - pyyaml
+  - pyzmq
   - ruamel_yaml
   - scipy
   - setuptools
