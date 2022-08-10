@@ -33,6 +33,7 @@ Software Model Versions:
 Software        |       Version
 ---             |       ---
 OpenFAST        |       3.2.0
+ROSCO           |       2.6.0
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
