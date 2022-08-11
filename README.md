@@ -59,7 +59,7 @@ The installation instructions below use the environment name, "weis-env," but an
         conda config --add channels conda-forge
         conda create -y --name weis-env python=3.8       # (you can install an environment at a predefined path by switching "--name weis-env" with "--prefix path/weis-env")
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
-        sudo apt update.                                 # (WSL only, assuming Ubuntu)
+        sudo apt update                                  # (WSL only, assuming Ubuntu)
     
 2.  Use conda to install the build dependencies.  Note the differences between Windows and Mac/build systems. Skip to point #3 if you are on the DOE HPC system Eagle
 
