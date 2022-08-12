@@ -1022,6 +1022,22 @@ DebugVariables:
     <<: *real
     description: State of yaw controller
 
+  YawRateCom:
+    <<: *real
+    description: Commanded yaw rate [rad/s].
+  NacHeadingTarget:
+    <<: *real
+    description: Target nacelle heading [rad].
+  NacVaneOffset:
+    <<: *real
+    description: Nacelle vane angle with offset [rad].
+  Yaw_err:
+    <<: *real
+    description: Yaw error [rad].
+  YawState:
+    <<: *real
+    description: State of yaw controller
+
 ErrorVariables:
   size_avcMSG: 
     <<: *integer
