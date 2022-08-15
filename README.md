@@ -7,7 +7,7 @@
 
 WEIS, Wind Energy with Integrated Servo-control, performs multifidelity co-design of wind turbines. WEIS is a framework that combines multiple NREL-developed tools to enable design optimization of floating offshore wind turbines.
 
-Author: [NREL WISDEM & OpenFAST & Control Teams](mailto:systems.engineering@nrel.gov) 
+Author: [NREL WISDEM & OpenFAST & Control Teams](mailto:systems.engineering@nrel.gov)
 
 ## Version
 
@@ -22,13 +22,17 @@ See local documentation in the `docs`-directory or access the online version at 
 WEIS integrates in a unique workflow four models:
 * [WISDEM](https://github.com/WISDEM/WISDEM) is a set of models for assessing overall wind plant cost of energy (COE).
 * [OpenFAST](https://github.com/OpenFAST/openfast) is the community model for wind turbine simulation to be developed and used by research laboratories, academia, and industry.
-* [TurbSim](https://www.nrel.gov/docs/fy09osti/46198.pdf) is a stochastic, full-field, turbulent-wind simulator. 
+* [TurbSim](https://www.nrel.gov/docs/fy09osti/46198.pdf) is a stochastic, full-field, turbulent-wind simulator.
 * [ROSCO](https://github.com/NREL/ROSCO) provides an open, modular and fully adaptable baseline wind turbine controller to the scientific community.
 
 In addition, three external libraries are added:
-* [ROSCO_Toolbox](https://github.com/NREL/ROSCO_toolbox) is a toolbox designed to ease controller implementation for the wind turbine researcher and tune the ROSCO controller.
 * [pCrunch](https://github.com/NREL/pCrunch) is a collection of tools to ease the process of parsing large amounts of OpenFAST output data and conduct loads analysis.
 * [pyOptSparse](https://github.com/mdolab/pyoptsparse) is a framework for formulating and efficiently solving nonlinear constrained optimization problems.
+
+Software Model Versions:
+Software        |       Version
+---             |       ---
+OpenFAST        |       3.2.0
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
@@ -40,25 +44,26 @@ The core WEIS modules are:
 
 ## Installation
 
-On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). 
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not supported.
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable.
 
 0.  On the DOE HPC system eagle, make sure to start from a clean setup and type
-        
+
         module purge
         module load conda        
 
-1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
+1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
 
         conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml python=3.9
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
-    
+        sudo apt update                                  # (WSL only, assuming Ubuntu)
+
 2.  Use conda to add platform specific dependencies.
 
-        conda install -y petsc4py mpi4py                 # (Mac / Linux only)   
-        conda install -y compilers                       # (Mac only)   
-        conda install -y m2w64-toolchain libpython       # (Windows only)
+        conda install -y petsc4py mpi4py                                     # (Mac / Linux only)   
+        conda install -y compilers                                           # (Mac only)   
+        sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y      # (WSL only, assuming Ubuntu)
 
 3. Clone the repository and install the software
         git clone https://github.com/WISDEM/WEIS.git

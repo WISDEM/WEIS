@@ -1,0 +1,435 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: WEIS_add-ons_analysis
+title: WEIS analysis ontology add-ons beyond WISDEM ontology
+description: Scehma that describes the analysis and optimization options for WEIS
+type: object
+properties:
+    general:
+        type: object
+        default: {}
+        properties:
+            folder_output:
+                type: string
+                default: output
+                description: Name of folder to dump output files
+            fname_output:
+                type: string
+                default: output
+                description: File prefix for output files
+    design_variables:
+        type: object
+        default: {}
+        properties:
+            control:
+                type: object
+                default: {}
+                properties:
+                    flaps:
+                        type: object
+                        default: {}
+                        properties:
+                            te_flap_end:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: &flag
+                                        type: boolean
+                                        default: False
+                                        description: Activates as a design variable or constraint
+                                    minimum:
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.1
+                                        default: 1.0
+                                    maximum:
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.1
+                                        default: 1.0
+                            te_flap_ext:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    minimum:
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.0
+                                        default: 0.01
+                                    maximum:
+                                        type: number
+                                        maximum: 1.0
+                                        minimum: 0.0
+                                        default: 0.2
+                    tsr:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min_gain:  &mingain
+                                type: number
+                                default: 0.5
+                                unit: none
+                                description: Lower bound on scalar multiplier that will be applied to value at control points
+                            max_gain: &maxgain
+                                type: number
+                                default: 1.5
+                                unit: none
+                                description: Upper bound on scalar multiplier that will be applied to value at control points
+                    ps_percent:
+                        type: object
+                        default: {}
+                        description: Percent peak shaving as a design variable
+                        properties:
+                            flag: *flag
+                            lower_bound:
+                                type: number
+                                default: 0.75
+                                unit: none
+                            upper_bound:
+                                type: number
+                                default: 1.0
+                                unit: none
+                    servo:
+                        type: object
+                        default: {}
+                        properties:
+                            pitch_control:
+                                type: object
+                                default: {}
+                                properties:
+                                    omega: &control_omega
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.1
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: rad/s
+                                            max:
+                                                type: number
+                                                default: 0.7
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: rad/s
+                                    zeta: &control_zeta
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.7
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 1.5
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: rad/s
+                                    Kp_float:
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: -100
+                                                unit: s
+                                            max:
+                                                type: number
+                                                default: 0
+                                                unit: s
+                                    ptfm_freq:
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.00001
+                                                minimum: 0.00001
+                                                unit: rad/s
+                                            max:
+                                                type: number
+                                                default: 1.5
+                                                minimum: 0.00001
+                                                unit: rad/s
+                                    stability_margin:
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.01
+                                                minimum: 0.0
+                                                maximum: 1.0
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 0.01
+                                                minimum: 0.0
+                                                maximum: 1.0
+                                                unit: none
+
+                            torque_control:
+                                type: object
+                                default: {}
+                                properties:
+                                    omega: *control_omega
+                                    zeta: *control_zeta
+                            flap_control:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+                                    omega_min: &omega_min
+                                        type: number
+                                        default: 0.1
+                                        minimum: 0.0
+                                        maximum: 10.0
+                                        unit: none
+                                    omega_max: &omega_max
+                                        type: number
+                                        default: 0.7
+                                        minimum: 0.0
+                                        maximum: 10.0
+                                        unit: none
+                                    zeta_min: &zeta_min
+                                        type: number
+                                        default: 0.4
+                                        minimum: 0.0
+                                        maximum: 10.0
+                                        unit: none
+                                    zeta_max: &zeta_max
+                                        type: number
+                                        default: 1.5
+                                        minimum: 0.0
+                                        maximum: 10.0
+                                        unit: none
+                            ipc_control:
+                                type: object
+                                default: {}
+                                properties:
+                                    flag: *flag
+            TMDs:
+                type: object
+                description: Design variables associated with TMDs
+                default: {}
+                properties:
+                    flag: *flag
+                    groups:
+                        type: array
+                        description: Sets of members that share the same design
+                        default: []
+                        items:
+                            type: object
+                            default: {}
+                            properties:
+                                names:
+                                    type: array
+                                    description: TMD names of those that are linked
+                                    items:
+                                        type: string
+                                mass:
+                                    type: object
+                                    description: Mass optimization of TMD group
+                                    properties:
+                                        lower_bound: &bound
+                                            type: number
+                                            default: 20000
+                                        upper_bound: *bound
+                                        initial: &initial
+                                            type: number
+                                            default: 100
+                                            description: Initial condition of TMD group
+                                        const_omega:
+                                            type: boolean
+                                            default: False
+                                            description: Keep the natural frequency constant while the mass changes?
+                                        const_zeta:
+                                            type: boolean
+                                            default: False
+                                            description: Keep the damping ratio constant while the mass changes?
+                                stiffness:
+                                    type: object
+                                    description: Stiffness optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+                                damping:
+                                    type: object
+                                    description: Damping optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+                                natural_frequency:
+                                    type: object
+                                    description: Natural frequency optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+                                        const_zeta:
+                                            type: boolean
+                                            default: False
+                                            description: Keep the damping ratio constant while the natural frequency changes?
+                                damping_ratio:
+                                    type: object
+                                    description: Damping ratio optimization of TMD group
+                                    properties:
+                                        lower_bound: *bound
+                                        upper_bound: *bound
+                                        initial: *initial
+
+    constraints:
+        # GB: These all need gammas or safety factors
+        type: object
+        default: {}
+        properties:
+            control:
+                type: object
+                default: {}
+                properties:
+                    flap_control:
+                        type: object
+                        description: Words TODO
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &flapminmax
+                                type: number
+                                default: 0.05
+                                minimum: 0.0
+                                maximum: 1.0e+6
+                            max: *flapminmax
+                    rotor_overspeed:
+                        type: object
+                        description: (Maximum rotor speed / rated rotor speed) - 1
+                        default: {}
+                        properties:
+                            flag: *flag
+                            min: &rotor_overspeed
+                                type: number
+                                default: 0.05
+                                minimum: 0.0
+                                maximum: 1.0
+                            max: *rotor_overspeed
+                    Max_PtfmPitch:
+                        type: object
+                        description: Maximum platform pitch displacement
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max: 
+                                type: number
+                                default: 6.0
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg
+                    Std_PtfmPitch:
+                        type: object
+                        description: Maximum platform pitch standard deviation
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 2.0
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg
+                    nacelle_acceleration:
+                        type: object
+                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2)
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 3.2667
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: m/s^2
+                    avg_pitch_travel:
+                        type: object
+                        description: Average pitch travel per second
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 5
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg/s
+                    pitch_duty_cycle:
+                        type: object
+                        description: Number of pitch direction changes per second of simulation
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 5
+                                minimum: 0.0
+                                maximum: 30.0
+                                unit: deg/s
+            damage:
+                type: object
+                default: {}
+                properties:
+                    tower_base:
+                        type: object
+                        description: Tower base damage constraint
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 1.0
+                                minimum: 1.e-5
+                                maximum: 30.0
+                            log:
+                                type: boolean
+                                default: False
+                                description: Use the logarithm of damage as the constraint.
+
+            openfast_failed:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain design to one where OpenFAST simulations don't fail_value
+                        default: False
+
+            Max_Offset:
+                type: object
+                default: {}
+                properties:
+                    flag:
+                        type: boolean
+                        description: Constrain maximum offset of platform from equilibrium point
+                        default: False
+                    max:
+                        type: number
+                        default: 20
+                        minimum: 0.0
+                        maximum: 20000.0
+                        unit: m
+
+    
+
+    merit_figure:
+        type: string
+        description: Objective function / merit figure for optimization
+        default: LCOE
