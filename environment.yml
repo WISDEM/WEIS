@@ -28,7 +28,7 @@ dependencies:
   - pyyaml
   - ruamel_yaml
   - scipy
-  - setuptools
+  - setuptools<60.0
   - simpy
   - slycot
   - smt
