@@ -51,30 +51,23 @@ The installation instructions below use the environment name, "weis-env," but an
 
 1.  Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell on Windows or Terminal.app on Mac)
 
-        conda config --add channels conda-forge
-        conda create -y --name weis-env python=3.8       # (you can install an environment at a predefined path by switching "--name weis-env" with "--prefix path/weis-env")
+        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml python=3.9
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
     
-2.  Use conda to install the build dependencies.  Note the differences between Windows and Mac/Linux build systems. Skip to point #3 if you are on the DOE HPC system Eagle
+2.  Use conda to add platform specific dependencies.
 
-        conda install -y cmake cython control dill git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pyoptsparse pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy slycot smt sortedcontainers swig
         conda install -y petsc4py mpi4py                 # (Mac / Linux only)   
         conda install -y compilers                       # (Mac only)   
         conda install -y m2w64-toolchain libpython       # (Windows only)
-        pip install marmot-agents jsonmerge fatpack
+
+3. Clone the repository and install the software
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
-        git checkout branch_name # (Only if you want to switch git branch, say develop)
-        python setup.py develop
+        git checkout branch_name                         # (Only if you want to switch branches, say "develop")
+        python setup.py develop                          # (The common "pip install -e ." will not work here)
 
-3. Instructions specific for DOE HPC system Eagle
+4. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:
 
-        conda install -y cmake cython control dill git jsonschema make matplotlib-base numpy openmdao openpyxl pandas pip pyoptsparse pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy slycot smt sortedcontainers swig
-        conda install -y petsc4py mpi4py
-        pip install marmot-agents jsonmerge fatpack
-        git clone https://github.com/WISDEM/WEIS.git
-        cd WEIS
-        git checkout branch_name # (Only if you want to switch git branch, say develop)
         module load comp-intel intel-mpi mkl
         module unload gcc
         python setup.py develop
