@@ -515,6 +515,8 @@ materials:
       Xc: 450.e+006
       S: 0
       Xy: 345.e+6
+      m: 3
+      A: 3.5534648443719767e10 #DOI 10.1016/j.proeng.2013.12.061 eqn 5
       unit_cost: 0.7
    -  name: steel_drive
       description: Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -532,6 +534,8 @@ materials:
       Xc: 814.e+006
       S: 0
       Xy: 485.e+6
+      m: 3
+      A: 3.5534648443719767e10 #DOI 10.1016/j.proeng.2013.12.061 eqn 5
       unit_cost: 0.9
    -  name: cast_iron
       description: TODO Steel of the drivetrain ASTM 4140 40Cr1Mo28
@@ -549,6 +553,7 @@ materials:
       Xc: 310.e+006
       S: 0
       Xy: 265.e+6
+      m: 3
       unit_cost: 0.5
    -  name: glass_uni
       description: Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy
