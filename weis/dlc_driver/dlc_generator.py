@@ -279,7 +279,7 @@ class DLCGenerator(object):
         if len(wave_gamma) > 1 and len(wave_gamma) != len(speeds):
             raise Exception("The vector of wave_gamma must have either length=1 or the same length of speeds")
         if len(wave_heading) > 1 and len(wave_heading) != len(speeds):
-            raise Exception("The vector of wave heading must have either length=1 or the same length of speeds")
+            print("DLCGenerator WARNING: The vector of wave heading must have either length=1 or the same length of speeds")
         if len(probabilities) > 1 and len(probabilities) != len(speeds):
             raise Exception("The vector of probabilities must have either length=1 or the same length of speeds")
         if abs(sum(probabilities) - 1.) > 1.e-3:
@@ -597,6 +597,38 @@ class DLCGenerator(object):
             if len(current)>1:
                 i_Cu+=1
 
+    def generate_1p3_mhk(self, options):
+        # Power production extreme turbulence model - ultimate loads
+        metocean = self.get_metocean(options)
+        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['current_speeds'], self.mo_ws, self.mo_Hs_NSS)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['current_speeds'], self.mo_ws, self.mo_Tp_NSS)
+
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['current_speeds']:
+            idlc = DLCInstance(options=options)
+            idlc.URef = ws
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+            idlc.IEC_WindType = self.wind_speed_class_num + 'ETM'
+            idlc.label = '1.3'
+            if options['analysis_time'] > 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+            idlc.PSF = 1.2 * 1.25
+            self.cases.append(idlc)
+
+            mc.increment()
+
     def generate_1p4(self, options):
         # Extreme coherent gust with direction change - ultimate loads
         wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _,_ = self.get_metocean(options)
@@ -909,6 +941,53 @@ class DLCGenerator(object):
                 i_SL+=1
             if len(current)>1:
                 i_Cu+=1
+
+    def generate_6p1_mhk(self, options):
+        # Section 7.3.7.2, Table 8 in IEC docs
+
+        # Get initial options
+        metocean = self.get_metocean(options)
+
+        # Use 50 year waves, current if not specified
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = self.wave_Hs50
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = self.wave_Tp50
+            
+            
+        metocean['current_speeds'] = np.tile(self.current_50,options['n_seeds'])
+
+        # Make cartesian product of current speeds (x number of seeds) with wave heading
+        speed_heading_product = list(itertools.product(*[options['wave_heading'],metocean['current_speeds']]))
+        metocean['wave_heading'] = [sh[0] for sh in speed_heading_product]
+        metocean['current_speeds'] = [sh[1] for sh in speed_heading_product]
+
+        options['n_seeds'] = 1  # Trick next function into giving us 1 seed for each current_speed, we generated the proper amount of current_speeds already
+        metocean['current_speeds'], metocean['rand_seeds'] = self.get_rand_seeds(options, metocean['current_speeds'])
+        metocean['wave_seeds'] = self.get_wave_seeds(options, metocean['current_speeds'])
+
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['current_speeds']:
+            idlc = DLCInstance(options=options)
+            idlc.URef = ws
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+            idlc.turbulent = True
+            idlc.label = '6.1'
+            if options['analysis_time'] > 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+            idlc.PSF = 1.2 * 1.25
+            self.cases.append(idlc)
+
+            mc.increment()
 
     def generate_6p3(self, options):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads

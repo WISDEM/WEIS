@@ -85,8 +85,19 @@ if __name__ == '__main__':
                             icase.current]
 
     with open('/Users/dzalkind/Tools/WEIS-4/examples/16_MHK_DLCs/raft_cases.txt','w') as f:
-        keys=['wind_speed', 'wind_heading', 'turbulence','turbine_status', 'yaw_misalign', 'wave_spectrum','wave_period', 'wave_height', 'wave_heading']
-        f.write("{}\n".format('\t'.join(keys)))
+        raft_dlc_keys = [
+            'wind_speed', 
+            'wind_heading', 
+            'turbulence',
+            'turbine_status', 
+            'yaw_misalign', 
+            'wave_spectrum',
+            'wave_period', 
+            'wave_height', 
+            'wave_heading',
+            'current_speed'
+            ]
+        f.write("{}\n".format('\t'.join(raft_dlc_keys)))
         for rc in raft_cases:
             f.write("{}\n".format('\t'.join([str(r) for r in rc])))
 
