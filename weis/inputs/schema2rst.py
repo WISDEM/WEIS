@@ -1,5 +1,6 @@
 import textwrap
 import validation
+import os, shutil
 
 mywidth  = 70
 myindent = ' '*4
@@ -120,8 +121,27 @@ class Schema2RST(object):
                 continue
             
 if __name__ == '__main__':
+
+    this_dir = os.path.dirname(__file__)
+    docs_dir = os.path.realpath(os.path.join(this_dir,'../../docs/inputs'))
+
+    wisdem_docs_dir = os.path.realpath(os.path.join(this_dir,'../../WISDEM/docs/inputs'))
+
     for ifile in ['geometry_schema.yaml','modeling_schema.yaml','analysis_schema.yaml']:
-        myobj = Schema2RST(ifile)
+        myobj = Schema2RST(os.path.join(this_dir,ifile))
         myobj.write_rst()
+
+        # copy file to docs
+        doc_file = os.path.join(docs_dir,ifile.split('.')[0] + '.rst')
+        shutil.copyfile(os.path.join(this_dir,ifile),os.path.join(docs_dir,doc_file))
+
+        # copy wisdem rsts while where here
+        doc_file = os.path.split(doc_file)[-1]
+        new_doc_file = doc_file.split('.')[0] + '_wisdem.rst'
+        shutil.copyfile(os.path.join(wisdem_docs_dir,doc_file),os.path.join(docs_dir,new_doc_file))
+
+
+
+
         
     
