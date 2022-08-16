@@ -66,6 +66,7 @@ The installation instructions below use the environment name, "weis-env," but an
         sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y      # (WSL only, assuming Ubuntu)
 
 3. Clone the repository and install the software
+
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
         git checkout branch_name                         # (Only if you want to switch branches, say "develop")
