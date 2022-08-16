@@ -1,7 +1,7 @@
 channels:
   - conda-forge
   - defaults
-  
+
 dependencies:
   - alabaster
   - babel
@@ -41,7 +41,7 @@ dependencies:
   - ruamel_yaml
   - scipy
   - seaborn
-  - setuptools
+  - setuptools<60.0
   - simpy
   - slycot
   - smt
