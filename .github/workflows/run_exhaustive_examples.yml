@@ -96,3 +96,14 @@ jobs:
           cd examples/09_design_of_experiments
           mpirun -n 2 --bind-to core python DOE_openfast.py
           python postprocess_results.py
+
+      # Test walkthrough notebook
+      - name: Test postprocessing notebooks
+        run: |
+          cd examples/16_postprocessing
+          gdown --no-check-certificate 1_FJaN-W1DoPNmO6YLSjnftvq6-7bn4VI
+          unzip outputs
+          treon plot_FAST.ipynb
+          treon rev_DLCs_WEIS.ipynb
+          treon rev_Opt.ipynb
+          treon rev_WEIS_CSV.ipynb
