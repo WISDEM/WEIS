@@ -58,6 +58,7 @@ dependencies:
   - sphinxcontrib-serializinghtml
   - statsmodels
   - swig
+  - treon
   - pyzmq
 #  - versioneer
   - pip:
