@@ -133,6 +133,11 @@ class TestMonopileSE(unittest.TestCase):
         self.modeling_options["WISDEM"]["TowerSE"] = {}
         self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 0
 
+        self.modeling_options["flags"] = {}
+        self.modeling_options["flags"]["tower"] = False
+        self.modeling_options["WISDEM"]["TowerSE"] = {}
+        self.modeling_options["WISDEM"]["TowerSE"]["n_height"] = 0
+
     def testProblemFixedPile(self):
         self.modeling_options["WISDEM"]["FixedBottomSE"]["n_height"] = 3
         self.modeling_options["WISDEM"]["FixedBottomSE"]["n_layers"] = 1

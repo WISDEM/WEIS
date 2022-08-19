@@ -37,6 +37,7 @@ dependencies:
   - pytest-cov
   - python-benedict
   - pyyaml
+  - pyzmq
   - qdldl-python
   - ruamel_yaml
   - scipy
@@ -56,6 +57,7 @@ dependencies:
   - sphinxcontrib-serializinghtml
   - statsmodels
   - swig
+  - pyzmq
 #  - versioneer
   - pip:
     - fatpack

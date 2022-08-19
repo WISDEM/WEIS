@@ -33,8 +33,6 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 
-
-
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 import pickle
@@ -466,7 +464,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
 
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
+        self.add_output('max_TwrBsMyt_ratio',val=0.0,  desc='ratio of maximum of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
+        self.add_output('DEL_TwrBsMyt_ratio',val=0.0, desc='ratio of damage equivalent load of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         
         # Tower outputs
         if not self.options['modeling_options']['Level3']['from_openfast']:
@@ -858,6 +858,13 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['OverHang']   = k*inputs['overhang'][0] / np.cos(np.deg2rad(inputs['tilt'][0])) # OpenFAST defines the overhang tilted (!)
         fst_vt['ElastoDyn']['GBoxEff']    = inputs['gearbox_efficiency'][0] * 100.
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
+
+        # Update ServoDyn
+        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
+        
 
         # Update ServoDyn
         fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
@@ -2075,6 +2082,10 @@ class FASTLoadCases(ExplicitComponent):
             if any(summary_stats['openfast_failed']['mean'] > 0):
                 outputs['openfast_failed'] = 2
 
+        # # Did any OpenFAST runs fail?
+        # if any(summary_stats['openfast_failed']['mean'] > 0):
+        #     outputs['openfast_failed'] = 2
+
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
             self.save_timeseries(chan_time)
@@ -2096,37 +2107,33 @@ class FASTLoadCases(ExplicitComponent):
         extreme_table : dict
         """
 
-        # Determine blade with the maximum deflection magnitude
+        # Determine maximum deflection magnitudes
         if self.n_blades == 2:
             defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max'])]
         else:
             defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max']), max(sum_stats['TipDxc3']['max'])]
-
-        # Select channels for the blade identified above
-        if np.argmax(defl_mag) == 0:
-            blade_chans_Fz = ["RootFzb1", "Spn1FLzb1", "Spn2FLzb1", "Spn3FLzb1", "Spn4FLzb1", "Spn5FLzb1", "Spn6FLzb1", "Spn7FLzb1", "Spn8FLzb1", "Spn9FLzb1"]
-            blade_chans_Mx = ["RootMxb1", "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
-            blade_chans_My = ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
-            tip_max_chan   = "TipDxc1"
-
-        if np.argmax(defl_mag) == 1:
-            blade_chans_Fz = ["RootFzb2", "Spn1FLzb2", "Spn2FLzb2", "Spn3FLzb2", "Spn4FLzb2", "Spn5FLzb2", "Spn6FLzb2", "Spn7FLzb2", "Spn8FLzb2", "Spn9FLzb2"]
-            blade_chans_Mx = ["RootMxb2", "Spn1MLxb2", "Spn2MLxb2", "Spn3MLxb2", "Spn4MLxb2", "Spn5MLxb2", "Spn6MLxb2", "Spn7MLxb2", "Spn8MLxb2", "Spn9MLxb2"]
-            blade_chans_My = ["RootMyb2", "Spn1MLyb2", "Spn2MLyb2", "Spn3MLyb2", "Spn4MLyb2", "Spn5MLyb2", "Spn6MLyb2", "Spn7MLyb2", "Spn8MLyb2", "Spn9MLyb2"]
-            tip_max_chan   = "TipDxc2"
-
-        if np.argmax(defl_mag) == 2:
-            blade_chans_Fz = ["RootFzb3", "Spn1FLzb3", "Spn2FLzb3", "Spn3FLzb3", "Spn4FLzb3", "Spn5FLzb3", "Spn6FLzb3", "Spn7FLzb3", "Spn8FLzb3", "Spn9FLzb3"]
-            blade_chans_Mx = ["RootMxb3", "Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
-            blade_chans_My = ["RootMyb3", "Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
-            tip_max_chan   = "TipDxc3"
-
         # Get the maximum out of plane blade deflection
-        outputs["max_TipDxc"] = np.max(sum_stats[tip_max_chan]['max'])
-        # Return moments around x and y and axial force along blade span at instance of largest out of plane blade tip deflection
-        Fz = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fz]
-        Mx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Mx]
-        My = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_My]
+        outputs["max_TipDxc"] = np.max(defl_mag)
+
+        # Return moments around x and y and axial force along blade span at instance of largest flapwise bending moment at each node
+        My_chans = ["RootMyb", "Spn1MLyb", "Spn2MLyb", "Spn3MLyb", "Spn4MLyb", "Spn5MLyb", "Spn6MLyb", "Spn7MLyb", "Spn8MLyb", "Spn9MLyb"]
+        Mx_chans = ["RootMxb", "Spn1MLxb", "Spn2MLxb", "Spn3MLxb", "Spn4MLxb", "Spn5MLxb", "Spn6MLxb", "Spn7MLxb", "Spn8MLxb", "Spn9MLxb"]
+        Fz_chans = ["RootFzb", "Spn1FLzb", "Spn2FLzb", "Spn3FLzb", "Spn4FLzb", "Spn5FLzb", "Spn6FLzb", "Spn7FLzb", "Spn8FLzb", "Spn9FLzb"]
+            
+        Fz = []
+        Mx = []
+        My = []
+        for My_chan,Mx_chan,Fz_chan in zip(My_chans, Mx_chans, Fz_chans):
+            if self.n_blades == 2:
+                bld_idx_max = np.argmax([max(sum_stats[My_chan+'1']['max']), max(sum_stats[My_chan+'2']['max'])])
+            else:
+                bld_idx_max = np.argmax([max(sum_stats[My_chan+'1']['max']), max(sum_stats[My_chan+'2']['max']), max(sum_stats[My_chan+'3']['max'])])
+            My_max_chan = My_chan + str(bld_idx_max+1)
+            My.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][My_chan+str(bld_idx_max+1)])
+            Mx.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][Mx_chan+str(bld_idx_max+1)])
+            Fz.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][Fz_chan+str(bld_idx_max+1)])
+
+
         if np.any(np.isnan(Fz)):
             print('WARNING: nans found in Fz extremes')
             Fz[np.isnan(Fz)] = 0.0
@@ -2222,6 +2229,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Get the maximum fore-aft moment at tower base
         outputs["max_TwrBsMyt"] = np.max(sum_stats[fatb_max_chan]['max'])
+        outputs["max_TwrBsMyt_ratio"] = np.max(sum_stats[fatb_max_chan]['max'])/self.options['opt_options']['constraints']['control']['Max_TwrBsMyt']['max']
         # Return forces and moments along tower height at instance of largest fore-aft tower base moment
         Fx = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fx]
         Fy = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fy]
@@ -2404,6 +2412,7 @@ class FASTLoadCases(ExplicitComponent):
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
+        outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         if not modopt['Level3']['from_openfast']:
