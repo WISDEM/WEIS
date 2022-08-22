@@ -14,6 +14,7 @@ dependencies:
   - et-xmlfile
   - future
   - git
+  - gdown
   - imagesize
   - jinja2
   - jsonmerge
@@ -57,6 +58,7 @@ dependencies:
   - sphinxcontrib-serializinghtml
   - statsmodels
   - swig
+  - treon
   - pyzmq
 #  - versioneer
   - pip:

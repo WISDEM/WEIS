@@ -68,6 +68,17 @@ jobs:
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
+
+      # Test walkthrough notebook
+      - name: Test postprocessing notebooks
+        run: |
+          cd examples/16_postprocessing
+          gdown --no-check-certificate 1_FJaN-W1DoPNmO6YLSjnftvq6-7bn4VI
+          unzip outputs
+          treon plot_FAST.ipynb
+          treon rev_DLCs_WEIS.ipynb
+          treon rev_Opt.ipynb
+          treon rev_WEIS_CSV.ipynb
         
       # Run all examples
       - name: Run tests within WEIS
