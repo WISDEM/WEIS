@@ -156,7 +156,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
             self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
 
-            # These next ones are needed for SubDyn
+            # These next ones are needed for SubDyn- fixed bottom
             n_height_mon = n_full_mon = 0
             if modopt['flags']['offshore']:
                 self.add_input('transition_piece_mass', val=0.0, units='kg')
@@ -174,6 +174,18 @@ class FASTLoadCases(ExplicitComponent):
                     self.add_input('monopile_rho', val=np.zeros(n_height_mon-1), units='kg/m**3')
                     self.add_input('gravity_foundation_mass', val=0.0, units='kg')
                     self.add_input('gravity_foundation_I', val=np.zeros(3), units='kg*m**2')
+                    
+                elif modopt['flags']['jacket']:
+                    n_legs = modopt["WISDEM"]["FixedBottomSE"]["n_legs"]
+                    self.add_input("leg_indices", np.zeros(n_legs))
+                    self.add_input("jacket_nodes", shape_by_conn=True, units="m")
+                    self.add_input("jacket_elem_N", shape_by_conn=True)
+                    self.add_input("jacket_elem_D", shape_by_conn=True, units="m")
+                    self.add_input("jacket_elem_t", shape_by_conn=True, units="m")
+                    self.add_input("jacket_elem_rho", shape_by_conn=True, units="kg/m**3")
+                    self.add_input("jacket_elem_E", shape_by_conn=True, units="Pa")
+                    self.add_input("jacket_elem_G", shape_by_conn=True, units="Pa")
+
             monlen = max(0, n_height_mon-1)
             monlen_full = max(0, n_full_mon-1)
 
@@ -1170,8 +1182,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]
             fst_vt['SubDyn']['NInterf'] = 1
             fst_vt['SubDyn']['IJointID'] = [n_joints]
-            fst_vt['SubDyn']['MJointID1'] = np.arange( n_members, dtype=np.int_ ) + 1
-            fst_vt['SubDyn']['MJointID2'] = np.arange( n_members, dtype=np.int_ ) + 2
+            fst_vt['SubDyn']['MJointID1'] = N1 = np.arange( n_members, dtype=np.int_ ) + 1
+            fst_vt['SubDyn']['MJointID2'] = N2 = np.arange( n_members, dtype=np.int_ ) + 2
             fst_vt['SubDyn']['YoungE1'] = inputs['monopile_E'][1:]
             fst_vt['SubDyn']['ShearG1'] = inputs['monopile_G'][1:]
             fst_vt['SubDyn']['MatDens1'] = inputs['monopile_rho'][1:]
@@ -1191,6 +1203,34 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NodeCnt'][-1] = 2
             self.Z_out_SD_mpl = [grid_joints_monopile[i] for i in idx_out]
 
+        elif modopt['flags']['jacket']:
+            n_legs = modopt["WISDEM"]["FixedBottomSE"]["n_legs"]
+            joints_xyz = inputs["jacket_nodes"]
+            n_joints = joints_xyz.shape[0]
+            itrans = n_joints
+            leg_indices = np.int_(inputs["leg_indices"]) # Should already be 1-based
+            N1 = np.int_(inputs["jacket_elem_N"][:,0]) + 1
+            N2 = np.int_(inputs["jacket_elem_N"][:,1]) + 1
+            n_members = N1.size
+
+            fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
+            fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
+            fst_vt['SubDyn']['JointZss'] = joints_xyz[:,2]
+            fst_vt['SubDyn']['NReact'] = n_legs
+            fst_vt['SubDyn']['RJointID'] = leg_indices.tolist()
+            fst_vt['SubDyn']['RctTDXss'] = fst_vt['SubDyn']['RctTDYss'] = fst_vt['SubDyn']['RctTDZss'] = [1]*n_legs
+            fst_vt['SubDyn']['RctRDXss'] = fst_vt['SubDyn']['RctRDYss'] = fst_vt['SubDyn']['RctRDZss'] = [1]*n_legs
+            fst_vt['SubDyn']['NInterf'] = 1
+            fst_vt['SubDyn']['IJointID'] = [itrans]
+            fst_vt['SubDyn']['MJointID1'] = N1
+            fst_vt['SubDyn']['MJointID2'] = N2
+
+            fst_vt['SubDyn']['YoungE1'] = inputs["jacket_elem_E"]
+            fst_vt['SubDyn']['ShearG1'] = inputs["jacket_elem_G"]
+            fst_vt['SubDyn']['MatDens1'] = inputs["jacket_elem_rho"]
+            fst_vt['SubDyn']['XsecD'] = inputs["jacket_elem_D"]
+            fst_vt['SubDyn']['XsecT'] = inputs["jacket_elem_t"]
+
         elif modopt['flags']['floating']:
             joints_xyz = inputs["platform_nodes"]
             n_joints = np.where(joints_xyz[:, 0] == NULL)[0][0]
@@ -1199,8 +1239,8 @@ class FASTLoadCases(ExplicitComponent):
 
             N1 = np.int_(inputs["platform_elem_n1"])
             n_members = np.where(N1 == NULL)[0][0]
-            N1 = N1[:n_members]
-            N2 = np.int_(inputs["platform_elem_n2"][:n_members])
+            N1 = N1[:n_members] + 1
+            N2 = np.int_(inputs["platform_elem_n2"][:n_members]) + 1
 
             fst_vt['SubDyn']['JointXss'] = joints_xyz[:,0]
             fst_vt['SubDyn']['JointYss'] = joints_xyz[:,1]
@@ -1215,8 +1255,8 @@ class FASTLoadCases(ExplicitComponent):
             else:
                 fst_vt['SubDyn']['NInterf'] = 1
                 fst_vt['SubDyn']['IJointID'] = [itrans+1]
-            fst_vt['SubDyn']['MJointID1'] = N1+1
-            fst_vt['SubDyn']['MJointID2'] = N2+1
+            fst_vt['SubDyn']['MJointID1'] = N1
+            fst_vt['SubDyn']['MJointID2'] = N2
 
             fst_vt['SubDyn']['YoungE1'] = inputs["platform_elem_E"][:n_members]
             fst_vt['SubDyn']['ShearG1'] = inputs["platform_elem_G"][:n_members]
@@ -1282,6 +1322,11 @@ class FASTLoadCases(ExplicitComponent):
             t_coarse = util.sectional_interp(z_coarse, mono_elev[1:], mono_t[1:])
             N1 = np.arange( n_members, dtype=np.int_ ) + 1
             N2 = np.arange( n_members, dtype=np.int_ ) + 2
+            
+        elif modopt['flags']['jacket']:
+            # No coarsening available
+            d_coarse = inputs["jacket_elem_D"]
+            t_coarse = inputs["jacket_elem_t"]
             
         elif modopt['flags']['floating']:
             joints_xyz = np.empty((0, 3))
@@ -1366,7 +1411,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MJointID1'] = N1
             fst_vt['HydroDyn']['MJointID2'] = N2
             fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = imembers
-            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
+            mdiv = 1.0 if modopt['flags']['jacket'] else 0.5
+            fst_vt['HydroDyn']['MDivSize'] = mdiv*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)

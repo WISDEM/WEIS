@@ -436,7 +436,7 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
-                    if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
+                    if modeling_options["flags"]["monopile"]:
                         self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
                         self.connect('fixedse.tower_side_side_modes',    'aeroelastic.side_side_modes')
@@ -465,6 +465,18 @@ class WindPark(om.Group):
                     self.connect('fixedse.member.E',                       'aeroelastic.monopile_E')
                     self.connect('fixedse.member.G',                       'aeroelastic.monopile_G')
                     self.connect('fixedse.member.rho',                     'aeroelastic.monopile_rho')
+                        
+                elif modeling_options['flags']['jacket']:
+                    self.connect('jacket.transition_piece_mass',  'aeroelastic.transition_piece_mass')
+                    self.connect('fixedse.transition_piece_I',      'aeroelastic.transition_piece_I', src_indices=[0,1,2])
+                    self.connect("fixedse.jacket_nodes", "aeroelastic.jacket_nodes")
+                    self.connect("fixedse.leg_indices", "aeroelastic.leg_indices")
+                    self.connect("fixedse.jacket_elem_N", "aeroelastic.jacket_elem_N")
+                    self.connect("fixedse.jacket_elem_D", "aeroelastic.jacket_elem_D")
+                    self.connect("fixedse.jacket_elem_t", "aeroelastic.jacket_elem_t")
+                    self.connect("fixedse.jacket_elem_rho", "aeroelastic.jacket_elem_rho")
+                    self.connect("fixedse.jacket_elem_E", "aeroelastic.jacket_elem_E")
+                    self.connect("fixedse.jacket_elem_G", "aeroelastic.jacket_elem_G")
                         
                 elif modeling_options['flags']['floating']:
                     self.connect("floatingse.platform_nodes", "aeroelastic.platform_nodes")
