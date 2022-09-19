@@ -919,7 +919,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
             fst_vt['ElastoDyn']['PtfmPIner'] = 0.
             # Advice from R. Bergua- Use a dummy quantity (at least 1e4) here when have fixed-bottom support
-            fst_vt['ElastoDyn']['PtfmYIner'] = 1e5 if modopt['flags']['offshore'] else 0.0
+            fst_vt['ElastoDyn']['PtfmYIner'] = 1e8 if modopt['flags']['offshore'] else 0.0
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
