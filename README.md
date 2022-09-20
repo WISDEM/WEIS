@@ -32,7 +32,7 @@ In addition, three external libraries are added:
 Software Model Versions:
 Software        |       Version
 ---             |       ---
-OpenFAST        |       3.2.0
+OpenFAST        |       3.2.1
 ROSCO           |       2.6.0
 
 The core WEIS modules are:
