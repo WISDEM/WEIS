@@ -1,0 +1,207 @@
+general: {folder_output: step, fname_output: refturb_output}
+constraints:
+    control:
+        rotor_overspeed: {flag: true, min: 0.0, max: 0.25}
+        Max_PtfmPitch: {flag: true, max: 5.5}
+        Std_PtfmPitch: {flag: false, max: 2.0}
+        flap_control: {flag: false, min: 0.05, max: 0.05}
+        Max_TwrBsMyt: {flag: false, max: 100000.0}
+        DEL_TwrBsMyt: {flag: false, max: 100000.0}
+        nacelle_acceleration: {flag: false, max: 3.2667}
+        avg_pitch_travel: {flag: false, max: 5}
+        pitch_duty_cycle: {flag: false, max: 5}
+    Max_Offset: {flag: true, max: 30.0}
+    blade:
+        strains_spar_cap_ss: {flag: false, max: 0.004, index_start: 0, index_end: 8}
+        strains_spar_cap_ps: {flag: false, max: 0.004, index_start: 0, index_end: 8}
+        strains_te_ss: {flag: false, max: 0.004, index_start: 0, index_end: 8}
+        strains_te_ps: {flag: false, max: 0.004, index_start: 0, index_end: 8}
+        tip_deflection: {flag: false, margin: 1.4175}
+        t_sc_joint: {flag: false}
+        rail_transport: {flag: false, 8_axle: false, 4_axle: false}
+        stall: {flag: false, margin: 0.05233}
+        chord: {flag: false, max: 4.75}
+        root_circle_diameter: {flag: false, max_ratio: 1.0}
+        frequency: {flap_3P: false, edge_3P: false}
+        moment_coefficient: {flag: false, min: 0.15, max: 0.15}
+        match_cl_cd: {flag_cl: false, flag_cd: false, filename: ''}
+        match_L_D: {flag_L: false, flag_D: false, filename: ''}
+        AEP: {flag: false, min: 1.0}
+    tower:
+        height_constraint: {flag: false, lower_bound: 0.01, upper_bound: 0.01}
+        stress: &id001 {flag: false}
+        global_buckling: &id002 {flag: false}
+        shell_buckling: &id003 {flag: false}
+        slope: &id004 {flag: false}
+        thickness_slope: &id005 {flag: false}
+        d_to_t: &id006 {flag: false, lower_bound: 50.0, upper_bound: 50.0}
+        taper: &id007 {flag: false, lower_bound: 0.5}
+        frequency: {flag: false}
+        frequency_1: &id008 {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+    monopile: &id009
+        stress: *id001
+        global_buckling: *id002
+        shell_buckling: *id003
+        slope: *id004
+        thickness_slope: *id005
+        d_to_t: *id006
+        taper: *id007
+        frequency_1: *id008
+        pile_depth: {flag: false, lower_bound: 0.0}
+        tower_diameter_coupling: {flag: false}
+    jacket: *id009
+    hub:
+        hub_diameter: {flag: false}
+    drivetrain:
+        lss: *id001
+        hss: *id001
+        bedplate: *id001
+        mb1: &id010 {flag: false}
+        mb2: *id010
+        length: {flag: false}
+        height: {flag: false}
+        access: {flag: false, lower_bound: 2.0}
+        shaft_deflection: {flag: false, upper_bound: 0.0001}
+        shaft_angle: {flag: false, upper_bound: 0.001}
+        stator_deflection: {flag: false, upper_bound: 0.0001}
+        stator_angle: {flag: false, upper_bound: 0.001}
+        ecc: {flag: false}
+    floating:
+        operational_heel: &id011 {upper_bound: 0.17453292519943295}
+        survival_heel: *id011
+        max_surge: {flag: false, upper_bound: 0.1}
+        buoyancy: {flag: false}
+        fixed_ballast_capacity: {flag: false}
+        variable_ballast_capacity: {flag: false}
+        metacentric_height: {flag: false, lower_bound: 10.0}
+        freeboard_margin: {flag: false}
+        draft_margin: {flag: false}
+        fairlead_depth: {flag: false}
+        mooring_surge: {flag: false}
+        mooring_heel: {flag: false}
+        mooring_tension: {flag: false}
+        mooring_length: {flag: false}
+        anchor_vertical: {flag: false}
+        anchor_lateral: {flag: false}
+        stress: *id001
+        global_buckling: *id002
+        shell_buckling: *id003
+        surge_period: &id012 {flag: false, lower_bound: 1.0, upper_bound: 1.0}
+        sway_period: *id012
+        heave_period: *id012
+        roll_period: *id012
+        pitch_period: *id012
+        yaw_period: *id012
+    damage:
+        tower_base: {flag: false, max: 1.0, log: false}
+    openfast_failed: {flag: false}
+merit_figure: platform_mass
+driver:
+    optimization: {flag: false, solver: LN_COBYLA, tol: 0.01, max_iter: 100, max_major_iter: 10, max_minor_iter: 100, max_function_calls: 100000, step_size: 0.001, form: central, step_calc: None, debug_print: false}
+    design_of_experiments: {flag: false, run_parallel: true, generator: Uniform, num_samples: 5, seed: 2, levels: 2, criterion: center, iterations: 2, debug_print: false}
+    step_size_study:
+        flag: false
+        step_sizes: [0.01, 0.005, 0.001, 0.0005, 0.0001, 5e-05, 1e-05, 5e-06, 1e-06, 5e-07, 1e-07, 5e-08, 1e-08]
+        form: central
+        of: []
+        wrt: []
+        driver_scaling: false
+recorder:
+    flag: true
+    file_name: log_opt.sql
+    includes: ['*raft*', '*floating*', '*platform*']
+    just_dvs: false
+design_variables:
+    rotor_diameter: {flag: false, minimum: 0.0, maximum: 0.0}
+    blade:
+        aero_shape:
+            twist: {flag: false, inverse: false, n_opt: 30, max_decrease: 0.1, max_increase: 0.1, index_start: 0, index_end: 8}
+            chord: {flag: false, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            af_positions: {flag: false, af_start: 4}
+            t/c: {flag: false, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            L/D: {flag: false, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            c_d: {flag: false, n_opt: 8, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            stall_margin: {flag: false, n_opt: 8, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            z: {flag: false, n_opt: 3, lower_bound: -1.0, upper_bound: 1.0}
+        structure:
+            spar_cap_ss: {flag: false, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            spar_cap_ps: {flag: false, equal_to_suction: true, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            te_ss: {flag: false, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+            te_ps: {flag: false, equal_to_suction: true, n_opt: 30, max_decrease: 0.5, max_increase: 1.5, index_start: 0, index_end: 8}
+    control:
+        tsr: {flag: false, minimum: 0.0, maximum: 0.0, min_gain: 0.5, max_gain: 1.5}
+        flaps:
+            te_flap_end: {flag: false, min: 0.5, max: 0.98}
+            te_flap_ext: {flag: false, min: 0.01, max: 0.2}
+        ps_percent: {flag: false, lower_bound: 0.75, upper_bound: 1.0}
+        servo:
+            pitch_control:
+                omega: {flag: false, min: 0.1, max: 0.7}
+                zeta: {flag: false, min: 0.7, max: 1.5}
+                Kp_float: {flag: false, min: -100, max: 0}
+                ptfm_freq: {flag: false, min: 1e-05, max: 1.5}
+                stability_margin: {flag: false, min: 0.01, max: 0.01}
+            torque_control:
+                omega: {flag: false, min: 0.1, max: 0.7}
+                zeta: {flag: false, min: 0.7, max: 1.5}
+            flap_control:
+                flp_kp_norm: {flag: false, min: 0.01, max: 5.0}
+                flp_tau: {flag: false, min: 5, max: 30}
+            ipc_control:
+                Kp: {flag: false, min: 0.0, max: 0.0, ref: 1e-08}
+                Ki: {flag: false, min: 0.0, max: 1e-07, ref: 1e-08}
+    hub:
+        cone: {flag: false, lower_bound: 0.0, upper_bound: 0.0}
+        hub_diameter: {flag: false, lower_bound: 0.0, upper_bound: 30.0}
+    drivetrain:
+        uptilt: {flag: false, lower_bound: 0.0, upper_bound: 0.0}
+        overhang: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        distance_tt_hub: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        distance_hub_mb: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        distance_mb_mb: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        generator_length: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        gear_ratio: {flag: false, lower_bound: 1.0, upper_bound: 150.0}
+        lss_diameter: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        hss_diameter: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        nose_diameter: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        lss_wall_thickness: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+        hss_wall_thickness: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+        nose_wall_thickness: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+        bedplate_wall_thickness: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+        bedplate_web_thickness: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+        bedplate_flange_thickness: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+        bedplate_flange_width: {flag: false, lower_bound: 0.001, upper_bound: 1.0}
+    tower: &id013
+        outer_diameter: {flag: false, lower_bound: 5.0, upper_bound: 5.0}
+        layer_thickness: {flag: false, lower_bound: 0.01, upper_bound: 0.01}
+        section_height: {flag: false, lower_bound: 5.0, upper_bound: 5.0}
+        E: {flag: false, lower_bound: 200000000000.0, upper_bound: 200000000000.0}
+        rho: {flag: false, lower_bound: 7800, upper_bound: 7800}
+    monopile: *id013
+    jacket:
+        foot_head_ratio: {flag: false, lower_bound: 1.5, upper_bound: 1.5}
+        r_head: {flag: false, lower_bound: 5.0, upper_bound: 5.0}
+        leg_diameter: {flag: false, lower_bound: 1.5, upper_bound: 1.5}
+        height: {flag: false, lower_bound: 70, upper_bound: 70}
+        leg_thickness: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        brace_diameters: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        brace_thicknesses: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+        bay_spacing: {flag: false, lower_bound: 0.1, upper_bound: 0.1}
+    floating:
+        joints:
+            flag: false
+            z_coordinate: &id014 []
+            r_coordinate: *id014
+        members:
+            flag: false
+            groups: []
+    mooring:
+        line_length: {flag: false, lower_bound: 0.0}
+        line_diameter: {flag: false, lower_bound: 0.0}
+        line_mass_density_coeff: {flag: false, lower_bound: 0.0}
+        line_stiffness_coeff: {flag: false, lower_bound: 0.0}
+    TMDs:
+        flag: false
+        groups: []
+inverse_design: {}
+opt_flag: false

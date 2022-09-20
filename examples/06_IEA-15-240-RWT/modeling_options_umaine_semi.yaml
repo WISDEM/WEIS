@@ -125,12 +125,14 @@ DLC_driver:
         #   n_seeds: 6
         # - DLC: "1.4"
         # - DLC: "1.5"
-        - DLC: "1.6"
-          wind_speed: [12]
-          transient_time: 0.
-          analysis_time: 10.
+        # - DLC: "1.6"
+        #   wind_speed: [12]
+        #   transient_time: 0.
+        #   analysis_time: 10.
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"
         #   n_seeds: 6
+        - DLC: "12.1"
+          wind_file: '/home/athulsun/WEIS/examples/15_RAFT_Studies/NL_Step.wnd'
 

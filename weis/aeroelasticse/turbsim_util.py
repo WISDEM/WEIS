@@ -220,7 +220,7 @@ class Turbsim_wrapper(object):
         os.chdir(olddir)
 
 def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, i_case):
-
+    
     if dlc_generator.cases[i_case].turbulent_wind:
         # Write out turbsim input file
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (

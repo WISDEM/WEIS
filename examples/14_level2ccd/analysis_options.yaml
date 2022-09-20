@@ -5,13 +5,13 @@ general:
 design_variables:
   floating:
         joints:
-            flag: True
+            flag: False
             r_coordinate:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
                   lower_bound: 36.
                   upper_bound: 66.
         members:
-            flag: True
+            flag: False
             groups:
                 - names: [main_column]
                   ballast:
@@ -55,7 +55,7 @@ merit_figure: weis_lcoe
 
 driver:
   optimization:
-    flag: True     # Flag to enable optimization
+    flag: False    # Flag to enable optimization
     solver: LN_COBYLA
     max_iter: 100
   design_of_experiments:

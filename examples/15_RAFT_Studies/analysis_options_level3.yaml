@@ -1,5 +1,5 @@
 general:
-    folder_output: /Users/dzalkind/Tools/WEIS-4/examples/15_RAFT_Studies/OF_comp_3
+    folder_output: output/sim_step/analysis
     fname_output: refturb_output
 
 

@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/OLOC/EAB_sens
+        OF_run_dir: outputs/1p5_debug
         use_exe: True
         cores: 1
 
@@ -39,7 +39,7 @@ WISDEM:
         flag: True
         
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
-    flag: False
+    flag: True
     OutFileFmt: 3
     simulation:
         TMax: 1.
@@ -56,22 +56,22 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         Linearize: False
     ElastoDyn:
         flag: True
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : True
-        TwSSDOF1 : True
-        TwSSDOF2 : True
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
         PtfmSgDOF: False
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
-        PtfmPDOF : False
+        PtfmPDOF : True
         PtfmYDOF : False
         ElastoDynBlade:
         BldFlDmp1: 3.0
@@ -99,12 +99,12 @@ ROSCO:
     flag: True
 
 Level2:
-    flag: True
+    flag: False
     simulation:         # could these be included in openfast options?
         flag: False
         TMax: 100.      # run simulations using IEC standards, could share that info
     DTQP:
-        flag: True
+        flag: False
     linearization:
         TMax: 1600.
         DT: 0.01
@@ -123,15 +123,27 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [14,15,16] #[5.8, 9.4732, 13.009,16.866,19.9968,15.6765] 
+          wind_speed: [14,16] #[5.8, 9.4732, 13.009,16.866,19.9968,15.6765] 
           wave_height: [8.]
           wave_period: [2.]
           #wind_seeds: [3,4] #[1,2,3,4,5]
           n_seeds: 1
-          analysis_time: 700.
+          analysis_time: 100.
           transient_time: 100.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True
               RefHt: 150.0
               PLExp: 0.11
+              
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/NL_Step.wnd'
+          # wave_height: [8.]
+          # wave_period: [2.]
+          # analysis_time: 800.
+          # transient_time: 0.
+          # turbulent_wind:
+          #     HubHt: 150.0
+          #     Clockwise: True
+          #     RefHt: 150.0
+          #     PLExp: 0.11

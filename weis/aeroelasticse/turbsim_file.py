@@ -71,11 +71,12 @@ class TurbSimFile(File):
         scl = np.zeros(3, np.float32); off = np.zeros(3, np.float32)
         with open(self.filename, mode='rb') as f:            
             # Reading header info
-            ID, nz, ny, nTwr, nt                      = struct.unpack('<h4l', f.read(2+4*4))
+            ID, nz, ny, nTwr, nt                      = struct.unpack('<h4l', f.read(2+4*4));print(self.filename)
             dz, dy, dt, uHub, zHub, zBottom           = struct.unpack('<6f' , f.read(6*4)  )
             scl[0],off[0],scl[1],off[1],scl[2],off[2] = struct.unpack('<6f' , f.read(6*4))
             nChar, = struct.unpack('<l',  f.read(4))
             info = (f.read(nChar)).decode()
+            
             # Reading turbulence field
             if not header_only: 
                 u    = np.zeros((3,nt,ny,nz))
