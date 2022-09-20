@@ -436,6 +436,7 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
+                    self.connect('towerse.tower_I_base',            'aeroelastic.tower_I_base')
                     if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
                         self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
