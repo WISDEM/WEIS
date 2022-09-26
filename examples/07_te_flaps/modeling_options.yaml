@@ -84,6 +84,8 @@ ROSCO:
     IPC_Kp1p: 1.4788252060327009e-08
     IPC_Ki1p: 1.7335658014571253e-09
     Bld_FlpDamp: 0.59696
+    flp_kp_norm: 0.8372297349345306
+    flp_tau: 12.258174215008605
 
 DLC_driver:
     DLCs:
