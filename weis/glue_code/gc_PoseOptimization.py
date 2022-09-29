@@ -335,7 +335,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         # Tower constraints
         tower_opt = self.opt["design_variables"]["tower"]
         tower_constr = self.opt["constraints"]["tower"]
-        if tower_constr["global_buckling"]["flag"]:
+        if tower_constr["global_buckling"]["flag"] and self.modeling['Level3']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_global_buckling'
             if name in wt_opt.model._responses:
@@ -345,7 +345,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 
             wt_opt.model.add_constraint("towerse_post.constr_global_buckling", upper=1.0)
         
-        if tower_constr["shell_buckling"]["flag"]:
+        if tower_constr["shell_buckling"]["flag"] and self.modeling['Level3']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_shell_buckling'
             if name in wt_opt.model._responses:
@@ -355,7 +355,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 
             wt_opt.model.add_constraint("towerse_post.constr_shell_buckling", upper=1.0)
         
-        if tower_constr["stress"]["flag"]:
+        if tower_constr["stress"]["flag"] and self.modeling['Level3']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_stress'
             if name in wt_opt.model._responses:
@@ -367,7 +367,7 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         # Damage constraints
         damage_constraints = self.opt['constraints']['damage']
-        if damage_constraints['tower_base']['flag']:
+        if damage_constraints['tower_base']['flag'] and (self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']):
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
 
