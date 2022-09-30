@@ -367,7 +367,7 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         # Damage constraints
         damage_constraints = self.opt['constraints']['damage']
-        if damage_constraints['tower_base']['flag'] and (self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']):
+        if damage_constraints['tower_base']['flag'] and (self.modeling['Level2']['flag'] or self.modeling['Level3']['flag']):
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
 
