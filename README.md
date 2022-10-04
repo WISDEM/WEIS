@@ -47,7 +47,7 @@ The core WEIS modules are:
 
 On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not supported.
 
-The installation instructions below use the environment name, "weis-env," but any name is acceptable.
+The installation instructions below use the environment name, "weis-env," but any name is acceptable. For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 
 0.  On the DOE HPC system eagle, make sure to start from a clean setup and type
 
@@ -62,6 +62,7 @@ The installation instructions below use the environment name, "weis-env," but an
 
 2.  Use conda to add platform specific dependencies.
 
+        conda config --add channels conda-forge
         conda install -y petsc4py mpi4py                                     # (Mac / Linux only)   
         conda install -y compilers                                           # (Mac only)   
         sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y      # (WSL only, assuming Ubuntu)
