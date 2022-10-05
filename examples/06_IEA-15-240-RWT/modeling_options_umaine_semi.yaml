@@ -24,6 +24,7 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
+        rank_and_file: True
     # BOS:
     #     flag: True
 
@@ -104,10 +105,10 @@ DLC_driver:
         wave_period_NSS: [6.9, 6.96, 7.02, 7.12, 7.25, 7.43, 7.66, 7.94, 8.27, 8.63, 9.01]
         wave_height_SSS: [6.3, 8, 8, 8.1, 8.5, 8.5, 9.8, 9.8, 9.8, 9.8, 9.9]
         wave_period_SSS: [11.5, 12.7, 12.7, 12.8, 13.1, 13.1, 14.1, 14.1, 14.1, 14.1, 14.1]
-        wave_height_1: 6.98
-        wave_period_1: 11.7
-        wave_height_50: 10.68
-        wave_period_50: 14.2
+        wave_height1: 6.98
+        wave_period1: 11.7
+        wave_height50: 10.68
+        wave_period50: 14.2
     DLCs:
         # - DLC: "1.1"
         #   wind_speed: [24]

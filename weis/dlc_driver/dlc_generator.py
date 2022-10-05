@@ -18,6 +18,7 @@ class DLCInstance(object):
         self.probability = 0.0
         self.analysis_time = 600.
         self.transient_time = 120.
+        self.shutdown_time = 9999.
         self.IEC_WindType = 'NTM'
         self.turbine_status = 'operating'
         self.wave_spectrum = 'JONSWAP'
@@ -30,6 +31,7 @@ class DLCInstance(object):
         self.label = '' # For 1.1/Custom
         self.wind_file = ''
         self.PSF = 1.35 # Partial Safety Factor
+        self.azimuth_init = 0.0
 
         if not options is None:
             self.default_turbsim_props(options)
@@ -109,11 +111,16 @@ class DLCGenerator(object):
         return wind_speeds
 
     def get_wind_seeds(self, options, wind_speeds):
+        if 'yaw_misalign' in options:
+            n_yaw_ms = len(options['yaw_misalign'])
+        else:
+            n_yaw_ms = 1
+        
         if len(options['wind_seed']) > 0:
             wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
         else:
-            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds), dtype=int)
-            wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
+            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms * options['n_azimuth'], dtype=int)
+            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms * options['n_azimuth'])
 
         return wind_speeds, wind_seeds
 
@@ -200,7 +207,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 6.1, 6.2, 6.3, 6.4, 12.1]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4, 6.5, 12.1]
 
         # Get extreme wind speeds
         self.IECwind()
@@ -230,6 +237,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         # Counter for wind seed
         i_WiSe=0
         # Counters for wave conditions
@@ -249,6 +262,7 @@ class DLCGenerator(object):
             idlc.wave_period = wave_Tp[i_Tp]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
             idlc.turbulent_wind = True
             idlc.label = '1.1'
             if options['analysis_time'] > 0:
@@ -333,6 +347,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         # Counter for wind seed
         i_WiSe=0
         # Counters for wave conditions
@@ -352,6 +372,7 @@ class DLCGenerator(object):
             idlc.wave_period = wave_Tp[i_Tp]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
             idlc.IEC_WindType = self.wind_speed_class_num + 'ETM'
             idlc.turbulent_wind = True
             idlc.label = '1.3'
@@ -384,6 +405,17 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
+        # Set azimuth start positions, tile so length is same as wind_seeds
+        azimuth_inits = np.tile(
+            np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
+            int(len(wind_speeds)/options['n_azimuth'])
+            )
         # Counters for wave conditions
         i_WaSe=0
         i_Hs=0
@@ -401,6 +433,8 @@ class DLCGenerator(object):
                 idlc.wave_period = wave_Tp[i_Tp]
                 idlc.wave_gamma = wave_gamma[i_WG]
                 idlc.wave_heading = wave_heading[i_WaH]
+                idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
+                idlc.azimuth_init = azimuth_inits[i_WaSe]
                 idlc.IEC_WindType = 'ECD'
                 idlc.turbulent_wind = False
                 idlc.label = '1.4'
@@ -432,6 +466,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         directions = ['p', 'n']
         shears=['h', 'v']
         # Counters for wave conditions
@@ -452,6 +492,7 @@ class DLCGenerator(object):
                     idlc.wave_period = wave_Tp[i_Tp]
                     idlc.wave_gamma = wave_gamma[i_WG]
                     idlc.wave_heading = wave_heading[i_WaH]
+                    idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
                     idlc.IEC_WindType = 'EWS'
                     idlc.turbulent_wind = False
                     idlc.label = '1.5'
@@ -485,6 +526,12 @@ class DLCGenerator(object):
             wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_SSS)
         if len(wave_Tp)==0:
             wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_SSS)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [0]
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
         # Counter for wind seed
         i_WiSe=0
         # Counters for wave conditions
@@ -504,6 +551,7 @@ class DLCGenerator(object):
             idlc.wave_period = wave_Tp[i_Tp]
             idlc.wave_gamma = wave_gamma[i_WG]
             idlc.wave_heading = wave_heading[i_WaH]
+            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
             idlc.turbulent_wind = True
             idlc.label = '1.6'
             if options['analysis_time'] > 0:
@@ -526,11 +574,76 @@ class DLCGenerator(object):
             if len(wave_heading)>1:
                 i_WaH+=1
 
+    def generate_5p1(self, options):
+        # Power production normal turbulence model - severe sea state
+        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
+        if len(wave_Hs)==0:
+            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
+        if len(wave_Tp)==0:
+            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        # Set azimuth start positions, tile so length is same as wind_seeds
+        azimuth_inits = np.tile(
+            np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
+            int(len(wind_seeds)/options['n_azimuth'])
+            )
+        # Counter for wind seed
+        i_WiSe=0
+        # Counters for wave conditions
+        i_WaSe=0
+        i_Hs=0
+        i_Tp=0
+        i_WiH=0
+        i_WG=0
+        i_WaH=0
+        for ws in wind_speeds:
+            idlc = DLCInstance(options=options)
+            idlc.URef = ws
+            idlc.RandSeed1 = wind_seeds[i_WiSe]
+            idlc.wave_seed1 = wave_seeds[i_WaSe]
+            idlc.wind_heading = wind_heading[i_WiH]
+            idlc.wave_height = wave_Hs[i_Hs]
+            idlc.wave_period = wave_Tp[i_Tp]
+            idlc.wave_gamma = wave_gamma[i_WG]
+            idlc.wave_heading = wave_heading[i_WaH]
+            idlc.azimuth_init = azimuth_inits[i_WiSe]
+            idlc.turbulent_wind = True
+            idlc.label = '5.1'
+            idlc.turbine_status = 'operating-shutdown'
+            if options['analysis_time'] > 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+            if options['shutdown_time'] > options['analysis_time']:
+                raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({options['shutdown_time']}) option is greater than the analysis_time ({options['analysis_time']})")
+            else:
+                idlc.shutdown_time = options['shutdown_time']
+            self.cases.append(idlc)
+            if len(wind_seeds)>1:
+                i_WiSe+=1
+            if len(wave_seeds)>1:
+                i_WaSe+=1
+            if len(wind_heading)>1:
+                i_WiH+=1
+            if len(wave_Hs)>1:
+                i_Hs+=1
+            if len(wave_Tp)>1:
+                i_Tp+=1
+            if len(wave_gamma)>1:
+                i_WG+=1
+            if len(wave_heading)>1:
+                i_WaH+=1
+
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        yaw_misalign_deg = np.array([-8., 8.] * options['n_seeds'])
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [-8., 8.]
+        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
         if len(wave_Hs)==0:
             wave_Hs = self.wave_Hs50
         if len(wave_Tp)==0:
@@ -546,7 +659,8 @@ class DLCGenerator(object):
         i_WaH=0
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
-            idlc.URef = self.V_e50
+            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
+                idlc.URef = self.V_e50
             idlc.yaw_misalign = yaw_ms
             idlc.RandSeed1 = wind_seeds[i_WiSe]
             idlc.wave_seed1 = wave_seeds[i_WaSe]
@@ -584,7 +698,12 @@ class DLCGenerator(object):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        yaw_misalign_deg = np.array([-20., 20.] * options['n_seeds'])
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [-20., 20.]
+        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
         if len(wave_Hs)==0:
             wave_Hs = self.wave_Hs1
         if len(wave_Tp)==0:
@@ -600,7 +719,8 @@ class DLCGenerator(object):
         i_WaH=0
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
-            idlc.URef = self.V_e1
+            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
+                idlc.URef = self.V_e1
             idlc.yaw_misalign = yaw_ms
             idlc.RandSeed1 = wind_seeds[i_WiSe]
             idlc.wave_seed1 = wave_seeds[i_WaSe]
@@ -691,6 +811,66 @@ class DLCGenerator(object):
             if len(wave_heading)>1:
                 i_WaH+=1
 
+    def generate_6p5(self, options):
+        # Parked (standing still or idling) - extreme wind model 500-year return period - ultimate loads
+        options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
+        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in options:
+            yaw_misalign = options['yaw_misalign']
+        else: # default
+            yaw_misalign = [-8., 8.]
+        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
+        if len(wave_Hs)==0:
+            wave_Hs = self.wave_Hs1
+        if len(wave_Tp)==0:
+            wave_Tp = self.wave_Tp1
+        # Counter for wind seed
+        i_WiSe=0
+        # Counters for wave conditions
+        i_WaSe=0
+        i_Hs=0
+        i_Tp=0
+        i_WiH=0
+        i_WG=0
+        i_WaH=0
+        for yaw_ms in yaw_misalign_deg:
+            idlc = DLCInstance(options=options)
+            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
+                idlc.URef = self.V_e50 * 1.125
+            idlc.yaw_misalign = yaw_ms
+            idlc.RandSeed1 = wind_seeds[i_WiSe]
+            idlc.wave_seed1 = wave_seeds[i_WaSe]
+            idlc.wind_heading = wind_heading[i_WiH]
+            idlc.wave_height = wave_Hs[i_Hs]
+            idlc.wave_period = wave_Tp[i_Tp]
+            idlc.wave_gamma = wave_gamma[i_WG]
+            idlc.wave_heading = wave_heading[i_WaH]
+            idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
+            idlc.turbulent_wind = True
+            if idlc.turbine_status == 'operating':
+                idlc.turbine_status = 'parked-still'
+            idlc.label = '6.5'
+            if options['analysis_time'] > 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+            self.cases.append(idlc)
+            if len(wind_seeds)>1:
+                i_WiSe+=1
+            if len(wave_seeds)>1:
+                i_WaSe+=1
+            if len(wind_heading)>1:
+                i_WiH+=1
+            if len(wave_Hs)>1:
+                i_Hs+=1
+            if len(wave_Tp)>1:
+                i_Tp+=1
+            if len(wave_gamma)>1:
+                i_WG+=1
+            if len(wave_heading)>1:
+                i_WaH+=1
+    
     def generate_12p1(self, options):
         # Pass through uniform wind input
         wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)

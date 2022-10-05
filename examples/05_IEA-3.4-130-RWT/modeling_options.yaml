@@ -93,7 +93,8 @@ DLC_driver:
           ws_bin_size: 10
           analysis_time: 5.
           transient_time: 5.
-        #   wind_speed: [9., 11.]
+          n_azimuth: 3
+          wind_speed: [9., 11.]
         - DLC: "1.5"
           ws_bin_size: 10
           analysis_time: 5.
@@ -103,6 +104,18 @@ DLC_driver:
         # - DLC: "5.1"
         #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
         #   Seeds: [2821, 2993939]
+        # - DLC: "1.5"
+        # - DLC: "1.6"
+        #   n_seeds: 6
+        # - DLC: "6.3"
+        #   n_seeds: 6
+        - DLC: "5.1"
+          wind_speed: [12]
+          n_seeds: 1
+          n_azimuth: 3
+          analysis_time: 20.
+          shutdown_time: 10.
+          transient_time: 0.0
         - DLC: "6.1"
           ws_bin_size: 10
           analysis_time: 5.
@@ -120,6 +133,19 @@ DLC_driver:
           ws_bin_size: 10
           analysis_time: 5.
           transient_time: 5.
+        - DLC: "6.5"  
+          yaw_misalign: [-8.,8.]
+          wave_height: [12.57]
+          wave_period: [16.0]
+          transient_time: 0.0
+          wave_gamma: [1.2]
+          analysis_time: 10.
+          turbulent_wind:
+              HubHt: 140
+              GridHeight: 220
+              GridWidth: 220
+              URef: 54.8339
+              PLExp: 0.12
 
         # - DLC: Custom
         #   wind_speed: [10., 12, 14]

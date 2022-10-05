@@ -7,27 +7,39 @@ General:
 WISDEM:
     RotorSE:
         flag: True
+        n_pitch_perf_surfaces: 20
+        n_tsr_perf_surfaces: 20
         spar_cap_ss: Spar_cap_ss
         spar_cap_ps: Spar_cap_ps
-        te_ss: TE_reinforcement_SS
-        te_ps: TE_reinforcement_PS
-        regulation_reg_III: True
+        te_ss: TE_reinf_ss
+        te_ps: TE_reinf_ps
+        AFTabMod: 3
     TowerSE:
         flag: True
     DriveSE:
         flag: True
     FloatingSE:
-        flag: True
+        flag: False
     BOS:
-        flag: True
+        flag: False
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
+    from_openfast: False
     simulation:
-        DT: 0.01
-        SttsTime: 100.
+        DT: 0.0125
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 0
+        CompSub: 0
+        CompMooring: 0
+        CompIce: 0
+        OutFileFmt: 3
+    linearization:
+        Linearize: False
     ElastoDyn:
-        flag: True
         FlapDOF1: True
         FlapDOF2: True
         EdgeDOF: True
@@ -45,21 +57,46 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : False
         PtfmPDOF : False
         PtfmYDOF : False
-ROSCO:
-    SD_Mode: 0
-    Flp_Mode: 2
-    zeta_vs: 1.0
     
+    ServoDyn:
+        Ptch_Cntrl: 1
+    
+    xfoil:
+        path: /Users/nabbas/Documents/WindEnergyToolbox/Xfoil/bin/xfoil
+
+ROSCO:
+    flag: False
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 0
+    Fl_Mode: 0 
+    Flp_Mode: 2 
+    zeta_flp: 0.7 
+    omega_flp: 2.63
+    zeta_pc: [1.2]
+    omega_pc: [0.1]
+    U_pc: [12]
+    zeta_vs: 0.5                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.1  
+    IPC_ControlMode: 0
+    IPC_Kp1p: 1.4788252060327009e-08
+    IPC_Ki1p: 1.7335658014571253e-09
+    Bld_FlpDamp: 0.59696
+    flp_kp_norm: 0.8372297349345306
+    flp_tau: 12.258174215008605
+
 DLC_driver:
     DLCs:
         - DLC: "1.1"
-          ws_bin_size: 5
+          wind_speed: [12]
           n_seeds: 1
+          analysis_time: 10.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 140
-              GridHeight: 240
-              GridWidth: 240
+              GridHeight: 220
+              GridWidth: 220
+            #   AnalysisTime: 5.
 
-xfoil:
-    path       : /Users/pbortolo/work/1_wisdem/Xfoil/bin/xfoil # Path to xfoil executable. Only used for blades with distributed aerodynamic control devices 
-    run_parallel: False

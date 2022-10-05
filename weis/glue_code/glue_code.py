@@ -58,9 +58,10 @@ class WindPark(om.Group):
         tune_rosco_ivc.add_output('zeta_pc',          val=np.zeros(n_PC),                    desc='Pitch controller damping ratio')
         tune_rosco_ivc.add_output('omega_vs',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
         tune_rosco_ivc.add_output('zeta_vs',          val=0.0,                    desc='Generator torque controller damping ratio')
-        tune_rosco_ivc.add_output('Flp_omega',        val=0.0, units='rad/s',     desc='Flap controller natural frequency')
-        tune_rosco_ivc.add_output('Flp_zeta',         val=0.0,                    desc='Flap controller damping ratio')
-        tune_rosco_ivc.add_output('IPC_Ki1p',         val=0.0, units='rad/(N*m)', desc='Individual pitch controller 1p gain')
+        tune_rosco_ivc.add_output('flp_kp_norm',      val=0.0,                    desc='Flap controller normalized gain')
+        tune_rosco_ivc.add_output('flp_tau',          val=0.0, units='s',         desc='Flap controller integral gain time constant')
+        tune_rosco_ivc.add_output('IPC_Kp1p',         val=0.0, units='s',         desc='Individual pitch controller 1p proportional gain')
+        tune_rosco_ivc.add_output('IPC_Ki1p',         val=0.0,                    desc='Individual pitch controller 1p integral gain')
         tune_rosco_ivc.add_output('stability_margin', val=0.0,                    desc='Stability margin for robust tuning')
         tune_rosco_ivc.add_output('omega_pc_max',     val=0.0,                    desc='Maximum allowable omega for robust tuning')
         # optional inputs - not connected right now!!
@@ -204,6 +205,7 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.zeta_pc',          'sse_tune.tune_rosco.zeta_pc')
             self.connect('tune_rosco_ivc.omega_vs',         'sse_tune.tune_rosco.omega_vs')
             self.connect('tune_rosco_ivc.zeta_vs',          'sse_tune.tune_rosco.zeta_vs')
+            self.connect('tune_rosco_ivc.IPC_Kp1p',         'sse_tune.tune_rosco.IPC_Kp1p')
             self.connect('tune_rosco_ivc.IPC_Ki1p',         'sse_tune.tune_rosco.IPC_Ki1p')
             self.connect('tune_rosco_ivc.stability_margin', 'sse_tune.tune_rosco.stability_margin')
             self.connect('tune_rosco_ivc.omega_pc_max', 'sse_tune.tune_rosco.omega_pc_max')
@@ -214,8 +216,8 @@ class WindPark(om.Group):
             self.connect('tune_rosco_ivc.Kp_float',         'sse_tune.tune_rosco.Kp_float')
             self.connect('dac_ivc.delta_max_pos',           'sse_tune.tune_rosco.delta_max_pos')
             if modeling_options['ROSCO']['Flp_Mode'] > 0:
-                self.connect('tune_rosco_ivc.Flp_omega',    'sse_tune.tune_rosco.Flp_omega')
-                self.connect('tune_rosco_ivc.Flp_zeta',     'sse_tune.tune_rosco.Flp_zeta')
+                self.connect('tune_rosco_ivc.flp_kp_norm',    'sse_tune.tune_rosco.flp_kp_norm')
+                self.connect('tune_rosco_ivc.flp_tau',     'sse_tune.tune_rosco.flp_tau')
 
         if modeling_options['Level1']['flag']:
             self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))
@@ -379,6 +381,9 @@ class WindPark(om.Group):
             self.connect('env.shear_exp',                   'aeroelastic.shearExp')
             
             # Connections to aeroelasticse
+            self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
+            self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
+
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
                 self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
@@ -431,6 +436,7 @@ class WindPark(om.Group):
                     self.connect('tower.cd',                        'aeroelastic.tower_cd')
                     self.connect('tower_grid.height',               'aeroelastic.tower_height')
                     self.connect('tower_grid.foundation_height',    'aeroelastic.tower_base_height')
+                    self.connect('towerse.tower_I_base',            'aeroelastic.tower_I_base')
                     if modeling_options["flags"]["monopile"] or modeling_options["flags"]["jacket"]:
                         self.connect('fixedse.torsion_freqs',      'aeroelastic.tor_freq', src_indices=[0])
                         self.connect('fixedse.tower_fore_aft_modes',     'aeroelastic.fore_aft_modes')
@@ -520,8 +526,6 @@ class WindPark(om.Group):
                 self.connect('configuration.rated_power',       'aeroelastic.control_ratedPower')
                 self.connect('control.max_TS',                  'aeroelastic.control_maxTS')
                 self.connect('control.maxOmega',                'aeroelastic.control_maxOmega')
-                self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
-                self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
                 self.connect('sse_tune.aeroperf_tables.pitch_vector','aeroelastic.pitch_vector')
                 self.connect('sse_tune.aeroperf_tables.tsr_vector', 'aeroelastic.tsr_vector')
                 self.connect('sse_tune.aeroperf_tables.U_vector', 'aeroelastic.U_vector')
@@ -884,8 +888,9 @@ class WindPark(om.Group):
                 self.connect('tune_rosco_ivc.zeta_vs',         'outputs_2_screen_weis.zeta_vs')
                 self.connect('tune_rosco_ivc.Kp_float',        'outputs_2_screen_weis.Kp_float')
                 self.connect('tune_rosco_ivc.ptfm_freq',       'outputs_2_screen_weis.ptfm_freq')
-                self.connect('tune_rosco_ivc.Flp_omega',       'outputs_2_screen_weis.Flp_omega')
-                self.connect('tune_rosco_ivc.Flp_zeta',        'outputs_2_screen_weis.Flp_zeta')
+                self.connect('tune_rosco_ivc.flp_kp_norm',       'outputs_2_screen_weis.flp_kp_norm')
+                self.connect('tune_rosco_ivc.flp_tau',        'outputs_2_screen_weis.flp_tau')
+                self.connect('tune_rosco_ivc.IPC_Kp1p',        'outputs_2_screen_weis.IPC_Kp1p')
                 self.connect('tune_rosco_ivc.IPC_Ki1p',        'outputs_2_screen_weis.IPC_Ki1p')
                 self.connect('dac_ivc.te_flap_end',            'outputs_2_screen_weis.te_flap_end')
                 if modeling_options['OL2CL']['flag']:

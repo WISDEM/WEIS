@@ -703,17 +703,21 @@ class InputReader_OpenFAST(object):
         f.readline()
         self.fst_vt['InflowWind']['SumPrint'] = bool_read(f.readline().split()[0])
         
-        # NO INFLOW WIND OUTPUT PARAMETERS YET DEFINED IN FAST
-        # f.readline()
-        # data = f.readline()
-        # while data.split()[0] != 'END':
-        #     channels = data.split('"')
-        #     channel_list = channels[1].split(',')
-        #     for i in range(len(channel_list)):
-        #         channel_list[i] = channel_list[i].replace(' ','')
-        #         if channel_list[i] in self.fst_vt.outlist.inflow_wind_vt.__dict__.keys():
-        #             self.fst_vt.outlist.inflow_wind_vt.__dict__[channel_list[i]] = True
-        #     data = f.readline()
+        # InflowWind Outlist
+        f.readline()
+        data = f.readline()
+        while data.split()[0] != 'END':
+            if data.find('"')>=0:
+                channels = data.split('"')
+                channel_list = channels[1].split(',')
+            else:
+                row_string = data.split(',')
+                if len(row_string)==1:
+                    channel_list = row_string[0].split('\n')[0]
+                else:
+                    channel_list = row_string
+            self.set_outlist(self.fst_vt['outlist']['InflowWind'], channel_list)
+            data = f.readline()
 
         f.close()
                 
@@ -1798,7 +1802,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['NDiv']      = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['CBMod']     = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['Nmodes']    = int_read(f.readline().split()[0])
-        self.fst_vt['SubDyn']['JDampings'] = int_read(f.readline().split()[0])
+        self.fst_vt['SubDyn']['JDampings'] = float(f.readline().split()[0])
         self.fst_vt['SubDyn']['GuyanDampMod'] = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['RayleighDamp'] = [float(m.replace(',','')) for m in f.readline().split()[:2]]
         self.fst_vt['SubDyn']['GuyanDampSize'] = int_read(f.readline().split()[0])

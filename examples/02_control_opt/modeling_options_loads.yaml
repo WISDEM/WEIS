@@ -1,0 +1,175 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: IEA15
+        OF_run_dir: outputs/02_loads
+        save_timeseries: True
+        save_iterations: True
+        use_exe: True
+
+WISDEM:
+    RotorSE:
+        flag: False
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+    BOS:
+        flag: False
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    from_openfast: True
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    simulation:
+        DT: 0.0125
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 3
+        CompIce: 0
+        OutFileFmt: 3
+        Gravity: 9.81
+        # WtrDpth: 35
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: True
+        FlapDOF2: True
+        EdgeDOF: True
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : True
+        TwSSDOF1 : True
+        TwSSDOF2 : True
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+        TwrNodes: 20
+    HydroDyn:
+        WaveSeed1: 123456789
+        WaveSeed2: 1011121314
+        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+        WaveMod: 2
+        WaveTMax: 850
+        WvLowCOff: 0.111527
+        WvHiCOff: 0.783827
+        WvSumQTF: True
+        RdtnMod: 1
+        PotMod: 1
+        ExctnMod: 1
+        DiffQTF: 0
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+    ServoDyn:
+        PitManRat(1): 2.
+        PitManRat(2): 2.
+        PitManRat(3): 2.
+    SubDyn:
+        SDdeltaT: 0.005
+
+    InflowWind:
+        RefHt: 150.0
+    
+ROSCO:
+    flag: True
+    SD_Mode: 0
+    PS_Mode: 1
+    ps_percent: 0.85
+    F_LPFType: 2
+    F_NotchType: 0
+    Fl_Mode: 0 
+    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
+    zeta_pc: [1]
+    omega_pc: [0.2]
+    U_pc: [12,18]
+    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    omega_vs: 0.12  
+    vs_minspd:          0.523598775
+    # twr_freq: 3.2
+    # ptfm_freq: 0.2
+    # Kp_float: -10
+
+
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+    DLCs:
+        # - DLC: "1.1"
+        #   n_seeds: 1
+        #   wind_speed: [4]
+        # - DLC: "1.3"
+        #   n_seeds: 6
+        # - DLC: "1.4"
+        #   wind_speed: [8.6, 10.6, 12.6]
+        #   n_seeds: 2
+        #   n_azimuth: 3
+        # - DLC: "1.5"
+        # - DLC: "1.6"
+        #   n_seeds: 1
+        #   wind_speed: [12]
+        #   yaw_misalign: [-8,8]
+        #   analysis_time: 10.
+        #   transient_time: 0.
+        # - DLC: "1.6"
+        #   n_seeds: 1
+        #   wind_speed: [12]
+        #   wave_heading: [30]
+        #   analysis_time: 10.
+        #   transient_time: 0.
+        # - DLC: "6.3"
+        #   n_seeds: 6
+        - DLC: "5.1"
+          wind_speed: [12]
+          n_seeds: 1
+          n_azimuth: 3
+          analysis_time: 150.
+          shutdown_time: 70.
+          transient_time: 0.0
+          turbulent_wind:
+              HubHt: 140
+              GridHeight: 220
+              GridWidth: 220
+              AnalysisTime: 5.
+        # - DLC: "6.5"
+        #   yaw_misalign: [-8.,8.]
+        #   wave_height: [12.57]
+        #   wave_period: [16.0]
+        #   transient_time: 0.0
+        #   wave_gamma: [1.2]
+        #   analysis_time: 10.
+        #   turbulent_wind:
+        #       HubHt: 140
+        #       GridHeight: 220
+        #       GridWidth: 220
+        #       URef: 54.8339
+        #       PLExp: 0.12
+
+

@@ -33,8 +33,6 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 
-
-
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 import pickle
@@ -82,7 +80,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
         self.add_input('hub_height',                val=0.0, units='m', desc='hub height')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
-        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
+        self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
 
@@ -157,6 +155,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('tower_height',              val=0.0, units='m', desc='tower height from the tower base')
             self.add_input('tower_base_height',         val=0.0, units='m', desc='tower base height from the ground or mean sea level')
             self.add_input('tower_cd',         val=np.zeros(n_height_tow),                   desc='drag coefficients along tower height at corresponding locations')
+            self.add_input("tower_I_base", np.zeros(6), units="kg*m**2", desc="tower moments of inertia at the tower base")
 
             # These next ones are needed for SubDyn
             n_height_mon = n_full_mon = 0
@@ -466,7 +465,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
 
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
+        self.add_output('max_TwrBsMyt_ratio',val=0.0,  desc='ratio of maximum of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         self.add_output('DEL_TwrBsMyt',val=0.0, units='kN*m', desc='damage equivalent load of tower base bending moment in fore-aft direction')
+        self.add_output('DEL_TwrBsMyt_ratio',val=0.0, desc='ratio of damage equivalent load of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         
         # Tower outputs
         if not self.options['modeling_options']['Level3']['from_openfast']:
@@ -866,13 +867,21 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
         
 
+        # Update ServoDyn
+        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
+        
+
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
         fst_vt['ElastoDyn']['HubIner']   = inputs['hub_system_I'][0]
         fst_vt['ElastoDyn']['HubCM']     = inputs['hub_system_cm'][0] # k*inputs['overhang'][0] - inputs['hub_system_cm'][0], but we need to solve the circular dependency in DriveSE first
         fst_vt['ElastoDyn']['NacMass']   = inputs['above_yaw_mass'][0]
         fst_vt['ElastoDyn']['YawBrMass'] = inputs['yaw_mass'][0]
-        fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I_TT'][2]
+        # Advice from R. Bergua, add 1/3 the tower yaw inertia here because it is activated as a lumped modal mass
+        fst_vt['ElastoDyn']['NacYIner']  = inputs['nacelle_I_TT'][2] + inputs['tower_I_base'][2]/3.0
         fst_vt['ElastoDyn']['NacCMxn']   = -k*inputs['nacelle_cm'][0]
         fst_vt['ElastoDyn']['NacCMyn']   = inputs['nacelle_cm'][1]
         fst_vt['ElastoDyn']['NacCMzn']   = inputs['nacelle_cm'][2]
@@ -909,7 +918,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
             fst_vt['ElastoDyn']['PtfmPIner'] = 0.
-            fst_vt['ElastoDyn']['PtfmYIner'] = 0.
+            # Advice from R. Bergua- Use a dummy quantity (at least 1e4) here when have fixed-bottom support
+            fst_vt['ElastoDyn']['PtfmYIner'] = 1e8 if modopt['flags']['offshore'] else 0.0
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMyt'] = 0.
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
@@ -1174,12 +1184,11 @@ class FASTLoadCases(ExplicitComponent):
             # Find the members where the 9 channels of SubDyn should be placed
             grid_joints_monopile = (fst_vt['SubDyn']['JointZss'] - fst_vt['SubDyn']['JointZss'][0]) / (fst_vt['SubDyn']['JointZss'][-1] - fst_vt['SubDyn']['JointZss'][0])
             n_channels = 9
-            grid_target = np.linspace(0., 1., n_channels)
-            # Take the first node for every member, except for last one
-            idx_out = [np.argmin(abs(grid_joints_monopile-grid_i)) for grid_i in grid_target]
-            fst_vt['SubDyn']['NMOutputs'] = n_channels
+            grid_target = np.linspace(0., 0.999999999, n_channels)
+            idx_out = [np.where(grid_i >= grid_joints_monopile)[0][-1] for grid_i in grid_target]
+            idx_out = np.unique(idx_out)
+            fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
             fst_vt['SubDyn']['MemberID_out'] = [idx+1 for idx in idx_out]
-            fst_vt['SubDyn']['MemberID_out'][-1] -= 1
             fst_vt['SubDyn']['NOutCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
             fst_vt['SubDyn']['NodeCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
             fst_vt['SubDyn']['NodeCnt'][-1] = 2
@@ -1222,7 +1231,6 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['flags']['offshore']:
             mgrav = 0.0 if not modopt['flags']['monopile'] else float(inputs['gravity_foundation_mass'])
             if fst_vt['SubDyn']['SDdeltaT']<=-999.0: fst_vt['SubDyn']['SDdeltaT'] = "DEFAULT"
-            fst_vt['SubDyn']['JDampings'] = [str(m) for m in fst_vt['SubDyn']['JDampings']]
             fst_vt['SubDyn']['GuyanDamp'] = np.vstack( tuple([fst_vt['SubDyn']['GuyanDamp'+str(m+1)] for m in range(6)]) )
             fst_vt['SubDyn']['Rct_SoilFile'] = [""]*fst_vt['SubDyn']['NReact']
             fst_vt['SubDyn']['NJoints'] = n_joints
@@ -1267,6 +1275,9 @@ class FASTLoadCases(ExplicitComponent):
         # HydroDyn inputs
         if modopt['flags']['monopile']:
             z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
+            # Don't want any nodes near zero for annoying hydrodyn errors
+            idx0 = np.intersect1d(np.where(z_coarse>-0.5), np.where(z_coarse<0.5))
+            z_coarse = np.delete(z_coarse, idx0) 
             n_joints = len(z_coarse)
             n_members = n_joints - 1
             joints_xyz = np.c_[np.zeros((n_joints,2)), z_coarse]
@@ -1339,7 +1350,7 @@ class FASTLoadCases(ExplicitComponent):
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
             if len(idx) > 0:
-                joints_xyz[idx,2] = 1e-2
+                joints_xyz[idx,2] += 1e-2
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
@@ -1706,7 +1717,8 @@ class FASTLoadCases(ExplicitComponent):
         WindFile_name = [''] * dlc_generator.n_cases
         rot_speed_initial = np.zeros(dlc_generator.n_cases)
         pitch_initial = np.zeros(dlc_generator.n_cases)
-        shutdown_start = np.full(dlc_generator.n_cases, fill_value = 9999)
+        shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
+        azimuth_init = np.full(dlc_generator.n_cases, fill_value = 0)
         WindHd = np.zeros(dlc_generator.n_cases)
         WaveHs = np.zeros(dlc_generator.n_cases)
         WaveTp = np.zeros(dlc_generator.n_cases)
@@ -1718,15 +1730,23 @@ class FASTLoadCases(ExplicitComponent):
         dlc_label = [''] * dlc_generator.n_cases
         wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
         mean_wind_speed = np.zeros(dlc_generator.n_cases)
+        yaw_misalignment = np.zeros(dlc_generator.n_cases)
+        aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
+        wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
 
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
                 # Assign values common to all DLCs
                 # Wind turbulence class
-                dlc_generator.cases[i_case].IECturbc = wt_class
+                if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case
+                    dlc_generator.cases[i_case].IECturbc = str(dlc_generator.cases[i_case].IECturbc)
+                    dlc_generator.cases[i_case].IEC_WindType = 'NTM'
+                else:
+                    dlc_generator.cases[i_case].IECturbc = wt_class
                 # Reference height for wind speed
-                dlc_generator.cases[i_case].RefHt = hub_height
+                if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].RefHt = hub_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
                 dlc_generator.cases[i_case].HubHt = hub_height
                 # Height of wind grid, it stops 1 mm above the ground
@@ -1738,7 +1758,8 @@ class FASTLoadCases(ExplicitComponent):
                 # Width of wind grid, same of height
                 dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
                 # Power law exponent of wind shear
-                dlc_generator.cases[i_case].PLExp = PLExp
+                if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
+                    dlc_generator.cases[i_case].PLExp = PLExp
                 # Length of wind grids
                 dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
 
@@ -1774,18 +1795,24 @@ class FASTLoadCases(ExplicitComponent):
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
         for i_case in range(dlc_generator.n_cases):
-            if dlc_generator.cases[i_case].turbine_status == 'operating':
+            if 'operating' in dlc_generator.cases[i_case].turbine_status:
                 # We have initial conditions from WISDEM
                 if ('U' in inputs) and ('Omega' in inputs) and ('pitch' in inputs):
                     rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
                     pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
                 else:
                     rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi / fst_vt['ElastoDyn']['GBRatio']
-                    pitch_initial[i_case]       = 10
+                    pitch_initial[i_case]       = 15
+
+                if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
+                    shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
             else:
                 rot_speed_initial[i_case]   = 0.
                 pitch_initial[i_case]       = 90.
-                shutdown_start[i_case]      = 0
+                shutdown_time[i_case]      = 0
+                aero_mod[i_case]            = 1
+                wake_mod[i_case]            = 0
+
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
             WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
@@ -1793,11 +1820,16 @@ class FASTLoadCases(ExplicitComponent):
             WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
             WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
             WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
+
+            # Other case info
             self.TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
             self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
             dlc_label[i_case] = dlc_generator.cases[i_case].label
             wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
             mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
+            yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
+            azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
+
 
 
         # Parameteric inputs
@@ -1811,22 +1843,30 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
         case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
-        # Initial conditions for rotor speed and pitch
+        case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[hub_height], 'group':0}
+        # Initial conditions for rotor speed, pitch, and azimuth
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+        case_inputs[("ElastoDyn","Azimuth")] = {'vals':azimuth_init, 'group':1}
+        # Yaw offset
+        case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
         # Inputs to HydroDyn
         case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
         case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
-        # Inptus to ServoDyn (parking)
-        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_start, 'group':1}
-        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_start, 'group':1}
-        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_start, 'group':1}
-        
+        # Inputs to ServoDyn (parking), PitManRat and BlPitchF are ServoDyn modeling_options
+        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
+        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
+        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
+
+        # Inputs to AeroDyn (parking)
+        case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
+        case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+
         # DLC Label add these for the case matrix and delete from the case_list
         case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
         case_inputs[("DLC","WindSeed")] = {'vals':wind_seed, 'group':1}
@@ -1892,18 +1932,19 @@ class FASTLoadCases(ExplicitComponent):
         magnitude_channels['NcIMUTA'] = ['NcIMUTAxs','NcIMUTAzs','NcIMUTAzs']
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
+        # Convert ultstress and S_intercept values to kPa with 1e-3 factor
         if not modopt['Level3']['from_openfast']:
             for u in ['U','L']:
                 blade_fatigue_root = FatigueParams(load2stress=1.0,
                                                 lifetime=inputs['lifetime'],
                                                 slope=inputs[f'blade_spar{u}_wohlerexp'],
-                                                ult_stress=inputs[f'blade_spar{u}_ultstress'],
-                                                S_intercept=inputs[f'blade_spar{u}_wohlerA'])
+                                                ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
+                                                S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
                 blade_fatigue_te = FatigueParams(load2stress=1.0,
                                                 lifetime=inputs['lifetime'],
                                                 slope=inputs[f'blade_te{u}_wohlerexp'],
-                                                ult_stress=inputs[f'blade_te{u}_ultstress'],
-                                                S_intercept=inputs[f'blade_te{u}_wohlerA'])
+                                                ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
+                                                S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
                 
                 for k in range(1,self.n_blades+1):
                     blade_root_Fz = blade_fatigue_root.copy()
@@ -1937,11 +1978,12 @@ class FASTLoadCases(ExplicitComponent):
                     magnitude_channels[f'Spn2te{u}_MLyb{k}'] = [f'Spn2MLyb{k}']
 
             # Low speed shaft fatigue
+            # Convert ultstress and S_intercept values to kPa with 1e-3 factor
             lss_fatigue = FatigueParams(load2stress=1.0,
                                         lifetime=inputs['lifetime'],
                                         slope=inputs['lss_wohlerexp'],
-                                        ult_stress=inputs['lss_ultstress'],
-                                        S_intercept=inputs['lss_wohlerA'])        
+                                        ult_stress=1e-3*inputs['lss_ultstress'],
+                                        S_intercept=1e-3*inputs['lss_wohlerA'])        
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -1956,11 +1998,12 @@ class FASTLoadCases(ExplicitComponent):
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
             # Fatigue at the tower base
+            # Convert ultstress and S_intercept values to kPa with 1e-3 factor
             tower_fatigue_base = FatigueParams(load2stress=1.0,
                                                lifetime=inputs['lifetime'],
                                                slope=inputs['tower_wohlerexp'][0],
-                                               ult_stress=inputs['tower_ultstress'][0],
-                                               S_intercept=inputs['tower_wohlerA'][0])
+                                               ult_stress=1e-3*inputs['tower_ultstress'][0],
+                                               S_intercept=1e-3*inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -1972,6 +2015,7 @@ class FASTLoadCases(ExplicitComponent):
                         magnitude_channels[f'TwrBs{s}{k}{x}t'] = [f'TwrBs{k}{x}t'] if x=='z' else [f'TwrBs{k}xt', f'TwrBs{k}yt']
 
             # Fatigue at monopile base (mudline)
+            # No need to convert to kPa here since SubDyn reports in N already
             if modopt['flags']['monopile']:
                 monopile_fatigue_base = FatigueParams(load2stress=1.0,
                                                       lifetime=inputs['lifetime'],
@@ -2029,8 +2073,7 @@ class FASTLoadCases(ExplicitComponent):
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
 
-        if modopt['DLC_driver']['n_ws_dlc11'] > 0 and bool(self.fst_vt['Fst']['CompAero']):
-            outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
@@ -2041,6 +2084,10 @@ class FASTLoadCases(ExplicitComponent):
         if modopt['Level3']['flag']:
             if any(summary_stats['openfast_failed']['mean'] > 0):
                 outputs['openfast_failed'] = 2
+
+        # # Did any OpenFAST runs fail?
+        # if any(summary_stats['openfast_failed']['mean'] > 0):
+        #     outputs['openfast_failed'] = 2
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
@@ -2063,37 +2110,33 @@ class FASTLoadCases(ExplicitComponent):
         extreme_table : dict
         """
 
-        # Determine blade with the maximum deflection magnitude
+        # Determine maximum deflection magnitudes
         if self.n_blades == 2:
             defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max'])]
         else:
             defl_mag = [max(sum_stats['TipDxc1']['max']), max(sum_stats['TipDxc2']['max']), max(sum_stats['TipDxc3']['max'])]
-
-        # Select channels for the blade identified above
-        if np.argmax(defl_mag) == 0:
-            blade_chans_Fz = ["RootFzb1", "Spn1FLzb1", "Spn2FLzb1", "Spn3FLzb1", "Spn4FLzb1", "Spn5FLzb1", "Spn6FLzb1", "Spn7FLzb1", "Spn8FLzb1", "Spn9FLzb1"]
-            blade_chans_Mx = ["RootMxb1", "Spn1MLxb1", "Spn2MLxb1", "Spn3MLxb1", "Spn4MLxb1", "Spn5MLxb1", "Spn6MLxb1", "Spn7MLxb1", "Spn8MLxb1", "Spn9MLxb1"]
-            blade_chans_My = ["RootMyb1", "Spn1MLyb1", "Spn2MLyb1", "Spn3MLyb1", "Spn4MLyb1", "Spn5MLyb1", "Spn6MLyb1", "Spn7MLyb1", "Spn8MLyb1", "Spn9MLyb1"]
-            tip_max_chan   = "TipDxc1"
-
-        if np.argmax(defl_mag) == 1:
-            blade_chans_Fz = ["RootFzb2", "Spn1FLzb2", "Spn2FLzb2", "Spn3FLzb2", "Spn4FLzb2", "Spn5FLzb2", "Spn6FLzb2", "Spn7FLzb2", "Spn8FLzb2", "Spn9FLzb2"]
-            blade_chans_Mx = ["RootMxb2", "Spn1MLxb2", "Spn2MLxb2", "Spn3MLxb2", "Spn4MLxb2", "Spn5MLxb2", "Spn6MLxb2", "Spn7MLxb2", "Spn8MLxb2", "Spn9MLxb2"]
-            blade_chans_My = ["RootMyb2", "Spn1MLyb2", "Spn2MLyb2", "Spn3MLyb2", "Spn4MLyb2", "Spn5MLyb2", "Spn6MLyb2", "Spn7MLyb2", "Spn8MLyb2", "Spn9MLyb2"]
-            tip_max_chan   = "TipDxc2"
-
-        if np.argmax(defl_mag) == 2:
-            blade_chans_Fz = ["RootFzb3", "Spn1FLzb3", "Spn2FLzb3", "Spn3FLzb3", "Spn4FLzb3", "Spn5FLzb3", "Spn6FLzb3", "Spn7FLzb3", "Spn8FLzb3", "Spn9FLzb3"]
-            blade_chans_Mx = ["RootMxb3", "Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
-            blade_chans_My = ["RootMyb3", "Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
-            tip_max_chan   = "TipDxc3"
-
         # Get the maximum out of plane blade deflection
-        outputs["max_TipDxc"] = np.max(sum_stats[tip_max_chan]['max'])
-        # Return moments around x and y and axial force along blade span at instance of largest out of plane blade tip deflection
-        Fz = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Fz]
-        Mx = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_Mx]
-        My = [extreme_table[tip_max_chan][np.argmax(sum_stats[tip_max_chan]['max'])][var] for var in blade_chans_My]
+        outputs["max_TipDxc"] = np.max(defl_mag)
+
+        # Return moments around x and y and axial force along blade span at instance of largest flapwise bending moment at each node
+        My_chans = ["RootMyb", "Spn1MLyb", "Spn2MLyb", "Spn3MLyb", "Spn4MLyb", "Spn5MLyb", "Spn6MLyb", "Spn7MLyb", "Spn8MLyb", "Spn9MLyb"]
+        Mx_chans = ["RootMxb", "Spn1MLxb", "Spn2MLxb", "Spn3MLxb", "Spn4MLxb", "Spn5MLxb", "Spn6MLxb", "Spn7MLxb", "Spn8MLxb", "Spn9MLxb"]
+        Fz_chans = ["RootFzb", "Spn1FLzb", "Spn2FLzb", "Spn3FLzb", "Spn4FLzb", "Spn5FLzb", "Spn6FLzb", "Spn7FLzb", "Spn8FLzb", "Spn9FLzb"]
+            
+        Fz = []
+        Mx = []
+        My = []
+        for My_chan,Mx_chan,Fz_chan in zip(My_chans, Mx_chans, Fz_chans):
+            if self.n_blades == 2:
+                bld_idx_max = np.argmax([max(sum_stats[My_chan+'1']['max']), max(sum_stats[My_chan+'2']['max'])])
+            else:
+                bld_idx_max = np.argmax([max(sum_stats[My_chan+'1']['max']), max(sum_stats[My_chan+'2']['max']), max(sum_stats[My_chan+'3']['max'])])
+            My_max_chan = My_chan + str(bld_idx_max+1)
+            My.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][My_chan+str(bld_idx_max+1)])
+            Mx.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][Mx_chan+str(bld_idx_max+1)])
+            Fz.append(extreme_table[My_max_chan][np.argmax(sum_stats[My_max_chan]['max'])][Fz_chan+str(bld_idx_max+1)])
+
+
         if np.any(np.isnan(Fz)):
             print('WARNING: nans found in Fz extremes')
             Fz[np.isnan(Fz)] = 0.0
@@ -2189,6 +2232,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Get the maximum fore-aft moment at tower base
         outputs["max_TwrBsMyt"] = np.max(sum_stats[fatb_max_chan]['max'])
+        outputs["max_TwrBsMyt_ratio"] = np.max(sum_stats[fatb_max_chan]['max'])/self.options['opt_options']['constraints']['control']['Max_TwrBsMyt']['max']
         # Return forces and moments along tower height at instance of largest fore-aft tower base moment
         Fx = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fx]
         Fy = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fy]
@@ -2252,7 +2296,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # # Get the maximum of signal M1N1MKye
         outputs["max_M1N1MKye"] = np.max(sum_stats[max_chan]['max'])
-        # # Return forces and moments along tower height at instance of largest fore-aft tower base moment
+        # # Return forces and moments along monopile at instance of largest fore-aft tower base moment
         Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
         Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
         Fz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fz]
@@ -2272,12 +2316,13 @@ class FASTLoadCases(ExplicitComponent):
         z_sec, _ = util.nodal2sectional(z_full)
         z = (z_sec - z_sec[0]) / (z_sec[-1] - z_sec[0])
 
-        outputs['monopile_maxMy_Fx'] = spline_Fx(z)
-        outputs['monopile_maxMy_Fy'] = spline_Fy(z)
-        outputs['monopile_maxMy_Fz'] = spline_Fz(z)
-        outputs['monopile_maxMy_Mx'] = spline_Mx(z)
-        outputs['monopile_maxMy_My'] = spline_My(z)
-        outputs['monopile_maxMy_Mz'] = spline_Mz(z)
+        # SubDyn reports in N, but ElastoDyn and units here report in kN, so scale by 0.001
+        outputs['monopile_maxMy_Fx'] = 1e-3*spline_Fx(z)
+        outputs['monopile_maxMy_Fy'] = 1e-3*spline_Fy(z)
+        outputs['monopile_maxMy_Fz'] = 1e-3*spline_Fz(z)
+        outputs['monopile_maxMy_Mx'] = 1e-3*spline_Mx(z)
+        outputs['monopile_maxMy_My'] = 1e-3*spline_My(z)
+        outputs['monopile_maxMy_Mz'] = 1e-3*spline_Mz(z)
 
         return outputs
 
@@ -2347,7 +2392,7 @@ class FASTLoadCases(ExplicitComponent):
         for k in range(dlc_generator.n_cases):
             U[k] = dlc_generator.cases[k].URef
             
-            if dlc_generator.cases[k].label in ['1.1', '6.4']:
+            if dlc_generator.cases[k].label in ['1.2', '6.4', '7.2']:
                 ifat.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
@@ -2370,6 +2415,7 @@ class FASTLoadCases(ExplicitComponent):
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
+        outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         if not modopt['Level3']['from_openfast']:

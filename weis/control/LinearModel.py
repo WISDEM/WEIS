@@ -109,7 +109,7 @@ class LinearTurbineModel(object):
                 if reduceStates:
                     if not iCase:
                         n_states = np.zeros((n_lin_cases,1),dtype=int)
-                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase],remove_useless=False)
+                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase])
                     
                     # figure out minimum number of states for the systems at each operating point
                     P_min = co.minreal(P,tol=1e-7,verbose=False)
@@ -147,7 +147,7 @@ class LinearTurbineModel(object):
                         self.C_ops = np.zeros((len(indOuts),max(n_states)[0],n_lin_cases))
                         self.D_ops = np.zeros((len(indOuts),len(indInps),n_lin_cases))
 
-                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase],remove_useless=False)
+                    P = co.StateSpace(A_ops[:,:,iCase],B_ops[:,:,iCase],C_ops[:,:,iCase],D_ops[:,:,iCase])
                     P_red = co.balred(P,max(n_states)[0],method='matchdc')         # I don't know why it's not reducing to max(n_states), must add 2
                     # P_red = co.minreal(P,tol=1e-7,verbose=False)         # I don't know why it's not reducing to max(n_states), must add 2
                     self.A_ops[:,:,iCase] = P_red.A
@@ -308,7 +308,7 @@ class LinearTurbineModel(object):
             x_op    = self.x_ops[:,0]            
 
         # NOTE: co.StateSpace() will remove states sometimes! This kwarg may be changed, was different here: https://github.com/python-control/python-control/blob/master/control/statesp.py
-        P_op                = co.StateSpace(A,B,C,D,remove_useless=False)
+        P_op                = co.StateSpace(A,B,C,D)
         if reduce_states:
             P_op            = co.minreal(P_op,tol=1e-7,verbose=False)
         P_op.InputName      = self.DescCntrlInpt
@@ -419,8 +419,26 @@ class LinearTurbineModel(object):
                 if k == 0:
                     continue # Skip the first run
                 
+                # populate turbine state dictionary
+                turbine_state = {}
+                if k < len(t_array):
+                    turbine_state['iStatus']    = 1
+                else:
+                    turbine_state['iStatus']    = -1
+                turbine_state['t']              = t
+                turbine_state['dt']             = dt
+                turbine_state['ws']             = u_h[k-1]
+                turbine_state['bld_pitch']      = bld_pitch[k-1]
+                turbine_state['gen_torque']     = gen_torque[k-1]
+                turbine_state['gen_speed']      = gen_speed[k-1]
+                turbine_state['gen_eff']        = 0.95  # hard code, for now
+                turbine_state['rot_speed']      = rot_speed[k-1]
+                turbine_state['Yaw_fromNorth']  = 0
+                turbine_state['Y_MeasErr']      = 0 
+                turbine_state['NacIMU_FA_Acc']  = nac_accel[k-1]
+
                 # Call the controller
-                gen_torque[k], bld_pitch[k] = controller.call_controller(t,dt,bld_pitch[k-1],gen_torque[k-1],gen_speed[k-1],0.95,rot_speed[k-1],u_h[k-1],nac_accel[k-1])
+                gen_torque[k], bld_pitch[k], _ = controller.call_controller(turbine_state)
 
                 # Set inputs:
                 # Wind
