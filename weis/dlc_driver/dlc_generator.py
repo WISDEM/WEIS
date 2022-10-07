@@ -62,6 +62,8 @@ class MetoceanCounters(object):
     def increment(self):
         if len(self.metocean['wind_speeds'])>1:
             self.i_wind_speed+=1
+        if len(self.metocean['rand_seeds'])>1:
+            self.i_seed+=1
         if len(self.metocean['wave_seeds'])>1:
             self.i_wave_seed+=1
         if len(self.metocean['wind_heading'])>1:
@@ -216,9 +218,12 @@ class DLCGenerator(object):
         if len(options['current_speed']) > 0:
             current_speeds = np.array( [float(m) for m in options['current_speed']] )
         else:
-            current_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+0.5*options['ws_bin_size'], options['ws_bin_size'])
-            if current_speeds[-1] != self.ws_cut_out:
-                current_speeds = np.append(current_speeds, self.ws_cut_out)
+            if self.MHK:
+                current_speeds = np.arange(self.ws_cut_in, self.ws_cut_out+0.5*options['ws_bin_size'], options['ws_bin_size'])
+                if current_speeds[-1] != self.ws_cut_out:
+                    current_speeds = np.append(current_speeds, self.ws_cut_out)
+            else:
+                current_speeds = np.array([0])
 
         return current_speeds
 
@@ -284,7 +289,6 @@ class DLCGenerator(object):
             raise Exception("The vector of probabilities must have either length=1 or the same length of speeds")
         if abs(sum(probabilities) - 1.) > 1.e-3:
             raise Exception("The vector of probabilities must sum to 1")
-        # TODO: make and return dict
 
         if self.MHK:
             current_speeds = speeds
@@ -298,7 +302,7 @@ class DLCGenerator(object):
         metocean_case_info['wind_heading'] = wind_heading
         metocean_case_info['wave_Hs'] = wave_Hs
         metocean_case_info['wave_Tp'] = wave_Tp
-        metocean_case_info['current_speeds'] = speeds
+        metocean_case_info['current_speeds'] = current_speeds
         metocean_case_info['wave_gamma'] = wave_gamma
         metocean_case_info['wave_heading'] = wave_heading
         metocean_case_info['probabilities'] = probabilities       
@@ -335,42 +339,37 @@ class DLCGenerator(object):
 
     def generate_1p1(self, options):
         # Power production normal turbulence model - ultimate loads
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
+        # wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _, _
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_NSS)
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_NSS)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_NSS)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
+            
         # Set yaw_misalign, else default
         if 'yaw_misalign' in options:
             yaw_misalign = options['yaw_misalign']
         else: # default
             yaw_misalign = [0]
-        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(metocean['wind_speeds']) / len(yaw_misalign)))
+        
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['wind_speeds']:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+            idlc.yaw_misalign = yaw_misalign_deg[mc.i_seed]
             idlc.turbulent = True
             idlc.label = '1.1'
             if options['analysis_time'] > 0:
@@ -379,24 +378,9 @@ class DLCGenerator(object):
                 idlc.transient_time = options['transient_time']
             idlc.PSF = 1.2 * 1.25
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
-        self.n_ws_dlc11 = len(np.unique(wind_speeds))
+        self.n_ws_dlc11 = len(np.unique(metocean['wind_speeds']))
 
     def generate_1p1_mhk(self, options):
         # Power production normal turbulence model - ultimate loads
@@ -435,34 +419,30 @@ class DLCGenerator(object):
 
     def generate_1p2(self, options):
         # Power production normal turbulence model - fatigue loads
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _, probabilities = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         # If the user has not defined Hs and Tp, apply the metocean conditions for the fatigue analysis
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_F)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_F)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_F)
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_F)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_F)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
+        
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['wind_speeds']:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.probability = probabilities[i_WaH]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+            idlc.probability = metocean['probabilities'][mc.i_wave_heading]
             idlc.turbulent = True
             idlc.label = '1.2'
             if options['analysis_time'] > 0:
@@ -471,22 +451,7 @@ class DLCGenerator(object):
                 idlc.transient_time = options['transient_time']
             idlc.PSF = 1.
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
     def generate_1p2_mhk(self, options):
         # Section 7.3.7.2, Table 8 in IEC docs
@@ -536,42 +501,36 @@ class DLCGenerator(object):
 
     def generate_1p3(self, options):
         # Power production extreme turbulence model - ultimate loads
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _, _ = self.get_metocean(options)
-        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_NSS)
+        metocean = self.get_metocean(options)
+        # If the user has not defined Hs and Tp, apply the metocean conditions for the fatigue analysis
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_F)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_F)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
         # Set yaw_misalign, else default
         if 'yaw_misalign' in options:
             yaw_misalign = options['yaw_misalign']
         else: # default
             yaw_misalign = [0]
-        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        yaw_misalign_deg = np.array(yaw_misalign * int(len(metocean['wind_speeds']) / len(yaw_misalign)))
+        
+        # Counters
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['wind_speeds']:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+            idlc.yaw_misalign = yaw_misalign_deg[mc.i_seed]
             idlc.IEC_WindType = self.wind_speed_class_num + 'ETM'
             idlc.turbulent = True
             idlc.label = '1.3'
@@ -580,22 +539,7 @@ class DLCGenerator(object):
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
     def generate_1p3_mhk(self, options):
         # Power production extreme turbulence model - ultimate loads
@@ -631,41 +575,43 @@ class DLCGenerator(object):
 
     def generate_1p4(self, options):
         # Extreme coherent gust with direction change - ultimate loads
-        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _,_ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         directions = ['n', 'p']
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_NSS)
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_F)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_F)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
+
         # Set azimuth start positions, tile so length is same as wind_seeds
         azimuth_inits = np.tile(
             np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
-            int(len(wind_speeds)/options['n_azimuth'])
+            int(len(metocean['wind_speeds'])/options['n_azimuth']) * len(directions)
             )
+
+        # Tile wave_seeds, Hs, Tp for each direction
+        metocean['wave_seeds'] = np.tile(metocean['wave_seeds'],len(directions))
+        metocean['wave_Hs'] = np.tile(metocean['wave_Hs'],len(directions))
+        metocean['wave_Tp'] = np.tile(metocean['wave_Tp'],len(directions))
+        metocean['current_speeds'] = np.tile(metocean['current_speeds'],len(directions))
+
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['wind_speeds']:
             for direction in directions:
                 idlc = DLCInstance(options=options)
                 idlc.URef = ws
-                idlc.wave_seed1 = wave_seeds[i_WaSe]
-                idlc.wind_heading = wind_heading[i_WiH]
-                idlc.wave_height = wave_Hs[i_Hs]
-                idlc.wave_period = wave_Tp[i_Tp]
-                idlc.current = current[i_Cu]
-                idlc.wave_gamma = wave_gamma[i_WG]
-                idlc.wave_heading = wave_heading[i_WaH]
-                idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
-                idlc.azimuth_init = azimuth_inits[i_WaSe]
+                idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+                idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+                idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+                idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+                idlc.current = metocean['current_speeds'][mc.i_current]
+                idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+                idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+                idlc.azimuth_init = azimuth_inits[mc.i_wave_seed]
                 idlc.IEC_WindType = 'ECD'
                 idlc.turbulent = False
                 idlc.label = '1.4'
@@ -675,55 +621,41 @@ class DLCGenerator(object):
                     idlc.transient_time = options['transient_time']
                 idlc.direction_pn = direction
                 self.cases.append(idlc)
-                if len(wind_heading)>1:
-                    i_WiH+=1
-                if len(wave_gamma)>1:
-                    i_WG+=1
-                if len(wave_heading)>1:
-                    i_WaH+=1
-            # Same wave height, period, and seed per direction, check whether this is allowed or change seed sampling
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(current)>1:
-                i_Cu+=1
+                mc.increment()  # check this one
 
     def generate_1p5(self, options):
         # Extreme wind shear - ultimate loads
-        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_NSS)
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_F)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_F)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
+
         directions = ['p', 'n']
         shears=['h', 'v']
+        # tile seeds and waves info for direction, shears
+        metocean['wave_seeds'] = np.tile(metocean['wave_seeds'],4)
+        metocean['wave_Hs'] = np.tile(metocean['wave_Hs'],4)
+        metocean['wave_Tp'] = np.tile(metocean['wave_Tp'],4)
+        metocean['current_speeds'] = np.tile(metocean['current_speeds'],4)
+
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        mc = MetoceanCounters(metocean)
+        for ws in metocean['wind_speeds']:
             for direction in directions:
                 for shear in shears:
                     idlc = DLCInstance(options=options)
                     idlc.URef = ws
-                    idlc.wave_seed1 = wave_seeds[i_WaSe]
-                    idlc.wind_heading = wind_heading[i_WiH]
-                    idlc.wave_height = wave_Hs[i_Hs]
-                    idlc.wave_period = wave_Tp[i_Tp]
-                    idlc.current = current[i_Cu]
-                    idlc.wave_gamma = wave_gamma[i_WG]
-                    idlc.wave_heading = wave_heading[i_WaH]
-                    idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
+                    idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+                    idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+                    idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+                    idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+                    idlc.current = metocean['current_speeds'][mc.i_current]
+                    idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+                    idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
                     idlc.IEC_WindType = 'EWS'
                     idlc.turbulent = False
                     idlc.label = '1.5'
@@ -735,54 +667,32 @@ class DLCGenerator(object):
                     idlc.direction_pn = direction
                     idlc.shear_hv = shear
                     self.cases.append(idlc)
-                    if len(wind_heading)>1:
-                        i_WiH+=1
-                    if len(wave_gamma)>1:
-                        i_WG+=1
-                    if len(wave_heading)>1:
-                        i_WaH+=1
-            # Same wave height, period, and seed per direction, check whether this is allowed or change seed sampling
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(current)>1:
-                i_Cu+=1
+                    mc.increment()
 
     def generate_1p6(self, options):
         # Power production normal turbulence model - severe sea state
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        # If the user has not defined Hs and Tp, apply the metocean conditions for the severe sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_SSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_SSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_SSS)
-        # Counter for wind seed
-        i_WiSe=0
+        metocean = self.get_metocean(options)        # If the user has not defined Hs and Tp, apply the metocean conditions for the severe sea state
+        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_F)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_F)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['wind_speeds']:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.yaw_misalign = yaw_misalign_deg[i_WiSe]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
             idlc.turbulent = True
             idlc.label = '1.6'
             if options['analysis_time'] > 0:
@@ -790,60 +700,41 @@ class DLCGenerator(object):
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
     def generate_5p1(self, options):
         # Power production normal turbulence model - severe sea state
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)        # If the user has not defined Hs and Tp, apply the metocean conditions for the severe sea state
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_NSS)
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Hs_F)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Tp_F)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(metocean['wind_speeds'], self.mo_ws, self.mo_Cu_F)
+        
+
         # Set azimuth start positions, tile so length is same as wind_seeds
         azimuth_inits = np.tile(
             np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
-            int(len(wind_seeds)/options['n_azimuth'])
+            int(len(metocean['wind_speeds'])/options['n_azimuth'])
             )
-        # Counter for wind seed
-        i_WiSe=0
+
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
-        for ws in wind_speeds:
+        mc = MetoceanCounters(metocean)
+
+        for ws in metocean['wind_speeds']:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.azimuth_init = azimuth_inits[i_WiSe]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
+            idlc.azimuth_init = azimuth_inits[mc.i_wave_seed]
             idlc.turbulent = True
             idlc.label = '5.1'
             idlc.turbine_status = 'operating-shutdown'
@@ -856,63 +747,41 @@ class DLCGenerator(object):
             else:
                 idlc.shutdown_time = options['shutdown_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
+
 
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
-        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, sea_level_offset, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         # Set yaw_misalign, else default
         if 'yaw_misalign' in options:
             yaw_misalign = options['yaw_misalign']
         else: # default
             yaw_misalign = [-8., 8.]
         yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
-        if len(wave_Hs)==0:
-            wave_Hs = self.wave_Hs50
-        if len(wave_Tp)==0:
-            wave_Tp = self.wave_Tp50
-        if len(current)==0:
-            current = self.current_50
-        # Counter for wind seed
-        i_WiSe=0
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = self.wave_Hs50
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = self.wave_Tp50
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = self.current_50
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_SL=0
-        i_Cu = 0
+        mc = MetoceanCounters(metocean)
+
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
             if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
                 idlc.URef = self.V_e50
             idlc.yaw_misalign = yaw_ms
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
             idlc.IEC_WindType = self.wind_speed_class_num + 'EWM50'
             idlc.turbulent = True
             if idlc.turbine_status == 'operating':
@@ -923,24 +792,7 @@ class DLCGenerator(object):
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(sea_level_offset)>1:
-                i_SL+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
     def generate_6p1_mhk(self, options):
         # Section 7.3.7.2, Table 8 in IEC docs
@@ -992,44 +844,34 @@ class DLCGenerator(object):
     def generate_6p3(self, options):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
-        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, sea_level_offset, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         # Set yaw_misalign, else default
         if 'yaw_misalign' in options:
             yaw_misalign = options['yaw_misalign']
         else: # default
             yaw_misalign = [-20., 20.]
         yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
-        if len(wave_Hs)==0:
-            wave_Hs = self.wave_Hs1
-        if len(wave_Tp)==0:
-            wave_Tp = self.wave_Tp1
-        if len(current)==0:
-            current = self.current_1
-        # Counter for wind seed
-        i_WiSe=0
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = self.wave_Hs1
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = self.wave_Tp1
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = self.current_1
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_SL=0
-        i_Cu = 0
+        mc = MetoceanCounters(metocean)
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
             if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
                 idlc.URef = self.V_e1
             idlc.yaw_misalign = yaw_ms
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.sea_level_offset = sea_level_offset[i_WiSe]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
             idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
             idlc.turbulent = True
             if idlc.turbine_status == 'operating':
@@ -1040,24 +882,7 @@ class DLCGenerator(object):
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(sea_level_offset)>1:
-                i_SL+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
     def generate_6p4(self, options):
         # Parked (standing still or idling) - normal turbulence model - fatigue loads
@@ -1067,35 +892,30 @@ class DLCGenerator(object):
         wind_speeds, wind_seeds = self.get_rand_seeds(options, wind_speeds)
         wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
         wave_seeds = self.get_wave_seeds(options, wind_speeds)
-        _, _, _, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        if len(current)==0:
-            current = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_NSS)
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_Cu = 0
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = np.interp(wind_speeds, self.mo_ws, self.mo_Cu_F)
+        else:
+            metocean['current_speeds'] = metocean['current_speeds']
+
+        mc = MetoceanCounters(metocean)
+
         for ws in wind_speeds:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
+            idlc.RandSeed1 = wind_seeds[mc.i_seed]
+            idlc.wave_seed1 = wave_seeds[mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
             idlc.turbulent = True
             if idlc.turbine_status == 'operating':
                 idlc.turbine_status = 'parked-still'
@@ -1105,62 +925,41 @@ class DLCGenerator(object):
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
 
     def generate_6p5(self, options):
         # Parked (standing still or idling) - extreme wind model 500-year return period - ultimate loads
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
-        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, current, wave_gamma, wave_heading, sea_level_offset, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         # Set yaw_misalign, else default
         if 'yaw_misalign' in options:
             yaw_misalign = options['yaw_misalign']
         else: # default
             yaw_misalign = [-8., 8.]
         yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
-        if len(wave_Hs)==0:
-            wave_Hs = self.wave_Hs1
-        if len(wave_Tp)==0:
-            wave_Tp = self.wave_Tp1
-        # Counter for wind seed
-        i_WiSe=0
+        if len(metocean['wave_Hs'])==0:
+            metocean['wave_Hs'] = self.wave_Hs1
+        if len(metocean['wave_Tp'])==0:
+            metocean['wave_Tp'] = self.wave_Tp1
+        if metocean['current_speeds']==[0]:
+            metocean['current_speeds'] = self.current_1
+        else:
+            metocean['current_speeds'] = metocean['current_speeds']
         # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        i_SL=0
-        i_Cu = 0
+        mc = MetoceanCounters(metocean)
         for yaw_ms in yaw_misalign_deg:
             idlc = DLCInstance(options=options)
             if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
                 idlc.URef = self.V_e50 * 1.125
             idlc.yaw_misalign = yaw_ms
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.current = current[i_Cu]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.sea_level_offset = sea_level_offset[i_SL]
+            idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
+            idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
+            idlc.wind_heading = metocean['wind_heading'][mc.i_heading]
+            idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]
+            idlc.wave_period = metocean['wave_Tp'][mc.i_Tp]
+            idlc.current = metocean['current_speeds'][mc.i_current]
+            idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
+            idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
             idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
             idlc.turbulent = True
             if idlc.turbine_status == 'operating':
@@ -1171,28 +970,11 @@ class DLCGenerator(object):
             if options['transient_time'] >= 0:
                 idlc.transient_time = options['transient_time']
             self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
-            if len(sea_level_offset)>1:
-                i_SL+=1
-            if len(current)>1:
-                i_Cu+=1
+            mc.increment()
     
     def generate_12p1(self, options):
         # Pass through uniform wind input
-        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        metocean = self.get_metocean(options)
         idlc = DLCInstance(options=options)
         idlc.label = '12.1'
         idlc.IEC_WindType = 'Custom'
