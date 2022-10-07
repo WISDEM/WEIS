@@ -1696,7 +1696,17 @@ class FASTLoadCases(ExplicitComponent):
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
         metocean = modopt['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        dlc_generator = DLCGenerator(
+            metocean,
+            **{
+                'ws_cut_in': cut_in, 
+                'ws_cut_out':cut_out, 
+                'ws_rated':rated, 
+                'wind_speed_class':ws_class, 
+                'wind_turbulence_class':wt_class, 
+                'fix_wind_seeds':fix_wind_seeds, 
+                'fix_wave_seeds':fix_wave_seeds, 
+            })
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
