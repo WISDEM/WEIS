@@ -1883,26 +1883,33 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
 
-        # Inputs to SeaState
-        case_inputs[("SeaState","WaveHs")] = {'vals':WaveHs, 'group':1}
-        case_inputs[("SeaState","WaveTp")] = {'vals':WaveTp, 'group':1}
-        case_inputs[("SeaState","WaveDir")] = {'vals':WaveHd, 'group':1}
-        case_inputs[("SeaState","WavePkShp")] = {'vals':WaveGamma, 'group':1}
-        case_inputs[("SeaState","ConstWaveMod")] = {'vals':constrained_wave, 'group':1}
-        case_inputs[("SeaState","CrestHmax")] = {'vals':1.86 * WaveHs, 'group':1}  # unused if ConstWaveMod=0
-        case_inputs[("SeaState","CrestTime")] = {'vals':(self.TMax + self.TStart)/2, 'group':1} # midpoint of analysis time
-        case_inputs[("SeaState","CurrMod")] = {'vals':CurrMod, 'group':1} 
-        case_inputs[("SeaState","CurrDIV")] = {'vals':CurrSSV0, 'group':1} 
-        case_inputs[("SeaState","CurrDIDir")] = {'vals':WaveHd, 'group':1}    # both current directions aligned with wave direction 
-        case_inputs[("SeaState","CurrNSDir")] = {'vals':WaveHd, 'group':1} 
-        case_inputs[("SeaState","WaveSeed1")] = {'vals':WaveSeed1, 'group':1} 
+        # # Inputs to SeaState (future module)
+        # case_inputs[("SeaState","WaveHs")] = {'vals':WaveHs, 'group':1}
+        # case_inputs[("SeaState","WaveTp")] = {'vals':WaveTp, 'group':1}
+        # case_inputs[("SeaState","WaveDir")] = {'vals':WaveHd, 'group':1}
+        # case_inputs[("SeaState","WavePkShp")] = {'vals':WaveGamma, 'group':1}
+        # case_inputs[("SeaState","ConstWaveMod")] = {'vals':constrained_wave, 'group':1}
+        # case_inputs[("SeaState","CrestHmax")] = {'vals':1.86 * WaveHs, 'group':1}  # unused if ConstWaveMod=0
+        # case_inputs[("SeaState","CrestTime")] = {'vals':(self.TMax + self.TStart)/2, 'group':1} # midpoint of analysis time
+        # case_inputs[("SeaState","CurrMod")] = {'vals':CurrMod, 'group':1} 
+        # case_inputs[("SeaState","CurrDIV")] = {'vals':CurrSSV0, 'group':1} 
+        # case_inputs[("SeaState","CurrDIDir")] = {'vals':WaveHd, 'group':1}    # both current directions aligned with wave direction 
+        # case_inputs[("SeaState","CurrNSDir")] = {'vals':WaveHd, 'group':1} 
+        # case_inputs[("SeaState","WaveSeed1")] = {'vals':WaveSeed1, 'group':1} 
+
+        # Inputs to HydroDyn
+        case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
+        case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
+        case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
+        case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
+        case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
         
 
 
-        # Sea Level (set in a couple of places)
-        case_inputs[("Fst","MSL2SWL")] = {'vals':sea_level_offset, 'group':1}
-        case_inputs[("HydroDyn","MSL2SWL")] = {'vals':sea_level_offset, 'group':1}
-        case_inputs[("SeaState","MSL2SWL")] = {'vals':sea_level_offset, 'group':1}
+        # # Sea Level (set in a couple of places, for the future)
+        # case_inputs[("Fst","MSL2SWL")] = {'vals':sea_level_offset, 'group':1}
+        # case_inputs[("HydroDyn","MSL2SWL")] = {'vals':sea_level_offset, 'group':1}
+        # case_inputs[("SeaState","MSL2SWL")] = {'vals':sea_level_offset, 'group':1}
 
         # DLC Label add these for the case matrix and delete from the case_list
         case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
