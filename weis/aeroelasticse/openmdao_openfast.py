@@ -1396,16 +1396,17 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['PtfmRefzt']     = 0
             fst_vt['HydroDyn']['PtfmRefztRot']  = 0
 
+            if not fst_vt['HydroDyn']['RdtnDT']:        # default is 0
+                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+
             # If we're using the potential model, need these settings that aren't default
             if fst_vt['HydroDyn']['PotMod'] == 1:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
-                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
             if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['Level2']['flag'] and modopt['Level1']['runPyHAMS']:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
-                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
                 from weis.ss_fitting.SS_FitTools import SSFit_Excitation, FDI_Fitting
                 print('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
