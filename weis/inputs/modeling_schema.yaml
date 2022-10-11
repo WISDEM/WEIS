@@ -1913,10 +1913,10 @@ properties:
                         unit: s
                         description: Analysis time for wave radiation kernel calculations (sec) [only used when PotMod=1; determines RdtnDOmega=Pi/RdtnTMax in the cosine transform; MAKE SURE THIS IS LONG ENOUGH FOR THE RADIATION IMPULSE RESPONSE FUNCTIONS TO DECAY TO NEAR-ZERO FOR THE GIVEN PLATFORM!]
                     RdtnDT:
-                        type: number
+                        type: [number,string]
                         minimum: 0.0
                         maximum: 1e3
-                        default: 0.
+                        default: DEFAULT
                         unit: s
                         description: Time step for wave radiation kernel calculations, use 0.0 for default (sec) [only used when PotMod=1; DT<=RdtnDT<=0.1 recommended; determines RdtnOmegaMax=Pi/RdtnDT in the cosine transform]
                     MnDrift:
