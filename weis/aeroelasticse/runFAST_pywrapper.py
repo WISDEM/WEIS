@@ -229,7 +229,7 @@ class runFAST_pywrapper(object):
                 if os.path.exists(FAST_Output):
                     output_init = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
                 elif os.path.exists(FAST_Output_txt):
-                    output_init = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
+                    output_init = OpenFASTAscii(FAST_Output_txt, magnitude_channels=self.magnitude_channels)
                     
                 output_init.read()
 
