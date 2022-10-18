@@ -453,7 +453,7 @@ def printVec(vec):
     print( "\t".join(["{:+8.3e}"]*len(vec)).format( *vec ))
 
 
-def getFromDict(dict, key, shape=0, dtype=float, default=None):
+def getFromDict(dict, key, shape=0, dtype=float, default=None, index=None):
     '''
     Function to streamline getting values from design dictionary from YAML file, including error checking.
 
@@ -488,9 +488,22 @@ def getFromDict(dict, key, shape=0, dtype=float, default=None):
             if np.isscalar(val):                             # if a scalar value is provided and we need to produce an array (of any shape)
                 return np.tile(dtype(val), shape)
 
-            elif np.isscalar(shape):                         # if expecting a 1D array
-                if len(val) == shape:
-                    return np.array([dtype(v) for v in val])
+            elif np.isscalar(shape):                         # if expecting a 1D array (or if wanting the result to have the same length as the input)
+                if len(val) == shape:                        # throw an error if the input is not the same length as the shape, meaning the user is missing data
+                    if index == None:
+                        return np.array([dtype(v) for v in val])    # if no index is provided, do normally and return the array input
+                    else:
+                        keyshape = np.array(val).shape              # otherwise, use the index to create the output arrays desired
+                        if len(keyshape) == 1:                      # if the input is 1D, shape=n, and index!=None, then tile the indexed value of length shape
+                            if index in range(keyshape[0]):
+                                return np.tile(val[index], shape)
+                            else:
+                                raise ValueError(f"Value for index '{index}' is not within the size of {val} (len={keyshape[0]})")
+                        else:                                               # if the input is 2D, len(val)=shape, and index!=None
+                            if index in range(keyshape[1]):
+                                return np.array([v[index] for v in val])    # then pull the indexed value out of each row of 2D input
+                            else:
+                                raise ValueError(f"Value for index '{index}' is not within the size of {val} (len={keyshape[0]})")
                 else:
                     raise ValueError(f"Value for key '{key}' is not the expected size of {shape} and is instead: {val}")
 
@@ -513,7 +526,10 @@ def getFromDict(dict, key, shape=0, dtype=float, default=None):
             if shape==0 or shape==-1:
                 return default
             else:
-                return np.tile(default, shape)
+                if np.isscalar(default):
+                    return np.tile(default, shape)
+                else:
+                    return np.tile(default, [shape, 1])
 
 def convertIEAturbineYAML2RAFT(fname_turbine):
     '''

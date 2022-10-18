@@ -87,7 +87,7 @@ class Member:
         
         if isinstance(self.l_fill, np.ndarray):
             if len(self.l_fill) != n-1 or len(self.rho_fill) != n-1:
-                raise ValueError(f'The number of stations ({n}) should always be 1 greater than the number of ballast sections, l_fill ({len(self.l_fill)}) and rho_fill ({len(self.rho_fill)})')
+                raise ValueError(f"Member '{self.name}': The number of stations ({n}) should always be 1 greater than the number of ballast sections, l_fill ({len(self.l_fill)}) and rho_fill ({len(self.rho_fill)})")
             
         self.rho_shell = getFromDict(mi, 'rho_shell', default=8500.) # shell mass density [kg/m^3]
 
@@ -114,27 +114,35 @@ class Member:
 
         # Drag coefficients
         self.Cd_q   = getFromDict(mi, 'Cd_q' , shape=n, default=0.0 )     # axial drag coefficient
+        self.Cd_p1  = getFromDict(mi, 'Cd'   , shape=n, default=0.6, index=0)      # transverse1 drag coefficient
+        self.Cd_p2  = getFromDict(mi, 'Cd'   , shape=n, default=0.6, index=1)      # transverse2 drag coefficient
+        self.Cd_End = getFromDict(mi, 'CdEnd', shape=n, default=0.6 )     # end drag coefficient
+        '''
         if not np.isscalar(mi['Cd']) and len(mi['Cd'])==2:  # special case for rectangular members with directional coefficients
             self.Cd_p1 = np.tile(float(mi['Cd'][0]), [n])
             self.Cd_p2 = np.tile(float(mi['Cd'][1]), [n])
         else:
             self.Cd_p1  = getFromDict(mi, 'Cd'   , shape=n, default=0.6 )     # transverse1 drag coefficient
             self.Cd_p2  = getFromDict(mi, 'Cd'   , shape=n, default=0.6 )     # transverse2 drag coefficient
-        self.Cd_End = getFromDict(mi, 'CdEnd', shape=n, default=0.6 )     # end drag coefficient
+        '''
         # Added mass coefficients
         self.Ca_q   = getFromDict(mi, 'Ca_q' , shape=n, default=0.0 )     # axial added mass coefficient
+        self.Ca_p1  = getFromDict(mi, 'Ca'   , shape=n, default=0.97, index=0)     # transverse1 added mass coefficient
+        self.Ca_p2  = getFromDict(mi, 'Ca'   , shape=n, default=0.97, index=1)     # transverse2 added mass coefficient
+        self.Ca_End = getFromDict(mi, 'CaEnd', shape=n, default=0.6 )     # end added mass coefficient
+        '''
         if not np.isscalar(mi['Ca']) and len(mi['Ca'])==2:  # special case for rectangular members with directional coefficients
             self.Ca_p1 = np.tile(float(mi['Ca'][0]), [n])
             self.Ca_p2 = np.tile(float(mi['Ca'][1]), [n])
         else:
             self.Ca_p1  = getFromDict(mi, 'Ca'   , shape=n, default=0.97)     # transverse1 added mass coefficient
             self.Ca_p2  = getFromDict(mi, 'Ca'   , shape=n, default=0.97)     # transverse2 added mass coefficient
-        self.Ca_End = getFromDict(mi, 'CaEnd', shape=n, default=0.6 )     # end added mass coefficient
-
+        '''
 
         # discretize into strips with a node at the midpoint of each strip (flat surfaces have dl=0)
         dorsl  = list(self.d) if self.shape=='circular' else list(self.sl)   # get a variable that is either diameter or side length pair
-        dlsMax = mi['dlsMax']
+        dlsMax = getFromDict(mi, 'dlsMax', shape=1, default=5)
+        #dlsMax = mi['dlsMax']
         
         # start things off with the strip for end A
         ls     = [0.0]                 # list of lengths along member axis where a node is located <<< should these be midpoints instead of ends???
@@ -710,7 +718,7 @@ class Member:
                     IxWP = I_rot[0,0]
                     IyWP = I_rot[1,1]
 
-                LWP = abs(rA[2])/cosPhi                   # get length of segment along member axis that is underwater [m]
+                LWP = abs(rA[2]/cosPhi)                   # get length of segment along member axis that is underwater [m]
 
                 # Assumption: the areas and MoI of the waterplane are as if the member were completely vertical, i.e. it doesn't account for phi
                 # This can be fixed later on if needed. We're using this assumption since the fix wouldn't significantly affect the outputs
@@ -798,12 +806,17 @@ class Member:
         return Fvec, Cmat, V_UW, r_center, AWP, IWP, xWP, yWP
 
 
-    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[], color='k', nodes=0):
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[], color='k', nodes=0, station_plot=[]):
         '''Draws the member on the passed axes, and optional platform offset and rotation matrix'''
 
         # --- get coordinates of member edges in member reference frame -------------------
 
-        m = len(self.stations)
+        if not station_plot:
+            m = np.arange(0, len(self.stations), 1)
+        else:
+            m = station_plot
+
+        nm = len(m)
 
         # lists to be filled with coordinates for plotting
         X = []
@@ -816,7 +829,7 @@ class Member:
                 x = np.cos(float(i)/float(n)*2.0*np.pi)    # x coordinates of a unit circle
                 y = np.sin(float(i)/float(n)*2.0*np.pi)    # y
 
-                for j in range(m):
+                for j in m:
                     X.append(0.5*self.d[j]*x)
                     Y.append(0.5*self.d[j]*y)
                     Z.append(self.stations[j])
@@ -827,7 +840,7 @@ class Member:
             n=4
             for x,y in zip([1,-1,-1,1,1], [1,1,-1,-1,1]):
 
-                for j in range(m):
+                for j in m:
                     X.append(0.5*self.sl[j,1]*x)
                     Y.append(0.5*self.sl[j,0]*y)
                     Z.append(self.stations[j])
@@ -855,10 +868,10 @@ class Member:
             #linebit.append(ax.plot(Xs[[2*i,2*i+2]],Ys[[2*i,2*i+2]],Zs[[2*i,2*i+2]]      , color='k'))  # end A edges
             #linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color='k'))  # end B edges
 
-            linebit.append(ax.plot(Xs[m*i:m*i+m],Ys[m*i:m*i+m],Zs[m*i:m*i+m]            , color=color, lw=0.5, zorder=2))  # side edges
+            linebit.append(ax.plot(Xs[nm*i:nm*i+nm],Ys[nm*i:nm*i+nm],Zs[nm*i:nm*i+nm]            , color=color, lw=0.5, zorder=2))  # side edges
 
-        for j in range(m):
-            linebit.append(ax.plot(Xs[j::m], Ys[j::m], Zs[j::m]            , color=color, lw=0.5, zorder=2))  # station rings
+        for j in range(nm):
+            linebit.append(ax.plot(Xs[j::nm], Ys[j::nm], Zs[j::nm]            , color=color, lw=0.5, zorder=2))  # station rings
 
 
         # plot nodes if asked
