@@ -157,12 +157,21 @@ Site Characteristics
 Load Cases
 ^^^^^^^^^^
 
+This section lists the environmental and operating conditions of each load case to be analyzed.
+
 .. code-block:: python
 
     cases:
-        keys : [wind_speed, wind_heading, turbulence, turbine_status, yaw_misalign, wave_spectrum, wave_period, wave_height, wave_heading  ]
-        data :  #   m/s        deg    % or e.g. 2B_NTM    string            deg         string          (s)         (m)         (deg)
-            -  [    12,         0,            0.01,       operating,          0,        JONSWAP,         13.1,        8.5,           0        ]
+        keys : [wind_speed, wind_heading, turbulence, turbine_status, turbine_heading, wave_spectrum, wave_period, wave_height, wave_heading, current_speed, current_heading, current_turbulence  ]
+        data :  #   m/s        deg    % or e.g. IIB_NTM    string            deg         string          (s)          (m)          (deg)         (m/s)           (deg)         % or e.g. IIB_NTM     
+            -  [     0,         0,            0,         operating,           0,        JONSWAP,         12,          1,           0,            1,              0,                   0           ]
+      
+The reference height of current_speed depends on whether it is a MHK or floating wind application.
+If the first (or only) rotor is underwater, then the current speed refers to the hub height of the first rotor.
+Otherwise, the current speed is taken to be at the water surface.
+
+Nonzero turbine headings are not yet supported but will be in the future.
+
 
 Turbine
 ^^^^^^^

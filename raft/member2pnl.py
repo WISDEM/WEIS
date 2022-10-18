@@ -310,7 +310,7 @@ def writeMesh(savedNodes, savedPanels, oDir=""):
 # below are some helper functions for outputting in GDF format instead, for visualization at this point
 
 
-def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
+def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True, endB=True):
     '''
     Creates mesh for an axisymmetric member as defined by RAFT.
 
@@ -321,6 +321,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
     rA, rB: member end point coordinates
     dz_max: maximum panel height
     da_max: maximum panel width (before doubling azimuthal discretization)
+    endA/endB: flag for whether to mesh each end (may want to add for meshMember too)
 
     Returns
     -------
@@ -373,22 +374,24 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
             z_rp.append(stations[i_s-1] + cos_m*i_z*d_l)
         
 
-    # fill in end B if it's submerged
-    n_r = np.int(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
-    dr  = radii[-1] / n_r                               # local panel radial size
+    # fill in end B if it's requested
+    if endB:
+        n_r = np.int(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
+        dr  = radii[-1] / n_r                               # local panel radial size
 
-    for i_r in range(n_r):
-        r_rp.append(radii[-1] - (1+i_r)*dr)
-        z_rp.append(stations[-1])
+        for i_r in range(n_r):
+            r_rp.append(radii[-1] - (1+i_r)*dr)
+            z_rp.append(stations[-1])
     
     
-    # fill in end A if it's submerged
-    n_r = np.int(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
-    dr  = radii[0] / n_r                               # local panel radial size
+    # fill in end A if it's requested
+    if endA:
+        n_r = np.int(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
+        dr  = radii[0] / n_r                               # local panel radial size
 
-    for i_r in range(n_r):
-        r_rp.insert(0, radii[0] - (1+i_r)*dr)
-        z_rp.insert(0, stations[0])
+        for i_r in range(n_r):
+            r_rp.insert(0, radii[0] - (1+i_r)*dr)
+            z_rp.insert(0, stations[0])
     
     
     # --------------- revolve radius profile, do adaptive paneling stuff ------
@@ -504,9 +507,24 @@ def writeMeshToGDF(vertices, filename="platform.gdf", aboveWater=True):
     f.write('1.0   9.8 \n')
     f.write('0, 0 \n')
     f.write(f'{npan}\n')
-
-    for i in range(npan*4):
-        f.write(f'{vertices[i,0]:>10.3f} {vertices[i,1]:>10.3f} {vertices[i,2]:>10.3f}\n')
+    
+    if aboveWater:
+        for i in range(npan*4):
+            f.write(f'{vertices[i,0]:>10.3f} {vertices[i,1]:>10.3f} {vertices[i,2]:>10.3f}\n')
+            
+    else: # this option avoids making panels above the waterline
+    
+        for i in range(npan):
+            
+            panel = vertices[4*i:4*i+4]  # the vertices of this panel
+            
+            if any(panel[:,2] < -0.001):  # only consider the panel if it's at least partly submerged (some z < 0)
+                
+                for j in range(4):   # go through each vertex of the panel, but move any above z=0 down to z=0
+                
+                    if panel[j,2] > 0:  panel[j,2] = 0
+                    
+                    f.write(f'{panel[j,0]:>10.3f} {panel[j,1]:>10.3f} {panel[j,2]:>10.3f}\n')
     
     f.close()    
     
