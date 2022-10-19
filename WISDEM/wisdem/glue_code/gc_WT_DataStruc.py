@@ -3223,8 +3223,10 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
+        else:
+            outputs["hub_height"] = inputs["hub_height_user"]
 
-        if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * outputs["hub_height"]:
+        if modeling_options["flags"]["blade"] and inputs["rotor_diameter"] > 2.0 * np.abs(outputs["hub_height"]):
             raise Exception(
                 "The rotor blade extends past the ground or water line. Please adjust hub height and/or rotor diameter."
             )
