@@ -411,6 +411,20 @@ class InputWriter_OpenFAST(object):
                 f.write('"' + channel_list[i] + '"\n')
         
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+                
+        # Optional nodal output section
+        if 'BldNd_BladesOut' in self.fst_vt['ElastoDyn']:
+            f.write('====== Outputs for all blade stations (same ending as above for B1N1.... =========================== [optional section]\n')
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['BldNd_BladesOut'], 'BldNd_BladesOut', '- Number of blades to output all node information at.  Up to number of blades on turbine. (-)\n'))
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['BldNd_BlOutNd'], 'BldNd_BlOutNd', '- Future feature will allow selecting a portion of the nodes to output.  Not implemented yet. (-)\n'))
+            f.write('                   OutList     - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx, ElastoDyn_Nodes tab for a listing of available output channels, (-)\n')
+            
+            opt_outlist = self.get_outlist(self.fst_vt['outlist'], ['ElastoDyn_Nodes'])      
+            for opt_channel_list in opt_outlist:
+                for i in range(len(opt_channel_list)):
+                    f.write('"' + opt_channel_list[i] + '"\n')
+            f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
         f.write('---------------------------------------------------------------------------------------\n')
         f.close()
 
@@ -586,7 +600,21 @@ class InputWriter_OpenFAST(object):
         for channel_list in outlist:
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
-        f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)')
+        f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+                
+        # Optional nodal output section
+        if 'BldNd_BlOutNd' in self.fst_vt['BeamDyn']:
+            f.write('====== Outputs for all blade stations (same ending as above for B1N1.... =========================== [optional section]\n')
+            # f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['BldNd_BladesOut'], 'BldNd_BladesOut', '- Number of blades to output all node information at.  Up to number of blades on turbine. (-)\n'))
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['BldNd_BlOutNd'], 'BldNd_BlOutNd', '- Future feature will allow selecting a portion of the nodes to output.  Not implemented yet. (-)\n'))
+            f.write('                   OutList     - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx, BeamDyn_Nodes tab for a listing of available output channels, (-)\n')
+            
+            opt_outlist = self.get_outlist(self.fst_vt['outlist'], ['BeamDyn_Nodes'])      
+            for opt_channel_list in opt_outlist:
+                for i in range(len(opt_channel_list)):
+                    f.write('"' + opt_channel_list[i] + '"\n')
+            f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
         f.write('---------------------------------------------------------------------------------------')
         f.close()
 
@@ -799,6 +827,20 @@ class InputWriter_OpenFAST(object):
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
+        # Optional nodal output section
+        if 'BldNd_BladesOut' in self.fst_vt['AeroDyn15']:
+            f.write('====== Outputs for all blade stations (same ending as above for B1N1.... =========================== [optional section]\n')
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['BldNd_BladesOut'], 'BldNd_BladesOut', '- Number of blades to output all node information at.  Up to number of blades on turbine. (-)\n'))
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['BldNd_BlOutNd'], 'BldNd_BlOutNd', '- Future feature will allow selecting a portion of the nodes to output.  Not implemented yet. (-)\n'))
+            f.write('                   OutList     - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx, AeroDyn_Nodes tab for a listing of available output channels, (-)\n')
+            
+            opt_outlist = self.get_outlist(self.fst_vt['outlist'], ['AeroDyn_Nodes'])      
+            for opt_channel_list in opt_outlist:
+                for i in range(len(opt_channel_list)):
+                    f.write('"' + opt_channel_list[i] + '"\n')
+            f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
         f.write('---------------------------------------------------------------------------------------\n')
         f.close()
 
