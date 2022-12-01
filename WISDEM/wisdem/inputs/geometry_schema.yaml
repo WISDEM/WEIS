@@ -38,6 +38,7 @@ properties:
             - hub_height
             - rated_power
             - lifetime
+            - marine_hydro
         properties:
             turbine_class:
                 type: string
@@ -77,7 +78,7 @@ properties:
                 default: 0
                 description: Height of the hub center over the ground (land-based) or the mean sea level (offshore)
                 unit: m
-                minimum: 0
+                minimum: -1000
                 maximum: 1000
             rated_power:
                 type: number

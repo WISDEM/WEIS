@@ -103,6 +103,12 @@ class WindTurbineOntologyPython(object):
         if flags["floating_platform"] and (flags["monopile"] or flags["jacket"]):
             raise ValueError("Cannot have both floating and fixed-bottom components")
 
+        # Marine Hydro
+        if self.wt_init["assembly"]["marine_hydro"]:
+            self.modeling_options["flags"]["marine_hydro"] = True
+        else:
+            self.modeling_options["flags"]["marine_hydro"] = False
+
         # Water depth check
         if "water_depth" in self.wt_init["environment"]:
             if self.wt_init["environment"]["water_depth"] <= 0.0 and flags["offshore"]:

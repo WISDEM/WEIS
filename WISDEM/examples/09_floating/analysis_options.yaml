@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs
+    folder_output: /Users/dzalkind/Tools/WEIS-4/outputs/focct/1_rotor_underwater
     fname_output: refturb_output
 design_variables:
     blade:
