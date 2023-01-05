@@ -1,6 +1,20 @@
+from ROSCO_toolbox.inputs.validation import load_rosco_yaml
+from wisdem.inputs import load_yaml
+
 def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     # ROSCO tuning parameters
-    rosco_init_options = modeling_options['ROSCO']
+    # Apply tuning yaml input if available
+
+    if modeling_options['ROSCO']['tuning_yaml']:  # default is empty
+        inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
+        rosco_init_options         = inps['controller_params']
+
+        # Apply changes in modeling options, should have already been validated
+        modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
+        for option, value in modopts_no_defaults['ROSCO'].items():
+            rosco_init_options[option] = value
+    else:
+        rosco_init_options = modeling_options['ROSCO']
 
     # Pitch regulation
     wt_opt['tune_rosco_ivc.omega_pc']      = rosco_init_options['omega_pc']
