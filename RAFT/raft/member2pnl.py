@@ -138,7 +138,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
             sin_m = dr_s/np.sqrt(dr_s**2 + dz_s**2)
         # make subdivision
         # local panel longitudinal discretization
-        n_z = np.int(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
+        n_z = np.int_(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
         # local panel longitudinal dimension
         d_l = np.sqrt(dr_s*dr_s + dz_s*dz_s)/n_z;
         for i_z in range(1,n_z+1):
@@ -147,7 +147,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
             
 
     # fill in end B if it's submerged
-    n_r = np.int(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
+    n_r = np.int_(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
     dr  = radii[-1] / n_r                               # local panel radial size
 
     for i_r in range(n_r):
@@ -156,7 +156,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
     
     
     # fill in end A if it's submerged
-    n_r = np.int(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
+    n_r = np.int_(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
     dr  = radii[0] / n_r                               # local panel radial size
 
     for i_r in range(n_r):
@@ -172,7 +172,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
     z = []
 
     npan =0;
-    naz = np.int(8);
+    naz = np.int_(8);
 
     # go through each point of the radius profile, panelizing from top to bottom:
     for i_rp in range(len(z_rp)-1):
@@ -186,13 +186,13 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
 
         # scale up or down azimuthal discretization as needed
         while ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            naz = np.int(2*naz)
+            naz = np.int_(2*naz)
         while ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            naz = np.int(naz/2)
+            naz = np.int_(naz/2)
 
         # transition - increase azimuthal discretization
         if ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2
                 th2 = (ia-0.5)*2*np.pi/naz*2
                 th3 = (ia    )*2*np.pi/naz*2
@@ -211,7 +211,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
 
         # transition - decrease azimuthal discretization
         elif ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2
                 th2 = (ia-0.5)*2*np.pi/naz*2
                 th3 = (ia    )*2*np.pi/naz*2
@@ -366,7 +366,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True,
             sin_m = dr_s/np.sqrt(dr_s**2 + dz_s**2)
         # make subdivision
         # local panel longitudinal discretization
-        n_z = np.int(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
+        n_z = np.int_(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
         # local panel longitudinal dimension
         d_l = np.sqrt(dr_s*dr_s + dz_s*dz_s)/n_z;
         for i_z in range(1,n_z+1):
@@ -376,7 +376,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True,
 
     # fill in end B if it's requested
     if endB:
-        n_r = np.int(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
+        n_r = np.int_(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
         dr  = radii[-1] / n_r                               # local panel radial size
 
         for i_r in range(n_r):
@@ -386,7 +386,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True,
     
     # fill in end A if it's requested
     if endA:
-        n_r = np.int(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
+        n_r = np.int_(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
         dr  = radii[0] / n_r                               # local panel radial size
 
         for i_r in range(n_r):
@@ -402,7 +402,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True,
     z = []
 
     npan =0;
-    naz = np.int(8);
+    naz = np.int_(8);
 
     # go through each point of the radius profile, panelizing from top to bottom:
     for i_rp in range(len(z_rp)-1):
@@ -416,13 +416,13 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True,
 
         # scale up or down azimuthal discretization as needed
         while ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            naz = np.int(2*naz)
+            naz = np.int_(2*naz)
         while ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            naz = np.int(naz/2)
+            naz = np.int_(naz/2)
 
         # transition - increase azimuthal discretization
         if ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2;
                 th2 = (ia-0.5)*2*np.pi/naz*2;
                 th3 = (ia    )*2*np.pi/naz*2;
@@ -441,7 +441,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True,
 
         # transition - decrease azimuthal discretization
         elif ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2;
                 th2 = (ia-0.5)*2*np.pi/naz*2;
                 th3 = (ia    )*2*np.pi/naz*2;
