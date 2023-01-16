@@ -1,0 +1,3 @@
+[build-system]
+requires = ["setuptools", "meson>=0.60.0", "numpy", "ninja"]
+build-backend = "setuptools.build_meta"
