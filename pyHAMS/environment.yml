@@ -5,7 +5,10 @@ channels:
   - defaults
 
 dependencies:
-  - python
-  - setuptools
+  - openblas
+  - meson
+  - ninja
   - numpy
   - pip
+  - python
+  - setuptools
