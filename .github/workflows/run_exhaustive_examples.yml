@@ -5,34 +5,41 @@ on: [pull_request]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     # if: "contains(github.event.head_commit.message, 'exhaustive_CI')"  # This line could be used to have commit-specific instructions
+
+    defaults:
+        run:
+            shell: bash -l {0}
+    
     strategy:
       fail-fast: true
       matrix:
         os: ["ubuntu-latest"] #, "macOS-latest"]
-        python-version: ["3.8"]
+        python-version: ["3.9","3.10"]
         
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
       #  # https://github.com/marketplace/actions/setup-miniconda
       #  with:
-      #    #miniconda-version: "latest"
+      #    miniconda-version: "latest"
       #    channels: conda-forge
       #    auto-update-conda: true
-      #    python-version: 3.8
+      #    python-version: ${{ matrix.python-version }}
       #    environment-file: environment.yml
+      #    activate-environment: test
+      #    auto-activate-base: false
         
       # This is a less official, but more lightweight way to do miniconda
       - uses: s-weigand/setup-conda@v1
         # https://github.com/marketplace/actions/setup-conda
         with:
           update-conda: true
-          python-version: 3.8
+          python-version: ${{ matrix.python-version }}
           conda-channels: conda-forge
           activate-conda: true
       - run: conda env update --file environment.yml
