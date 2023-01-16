@@ -1,11 +1,12 @@
 type: input file for RAFT
 name: 5MW with OC3-Hywind spar
 
+
 settings:                   # global Settings
-    min_freq     :  0.01    #  [Hz]       lowest frequency to consider, also the frequency bin width 
-    max_freq     :  1.00    #  [Hz]       highest frequency to consider
+    min_freq     :  0.005   #  [Hz]       lowest frequency to consider, also the frequency bin width 
+    max_freq     :  0.40    #  [Hz]       highest frequency to consider
     XiStart      :   0      # sets initial amplitude of each DOF for all frequencies
-    nIter        :   0      # sets how many iterations to perform in Model.solveDynamics()
+    nIter        :  10      # sets how many iterations to perform in Model.solveDynamics()
     
 site:
     water_depth : 200        # [m]      uniform water depth
