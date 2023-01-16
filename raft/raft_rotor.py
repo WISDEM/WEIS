@@ -34,26 +34,42 @@ rpm2radps = 0.1047
 # a class for the rotor structure, aerodynamics, and control in RAFT
 class Rotor:
 
-    def __init__(self, turbine, w, old=False):
+    def __init__(self, turbine, w, ir, old=False):
         '''
         >>>> add mean offset parameters add move this to runCCBlade<<<<
+        ir = the index of the values in the arrays of the input file for multiple rotors
         '''
 
         # Should inherit these from raft_model or _env?
         self.w = np.array(w)
-               
-        self.Zhub       = turbine['Zhub']           # [m]
-        self.shaft_tilt = turbine['shaft_tilt']     # [deg]        
-        self.overhang   = turbine['overhang'] 
-        self.R_rot      = turbine['blade']['Rtip']  # rotor radius [m]
+
+        self.coords = getFromDict(turbine, 'rotorCoords', dtype=list, shape=turbine['nrotors'], default=[[0,0]])[ir]
+        
+        self.nBlades    = getFromDict(turbine, 'nBlades', shape=turbine['nrotors'])[ir]         # [-]
+        self.Zhub       = getFromDict(turbine, 'Zhub', shape=turbine['nrotors'])[ir]            # [m]
+        self.Rhub       = getFromDict(turbine, 'Rhub', shape=turbine['nrotors'])[ir]            # [m]
+        self.precone    = getFromDict(turbine, 'precone', shape=turbine['nrotors'])[ir]         # [m]
+        self.shaft_tilt = getFromDict(turbine, 'shaft_tilt', shape=turbine['nrotors'])[ir]      # [deg]        
+        self.overhang   = getFromDict(turbine, 'overhang', shape=turbine['nrotors'])[ir]        # [m]
+        self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', shape=turbine['nrotors'], default=1)[ir]  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
+
+        if isinstance(turbine['blade'], dict):          # if we use the entire blade dict list approach
+            turbine['blade'] = [turbine['blade']]*turbine['nrotors']
+        if isinstance(turbine['wt_ops'], dict):
+            turbine['wt_ops'] = [turbine['wt_ops']]*turbine['nrotors']
+
+        self.R_rot      = getFromDict(turbine['blade'][ir], 'Rtip', shape=-1)
+        # otherwise, we can avoid the if statment if we use the list approach within each dict value of the blade dict
+
         #yaw  = 0        
 
-        self.Uhub      = np.array(turbine['wt_ops']['v'])
-        self.Omega_rpm = np.array(turbine['wt_ops']['omega_op'])
-        self.pitch_deg = np.array(turbine['wt_ops']['pitch_op'])
-        self.I_drivetrain = float(turbine['I_drivetrain'])
+        self.Uhub      = getFromDict(turbine['wt_ops'][ir], 'v', shape=-1)
+        self.Omega_rpm = getFromDict(turbine['wt_ops'][ir], 'omega_op', shape=-1)
+        self.pitch_deg = getFromDict(turbine['wt_ops'][ir], 'pitch_op', shape=-1)
 
-        self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
+        self.I_drivetrain = getFromDict(turbine, 'I_drivetrain', shape=turbine['nrotors'])[ir]
+
+        #self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
         
 		# Add parked pitch, rotor speed, assuming fully shut down by 40% above cut-out
         self.Uhub = np.r_[self.Uhub, self.Uhub.max()*1.4, 100]
@@ -80,9 +96,10 @@ class Rotor:
 
         # ----- AIRFOIL STUFF ------
         n_aoa = 200 # [-] - number of angles of attack to discretize airfoil polars - MUST BE MULTIPLE OF 4
-        n_af = len(turbine["airfoils"])
-        af_used     = [ b for [a,b] in turbine['blade']["airfoils"] ]
-        af_position = [ a for [a,b] in turbine['blade']["airfoils"] ]
+        #n_af = len(turbine["airfoils"])
+        af_used     = [ b for [a,b] in turbine['blade'][ir]["airfoils"] ]
+        af_position = [ a for [a,b] in turbine['blade'][ir]["airfoils"] ]
+        n_af = len(np.unique(af_used))
         #af_used     = turbine['blade']["airfoils"]["labels"]
         #af_position = turbine['blade']["airfoils"]["grid"]
         n_af_span = len(af_used)
@@ -168,7 +185,7 @@ class Rotor:
         self.aoa = aoa
         
         # split out blade geometry info from table 
-        geometry_table = np.array(turbine['blade']['geometry'])
+        geometry_table = np.array(turbine['blade'][ir]['geometry'])
         blade_r         = geometry_table[:,0]
         blade_chord     = geometry_table[:,1]
         blade_theta     = geometry_table[:,2]
@@ -184,21 +201,21 @@ class Rotor:
             blade_chord,                    # (m) corresponding chord length at each section
             blade_theta,                    # (deg) corresponding :ref:`twist angle <blade_airfoil_coord>` at each section---positive twist decreases angle of attack.
             af,                             # CCAirfoil object
-            turbine['Rhub'],                # (m) radius of hub
-            turbine['blade']['Rtip'],       # (m) radius of tip
-            turbine['nBlades'],             # number of blades
+            self.Rhub,                      # (m) radius of hub
+            turbine['blade'][ir]['Rtip'],   # (m) radius of tip
+            self.nBlades,                   # number of blades
             turbine['rho_air'],             # (kg/m^3) freestream fluid density
             turbine['mu_air'],              # (kg/m/s) dynamic viscosity of fluid
-            turbine['precone'],             # (deg) hub precone angle
+            self.precone,                   # (deg) hub precone angle
             self.shaft_tilt,                # (deg) hub tilt angle
             0.0,                            # (deg) nacelle yaw angle
             turbine['shearExp'],            # shear exponent for a power-law wind profile across hub
-            turbine['Zhub'],                # (m) hub height used for power-law wind profile.  U = Uref*(z/hubHt)**shearExp
+            self.Zhub,                      # (m) hub height used for power-law wind profile.  U = Uref*(z/hubHt)**shearExp
             nSector,                        # number of azimuthal sectors to descretize aerodynamic calculation.  automatically set to 1 if tilt, yaw, and shearExp are all 0.0.  Otherwise set to a minimum of 4.
             blade_precurve,                 # (m) location of blade pitch axis in x-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
-            turbine['blade']['precurveTip'],# (m) location of blade pitch axis in x-direction at the tip (analogous to Rtip)
+            turbine['blade'][ir]['precurveTip'],# (m) location of blade pitch axis in x-direction at the tip (analogous to Rtip)
             blade_presweep,                 # (m) location of blade pitch axis in y-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
-            turbine['blade']['presweepTip'],# (m) location of blade pitch axis in y-direction at the tip (analogous to Rtip)
+            turbine['blade'][ir]['presweepTip'],# (m) location of blade pitch axis in y-direction at the tip (analogous to Rtip)
             tiploss=tiploss,                # if True, include Prandtl tip loss model
             hubloss=hubloss,                # if True, include Prandtl hub loss model
             wakerotation=wakerotation,      # if True, include effect of wake rotation (i.e., tangential induction factor is nonzero)
@@ -555,7 +572,7 @@ class Rotor:
     
         # Set inputs (f, V_ref, HH, Class, Categ, TurbMod, R)
         f = self.w / 2 / np.pi    # frequency in Hz
-        HH = self.Zhub
+        HH = abs(self.Zhub)     # <<< Temporary absolute value to avoid NaNs with underwater turbines. Eventually need a new function <<<
         R = self.R_rot
         V_ref = case['wind_speed']
         

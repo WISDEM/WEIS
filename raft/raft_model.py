@@ -33,7 +33,7 @@ class Model():
             could in future be used to set up any number of identical turbines
         '''
 
-        self.fowtList = []
+        self.fowtList = []      # assume only 1 FOWT per model - so len(this list) = 1
         self.coords = []
 
         self.nDOF = 0  # number of DOFs in system
@@ -186,37 +186,40 @@ class Model():
         self.results['case_metrics']['yaw_max'] = np.zeros(nCases)
         self.results['case_metrics']['yaw_PSD'] = np.zeros([nCases,self.nw])
         
+        nrotors = self.fowtList[0].nrotors
+
         # nacelle acceleration
-        self.results['case_metrics']['AxRNA_avg'] = np.zeros(nCases)
-        self.results['case_metrics']['AxRNA_std'] = np.zeros(nCases)
-        self.results['case_metrics']['AxRNA_max'] = np.zeros(nCases)
-        self.results['case_metrics']['AxRNA_PSD'] = np.zeros([nCases,self.nw])
+        self.results['case_metrics']['AxRNA_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['AxRNA_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['AxRNA_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['AxRNA_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])
         # tower base bending moment
-        self.results['case_metrics']['Mbase_avg'] = np.zeros(nCases) 
-        self.results['case_metrics']['Mbase_std'] = np.zeros(nCases)
-        self.results['case_metrics']['Mbase_max'] = np.zeros(nCases)
-        self.results['case_metrics']['Mbase_PSD'] = np.zeros([nCases,self.nw])
-        self.results['case_metrics']['Mbase_DEL'] = np.zeros(nCases)        
+        self.results['case_metrics']['Mbase_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases) 
+        self.results['case_metrics']['Mbase_std'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['Mbase_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['Mbase_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])
+        self.results['case_metrics']['Mbase_DEL'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)       
         # rotor speed
-        self.results['case_metrics']['omega_avg'] = np.zeros(nCases)    
-        self.results['case_metrics']['omega_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['omega_max'] = np.zeros(nCases)   
-        self.results['case_metrics']['omega_PSD'] = np.zeros([nCases,self.nw])        
+        self.results['case_metrics']['omega_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['omega_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['omega_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)  
+        self.results['case_metrics']['omega_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])        
         # generator torque
-        self.results['case_metrics']['torque_avg'] = np.zeros(nCases) 
-        self.results['case_metrics']['torque_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['torque_max'] = np.zeros(nCases)  
-        self.results['case_metrics']['torque_PSD'] = np.zeros([nCases,self.nw])        
+        self.results['case_metrics']['torque_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases) 
+        self.results['case_metrics']['torque_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['torque_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)  
+        self.results['case_metrics']['torque_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])       
         # rotor power 
-        self.results['case_metrics']['power_avg'] = np.zeros(nCases)
-        self.results['case_metrics']['power_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['power_max'] = np.zeros(nCases)   
-        self.results['case_metrics']['power_PSD'] = np.zeros([nCases,self.nw])        
+        self.results['case_metrics']['power_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['power_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['power_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)   
+        self.results['case_metrics']['power_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])     
         # collective blade pitch
-        self.results['case_metrics']['bPitch_avg'] = np.zeros(nCases)   
-        self.results['case_metrics']['bPitch_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['bPitch_max'] = np.zeros(nCases) 
-        self.results['case_metrics']['bPitch_PSD'] = np.zeros([nCases, self.nw])
+        self.results['case_metrics']['bPitch_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)   
+        self.results['case_metrics']['bPitch_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['bPitch_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases) 
+        self.results['case_metrics']['bPitch_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])
+
         # mooring tension
         self.results['case_metrics']['Tmoor_avg'] = np.zeros([nCases, 2*nLines]) # 2d array, for each line in each case?
         self.results['case_metrics']['Tmoor_std'] = np.zeros([nCases, 2*nLines])
@@ -335,7 +338,9 @@ class Model():
         '''
 
         # apply any mean aerodynamic and hydrodynamic loads
-        F_PRP = self.fowtList[0].F_aero0# + self.fowtList[0].F_hydro0 <<< hydro load would be nice here eventually
+        #F_PRP = self.fowtList[0].F_aero0
+        F_PRP = np.sum(self.fowtList[0].F_aero0, axis=1)
+        # + self.fowtList[0].F_hydro0 <<< hydro load would be nice here eventually
         self.ms.bodyList[0].f6Ext = np.array(F_PRP)
 
 
@@ -383,13 +388,21 @@ class Model():
         self.results['means']['platform offset'  ] = r6eq
         self.results['means']['mooring force'    ] = F_moor
         self.results['means']['fairlead tensions'] = np.array([np.linalg.norm(self.ms.pointList[id-1].getForces()) for id in self.ms.bodyList[0].attachedP])
+        
         # tower base bending moment
-        m_turbine   = self.fowtList[0].mtower + self.fowtList[0].mRNA               # turbine total mass
-        zCG_turbine = (self.fowtList[0].rCG_tow[2]*self.fowtList[0].mtower 
-                       + self.fowtList[0].hHub*self.fowtList[0].mRNA)/m_turbine     # turbine center of gravity
-        zBase = self.fowtList[0].memberList[-1].rA[2]                               # tower base elevation [m]
-        hArm = zCG_turbine - zBase                                                  # vertical distance from tower base to turbine CG [m]
-        self.results['means']['Mbase'] = m_turbine*self.fowtList[0].g * hArm*np.sin(r6eq[4]) + transformForce(self.fowtList[0].F_aero0, offset=[0,0,-hArm])[4] # mean moment from weight and thrust
+        m_turbine = np.zeros([len(self.fowtList), max([len(self.fowtList[j].mtower) for j in range(len(self.fowtList))])])
+        zCG_turbine = np.zeros_like(m_turbine)
+        zBase = np.zeros_like(m_turbine)
+        hArm = np.zeros_like(m_turbine)
+        self.results['means']['Mbase'] = np.zeros_like(m_turbine)
+        for j in range(len(self.fowtList)):
+            for i in range(len(self.fowtList[j].mtower)):
+                m_turbine[j,i] = self.fowtList[j].mtower[i] + self.fowtList[j].mRNA[i]          # total masses of each turbine
+                zCG_turbine[j,i] = (self.fowtList[j].rCG_tow[i][2]*self.fowtList[j].mtower[i]  # CoG of each turbine
+                                    + self.fowtList[j].hHub[i]*self.fowtList[j].mRNA[i])/m_turbine[j,i]
+                zBase[j,i] = self.fowtList[j].memberList[self.fowtList[j].nplatmems + i].rA[2]  # tower base elevation [m]
+                hArm[j,i] = zCG_turbine[j,i] - zBase[j,i]                                                  # vertical distance from tower base to turbine CG [m]
+                self.results['means']['Mbase'][j,i] = m_turbine[j,i]*self.fowtList[j].g * hArm[j,i]*np.sin(r6eq[4]) + transformForce(self.fowtList[j].F_aero0[:,i], offset=[0,0,-hArm[j,i]])[4] # mean moment from weight and thrust
     
     
 
@@ -549,10 +562,10 @@ class Model():
         fowt.F_aero = fowt.F_aero*0 # <<<< a separate solve needs to be added for wind-driven response <<<< 
 
         # sum up all linear (non-varying) matrices up front
-        M_lin = fowt.A_aero + fowt.M_struc[:,:,None] + fowt.A_BEM + fowt.A_hydro_morison[:,:,None] # mass
-        B_lin = fowt.B_aero + fowt.B_struc[:,:,None] + fowt.B_BEM                                  # damping
-        C_lin =               fowt.C_struc   + self.C_moor        + fowt.C_hydro                   # stiffness
-        F_lin = fowt.F_aero +                          fowt.F_BEM + fowt.F_hydro_iner              # excitation
+        M_lin = np.sum(fowt.A_aero, axis=3) + fowt.M_struc[:,:,None] + fowt.A_BEM + fowt.A_hydro_morison[:,:,None] # mass
+        B_lin = np.sum(fowt.B_aero, axis=3) + fowt.B_struc[:,:,None] + fowt.B_BEM                                  # damping
+        C_lin =                               fowt.C_struc   + self.C_moor        + fowt.C_hydro                   # stiffness
+        F_lin = np.sum(fowt.F_aero, axis=2) +                          fowt.F_BEM + fowt.F_hydro_iner              # excitation
         
         # start fixed point iteration loop for dynamics
         for iiter in range(nIter):
