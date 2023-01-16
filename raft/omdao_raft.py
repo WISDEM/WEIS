@@ -2,6 +2,8 @@ import openmdao.api as om
 import raft
 import numpy as np
 import pickle, os
+import copy
+from itertools import compress
 
 ndim = 3
 ndof = 6
@@ -307,9 +309,16 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
         self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
 
+        # Combined outputs for OpenFAST
+        self.add_output("platform_total_center_of_mass", np.zeros(3), units="m")
+        self.add_output("platform_displacement", 0.0, desc='Volumetric platform displacement', units='m**3')
+        self.add_output("platform_mass", 0.0, units="kg")
+        self.add_output("platform_I_total", np.zeros(6), units="kg*m**2")
+        
         self.i_design = 0
-        if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
-            os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
+        if modeling_opt['save_designs']:
+            if not os.path.exists(os.path.join(analysis_options['general']['folder_output'],'raft_designs')):
+                os.makedirs(os.path.join(analysis_options['general']['folder_output'],'raft_designs'))
                 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
 
@@ -446,6 +455,9 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['platform'] = {}
         design['platform']['potModMaster'] = int(modeling_opt['potential_model_override'])
         design['platform']['dlsMax'] = float(modeling_opt['dls_max'])
+        # lowest BEM freq needs to be just below RAFT min_freq because of interpolation in RAFT
+        if float(modeling_opt['min_freq_BEM']) >= modeling_opt['min_freq']:
+            modeling_opt['min_freq_BEM'] = modeling_opt['min_freq'] - 1e-7
         design['platform']['min_freq_BEM'] = float(modeling_opt['min_freq_BEM'])
         design['platform']['members'] = [dict() for m in range(nmembers)] #Note: doesn't work [{}]*nmembers
         for i in range(nmembers):
@@ -587,14 +599,21 @@ class RAFT_OMDAO(om.ExplicitComponent):
         design['mooring']['anchor_types'][0]['max_lateral_load'] = 1e5
 
         # DLCs
+        # Only give RAFT valid RAFT cases, spectral wind
+        turb_ind = discrete_inputs['raft_dlcs_keys'].index('turbulence')
+        turb_type = [case_data[turb_ind] for case_data in discrete_inputs['raft_dlcs']]
+        case_mask = [
+            ('NTM' in tt or 'ETM' in tt or 'EWM' in tt)
+             for tt in turb_type]
+
         design['cases'] = {}
         design['cases']['keys'] = discrete_inputs['raft_dlcs_keys']
-        design['cases']['data'] = discrete_inputs['raft_dlcs']
+        design['cases']['data'] = list(compress(discrete_inputs['raft_dlcs'],case_mask))    # filter cases by case_mask
 
         # Debug
         if modeling_opt['save_designs']:
             with open(
-                os.path.join(analysis_options['general']['folder_output'],
+                os.path.join(analysis_options['general']['folder_output'],'raft_designs',
                 f'raft_design_{self.i_design}.pkl'), 'wb') as handle:
                 pickle.dump(design, handle, protocol=pickle.HIGHEST_PROTOCOL)
             self.i_design += 1
@@ -612,13 +631,12 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # option to run level 1 load cases
         if True: #processCases:
-            model.analyzeCases()
+            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=modeling_opt['BEM_dir'])
             
         # get and process results
         results = model.calcOutputs()
-
         # Pattern matching for "responses" annd "properties"
-        outs = self.list_outputs(out_stream=None)
+        outs = self.list_outputs(out_stream=None, all_procs=True)
         for i in range(len(outs)):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
@@ -630,25 +648,35 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 else:
                     outputs['response_'+name] = results['response'][name]
 
+
         # Pattern matching for case-by-case outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
         stats = ['avg','std','max','PSD','DEL']
+        case_mask = np.array(case_mask)
         for n in names:
             for s in stats:
                 if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['stats_'+iout] = results['case_metrics'][iout]
+                outputs['stats_'+iout][case_mask] = results['case_metrics'][iout]
 
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:
-            outputs['stats_'+n] = results['case_metrics'][n]
+            outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
 
         # Compute some aggregate outputs manually
-        outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max']**2 + outputs['stats_sway_max']**2).max()
-        outputs['heave_avg'] = outputs['stats_heave_avg'].mean()
-        outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'].max()
-        outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'].mean()
-        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_max'].max()
-        outputs['rotor_overspeed'] = (outputs['stats_omega_max'].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
-        outputs['max_tower_base'] = outputs['stats_Mbase_max'].max()
-        print('here')
+        outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max'][case_mask]**2 + outputs['stats_sway_max'][case_mask]**2).max()
+        outputs['heave_avg'] = outputs['stats_heave_avg'][case_mask].mean()
+        outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'][case_mask].max()
+        outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'][case_mask].mean()
+        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'][case_mask].max()
+        outputs['rotor_overspeed'] = (outputs['stats_omega_max'][case_mask].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
+        outputs['max_tower_base'] = outputs['stats_Mbase_max'][case_mask].max()
+        
+        # Combined outputs for OpenFAST
+        outputs['platform_displacement'] = model.fowtList[0].V
+        outputs["platform_total_center_of_mass"] = outputs['properties_substructure CG']
+        outputs["platform_mass"] = outputs["properties_substructure mass"]
+        # Note: Inertia calculated for each case
+        outputs["platform_I_total"][:3] = np.r_[outputs['properties_roll inertia at subCG'][0],
+                                           outputs['properties_pitch inertia at subCG'][0],
+                                           outputs['properties_yaw inertia at subCG'][0]]

@@ -5,10 +5,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import yaml
+
 try:
     import pickle5 as pickle
 except:
     import pickle
+    
 import moorpy as mp
 import raft.raft_fowt  as fowt
 from raft.helpers import *
@@ -31,7 +33,7 @@ class Model():
             could in future be used to set up any number of identical turbines
         '''
 
-        self.fowtList = []
+        self.fowtList = []      # assume only 1 FOWT per model - so len(this list) = 1
         self.coords = []
 
         self.nDOF = 0  # number of DOFs in system
@@ -123,8 +125,10 @@ class Model():
         
             # apply any ballast adjustment if requested
             if ballast == 1:
+                print('adjusting ballast fill levels')
                 self.adjustBallast(fowt, heave_tol=heave_tol)  
             elif ballast == 2:
+                print('adjusting ballast densities')
                 self.adjustBallastDensity(fowt)        
             
             # compute FOWT static and constant hydrodynamic properties
@@ -142,7 +146,7 @@ class Model():
         # TODO: add printing of summary info here - mass, stiffnesses, etc
 
     
-    def analyzeCases(self, display=0):
+    def analyzeCases(self, display=0, runPyHAMS=True, meshDir=os.path.join(os.getcwd(),'BEM')):
         '''This runs through all the specified load cases, building a dictionary of results.'''
         
         nCases = len(self.design['cases']['data'])
@@ -182,37 +186,40 @@ class Model():
         self.results['case_metrics']['yaw_max'] = np.zeros(nCases)
         self.results['case_metrics']['yaw_PSD'] = np.zeros([nCases,self.nw])
         
+        nrotors = self.fowtList[0].nrotors
+
         # nacelle acceleration
-        self.results['case_metrics']['AxRNA_avg'] = np.zeros(nCases)
-        self.results['case_metrics']['AxRNA_std'] = np.zeros(nCases)
-        self.results['case_metrics']['AxRNA_max'] = np.zeros(nCases)
-        self.results['case_metrics']['AxRNA_PSD'] = np.zeros([nCases,self.nw])
+        self.results['case_metrics']['AxRNA_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['AxRNA_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['AxRNA_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['AxRNA_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])
         # tower base bending moment
-        self.results['case_metrics']['Mbase_avg'] = np.zeros(nCases) 
-        self.results['case_metrics']['Mbase_std'] = np.zeros(nCases)
-        self.results['case_metrics']['Mbase_max'] = np.zeros(nCases)
-        self.results['case_metrics']['Mbase_PSD'] = np.zeros([nCases,self.nw])
-        self.results['case_metrics']['Mbase_DEL'] = np.zeros(nCases)        
+        self.results['case_metrics']['Mbase_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases) 
+        self.results['case_metrics']['Mbase_std'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['Mbase_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['Mbase_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])
+        self.results['case_metrics']['Mbase_DEL'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)       
         # rotor speed
-        self.results['case_metrics']['omega_avg'] = np.zeros(nCases)    
-        self.results['case_metrics']['omega_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['omega_max'] = np.zeros(nCases)   
-        self.results['case_metrics']['omega_PSD'] = np.zeros([nCases,self.nw])        
+        self.results['case_metrics']['omega_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['omega_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['omega_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)  
+        self.results['case_metrics']['omega_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])        
         # generator torque
-        self.results['case_metrics']['torque_avg'] = np.zeros(nCases) 
-        self.results['case_metrics']['torque_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['torque_max'] = np.zeros(nCases)  
-        self.results['case_metrics']['torque_PSD'] = np.zeros([nCases,self.nw])        
+        self.results['case_metrics']['torque_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases) 
+        self.results['case_metrics']['torque_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['torque_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)  
+        self.results['case_metrics']['torque_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])       
         # rotor power 
-        self.results['case_metrics']['power_avg'] = np.zeros(nCases)
-        self.results['case_metrics']['power_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['power_max'] = np.zeros(nCases)   
-        self.results['case_metrics']['power_PSD'] = np.zeros([nCases,self.nw])        
+        self.results['case_metrics']['power_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)
+        self.results['case_metrics']['power_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['power_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)   
+        self.results['case_metrics']['power_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])     
         # collective blade pitch
-        self.results['case_metrics']['bPitch_avg'] = np.zeros(nCases)   
-        self.results['case_metrics']['bPitch_std'] = np.zeros(nCases)    
-        self.results['case_metrics']['bPitch_max'] = np.zeros(nCases) 
-        self.results['case_metrics']['bPitch_PSD'] = np.zeros([nCases, self.nw])
+        self.results['case_metrics']['bPitch_avg'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)   
+        self.results['case_metrics']['bPitch_std'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases)    
+        self.results['case_metrics']['bPitch_max'] = np.zeros([nCases,nrotors])    # = np.zeros(nCases) 
+        self.results['case_metrics']['bPitch_PSD'] = np.zeros([nCases,self.nw, nrotors])    # = np.zeros([nCases,self.nw])
+
         # mooring tension
         self.results['case_metrics']['Tmoor_avg'] = np.zeros([nCases, 2*nLines]) # 2d array, for each line in each case?
         self.results['case_metrics']['Tmoor_std'] = np.zeros([nCases, 2*nLines])
@@ -227,7 +234,9 @@ class Model():
         # calculate the system's constant properties
         for fowt in self.fowtList:
             fowt.calcStatics()
-            fowt.calcBEM()
+
+        if runPyHAMS:
+            fowt.calcBEM(meshDir=meshDir)
             
         # loop through each case
         for iCase in range(nCases):
@@ -237,7 +246,8 @@ class Model():
         
             # form dictionary of case parameters
             case = dict(zip( self.design['cases']['keys'], self.design['cases']['data'][iCase]))   
-
+            
+            '''
             # get initial FOWT values assuming no offset
             for fowt in self.fowtList:
                 fowt.Xi0 = np.zeros(6)      # zero platform offsets
@@ -253,6 +263,8 @@ class Model():
                 # fowt.calcHydroConstants(case)  (hydrodynamics don't account for offset, so far)
             
             # (could solve mooring and offsets a second time, but likely overkill)
+            '''            
+            self.solveStatics(case)
             
             # solve system dynamics
             self.solveDynamics(case)
@@ -326,7 +338,9 @@ class Model():
         '''
 
         # apply any mean aerodynamic and hydrodynamic loads
-        F_PRP = self.fowtList[0].F_aero0# + self.fowtList[0].F_hydro0 <<< hydro load would be nice here eventually
+        #F_PRP = self.fowtList[0].F_aero0
+        F_PRP = np.sum(self.fowtList[0].F_aero0, axis=1)
+        # + self.fowtList[0].F_hydro0 <<< hydro load would be nice here eventually
         self.ms.bodyList[0].f6Ext = np.array(F_PRP)
 
 
@@ -367,7 +381,7 @@ class Model():
         self.J_moor = J_moor        # jacobian of mooring line tensions w.r.t. coupled DOFs
         self.F_moor = F_moor
         self.T_moor = T_moor
-
+        
         # store results
         self.results['means'] = {}   # signal this data is available by adding a section to the results dictionary
         self.results['means']['aero force'  ] = self.fowtList[0].F_aero0
@@ -375,6 +389,20 @@ class Model():
         self.results['means']['mooring force'    ] = F_moor
         self.results['means']['fairlead tensions'] = np.array([np.linalg.norm(self.ms.pointList[id-1].getForces()) for id in self.ms.bodyList[0].attachedP])
         
+        # tower base bending moment
+        m_turbine = np.zeros([len(self.fowtList), max([len(self.fowtList[j].mtower) for j in range(len(self.fowtList))])])
+        zCG_turbine = np.zeros_like(m_turbine)
+        zBase = np.zeros_like(m_turbine)
+        hArm = np.zeros_like(m_turbine)
+        self.results['means']['Mbase'] = np.zeros_like(m_turbine)
+        for j in range(len(self.fowtList)):
+            for i in range(len(self.fowtList[j].mtower)):
+                m_turbine[j,i] = self.fowtList[j].mtower[i] + self.fowtList[j].mRNA[i]          # total masses of each turbine
+                zCG_turbine[j,i] = (self.fowtList[j].rCG_tow[i][2]*self.fowtList[j].mtower[i]  # CoG of each turbine
+                                    + self.fowtList[j].hHub[i]*self.fowtList[j].mRNA[i])/m_turbine[j,i]
+                zBase[j,i] = self.fowtList[j].memberList[self.fowtList[j].nplatmems + i].rA[2]  # tower base elevation [m]
+                hArm[j,i] = zCG_turbine[j,i] - zBase[j,i]                                                  # vertical distance from tower base to turbine CG [m]
+                self.results['means']['Mbase'][j,i] = m_turbine[j,i]*self.fowtList[j].g * hArm[j,i]*np.sin(r6eq[4]) + transformForce(self.fowtList[j].F_aero0[:,i], offset=[0,0,-hArm[j,i]])[4] # mean moment from weight and thrust
     
     
 
@@ -411,7 +439,7 @@ class Model():
             raise RuntimeError('System matrices computed by RAFT have one or more small or negative diagonals: '+message)
 
         # calculate natural frequencies (using eigen analysis to get proper values for pitch and roll - otherwise would need to base about CG if using diagonal entries only)
-        eigenvals, eigenvectors = np.linalg.eig(np.matmul(np.linalg.inv(M_tot), C_tot))   # <<< need to sort this out so it gives desired modes, some are currently a bit messy
+        eigenvals, eigenvectors = np.linalg.eig(np.linalg.solve(M_tot, C_tot))   # <<< need to sort this out so it gives desired modes, some are currently a bit messy
 
         if any(eigenvals <= 0.0):
             raise RuntimeError("Error: zero or negative system eigenvalues detected.")
@@ -485,6 +513,26 @@ class Model():
         self.results['eigen']['frequencies'] = fns
         self.results['eigen']['modes'      ] = modes
   
+    
+    def solveStatics(self, case):
+
+        # get initial FOWT values assuming no offset
+        for fowt in self.fowtList:
+            fowt.Xi0 = np.zeros(6)      # zero platform offsets
+            fowt.calcTurbineConstants(case, ptfm_pitch=0.0)
+            fowt.calcHydroConstants(case)
+        
+        # calculate platform offsets and mooring system equilibrium state
+        self.calcMooringAndOffsets()
+        
+        # update values based on offsets if applicable
+        for fowt in self.fowtList:
+            fowt.calcTurbineConstants(case, ptfm_pitch=fowt.Xi0[4])
+            # fowt.calcHydroConstants(case)  (hydrodynamics don't account for offset, so far)
+        
+        # (could solve mooring and offsets a second time, but likely overkill)
+        # self.calcMooringAndOffsets()
+  
 
     def solveDynamics(self, case, tol=0.01, conv_plot=0, RAO_plot=0):
         '''After all constant parts have been computed, call this to iterate through remaining terms
@@ -509,15 +557,15 @@ class Model():
         i1 = 0                                                # range of DOFs for the current turbine
         i2 = 6
         
-        # TEMPORARY <<<<
-        #fowt.B_aero[0,4,:] = 0.0
-        #fowt.B_aero[4,0,:] = 0.0
+        # >>>> NOTE: Turbulent wind excitation is currently disabled pending formulation checks/fixes <<<<
+        print('Solving for system response to wave excitation') 
+        fowt.F_aero = fowt.F_aero*0 # <<<< a separate solve needs to be added for wind-driven response <<<< 
 
         # sum up all linear (non-varying) matrices up front
-        M_lin = fowt.A_aero + fowt.M_struc[:,:,None] + fowt.A_BEM + fowt.A_hydro_morison[:,:,None] # mass
-        B_lin = fowt.B_aero + fowt.B_struc[:,:,None] + fowt.B_BEM                                  # damping
-        C_lin =               fowt.C_struc   + self.C_moor        + fowt.C_hydro                   # stiffness
-        F_lin = fowt.F_aero +                          fowt.F_BEM + fowt.F_hydro_iner              # excitation
+        M_lin = np.sum(fowt.A_aero, axis=3) + fowt.M_struc[:,:,None] + fowt.A_BEM + fowt.A_hydro_morison[:,:,None] # mass
+        B_lin = np.sum(fowt.B_aero, axis=3) + fowt.B_struc[:,:,None] + fowt.B_BEM                                  # damping
+        C_lin =                               fowt.C_struc   + self.C_moor        + fowt.C_hydro                   # stiffness
+        F_lin = np.sum(fowt.F_aero, axis=2) +                          fowt.F_BEM + fowt.F_hydro_iner              # excitation
         
         # start fixed point iteration loop for dynamics
         for iiter in range(nIter):
@@ -552,7 +600,7 @@ class Model():
                 Z[:,:,ii] = -self.w[ii]**2 * M_tot[:,:,ii] + 1j*self.w[ii]*B_tot[:,:,ii] + C_tot[:,:,ii]
                 
                 # solve response (complex amplitude)
-                Xi[:,ii] = np.matmul(np.linalg.inv(Z[:,:,ii]),  F_tot[:,ii] )
+                Xi[:,ii] = np.linalg.solve(Z[:,:,ii], F_tot[:,ii])
 
 
             if conv_plot:
@@ -754,7 +802,8 @@ class Model():
         self.fowtList[0].calcBEM(dw=dw, wMax=wMax, dz=dz, da=da)
 
 
-    def plot(self, ax=None, hideGrid=False, color='k', nodes=0):
+    def plot(self, ax=None, hideGrid=False, draw_body=True, color='k', nodes=0, 
+             xbounds=None, ybounds=None, zbounds=None, plot_rotor=True, airfoils=False, station_plot=[]):
         '''plots the whole model, including FOWTs and mooring system...'''
 
         # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
@@ -766,14 +815,14 @@ class Model():
 
        # if axes not passed in, make a new figure
         if ax == None:    
-            fig, ax = self.ms.plot(color=color)
+            fig, ax = self.ms.plot(color=color, draw_body=draw_body, xbounds=xbounds, ybounds=ybounds, zbounds=zbounds)
         else:
             fig = ax.get_figure()
-            self.ms.plot(ax=ax, color=color)
+            self.ms.plot(ax=ax, color=color, draw_body=draw_body, xbounds=xbounds, ybounds=ybounds, zbounds=zbounds)
 
         # plot each FOWT
         for fowt in self.fowtList:
-            fowt.plot(ax, color=color, nodes=nodes)
+            fowt.plot(ax, color=color, nodes=nodes, plot_rotor=plot_rotor, station_plot=station_plot, airfoils=airfoils)
             
         if hideGrid:       
             ax.set_xticks([])    # Hide axes ticks
@@ -956,7 +1005,7 @@ class Model():
                 if member.rho_fill == 0.0:
                     member.l_fill = 0.0
             else:
-                for i in len(l_fill):
+                for i in range(len(member.l_fill)):
                     if member.rho_fill[i] == 0.0:
                         member.l_fill[i] = 0.0
         
@@ -986,7 +1035,7 @@ class Model():
                 if member.l_fill > 0.0:
                     member.rho_fill += delta_rho_fill
             else:
-                for i in len(l_fill):
+                for i in range(len(member.l_fill)):
                     if member.l_fill[i] > 0.0:
                         member.rho_fill[i] += delta_rho_fill
         
@@ -999,10 +1048,61 @@ class Model():
         
         # return adjustment
         return delta_rho_fill
+    
+    
+    def adjustWISDEM(self, old_wisdem_file, new_wisdem_file):
+        '''
+        This loads an existing WISDEM input file and adjusts the ballast in the members in WISDEM based on 
+        a RAFT model that was created based on the original WISDEM model
+        '''
+        
+        # read in the wisdem file that you want to adjust and save it as a wisdem_design dictionary
+        import ruamel_yaml as ry
+        reader = ry.YAML(typ="safe", pure=True)
+        with open(old_wisdem_file, "r", encoding="utf-8") as f:
+            wisdem_design = reader.load(f)
+        
+        fowt = self.fowtList[0]
+        membersRAFT = fowt.memberList       # list of members in the RAFT model
+        membersWISDEM = wisdem_design['components']['floating_platform']['members']     # list of members in the WISDEM model
+        
+        # Main adjuster section:
+        # Loop through each member in WISDEM and make adjustments based on the data in RAFT
+        # For right now, this only changes the ballast fill levels
+        for wisdem_member in membersWISDEM:
+            if 'ballasts' in wisdem_member['internal_structure'].keys():    # skip the wisdem member if there is no ballast section
+                for raft_member in membersRAFT:
+                    # determine if the raft_member is the same type as the current wisdem member (they don't have great identifiers to relate)
+                    # first, find the bottom joint of the current wisdem member
+                    for joint in wisdem_design['components']['floating_platform']['joints']:
+                        if wisdem_member['joint1']==joint['name']:  # find the name of the bottom 
+                            # if that joint's location is the same as the raft member's bottom node location AND both the wisdem member and the raft member have the same diameter
+                            if str(joint['location'][2])[0:5] == str(raft_member.rA[2])[0:5] and wisdem_member['outer_shape']['outer_diameter']['values'][0]==raft_member.d[0]:
+                                # adjust the volume of the wisdem member based on the similar raft member's fill level
+                                
+                                # assume the diameter is constant along the member's length in both WISDEM and RAFT
+                                area = np.pi * ((raft_member.d[0]-2*raft_member.t[0])/2)**2
+                                # update the volume of the wisdem member based on the l_fill value in RAFT
+                                wisdem_member['internal_structure']['ballasts'][0]['volume'] = float(area*raft_member.l_fill[0])
+                                
+                                break   # stop looping through the rest of the joints
+                    break   # stop looping through the rest of the raft members
+        
+        # save the adjusted wisdem design dictionary into a new wisdem yaml file
+        yaml = ry.YAML()
+        yaml.default_flow_style = None
+        yaml.width = float("inf")
+        yaml.indent(mapping=4, sequence=6, offset=3)
+        yaml.allow_unicode = False
+        with open(new_wisdem_file, "w", encoding="utf-8") as f:
+            yaml.dump(wisdem_design, f)
 
 
 
-def runRAFT(input_file, turbine_file="", plot=0, ballast=False):
+
+
+
+def runRAFT(input_file, turbine_file="", plot=0, ballast=False, station_plot=[]):
     '''
     This will set up and run RAFT based on a YAML input file.
     '''
@@ -1013,7 +1113,7 @@ def runRAFT(input_file, turbine_file="", plot=0, ballast=False):
             design = pickle.load(pfile)
     elif not isinstance(input_file, dict):
         # open the design YAML file and parse it into a dictionary for passing to raft
-        print("Loading RAFT input file: "+input_file)
+        print("\n\nLoading RAFT input file: "+input_file)
         with open(input_file) as file:
             design = yaml.load(file, Loader=yaml.FullLoader)
     else:
@@ -1040,26 +1140,21 @@ def runRAFT(input_file, turbine_file="", plot=0, ballast=False):
     model.analyzeCases()
     
     if plot:
-        model.plot()
-        
+        model.plot(station_plot=station_plot)        
         model.plotResponses()
     
     #model.preprocess_HAMS("testHAMSoutput", dw=0.1, wMax=10)
     
-    plt.show()
-    
     return model
-
+    
 
     
     
 if __name__ == "__main__":
-    import raft
     
-    #model = runRAFT(os.path.join(raft_dir,'designs/DTU10MW.yaml'))
-    #model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S.yaml'), ballast=True)
-    model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S - Copy.yaml'), ballast=2)
-    #model = runRAFT(os.path.join(raft_dir,'designs/OC3spar.yaml'))
-    #model = runRAFT(os.path.join(raft_dir,'raft/raft_design.pkl'), ballast=True)
-    #model = runRAFT(os.path.join(raft_dir,'raft/raft_design_0.pkl'), ballast=True)
-    fowt = model.fowtList[0]
+    model = runRAFT(os.path.join(raft_dir,'designs/OC3spar.yaml'), plot=1)
+    model = runRAFT(os.path.join(raft_dir,'designs/OC4semi.yaml'), plot=1)
+    model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S.yaml'), ballast=True, plot=1)
+   
+    plt.show()
+    

@@ -158,10 +158,15 @@ def waveNumber(omega, h, e=0.001):
 def SmallRotate(r, th):
 
     rt = np.zeros(3, dtype=complex)    # translated point
-
+    
+    rt[0] =              -th[2]*r[1] + th[1]*r[2]
+    rt[1] =  th[2]*r[0]              - th[0]*r[2]
+    rt[2] = -th[1]*r[0] + th[0]*r[1]
+    '''
     rt[0] =              th[2]*r[1] - th[1]*r[2]
     rt[1] = th[2]*r[0]              - th[0]*r[2]
     rt[2] = th[1]*r[0] - th[0]*r[1]
+    '''
     return rt
 
 
