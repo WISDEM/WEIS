@@ -286,7 +286,7 @@ class WT_RNTA(om.Group):
             self.connect("hub.clearance_hub_spinner", "drivese.clearance_hub_spinner")
             self.connect("hub.spin_hole_incr", "drivese.spin_hole_incr")
             self.connect("hub.pitch_system_scaling_factor", "drivese.pitch_system_scaling_factor")
-            self.connect("hub.spinner_gust_ws", "drivese.spinner_gust_ws")
+            self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
 
             self.connect("configuration.n_blades", "drivese.n_blades")
 
@@ -516,6 +516,7 @@ class WT_RNTA(om.Group):
                 self.connect("towerse.tower.turbine_F", "fixedse.turbine_F")
                 self.connect("towerse.tower.turbine_M", "fixedse.turbine_M")
                 self.connect("tower.diameter", "fixedse.tower_base_diameter", src_indices=[0])
+                self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
 
         if modeling_options["flags"]["monopile"]:
             if modeling_options["flags"]["blade"]:
@@ -524,7 +525,6 @@ class WT_RNTA(om.Group):
             self.connect("env.rho_air", "fixedse.rho_air")
             self.connect("env.mu_air", "fixedse.mu_air")
             self.connect("env.shear_exp", "fixedse.shearExp")
-            self.connect("tower_grid.foundation_height", "fixedse.tower_foundation_height")
             self.connect("env.water_depth", "fixedse.water_depth")
             self.connect("env.rho_water", "fixedse.rho_water")
             self.connect("env.mu_water", "fixedse.mu_water")
@@ -561,6 +561,8 @@ class WT_RNTA(om.Group):
                 self.connect("drivese.rna_mass", "fixedse.rna_mass")
 
         if modeling_options["flags"]["jacket"]:
+            self.connect("jacket.transition_piece_cost", "fixedse.transition_piece_cost")
+            self.connect("jacket.transition_piece_mass", "fixedse.transition_piece_mass")
             self.connect("jacket.foot_head_ratio", "fixedse.foot_head_ratio")
             self.connect("jacket.r_head", "fixedse.r_head")
             self.connect("jacket.height", "fixedse.height")
@@ -920,6 +922,7 @@ class WindPark(om.Group):
                 self.connect("configuration.n_blades", "landbosse.number_of_blades")
                 if modeling_options["flags"]["blade"]:
                     self.connect("rotorse.rp.powercurve.rated_T", "landbosse.rated_thrust_N")
+                    self.connect("rotorse.wt_class.V_extreme50", "landbosse.gust_velocity_m_per_s")
                 self.connect("towerse.tower_mass", "landbosse.tower_mass")
                 if modeling_options["flags"]["nacelle"]:
                     self.connect("drivese.nacelle_mass", "landbosse.nacelle_mass")

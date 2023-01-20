@@ -22,6 +22,8 @@ dependencies:
   - make
   - markupsafe
   - matplotlib-base
+  - meson
+  - ninja
   - nlopt
   - numpy
   - numpydoc
@@ -33,7 +35,6 @@ dependencies:
   - pip
   - pygments
   - pyoptsparse
-  - pyside2
   - pytest
   - pytest-cov
   - python-benedict
@@ -47,7 +48,6 @@ dependencies:
   - simpy
   - slycot
   - smt
-  - snowballstemmer
   - sortedcontainers
   - sphinx
   - sphinxcontrib-applehelp
@@ -62,6 +62,7 @@ dependencies:
   - pyzmq
 #  - versioneer
   - pip:
+    - dearpygui
     - fatpack
     - marmot-agents
 # Needs to be done outside of environment file:

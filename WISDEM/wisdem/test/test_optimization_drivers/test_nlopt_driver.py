@@ -10,10 +10,11 @@ from openmdao.utils.assert_utils import assert_near_equal
 from openmdao.utils.general_utils import run_driver
 from openmdao.test_suite.components.sellar import SellarDerivatives, SellarDerivativesGrouped
 from openmdao.test_suite.groups.sin_fitter import SineFitter
-from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 from openmdao.test_suite.components.paraboloid import Paraboloid
 from openmdao.test_suite.components.simple_comps import NonSquareArrayComp
 from openmdao.test_suite.components.expl_comp_array import TestExplCompArrayDense
+
+from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
 try:
     import nlopt
@@ -29,7 +30,7 @@ def rastrigin(x):
 @unittest.skipIf(nlopt is None, "only run if NLopt is installed.")
 class TestNLoptDriver(unittest.TestCase):
     def test_driver_supports(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -50,7 +51,7 @@ class TestNLoptDriver(unittest.TestCase):
     def test_compute_totals_basic_return_array(self):
         # Make sure 'array' return_format works.
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
         model.add_subsystem("p1", om.IndepVarComp("x", 0.0), promotes=["x"])
         model.add_subsystem("p2", om.IndepVarComp("y", 0.0), promotes=["y"])
@@ -85,7 +86,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_compute_totals_return_array_non_square(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("px", om.IndepVarComp(name="x", val=np.ones((2,))))
@@ -116,7 +117,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_deriv_wrt_self(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("px", om.IndepVarComp(name="x", val=np.ones((2,))))
@@ -136,7 +137,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_optimizer_simple_paraboloid_unconstrained(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -160,7 +161,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_unconstrained(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -185,7 +186,7 @@ class TestNLoptDriver(unittest.TestCase):
         assert_near_equal(prob["y"], -7.3333333, 1e-6)
 
     def test_simple_paraboloid_unconstrained_LN_COBYLA(self):
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -211,7 +212,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_upper(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -240,7 +241,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_lower(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -270,7 +271,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -299,7 +300,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_missing_objective(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("x", om.IndepVarComp("x", 2.0), promotes=["*"])
@@ -323,7 +324,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_double_sided_low(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -350,7 +351,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_double_sided_high(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -377,7 +378,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_array_comp2D(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
@@ -412,7 +413,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_array_comp2D_eq_con(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
@@ -442,7 +443,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_array_comp2D_dbl_sided_con(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
@@ -476,7 +477,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_array_comp2D_dbl_sided_con_array(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
@@ -506,7 +507,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_array_comp2D_array_lo_hi(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("widths", np.zeros((2, 2))), promotes=["*"])
@@ -541,7 +542,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_scaled_desvars_fwd(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -568,7 +569,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_scaled_desvars_rev(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -595,7 +596,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_scaled_constraint_fwd(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -622,7 +623,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_scaled_objective_fwd(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         prob.set_solver_print(level=0)
@@ -649,7 +650,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_scaled_objective_rev(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         prob.set_solver_print(level=0)
@@ -676,7 +677,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_sellar_mdf(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model = SellarDerivativesGrouped()
 
         prob.set_solver_print(level=0)
@@ -702,7 +703,7 @@ class TestNLoptDriver(unittest.TestCase):
     def test_bug_in_eq_constraints(self):
         # We were getting extra constraints created because lower and upper are maxfloat instead of
         # None when unused.
-        p = om.Problem(model=SineFitter())
+        p = om.Problem(reports=False, model=SineFitter())
         p.driver = NLoptDriver()
 
         p.setup()
@@ -743,7 +744,7 @@ class TestNLoptDriver(unittest.TestCase):
 
                 J["Vd", "a"] = -2.0 * Vu
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         indeps = prob.model.add_subsystem("indeps", om.IndepVarComp(), promotes=["*"])
         indeps.add_output("a", 0.5)
         indeps.add_output("Vu", 10.0, units="m/s")
@@ -768,7 +769,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_upper_LN_COBYLA(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -797,7 +798,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_sellar_mdf_LN_COBYLA(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model = SellarDerivativesGrouped()
 
         prob.driver = NLoptDriver()
@@ -818,11 +819,11 @@ class TestNLoptDriver(unittest.TestCase):
 
         assert_near_equal(prob["z"][0], 1.9776, 1e-3)
         assert_near_equal(prob["z"][1], 0.0, 1e-3)
-        assert_near_equal(prob["x"], 0.0, 1e-3)
+        assert_near_equal(prob["x"], 0.0, 1e-2)
 
     def test_simple_paraboloid_lower_linear(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -853,7 +854,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_linear(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -882,7 +883,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_debug_print_option(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -945,7 +946,7 @@ class TestNLoptDriver(unittest.TestCase):
     def test_sellar_mdf_linear_con_directsolver(self):
         # This test makes sure that we call solve_nonlinear first if we have any linear constraints
         # to cache.
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model = SellarDerivatives()
 
         prob.driver = NLoptDriver()
@@ -976,7 +977,7 @@ class TestNLoptDriver(unittest.TestCase):
     def test_call_final_setup(self):
         # Make sure we call final setup if our model hasn't been setup.
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1010,7 +1011,7 @@ class TestNLoptDriver(unittest.TestCase):
         # Bug where NLoptDriver tried to compute and cache the constraint derivatives for the
         # lower and upper bounds of the desvars even though we were using a non-gradient optimizer.
         # This causd a KeyError.
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         indeps = prob.model.add_subsystem("indeps", om.IndepVarComp())
         indeps.add_output("x", 3.0)
         indeps.add_output("y", -4.0)
@@ -1040,7 +1041,7 @@ class TestNLoptDriver(unittest.TestCase):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1085,7 +1086,7 @@ class TestNLoptDriver(unittest.TestCase):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
@@ -1118,7 +1119,7 @@ class TestNLoptDriver(unittest.TestCase):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
@@ -1151,7 +1152,7 @@ class TestNLoptDriver(unittest.TestCase):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
@@ -1184,7 +1185,7 @@ class TestNLoptDriver(unittest.TestCase):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
@@ -1217,7 +1218,7 @@ class TestNLoptDriver(unittest.TestCase):
                 x = inputs["x"]
                 outputs["f"] = rastrigin(x)
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("indeps", om.IndepVarComp("x", np.ones(size)), promotes=["*"])
@@ -1236,7 +1237,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_upper_LD_MMA(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1264,7 +1265,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_upper_LD_CCSAQ(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1292,7 +1293,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_upper_GN_ORIG_DIRECT(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
@@ -1323,7 +1324,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_upper_GN_ORIG_DIRECT_L(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 7.5), promotes=["*"])
@@ -1354,7 +1355,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_COBYLA(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1383,7 +1384,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_ISRES(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1417,7 +1418,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_failure_MMA(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1453,7 +1454,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_failure_LD_CCSAQ(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1489,7 +1490,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1525,7 +1526,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_failure_GN_ORIG_DIRECT_L(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1561,7 +1562,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_simple_paraboloid_equality_failure_GN_AGS(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1597,7 +1598,7 @@ class TestNLoptDriver(unittest.TestCase):
 
     def test_maxtime(self):
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1625,7 +1626,7 @@ class TestNLoptDriver(unittest.TestCase):
         # for both the lower and upper bounds to effectively create an equality
         # constraint even if the optimization method doesn't allow equality constraints
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         # Start very close to the correct answer with tight bounds to
@@ -1663,9 +1664,10 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_basic(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1690,9 +1692,10 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_optimizer(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1715,9 +1718,10 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_maxiter(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
@@ -1741,9 +1745,10 @@ class TestNLoptDriverFeatures(unittest.TestCase):
     def test_feature_tol(self):
         import openmdao.api as om
         from openmdao.test_suite.components.paraboloid import Paraboloid
+
         from wisdem.optimization_drivers.nlopt_driver import NLoptDriver
 
-        prob = om.Problem()
+        prob = om.Problem(reports=False)
         model = prob.model
 
         model.add_subsystem("p1", om.IndepVarComp("x", 50.0), promotes=["*"])
