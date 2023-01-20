@@ -1,6 +1,5 @@
 type: input file for RAFT
 name: IEA 15 MW with VolturnUS-S steel semi
-comments: Revised example with "super-member" type inputs, including one for the tower
 
 
 settings:                   # global Settings
@@ -17,7 +16,6 @@ site:
     shearExp    : 0.12       #          shear exponent
     
 cases:
-
     keys : [wind_speed, wind_heading, turbulence, turbine_status, yaw_misalign, wave_spectrum, wave_period, wave_height, wave_heading  ]
     data :  #   m/s        deg    % or e.g. 2B_NTM    string            deg         string          (s)         (m)         (deg)
         -  [    12,         0,            0.01,       operating,          0,        JONSWAP,         13.1,        8.5,           0        ]
@@ -40,7 +38,7 @@ turbine:
     precone     : 4.0     # [deg]
     shaft_tilt  : 6.0     # [deg]
     overhang    : 12.0313 # [m]
-    aeroServoMod : 1          # 0 aerodynamics off; 1 aerodynamics on (no control); 2 aerodynamics and control on
+    aeroServoMod : 2          # 0 aerodynamics off; 1 aerodynamics on (no control); 2 aerodynamics and control on
     
     blade: 
         precurveTip : -3.9999999999999964  # 

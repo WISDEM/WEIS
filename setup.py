@@ -131,8 +131,11 @@ weis_pkgs       = find_packages()
 print(sys.argv)
 for pkg in ['WISDEM','ROSCO','pCrunch','pyHAMS','MoorPy','RAFT','dtqpy']:
     os.chdir(pkg)
-    run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
-    # subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])  # This option runs `pip install -e .` on each package
+    if pkg in ['WISDEM', 'pyHAMS']:
+        # This option runs `pip install -e .` on each package
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-e", "."])
+    else:
+        run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
     os.chdir('..')
 
 # Now install WEIS and the Fortran packages

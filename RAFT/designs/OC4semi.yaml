@@ -1,10 +1,24 @@
 type: input file for RAFT
 name: 5MW with OC4-DeepCWind semi-sub
-comments: Revised example with "super-member" type inputs, including one for the tower
 
-# Global Settings
-potModMaster:   0   # [int] master switch for potMod variables; 0=keeps all member potMod vars the same, 1=turns all potMod vars to False (no HAMS), 2=turns all potMod vars to True (no strip)
 
+settings:                   # global Settings
+    min_freq     :  0.005   #  [Hz]       lowest frequency to consider, also the frequency bin width 
+    max_freq     :  0.40    #  [Hz]       highest frequency to consider
+    XiStart      :   0      # sets initial amplitude of each DOF for all frequencies
+    nIter        :  10      # sets how many iterations to perform in Model.solveDynamics()
+    
+site:
+    water_depth : 200        # [m]      uniform water depth
+    rho_water   : 1025.0     # [kg/m^3] water density
+    rho_air     : 1.225      # [kg/m^3] air density
+    mu_air      : 1.81e-05   #          air dynamic viscosity
+    shearExp    : 0.12       #          shear exponent
+    
+cases:
+    keys : [wind_speed, wind_heading, turbulence, turbine_status, yaw_misalign, wave_spectrum, wave_period, wave_height, wave_heading  ]
+    data :  #   m/s        deg    % or e.g. 2B_NTM    string            deg         string          (s)         (m)         (deg)
+        -  [    12,         0,            0.01,       operating,          0,        JONSWAP,         13.1,        8.5,           0        ]
 
 
 turbine:
@@ -1046,6 +1060,11 @@ turbine:
 
 platform:
 
+    min_freq_BEM : 0.03   #  [Hz]  lowest frequency and frequency interval to use in BEM analysis
+    dz_BEM       : 3.0    #  [m]   axial discretization panel length target for BEM analysis
+    da_BEM       : 2.0    #  [m]   azimuthal discretization panel length target for BEM analysis
+    potModMaster : 1
+    
     members:   # list all members here
         
       - name      :  main_column               # [-]    an identifier (no longer has to be number)       
@@ -1089,8 +1108,8 @@ platform:
         CaEnd     :  0.6                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
         rho_shell :  7850                      # [kg/m3]   material density
         # --- ballast ---
-        l_fill    :  [5.0418, 0, 7.77, 0]                    # [m]
-        rho_fill  :  [1025.0, 0, 1025.0, 0]                  # [kg/m3]
+        l_fill    :  [5.0418, 0, 7.77]         # [m]
+        rho_fill  :  [1025.0, 0, 1025.0]       # [kg/m3]
         # --- handling of end caps or any internal structures if we need them ---
         # (These will only be *within* the inner diameter of the outer shell, so they don't interrupt the outer shell.)
         cap_stations :  [ -20, -14, -14, 12]             # [m]  location along member of any inner structures (in same scaling as set by 'stations')
