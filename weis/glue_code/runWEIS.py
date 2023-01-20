@@ -114,15 +114,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             
             # Parallel settings for OpenMDAO
             if opt_options['driver']['design_of_experiments']['flag']:  
-                wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+                wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
             else:
-                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i, reports=False)
                 wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
             modeling_options['General']['openfast_configuration']['mpi_run'] = False
             modeling_options['General']['openfast_configuration']['cores']   = 1
-            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
 
         # If at least one of the design variables is active, setup an optimization
         if opt_options['opt_flag']:
