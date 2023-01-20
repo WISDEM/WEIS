@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-import os, shutil, sys, platform
-import copy
-import glob
+import os, shutil, sys, platform, copy, glob, logging
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
@@ -32,6 +30,7 @@ from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
+logger = logging.getLogger("wisdem/weis")
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -361,7 +360,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
         # DLC options
-        n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']
+        n_ws_dlc11 = np.max([1,modopt['DLC_driver']['n_ws_dlc11']])
 
         # OpenFAST options
         OFmgmt = modopt['General']['openfast_configuration']
@@ -537,7 +536,6 @@ class FASTLoadCases(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         modopt = self.options['modeling_options']
-        #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
 
         if modopt['Level2']['flag']:
@@ -614,11 +612,11 @@ class FASTLoadCases(ExplicitComponent):
                     reduceControls=True
                     )
                 except FileNotFoundError as e:
-                    print('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
+                    logger.warning('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
                     return
 
                 # Save linearizations
-                print('Saving ABCD matrices!')
+                logger.warning('Saving ABCD matrices!')
                 ABCD = {
                     'sim_idx' : self.sim_idx,
                     'A' : LinearTurbine.A_ops,
@@ -758,7 +756,7 @@ class FASTLoadCases(ExplicitComponent):
             try:
                 shutil.rmtree(self.FAST_runDirectory)
             except:
-                print('Failed to delete directory: %s'%self.FAST_runDirectory)
+                logger.warning('Failed to delete directory: %s'%self.FAST_runDirectory)
 
     def init_FAST_model(self):
 
@@ -1004,13 +1002,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
         fst_vt['AeroDyn15']['SpdSound']  = float(inputs['speed_sound_air'])
 
-        # Update OLAF
-        if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            _, _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
-            fst_vt['AeroDyn15']['OLAF']['nNWPanel'] = nNWPanel
-            fst_vt['AeroDyn15']['OLAF']['nFWPanel'] = nFWPanel
-            fst_vt['AeroDyn15']['OLAF']['nFWPanelFree'] = nFWPanelFree
-
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
         r[0]  = 0.
@@ -1155,6 +1146,8 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TwrGagNd'] = [idx+1 for idx in idx_out]
         fst_vt['AeroDyn15']['NTwOuts'] = 0
         self.Z_out_ED_twr = np.hstack((0., [twr_fract[i] for i in idx_out], 1.))
+        if len(np.unique(self.Z_out_ED_twr)) < len(self.Z_out_ED_twr):
+            raise Exception('The minimum number of tower nodes for WEIS to compute forces along the tower height is 11.')
 
         # SubDyn inputs- monopile and floating
         if modopt['flags']['monopile']:
@@ -1332,7 +1325,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
             BQuad = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
             if np.any(BQuad):
-                print('WARNING: You are adding in additional drag terms that may double count strip theory estimated viscous drag terms.  Please zero out the BQuad entries or use modeling options SimplCd/a/p and/or potential_model_override and/or potential_bem_members to suppress strip theory for the members')
+                logger.warning('WARNING: You are adding in additional drag terms that may double count strip theory estimated viscous drag terms.  Please zero out the BQuad entries or use modeling options SimplCd/a/p and/or potential_model_override and/or potential_bem_members to suppress strip theory for the members')
             fst_vt['HydroDyn']['AddBQuad'] = BQuad
             fst_vt['HydroDyn']['NAxCoef'] = 1
             fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
@@ -1418,7 +1411,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
                 from weis.ss_fitting.SS_FitTools import SSFit_Excitation, FDI_Fitting
-                print('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
+                logger.warning('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
                 exctn_fit = SSFit_Excitation(HydroFile=fst_vt['HydroDyn']['PotFile'])
                 rad_fit = FDI_Fitting(HydroFile=fst_vt['HydroDyn']['PotFile'])
                 exctn_fit.writeMats()
@@ -1493,9 +1486,9 @@ class FASTLoadCases(ExplicitComponent):
                     fst_vt['MoorDyn']['NodeFair'][k] = id2+1
                     fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
                 else:
-                    print(discrete_inputs['node_names'])
-                    print(mooropt["node1"][k], mooropt["node2"][k])
-                    print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
+                    logger.warning(discrete_inputs['node_names'])
+                    logger.warning(mooropt["node1"][k], mooropt["node2"][k])
+                    logger.warning(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
                     raise ValueError('Mooring line seems to be between unknown endpoint types.')
 
             for key in fst_vt['MoorDyn']:
@@ -1731,9 +1724,13 @@ class FASTLoadCases(ExplicitComponent):
         wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
         mean_wind_speed = np.zeros(dlc_generator.n_cases)
         yaw_misalignment = np.zeros(dlc_generator.n_cases)
+        DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
         aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
-
+        dt_fvw = np.zeros(dlc_generator.n_cases)
+        nNWPanel = np.zeros(dlc_generator.n_cases, dtype=int)
+        nFWPanel = np.zeros(dlc_generator.n_cases, dtype=int)
+        nFWPanelFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1751,7 +1748,7 @@ class FASTLoadCases(ExplicitComponent):
                 dlc_generator.cases[i_case].HubHt = hub_height
                 # Height of wind grid, it stops 1 mm above the ground
                 dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
-                # If OLAF is called, make wind grid high and big
+                # If OLAF is called, make wind grid 3x higher, taller, and wider
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
                     dlc_generator.cases[i_case].HubHt *= 3.
                     dlc_generator.cases[i_case].GridHeight *= 3.
@@ -1830,15 +1827,23 @@ class FASTLoadCases(ExplicitComponent):
             yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
             azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
 
-
+            # OLAF data
+            if wake_mod[i_case] == 3:
+                dt_fvw[i_case], tMax, nNWPanel[i_case], nFWPanel[i_case], nFWPanelFree[i_case] = OLAFParams(rot_speed_initial[i_case], mean_wind_speed[i_case], rotorD*0.5)
+                if fst_vt['Fst']['CompElast'] == 1:
+                    DT[i_case] = dt_fvw[i_case]
+                if tMax > self.TMax[i_case]:
+                    logger.warning("OLAF runs are too short in time, the wake is not at convergence")
 
         # Parameteric inputs
         case_inputs = {}
         # Main fst
+        case_inputs[("Fst","DT")] = {'vals':DT, 'group':1}
         case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
         case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
+        case_inputs[("InflowWind","HWindSpeed")] = {'vals':mean_wind_speed, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
@@ -1866,6 +1871,12 @@ class FASTLoadCases(ExplicitComponent):
         # Inputs to AeroDyn (parking)
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+
+        # Inputs to OLAF
+        case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nNWPanel")] = {'vals':nNWPanel, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","WakeLength")] = {'vals':nFWPanel, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","FreeWakeLength")] = {'vals':nFWPanelFree, 'group':1}
 
         # DLC Label add these for the case matrix and delete from the case_list
         case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
@@ -2138,13 +2149,13 @@ class FASTLoadCases(ExplicitComponent):
 
 
         if np.any(np.isnan(Fz)):
-            print('WARNING: nans found in Fz extremes')
+            logger.warning('WARNING: nans found in Fz extremes')
             Fz[np.isnan(Fz)] = 0.0
         if np.any(np.isnan(Mx)):
-            print('WARNING: nans found in Mx extremes')
+            logger.warning('WARNING: nans found in Mx extremes')
             Mx[np.isnan(Mx)] = 0.0
         if np.any(np.isnan(My)):
-            print('WARNING: nans found in My extremes')
+            logger.warning('WARNING: nans found in My extremes')
             My[np.isnan(My)] = 0.0
         spline_Fz = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((Fz, 0.)))
         spline_Mx = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((Mx, 0.)))
@@ -2355,31 +2366,34 @@ class FASTLoadCases(ExplicitComponent):
             pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
             AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
-            outputs['P_out']       = perf_data['GenPwr']['mean'] * 1.e3
-            outputs['Cp_out']      = perf_data['RtAeroCp']['mean']
-            outputs['Omega_out']   = perf_data['RotSpeed']['mean']
-            outputs['pitch_out']   = perf_data['BldPitch1']['mean']
-            outputs['AEP']         = AEP
+            outputs['P_out'] = perf_data['GenPwr']['mean'] * 1.e3
+            outputs['Cp_out'] = perf_data['RtAeroCp']['mean']
+            outputs['Omega_out'] = perf_data['RotSpeed']['mean']
+            outputs['pitch_out'] = perf_data['BldPitch1']['mean']
+            outputs['AEP'] = AEP
         else:
             # If DLC 1.1 was run
-            if len(stats_pwrcrv['GenPwr']['mean']): 
-                outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
-                outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
-                outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
-                outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
+            if len(stats_pwrcrv['RtAeroCp']['mean']): 
+                outputs['Cp_out'] = stats_pwrcrv['RtAeroCp']['mean']
+                outputs['Omega_out'] = stats_pwrcrv['RotSpeed']['mean']
+                outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
-                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
-                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+                    outputs['AEP'] = stats_pwrcrv['GenPwr']['mean']
+                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
-                outputs['Cp_out']      = sum_stats['RtAeroCp']['mean'].mean()
-                outputs['AEP']         = sum_stats['GenPwr']['mean'].mean()
-                outputs['Omega_out']   = sum_stats['RotSpeed']['mean'].mean()
-                outputs['pitch_out']   = sum_stats['BldPitch1']['mean'].mean()
+                outputs['Cp_out'] = sum_stats['RtAeroCp']['mean'].mean()
+                outputs['Omega_out'] = sum_stats['RotSpeed']['mean'].mean()
+                outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
-                    outputs['P_out']       = sum_stats['GenPwr']['mean'][0] * 1.e3
-                print('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
+                    outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
+                    outputs['P_out'] = sum_stats['GenPwr']['mean'][0] * 1.e3
+                logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
-        outputs['V_out']       = np.unique(U)
+        if len(U)>0:
+            outputs['V_out'] = np.unique(U)
+        else:
+            outputs['V_out'] = dlc_generator.cases[0].URef
 
         return outputs, discrete_outputs
 
@@ -2503,7 +2517,7 @@ class FASTLoadCases(ExplicitComponent):
             dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['pitch_duty_cycle'] = dir_change_per_sec
         else:
-            print('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
+            logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
 
 
