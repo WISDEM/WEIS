@@ -283,6 +283,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 
                 if n == 'Tmoor':
                     myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, 2*nlines, nfreq))
+                elif n == 'Mbase':
+                    myval = np.zeros(n_cases) if s not in ['PSD','std'] else np.zeros((n_cases, nfreq))
                 else:
                     myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
                 
@@ -657,7 +659,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
             for s in stats:
                 if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['stats_'+iout][case_mask] = results['case_metrics'][iout]
+                outputs['stats_'+iout][case_mask] = np.squeeze( results['case_metrics'][iout] )
 
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:
