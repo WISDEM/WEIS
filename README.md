@@ -56,13 +56,13 @@ The installation instructions below use the environment name, "weis-env," but an
 
 1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
 
-        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml python=3.9
+        conda config --add channels conda-forge
+        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
         sudo apt update                                  # (WSL only, assuming Ubuntu)
 
 2.  Use conda to add platform specific dependencies.
 
-        conda config --add channels conda-forge
         conda install -y petsc4py mpi4py                                     # (Mac / Linux only)   
         conda install -y compilers                                           # (Mac only)   
         sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y      # (WSL only, assuming Ubuntu)
