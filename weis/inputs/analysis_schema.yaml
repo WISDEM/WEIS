@@ -454,6 +454,21 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg/s
+            floating:
+                type: object
+                default: {}
+                properties:
+                    Max_Offset:
+                        type: object
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 20
+                                minimum: 0.0
+                                maximum: 20000.0
+                                unit: m
             damage:
                 type: object
                 default: {}
@@ -482,21 +497,6 @@ properties:
                         type: boolean
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
-
-            Max_Offset:
-                type: object
-                default: {}
-                properties:
-                    flag:
-                        type: boolean
-                        description: Constrain maximum offset of platform from equilibrium point
-                        default: False
-                    max:
-                        type: number
-                        default: 20
-                        minimum: 0.0
-                        maximum: 20000.0
-                        unit: m
 
     
 
