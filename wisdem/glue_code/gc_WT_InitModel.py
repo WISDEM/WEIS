@@ -1047,9 +1047,14 @@ def assign_floating_values(wt_opt, modeling_options, floating, opt_options):
             memname = kgrp["names"][0]
             idx2 = floating_init_options["members"]["name2idx"][memname]
             if idx == idx2:
-                wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
-                    "outer_diameter"
-                ]["values"]
+                if float_opt["members"]["groups"][j]["diameter"]["constant"]:
+                    wt_opt[f"floating.memgrp{idx}.outer_diameter_in"] = floating["members"][i]["outer_shape"][
+                        "outer_diameter"
+                    ]["values"][0]
+                else:
+                    wt_opt[f"floating.memgrp{idx}.outer_diameter_in"][:] = floating["members"][i]["outer_shape"][
+                        "outer_diameter"
+                    ]["values"]
                 diameter_assigned = True
 
         if not diameter_assigned:
