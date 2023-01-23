@@ -4,6 +4,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib.patches import Circle
+import mpl_toolkits.mplot3d.art3d as art3d
 import yaml
 
 try:
@@ -803,7 +805,8 @@ class Model():
 
 
     def plot(self, ax=None, hideGrid=False, draw_body=True, color='k', nodes=0, 
-             xbounds=None, ybounds=None, zbounds=None, plot_rotor=True, airfoils=False, station_plot=[]):
+             xbounds=None, ybounds=None, zbounds=None, plot_rotor=True, airfoils=False, station_plot=[],
+             plot_water=False, plot_soil=False):
         '''plots the whole model, including FOWTs and mooring system...'''
 
         # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
@@ -821,8 +824,8 @@ class Model():
             self.ms.plot(ax=ax, color=color, draw_body=draw_body, xbounds=xbounds, ybounds=ybounds, zbounds=zbounds)
 
         # plot each FOWT
-        for fowt in self.fowtList:
-            fowt.plot(ax, color=color, nodes=nodes, plot_rotor=plot_rotor, station_plot=station_plot, airfoils=airfoils)
+        for ifowt in self.fowtList:
+            ifowt.plot(ax, color=color, nodes=nodes, plot_rotor=plot_rotor, station_plot=station_plot, airfoils=airfoils)
             
         if hideGrid:       
             ax.set_xticks([])    # Hide axes ticks
@@ -832,6 +835,21 @@ class Model():
             ax.grid(b=None)
             ax.axis('off')
             ax.set_frame_on(False)
+
+        #vx = np.array( ax.get_xlim() )
+        #vy = np.array( ax.get_ylim() )
+        r = 75 #0.1*np.maximum(vx.max(), vy.max())
+
+        if plot_water:
+            water_color = (0.122, 0.4667, 0.706)
+            p_sea = Circle((0,0), r, color=water_color, alpha=0.3)
+            ax.add_patch(p_sea)
+            art3d.pathpatch_2d_to_3d(p_sea, z=0, zdir="z")
+        if plot_soil:
+            soil_color = (0.703125, 0.390625, 0.0)
+            p_soil = Circle((0,0), r, color=soil_color, alpha=0.5)
+            ax.add_patch(p_soil)
+            art3d.pathpatch_2d_to_3d(p_soil, z=-self.depth, zdir="z")
             
         return fig, ax
     
