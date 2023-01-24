@@ -272,30 +272,31 @@ class FrameAnalysis(om.ExplicitComponent):
 
         # myframe.write("system.3dd")
         # myframe.draw()
-        displacements, forces, reactions, internalForces, mass, modal = myframe.run()
+        if False:
+            displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
-        # Determine reaction forces
-        outputs["platform_base_F"] = -np.c_[
-            reactions.Fx.sum(axis=1), reactions.Fy.sum(axis=1), reactions.Fz.sum(axis=1)
-        ].T
-        outputs["platform_base_M"] = -np.c_[
-            reactions.Mxx.sum(axis=1), reactions.Myy.sum(axis=1), reactions.Mzz.sum(axis=1)
-        ].T
+            # Determine reaction forces
+            outputs["platform_base_F"] = -np.c_[
+                reactions.Fx.sum(axis=1), reactions.Fy.sum(axis=1), reactions.Fz.sum(axis=1)
+            ].T
+            outputs["platform_base_M"] = -np.c_[
+                reactions.Mxx.sum(axis=1), reactions.Myy.sum(axis=1), reactions.Mzz.sum(axis=1)
+            ].T
 
-        # Forces and moments along the structure
-        outputs["platform_Fz"] = NULL * np.ones((NELEM_MAX, n_dlc))
-        outputs["platform_Vx"] = NULL * np.ones((NELEM_MAX, n_dlc))
-        outputs["platform_Vy"] = NULL * np.ones((NELEM_MAX, n_dlc))
-        outputs["platform_Mxx"] = NULL * np.ones((NELEM_MAX, n_dlc))
-        outputs["platform_Myy"] = NULL * np.ones((NELEM_MAX, n_dlc))
-        outputs["platform_Mzz"] = NULL * np.ones((NELEM_MAX, n_dlc))
-        for k in range(n_dlc):
-            outputs["platform_Fz"][:nelem, k] = forces.Nx[k, 1::2]
-            outputs["platform_Vx"][:nelem, k] = -forces.Vz[k, 1::2]
-            outputs["platform_Vy"][:nelem, k] = forces.Vy[k, 1::2]
-            outputs["platform_Mxx"][:nelem, k] = -forces.Mzz[k, 1::2]
-            outputs["platform_Myy"][:nelem, k] = forces.Myy[k, 1::2]
-            outputs["platform_Mzz"][:nelem, k] = forces.Txx[k, 1::2]
+            # Forces and moments along the structure
+            outputs["platform_Fz"] = NULL * np.ones((NELEM_MAX, n_dlc))
+            outputs["platform_Vx"] = NULL * np.ones((NELEM_MAX, n_dlc))
+            outputs["platform_Vy"] = NULL * np.ones((NELEM_MAX, n_dlc))
+            outputs["platform_Mxx"] = NULL * np.ones((NELEM_MAX, n_dlc))
+            outputs["platform_Myy"] = NULL * np.ones((NELEM_MAX, n_dlc))
+            outputs["platform_Mzz"] = NULL * np.ones((NELEM_MAX, n_dlc))
+            for k in range(n_dlc):
+                outputs["platform_Fz"][:nelem, k] = forces.Nx[k, 1::2]
+                outputs["platform_Vx"][:nelem, k] = -forces.Vz[k, 1::2]
+                outputs["platform_Vy"][:nelem, k] = forces.Vy[k, 1::2]
+                outputs["platform_Mxx"][:nelem, k] = -forces.Mzz[k, 1::2]
+                outputs["platform_Myy"][:nelem, k] = forces.Myy[k, 1::2]
+                outputs["platform_Mzz"][:nelem, k] = forces.Txx[k, 1::2]
 
 
 class TowerModal(om.ExplicitComponent):
@@ -674,6 +675,8 @@ class FloatingFrame(om.Group):
                 TowerModal(n_full=n_full_tow, frame3dd_opt=frame3dd_opt, rank_and_file=rank_and_file),
                 promotes=["*"],
             )
+        else:
+            print("Assign tower as member here?")
 
         self.add_subsystem("post", FloatingPost(options=opt["WISDEM"]["FloatingSE"], n_dlc=nLC), promotes=["*"])
 
