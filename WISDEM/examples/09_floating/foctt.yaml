@@ -355,6 +355,13 @@ components:
                 thickness:
                   grid: [0,1]
                   values: [0.03, 0.03]
+            ballasts:
+              - variable_flag: False
+                material: slurry
+                volume: 5
+                grid: [0.0, 0.05]
+              # - variable_flag: True
+              #   grid: [0.05, 0.4]
         - name: mooring_fins
           joint1: mooring_fins_a
           joint2: mooring_fins_b
@@ -702,6 +709,18 @@ materials:
       S: 0.31e+006
       G: 1520000.0
       unit_cost: 9.0
+   -  name: slurry
+      description: fixed/permanent ballast
+      E: 1.0 # compliant
+      nu: 0.3  #Place holder, currently not used
+      G: 1.0  # compliant
+      Xt: 0  #Place holder, currently not used
+      Xc: 0  #Place holder, currently not used
+      S: 0  #Place holder, currently not used
+      rho: 5000.
+      alpha: 0.0
+      unit_cost: 1.0
+      orth: 0.0
 control:
     supervisory:
         Vin: 2.0
