@@ -310,163 +310,90 @@ components:
                   thickness:
                     grid: *grid_tower
                     values:  [ 0.03,  0.03,  0.03 ]
-    # floating_platform:
-    #     joints:
-    #         - name: spar_keel
-    #           location: [0.0, 0.0, -120.0]
+    floating_platform:
+      joints:
+        - name: upper_column_a
+          location: [0, 0, -2.5]
+        - name: upper_column_b
+          location: [0, 0, 9]
+        - name: mooring_fins_a
+          location: [0, 10, -2.15]
+        - name: mooring_fins_b
+          location: [0, -10, -2.15]
+        - name: back_anchor
+          location: [-200, 0.0, -60.0]
+        - name: back_anchor_L
+          location: [-201, -50.0, -60.0]
+        - name: back_anchor_R
+          location: [-201, 50.0, -60.0]
+        - name: front_anchor
+          location: [200, 0.0, -60.0]
+        - name: front_anchor_L
+          location: [200, -50.0, -60.0]
+        - name: front_anchor_R
+          location: [200, 50.0, -60.0]
+        - name: keel_vessel
+          location: [0.0, 0.0, -33.5]
+        # - name: fin_-y_vessel
+        #   location: [0.0, -10.0, -2.15]
+        # - name: fin_+y_vessel
+        #   location: [0.0, 10.0, -2.15]
 
-    #         - name: spar_freeboard
-    #           location: [0.0, 0.0, 10.0]
-    #           transition: True
+      members:
+        - name: upper_column
+          joint1: upper_column_a
+          joint2: upper_column_b
+          outer_shape:
+            shape: circular
+            outer_diameter:
+                grid: [0, 1]
+                values: [2.0, 2.0]
+          internal_structure:
+            layers:
+              - name: main_twall
+                material: steel
+                thickness:
+                  grid: [0,1]
+                  values: [0.03, 0.03]
+        - name: mooring_fins
+          joint1: mooring_fins_a
+          joint2: mooring_fins_b
+          outer_shape:
+            shape: circular
+            outer_diameter:
+              grid: [0, 1]
+              values: [0.5, 0.5]
+          internal_structure:
+            layers:
+              - name: main_twall
+                material: steel
+                thickness:
+                  grid: [0,1]
+                  values: [0.03, 0.03]
 
-    #         - name: fairlead1
-    #           location: [5.2, 0.0, -70.0]
-    #           cylindrical: True
 
-    #         - name: fairlead2
-    #           location: [5.2, 2.0943951023931953, -70.0] # 120deg
-    #           cylindrical: True
-
-    #         - name: fairlead3
-    #           location: [5.2, 4.1887902047863905, -70.0] # 240deg
-    #           cylindrical: True
-
-    #         - name: anchor1
-    #           location: [853.87, 0.0, -320.0]
-    #           cylindrical: True
-
-    #         - name: anchor2
-    #           location: [853.87, 2.0943951023931953, -320.0] # 120deg
-    #           cylindrical: True
-
-    #         - name: anchor3
-    #           location: [853.87, 4.1887902047863905, -320.0] # 240deg
-    #           cylindrical: True
-
-    #     members:
-    #         - name: spar
-    #           joint1: spar_keel
-    #           joint2: spar_freeboard
-    #           outer_shape:
-    #             shape: circular
-    #             outer_diameter:
-    #                 grid: [0.0, 0.8308, 0.8923, 1.0]
-    #                 values: [9.4, 9.4, 6.5, 6.5]
-    #           internal_structure:
-    #             layers:
-    #                 - name: spar_twall
-    #                   material: steel
-    #                   thickness:
-    #                     grid: [0.0, 1.0]
-    #                     values: [0.08, 0.08]
-    #             bulkhead:
-    #                 material: steel
-    #                 thickness:
-    #                     grid: [0.0, 0.1, 0.5, 0.8308, 1.0]
-    #                     values: [0.1, 0.05, 0.05, 0.05, 0.05]
-    #             ballasts:
-    #                 - variable_flag: False
-    #                   material: slurry
-    #                   volume: 900
-    #                   grid: [0.0, 0.4]
-    #                 - variable_flag: True
-    #                   grid: [0.4, 1.0]
-
-    #           axial_joints:
-    #             - name: fairlead_attach
-    #               grid: 0.38462 # Should be -70m
-
-    #         - name: fairlead_leg1
-    #           joint1: fairlead1
-    #           joint2: fairlead_attach
-    #           outer_shape: &fair_out
-    #             shape: circular
-    #             outer_diameter:
-    #                 grid: [0.0, 1.0]
-    #                 values: [1.0, 1.0]
-    #           internal_structure: &fair_in
-    #             layers:
-    #                 - name: fairlead_twall
-    #                   material: steel
-    #                   thickness:
-    #                     grid: [0.0, 1.0]
-    #                     values: [0.1, 0.1]
-
-    #         - name: fairlead_leg2
-    #           joint1: fairlead2
-    #           joint2: fairlead_attach
-    #           outer_shape: *fair_out
-    #           internal_structure: *fair_in
-
-    #         - name: fairlead_leg3
-    #           joint1: fairlead3
-    #           joint2: fairlead_attach
-    #           outer_shape: *fair_out
-    #           internal_structure: *fair_in
-
-    # mooring:
-    #     nodes:
-    #         - name: line1_anchor
-    #           node_type: fixed
-    #           joint: anchor1
-    #           anchor_type: drag_embedment
-
-    #         - name: line2_anchor
-    #           node_type: fixed
-    #           joint: anchor2
-    #           anchor_type: drag_embedment
-
-    #         - name: line3_anchor
-    #           node_type: fixed
-    #           joint: anchor3
-    #           anchor_type: drag_embedment
-
-    #         - name: line1_vessel
-    #           node_type: vessel
-    #           joint: fairlead1
-    #           fairlead_type: rigid
-
-    #         - name: line2_vessel
-    #           node_type: vessel
-    #           joint: fairlead2
-    #           fairlead_type: rigid
-
-    #         - name: line3_vessel
-    #           node_type: vessel
-    #           joint: fairlead3
-    #           fairlead_type: rigid
-
-    #     lines:
-    #         - name: line1
-    #           node1: line1_anchor
-    #           node2: line1_vessel
-    #           line_type: main
-    #           unstretched_length: 902.2
-
-    #         - name: line2
-    #           node1: line2_anchor
-    #           node2: line2_vessel
-    #           line_type: main
-    #           unstretched_length: 902.2
-
-    #         - name: line3
-    #           node1: line3_anchor
-    #           node2: line3_vessel
-    #           line_type: main
-    #           unstretched_length: 902.2
-
-    #     line_types:
-    #         - name: main
-    #           diameter: 0.09
-    #           type: chain
-    #           transverse_added_mass: 1.0
-    #           tangential_added_mass: 0.0
-    #           transverse_drag: 1.6
-    #           tangential_drag: 0.1
-
-    #     anchor_types:
-    #         - name: drag_embedment
-    #           type: drag_embedment
+    mooring:
+      nodes:
+        # - {name: back_anchor, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor}
+        - {name: back_anchor_L, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor_L}
+        - {name: back_anchor_R, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor_R}
+        # - {name: front_anchor, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor}
+        - {name: front_anchor_L, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor_L}
+        - {name: front_anchor_R, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor_R}
+        # - {name: keel_vessel, node_type: vessel, fairlead_type: rigid, joint: keel_vessel}
+        - {name: fin_-y_vessel, node_type: vessel, fairlead_type: rigid, joint: mooring_fins_b}
+        - {name: fin_+y_vessel, node_type: vessel, fairlead_type: rigid, joint: mooring_fins_a}
+      lines:
+        # - {name: line1, node1: back_anchor, node2: keel_vessel, line_type: chain, unstretched_length: 205}
+        # - {name: line2, node1: front_anchor, node2: keel_vessel, line_type: chain, unstretched_length: 205}
+        - {name: line3, node1: back_anchor_L, node2: fin_-y_vessel, line_type: chain, unstretched_length: 220}
+        - {name: line4, node1: back_anchor_R, node2: fin_+y_vessel, line_type: chain, unstretched_length: 220}
+        - {name: line5, node1: front_anchor_L, node2: fin_-y_vessel, line_type: chain, unstretched_length: 220}
+        - {name: line6, node1: front_anchor_R, node2: fin_+y_vessel, line_type: chain, unstretched_length: 220}
+      line_types:
+        - {name: chain, type: chain, diameter: 0.185, transverse_added_mass: 1.0, tangential_added_mass: 0.0, transverse_drag: 1.6, tangential_drag: 0.1}
+      anchor_types:
+        - {name: drag_embedment, type: drag_embedment}
 
 airfoils:
    -  aerodynamic_center: 0.0
