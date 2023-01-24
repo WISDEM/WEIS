@@ -5,6 +5,7 @@ skinny_scripts = [
     "02_control_opt/weis_driver",       #It's fast, I promise (49 sec. locally)
     "02_control_opt/weis_driver_sm",    #Not as fast as weis_driver, but not too bad (120 sec. locally)
     "03_NREL5MW_OC3_spar/weis_driver",
+    "03_NREL5MW_OC3_spar/weis_freq_driver",
     "06_IEA-15-240-RWT/weis_driver",
     "06_IEA-15-240-RWT/weis_driver_TMDs",
     "09_design_of_experiments/weis_driver",

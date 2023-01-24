@@ -324,12 +324,12 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_constraint('aeroelastic.openfast_failed',upper = 1.)
 
         # Max offset
-        if self.opt['constraints']['Max_Offset']['flag']:
+        if self.opt['constraints']['floating']['Max_Offset']['flag']:
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize with openfast_failed constraint.')
             wt_opt.model.add_constraint(
                 f'{self.solve_component}.Max_Offset',
-                upper = self.opt['constraints']['Max_Offset']['max']
+                upper = self.opt['constraints']['floating']['Max_Offset']['max']
                 )
                 
         # Tower constraints
