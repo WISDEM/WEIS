@@ -2780,7 +2780,8 @@ class MooringJoints(om.ExplicitComponent):
         outputs["mooring_nodes"] = node_loc
 
         node_loc = np.unique(node_loc, axis=0)
-        tol = 0.5
+        depth = np.abs(node_loc[:, 2].min())
+        tol = 0.5 * depth
         z_fair = node_loc[:, 2].max()
         z_anch = node_loc[:, 2].min()
         ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
