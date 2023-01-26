@@ -134,7 +134,7 @@ class Member:
 
         # discretize into strips with a node at the midpoint of each strip (flat surfaces have dl=0)
         dorsl  = list(self.d) if self.shape=='circular' else list(self.sl)   # get a variable that is either diameter or side length pair
-        dlsMax = mi['dlsMax']
+        dlsMax = getFromDict(mi, 'dlsMax', shape=-1, default=5.0)
         
         # start things off with the strip for end A
         ls     = [0.0]                 # list of lengths along member axis where a node is located <<< should these be midpoints instead of ends???
