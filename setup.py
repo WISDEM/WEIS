@@ -134,6 +134,7 @@ for pkg in ['WISDEM','ROSCO','pCrunch','pyHAMS','MoorPy','RAFT','dtqpy']:
     if pkg in ['WISDEM', 'pyHAMS']:
         # This option runs `python setup.py install/develop` on each package
         os.system(sys.executable+" setup.py develop")
+        #retval = subprocess.call([sys.executable, "setup.py", "develop"])
     else:
         run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
     os.chdir('..')
