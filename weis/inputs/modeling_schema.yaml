@@ -820,27 +820,27 @@ properties:
                                 type: integer
                                 enumerate: [5]
                                 default: 5
-                                description: Integration method {5 Forward Euler 1st order, default 5} (switch)
+                                description: Integration method 1 RK4, 5 Forward Euler 1st order, default 5 switch
                             DTfvw:
                                 type: number
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description: Time interval for wake propagation. {default dtaero} (s). Set it to 0. for default (same as main fst)
+                                description: Time interval for wake propagation. {default dtaero} (s)
                             FreeWakeStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description:  Time when wake is free. (-) value = always free. {default 0.0} (s). Set it to 0. for default (same as main fst)
+                                description: Time when wake is free. (-) value = always free. {default 0.0} (s)
                             FullCircStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description: Time at which full circulation is reached. {default 0.0} (s). Set it to 0. for default (same as main fst)
-                            CircSolvingMethod:
+                                description: Time at which full circulation is reached. {default 0.0} (s)
+                            CircSolvMethod:
                                 type: integer
                                 enumerate: [1, 2, 3]
                                 default: 1
@@ -848,11 +848,11 @@ properties:
                             CircSolvConvCrit:
                                 type: number
                                 default: 0.001
-                                description: Convergence criteria {default 0.001} [only if CircSolvingMethod=1] (-)
+                                description: Convergence criteria {default 0.001} [only if CircSolvMethod=1] (-)
                             CircSolvRelaxation:
                                 type: number
                                 default: 0.1
-                                description: Relaxation factor {default 0.1} [only if CircSolvingMethod=1] (-)
+                                description: Relaxation factor {default 0.1} [only if CircSolvMethod=1] (-)
                             CircSolvMaxIter:
                                 type: integer
                                 default: 30
@@ -860,22 +860,27 @@ properties:
                             PrescribedCircFile:
                                 type: string
                                 default: 'NA'
-                                description: File containing prescribed circulation [only if CircSolvingMethod=3] (quoted string)
-                            nNWPanel:
+                                description: File containing prescribed circulation [only if CircSolvMethod=3] (quoted string)
+                            nNWPanels:
                                 type: integer
                                 minimum: 0
                                 default: 120
                                 description: Number of near-wake panels [integer] (-)
-                            WakeLength:
+                            nNWPanelsFree:
                                 type: integer
                                 minimum: 0
-                                default: 900
-                                description: Total wake distance [integer] (number of time steps)
-                            FreeWakeLength:
+                                default: 120
+                                description: Number of free near-wake panels (-) {default nNWPanels}
+                            nFWPanels:
                                 type: integer
+                                minimum: 0
                                 default: 0
+                                description: Number of far-wake panels (-) {default 0}
+                            nFWPanelsFree:
+                                type: integer
                                 minimum: 0
-                                description: Wake length that is free [integer] (number of time steps) {default WakeLength}
+                                default: 0
+                                description: Number of free far-wake panels (-) {default nFWPanels}
                             FWShedVorticity:
                                 type: boolean
                                 default: False
@@ -897,7 +902,7 @@ properties:
                                 description: Viscous diffusion function {0 None, 1 Rankine, 2 LambOseen, 3 Vatistas, 4 Denominator, 'default' 3} (switch)
                             WakeRegMethod:
                                 type: integer
-                                enumerate: [0, 1, 2, 3, 4]
+                                enumerate: [0, 1, 2, 3]
                                 default: 1
                                 description: Wake regularization method {1 Constant, 2 Stretching, 3 Age, default 1} (switch)
                             WakeRegFactor:
@@ -1027,7 +1032,7 @@ properties:
                         type: boolean
                         default: False
                         description: Calculate tail fin aerodynamics model (flag)
-                    TFinAero:
+                    TFinFile:
                         type: string
                         default: "unused"
                         description: Input file for tail fin aerodynamics [used only when TFinAero=True]
