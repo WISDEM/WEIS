@@ -53,32 +53,14 @@ if not omp.found()
 endif
 
 if fc.get_id() == 'gcc'
-  lapack = dependency('openblas', required: false)
-  if not lapack.found()
-    lapack = fc.find_library('openblas', required: false)
-  endif
-  if not lapack.found()
-    lapack = dependency('lapack', required: false)
-  endif
-  if not lapack.found()
-    lapack = fc.find_library('lapack', required: false)
-  endif
-  if not lapack.found()
-    lapack = declare_dependency(
-      link_args: '-llapack',
-    )
-  endif
+  lapack = declare_dependency(
+    link_args: '-llapack',
+  )
 endif
 if fc.get_id() == 'intel'
-  lapack = dependency('mkl', required: false)
-  if not lapack.found()
-    lapack = fc.find_library('mkl_rt')
-  endif
-  if not lapack.found()
-    lapack = declare_dependency(
-      link_args: '-lmkl_rt',
-    )
-  endif
+  lapack = declare_dependency(
+    link_args: '-lmkl_rt',
+  )
 endif
 
 # https://mesonbuild.com/Python-module.html
