@@ -17,10 +17,10 @@ jobs:
       fail-fast: true
       matrix:
         os: ["ubuntu-latest", "macOS-latest"]
-        python-version: ["3.9","3.10","3.11"]
+        python-version: ["3.9","3.10"]
         
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       - uses: conda-incubator/setup-miniconda@v2
