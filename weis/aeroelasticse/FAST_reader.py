@@ -740,6 +740,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['TwrAero']       = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['FrozenWake']    = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['CavitCheck']    = bool_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['Buoyancy']      = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['CompAA']        = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['AA_InputFile']  = f.readline().split()[0]
 
@@ -778,8 +779,8 @@ class InputReader_OpenFAST(object):
         f.readline()
         self.fst_vt['AeroDyn15']['UAMod']                  = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['FLookup']                = bool_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['UAStartRad']             = float_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['UAEndRad']               = float_read(f.readline().split()[0])
+        # self.fst_vt['AeroDyn15']['UAStartRad']             = float_read(f.readline().split()[0])
+        # self.fst_vt['AeroDyn15']['UAEndRad']               = float_read(f.readline().split()[0])
 
         # Airfoil Information
         f.readline()
@@ -802,21 +803,36 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['ADBlFile2']      = f.readline().split()[0][1:-1]
         self.fst_vt['AeroDyn15']['ADBlFile3']      = f.readline().split()[0][1:-1]
 
+        # Hub, nacelle, and tail fin aerodynamics
+        f.readline()
+        self.fst_vt['AeroDyn15']['VolHub'] = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['HubCenBx'] = float_read(f.readline().split()[0])
+        f.readline()
+        self.fst_vt['AeroDyn15']['VolNac'] = float_read(f.readline().split()[0])
+        # data = [float(val) for val in f.readline().split(',')]
+        self.fst_vt['AeroDyn15']['NacCenB'] = [idx.strip() for idx in f.readline().split('NacCenB')[0].split(',')]
+        f.readline()
+        self.fst_vt['AeroDyn15']['TFinAero'] = bool_read(f.readline().split()[0])
+        tfa_filename = fix_path(f.readline().split()[0])[1:-1]
+        self.fst_vt['AeroDyn15']['TFinFile'] = os.path.abspath(os.path.join(self.FAST_directory, tfa_filename))
+
         # Tower Influence and Aerodynamics
         f.readline()
         self.fst_vt['AeroDyn15']['NumTwrNds']      = int(f.readline().split()[0])
         f.readline()
         f.readline()
-        self.fst_vt['AeroDyn15']['TwrElev']        = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
-        self.fst_vt['AeroDyn15']['TwrDiam']        = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
-        self.fst_vt['AeroDyn15']['TwrCd']          = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
-        self.fst_vt['AeroDyn15']['TwrTI']          = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
+        self.fst_vt['AeroDyn15']['TwrElev'] = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
+        self.fst_vt['AeroDyn15']['TwrDiam'] = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
+        self.fst_vt['AeroDyn15']['TwrCd'] = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
+        self.fst_vt['AeroDyn15']['TwrTI'] = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
+        self.fst_vt['AeroDyn15']['TwrCb'] = [None]*self.fst_vt['AeroDyn15']['NumTwrNds']
         for i in range(self.fst_vt['AeroDyn15']['NumTwrNds']):
             data = [float(val) for val in f.readline().split()]
             self.fst_vt['AeroDyn15']['TwrElev'][i] = data[0] 
             self.fst_vt['AeroDyn15']['TwrDiam'][i] = data[1] 
             self.fst_vt['AeroDyn15']['TwrCd'][i]   = data[2]
             self.fst_vt['AeroDyn15']['TwrTI'][i]   = data[3]
+            self.fst_vt['AeroDyn15']['TwrCb'][i]   = data[4]
 
         # Outputs
         f.readline()

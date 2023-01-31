@@ -3045,17 +3045,17 @@ AeroDyn['RtVAvgxh']           = False     # (m/s); Rotor-disk-averaged relative 
 AeroDyn['RtVAvgyh']           = False     # (m/s); Rotor-disk-averaged relative wind velocity (y-component);  the hub coordinate system
 AeroDyn['RtVAvgzh']           = False     # (m/s); Rotor-disk-averaged relative wind velocity (z-component);  the hub coordinate system
 AeroDyn['RtSkew']             = False     # (deg); Rotor inflow-skew angle; 
-AeroDyn['RtAeroFxh']          = False     # (N); Total rotor aerodynamic load (force in x direction);  the hub coordinate system
-AeroDyn['RtAeroFyh']          = False     # (N); Total rotor aerodynamic load (force in y direction);  the hub coordinate system
-AeroDyn['RtAeroFzh']          = False     # (N); Total rotor aerodynamic load (force in z direction);  the hub coordinate system
-AeroDyn['RtAeroMxh']          = False     # (N m); Total rotor aerodynamic load (moment in x direction);  the hub coordinate system
-AeroDyn['RtAeroMyh']          = False     # (N m); Total rotor aerodynamic load (moment in y direction);  the hub coordinate system
-AeroDyn['RtAeroMzh']          = False     # (N m); Total rotor aerodynamic load (moment in z direction);  the hub coordinate system
-AeroDyn['RtAeroPwr']          = False     # (W); Rotor aerodynamic power; 
-AeroDyn['RtArea']             = False     # (m^2); Rotor swept area; 
-AeroDyn['RtAeroCp']           = False     # (-); Rotor aerodynamic power coefficient; 
-AeroDyn['RtAeroCq']           = False     # (-); Rotor aerodynamic torque coefficient; 
-AeroDyn['RtAeroCt']           = False     # (-); Rotor aerodynamic thrust coefficient; 
+# AeroDyn['RtAeroFxh']          = False     # (N); Total rotor aerodynamic load (force in x direction);  the hub coordinate system
+# AeroDyn['RtAeroFyh']          = False     # (N); Total rotor aerodynamic load (force in y direction);  the hub coordinate system
+# AeroDyn['RtAeroFzh']          = False     # (N); Total rotor aerodynamic load (force in z direction);  the hub coordinate system
+# AeroDyn['RtAeroMxh']          = False     # (N m); Total rotor aerodynamic load (moment in x direction);  the hub coordinate system
+# AeroDyn['RtAeroMyh']          = False     # (N m); Total rotor aerodynamic load (moment in y direction);  the hub coordinate system
+# AeroDyn['RtAeroMzh']          = False     # (N m); Total rotor aerodynamic load (moment in z direction);  the hub coordinate system
+# AeroDyn['RtAeroPwr']          = False     # (W); Rotor aerodynamic power; 
+# AeroDyn['RtArea']             = False     # (m^2); Rotor swept area; 
+# AeroDyn['RtAeroCp']           = False     # (-); Rotor aerodynamic power coefficient; 
+# AeroDyn['RtAeroCq']           = False     # (-); Rotor aerodynamic torque coefficient; 
+# AeroDyn['RtAeroCt']           = False     # (-); Rotor aerodynamic thrust coefficient; 
 
 
 """ InflowWind """

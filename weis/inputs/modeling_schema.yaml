@@ -747,6 +747,10 @@ properties:
                         type: boolean
                         default: False
                         description: Perform cavitation check? (flag) TRUE will turn off unsteady aerodynamics
+                    Buoyancy:
+                        type: boolean
+                        default: False
+                        description: Include buoyancy effects? (flag)
                     CompAA:
                         type: boolean
                         default: False
@@ -796,7 +800,7 @@ properties:
                         type: integer
                         enum: [1, 2, 3]
                         default: 2
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=unsteady, 3=time-dependent tau1} (-) [used only when WakeMod=2]
+                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when WakeMod=2]
                     tau1_const:
                         type: number
                         unit: s
@@ -964,14 +968,6 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
-                    UAStartRad:
-                        type: number
-                        default: 0
-                        description: Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
-                    UAEndRad:
-                        type: number
-                        default: 1
-                        description: Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
                     AFTabMod:
                         type: integer
                         enum: [1,2,3]
@@ -1001,6 +997,40 @@ properties:
                         type: boolean
                         default: True
                         description: Include aerodynamic pitching moment in calculations?  (flag)
+                    VolHub:
+                        type: number
+                        default: 0
+                        description: Hub volume (m^3)
+                        minimum: 0.
+                    HubCenBx:
+                        type: number
+                        default: 0
+                        description: Hub center of buoyancy x direction offset (m)
+                        minimum: -100.
+                        maximum: 100.
+                    VolNac:
+                        type: number
+                        default: 0
+                        description:  Nacelle volume (m^3)
+                        minimum: 0.
+                    NacCenB:                       
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Position of nacelle center of buoyancy from yaw bearing in nacelle coordinates (m)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                            minimum: -100.
+                            maximum: 100.
+                    TFinAero:
+                        type: boolean
+                        default: False
+                        description: Calculate tail fin aerodynamics model (flag)
+                    TFinAero:
+                        type: string
+                        default: "unused"
+                        description: Input file for tail fin aerodynamics [used only when TFinAero=True]
                     Patm:
                         type: number
                         minimum: 0.
@@ -1022,6 +1052,12 @@ properties:
                         minimum: 0.
                         maximum: 10.
                         description: Turbulence intensity used in the Eames tower shadow model. Values of TwrTI between 0.05 and 0.4 are recommended.
+                    TwrCb:
+                        type: number
+                        default: 0.0
+                        # minimum: 0.
+                        # maximum: 10.
+                        description: Turbulence buoyancy coefficient
                     SumPrint:
                         type: boolean
                         default: False
