@@ -7,7 +7,7 @@ Example script to compute the steady-state performance in OpenFAST
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from weis.aeroelasticse.openmdao_openfast import OLAFParams
+from weis.aeroelasticse.utils import OLAFParams
 import numpy as np
 import os, platform
 
