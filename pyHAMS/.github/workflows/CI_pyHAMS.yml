@@ -13,31 +13,38 @@ jobs:
                 shell: bash -l {0}
                 
         strategy:
-            fail-fast: False
+            fail-fast: true
             matrix:
-                os: ["ubuntu-latest", "windows-latest"]
-                python-version: ["3.8", "3.9", "3.10"]
+                os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
+                python-version: ["3.8", "3.9", "3.10", "3.11"]
 
         steps:
             - name: Setup GNU Fortran
               uses: modflowpy/install-gfortran-action@v1
               
             - name: checkout repository
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
 
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v4
+              id: cp
               with:
                   python-version: ${{ matrix.python-version }}
+                  update-environment: true
 
+            #- name: Setup tmate session
+            #  uses: mxschmitt/action-tmate@v3
+              
             - name: Pip Install pyHAMS
+              env:
+                  MESON_ARGS: -Dpython_target=${{ steps.cp.outputs.python-path }}
               run: |
-                  pip install -vv -e .
+                  '${{ steps.cp.outputs.python-path }}' -m pip install -vv -e .
 
             - name: Test run
               run: |
                   cd test
-                  python test_cylinder.py
+                  '${{ steps.cp.outputs.python-path }}' test_cylinder.py
 
 
     build_conda:
@@ -48,14 +55,14 @@ jobs:
                 shell: bash -l {0}
                 
         strategy:
-            fail-fast: False
+            fail-fast: true
             matrix:
-                os: ["ubuntu-latest", "windows-latest"]
-                python-version: ["3.8", "3.9", "3.10"]
+                os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
+                python-version: ["3.8", "3.9", "3.10", "3.11"]
 
         steps:
             - name: checkout repository
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
 
             - uses: conda-incubator/setup-miniconda@v2
               # https://github.com/marketplace/actions/setup-miniconda
@@ -73,6 +80,13 @@ jobs:
               if: contains( matrix.os, 'windows')
               run: |
                   conda install -y m2w64-toolchain libpython
+
+            # Install dependencies of WISDEM specific to windows
+            - name: Add dependencies windows specific
+              if: contains( matrix.os, 'mac')
+              run: |
+                  conda install -y compilers
+                  gfortran --version
 
             # Install 
             - name: Conda Install pyHAMS
