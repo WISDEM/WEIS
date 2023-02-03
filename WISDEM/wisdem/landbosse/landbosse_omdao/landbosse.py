@@ -602,7 +602,7 @@ class LandBOSSE_API(om.ExplicitComponent):
         outputs["bos_capex_kW"] = round(bos_per_kw, 0)
         outputs["installation_capex"] = round(installation_per_project, 0)
         outputs["installation_capex_kW"] = round(installation_per_kW, 0)
-
+        breakpoint()
         actual_construction_months = master_output_dict["actual_construction_months"]
         outputs["installation_time_months"] = round(actual_construction_months, 0)
 

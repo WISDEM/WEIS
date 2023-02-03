@@ -882,10 +882,10 @@ class DLCGenerator(object):
             idlc.analysis_time = options['analysis_time']
         if options['transient_time'] >= 0:
             idlc.transient_time = options['transient_time']
-        idlc.wave_height = wave_Hs
-        idlc.wave_period = wave_Tp
-        idlc.wave_gamma = wave_gamma
-        idlc.wave_heading = wave_heading
+        idlc.wave_height = wave_Hs # dummy option
+        idlc.wave_period = wave_Tp # dummy option
+        idlc.wave_gamma = wave_gamma # dummy option
+        idlc.wave_heading = wave_heading # dummy option
         
         self.cases.append(idlc)
 

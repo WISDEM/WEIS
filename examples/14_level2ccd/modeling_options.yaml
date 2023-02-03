@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/sim_step/modeling
+        OF_run_dir: outputs/1p1_samples_rated
         save_iterations: False
         save_timeseries: False
         use_exe: True
@@ -12,8 +12,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
+        n_pitch_perf_surfaces: 28
+        n_tsr_perf_surfaces: 28
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -25,8 +25,8 @@ WISDEM:
     FloatingSE:
         flag: True
         rank_and_file: True
-    # BOS:
-    #     flag: True
+    BOS:
+        flag: True
         
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
@@ -38,7 +38,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompServo: 1
         CompHydro: 1
         CompSub: 0
-        CompMooring: 3
+        CompMooring: 0
         CompIce: 0
         OutFileFmt: 3
         NumCrctn: 1
@@ -52,7 +52,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
-        TwFADOF1 : True
+        TwFADOF1 : False
         TwFADOF2 : False
         TwSSDOF1 : False
         TwSSDOF2 : False
@@ -83,6 +83,24 @@ Level1:
     heave_tol: 1
     save_designs: True
 
+# ROSCO:
+#     flag: True
+#     SD_Mode: 0
+#     PS_Mode: 3
+#     ps_percent: 0.85
+#     F_LPFType: 2
+#     F_NotchType: 2
+#     Fl_Mode: 1 
+#     tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
+#     zeta_pc: [1,1]
+#     omega_pc: [0.15,0.2]
+#     U_pc: [12,18]
+#     zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+#     omega_vs: 0.12  
+#     twr_freq: 3.2
+#     ptfm_freq: 0.2
+#     Kp_float: -10
+
 ROSCO:
     flag: True
     SD_Mode: 0
@@ -101,6 +119,7 @@ ROSCO:
     ptfm_freq: 0.2
     Kp_float: -10
 
+
 Level2:
     flag: False
     simulation:         # could these be included in openfast options?
@@ -109,35 +128,172 @@ Level2:
     DTQP:
         flag: False
     linearization:
-        TMax: 1600.
+        TMax: 2000.
         DT: 0.01
         TrimGain: 1e-4
-        TrimTol: 1e-3
-        wind_speeds: [3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]
+        TrimTol: 4e-5
+        wind_speeds: [15] #[3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25]
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 12
+        ic_flag: True
+        ss_opFile: '/home/athulsun/WEIS/examples/14_level2ccd/OutOps.yaml'
+        NLinTimes: 3
+
+
+
 
 
 DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [17] #[5.8, 9.4732, 13.009,16.866,19.9968,15.6765] 
+          wind_speed: [18] #[5.8, 9.4732, 13.009,16.866,19.9968,15.6765] 
           wave_height: [8.]
           wave_period: [2.]
           #wind_seeds: [3,4] #[1,2,3,4,5]
-          n_seeds: 1
-          analysis_time: 20.
-          transient_time: 10.
+          n_seeds: 2
+          analysis_time: 500.
+          transient_time: 100.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True
               RefHt: 150.0
               PLExp: 0.11
               
-        - DLC: "12.1"
-          wind_file: '/home/athulsun/WEIS/examples/15_RAFT_Studies/NL_Step.wnd'
-          wave_height: [8.]
-          wave_period: [2.]
-          analysis_time: 1000.
-          transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/NL_linear.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 500.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/NL_Step_DFSM2.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 600.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_5.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.  
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_6.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_7.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_8.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_9.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.  
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_10.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_11.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_12.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_13.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.  
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_14.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_15.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_16.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_17.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.  
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_18.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_19.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_20.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_21.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.  
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_22.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_23.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_24.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.
+        # - DLC: "12.1"
+        #   wind_file: '/home/athulsun/WEIS/examples/14_level2ccd/constant_wind/NL_Constant_25.wnd'
+        #   wave_height: [8.] # dummy options 
+        #   wave_period: [2.] # dummy options
+        #   analysis_time: 800.
+        #   transient_time: 0.  

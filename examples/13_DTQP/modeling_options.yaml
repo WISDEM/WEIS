@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_3
+        OF_run_dir: outputs/13_DTQP_3
         use_exe: True
 
 WISDEM:
@@ -126,7 +126,7 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [15,18,21]
+          wind_speed: [16]
           n_seeds: 1
           analysis_time: 600.
           transient_time: 100.

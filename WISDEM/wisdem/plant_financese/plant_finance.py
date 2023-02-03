@@ -100,7 +100,7 @@ class PlantFinance(om.ExplicitComponent):
         self.add_output("roi", val=0.0, desc="Return on investment: ROI can also be expressed as BCR – 1. A higher ROI is more competitive. ROI ≥ 0 for economic viability.")
         self.add_output("pm", val=0.0, desc="Profit margin: PM can also be expressed as 1 - CBR. A higher PM is more competitive. PM ≥ 0 for economic viability.")
         self.add_output("plcoe", val=0.0, units="USD/kW/h", desc="Profitability adjusted PLCOE is the product of a benchmark price and CBR, which is equal to LCOE divided by value factor. A lower PLCOE is more competitive. PLCOE ≤ benchmark price for economic viability.")
-
+        self.add_output('bos',val=0.0,units = 'USD/kW',desc='Balance of system cost for the floating platform')
         self.declare_partials("*", "*")
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
@@ -204,6 +204,7 @@ class PlantFinance(om.ExplicitComponent):
         outputs['roi'] = roi
         outputs['pm'] = pm
         outputs['plcoe'] = plcoe
+        outputs['bos'] = bos_per_kW
 
         self.J = {}
         self.J["lcoe", "tcc_per_kW"] = dicc_dcturb * fcr / nec

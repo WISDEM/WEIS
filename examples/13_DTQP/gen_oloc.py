@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     # generate wind files
     FAST_namingOut = 'oloc'
-    wind_directory = '/Users/dzalkind/Tools/WEIS-1/examples/13_DTQP/outputs/oloc/wind'
+    wind_directory = mydir + '/outputs/oloc/wind2'
     if not os.path.exists(wind_directory):
         os.makedirs(wind_directory)
     rotorD = wt_init['assembly']['rotor_diameter']
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
-    lin_pickle = mydir + os.sep + "LinearTurbine_22.pkl"
+    lin_pickle = mydir + os.sep + "LinearTurbine.pkl"
 
     if True and os.path.exists(lin_pickle):
         with open(lin_pickle,"rb") as pkl_file:

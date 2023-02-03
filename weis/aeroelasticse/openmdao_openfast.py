@@ -640,6 +640,7 @@ class FASTLoadCases(ExplicitComponent):
                     ABCD_list = pickle.load(handle)
 
                 ABCD_list[self.sim_idx] = ABCD
+                self.ABCD = ABCD
 
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
@@ -1611,7 +1612,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["RtVAvgxh", "RtVAvgyh", "RtVAvgzh"]
-        channels_out += ["TwrBsFxt",  "TwrBsFyt", "TwrBsFzt", "TwrBsMxt",  "TwrBsMyt", "TwrBsMzt"]
+        channels_out += ["TwrBsFxt",  "TwrBsFyt", "TwrBsFzt", "TwrBsMxt",  "TwrBsMyt", "TwrBsMzt","TTDspFA"]
         channels_out += ["YawBrFxp", "YawBrFyp", "YawBrFzp", "YawBrMxp", "YawBrMyp", "YawBrMzp"]
         channels_out += ["TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt"]
         channels_out += ["TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt"]

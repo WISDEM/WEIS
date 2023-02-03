@@ -1339,7 +1339,7 @@ class InputWriter_OpenFAST(object):
             turbine, 
             txt_filename=os.path.join(self.FAST_runDirectory, self.fst_vt['DISCON_in']['PerfFileName'])
             )
-        
+
         ROSCO_utilities.write_DISCON(
             turbine,
             controller,
