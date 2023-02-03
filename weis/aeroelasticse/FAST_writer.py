@@ -162,13 +162,17 @@ class InputWriter_OpenFAST(object):
             self.write_AeroDyn15()
         
         if self.fst_vt['Fst']['CompServo'] == 1:
-            if 'DISCON_in' in self.fst_vt and ROSCO:
-                self.write_DISCON_in()
-            self.write_ServoDyn()
-            for i_TStC, TStC in enumerate(self.fst_vt['TStC']):
-                self.write_StC(TStC,self.fst_vt['ServoDyn']['TStCfiles'][i_TStC])
-            for i_SStC, SStC in enumerate(self.fst_vt['SStC']):
-                self.write_StC(SStC,self.fst_vt['ServoDyn']['SStCfiles'][i_SStC])
+	        if 'DISCON_in' in self.fst_vt and ROSCO:
+	            self.write_DISCON_in()
+	        self.write_ServoDyn()
+	        for i_NStC, NStC in enumerate(self.fst_vt['NStC']):
+	            self.write_StC(NStC,self.fst_vt['ServoDyn']['NStCfiles'][i_NStC])
+	        for i_BStC, BStC in enumerate(self.fst_vt['BStC']):
+	            self.write_StC(BStC,self.fst_vt['ServoDyn']['BStCfiles'][i_BStC])
+	        for i_TStC, TStC in enumerate(self.fst_vt['TStC']):
+	            self.write_StC(TStC,self.fst_vt['ServoDyn']['TStCfiles'][i_TStC])
+	        for i_SStC, SStC in enumerate(self.fst_vt['SStC']):
+	            self.write_StC(SStC,self.fst_vt['ServoDyn']['SStCfiles'][i_SStC])
         
         if self.fst_vt['Fst']['CompHydro'] == 1:
             self.write_HydroDyn()
@@ -1447,7 +1451,13 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['SumQTF'], 'SumQTF', "- Full summation -frequency 2nd-order forces computed with full QTF          {0: None; [10, 11, or 12]: WAMIT file to use}\n"))
         f.write('---------------------- PLATFORM ADDITIONAL STIFFNESS AND DAMPING  --------------\n')
         for j in range(6):
-            ln = '{:14}   '.format(self.fst_vt['HydroDyn']['AddF0'][j][0])
+            if type(self.fst_vt['HydroDyn']['AddF0'][j]) == float:
+                ln = '{:14}   '.format(self.fst_vt['HydroDyn']['AddF0'][j])  
+            elif type(self.fst_vt['HydroDyn']['AddF0'][j]) in [list, np.ndarray]:
+                ln = '{:14}   '.format(' '.join([f'{val}' for val in self.fst_vt['HydroDyn']['AddF0'][j]]))
+            else:
+                raise Exception("Check type of self.fst_vt['HydroDyn']['AddF0']")
+            
             if j == 0:
                 ln = ln + 'AddF0    - Additional preload (N, N-m) [If NBodyMod=1, one size 6*NBody x 1 vector; if NBodyMod>1, NBody size 6 x 1 vectors]\n'
             else:
@@ -1935,15 +1945,15 @@ class InputWriter_OpenFAST(object):
         for i in range(len(self.fst_vt['MoorDyn']['Name'])):
             ln = []
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Name'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EA'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EI'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cd'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Ca'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CdAx'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CaAx'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['EA'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['EI'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Cd'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Ca'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CdAx'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CaAx'][i]))
             f.write(" ".join(ln) + '\n')
         f.write('---------------------- POINTS --------------------------------\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['ID', 'Attachment', 'X', 'Y', 'Z', 'M', 'V', 'CdA', 'CA']])+'\n')
@@ -1952,13 +1962,13 @@ class InputWriter_OpenFAST(object):
             ln = []
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Point_ID'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Attachment'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['X'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Y'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Z'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['M'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['V'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CA'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['X'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Y'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Z'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['M'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['V'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CA'][i]))
             f.write(" ".join(ln) + '\n')
         f.write('---------------------- LINES --------------------------------------\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'AttachA', 'AttachB', 'UnstrLen', 'NumSegs',  'Outputs']])+'\n')
@@ -1969,7 +1979,7 @@ class InputWriter_OpenFAST(object):
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['LineType'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['AttachA'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['AttachB'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NumSegs'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Outputs'][i]))
             f.write(" ".join(ln) + '\n')
@@ -2071,7 +2081,7 @@ class InputWriter_OpenFAST(object):
         
         f.write('---------------------- StructCtrl CONTROL -------------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CMODE'],     'StC_CMODE',        '- Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}\n'))
-        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CChan'],     'StC_CChan',        '- Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CChan'],     'StC_CChan',        '- Control channel group (1:10) for stiffness and damping (StC_[XYZ]_K, StC_[XYZ]_C, and StC_[XYZ]_Brake) (specify additional channels for blade instances of StC active control -- one channel per blade) [used only when StC_DOF_MODE=1 or 2, and StC_CMODE=4 or 5]\n'))
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_SA_MODE'],   'StC_SA_MODE',      '- Semi-Active control mode {1: velocity-based ground hook control; 2: Inverse velocity-based ground hook control; 3: displacement-based ground hook control 4: Phase difference Algorithm with Friction Force 5: Phase difference Algorithm with Damping Force} (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_HIGH'],  'StC_X_C_HIGH',     '- StC X high damping for ground hook control\n'))
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_LOW'],   'StC_X_C_LOW',      '- StC X low damping for ground hook control\n'))
