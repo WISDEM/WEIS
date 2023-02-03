@@ -6,7 +6,7 @@ default DTfvw              - Time interval for wake propagation. {default: dtaer
 99999   FreeWakeStart      - Time when wake is free. (-) value = always free. {default: 0.0} (s)
 default FullCircStart      - Time at which full circulation is reached. {default: 0.0} (s)
 --------------------------- CIRCULATION SPECIFICATIONS ----------------------------------------
-3       CircSolvMethod     - Circulation solving method {1: Cl-Based, 2: No-Flow Through, 3: Prescribed, default: 1 }(switch)
+1       CircSolvMethod     - Circulation solving method {1: Cl-Based, 2: No-Flow Through, 3: Prescribed, default: 1 }(switch)
 default CircSolvConvCrit   - Convergence criteria {default: 0.001} [only if CircSolvMethod=1] (-)
 default CircSolvRelaxation - Relaxation factor {default: 0.1} [only if CircSolvMethod=1] (-)
 default CircSolvMaxIter    - Maximum number of iterations for circulation solving {default: 30} (-)

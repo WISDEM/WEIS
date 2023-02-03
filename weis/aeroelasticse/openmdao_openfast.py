@@ -1739,9 +1739,11 @@ class FASTLoadCases(ExplicitComponent):
         aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
         dt_fvw = np.zeros(dlc_generator.n_cases)
-        nNWPanel = np.zeros(dlc_generator.n_cases, dtype=int)
-        nFWPanel = np.zeros(dlc_generator.n_cases, dtype=int)
-        nFWPanelFree = np.zeros(dlc_generator.n_cases, dtype=int)
+        tMin = np.zeros(dlc_generator.n_cases)
+        nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
+        nNWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
+        nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
+        nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1840,10 +1842,11 @@ class FASTLoadCases(ExplicitComponent):
 
             # OLAF data
             if wake_mod[i_case] == 3:
-                dt_fvw[i_case], tMax, nNWPanel[i_case], nFWPanel[i_case], nFWPanelFree[i_case] = OLAFParams(rot_speed_initial[i_case], mean_wind_speed[i_case], rotorD*0.5)
+                dt_fvw[i_case], tMin[i_case], nNWPanels[i_case], nNWPanelsFree[i_case], nFWPanels[i_case], nFWPanelsFree[i_case] = OLAFParams(rot_speed_initial[i_case], mean_wind_speed[i_case], rotorD*0.5)
+                # nNWPanelsFree[i_case]=60.
                 if fst_vt['Fst']['CompElast'] == 1:
                     DT[i_case] = dt_fvw[i_case]
-                if tMax > self.TMax[i_case]:
+                if tMin[i_case] > self.TMax:
                     logger.warning("OLAF runs are too short in time, the wake is not at convergence")
 
         # Parameteric inputs
@@ -1885,9 +1888,10 @@ class FASTLoadCases(ExplicitComponent):
 
         # Inputs to OLAF
         case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
-        case_inputs[("AeroDyn15","OLAF","nNWPanel")] = {'vals':nNWPanel, 'group':1} 
-        case_inputs[("AeroDyn15","OLAF","WakeLength")] = {'vals':nFWPanel, 'group':1} 
-        case_inputs[("AeroDyn15","OLAF","FreeWakeLength")] = {'vals':nFWPanelFree, 'group':1}
+        case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
+        case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1}
 
         # DLC Label add these for the case matrix and delete from the case_list
         case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
