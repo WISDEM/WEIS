@@ -782,6 +782,8 @@ class FASTLoadCases(ExplicitComponent):
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
         fst_vt['SStC'] = {}; fst_vt['SStC'] = []
+        fst_vt['NStC'] = {}; fst_vt['NStC'] = []
+        fst_vt['BStC'] = {}; fst_vt['BStC'] = []
 
         fst_vt = self.load_FAST_model_opts(fst_vt)
 
@@ -1438,6 +1440,8 @@ class FASTLoadCases(ExplicitComponent):
         # Moordyn inputs
         if modopt["flags"]["mooring"]:
             mooropt = modopt["mooring"]
+            
+            # Line types
             # Creating a line type for each line, regardless of whether it is unique or not
             n_lines = mooropt["n_lines"]
             line_names = ['line'+str(m) for m in range(n_lines)]
@@ -1446,60 +1450,64 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
             fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
             fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['EI'] = np.zeros(n_lines)     # MoorPy does not have EI, yet
             fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
-            fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
-            fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
-            fst_vt['MoorDyn']['Cdt'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['Ca'] = inputs["line_transverse_added_mass"]
+            fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
+            fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
+            fst_vt['MoorDyn']['CdAx'] = inputs["line_tangential_drag"]
 
+            # Connection properties - Points
             n_nodes = mooropt["n_nodes"]
             fst_vt['MoorDyn']['NConnects'] = n_nodes
-            fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
-            fst_vt['MoorDyn']['Type'] = mooropt["node_type"][:]
+            fst_vt['MoorDyn']['Point_ID'] = np.arange(n_nodes)+1
+            fst_vt['MoorDyn']['Attachment'] = mooropt["node_type"][:]
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
             fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
             fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
-            fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['FY'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['FZ'] = np.zeros( n_nodes )
             fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
             fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
 
+            # Lines
             fst_vt['MoorDyn']['NLines'] = n_lines
-            fst_vt['MoorDyn']['Line'] = np.arange(n_lines)+1
+            fst_vt['MoorDyn']['Line_ID'] = np.arange(n_lines)+1
             fst_vt['MoorDyn']['LineType'] = line_names
             fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
-            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones(n_lines, dtype=np.int64)      # TODO: make this a modeling option
+            fst_vt['MoorDyn']['AttachA'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['AttachB'] = np.zeros(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['Outputs'] = ['-'] * n_lines
             fst_vt['MoorDyn']['CtrlChan'] = np.zeros(n_lines, dtype=np.int64)
 
             for k in range(n_lines):
                 id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
                 id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
-                if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id2].lower().find('fix') >= 0):
-                    fst_vt['MoorDyn']['NodeFair'][k] = id1+1
-                    fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
-                elif (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id1].lower().find('fix') >= 0):
-                    fst_vt['MoorDyn']['NodeFair'][k] = id2+1
-                    fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
+                if (fst_vt['MoorDyn']['Attachment'][id1].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Attachment'][id2].lower().find('fix') >= 0):
+                    fst_vt['MoorDyn']['AttachB'][k] = id1+1
+                    fst_vt['MoorDyn']['AttachA'][k] = id2+1
+                elif (fst_vt['MoorDyn']['Attachment'][id2].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Attachment'][id1].lower().find('fix') >= 0):
+                    fst_vt['MoorDyn']['AttachB'][k] = id2+1
+                    fst_vt['MoorDyn']['AttachA'][k] = id1+1
                 else:
                     logger.warning(discrete_inputs['node_names'])
                     logger.warning(mooropt["node1"][k], mooropt["node2"][k])
-                    logger.warning(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
+                    logger.warning(fst_vt['MoorDyn']['Attachment'][id1], fst_vt['MoorDyn']['Attachment'][id2])
                     raise ValueError('Mooring line seems to be between unknown endpoint types.')
 
+            # MoorDyn Control - Optional
+            fst_vt['MoorDyn']['ChannelID'] = []
+            
+            # MAP - linearization only
             for key in fst_vt['MoorDyn']:
                 fst_vt['MAP'][key] = copy.copy(fst_vt['MoorDyn'][key])
 
-            for idx, node_type in enumerate(fst_vt['MAP']['Type']):
+            for idx, node_type in enumerate(fst_vt['MAP']['Attachment']):
                 if node_type == 'fixed':
-                    fst_vt['MAP']['Type'][idx] = 'fix'
+                    fst_vt['MAP']['Attachment'][idx] = 'fix'
 
             # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
             fst_vt['MAP']['LineType'] = ['main', 'main', 'main']
