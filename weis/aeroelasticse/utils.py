@@ -89,17 +89,20 @@ class MtoPrincipalAxes(ExplicitComponent):
         outputs['M2'] = M2
 
 
-def OLAFParams(omega_rpm, U0, R, a=0.3, aScale=1.5,
+def OLAFParams(omega_rpm, U0, R, a=0.3, aScale=1.2,
           deltaPsiDeg=6, nPerRot=None,
-          targetWakeLengthD=6,
-          nNWrot=8, nFWrot=2, nFWrotFree=1,
-          verbose=False, dt_glue_code=None):
+          targetFreeWakeLengthD=1,
+          targetWakeLengthD=4.,
+          nNWrot=8, nFWrot=0, nFWrotFree=0,
+          verbose=True, dt_glue_code=None):
     """
-    Computes recommended time step and wake length based on the rotational speed in RPM
+    Computes recommended time step and wake length for OLAF based on:
+
     INPUTS:
      - omega_rpm: rotational speed [RPM]
      - U0: mean wind speed [m/s]
      - R: rotor radius [m]
+
     OPTIONS FOR TIME STEP:
       - either:
          - deltaPsiDeg : target azimuthal discretization [deg]
@@ -112,23 +115,26 @@ def OLAFParams(omega_rpm, U0, R, a=0.3, aScale=1.5,
                      8            45
      - dt_glue_code: glue code time step. If provided, the time step of OLAF will be approximated
                      such that it is a multiple of the glue-code time step.
+
     OPTIONS FOR WAKE LENGTH:
      - a: average axial induction factor at the rotor [-]
      - aScale: scaling factor to estimate induction, such that the wake convection velocity is:
                Uc=U0(1-aScale*a)
      - targetWakeLengthD: target wake length in diameter [D]
-     - nNWrot     : minimum number of near-wake rotations
-     - nFWrot     : minimum number of far-wake rotations
-     - nFWrotFree : minimum number of far-wake rotations (free panels)
+     - nNWrot     : minimum number of near wake rotations
+     - nFWrot     : minimum number of far wake rotations
+     - nFWrotFree : minimum number of far wake rotations (free panels)
+
     """
     def myprint(*args, **kwargs):
         if verbose:
             print(*args, **kwargs)
 
     # Rotational period
-    omega_rpm = np.asarray(omega_rpm)
     omega = omega_rpm*2*np.pi/60
     T = 2*np.pi/omega
+    # Convection velocity
+    Uc = U0 * (1-aScale*a)
 
     # Desired time step
     if nPerRot is not None:
@@ -151,62 +157,66 @@ def OLAFParams(omega_rpm, U0, R, a=0.3, aScale=1.5,
     else:
         dt_fvw = dt_wanted
 
-    # Wake length from mean wind speed
-    targetWakeLength = targetWakeLengthD * 2 * R
-    Uc = U0 * (1-aScale*a)
-    nPanels_FromU0 = int(targetWakeLength / (Uc*dt_fvw))
+    # Useful functions
+    n2L = lambda n: (n * dt_fvw * Uc)/(2*R)  # convert number of panels to distance
+    n2R = lambda n:  n * dt_fvw / T          # convert number of panels to number of rotations
 
+    # All Wake (AW) panels - Wake length from mean wind speed
+    targetWakeLength = targetWakeLengthD * 2 * R
+    nAWPanels_FromU0 = int(targetWakeLength / (Uc*dt_fvw))
+    # Free near wake panels (based on distance)
+    targetFreeWakeLength = targetFreeWakeLengthD * 2 * R
+    nNWPanelsFree_FromU0 = int(targetFreeWakeLength / (Uc*dt_fvw))
+    # Far wake (FW) panels, always from number of rotations
+    nFWPanels     = int(nFWrot*nPerRot)
+    nFWPanelsFree = int(nFWrotFree*nPerRot)
     # Wake length from rotational speed and number of rotations
-    nNWPanel_FromRot     = int(nNWrot*nPerRot)
-    nFWPanel_FromRot     = int(nFWrot*nPerRot)
-    nFWPanelFree_FromRot = int(nFWrotFree*nPerRot)
-    nPanels_FromRot      = nNWPanel_FromRot +  nFWPanel_FromRot
+    nAWPanels_FromRot = int(nNWrot*nPerRot) # Total number of panels NW+FW
 
     # Below we chose between criteria on number of rotation or donwstream distance
     # This can be adapted/improved
-    myprint('Number of panels from wind speed and distance:{:15d}'.format(nPanels_FromU0))
-    myprint('Number of panels from number of rotations    :{:15d}'.format(nPanels_FromRot))
-    if nPanels_FromRot>nPanels_FromU0:
+    myprint('Number of panels (NW free) from wind speed and distance:{:15d}'.format(nNWPanelsFree_FromU0))
+    myprint('Number of panels (NW+FW)   from wind speed and distance:{:15d}'.format(nAWPanels_FromU0))
+    myprint('Number of panels (NW+FW)   from number of rotations    :{:15d}'.format(nAWPanels_FromRot))
+    myprint('Number of panels (NW+FW)   from average between two    :{:15d}'.format(int((nAWPanels_FromRot+nAWPanels_FromU0)/2)))
+    if nAWPanels_FromRot>nAWPanels_FromU0:
         # Criteria based on rotation wins:
         myprint('[INFO] Using number of rotations to setup number of panels')
-        nNWPanel     = nNWPanel_FromRot
-        nFWPanel     = nFWPanel_FromRot
-        nFWPanelFree = nFWPanelFree_FromRot
+        nAWPanels = nAWPanels_FromRot # Total number of panels NW+FW
     else:
         myprint('[INFO] Using wind speed and distance to setup number of panels')
         # Wake distance wins, we keep the nFW from rot but increase nNW
-        nPanels      = nPanels_FromU0
-        nFWPanel     = nFWPanel_FromRot
-        nFWPanelFree = nFWPanelFree_FromRot
-        nNWPanel     = nPanels - nFWPanel # increase nNW
+        nAWPanels = nAWPanels_FromU0  # Total number of panels NW+FW
+    nNWPanels = nAWPanels - nFWPanels # nNW = All-Far Wake
 
-    # Recompute
-    nNWrot     = nNWPanel    *dt_fvw/T
-    nFWrot     = nFWPanel    *dt_fvw/T
-    nFWrotFree = nFWPanelFree*dt_fvw/T
-
-    wakeLengthRot = nPanels * dt_fvw/T
-    wakeLengthEst = (nPanels * dt_fvw * Uc)/(2*R)
-
+    # See "free" near wake
+    nNWPanelsFree = nNWPanelsFree_FromU0
+    if nNWPanelsFree>nNWPanels:
+        nNWPanelsFree=nNWPanels
+        myprint('[INFO] Capping number of free NW panels to max.')
+    if nNWPanelsFree<nNWPanels and nFWPanelsFree>0:
+        nFWPanelsFree=0
+        myprint('[INFO] Setting number of Free FW panels to zero because a frozen near wake is used')
 
     # Transient time (twice the time to develop the full wake extent)
     # This is the minimum recommended time before convergence of the wake is expected
     # (might be quite long)
-    tMax = 2 * dt_fvw*nPanels
-
+    tMin = 2 * dt_fvw*nAWPanels
     if verbose:
-        myprint('Wake extent - panels: {:d} - est. distance {:.1f}D - {:5.1f} rotations'.format(nPanels, wakeLengthEst, wakeLengthRot))
-        myprint('Transient time: {:.6f} ({:.1f} rotations)'.format(tMax, tMax/T))
+        myprint('')
+        myprint('{:15.2f} Transient time   ({:5.1f} rot)'.format(tMin, tMin/T))
+        myprint('{:15d} nAWPanels        ({:5.1f} rot, {:5.1f}D)'.format(nAWPanels, n2R(nAWPanels), n2L(nAWPanels)))
         myprint('')
         myprint('OLAF INPUT FILE:')
         myprint('----------------------- GENERAL OPTIONS ---------------------')
-        myprint('{:15.6f} DT_FVW       (delta psi = {:5.1f})'.format(dt_fvw, deltaPsiDeg))
+        myprint('{:15.6f} DTFVW        (delta psi = {:5.1f}deg)'.format(dt_fvw, deltaPsiDeg))
         myprint('--------------- WAKE EXTENT AND DISCRETIZATION --------------')
-        myprint('{:15d} nNWPanel     ({:5.1f} rotations)'.format(nNWPanel, nNWrot))
-        myprint('{:15d} nFWPanel     ({:5.1f} rotations) (previously called WakeLength)'.format(nFWPanel, nFWrot))
-        myprint('{:15d} nFWPanelFree ({:5.1f} rotations) (previously called FreeWakeLength)'.format(nFWPanelFree, nFWrotFree))
+        myprint('{:15d} nNWPanels     ({:5.1f} rot, {:5.1f}D)'.format(nNWPanels    , n2R(nNWPanels    ), n2L(nNWPanels    )))
+        myprint('{:15d} nNWPanelsFree ({:5.1f} rot, {:5.1f}D)'.format(nNWPanelsFree, n2R(nNWPanelsFree), n2L(nNWPanelsFree)))
+        myprint('{:15d} nFWPanels     ({:5.1f} rot, {:5.1f}D)'.format(nFWPanels    , n2R(nFWPanels    ), n2L(nFWPanels    )))
+        myprint('{:15d} nFWPanelsFree ({:5.1f} rot, {:5.1f}D)'.format(nFWPanelsFree, n2R(nFWPanelsFree), n2L(nFWPanelsFree)))
 
-    return dt_fvw, tMax, nNWPanel, nFWPanel, nFWPanelFree
+    return dt_fvw, tMin, nNWPanels, nNWPanelsFree, nFWPanels, nFWPanelsFree
 
         
 '''
