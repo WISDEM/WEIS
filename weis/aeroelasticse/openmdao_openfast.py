@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-import os, shutil, sys, platform
-import copy
-import glob
+import os, shutil, sys, platform, copy, glob, logging
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
@@ -32,6 +30,7 @@ from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
+logger = logging.getLogger("wisdem/weis")
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -361,7 +360,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
         # DLC options
-        n_ws_dlc11 = modopt['DLC_driver']['n_ws_dlc11']
+        n_ws_dlc11 = np.max([1,modopt['DLC_driver']['n_ws_dlc11']])
 
         # OpenFAST options
         OFmgmt = modopt['General']['openfast_configuration']
@@ -537,7 +536,6 @@ class FASTLoadCases(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         modopt = self.options['modeling_options']
-        #print(impl.world_comm().rank, 'Rotor_fast','start')
         sys.stdout.flush()
 
         if modopt['Level2']['flag']:
@@ -589,6 +587,8 @@ class FASTLoadCases(ExplicitComponent):
             # Fix TwrTI: WEIS modeling options have it as a single value...
             if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
                 fst_vt['AeroDyn15']['TwrTI'] = [fst_vt['AeroDyn15']['TwrTI']] * len(fst_vt['AeroDyn15']['TwrElev'])
+            if not isinstance(fst_vt['AeroDyn15']['TwrCb'],list):
+                fst_vt['AeroDyn15']['TwrCb'] = [fst_vt['AeroDyn15']['TwrCb']] * len(fst_vt['AeroDyn15']['TwrElev'])
 
             # Fix AddF0: Should be a n x 1 array (list of lists):
             fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
@@ -614,11 +614,11 @@ class FASTLoadCases(ExplicitComponent):
                     reduceControls=True
                     )
                 except FileNotFoundError as e:
-                    print('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
+                    logger.warning('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
                     return
 
                 # Save linearizations
-                print('Saving ABCD matrices!')
+                logger.warning('Saving ABCD matrices!')
                 ABCD = {
                     'sim_idx' : self.sim_idx,
                     'A' : LinearTurbine.A_ops,
@@ -758,7 +758,7 @@ class FASTLoadCases(ExplicitComponent):
             try:
                 shutil.rmtree(self.FAST_runDirectory)
             except:
-                print('Failed to delete directory: %s'%self.FAST_runDirectory)
+                logger.warning('Failed to delete directory: %s'%self.FAST_runDirectory)
 
     def init_FAST_model(self):
 
@@ -782,6 +782,8 @@ class FASTLoadCases(ExplicitComponent):
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
         fst_vt['SStC'] = {}; fst_vt['SStC'] = []
+        fst_vt['NStC'] = {}; fst_vt['NStC'] = []
+        fst_vt['BStC'] = {}; fst_vt['BStC'] = []
 
         fst_vt = self.load_FAST_model_opts(fst_vt)
 
@@ -953,6 +955,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrDiam']   = twr_d[twr_index:]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
         fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
+        fst_vt['AeroDyn15']['TwrCb']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrCb']
         fst_vt['AeroDyn15']['tau1_const'] = 0.24 * float(inputs['Rtip']) # estimated using a=0.3 and U0=7.5
 
         z_tow = twr_elev
@@ -1003,13 +1006,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['AirDens']   = float(inputs['rho'])
         fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
         fst_vt['AeroDyn15']['SpdSound']  = float(inputs['speed_sound_air'])
-
-        # Update OLAF
-        if fst_vt['AeroDyn15']['WakeMod'] == 3:
-            _, _, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(fst_vt['ElastoDyn']['RotSpeed'])
-            fst_vt['AeroDyn15']['OLAF']['nNWPanel'] = nNWPanel
-            fst_vt['AeroDyn15']['OLAF']['nFWPanel'] = nFWPanel
-            fst_vt['AeroDyn15']['OLAF']['nFWPanelFree'] = nFWPanelFree
 
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
@@ -1155,6 +1151,8 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['TwrGagNd'] = [idx+1 for idx in idx_out]
         fst_vt['AeroDyn15']['NTwOuts'] = 0
         self.Z_out_ED_twr = np.hstack((0., [twr_fract[i] for i in idx_out], 1.))
+        if len(np.unique(self.Z_out_ED_twr)) < len(self.Z_out_ED_twr):
+            raise Exception('The minimum number of tower nodes for WEIS to compute forces along the tower height is 11.')
 
         # SubDyn inputs- monopile and floating
         if modopt['flags']['monopile']:
@@ -1332,7 +1330,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AddBLin'] = np.vstack( tuple([fst_vt['HydroDyn']['AddBLin'+str(m+1)] for m in range(6)]) )
             BQuad = np.vstack( tuple([fst_vt['HydroDyn']['AddBQuad'+str(m+1)] for m in range(6)]) )
             if np.any(BQuad):
-                print('WARNING: You are adding in additional drag terms that may double count strip theory estimated viscous drag terms.  Please zero out the BQuad entries or use modeling options SimplCd/a/p and/or potential_model_override and/or potential_bem_members to suppress strip theory for the members')
+                logger.warning('WARNING: You are adding in additional drag terms that may double count strip theory estimated viscous drag terms.  Please zero out the BQuad entries or use modeling options SimplCd/a/p and/or potential_model_override and/or potential_bem_members to suppress strip theory for the members')
             fst_vt['HydroDyn']['AddBQuad'] = BQuad
             fst_vt['HydroDyn']['NAxCoef'] = 1
             fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
@@ -1418,7 +1416,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
                 from weis.ss_fitting.SS_FitTools import SSFit_Excitation, FDI_Fitting
-                print('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
+                logger.warning('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
                 exctn_fit = SSFit_Excitation(HydroFile=fst_vt['HydroDyn']['PotFile'])
                 rad_fit = FDI_Fitting(HydroFile=fst_vt['HydroDyn']['PotFile'])
                 exctn_fit.writeMats()
@@ -1442,6 +1440,8 @@ class FASTLoadCases(ExplicitComponent):
         # Moordyn inputs
         if modopt["flags"]["mooring"]:
             mooropt = modopt["mooring"]
+            
+            # Line types
             # Creating a line type for each line, regardless of whether it is unique or not
             n_lines = mooropt["n_lines"]
             line_names = ['line'+str(m) for m in range(n_lines)]
@@ -1450,60 +1450,64 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
             fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
             fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['EI'] = np.zeros(n_lines)     # MoorPy does not have EI, yet
             fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['Can'] = inputs["line_transverse_added_mass"]
-            fst_vt['MoorDyn']['Cat'] = inputs["line_tangential_added_mass"]
-            fst_vt['MoorDyn']['Cdn'] = inputs["line_transverse_drag"]
-            fst_vt['MoorDyn']['Cdt'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['Ca'] = inputs["line_transverse_added_mass"]
+            fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
+            fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
+            fst_vt['MoorDyn']['CdAx'] = inputs["line_tangential_drag"]
 
+            # Connection properties - Points
             n_nodes = mooropt["n_nodes"]
             fst_vt['MoorDyn']['NConnects'] = n_nodes
-            fst_vt['MoorDyn']['Node'] = np.arange(n_nodes)+1
-            fst_vt['MoorDyn']['Type'] = mooropt["node_type"][:]
+            fst_vt['MoorDyn']['Point_ID'] = np.arange(n_nodes)+1
+            fst_vt['MoorDyn']['Attachment'] = mooropt["node_type"][:]
             fst_vt['MoorDyn']['X'] = inputs['nodes_location_full'][:,0]
             fst_vt['MoorDyn']['Y'] = inputs['nodes_location_full'][:,1]
             fst_vt['MoorDyn']['Z'] = inputs['nodes_location_full'][:,2]
             fst_vt['MoorDyn']['M'] = inputs['nodes_mass']
             fst_vt['MoorDyn']['V'] = inputs['nodes_volume']
-            fst_vt['MoorDyn']['FX'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['FY'] = np.zeros( n_nodes )
-            fst_vt['MoorDyn']['FZ'] = np.zeros( n_nodes )
             fst_vt['MoorDyn']['CdA'] = inputs['nodes_drag_area']
             fst_vt['MoorDyn']['CA'] = inputs['nodes_added_mass']
 
+            # Lines
             fst_vt['MoorDyn']['NLines'] = n_lines
-            fst_vt['MoorDyn']['Line'] = np.arange(n_lines)+1
+            fst_vt['MoorDyn']['Line_ID'] = np.arange(n_lines)+1
             fst_vt['MoorDyn']['LineType'] = line_names
             fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
-            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['NodeAnch'] = np.zeros(n_lines, dtype=np.int64)
-            fst_vt['MoorDyn']['NodeFair'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['NumSegs'] = 50*np.ones(n_lines, dtype=np.int64)      # TODO: make this a modeling option
+            fst_vt['MoorDyn']['AttachA'] = np.zeros(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['AttachB'] = np.zeros(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['Outputs'] = ['-'] * n_lines
             fst_vt['MoorDyn']['CtrlChan'] = np.zeros(n_lines, dtype=np.int64)
 
             for k in range(n_lines):
                 id1 = discrete_inputs['node_names'].index( mooropt["node1"][k] )
                 id2 = discrete_inputs['node_names'].index( mooropt["node2"][k] )
-                if (fst_vt['MoorDyn']['Type'][id1].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id2].lower().find('fix') >= 0):
-                    fst_vt['MoorDyn']['NodeFair'][k] = id1+1
-                    fst_vt['MoorDyn']['NodeAnch'][k] = id2+1
-                elif (fst_vt['MoorDyn']['Type'][id2].lower() == 'vessel' and
-                    fst_vt['MoorDyn']['Type'][id1].lower().find('fix') >= 0):
-                    fst_vt['MoorDyn']['NodeFair'][k] = id2+1
-                    fst_vt['MoorDyn']['NodeAnch'][k] = id1+1
+                if (fst_vt['MoorDyn']['Attachment'][id1].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Attachment'][id2].lower().find('fix') >= 0):
+                    fst_vt['MoorDyn']['AttachB'][k] = id1+1
+                    fst_vt['MoorDyn']['AttachA'][k] = id2+1
+                elif (fst_vt['MoorDyn']['Attachment'][id2].lower() == 'vessel' and
+                    fst_vt['MoorDyn']['Attachment'][id1].lower().find('fix') >= 0):
+                    fst_vt['MoorDyn']['AttachB'][k] = id2+1
+                    fst_vt['MoorDyn']['AttachA'][k] = id1+1
                 else:
-                    print(discrete_inputs['node_names'])
-                    print(mooropt["node1"][k], mooropt["node2"][k])
-                    print(fst_vt['MoorDyn']['Type'][id1], fst_vt['MoorDyn']['Type'][id2])
+                    logger.warning(discrete_inputs['node_names'])
+                    logger.warning(mooropt["node1"][k], mooropt["node2"][k])
+                    logger.warning(fst_vt['MoorDyn']['Attachment'][id1], fst_vt['MoorDyn']['Attachment'][id2])
                     raise ValueError('Mooring line seems to be between unknown endpoint types.')
 
+            # MoorDyn Control - Optional
+            fst_vt['MoorDyn']['ChannelID'] = []
+            
+            # MAP - linearization only
             for key in fst_vt['MoorDyn']:
                 fst_vt['MAP'][key] = copy.copy(fst_vt['MoorDyn'][key])
 
-            for idx, node_type in enumerate(fst_vt['MAP']['Type']):
+            for idx, node_type in enumerate(fst_vt['MAP']['Attachment']):
                 if node_type == 'fixed':
-                    fst_vt['MAP']['Type'][idx] = 'fix'
+                    fst_vt['MAP']['Attachment'][idx] = 'fix'
 
             # TODO: FIXME: these values are hardcoded for the IEA15MW linearization studies
             fst_vt['MAP']['LineType'] = ['main', 'main', 'main']
@@ -1609,7 +1613,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["Spn1FLzb3", "Spn2FLzb3", "Spn3FLzb3", "Spn4FLzb3", "Spn5FLzb3", "Spn6FLzb3", "Spn7FLzb3", "Spn8FLzb3", "Spn9FLzb3"]
         channels_out += ["Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
         channels_out += ["Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
-        channels_out += ["RtAeroCp", "RtAeroCt"]
+        channels_out += ["RtFldCp", "RtFldCt"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
@@ -1622,7 +1626,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt"]
         channels_out += ["TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt"]
         channels_out += ["TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt"]
-        channels_out += ["RtAeroFxh", "RtAeroFyh", "RtAeroFzh"]
+        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
         channels_out += ["RotThrust", "LSShftFxs", "LSShftFys", "LSShftFzs", "LSShftFxa", "LSShftFya", "LSShftFza"]
         channels_out += ["RotTorq", "LSSTipMxs", "LSSTipMys", "LSSTipMzs", "LSSTipMxa", "LSSTipMya", "LSSTipMza"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
@@ -1731,9 +1735,15 @@ class FASTLoadCases(ExplicitComponent):
         wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
         mean_wind_speed = np.zeros(dlc_generator.n_cases)
         yaw_misalignment = np.zeros(dlc_generator.n_cases)
+        DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
         aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
-
+        dt_fvw = np.zeros(dlc_generator.n_cases)
+        tMin = np.zeros(dlc_generator.n_cases)
+        nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
+        nNWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
+        nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
+        nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1751,7 +1761,7 @@ class FASTLoadCases(ExplicitComponent):
                 dlc_generator.cases[i_case].HubHt = hub_height
                 # Height of wind grid, it stops 1 mm above the ground
                 dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
-                # If OLAF is called, make wind grid high and big
+                # If OLAF is called, make wind grid 3x higher, taller, and wider
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
                     dlc_generator.cases[i_case].HubHt *= 3.
                     dlc_generator.cases[i_case].GridHeight *= 3.
@@ -1830,15 +1840,24 @@ class FASTLoadCases(ExplicitComponent):
             yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
             azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
 
-
+            # OLAF data
+            if wake_mod[i_case] == 3:
+                dt_fvw[i_case], tMin[i_case], nNWPanels[i_case], nNWPanelsFree[i_case], nFWPanels[i_case], nFWPanelsFree[i_case] = OLAFParams(rot_speed_initial[i_case], mean_wind_speed[i_case], rotorD*0.5)
+                # nNWPanelsFree[i_case]=60.
+                if fst_vt['Fst']['CompElast'] == 1:
+                    DT[i_case] = dt_fvw[i_case]
+                if tMin[i_case] > self.TMax:
+                    logger.warning("OLAF runs are too short in time, the wake is not at convergence")
 
         # Parameteric inputs
         case_inputs = {}
         # Main fst
+        case_inputs[("Fst","DT")] = {'vals':DT, 'group':1}
         case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
         case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
+        case_inputs[("InflowWind","HWindSpeed")] = {'vals':mean_wind_speed, 'group':1}
         case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
@@ -1866,6 +1885,13 @@ class FASTLoadCases(ExplicitComponent):
         # Inputs to AeroDyn (parking)
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+
+        # Inputs to OLAF
+        case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
+        case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1}
 
         # DLC Label add these for the case matrix and delete from the case_list
         case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
@@ -2138,13 +2164,13 @@ class FASTLoadCases(ExplicitComponent):
 
 
         if np.any(np.isnan(Fz)):
-            print('WARNING: nans found in Fz extremes')
+            logger.warning('WARNING: nans found in Fz extremes')
             Fz[np.isnan(Fz)] = 0.0
         if np.any(np.isnan(Mx)):
-            print('WARNING: nans found in Mx extremes')
+            logger.warning('WARNING: nans found in Mx extremes')
             Mx[np.isnan(Mx)] = 0.0
         if np.any(np.isnan(My)):
-            print('WARNING: nans found in My extremes')
+            logger.warning('WARNING: nans found in My extremes')
             My[np.isnan(My)] = 0.0
         spline_Fz = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((Fz, 0.)))
         spline_Mx = PchipInterpolator(np.hstack((self.R_out_ED_bl, inputs['Rtip'])), np.hstack((Mx, 0.)))
@@ -2352,34 +2378,37 @@ class FASTLoadCases(ExplicitComponent):
         # Calculate AEP and Performance Data
         if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
             pp = PowerProduction(discrete_inputs['turbine_class'])
-            pwr_curve_vars   = ["GenPwr", "RtAeroCp", "RotSpeed", "BldPitch1"]
+            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RotSpeed", "BldPitch1"]
             AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
-            outputs['P_out']       = perf_data['GenPwr']['mean'] * 1.e3
-            outputs['Cp_out']      = perf_data['RtAeroCp']['mean']
-            outputs['Omega_out']   = perf_data['RotSpeed']['mean']
-            outputs['pitch_out']   = perf_data['BldPitch1']['mean']
-            outputs['AEP']         = AEP
+            outputs['P_out'] = perf_data['GenPwr']['mean'] * 1.e3
+            outputs['Cp_out'] = perf_data['RtFldCp']['mean']
+            outputs['Omega_out'] = perf_data['RotSpeed']['mean']
+            outputs['pitch_out'] = perf_data['BldPitch1']['mean']
+            outputs['AEP'] = AEP
         else:
             # If DLC 1.1 was run
-            if len(stats_pwrcrv['GenPwr']['mean']): 
-                outputs['Cp_out']      = stats_pwrcrv['RtAeroCp']['mean']
-                outputs['AEP']         = stats_pwrcrv['GenPwr']['mean']
-                outputs['Omega_out']   = stats_pwrcrv['RotSpeed']['mean']
-                outputs['pitch_out']   = stats_pwrcrv['BldPitch1']['mean']
+            if len(stats_pwrcrv['RtFldCp']['mean']): 
+                outputs['Cp_out'] = stats_pwrcrv['RtFldCp']['mean']
+                outputs['Omega_out'] = stats_pwrcrv['RotSpeed']['mean']
+                outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
-                    outputs['P_out']       = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
-                print('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
+                    outputs['AEP'] = stats_pwrcrv['GenPwr']['mean']
+                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
-                outputs['Cp_out']      = sum_stats['RtAeroCp']['mean'].mean()
-                outputs['AEP']         = sum_stats['GenPwr']['mean'].mean()
-                outputs['Omega_out']   = sum_stats['RotSpeed']['mean'].mean()
-                outputs['pitch_out']   = sum_stats['BldPitch1']['mean'].mean()
+                outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
+                outputs['Omega_out'] = sum_stats['RotSpeed']['mean'].mean()
+                outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
-                    outputs['P_out']       = sum_stats['GenPwr']['mean'][0] * 1.e3
-                print('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
+                    outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
+                    outputs['P_out'] = sum_stats['GenPwr']['mean'][0] * 1.e3
+                logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
-        outputs['V_out']       = np.unique(U)
+        if len(U)>0:
+            outputs['V_out'] = np.unique(U)
+        else:
+            outputs['V_out'] = dlc_generator.cases[0].URef
 
         return outputs, discrete_outputs
 
@@ -2503,7 +2532,7 @@ class FASTLoadCases(ExplicitComponent):
             dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['pitch_duty_cycle'] = dir_change_per_sec
         else:
-            print('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
+            logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
 
 

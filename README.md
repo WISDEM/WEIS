@@ -25,15 +25,18 @@ WEIS integrates in a unique workflow four models:
 * [TurbSim](https://www.nrel.gov/docs/fy09osti/46198.pdf) is a stochastic, full-field, turbulent-wind simulator.
 * [ROSCO](https://github.com/NREL/ROSCO) provides an open, modular and fully adaptable baseline wind turbine controller to the scientific community.
 
+Software Model Versions:
+Software        |       Version
+---             |       ---
+OpenFAST        |       3.4.0
+ROSCO           |       develop ([05d7b3b](https://github.com/NREL/ROSCO/commit/05d7b3b948c12ad40892941b6f92f3b08f5c6894))
+WISDEM          |       develop ([6f15fc9](https://github.com/WISDEM/WISDEM/commit/6f15fc9ed7f7fd1282d32af5518d2ae37dbc9466))
+
 In addition, three external libraries are added:
 * [pCrunch](https://github.com/NREL/pCrunch) is a collection of tools to ease the process of parsing large amounts of OpenFAST output data and conduct loads analysis.
 * [pyOptSparse](https://github.com/mdolab/pyoptsparse) is a framework for formulating and efficiently solving nonlinear constrained optimization problems.
 
-Software Model Versions:
-Software        |       Version
----             |       ---
-OpenFAST        |       3.2.1
-ROSCO           |       2.6.0
+
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
