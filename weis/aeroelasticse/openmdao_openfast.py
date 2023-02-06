@@ -846,6 +846,14 @@ class FASTLoadCases(ExplicitComponent):
 
         # Update fst_vt nested dictionary with data coming from WISDEM
 
+        # Comp flags in main input
+        if modopt['flags']['offshore']:
+            fst_vt['Fst']['CompHydro'] = 1  # Use HydroDyn if not set in modeling inputs 
+
+        # If there's mooring and  CompMooring not set in modeling inputs
+        if modopt["flags"]["mooring"] and not fst_vt['Fst']['CompMooring']:
+            fst_vt['Fst']['CompMooring'] = 3  # Use MoorDyn             
+
         # Update ElastoDyn
         fst_vt['ElastoDyn']['NumBl']  = self.n_blades
         fst_vt['ElastoDyn']['TipRad'] = inputs['Rtip'][0]
