@@ -1,6 +1,3 @@
-from ROSCO_toolbox.inputs.validation import load_rosco_yaml
-from wisdem.inputs import load_yaml
-
 def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
 
     rosco_init_options = modeling_options['ROSCO']
