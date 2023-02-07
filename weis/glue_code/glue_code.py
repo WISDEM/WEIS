@@ -55,7 +55,7 @@ class WindPark(om.Group):
 
         # ROSCO tuning parameters
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if modeling_options['ROSCO']['tuning_yaml']:  # default is empty
+        if modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
             # Make path absolute if not
             if not os.path.isabs(modeling_options['ROSCO']['tuning_yaml']):
                 modeling_options['ROSCO']['tuning_yaml'] = os.path.join(weis_dir,modeling_options['ROSCO']['tuning_yaml'])
