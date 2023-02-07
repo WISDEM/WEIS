@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import openmdao.api as om
 from wisdem.glue_code.glue_code import WindPark as wisdemPark
 #from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
@@ -24,6 +25,7 @@ from weis.control.tmd import TMD_group
 from ROSCO_toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
 
+weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
 class WindPark(om.Group):
     # Openmdao group to run the analysis of the wind turbine
@@ -52,8 +54,11 @@ class WindPark(om.Group):
         self.add_subsystem('dac_ivc',dac_ivc)
 
         # ROSCO tuning parameters
-        # Apply tuning yaml input if available
+        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
         if modeling_options['ROSCO']['tuning_yaml']:  # default is empty
+            # Make path absolute if not
+            if not os.path.isabs(modeling_options['ROSCO']['tuning_yaml']):
+                modeling_options['ROSCO']['tuning_yaml'] = os.path.join(weis_dir,modeling_options['ROSCO']['tuning_yaml'])
             inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
             rosco_init_options         = inps['controller_params']
             rosco_init_options['linmodel_tuning'] = inps['linmodel_tuning']
