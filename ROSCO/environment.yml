@@ -1,0 +1,18 @@
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - matplotlib
+  - numpy==1.23
+  - pytest
+  - scipy
+  - pyYAML
+  - pandas
+  - wisdem
+  - cmake
+  - pyparsing==2.4.7 
+  - control
+  - pyzmq
+  - mpi4py
+  - treon
