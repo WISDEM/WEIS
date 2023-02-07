@@ -657,7 +657,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
             for s in stats:
                 if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['stats_'+iout][case_mask] = results['case_metrics'][iout]
+                # need to squeeze this because raft makes some outputs 2D for multiple rotors, we only support 1 right now
+                outputs['stats_'+iout][case_mask] = np.squeeze(results['case_metrics'][iout])
 
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:

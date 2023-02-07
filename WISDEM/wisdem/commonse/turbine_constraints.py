@@ -163,7 +163,7 @@ class TipDeflectionConstraint(om.ExplicitComponent):
         # Find the radius of tower where blade passes
         z_interp = z_tower[-1] + tt2hub + blade_yaw.z
 
-        if np.mean(d_tower) == 0.0:
+        if (np.mean(d_tower) == 0.0) or (np.mean(z_tower) < 0):
             print(
                 "Warning: turbine_constraints.py : TipDeflectionConstraint.compute : No tower data for blade tip tower clearnace calculation.  Assuming 0m for tower radius, tip clearance estimates will be too conservative."
             )

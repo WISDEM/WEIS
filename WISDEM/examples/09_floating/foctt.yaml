@@ -7,7 +7,7 @@ assembly:
     drivetrain: Geared
     rotor_orientation: Upwind
     number_of_blades: 3
-    hub_height: 20.
+    hub_height: -20.
     rotor_diameter: 20.
     rated_power: 5.e+5
     marine_hydro: True

@@ -298,6 +298,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                 'wind_turbulence_class':turb_class, 
                 'fix_wind_seeds':fix_wind_seeds, 
                 'fix_wave_seeds':fix_wave_seeds, 
+                'MHK': opt['flags']['marine_hydro'],
             })
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
@@ -321,8 +322,18 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                              waveStr,
                              max(1.0, icase.wave_period),
                              max(1.0, icase.wave_height),
-                             icase.wave_heading]
+                             icase.wave_heading,
+                             icase.current]
         discrete_outputs['raft_dlcs'] = raft_cases
-        discrete_outputs['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
-                                              'turbine_status', 'yaw_misalign', 'wave_spectrum',
-                                              'wave_period', 'wave_height', 'wave_heading']
+        discrete_outputs['raft_dlcs_keys'] = [
+            'wind_speed', 
+            'wind_heading', 
+            'turbulence',
+            'turbine_status', 
+            'yaw_misalign', 
+            'wave_spectrum',
+            'wave_period', 
+            'wave_height', 
+            'wave_heading',
+            'current_speed'
+            ]

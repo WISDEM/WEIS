@@ -278,6 +278,7 @@ properties:
                         description: Set of Frame3DD options used for tower analysis
                         default: {}
                         properties:
+                            flag: *flag
                             shear:
                                 type: boolean
                                 default: True

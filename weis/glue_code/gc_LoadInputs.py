@@ -142,6 +142,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             **{
                 'ws_cut_in': cut_in, 
                 'ws_cut_out':cut_out, 
+                'MHK': self.wt_init['assembly']['marine_hydro'],
             })
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):

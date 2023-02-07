@@ -53,6 +53,9 @@ class WindTurbineOntologyPython(object):
             or self.modeling_options["flags"]["jacket"]
         )
 
+        # MHK flag
+        self.modeling_options["flags"]["marine_hydro"] = self.wt_init["assembly"]["marine_hydro"]
+
         # Put in some logic about what needs to be in there
         flags = self.modeling_options["flags"]
 
