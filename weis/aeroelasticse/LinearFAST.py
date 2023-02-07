@@ -35,7 +35,6 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
-        self.dev_branch         = True
 
         self.read_yaml          = False
         self.FAST_yamlfile_in   = ''
