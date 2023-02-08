@@ -381,18 +381,18 @@ components:
 
     mooring:
       nodes:
-        # - {name: back_anchor, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor}
+        - {name: back_anchor, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor}
         - {name: back_anchor_L, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor_L}
         - {name: back_anchor_R, node_type: fixed, anchor_type: drag_embedment, joint: back_anchor_R}
-        # - {name: front_anchor, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor}
+        - {name: front_anchor, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor}
         - {name: front_anchor_L, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor_L}
         - {name: front_anchor_R, node_type: fixed, anchor_type: drag_embedment, joint: front_anchor_R}
-        # - {name: keel_vessel, node_type: vessel, fairlead_type: rigid, joint: keel_vessel}
+        - {name: keel_vessel, node_type: vessel, fairlead_type: rigid, joint: keel_vessel}
         - {name: fin_-y_vessel, node_type: vessel, fairlead_type: rigid, joint: mooring_fins_b}
         - {name: fin_+y_vessel, node_type: vessel, fairlead_type: rigid, joint: mooring_fins_a}
       lines:
-        # - {name: line1, node1: back_anchor, node2: keel_vessel, line_type: chain, unstretched_length: 205}
-        # - {name: line2, node1: front_anchor, node2: keel_vessel, line_type: chain, unstretched_length: 205}
+        - {name: line1, node1: back_anchor, node2: keel_vessel, line_type: chain, unstretched_length: 205}
+        - {name: line2, node1: front_anchor, node2: keel_vessel, line_type: chain, unstretched_length: 205}
         - {name: line3, node1: back_anchor_L, node2: fin_-y_vessel, line_type: chain, unstretched_length: 220}
         - {name: line4, node1: back_anchor_R, node2: fin_+y_vessel, line_type: chain, unstretched_length: 220}
         - {name: line5, node1: front_anchor_L, node2: fin_-y_vessel, line_type: chain, unstretched_length: 220}

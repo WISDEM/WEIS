@@ -2772,6 +2772,9 @@ class MooringJoints(om.ExplicitComponent):
         node_loc = inputs["nodes_location"]
         joints_loc = inputs["joints_xyz"]
         idx_map = self.options["options"]["floating"]["joints"]["name2idx"]
+        
+        # Find mooring nodes
+        # Use mooring node name that correpsonds to floating joint location
         for k in range(n_nodes):
             if node_joints[k] == "":
                 continue
@@ -2779,13 +2782,14 @@ class MooringJoints(om.ExplicitComponent):
             node_loc[k, :] = joints_loc[idx, :]
         outputs["mooring_nodes"] = node_loc
 
-        node_loc = np.unique(node_loc, axis=0)
+        # node_loc = np.unique(node_loc, axis=0)      # this step re-orders!  I'm not sure how there would be duplicates, unless there were duplicate mooring nodes
         depth = np.abs(node_loc[:, 2].min())
-        tol = 0.5 * depth
-        z_fair = node_loc[:, 2].max()
-        z_anch = node_loc[:, 2].min()
-        ifair = np.where(np.abs(node_loc[:, 2] - z_fair) < tol)[0]
-        ianch = np.where(np.abs(node_loc[:, 2] - z_anch) < tol)[0]
+        
+        ifair = np.where(np.array(mooring_init_options['node_type']) == 'vessel')[0]
+        ianch = np.where(np.array(mooring_init_options['node_type']) == 'fixed')[0]
+        
+        z_fair = node_loc[ifair, 2].mean()
+        z_anch = node_loc[ianch, 2].mean()
 
         node_fair = node_loc[ifair, :]
         node_anch = node_loc[ianch, :]
