@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import openmdao.api as om
 from wisdem.glue_code.glue_code import WindPark as wisdemPark
 #from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
@@ -21,7 +22,10 @@ from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 from weis.frequency.raft_wrapper import RAFT_WEIS
 from weis.control.tmd import TMD_group
+from ROSCO_toolbox.inputs.validation import load_rosco_yaml
+from wisdem.inputs import load_yaml
 
+weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
 class WindPark(om.Group):
     # Openmdao group to run the analysis of the wind turbine
@@ -48,6 +52,24 @@ class WindPark(om.Group):
         dac_ivc.add_output('delta_max_pos', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the max angle of the trailing edge flaps.')
         dac_ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
         self.add_subsystem('dac_ivc',dac_ivc)
+
+        # ROSCO tuning parameters
+        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
+        if modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
+            # Make path absolute if not
+            if not os.path.isabs(modeling_options['ROSCO']['tuning_yaml']):
+                modeling_options['ROSCO']['tuning_yaml'] = os.path.join(weis_dir,modeling_options['ROSCO']['tuning_yaml'])
+            inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
+            rosco_init_options         = inps['controller_params']
+            rosco_init_options['linmodel_tuning'] = inps['linmodel_tuning']
+
+            # Apply changes in modeling options, should have already been validated
+            modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
+            for option, value in modopts_no_defaults['ROSCO'].items():
+                rosco_init_options[option] = value
+
+            modeling_options['ROSCO'] = rosco_init_options
+
 
         tune_rosco_ivc = om.IndepVarComp()
         if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
