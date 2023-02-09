@@ -20,8 +20,12 @@ ifeq ($(FC), f77)
 endif
 
 ifeq ($(FC), ifort)
-	FLFLAGS = -g -xHost -fopenmp -mkl
-	FCFLAGS = -g -xHost -c -O3 -fPIC -check bounds,pointers -warn all -fopenmp -mkl
+	FLFLAGS = -g -xHost -fopenmp -qmkl
+	FCFLAGS = -g -xHost -c -O3 -fPIC -check bounds,pointers -warn all -fopenmp -qmkl
+	LDCOMP  = -lmkl_rt
+else ifeq ($(FC), ifx)
+	FLFLAGS = -g -xHost -fopenmp -qmkl
+	FCFLAGS = -g -xHost -c -O3 -fPIC -check bounds,pointers -warn all -fopenmp -qmkl
 	LDCOMP  = -lmkl_rt
 else
 	FLFLAGS = -g -march=native -mtune=native -fopenmp

@@ -7,7 +7,7 @@ Example script to compute the steady-state performance in OpenFAST
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from weis.aeroelasticse.openmdao_openfast import OLAFParams
+from weis.aeroelasticse.utils import OLAFParams
 import numpy as np
 import os, platform
 
@@ -26,6 +26,7 @@ TMax        = 1.    # Length of wind grids and OpenFAST simulations, suggested 7
 cut_in      = 3.    # Cut in wind speed
 cut_out     = 25.   # Cut out wind speed
 n_ws        = 12    # Number of wind speed bins
+rotorD = 242.
 wind_speeds = np.linspace(int(cut_in), int(cut_out), int(n_ws)) # Wind speeds to run OpenFAST at
 Ttrans      = max([0., TMax - 60.])  # Start of the transient for DLC with a transient, e.g. DLC 1.4
 TStart      = max([0., TMax - 600.]) # Start of the recording of the channels of OpenFAST
@@ -58,15 +59,24 @@ case_inputs[("ElastoDyn","RotSpeed")]   = {'vals': omega_init, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch1")]   = {'vals': pitch_init, 'group': 1}
 case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
 case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
-dt_wanted, tMax, nNWPanel, nFWPanel, nFWPanelFree = OLAFParams(omega_init)
-dt_olaf = np.zeros_like(dt_wanted)
+
+dt_fvw = np.zeros(len(wind_speeds))
+tMin = np.zeros(len(wind_speeds))
+nNWPanels = np.zeros(len(wind_speeds), dtype=int)
+nNWPanelsFree = np.zeros(len(wind_speeds), dtype=int)
+nFWPanels = np.zeros(len(wind_speeds), dtype=int)
+nFWPanelsFree = np.zeros(len(wind_speeds), dtype=int)
+for i in range(len(wind_speeds)):
+    dt_fvw[i], tMin[i], nNWPanels[i], nNWPanelsFree[i], nFWPanels[i], nFWPanelsFree[i] = OLAFParams(omega_init[i], wind_speeds[i], 0.5 * rotorD)
+dt_olaf = np.zeros_like(dt_fvw)
 dt = case_inputs[("Fst","DT")]["vals"]
-n_dt = dt_wanted / dt
+n_dt = dt_fvw / dt
 dt_olaf = dt * np.around(n_dt)
 case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_olaf, 'group':1} 
-# case_inputs[("AeroDyn15","OLAF","nNWPanel")] = {'vals':nNWPanel, 'group':1} 
-# case_inputs[("AeroDyn15","OLAF","WakeLength")] = {'vals':nFWPanel, 'group':1} 
-# case_inputs[("AeroDyn15","OLAF","FreeWakeLength")] = {'vals':nFWPanelFree, 'group':1} 
+case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
+case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
+case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1} 
+case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1} 
 
 # Find the controller
 if platform.system() == 'Windows':

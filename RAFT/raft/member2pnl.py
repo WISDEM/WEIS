@@ -138,7 +138,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
             sin_m = dr_s/np.sqrt(dr_s**2 + dz_s**2)
         # make subdivision
         # local panel longitudinal discretization
-        n_z = np.int(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
+        n_z = np.int_(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
         # local panel longitudinal dimension
         d_l = np.sqrt(dr_s*dr_s + dz_s*dz_s)/n_z;
         for i_z in range(1,n_z+1):
@@ -147,7 +147,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
             
 
     # fill in end B if it's submerged
-    n_r = np.int(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
+    n_r = np.int_(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
     dr  = radii[-1] / n_r                               # local panel radial size
 
     for i_r in range(n_r):
@@ -156,7 +156,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
     
     
     # fill in end A if it's submerged
-    n_r = np.int(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
+    n_r = np.int_(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
     dr  = radii[0] / n_r                               # local panel radial size
 
     for i_r in range(n_r):
@@ -172,7 +172,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
     z = []
 
     npan =0;
-    naz = np.int(8);
+    naz = np.int_(8);
 
     # go through each point of the radius profile, panelizing from top to bottom:
     for i_rp in range(len(z_rp)-1):
@@ -186,13 +186,13 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
 
         # scale up or down azimuthal discretization as needed
         while ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            naz = np.int(2*naz)
+            naz = np.int_(2*naz)
         while ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            naz = np.int(naz/2)
+            naz = np.int_(naz/2)
 
         # transition - increase azimuthal discretization
         if ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2
                 th2 = (ia-0.5)*2*np.pi/naz*2
                 th3 = (ia    )*2*np.pi/naz*2
@@ -211,7 +211,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
 
         # transition - decrease azimuthal discretization
         elif ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2
                 th2 = (ia-0.5)*2*np.pi/naz*2
                 th3 = (ia    )*2*np.pi/naz*2
@@ -310,7 +310,7 @@ def writeMesh(savedNodes, savedPanels, oDir=""):
 # below are some helper functions for outputting in GDF format instead, for visualization at this point
 
 
-def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
+def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0, endA=True, endB=True):
     '''
     Creates mesh for an axisymmetric member as defined by RAFT.
 
@@ -321,6 +321,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
     rA, rB: member end point coordinates
     dz_max: maximum panel height
     da_max: maximum panel width (before doubling azimuthal discretization)
+    endA/endB: flag for whether to mesh each end (may want to add for meshMember too)
 
     Returns
     -------
@@ -365,7 +366,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
             sin_m = dr_s/np.sqrt(dr_s**2 + dz_s**2)
         # make subdivision
         # local panel longitudinal discretization
-        n_z = np.int(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
+        n_z = np.int_(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
         # local panel longitudinal dimension
         d_l = np.sqrt(dr_s*dr_s + dz_s*dz_s)/n_z;
         for i_z in range(1,n_z+1):
@@ -373,22 +374,24 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
             z_rp.append(stations[i_s-1] + cos_m*i_z*d_l)
         
 
-    # fill in end B if it's submerged
-    n_r = np.int(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
-    dr  = radii[-1] / n_r                               # local panel radial size
+    # fill in end B if it's requested
+    if endB:
+        n_r = np.int_(np.ceil( radii[-1] / (0.6*da_max) ))   # local panel radial discretization #
+        dr  = radii[-1] / n_r                               # local panel radial size
 
-    for i_r in range(n_r):
-        r_rp.append(radii[-1] - (1+i_r)*dr)
-        z_rp.append(stations[-1])
+        for i_r in range(n_r):
+            r_rp.append(radii[-1] - (1+i_r)*dr)
+            z_rp.append(stations[-1])
     
     
-    # fill in end A if it's submerged
-    n_r = np.int(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
-    dr  = radii[0] / n_r                               # local panel radial size
+    # fill in end A if it's requested
+    if endA:
+        n_r = np.int_(np.ceil( radii[0] / (0.6*da_max) ))   # local panel radial discretization #
+        dr  = radii[0] / n_r                               # local panel radial size
 
-    for i_r in range(n_r):
-        r_rp.insert(0, radii[0] - (1+i_r)*dr)
-        z_rp.insert(0, stations[0])
+        for i_r in range(n_r):
+            r_rp.insert(0, radii[0] - (1+i_r)*dr)
+            z_rp.insert(0, stations[0])
     
     
     # --------------- revolve radius profile, do adaptive paneling stuff ------
@@ -399,7 +402,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
     z = []
 
     npan =0;
-    naz = np.int(8);
+    naz = np.int_(8);
 
     # go through each point of the radius profile, panelizing from top to bottom:
     for i_rp in range(len(z_rp)-1):
@@ -413,13 +416,13 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
 
         # scale up or down azimuthal discretization as needed
         while ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            naz = np.int(2*naz)
+            naz = np.int_(2*naz)
         while ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            naz = np.int(naz/2)
+            naz = np.int_(naz/2)
 
         # transition - increase azimuthal discretization
         if ( (r1*2*np.pi/naz < da_max/2) and (r2*2*np.pi/naz >= da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2;
                 th2 = (ia-0.5)*2*np.pi/naz*2;
                 th3 = (ia    )*2*np.pi/naz*2;
@@ -438,7 +441,7 @@ def meshMemberForGDF(stations, diameters, rA, rB, dz_max=0, da_max=0):
 
         # transition - decrease azimuthal discretization
         elif ( (r1*2*np.pi/naz >= da_max/2) and (r2*2*np.pi/naz < da_max/2) ):
-            for ia in range(1, np.int(naz/2)+1):
+            for ia in range(1, np.int_(naz/2)+1):
                 th1 = (ia-1  )*2*np.pi/naz*2;
                 th2 = (ia-0.5)*2*np.pi/naz*2;
                 th3 = (ia    )*2*np.pi/naz*2;
@@ -504,9 +507,24 @@ def writeMeshToGDF(vertices, filename="platform.gdf", aboveWater=True):
     f.write('1.0   9.8 \n')
     f.write('0, 0 \n')
     f.write(f'{npan}\n')
-
-    for i in range(npan*4):
-        f.write(f'{vertices[i,0]:>10.3f} {vertices[i,1]:>10.3f} {vertices[i,2]:>10.3f}\n')
+    
+    if aboveWater:
+        for i in range(npan*4):
+            f.write(f'{vertices[i,0]:>10.3f} {vertices[i,1]:>10.3f} {vertices[i,2]:>10.3f}\n')
+            
+    else: # this option avoids making panels above the waterline
+    
+        for i in range(npan):
+            
+            panel = vertices[4*i:4*i+4]  # the vertices of this panel
+            
+            if any(panel[:,2] < -0.001):  # only consider the panel if it's at least partly submerged (some z < 0)
+                
+                for j in range(4):   # go through each vertex of the panel, but move any above z=0 down to z=0
+                
+                    if panel[j,2] > 0:  panel[j,2] = 0
+                    
+                    f.write(f'{panel[j,0]:>10.3f} {panel[j,1]:>10.3f} {panel[j,2]:>10.3f}\n')
     
     f.close()    
     

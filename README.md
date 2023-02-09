@@ -25,15 +25,18 @@ WEIS integrates in a unique workflow four models:
 * [TurbSim](https://www.nrel.gov/docs/fy09osti/46198.pdf) is a stochastic, full-field, turbulent-wind simulator.
 * [ROSCO](https://github.com/NREL/ROSCO) provides an open, modular and fully adaptable baseline wind turbine controller to the scientific community.
 
+Software Model Versions:
+Software        |       Version
+---             |       ---
+OpenFAST        |       3.4.0
+ROSCO           |       develop ([05d7b3b](https://github.com/NREL/ROSCO/commit/05d7b3b948c12ad40892941b6f92f3b08f5c6894))
+WISDEM          |       develop ([6f15fc9](https://github.com/WISDEM/WISDEM/commit/6f15fc9ed7f7fd1282d32af5518d2ae37dbc9466))
+
 In addition, three external libraries are added:
 * [pCrunch](https://github.com/NREL/pCrunch) is a collection of tools to ease the process of parsing large amounts of OpenFAST output data and conduct loads analysis.
 * [pyOptSparse](https://github.com/mdolab/pyoptsparse) is a framework for formulating and efficiently solving nonlinear constrained optimization problems.
 
-Software Model Versions:
-Software        |       Version
----             |       ---
-OpenFAST        |       3.2.1
-ROSCO           |       2.6.0
+
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
@@ -45,7 +48,7 @@ The core WEIS modules are:
 
 ## Installation
 
-On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not supported.
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). WEIS is currently supported on Linux, MAC (intel only) and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not supported.  To install WEIS with conda on a M1/M2 Mac, you must start with conda for x86 on the Mac.
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable. For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 
@@ -56,13 +59,13 @@ The installation instructions below use the environment name, "weis-env," but an
 
 1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
 
-        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml python=3.9
+        conda config --add channels conda-forge
+        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
         sudo apt update                                  # (WSL only, assuming Ubuntu)
 
 2.  Use conda to add platform specific dependencies.
 
-        conda config --add channels conda-forge
         conda install -y petsc4py mpi4py                                     # (Mac / Linux only)   
         conda install -y compilers                                           # (Mac only)   
         sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y      # (WSL only, assuming Ubuntu)

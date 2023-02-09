@@ -11,6 +11,7 @@ RAFT represents a floating wind turbine system as a collection of different obje
 
 .. image:: /images/objects.JPG
     :align: center
+    :width: 240px
 	
 Each of these objects corresponds to a class in python. The Model class contains 
 the full RAFT representation of a floating wind system. Within it, the FOWT class

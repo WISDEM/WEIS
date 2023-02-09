@@ -13,32 +13,27 @@ Setup and activate the Anaconda environment from a prompt (Anaconda3 Power Shell
 .. code-block:: bash
 
     conda config --add channels conda-forge
-    conda create -y --name wisdem-env python=3.9
+    conda env create --name wisdem-env -f https://raw.githubusercontent.com/WISDEM/WISDEM/master/environment.yml python=3.9
     conda activate wisdem-env
 
-Note that any future occasion on which you wish to use WISDEM, you will only have to start with ``conda activate wisdem-env``.  For those working behind company firewalls, you may have to change the conda authentication with ``conda config --set ssl_verify no``.  Proxy servers can also be set with ``conda config --set proxy_servers.http http://id:pw@address:port`` and ``conda config --set proxy_servers.https https://id:pw@address:port``.
+Note that any future occasion on which you wish to use WISDEM, you will only have to start with ``conda activate wisdem-env``.  For those working behind company firewalls, you may have to change the conda authentication with ``conda config --set ssl_verify no``.  Proxy servers can also be set with ``conda config --set proxy_servers.http http://id:pw@address:port`` and ``conda config --set proxy_servers.https https://id:pw@address:port``.  To setup an environment based on a different Github branch of WISDEM, simply substitute the branch name for `master` in the line above.
 
 Install WISDEM
 ^^^^^^^^^^^^^^
 
-In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer* mode.  This is done by first installing WISDEM dependencies and then installing WISDEM from the Github source code.  Note the differences between Windows and Mac build systems.  For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
-
-.. code-block:: bash
-
-    conda install -y cython git jsonschema make matplotlib nlopt numpy openmdao openpyxl pandas pip pyside2 pytest python-benedict pyyaml ruamel_yaml scipy setuptools simpy sortedcontainers swig
-    pip install marmot-agents
+In order to directly use the examples in the repository and peek at the code when necessary, we recommend all users install WISDEM in *developer/editable* mode (`pip` has been unreliable for this type of install, so we recommend a slightly outdated approach).  This is done by first installing WISDEM dependencies and then installing WISDEM from the Github source code.  Note the differences between Windows and Mac build systems.  For Linux, we recommend using the native compilers (for example, gcc and gfortran in the default GNU suite).
 
 For Linux and Mac systems:
 
 .. code-block:: bash
 
-    conda install pyoptsparse
+    conda install petsc4py mpi4py
 
 For Mac systems that *are not* using Homebrew or Macports compilers:
 
 .. code-block:: bash
 
-    conda install gfortran pyoptsparse
+    conda install gfortran
 
 For Windows systems:
 
@@ -52,8 +47,7 @@ Finally, for all systems:
 
     git clone https://github.com/WISDEM/WISDEM.git
     cd WISDEM
-    git checkout develop
-    pip install -e .
+    python setup.py develop
 
 Run Unit Tests
 ^^^^^^^^^^^^^^

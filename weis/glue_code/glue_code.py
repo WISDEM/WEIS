@@ -620,7 +620,7 @@ class WindPark(om.Group):
                     self.connect('hub.clearance_hub_spinner'       , 'drivese_post.clearance_hub_spinner')
                     self.connect('hub.spin_hole_incr'              , 'drivese_post.spin_hole_incr')
                     self.connect('hub.pitch_system_scaling_factor' , 'drivese_post.pitch_system_scaling_factor')
-                    self.connect('hub.spinner_gust_ws'             , 'drivese_post.spinner_gust_ws')
+                    self.connect("rotorse.wt_class.V_extreme50", "drivese.spinner_gust_ws")
                     self.connect('configuration.n_blades',          'drivese_post.n_blades')
                     self.connect("blade.high_level_blade_props.rotor_diameter", "drivese_post.rotor_diameter")
                     self.connect('configuration.upwind',       'drivese_post.upwind')

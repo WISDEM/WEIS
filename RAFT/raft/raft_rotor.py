@@ -5,8 +5,6 @@ import yaml
 import numpy as np
 import matplotlib.pyplot as plt
 
-import pandas as pd
-
 
 from raft.pyIECWind         import pyIECWind_extreme
 
@@ -16,19 +14,17 @@ from scipy.special          import modstruve, iv
 
 from raft.helpers                import rotationMatrix, getFromDict
 
-from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
+try:
+    from ccblade.ccblade import CCBlade, CCAirfoil
+except:
+    from wisdem.ccblade.ccblade import CCBlade, CCAirfoil
+
 
 import pickle
 
 if False:
     thrust_psd = pickle.load( open( "/Users/dzalkind/Tools/RAFT/designs/rotors/thrust_psd.p", "rb" ) )
 
-'''
-try:
-    import ccblade        as CCBlade, CCAirfoil  # for cloned ccblade
-except:
-    import wisdem.ccblade as CCblade, CCAirfoil  # for conda install wisdem
-'''
 
 # global constants
 raft_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -38,26 +34,42 @@ rpm2radps = 0.1047
 # a class for the rotor structure, aerodynamics, and control in RAFT
 class Rotor:
 
-    def __init__(self, turbine, w, old=False):
+    def __init__(self, turbine, w, ir, old=False):
         '''
         >>>> add mean offset parameters add move this to runCCBlade<<<<
+        ir = the index of the values in the arrays of the input file for multiple rotors
         '''
 
         # Should inherit these from raft_model or _env?
         self.w = np.array(w)
-               
-        self.Zhub       = turbine['Zhub']           # [m]
-        self.shaft_tilt = turbine['shaft_tilt']     # [deg]        
-        self.overhang   = turbine['overhang'] 
-        self.R_rot      = turbine['blade']['Rtip']  # rotor radius [m]
+
+        self.coords = getFromDict(turbine, 'rotorCoords', dtype=list, shape=turbine['nrotors'], default=[[0,0]])[ir]
+        
+        self.nBlades    = getFromDict(turbine, 'nBlades', shape=turbine['nrotors'])[ir]         # [-]
+        self.Zhub       = getFromDict(turbine, 'Zhub', shape=turbine['nrotors'])[ir]            # [m]
+        self.Rhub       = getFromDict(turbine, 'Rhub', shape=turbine['nrotors'])[ir]            # [m]
+        self.precone    = getFromDict(turbine, 'precone', shape=turbine['nrotors'])[ir]         # [m]
+        self.shaft_tilt = getFromDict(turbine, 'shaft_tilt', shape=turbine['nrotors'])[ir]      # [deg]        
+        self.overhang   = getFromDict(turbine, 'overhang', shape=turbine['nrotors'])[ir]        # [m]
+        self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', shape=turbine['nrotors'], default=1)[ir]  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
+
+        if isinstance(turbine['blade'], dict):          # if we use the entire blade dict list approach
+            turbine['blade'] = [turbine['blade']]*turbine['nrotors']
+        if isinstance(turbine['wt_ops'], dict):
+            turbine['wt_ops'] = [turbine['wt_ops']]*turbine['nrotors']
+
+        self.R_rot      = getFromDict(turbine['blade'][ir], 'Rtip', shape=-1)
+        # otherwise, we can avoid the if statment if we use the list approach within each dict value of the blade dict
+
         #yaw  = 0        
 
-        self.Uhub      = np.array(turbine['wt_ops']['v'])
-        self.Omega_rpm = np.array(turbine['wt_ops']['omega_op'])
-        self.pitch_deg = np.array(turbine['wt_ops']['pitch_op'])
-        self.I_drivetrain = float(turbine['I_drivetrain'])
+        self.Uhub      = getFromDict(turbine['wt_ops'][ir], 'v', shape=-1)
+        self.Omega_rpm = getFromDict(turbine['wt_ops'][ir], 'omega_op', shape=-1)
+        self.pitch_deg = getFromDict(turbine['wt_ops'][ir], 'pitch_op', shape=-1)
 
-        self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
+        self.I_drivetrain = getFromDict(turbine, 'I_drivetrain', shape=turbine['nrotors'])[ir]
+
+        #self.aeroServoMod = getFromDict(turbine, 'aeroServoMod', default=1)  # flag for aeroservodynamics (0=none, 1=aero only, 2=aero and control)
         
 		# Add parked pitch, rotor speed, assuming fully shut down by 40% above cut-out
         self.Uhub = np.r_[self.Uhub, self.Uhub.max()*1.4, 100]
@@ -84,9 +96,10 @@ class Rotor:
 
         # ----- AIRFOIL STUFF ------
         n_aoa = 200 # [-] - number of angles of attack to discretize airfoil polars - MUST BE MULTIPLE OF 4
-        n_af = len(turbine["airfoils"])
-        af_used     = [ b for [a,b] in turbine['blade']["airfoils"] ]
-        af_position = [ a for [a,b] in turbine['blade']["airfoils"] ]
+        #n_af = len(turbine["airfoils"])
+        af_used     = [ b for [a,b] in turbine['blade'][ir]["airfoils"] ]
+        af_position = [ a for [a,b] in turbine['blade'][ir]["airfoils"] ]
+        n_af = len(np.unique(af_used))
         #af_used     = turbine['blade']["airfoils"]["labels"]
         #af_position = turbine['blade']["airfoils"]["grid"]
         n_af_span = len(af_used)
@@ -172,7 +185,7 @@ class Rotor:
         self.aoa = aoa
         
         # split out blade geometry info from table 
-        geometry_table = np.array(turbine['blade']['geometry'])
+        geometry_table = np.array(turbine['blade'][ir]['geometry'])
         blade_r         = geometry_table[:,0]
         blade_chord     = geometry_table[:,1]
         blade_theta     = geometry_table[:,2]
@@ -188,21 +201,21 @@ class Rotor:
             blade_chord,                    # (m) corresponding chord length at each section
             blade_theta,                    # (deg) corresponding :ref:`twist angle <blade_airfoil_coord>` at each section---positive twist decreases angle of attack.
             af,                             # CCAirfoil object
-            turbine['Rhub'],                # (m) radius of hub
-            turbine['blade']['Rtip'],       # (m) radius of tip
-            turbine['nBlades'],             # number of blades
+            self.Rhub,                      # (m) radius of hub
+            turbine['blade'][ir]['Rtip'],   # (m) radius of tip
+            self.nBlades,                   # number of blades
             turbine['rho_air'],             # (kg/m^3) freestream fluid density
             turbine['mu_air'],              # (kg/m/s) dynamic viscosity of fluid
-            turbine['precone'],             # (deg) hub precone angle
+            self.precone,                   # (deg) hub precone angle
             self.shaft_tilt,                # (deg) hub tilt angle
             0.0,                            # (deg) nacelle yaw angle
             turbine['shearExp'],            # shear exponent for a power-law wind profile across hub
-            turbine['Zhub'],                # (m) hub height used for power-law wind profile.  U = Uref*(z/hubHt)**shearExp
+            self.Zhub,                      # (m) hub height used for power-law wind profile.  U = Uref*(z/hubHt)**shearExp
             nSector,                        # number of azimuthal sectors to descretize aerodynamic calculation.  automatically set to 1 if tilt, yaw, and shearExp are all 0.0.  Otherwise set to a minimum of 4.
             blade_precurve,                 # (m) location of blade pitch axis in x-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
-            turbine['blade']['precurveTip'],# (m) location of blade pitch axis in x-direction at the tip (analogous to Rtip)
+            turbine['blade'][ir]['precurveTip'],# (m) location of blade pitch axis in x-direction at the tip (analogous to Rtip)
             blade_presweep,                 # (m) location of blade pitch axis in y-direction of :ref:`blade coordinate system <azimuth_blade_coord>`
-            turbine['blade']['presweepTip'],# (m) location of blade pitch axis in y-direction at the tip (analogous to Rtip)
+            turbine['blade'][ir]['presweepTip'],# (m) location of blade pitch axis in y-direction at the tip (analogous to Rtip)
             tiploss=tiploss,                # if True, include Prandtl tip loss model
             hubloss=hubloss,                # if True, include Prandtl hub loss model
             wakerotation=wakerotation,      # if True, include effect of wake rotation (i.e., tangential induction factor is nonzero)
@@ -222,7 +235,7 @@ class Rotor:
         yaw_misalign
             turbine yaw misalignment angle [deg]
         '''
-
+        
         # find turbine operating point at the provided wind speed
         Omega_rpm = np.interp(Uhub, self.Uhub, self.Omega_rpm)  # rotor speed [rpm]
         pitch_deg = np.interp(Uhub, self.Uhub, self.pitch_deg)  # blade pitch angle [deg]
@@ -362,8 +375,8 @@ class Rotor:
         # no-control option
         if self.aeroServoMod == 1:  
 
-            a_aer  = np.zeros(len(self.w)) 
-            b_aer  = np.zeros(len(self.w)) + dT_dU
+            a_aero = np.zeros(len(self.w)) 
+            b_aero = np.zeros(len(self.w)) + dT_dU
 
             f_aero =  dT_dU * np.sqrt(S_rot)
             
@@ -405,7 +418,7 @@ class Rotor:
 
                 # Complex aero damping
                 T = 1j * omega * (dT_dU - self.k_float * dT_dPi / self.Zhub) - ( E[iw] * C[iw])
-
+                
                 # Aerodynamic coefficients
                 a_aer[iw] = -(1/omega**2) * np.real(T)
                 b_aer[iw] = (1/omega) * np.imag(T)
@@ -420,6 +433,26 @@ class Rotor:
 
             T_ext = T_w1 + T_w2
 
+
+            # --- new approach ---
+            
+            
+            # transfer function from torque to thrust                
+            H_QT = ((dT_dOm + self.kp_beta*dT_dPi)*1j*self.w + self.ki_beta*dT_dPi) / (
+                   self.I_drivetrain*self.w**2 + (dQ_dOm + self.kp_beta*dQ_dPi - self.Ng*kp_tau)*1j*self.w + self.ki_beta*dQ_dPi - self.Ng*ki_tau )
+
+            # save excitation coefficient
+            self.c_exc = dT_dU - H_QT*dQ_dU
+
+            f2 = (dT_dU - H_QT*dQ_dU) * self.V_w  # excitation force
+            b2 = np.real(  dT_dU - self.k_float*dT_dPi - H_QT*(dQ_dU - self.k_float*dQ_dPi)             )  # damping
+            a2 = np.real( (dT_dU - self.k_float*dT_dPi - H_QT*(dQ_dU - self.k_float*dQ_dPi))/(1j*self.w))  # added mass
+
+            # without nacelle feedback
+            b3 = np.real(  dT_dU - H_QT*dQ_dU             )  # damping
+            a3 = np.real( (dT_dU - H_QT*dQ_dU)/(1j*self.w))  # added mass
+
+
             if display > 1:
                 '''
                 plt.plot(self.w/2/np.pi, self.V_w, label = 'S_rot')
@@ -432,7 +465,7 @@ class Rotor:
                 plt.xlabel('Freq. (Hz)')
                 plt.ylabel('PSD')
 
-                #plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)
+                #plt.plot(thrust_psd.fq_0 * 2 * np.pi,thrust_psd.psd_0)r
                 plt.plot(self.w, np.abs(T_ext))
                 plt.plot(self.w, abs(T_w2))
                 '''
@@ -445,15 +478,35 @@ class Rotor:
                 ax[3].plot(self.w/2.0/np.pi, np.real(T_w1+T_w2),'k')
                 ax[3].plot(self.w/2.0/np.pi, np.imag(T_w1+T_w2),'k:'); ax[3].set_ylabel('T_w2+T_w2') 
                 ax[3].set_xlabel('f (Hz)') 
+                
+                
+                fig,ax = plt.subplots(4,1,sharex=True)
+                ax[0].plot(self.w/2.0/np.pi, self.V_w);  ax[0].set_ylabel('U (m/s)') 
+                ax[1].plot(self.w/2.0/np.pi, T_w1 , 'g--')
+                ax[1].plot(self.w/2.0/np.pi, T_w2 , 'g:')
+                ax[1].plot(self.w/2.0/np.pi, T_ext, 'g')
+                ax[1].plot(self.w/2.0/np.pi, dT_dU*self.V_w, 'k--')
+                ax[1].plot(self.w/2.0/np.pi,-H_QT*dQ_dU*self.V_w , 'k:')
+                ax[1].plot(self.w/2.0/np.pi, f2        , 'k'  );  ax[1].set_ylabel('F') 
+                ax[2].plot(self.w/2.0/np.pi, b_aer     , 'g')
+                ax[2].plot(self.w/2.0/np.pi, b3        , 'b')
+                ax[2].plot(self.w/2.0/np.pi, b2        , 'k--');  ax[2].set_ylabel('B') 
+                ax[3].plot(self.w/2.0/np.pi, a_aer     , 'g')
+                ax[3].plot(self.w/2.0/np.pi, a3        , 'b')
+                ax[3].plot(self.w/2.0/np.pi, a2        , 'k--');  ax[3].set_ylabel('A') 
+                ax[3].set_xlabel('f (Hz)') 
 
+                plt.show()
+                
 
-            f_aero = T_ext  # wind thrust force excitation spectrum
-            
+            f_aero = f2  # wind thrust force excitation spectrum
+            a_aero = a2
+            b_aero = b2
         
-        return F_aero0, f_aero, a_aer, b_aer #  B_aero, C_aero, F_aero0, F_aero
+        return F_aero0, f_aero, a_aero, b_aero #  B_aero, C_aero, F_aero0, F_aero
         
         
-    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=np.eye(3), azimuth=0, color='k'):
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=np.eye(3), azimuth=0, color='k', airfoils=False):
         '''Draws the rotor on the passed axes, considering optional platform offset and rotation matrix, and rotor azimuth angle'''
 
         # ----- blade geometry ----------
@@ -498,8 +551,9 @@ class Rotor:
             P2 = np.matmul(R_ptfm, P2) + np.array(r_ptfm)[:,None]
           
             # drawing airfoils                            
-            #for ii in range(m-1):
-            #    ax.plot(P2[0, npts*ii:npts*(ii+1)], P2[1, npts*ii:npts*(ii+1)], P2[2, npts*ii:npts*(ii+1)])  
+            if airfoils:
+                for ii in range(m-1):
+                    ax.plot(P2[0, npts*ii:npts*(ii+1)], P2[1, npts*ii:npts*(ii+1)], P2[2, npts*ii:npts*(ii+1)], color=color, lw=0.4)  
             # draw outline
             ax.plot(P2[0, 0:-1:npts], P2[1, 0:-1:npts], P2[2, 0:-1:npts], color=color, lw=0.4, zorder=2) # leading edge  
             ax.plot(P2[0, 2:-1:npts], P2[1, 2:-1:npts], P2[2, 2:-1:npts], color=color, lw=0.4, zorder=2)  # trailing edge
@@ -518,7 +572,7 @@ class Rotor:
     
         # Set inputs (f, V_ref, HH, Class, Categ, TurbMod, R)
         f = self.w / 2 / np.pi    # frequency in Hz
-        HH = self.Zhub
+        HH = abs(self.Zhub)     # <<< Temporary absolute value to avoid NaNs with underwater turbines. Eventually need a new function <<<
         R = self.R_rot
         V_ref = case['wind_speed']
         
@@ -607,87 +661,97 @@ class Rotor:
 
 if __name__=='__main__':
     fname_design = os.path.join(raft_dir,'designs/VolturnUS-S.yaml')
-    # from raft.runRAFT import loadTurbineYAML
-    # turbine = loadTurbineYAML(fname_design)
 
     # open the design YAML file and parse it into a dictionary for passing to raft
     with open(fname_design) as file:
         design = yaml.load(file, Loader=yaml.FullLoader)
 
-    # Turbine rotor
+    # transfer some dictionary contents that would normally be done higher up in RAFT
     design['turbine']['rho_air' ] = design['site']['rho_air']
     design['turbine']['mu_air'  ] = design['site']['mu_air']
     design['turbine']['shearExp'] = design['site']['shearExp']
+    
+    # zero the nacelle velocity feedback gain since there seems to be a discrepancy with its definition
+    design['turbine']['pitch_control']['Fl_Kp'] = 0.0
 
-    # Set up thrust verification cases
-    print('here')
-    UU = [8,12,16]
+
+    UU = np.arange(6,17,2)           # wind speeds
+    ws = np.arange(0.01,6.0,0.01) # frequencies (rad/s)
+
+    # make Rotor object
+    rotor = Rotor(design['turbine'], ws)    
+    
+    
+    
+
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    from matplotlib import cm
+    
+    cmapper = cm.get_cmap('inferno_r')
+
+    fig,ax = plt.subplots(2,2,sharex=True, figsize=(10,4.8))
+    
+    # loop through each case    
     for i_case in range(len(UU)):
-        design['cases']['data'][i_case][0] = UU[i_case]     # wind speed
-        design['cases']['data'][i_case][1] = 0   # wind heading
-        design['cases']['data'][i_case][2] = 'IB_NTM'    # turbulence
-        design['cases']['data'][i_case][3] = 'operating'    # turbulence
-        design['cases']['data'][i_case][4] = 0    # turbulence
-        design['cases']['data'][i_case][5] = 'JONSWAP'    # turbulence
-        design['cases']['data'][i_case][6] = 8    # turbulence
-        design['cases']['data'][i_case][7] = 2    # turbulence
-        design['cases']['data'][i_case][8] = 0    # turbulence
-
-
-    rr = Rotor(design['turbine'],np.linspace(0.05,3)) #, old=True)
-    # rr.runCCBlade()
-    # rr.setControlGains(design['turbine'])  << now called in Rotor init
-
-
-    if True:
-
-        # loop through each case
-        nCases = len(design['cases']['data'])
-        for iCase in range(nCases):
+    
+        # manually set the case
+        case = dict(wind_speed    = UU[i_case], 
+                    wind_heading  = 0, 
+                    turbulence    = 'IB_NTM', 
+                    turbine_status= 'operating', 
+                    yaw_misalign  = 0, 
+                    wave_spectrum = 'JONSWAP', 
+                    wave_period   = 8, 
+                    wave_height   = 2, 
+                    wave_heading  = 0 )
         
-            print("  Running case")
-            print(design['cases']['data'][iCase])
+    
+        print(f"  Running case {i_case}")
         
-            # form dictionary of case parameters
-            case = dict(zip( design['cases']['keys'], design['cases']['data'][iCase]))   
-
-            rr.calcAeroServoContributions(case)
-
-    if True:
-
-        UU = np.linspace(4,24)
-        a_aer_U = np.zeros_like(UU)
-        b_aer_U = np.zeros_like(UU)
-
-        for iU, Uinf in enumerate(UU):
-            # rr.V = Uinf
-            case['wind_speed'] = Uinf
-            _,_, a_aer, b_aer = rr.calcAeroServoContributions(case)
-
-            a_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, a_aer)
-            b_aer_U[iU] = np.interp(2 * np.pi / 30, rr.w, b_aer)
+        F_aero0, f_aero, a_aero, b_aero = rotor.calcAeroServoContributions(case)
 
 
-        import matplotlib.pyplot as plt
-        fig1, ax1 = plt.subplots(2,1)
+        rgba = cmapper((i_case+1)/8)
 
+        ax[0,0].plot(ws/2.0/np.pi, a_aero              , color=rgba, label=f"U = {UU[i_case]:2.0f} m/s")
+        ax[1,0].plot(ws/2.0/np.pi, b_aero              , color=rgba, label=f"U = {UU[i_case]:2.0f} m/s")
+        ax[0,1].plot(ws/2.0/np.pi, np.real(rotor.c_exc), color=rgba)
+        ax[0,1].plot(ws/2.0/np.pi, np.imag(rotor.c_exc), color=rgba, ls=":") 
+        ax[1,1].plot(ws/2.0/np.pi, rotor.V_w           , color=rgba, label=f"U = {UU[i_case]:2.0f} m/s")
 
-        ax1[0].plot(UU,a_aer_U)
-        ax1[0].set_ylabel('$a_\mathrm{aer}$ @ 30 sec.\n(kg)')
-        ax1[0].grid(True)
+    
+    ax[0,1].plot([],[], color=[0.5,0.5,0.5],        label='real')
+    ax[0,1].plot([],[], color=[0.5,0.5,0.5], ls=":",label='imaginary')
 
-        ax1[1].plot(UU,b_aer_U)
-        ax1[1].set_ylabel('$b_\mathrm{aer}$ @ 30 sec.\n(Ns/m)')
-        ax1[1].grid(True)
-
-        ax1[1].set_xlabel('Wind Speed (m/s)')
-
-        plt.ticklabel_format(axis='y',style='sci',scilimits=(0,0))
-
-        fig1.align_ylabels()
-
-    plt.savefig('/Users/dzalkind/Projects/WEIS/Docs/Level1/rotor_mass_damp.pdf',format='pdf')
-
+    ax[0,0].set_ylabel(r"$a_{aero}(\omega)$ (kg)")  
+    ax[1,0].set_ylabel(r"$b_{aero}(\omega)$ (Ns/m)") 
+    ax[0,1].set_ylabel(r"$H_{Uf}(\omega)$ (Ns/m)") 
+    ax[1,1].set_ylabel(r"$U(\omega)$ (m/s)") 
+    ax[1,0].set_xlabel(r"frequency (Hz)") 
+    ax[1,1].set_xlabel(r"frequency (Hz)") 
+    ax[1,1].set_xlim([0,0.2]) 
+    
+    # force to use exponent y axis labeling
+    ax[0,0].ticklabel_format(axis='y', scilimits=[-3, 3])
+    ax[1,0].ticklabel_format(axis='y', scilimits=[-3, 3])
+    ax[0,1].ticklabel_format(axis='y', scilimits=[-3, 3])
+    ax[1,1].ticklabel_format(axis='y', scilimits=[-3, 3])
+    
+    ax[1,0].set_xticks(np.arange(0, 0.21,0.05))
+    
+    ax[0,0].grid()
+    ax[1,0].grid()
+    ax[0,1].grid()
+    ax[1,1].grid()
+    
+    ax[0,0].legend()
+    ax[0,1].legend()
+    fig.align_ylabels()
+    
+    fig.tight_layout()
+    fig.savefig("control.png", dpi=200)
+    plt.show()
 
     # ax1[0].plot(ww,a_aer)
     # ax1[0].set_ylabel('a_aer')

@@ -4,7 +4,7 @@ import platform
 import numpy as np
 
 if not platform.system() == 'Windows':
-    import pyhams.libhams as hams
+    import pyhams._hams as hams
 else:
     import subprocess as sub
 
@@ -403,6 +403,6 @@ def run_hams(projectDir):
     if platform.system() == 'Windows':
         sub.run([f'{hamsPath}'])
     else:
-        hams.hams_lib.exec()
+        hams.hams_full.exec()
     # change back to working directory
     os.chdir(workingDir)

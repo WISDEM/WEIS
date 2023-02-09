@@ -6,43 +6,64 @@ on: [push, pull_request]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
     build_pip:
-        name: Pip Build (${{ matrix.os }})
+        name: Pip Build (${{ matrix.os }}) - ${{ matrix.python-version }}
         runs-on: ${{ matrix.os }}
+        defaults:
+            run:
+                shell: bash -l {0}
+                
         strategy:
-            fail-fast: False
+            fail-fast: true
             matrix:
-                os: ["ubuntu-latest"]
-                python-version: [3.8, 3.9]
+                os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
+                python-version: ["3.8", "3.9", "3.10", "3.11"]
 
         steps:
-            - uses: actions/checkout@v2
+            - name: Setup GNU Fortran
+              uses: modflowpy/install-gfortran-action@v1
+              
+            - name: checkout repository
+              uses: actions/checkout@v3
+
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v2
+              uses: actions/setup-python@v4
+              id: cp
               with:
                   python-version: ${{ matrix.python-version }}
-                
-            - name: Pip Install Dependencies
-              shell: bash -l {0}
-              run: |
-                  python -m pip install --upgrade pip install pytest numpy
+                  update-environment: true
 
+            #- name: Setup tmate session
+            #  uses: mxschmitt/action-tmate@v3
+              
             - name: Pip Install pyHAMS
-              shell: bash -l {0}
+              env:
+                  MESON_ARGS: -Dpython_target=${{ steps.cp.outputs.python-path }}
               run: |
-                  pip install -e .
+                  '${{ steps.cp.outputs.python-path }}' -m pip install -vv -e .
+
+            - name: Test run
+              run: |
+                  cd test
+                  '${{ steps.cp.outputs.python-path }}' test_cylinder.py
 
 
     build_conda:
-        name: Conda Build (${{ matrix.os }})
+        name: Conda Build (${{ matrix.os }}) - ${{ matrix.python-version }}
         runs-on: ${{ matrix.os }}
+        defaults:
+            run:
+                shell: bash -l {0}
+                
         strategy:
-            fail-fast: False
+            fail-fast: true
             matrix:
-                os: ["ubuntu-latest"]
-                python-version: [3.8, 3.9]
+                os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
+                python-version: ["3.8", "3.9", "3.10", "3.11"]
 
         steps:
-            - uses: actions/checkout@v2
+            - name: checkout repository
+              uses: actions/checkout@v3
+
             - uses: conda-incubator/setup-miniconda@v2
               # https://github.com/marketplace/actions/setup-miniconda
               with:
@@ -50,10 +71,30 @@ jobs:
                   auto-update-conda: true
                   python-version: ${{ matrix.python-version }}
                   environment-file: environment.yml
+                  channels: conda-forge
+                  activate-environment: test
+                  auto-activate-base: false
+
+            # Install dependencies of WISDEM specific to windows
+            - name: Add dependencies windows specific
+              if: contains( matrix.os, 'windows')
+              run: |
+                  conda install -y m2w64-toolchain libpython
+
+            # Install dependencies of WISDEM specific to windows
+            - name: Add dependencies windows specific
+              if: contains( matrix.os, 'mac')
+              run: |
+                  conda install -y compilers
+                  gfortran --version
 
             # Install 
             - name: Conda Install pyHAMS
-              shell: pwsh
               run: |
                   python setup.py develop
+
+            - name: Test run
+              run: |
+                  cd test
+                  python test_cylinder.py
 

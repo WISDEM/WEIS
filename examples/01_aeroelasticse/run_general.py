@@ -22,7 +22,7 @@ if __name__ == '__main__':
     fastBatch.debug_level       = 2
 
     # User settings
-    n_cores     = 3     # Number of available cores
+    n_cores     = 1     # Number of available cores
     TMax        = 200.  # Length of wind grids and OpenFAST simulations, suggested 720 s
     cut_in      = 3.    # Cut in wind speed
     cut_out     = 25.   # Cut out wind speed

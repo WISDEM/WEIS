@@ -5,69 +5,85 @@ on: [pull_request]
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     # if: "contains(github.event.head_commit.message, 'exhaustive_CI')"  # This line could be used to have commit-specific instructions
+
+    defaults:
+        run:
+            shell: bash -l {0}
+    
     strategy:
       fail-fast: true
       matrix:
         os: ["ubuntu-latest"] #, "macOS-latest"]
-        python-version: ["3.8"]
+        python-version: ["3.9","3.10"]
         
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
-      #- uses: conda-incubator/setup-miniconda@v2
-      #  # https://github.com/marketplace/actions/setup-miniconda
-      #  with:
-      #    #miniconda-version: "latest"
-      #    channels: conda-forge
-      #    auto-update-conda: true
-      #    python-version: 3.8
-      #    environment-file: environment.yml
+      - uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
         
       # This is a less official, but more lightweight way to do miniconda
-      - uses: s-weigand/setup-conda@v1
-        # https://github.com/marketplace/actions/setup-conda
-        with:
-          update-conda: true
-          python-version: 3.8
-          conda-channels: conda-forge
-          activate-conda: true
-      - run: conda env update --file environment.yml
+      #- uses: s-weigand/setup-conda@v1
+      #  # https://github.com/marketplace/actions/setup-conda
+      #  with:
+      #    update-conda: true
+      #    python-version: ${{ matrix.python-version }}
+      #    conda-channels: conda-forge
+      #    activate-conda: true
+      #- run: conda env update --file environment.yml
 
       #- name: Show custom environment
       #  shell: bash
       #  run: |
       #      cat $GITHUB_ENV
       #      printenv
+
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependencies mac specific
+        if: contains( matrix.os, 'mac')
+        run: |
+            conda install -y compilers
+            gfortran --version
+            
+      # Install dependencies of WISDEM specific to windows
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain libpython
       
       # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
-        shell: bash 
         # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
         # Mpi only seems to work with the shell command though, so instead rely on system compilers
         run: |
           conda install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"
 
-      # Install dependencies of WISDEM specific to windows
-      - name: Add dependencies windows specific
-        if: contains( matrix.os, 'windows')
+      - name: Show custom environment
         run: |
-          conda install -y m2w64-toolchain libpython
+            conda list
 
-      # Install WEIS
-      - name: Install WEIS
-        shell: bash
-        run: |
-          python setup.py develop
-          
       # Debugging session
       #- name: Setup tmate session
       #  uses: mxschmitt/action-tmate@v3
+          
+      # Install WEIS
+      - name: Install WEIS
+        run: |
+          python setup.py develop
 
       # Test walkthrough notebook
       - name: Test postprocessing notebooks
@@ -82,14 +98,12 @@ jobs:
         
       # Run all examples
       - name: Run tests within WEIS
-        shell: bash
         run: |
           cd weis/test
           python run_examples.py
           
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
-        shell: bash
         run: |
           cd examples/05_IEA-3.4-130-RWT
           mpirun -np 2 python weis_driver.py
@@ -102,7 +116,6 @@ jobs:
 
       # Run scripts within design of experiments folder
       - name: Run examples design of experiments
-        shell: bash
         run: |
           cd examples/09_design_of_experiments
           mpirun -n 2 --bind-to core python DOE_openfast.py
