@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/iea_loads
+    folder_output: outputs/02_loads
     fname_output: iea15mw
 
 merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'

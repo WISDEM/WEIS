@@ -229,7 +229,7 @@ class TuneROSCO(ExplicitComponent):
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
         WISDEM_turbine.v_min        = float(inputs['v_min'])
-        WISDEM_turbine.J            = float(inputs['rotor_inertia'])
+        WISDEM_turbine.J            = float(inputs['rotor_inertia'])        # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
         WISDEM_turbine.rho          = float(inputs['rho'])
         WISDEM_turbine.rotor_radius = float(inputs['R'])
         WISDEM_turbine.Ng           = float(inputs['gear_ratio'])
@@ -518,6 +518,9 @@ class ROSCO_Turbine(ExplicitComponent):
         # Load yaml file 
         
         parameter_filename = modeling_options['ROSCO']['tuning_yaml']
+        if parameter_filename == 'none':
+            raise Exception('A ROSCO tuning_yaml must be specified in the modeling_options if from_OpenFAST is True')
+
         if not os.path.isabs(parameter_filename):
             parameter_filename = os.path.join(weis_dir,parameter_filename)
 
@@ -581,7 +584,7 @@ class ROSCO_Turbine(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         
-        outputs['rotor_inertia'          ] = self.turbine.rotor_inertia
+        outputs['rotor_inertia'          ] = self.turbine.J
         outputs['rho'                    ] = self.turbine.rho
         outputs['R'                      ] = self.turbine.rotor_radius
         outputs['gear_ratio'             ] = self.turbine.Ng

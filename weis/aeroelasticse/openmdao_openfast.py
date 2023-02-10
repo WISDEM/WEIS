@@ -30,6 +30,8 @@ from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
+from wisdem.inputs import load_yaml
+
 logger = logging.getLogger("wisdem/weis")
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -582,7 +584,9 @@ class FASTLoadCases(ExplicitComponent):
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
-            fst_vt = self.load_FAST_model_opts(fst_vt)
+            # Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
+            modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+            fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
 
             # Fix TwrTI: WEIS modeling options have it as a single value...
             if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
@@ -591,7 +595,8 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['AeroDyn15']['TwrCb'] = [fst_vt['AeroDyn15']['TwrCb']] * len(fst_vt['AeroDyn15']['TwrElev'])
 
             # Fix AddF0: Should be a n x 1 array (list of lists):
-            fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
+            if fst_vt['HydroDyn']:
+                fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
 
             if modopt['ROSCO']['flag']:
                 fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
@@ -789,52 +794,68 @@ class FASTLoadCases(ExplicitComponent):
 
         return fst_vt
 
-    def load_FAST_model_opts(self,fst_vt):
+    def load_FAST_model_opts(self,fst_vt,modeling_options={}):
+        # Can provide own modeling options, used when we don't want to use default OpenFAST options
+        if not modeling_options:
+            modeling_options = self.options['modeling_options']
 
-        modeling_options = self.options['modeling_options']
+        if 'simulation' in modeling_options['Level3']:
+            for key in modeling_options['Level3']['simulation']:
+                fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
 
-        for key in modeling_options['Level3']['simulation']:
-            fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
-            
-        for key in modeling_options['Level3']['ElastoDyn']:
-            fst_vt['ElastoDyn'][key] = modeling_options['Level3']['ElastoDyn'][key]
-            
-        for key in modeling_options['Level3']['ElastoDynBlade']:
-            fst_vt['ElastoDynBlade'][key] = modeling_options['Level3']['ElastoDynBlade'][key]
-            
-        for key in modeling_options['Level3']['ElastoDynTower']:
-            fst_vt['ElastoDynTower'][key] = modeling_options['Level3']['ElastoDynTower'][key]
-            
-        for key in modeling_options['Level3']['AeroDyn']:
-            fst_vt['AeroDyn15'][key] = copy.copy(modeling_options['Level3']['AeroDyn'][key])
-            
-        for key in modeling_options['Level3']['InflowWind']:
-            fst_vt['InflowWind'][key] = modeling_options['Level3']['InflowWind'][key]
-            
-        for key in modeling_options['Level3']['ServoDyn']:
-            fst_vt['ServoDyn'][key] = modeling_options['Level3']['ServoDyn'][key]
-            
-        for key in modeling_options['Level3']['SubDyn']:
-            fst_vt['SubDyn'][key] = modeling_options['Level3']['SubDyn'][key]
-            
-        for key in modeling_options['Level3']['HydroDyn']:
-            fst_vt['HydroDyn'][key] = modeling_options['Level3']['HydroDyn'][key]
-            
-        for key in modeling_options['Level3']['MoorDyn']:
-            fst_vt['MoorDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
+        if 'ElastoDyn' in modeling_options['Level3']:
+            for key in modeling_options['Level3']['ElastoDyn']:
+                fst_vt['ElastoDyn'][key] = modeling_options['Level3']['ElastoDyn'][key]
         
-        for key1 in modeling_options['Level3']['outlist']:
-                for key2 in modeling_options['Level3']['outlist'][key1]:
-                    fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
+        if 'ElastoDynBlade' in modeling_options['Level3']:
+            for key in modeling_options['Level3']['ElastoDynBlade']:
+                fst_vt['ElastoDynBlade'][key] = modeling_options['Level3']['ElastoDynBlade'][key]
+
+        if 'ElastoDynTower' in modeling_options['Level3']:   
+            for key in modeling_options['Level3']['ElastoDynTower']:
+                fst_vt['ElastoDynTower'][key] = modeling_options['Level3']['ElastoDynTower'][key]
+
+        if 'AeroDyn' in modeling_options['Level3']:    
+            for key in modeling_options['Level3']['AeroDyn']:
+                fst_vt['AeroDyn15'][key] = copy.copy(modeling_options['Level3']['AeroDyn'][key])
+
+        if 'InflowWind' in modeling_options['Level3']:    
+            for key in modeling_options['Level3']['InflowWind']:
+                fst_vt['InflowWind'][key] = modeling_options['Level3']['InflowWind'][key]
+            
+        if 'ServoDyn' in modeling_options['Level3']:    
+            for key in modeling_options['Level3']['ServoDyn']:
+                fst_vt['ServoDyn'][key] = modeling_options['Level3']['ServoDyn'][key]
+
+        if 'SubDyn' in modeling_options['Level3']:    
+            for key in modeling_options['Level3']['SubDyn']:
+                fst_vt['SubDyn'][key] = modeling_options['Level3']['SubDyn'][key]
+
+        if 'HydroDyn' in modeling_options['Level3']:    
+            for key in modeling_options['Level3']['HydroDyn']:
+                fst_vt['HydroDyn'][key] = modeling_options['Level3']['HydroDyn'][key]
+
+        if 'MoorDyn' in modeling_options['Level3']:    
+            for key in modeling_options['Level3']['MoorDyn']:
+                fst_vt['MoorDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
         
-        fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
+        if 'outlist' in modeling_options['Level3']:
+            for key1 in modeling_options['Level3']['outlist']:
+                    for key2 in modeling_options['Level3']['outlist'][key1]:
+                        fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
+        
+        if 'path2dll' in modeling_options['General']['openfast_configuration']:
+            fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
             fst_vt['AeroDyn15']['IndToler'] = 'Default'
         if fst_vt['AeroDyn15']['DTAero'] == 0.:
             fst_vt['AeroDyn15']['DTAero'] = 'Default'
-        if fst_vt['AeroDyn15']['OLAF']['DTfvw'] == 0.:
-            fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'Default'
+        if 'OLAF' in fst_vt['AeroDyn15']:
+            if fst_vt['AeroDyn15']['OLAF']['DTfvw'] == 0.:
+                fst_vt['AeroDyn15']['OLAF']['DTfvw'] = 'Default'
+        else:
+            fst_vt['AeroDyn15']['OLAF'] = {}
         if fst_vt['ElastoDyn']['DT'] == 0.:
             fst_vt['ElastoDyn']['DT'] = 'Default'
 
@@ -845,6 +866,14 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
         # Update fst_vt nested dictionary with data coming from WISDEM
+
+        # Comp flags in main input
+        if modopt['flags']['offshore']:
+            fst_vt['Fst']['CompHydro'] = 1  # Use HydroDyn if not set in modeling inputs 
+
+        # If there's mooring and  CompMooring not set in modeling inputs
+        if modopt["flags"]["mooring"] and not fst_vt['Fst']['CompMooring']:
+            fst_vt['Fst']['CompMooring'] = 3  # Use MoorDyn             
 
         # Update ElastoDyn
         fst_vt['ElastoDyn']['NumBl']  = self.n_blades
