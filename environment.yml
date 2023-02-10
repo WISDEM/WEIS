@@ -23,7 +23,7 @@ dependencies:
   - markupsafe
   - matplotlib-base
   - nlopt
-  - numpy
+  - numpy=1.23.1
   - numpydoc
   - openmdao
   - openpyxl
@@ -64,6 +64,7 @@ dependencies:
   - pip:
     - fatpack
     - marmot-agents
+    - mat4py
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
