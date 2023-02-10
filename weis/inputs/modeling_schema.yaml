@@ -717,7 +717,7 @@ properties:
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
                         type: integer
-                        enum: [0, 1, 3]
+                        enum: [0, 1, 2, 3]
                         default: 1
                         description: Type of wake/induction model (switch) {0=none, 1=BEMT, 3=OLAF}
                     AFAeroMod:
@@ -3501,7 +3501,7 @@ properties:
         properties: 
             tuning_yaml:
                 type: string
-                description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model
+                description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model.  Absolute path or relative to WEIS/
                 default: none
 
     OL2CL:
