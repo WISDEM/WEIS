@@ -60,6 +60,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
     ServoDyn:
         Ptch_Cntrl: 1
+        AfCmode: 5
     
     xfoil:
         path: /Users/nabbas/Documents/WindEnergyToolbox/Xfoil/bin/xfoil

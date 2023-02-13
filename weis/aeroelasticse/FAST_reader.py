@@ -409,6 +409,30 @@ class InputReader_OpenFAST(object):
                 self.set_outlist(self.fst_vt['outlist']['ElastoDyn'], channel_list)
 
                 data = f.readline()
+            
+        # ElastoDyn optional outlist
+        try:
+            f.readline()
+            self.fst_vt['ElastoDyn']['BldNd_BladesOut']    = int(f.readline().split()[0])
+            self.fst_vt['ElastoDyn']['BldNd_BlOutNd']    = f.readline().split()[0]
+
+            f.readline()
+            data =  f.readline()
+            while data.split()[0] != 'END':
+                if data.find('"')>=0:
+                    channels = data.split('"')
+                    opt_channel_list = channels[1].split(',')
+                else:
+                    row_string = data.split(',')
+                    if len(row_string)==1:
+                        opt_channel_list = row_string[0].split('\n')[0]
+                    else:
+                        opt_channel_list = row_string
+                self.set_outlist(self.fst_vt['outlist']['ElastoDyn_Nodes'], opt_channel_list)
+                data = f.readline()
+        except:
+            # The optinal outlist does not exist.
+            None
 
         f.close()
 
@@ -601,6 +625,30 @@ class InputReader_OpenFAST(object):
             channel_list = channels[1].split(',')
             self.set_outlist(self.fst_vt['outlist']['BeamDyn'], channel_list)
             data = f.readline()
+            
+        # BeamDyn optional outlist
+        try:
+            f.readline()
+            # self.fst_vt['BeamDyn']['BldNd_BladesOut']    = int(f.readline().split()[0])
+            self.fst_vt['BeamDyn']['BldNd_BlOutNd']    = f.readline().split()[0]
+
+            f.readline()
+            data =  f.readline()
+            while data.split()[0] != 'END':
+                if data.find('"')>=0:
+                    channels = data.split('"')
+                    opt_channel_list = channels[1].split(',')
+                else:
+                    row_string = data.split(',')
+                    if len(row_string)==1:
+                        opt_channel_list = row_string[0].split('\n')[0]
+                    else:
+                        opt_channel_list = row_string
+                self.set_outlist(self.fst_vt['outlist']['BeamDyn_Nodes'], opt_channel_list)
+                data = f.readline()
+        except:
+            # The optinal outlist does not exist.
+            None
 
         f.close()
 
@@ -875,6 +923,30 @@ class InputReader_OpenFAST(object):
                     channel_list = row_string
             self.set_outlist(self.fst_vt['outlist']['AeroDyn'], channel_list)
             data = f.readline()
+
+        # AeroDyn15 optional outlist
+        try:
+            f.readline()
+            self.fst_vt['AeroDyn15']['BldNd_BladesOut']    = int(f.readline().split()[0])
+            self.fst_vt['AeroDyn15']['BldNd_BlOutNd']    = f.readline().split()[0]
+
+            f.readline()
+            data =  f.readline()
+            while data.split()[0] != 'END':
+                if data.find('"')>=0:
+                    channels = data.split('"')
+                    opt_channel_list = channels[1].split(',')
+                else:
+                    row_string = data.split(',')
+                    if len(row_string)==1:
+                        opt_channel_list = row_string[0].split('\n')[0]
+                    else:
+                        opt_channel_list = row_string
+                self.set_outlist(self.fst_vt['outlist']['AeroDyn_Nodes'], opt_channel_list)
+                data = f.readline()
+        except:
+            # The optinal outlist does not exist.
+            None
 
         f.close()
 
