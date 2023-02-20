@@ -472,7 +472,7 @@ properties:
                                 type: number
                                 description: Vertical distance between the tower top and the hub center.
                                 unit: meter
-                                minimum: 0.
+                                minimum: -20.
                                 maximum: 20.
                                 default: 2.0
                             distance_hub_mb:

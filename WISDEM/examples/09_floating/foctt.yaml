@@ -208,22 +208,24 @@ components:
         pitch_system_scaling_factor: 0.54
         spinner_gust_ws: 70.0
     nacelle:
-        drivetrain:
+        drivetrain:   # to match RAFT model
+            generator_mass_user: 0.35e4
+            gearbox_mass_user: 0.15e4
             diameter: 3.0
             uptilt: 0.08726
-            distance_tt_hub: 2.3
+            distance_tt_hub: 13.5
             distance_hub_mb: 1.912
             distance_mb_mb: 0.368
             overhang: 5.
-            lss_diameter: [0.577, 0.577]
-            lss_wall_thickness: [0.288, 0.288]
+            lss_diameter: [0.1, 0.1]
+            lss_wall_thickness: [0.02, 0.02]
             generator_length: 2.0
             hss_length: 1.5
             hss_diameter: [0.288, 0.288]
             hss_wall_thickness: [0.144, 0.144]
-            bedplate_flange_width: 1.0
-            bedplate_flange_thickness: 0.05
-            bedplate_web_thickness: 0.05
+            bedplate_flange_width: .10
+            bedplate_flange_thickness: 0.0025
+            bedplate_web_thickness: 0.0025
             gear_ratio: 96
             planet_numbers: [3, 3, 0]
             gear_configuration: eep
@@ -235,54 +237,54 @@ components:
             lss_material: steel_drive
             hss_material: steel_drive
             bedplate_material: steel
-        generator:
-            generator_type: DFIG
-            rho_Fe: 7700.0
-            rho_Fes: 7850.0
-            rho_Copper: 8900.0
-            rho_PM: 7450.0
-            B_r: 1.2
-            P_Fe0e: 1.0
-            P_Fe0h: 4.0
-            S_N: -0.002
-            alpha_p: 1.0995574287564276 #0.5*np.pi*0.7
-            b_r_tau_r: 0.45
-            b_ro: 0.004
-            b_s_tau_s: 0.45
-            b_so: 0.004
-            freq: 60
-            h_i: 0.001
-            h_sy0: 0.0
-            h_w: 0.005
-            k_fes: 0.9
-            k_s: 0.2
-            m: 3
-            mu_0: 1.2566370614359173e-06 #np.pi*4e-7
-            mu_r: 1.06
-            p: 3.0
-            phi: 1.5707963267948966 # 90 deg
-            ratio_mw2pp: 0.7
-            resist_Cu: 2.52e-8 #1.8e-8*1.4
-            y_tau_pr: 0.8333333 #10. / 12
-            rated_rpm: 1200.0
-            cofi: 0.9
-            y_tau_p: 0.8 #12./15.
-            sigma: 21.5e3
-            rad_ag: 0.61
-            len_s: 0.49
-            h_s: 0.08
-            I_0: 40.0
-            B_symax: 1.3
-            S_Nmax: -0.2
-            h_0: 0.01
-            k_fillr: 0.55
-            k_fills: 0.65
-            q1: 5
-            q2: 4
-            C_Cu: 4.786
-            C_Fe: 0.556
-            C_Fes: 0.50139
-            C_PM: 50.0
+        # generator:
+        #     generator_type: DFIG
+        #     rho_Fe: 7700.0
+        #     rho_Fes: 7850.0
+        #     rho_Copper: 8900.0
+        #     rho_PM: 7450.0
+        #     B_r: 1.2
+        #     P_Fe0e: 1.0
+        #     P_Fe0h: 4.0
+        #     S_N: -0.002
+        #     alpha_p: 1.0995574287564276 #0.5*np.pi*0.7
+        #     b_r_tau_r: 0.45
+        #     b_ro: 0.004
+        #     b_s_tau_s: 0.45
+        #     b_so: 0.004
+        #     freq: 60
+        #     h_i: 0.001
+        #     h_sy0: 0.0
+        #     h_w: 0.005
+        #     k_fes: 0.9
+        #     k_s: 0.2
+        #     m: 3
+        #     mu_0: 1.2566370614359173e-06 #np.pi*4e-7
+        #     mu_r: 1.06
+        #     p: 3.0
+        #     phi: 1.5707963267948966 # 90 deg
+        #     ratio_mw2pp: 0.7
+        #     resist_Cu: 2.52e-8 #1.8e-8*1.4
+        #     y_tau_pr: 0.8333333 #10. / 12
+        #     rated_rpm: 1200.0
+        #     cofi: 0.9
+        #     y_tau_p: 0.8 #12./15.
+        #     sigma: 21.5e3
+        #     rad_ag: 0.61
+        #     len_s: 0.49
+        #     h_s: 0.08
+        #     I_0: 40.0
+        #     B_symax: 1.3
+        #     S_Nmax: -0.2
+        #     h_0: 0.01
+        #     k_fillr: 0.55
+        #     k_fills: 0.65
+        #     q1: 5
+        #     q2: 4
+        #     C_Cu: 4.786
+        #     C_Fe: 0.556
+        #     C_Fes: 0.50139
+        #     C_PM: 50.0
     tower:
         outer_shape_bem:
             reference_axis: &ref_axis_tower
@@ -358,10 +360,10 @@ components:
             ballasts:
               - variable_flag: False
                 material: slurry
-                volume: 5
+                volume: 50
                 grid: [0.0, 0.05]
-              # - variable_flag: True
-              #   grid: [0.05, 0.4]
+            #   - variable_flag: True
+            #     grid: [0.05, 0.4]
         - name: mooring_fins
           joint1: mooring_fins_a
           joint2: mooring_fins_b
@@ -398,7 +400,7 @@ components:
         - {name: line5, node1: front_anchor_L, node2: fin_-y_vessel, line_type: chain, unstretched_length: 220}
         - {name: line6, node1: front_anchor_R, node2: fin_+y_vessel, line_type: chain, unstretched_length: 220}
       line_types:
-        - {name: chain, type: chain, diameter: 0.185, transverse_added_mass: 1.0, tangential_added_mass: 0.0, transverse_drag: 1.6, tangential_drag: 0.1}
+        - {name: chain, type: chain, diameter: 0.044833, transverse_added_mass: 1.0, tangential_added_mass: 0.0, transverse_drag: 1.6, tangential_drag: 0.1}
       anchor_types:
         - {name: drag_embedment, type: drag_embedment}
 
@@ -759,7 +761,7 @@ environment:
     shear_exp: 0.11
     water_density: 1025.0
     water_dyn_viscosity: 1.3351e-3
-    water_depth: 200.0
+    water_depth: 60.0
     significant_wave_height: 9.14
     significant_wave_period: 13.6
     soil_shear_modulus: 140.e+6

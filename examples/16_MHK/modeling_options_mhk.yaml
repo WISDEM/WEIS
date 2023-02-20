@@ -26,6 +26,7 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
+        symmetric_moorings: False
     # BOS:
     #     flag: True
 

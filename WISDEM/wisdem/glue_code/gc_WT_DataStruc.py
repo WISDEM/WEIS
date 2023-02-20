@@ -3222,9 +3222,12 @@ class ComputeHighLevelTowerProperties(om.ExplicitComponent):
                 outputs["hub_height"] = inputs["hub_height_user"]
                 z_base = inputs["tower_ref_axis_user"][0, 2]
                 z_current = inputs["tower_ref_axis_user"][:, 2] - z_base
-                h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
-                z_new = z_current * h_needed / z_current[-1]
-                outputs["tower_ref_axis"][:, 2] = z_new + z_base
+                if outputs["hub_height"] > 0:
+                    h_needed = inputs["hub_height_user"] - inputs["distance_tt_hub"] - z_base
+                    z_new = z_current * h_needed / z_current[-1]
+                    outputs["tower_ref_axis"][:, 2] = z_new + z_base
+                else:
+                    outputs["tower_ref_axis"][:, 2] = inputs["tower_ref_axis_user"][:, 2]
             else:
                 outputs["hub_height"] = inputs["tower_ref_axis_user"][-1, 2] + inputs["distance_tt_hub"]
                 outputs["tower_ref_axis"] = inputs["tower_ref_axis_user"]
