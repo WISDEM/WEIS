@@ -28,7 +28,7 @@ dependencies:
   - numpy
   - numpydoc
   - openmdao
-  - openpyxl
+  - openpyxl=3.1.0
   - osqp
   - pandas
   - patsy
