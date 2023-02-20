@@ -1318,79 +1318,80 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             myframe.addLoadCase(load)
 
         # myframe.write('myframe4.3dd') # Debugging
-        displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
+        if False:
+            displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
-        # Loop over DLCs and append to outputs
-        outputs["mb1_deflection"] = np.zeros(n_dlcs)
-        outputs["mb2_deflection"] = np.zeros(n_dlcs)
-        outputs["mb1_rotation"] = np.zeros(n_dlcs)
-        outputs["mb2_rotation"] = np.zeros(n_dlcs)
-        outputs["base_F"] = np.zeros((3, n_dlcs))
-        outputs["base_M"] = np.zeros((3, n_dlcs))
-        outputs["bedplate_axial_stress"] = np.zeros((2 * n - 2, n_dlcs))
-        outputs["bedplate_shear_stress"] = np.zeros((2 * n - 2, n_dlcs))
-        outputs["bedplate_bending_stress"] = np.zeros((2 * n - 2, n_dlcs))
-        outputs["constr_bedplate_vonmises"] = np.zeros((2 * n - 2, n_dlcs))
-        for k in range(n_dlcs):
-            # Deflections and rotations at bearings- how to sum up rotation angles?
-            outputs["mb1_deflection"][k] = np.sqrt(
-                displacements.dx[k, i1 - 1] ** 2 + displacements.dy[k, i1 - 1] ** 2 + displacements.dz[k, i1 - 1] ** 2
-            )
-            outputs["mb2_deflection"][k] = np.sqrt(
-                displacements.dx[k, i2 - 1] ** 2 + displacements.dy[k, i2 - 1] ** 2 + displacements.dz[k, i2 - 1] ** 2
-            )
-            bedplate_deflection = np.maximum(
-                np.sqrt(displacements.dx[k, n] ** 2 + displacements.dy[k, n] ** 2 + displacements.dz[k, n] ** 2),
-                np.sqrt(displacements.dx[k, -1] ** 2 + displacements.dy[k, -1] ** 2 + displacements.dz[k, -1] ** 2),
-            )
-            outputs["mb1_rotation"][k] = (
-                displacements.dxrot[k, i1 - 1] + displacements.dyrot[k, i1 - 1] + displacements.dzrot[k, i1 - 1]
-            )
-            outputs["mb2_rotation"][k] = (
-                displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
-            )
-            bedplate_rotation = np.maximum(
-                displacements.dxrot[k, n] + displacements.dyrot[k, n] + displacements.dzrot[k, n],
-                displacements.dxrot[k, -1] + displacements.dyrot[k, -1] + displacements.dzrot[k, -1],
-            )
+            # Loop over DLCs and append to outputs
+            outputs["mb1_deflection"] = np.zeros(n_dlcs)
+            outputs["mb2_deflection"] = np.zeros(n_dlcs)
+            outputs["mb1_rotation"] = np.zeros(n_dlcs)
+            outputs["mb2_rotation"] = np.zeros(n_dlcs)
+            outputs["base_F"] = np.zeros((3, n_dlcs))
+            outputs["base_M"] = np.zeros((3, n_dlcs))
+            outputs["bedplate_axial_stress"] = np.zeros((2 * n - 2, n_dlcs))
+            outputs["bedplate_shear_stress"] = np.zeros((2 * n - 2, n_dlcs))
+            outputs["bedplate_bending_stress"] = np.zeros((2 * n - 2, n_dlcs))
+            outputs["constr_bedplate_vonmises"] = np.zeros((2 * n - 2, n_dlcs))
+            for k in range(n_dlcs):
+                # Deflections and rotations at bearings- how to sum up rotation angles?
+                outputs["mb1_deflection"][k] = np.sqrt(
+                    displacements.dx[k, i1 - 1] ** 2 + displacements.dy[k, i1 - 1] ** 2 + displacements.dz[k, i1 - 1] ** 2
+                )
+                outputs["mb2_deflection"][k] = np.sqrt(
+                    displacements.dx[k, i2 - 1] ** 2 + displacements.dy[k, i2 - 1] ** 2 + displacements.dz[k, i2 - 1] ** 2
+                )
+                bedplate_deflection = np.maximum(
+                    np.sqrt(displacements.dx[k, n] ** 2 + displacements.dy[k, n] ** 2 + displacements.dz[k, n] ** 2),
+                    np.sqrt(displacements.dx[k, -1] ** 2 + displacements.dy[k, -1] ** 2 + displacements.dz[k, -1] ** 2),
+                )
+                outputs["mb1_rotation"][k] = (
+                    displacements.dxrot[k, i1 - 1] + displacements.dyrot[k, i1 - 1] + displacements.dzrot[k, i1 - 1]
+                )
+                outputs["mb2_rotation"][k] = (
+                    displacements.dxrot[k, i2 - 1] + displacements.dyrot[k, i2 - 1] + displacements.dzrot[k, i2 - 1]
+                )
+                bedplate_rotation = np.maximum(
+                    displacements.dxrot[k, n] + displacements.dyrot[k, n] + displacements.dzrot[k, n],
+                    displacements.dxrot[k, -1] + displacements.dyrot[k, -1] + displacements.dzrot[k, -1],
+                )
 
-            # shear and bending, one per element (convert from local to global c.s.)
-            Fx = forces.Nx[k, 1::2]
-            Vy = forces.Vy[k, 1::2]
-            Vz = -forces.Vz[k, 1::2]
-            # F  =  np.sqrt(Vz**2 + Vy**2)
+                # shear and bending, one per element (convert from local to global c.s.)
+                Fx = forces.Nx[k, 1::2]
+                Vy = forces.Vy[k, 1::2]
+                Vz = -forces.Vz[k, 1::2]
+                # F  =  np.sqrt(Vz**2 + Vy**2)
 
-            Mxx = forces.Txx[k, 1::2]
-            Myy = forces.Myy[k, 1::2]
-            Mzz = -forces.Mzz[k, 1::2]
-            # M   =  np.sqrt(Myy**2 + Mzz**2)
+                Mxx = forces.Txx[k, 1::2]
+                Myy = forces.Myy[k, 1::2]
+                Mzz = -forces.Mzz[k, 1::2]
+                # M   =  np.sqrt(Myy**2 + Mzz**2)
 
-            # Record total forces and moments at base
-            outputs["base_F"][:, k] = np.r_[
-                -reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum()
-            ]
-            outputs["base_M"][:, k] = np.r_[
-                -reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()
-            ]
+                # Record total forces and moments at base
+                outputs["base_F"][:, k] = np.r_[
+                    -reactions.Fx[k, :].sum(), -reactions.Fy[k, :].sum(), -reactions.Fz[k, :].sum()
+                ]
+                outputs["base_M"][:, k] = np.r_[
+                    -reactions.Mxx[k, :].sum(), -reactions.Myy[k, :].sum(), -reactions.Mzz[k, :].sum()
+                ]
 
-            outputs["bedplate_axial_stress"][:, k] = (np.abs(Fx) / Ax + np.abs(Myy) / Sy + np.abs(Mzz) / Sz)[
-                : (2 * n - 2)
-            ]
-            outputs["bedplate_shear_stress"][:, k] = (2.0 * (np.abs(Vy) / Asy + np.abs(Vz) / Asz) + np.abs(Mxx) / C)[
-                : (2 * n - 2)
-            ]
-            hoop = np.zeros(2 * n - 2)
+                outputs["bedplate_axial_stress"][:, k] = (np.abs(Fx) / Ax + np.abs(Myy) / Sy + np.abs(Mzz) / Sz)[
+                    : (2 * n - 2)
+                ]
+                outputs["bedplate_shear_stress"][:, k] = (2.0 * (np.abs(Vy) / Asy + np.abs(Vz) / Asz) + np.abs(Mxx) / C)[
+                    : (2 * n - 2)
+                ]
+                hoop = np.zeros(2 * n - 2)
 
-            outputs["constr_bedplate_vonmises"][:, k] = vonMisesStressUtilization(
-                outputs["bedplate_axial_stress"][:, k],
-                hoop,
-                outputs["bedplate_shear_stress"][:, k],
-                gamma_f * gamma_m * gamma_n,
-                sigma_y,
-            )
+                outputs["constr_bedplate_vonmises"][:, k] = vonMisesStressUtilization(
+                    outputs["bedplate_axial_stress"][:, k],
+                    hoop,
+                    outputs["bedplate_shear_stress"][:, k],
+                    gamma_f * gamma_m * gamma_n,
+                    sigma_y,
+                )
 
-        # Evaluate bearing limits
-        outputs["constr_mb1_defl"] = outputs["mb1_rotation"] / inputs["mb1_max_defl_ang"]
-        outputs["constr_mb2_defl"] = outputs["mb2_rotation"] / inputs["mb2_max_defl_ang"]
-        outputs["bedplate_deflection"] = bedplate_deflection.max()
-        outputs["bedplate_rotation"] = bedplate_rotation.max()
+            # Evaluate bearing limits
+            outputs["constr_mb1_defl"] = outputs["mb1_rotation"] / inputs["mb1_max_defl_ang"]
+            outputs["constr_mb2_defl"] = outputs["mb2_rotation"] / inputs["mb2_max_defl_ang"]
+            outputs["bedplate_deflection"] = bedplate_deflection.max()
+            outputs["bedplate_rotation"] = bedplate_rotation.max()
