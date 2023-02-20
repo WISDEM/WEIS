@@ -2408,7 +2408,7 @@ class FASTLoadCases(ExplicitComponent):
         # Calculate AEP and Performance Data
         if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
             pp = PowerProduction(discrete_inputs['turbine_class'])
-            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RotSpeed", "BldPitch1"]
+            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RtFldCt", "RotSpeed", "BldPitch1"]
             AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
             outputs['P_out'] = perf_data['GenPwr']['mean'] * 1.e3
