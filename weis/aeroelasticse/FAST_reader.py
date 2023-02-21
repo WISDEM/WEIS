@@ -75,6 +75,26 @@ def int_read(text):
             return int(text)
         except:
             return str(text)
+        
+
+def skip_comments(f):
+    # Skip all comment lines, leave pointer at first non-comment line
+    line = f.readline()
+    while line.strip()[0] == '!':
+        line = f.readline()
+        x = f.tell()
+
+    # rewind until we find the third `\n` char
+    n_count = 0
+    for x_offset in range(x-1,0,-1):
+        f.seek(x_offset)  # rewind one line
+        line = f.readline()
+        if line == '\n':
+            n_count+=1
+        if n_count == 3:
+            break
+    f.seek(x_offset-1)    # go to that line
+    f.readline()        # read it and move to the next
 
 class InputReader_OpenFAST(object):
     """ OpenFAST input file reader """
@@ -1000,7 +1020,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['ac']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
 
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
-            f = open(af_filename)
+            f = open(af_filename,'r')
             # print af_filename
 
             polar = {}
@@ -1108,9 +1128,7 @@ class InputReader_OpenFAST(object):
         f.readline()
         f.readline()
         self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
-        f.readline()
-        f.readline()
-        f.readline()
+        skip_comments(f)
         for j in range(n_coords - 1):
             x[j], y[j] = f.readline().split()
 
