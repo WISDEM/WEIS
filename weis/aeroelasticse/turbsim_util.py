@@ -221,7 +221,7 @@ class Turbsim_wrapper(object):
 
 def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, i_case):
 
-    if dlc_generator.cases[i_case].turbulent:
+    if dlc_generator.cases[i_case].turbulent_wind:
         # Write out turbsim input file
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef +
@@ -262,14 +262,18 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         wind_file_type = 3
 
     else:
-        gusts = IEC_CoherentGusts()
-        gusts.D = rotorD
-        gusts.HH = hub_height
-        gusts.dt = dlc_generator.cases[i_case].TimeStep
-        gusts.TStart = dlc_generator.cases[i_case].transient_time + 10.  # start gust 10 seconds after OpenFAST starts recording
-        gusts.TF = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
-        gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
-        wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
-        wind_file_type = 2
+        if dlc_generator.cases[i_case].label != '12.1':
+            gusts = IEC_CoherentGusts()
+            gusts.D = rotorD
+            gusts.HH = hub_height
+            gusts.dt = dlc_generator.cases[i_case].TimeStep
+            gusts.TStart = dlc_generator.cases[i_case].transient_time + 10.  # start gust 10 seconds after OpenFAST starts recording
+            gusts.TF = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
+            wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
+            wind_file_type = 2
+        else:
+            wind_file_type = 1
+            wind_file_name = 'unused'
 
     return wind_file_type, wind_file_name
