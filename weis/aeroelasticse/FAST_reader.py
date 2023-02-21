@@ -952,7 +952,8 @@ class InputReader_OpenFAST(object):
 
         self.read_AeroDyn15Blade()
         self.read_AeroDyn15Polar()
-        self.read_AeroDyn15Coord()
+        if not self.fst_vt['AeroDyn15']['coords_in_af_file']:
+            self.read_AeroDyn15Coord()
         olaf_filename = os.path.join(self.FAST_directory, self.fst_vt['AeroDyn15']['OLAFInputFileName'])
         if os.path.isfile(olaf_filename):
             self.read_AeroDyn15OLAF(olaf_filename)
@@ -995,15 +996,28 @@ class InputReader_OpenFAST(object):
         
         self.fst_vt['AeroDyn15']['af_data'] = [None]*self.fst_vt['AeroDyn15']['NumAFfiles']
 
+        self.fst_vt['AeroDyn15']['af_coord'] = []
+        self.fst_vt['AeroDyn15']['ac']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
+
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
             f = open(af_filename)
             # print af_filename
 
             polar = {}
-
             polar['InterpOrd']      = int_read(readline_filterComments(f).split()[0])
             polar['NonDimArea']     = float_read(readline_filterComments(f).split()[0])
             polar['NumCoords']      = readline_filterComments(f).split()[0]
+            try:
+                polar['NumCoords']  = int(polar['NumCoords'])
+                self.fst_vt['AeroDyn15']['coords_in_af_file'] = True   # This could be an array more generally
+            except ValueError:  # points to coord file, read normal way
+                self.fst_vt['AeroDyn15']['coords_in_af_file'] = False
+
+            if self.fst_vt['AeroDyn15']['coords_in_af_file']:
+                self.fst_vt['AeroDyn15']['af_coord'].append({})
+                self.read_Coords(f,polar['NumCoords'],afi)  # This can also throw a ValueError and 
+
+
             polar['BL_file']        = readline_filterComments(f).split()[0]
             polar['NumTabs']        = int_read(readline_filterComments(f).split()[0])
             self.fst_vt['AeroDyn15']['af_data'][afi] = [None]*polar['NumTabs']
@@ -1076,31 +1090,32 @@ class InputReader_OpenFAST(object):
 
     def read_AeroDyn15Coord(self):
         
-        self.fst_vt['AeroDyn15']['af_coord'] = []
-        self.fst_vt['AeroDyn15']['ac']   = np.zeros(len(self.fst_vt['AeroDyn15']['AFNames']))
-
         for afi, af_filename in enumerate(self.fst_vt['AeroDyn15']['AFNames']):
             self.fst_vt['AeroDyn15']['af_coord'].append({})
             if not (self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] == 0 or self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] == '0'):
                 coord_filename = af_filename[0:af_filename.rfind(os.sep)] + os.sep + self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'][2:-1]
                 f = open(coord_filename)
                 n_coords = int_read(readline_filterComments(f).split()[0])
-                x = np.zeros(n_coords)
-                y = np.zeros(n_coords)
-                f.readline()
-                f.readline()
-                f.readline()
-                self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
-                f.readline()
-                f.readline()
-                f.readline()
-                for j in range(n_coords - 1):
-                    x[j], y[j] = f.readline().split()
 
-                self.fst_vt['AeroDyn15']['af_coord'][afi]['x'] = x
-                self.fst_vt['AeroDyn15']['af_coord'][afi]['y'] = y
+                self.read_Coords(f,n_coords,afi)
 
                 f.close()
+
+    def read_Coords(self,f,n_coords,afi):
+        x = np.zeros(n_coords)
+        y = np.zeros(n_coords)
+        f.readline()
+        f.readline()
+        f.readline()
+        self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
+        f.readline()
+        f.readline()
+        f.readline()
+        for j in range(n_coords - 1):
+            x[j], y[j] = f.readline().split()
+
+        self.fst_vt['AeroDyn15']['af_coord'][afi]['x'] = x
+        self.fst_vt['AeroDyn15']['af_coord'][afi]['y'] = y
 
     def read_AeroDyn15OLAF(self, olaf_filename):
         
@@ -2506,10 +2521,17 @@ if __name__=="__main__":
     
     examples_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
 
-    fast = InputReader_OpenFAST()
-    fast.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-    fast.FAST_directory = os.path.join(examples_dir, 'examples', '01_aeroelasticse',
-                                                     'OpenFAST_models', 'IEA-15-240-RWT',
-                                                     'IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+    # fast = InputReader_OpenFAST()
+    # fast.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+    # fast.FAST_directory = os.path.join(examples_dir, 'examples', '01_aeroelasticse',
+    #                                                  'OpenFAST_models', 'IEA-15-240-RWT',
+    #                                                  'IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
+
+    # Read MHK inputs
+    fast.FAST_InputFile = '26kW_UNH_Mega.fst'   # FAST input file (ext=.fst)
+    fast.FAST_directory = '/Users/dzalkind/Projects/CT-Opt/MHK-Reference-Turbine/Megalodon/'   # update to your directory
+    
+    
     fast.execute()
+    print('debug here')
 
