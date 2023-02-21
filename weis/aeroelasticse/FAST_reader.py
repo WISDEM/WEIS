@@ -2521,7 +2521,7 @@ if __name__=="__main__":
     
     examples_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
 
-    # fast = InputReader_OpenFAST()
+    fast = InputReader_OpenFAST()
     # fast.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
     # fast.FAST_directory = os.path.join(examples_dir, 'examples', '01_aeroelasticse',
     #                                                  'OpenFAST_models', 'IEA-15-240-RWT',
