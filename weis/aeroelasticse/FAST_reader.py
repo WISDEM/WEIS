@@ -79,22 +79,13 @@ def int_read(text):
 
 def skip_comments(f):
     # Skip all comment lines, leave pointer at first non-comment line
-    line = f.readline()
-    while line.strip()[0] == '!':
+    while True:
+        file_pos = f.tell()
         line = f.readline()
-        x = f.tell()
-
-    # rewind until we find the third `\n` char
-    n_count = 0
-    for x_offset in range(x-1,0,-1):
-        f.seek(x_offset)  # rewind one line
-        line = f.readline()
-        if line == '\n':
-            n_count+=1
-        if n_count == 3:
+        if line.strip()[0] != '!':
             break
-    f.seek(x_offset-1)    # go to that line
-    f.readline()        # read it and move to the next
+    
+    f.seek(file_pos)    # rewind to line with no !
 
 class InputReader_OpenFAST(object):
     """ OpenFAST input file reader """
@@ -1124,9 +1115,7 @@ class InputReader_OpenFAST(object):
     def read_Coords(self,f,n_coords,afi):
         x = np.zeros(n_coords)
         y = np.zeros(n_coords)
-        f.readline()
-        f.readline()
-        f.readline()
+        skip_comments(f)
         self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
         skip_comments(f)
         for j in range(n_coords - 1):
