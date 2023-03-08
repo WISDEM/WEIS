@@ -99,9 +99,9 @@ ControlParameters:
     F_YawErr:
       <<: *real
       description: Corner low pass filter corner frequency for yaw controller [rad/s].
-    F_FlpCornerFreq:
+    DACCornerFreq:
       <<: *real
-      description: Corner frequency (-3dB point) in the second order low pass filter of the blade root bending moment for flap control [rad/s].
+      description: Corner frequency (-3dB point) in the second order low pass filter of the blade root bending moment for DAC control [rad/s].
       allocatable: True
     
     # Tower fore-aft damping
@@ -361,22 +361,34 @@ ControlParameters:
       <<: *real
       description: Nacelle velocity proportional feedback gain [s]
     
-    # Trailing edge flaps
-    Flp_Mode:
+    # Distributed Aerodynamic Control
+    DAC_Mode:
       <<: *integer
-      description: Flap actuator mode {0 - off, 1 - fixed flap position, 2 - PI flap control}
-    Flp_Angle:
+      description: DAC actuator mode {0 - off, 1 - fixed DAC parameter value, 2 - PI DAC control, 3 - Cyclic control, 4 - Bang-Bang control}
+    dac_param: 
       <<: *real
-      description: Fixed flap angle (degrees)
-    Flp_Kp:
+      description: Fixed DAC parameter values (units of DAC device)
+    DAC_Kp:
       <<: *real
-      description: PI flap control proportional gain 
-    Flp_Ki:
+      description: PI DAC control proportional gain 
+    DAC_Ki:
       <<: *real
-      description: PI flap control integral gain 
-    Flp_MaxPit:
+      description: PI DAC control integral gain 
+    dac_maxval: 
       <<: *real
-      description: Maximum (and minimum) flap pitch angle [rad]
+      description: Maximum (and minimum) DAC parameter value [units of DAC parameter]
+    dac_bb_threshold: #Ben: I added these last 4 items
+      <<: *real
+      description: Threshold for flapwise root bending moment for bang-bang dac controller [N-m]
+    dac_bb_startDelay:
+      <<: *real
+      description: Time to begin allowing bang-bang dac controller in simulation [s]
+    dac_bb_depTime:
+      <<: *real
+      description: Time to manually deploy dac devices [s]
+    dac_bb_useIDAC:
+      <<: *integer
+      description: Flag for bang-bang dac control?
     
     # Open-loop Control
     OL_Filename:
@@ -871,9 +883,9 @@ LocalVariables:
       <<: *real 
     FA_AccF:
       <<: *real 
-    Flp_Angle:
+    dac_param: #TODO bem: need to check capitalization
       <<: *real 
-      description: Flap Angle (rad)
+      description: DAC parameter value (units depend on device)
       size: 3
     RootMyb_Last:
       <<: *real 

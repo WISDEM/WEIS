@@ -204,11 +204,16 @@ class WindTurbineOntologyPython(object):
                 ]["webs"][i]["name"]
 
             # Distributed aerodynamic control devices along blade
-            self.modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] = 0
+            self.modeling_options["WISDEM"]["RotorSE"]["n_dac"] = 0
             if "aerodynamic_control" in self.wt_init["components"]["blade"]:
                 if "te_flaps" in self.wt_init["components"]["blade"]["aerodynamic_control"]:
-                    self.modeling_options["WISDEM"]["RotorSE"]["n_te_flaps"] = len(
+                    self.modeling_options["WISDEM"]["RotorSE"]["n_dac"] = len(
                         self.wt_init["components"]["blade"]["aerodynamic_control"]["te_flaps"]
+                    )
+                    self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 3
+                elif "le_spoilers" in self.wt_init["components"]["blade"]["aerodynamic_control"]:
+                    self.modeling_options["WISDEM"]["RotorSE"]["n_dac"] = len(
+                        self.wt_init["components"]["blade"]["aerodynamic_control"]["le_spoilers"]
                     )
                     self.modeling_options["WISDEM"]["RotorSE"]["n_tab"] = 3
                 else:

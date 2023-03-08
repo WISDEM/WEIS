@@ -56,7 +56,7 @@ The installation instructions below use the environment name, "weis-env," but an
 
 1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
 
-        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/main/environment.yml python=3.9
+        conda env create --name weis-env -f https://raw.githubusercontent.com/DeepFriedDerp/WEIS-DAC_bb_featuredevelopment/main/environment.yml python=3.9
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
         sudo apt update                                  # (WSL only, assuming Ubuntu)
 

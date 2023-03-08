@@ -1,0 +1,3 @@
+general:
+    folder_output: dac_outputs
+    fname_output: BAR_10_output

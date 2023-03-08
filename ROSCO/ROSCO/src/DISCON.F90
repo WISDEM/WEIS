@@ -113,8 +113,8 @@ IF (((LocalVar%iStatus >= 0) .OR. (LocalVar%iStatus <= -8)) .AND. (ErrVar%aviFAI
         CALL YawRateControl(avrSWAP, CntrPar, LocalVar, objInst, zmqVar, DebugVar, ErrVar)
     END IF
     
-    IF (CntrPar%Flp_Mode > 0) THEN
-        CALL FlapControl(avrSWAP, CntrPar, LocalVar, objInst)
+    IF (CntrPar%DAC_Mode > 0) THEN
+        CALL DACControl(avrSWAP, CntrPar, LocalVar, objInst)
     END IF
     
     IF ( CntrPar%LoggingLevel > 0 ) THEN

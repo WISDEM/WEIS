@@ -12,7 +12,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
 
     def setup(self):
         modeling_options = self.options['modeling_options']
-        n_te_flaps = modeling_options['WISDEM']['RotorSE']['n_te_flaps']
+        n_dac = modeling_options['WISDEM']['RotorSE']['n_dac']
 
         self.add_input('aep',           val=0.0, units = 'GW * h')
         self.add_input('blade_mass',    val=0.0, units = 'kg')
@@ -30,12 +30,12 @@ class Outputs_2_Screen(om.ExplicitComponent):
         self.add_input('ptfm_freq',     val=0.0, units = 'rad/s')
         self.add_input('omega_vs',      val=0.0, units='rad/s')
         self.add_input('zeta_vs',       val=0.0)
-        self.add_input('flp_kp_norm',   val=0.0)
-        self.add_input('flp_tau',       val=0.0, units='s')
+        self.add_input('dac_kp_norm',   val=0.0)
+        self.add_input('dac_tau',       val=0.0, units='s')
         self.add_input('IPC_Kp1p',      val=0.0, units='s')
         self.add_input('IPC_Ki1p',      val=0.0,)
         self.add_input('tip_deflection',val=0.0, units='m')
-        self.add_input('te_flap_end'   ,val=np.zeros(n_te_flaps))
+        self.add_input('dac_end'   ,val=np.zeros(n_dac))
         self.add_input('rotor_overspeed',val=0.0)
         self.add_input('Max_PtfmPitch',val=0.0)
         if modeling_options['OL2CL']['flag']:
@@ -65,9 +65,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
             if self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['pitch_control']['ptfm_freq']['flag'] :
                 print('Floating Feedback: Kp_float = {:2.3f}, ptfm_freq = {:2.3f}'.format(inputs['Kp_float'][0], inputs['ptfm_freq'][0]))
             
-            # Flap control
-            if self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag']:
-                print('Flap PI gain inputs: flp_kp_norm = {:2.3f}, flp_tau = {:2.3f}'.format(inputs['flp_kp_norm'][0], inputs['flp_tau'][0]))
+            # DAC control
+            if self.options['opt_options']['design_variables']['control']['servo']['dac_control']['dac_kp_norm']['flag'] or self.options['opt_options']['design_variables']['control']['servo']['dac_control']['dac_kp_norm']['flag']:
+                print('DAC PI gain inputs: dac_kp_norm = {:2.3f}, dac_tau = {:2.3f}'.format(inputs['dac_kp_norm'][0], inputs['dac_tau'][0]))
             
             # IPC
             if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Kp']:
@@ -75,9 +75,9 @@ class Outputs_2_Screen(om.ExplicitComponent):
             if self.options['opt_options']['design_variables']['control']['servo']['ipc_control']['Ki']:
                 print('IPC Ki1p = {:2.3e}'.format(inputs['IPC_Ki1p'][0]))
            
-            # Flaps
-            if self.options['opt_options']['design_variables']['control']['flaps']['te_flap_end']['flag']:
-                print('Trailing-edge flap end = {:2.3f}%'.format(inputs['te_flap_end'][0]*100.))
+            # DAC
+            if self.options['opt_options']['design_variables']['control']['dac']['dac_end']['flag']:
+                print('DAC device end = {:2.3f}%'.format(inputs['dac_end'][0]*100.))
             # Print merit figure
             if self.options['opt_options']['merit_figure'] == 'DEL_TwrBsMyt':
                 print('DEL(TwrBsMyt): {:<8.10f} Nm'.format(inputs['DEL_TwrBsMyt'][0]))

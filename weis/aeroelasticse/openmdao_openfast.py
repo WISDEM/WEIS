@@ -206,7 +206,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('airfoils_cm',       val=np.zeros((n_span, n_aoa, n_Re, n_tab)), desc='moment coefficients, spanwise')
             self.add_input('airfoils_aoa',      val=np.zeros((n_aoa)), units='deg', desc='angle of attack grid for polars')
             self.add_input('airfoils_Re',       val=np.zeros((n_Re)), desc='Reynolds numbers of polars')
-            self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)), units='deg',desc='Airfoil control paremeter (i.e. flap angle)')
+            self.add_input('airfoils_Ctrl',     val=np.zeros((n_span, n_Re, n_tab)) ,desc='Airfoil control paremeter (i.e. flap angle)') #TODO bem: need to check units here (got rid of degree units)
 
             # Airfoil coordinates
             self.add_input('coord_xy_interp',   val=np.zeros((n_span, n_xy, 2)),              desc='3D array of the non-dimensional x and y airfoil coordinates of the airfoils interpolated along span for n_span stations. The leading edge is place at x=0 and y=0.')
@@ -424,7 +424,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
-        self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle')
+        self.add_output('flp1_std',    val=0.0,            units='deg',  desc='standard deviation of trailing-edge flap angle') #TODO bem:need to change to generic DAC and checkif units need to be degrees
 
         self.add_output('rated_V',     val=0.0,            units='m/s',  desc='rated wind speed')
         self.add_output('rated_Omega', val=0.0,            units='rpm',  desc='rotor rotation speed at rated')
@@ -1633,8 +1633,8 @@ class FASTLoadCases(ExplicitComponent):
             channels_out += ["B3N1Alpha", "B3N2Alpha", "B3N3Alpha", "B3N4Alpha", "B3N5Alpha", "B3N6Alpha", "B3N7Alpha", "B3N8Alpha", "B3N9Alpha"]
 
         # Channels for distributed aerodynamic control
-        if self.options['modeling_options']['ROSCO']['Flp_Mode']:   # we're doing flap control
-            channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']
+        if self.options['modeling_options']['ROSCO']['DAC_Mode']:   # we're doing flap control
+            channels_out += ['BLFLAP1', 'BLFLAP2', 'BLFLAP3']  #TODO bem:eventually want to change naming convention to include other DAC devices
 
         # Channels for wave outputs
         if modopt['flags']['offshore']:

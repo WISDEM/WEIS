@@ -24,11 +24,11 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flaps:
+                    dac:
                         type: object
                         default: {}
                         properties:
-                            te_flap_end:
+                            dac_end:
                                 type: object
                                 default: {}
                                 properties:
@@ -46,7 +46,7 @@ properties:
                                         maximum: 1.0
                                         minimum: 0.1
                                         default: 0.98
-                            te_flap_ext:
+                            dac_ext:
                                 type: object
                                 default: {}
                                 properties:
@@ -184,11 +184,11 @@ properties:
                                 properties:
                                     omega: *control_omega
                                     zeta: *control_zeta
-                            flap_control:
+                            dac_control:
                                 type: object
                                 default: {}
                                 properties:
-                                    flp_kp_norm: 
+                                    dac_kp_norm: 
                                         type: object
                                         default: {}
                                         properties:
@@ -205,7 +205,7 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 10.0
                                                 unit: none
-                                    flp_tau: 
+                                    dac_tau: 
                                         type: object
                                         default: {}
                                         properties:
@@ -346,13 +346,13 @@ properties:
                 type: object
                 default: {}
                 properties:
-                    flap_control:
+                    dac_control:
                         type: object
                         description: Words TODO
                         default: {}
                         properties:
                             flag: *flag
-                            min: &flapminmax
+                            min: &flapminmax #TODO bem: need to check that this does not need to change
                                 type: number
                                 default: 0.05
                                 minimum: 0.0

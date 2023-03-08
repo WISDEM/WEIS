@@ -873,8 +873,8 @@ class InputWriter_OpenFAST(object):
                 num_tab = len(self.fst_vt['AeroDyn15']['af_data'][afi])
             elif self.fst_vt['AeroDyn15']['AFTabMod'] == 3:
                 # for tab_orig in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] - 1):
-                if self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
-                    num_tab = 1  # assume that all Ctrl angles of the flaps are identical if the first two are -> no flaps!
+                if self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']: 
+                    num_tab = 1  # assume that all Ctrl values of the aerodynamic control device are identical if the first two are -> no DAC device!
                 else:
                     num_tab = self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']
             else:
@@ -888,7 +888,8 @@ class InputWriter_OpenFAST(object):
                 f.write("! data for table %i \n" % (tab + 1))
                 f.write('! ------------------------------------------------------------------------------\n')
                 f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Re']*1.e-6, 'Re', '! Reynolds number in millions\n'))
-                f.write('{:<22d}   {:<11} {:}'.format(int(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Ctrl']), 'Ctrl', '! Control setting (must be 0 for current AirfoilInfo)\n'))
+                # commented out to remove integer designation f.write('{:<22d}   {:<11} {:}'.format(int(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Ctrl']), 'Ctrl', '! Control setting (must be 0 for current AirfoilInfo)\n')) 
+                f.write('{:<22f}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['Ctrl'], 'Ctrl', '! Control setting (must be 0 for current AirfoilInfo)\n')) 
                 f.write('{!s:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][tab]['InclUAdata'], 'InclUAdata', '! Is unsteady aerodynamics data included in this table? If TRUE, then include 30 UA coefficients below this line\n'))
                 f.write('!........................................\n')
                 if self.fst_vt['AeroDyn15']['af_data'][afi][tab]['InclUAdata']:
@@ -1248,7 +1249,7 @@ class InputWriter_OpenFAST(object):
         f.write('---------------------- Aerodynamic Flow Control -------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfCmode'], 'AfCmode', '- Airfoil control mode {0- none, 1- cosine wave cycle, 4- user-defined from Simulink/Labview, 5- user-defined from Bladed-style DLL}\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Mean'], 'AfC_Mean', '- Mean level for sinusoidal cycling or steady value (-) [used only with AfCmode==1]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Amp'], 'AfC_Amp', '- Amplitude for for cosine cycling of flap signal (AfC = AfC_Amp*cos(Azimuth+phase)+AfC_mean) (-) [used only with AfCmode==1]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Amp'], 'AfC_Amp', '- Amplitude for for cosine cycling of flap signal (AfC = AfC_Amp*cos(Azimuth+phase)+AfC_mean) (-) [used only with AfCmode==1]\n')) #TODO bem: check if this is useful for generic distributed aero control
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['AfC_Phase'], 'AfC_phase', '- Phase relative to the blade azimuth (0 is vertical) for for cosine cycling of flap signal (deg) [used only with AfCmode==1]\n'))
         f.write('---------------------- STRUCTURAL CONTROL ---------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ServoDyn']['NumBStC'], 'NumBStC', '- Number of blade structural controllers (integer)\n'))

@@ -1941,9 +1941,9 @@ ServoDyn['SStC4_Mzl']         = False     # (kN-m); Substructure StC #4 -- Z res
 
 
 # Flap outputs
-ServoDyn['BLFLAP1']          = False     # (m/s); Tower Y TMD velocity; Relative to tower
-ServoDyn['BLFLAP2']          = False     # (m/s); Tower Y TMD velocity; Relative to tower
-ServoDyn['BLFLAP3']          = False     # (m/s); Tower Y TMD velocity; Relative to tower
+ServoDyn['BLFLAP1']          = False     # (-); Distributed aerodynamic control value for blade 1 TODO bem:change naming convention to reflect generic dac device
+ServoDyn['BLFLAP2']          = False     # (-); Distributed aerodynamic control value for blade 2
+ServoDyn['BLFLAP3']          = False     # (-); Distributed aerodynamic control value for blade 3
 
 """ AeroDyn """
 AeroDyn = {}

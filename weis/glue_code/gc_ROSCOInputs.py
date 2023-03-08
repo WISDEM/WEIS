@@ -14,13 +14,13 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     wt_opt['tune_rosco_ivc.omega_vs']      = rosco_init_options['omega_vs']
     wt_opt['tune_rosco_ivc.zeta_vs']       = rosco_init_options['zeta_vs']
     
-    # Flap control params
-    if rosco_init_options['Flp_Mode'] > 0:
+    # DAC control params
+    if rosco_init_options['DAC_Mode'] > 0:
         try:
-            wt_opt['tune_rosco_ivc.flp_kp_norm']      = rosco_init_options['flp_kp_norm']
-            wt_opt['tune_rosco_ivc.flp_tau']       = rosco_init_options['flp_tau']
+            wt_opt['tune_rosco_ivc.dac_kp_norm']      = rosco_init_options['dac_kp_norm']
+            wt_opt['tune_rosco_ivc.dac_tau']       = rosco_init_options['dac_tau']
         except:
-            raise Exception('If Flp_Mode > 0, you must set flp_kp_norm, flp_tau in the modeling options')
+            raise Exception('If DAC_Mode > 0, you must set dac_kp_norm, dac_tau in the modeling options')
 
     # IPC 
     if rosco_init_options['IPC_ControlMode']:
@@ -48,10 +48,10 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
         except:
             raise Exception('If Fl_Mode > 0, you must set twr_freq and ptfm_freq in modeling options')
         
-    # Check for proper Flp_Mode, print warning
-    if modeling_options['WISDEM']['RotorSE']['n_tab'] > 1 and rosco_init_options['Flp_Mode'] == 0:
-            raise Exception('A distributed aerodynamic control device is specified in the geometry yaml, but Flp_Mode is zero in the modeling options.')
-    if modeling_options['WISDEM']['RotorSE']['n_tab'] == 1 and rosco_init_options['Flp_Mode'] > 0:
-            raise Exception('Flp_Mode is non zero in the modeling options, but no distributed aerodynamic control device is specified in the geometry yaml.')
+    # Check for proper DAC_Mode, print warning
+    if modeling_options['WISDEM']['RotorSE']['n_tab'] > 1 and rosco_init_options['DAC_Mode'] == 0:
+            raise Exception('A distributed aerodynamic control device is specified in the geometry yaml, but DAC_Mode is zero in the modeling options.')
+    if modeling_options['WISDEM']['RotorSE']['n_tab'] == 1 and rosco_init_options['DAC_Mode'] > 0:
+            raise Exception('DAC_Mode is non zero in the modeling options, but no distributed aerodynamic control device is specified in the geometry yaml.')
 
     return wt_opt

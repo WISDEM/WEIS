@@ -1,5 +1,0 @@
-[run]
-omit =
-    *test*
-    *schema2rst.py
-    

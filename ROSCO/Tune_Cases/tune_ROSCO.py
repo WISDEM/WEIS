@@ -51,8 +51,8 @@ else:
 
     write_rotor_performance(turbine,txt_filename=os.path.join(this_dir,path_params['rotor_performance_filename']))
     
-# Flap tuning if necessary
-if controller_params['Flp_Mode']:
+# DAC tuning if necessary
+if controller_params['DAC_Mode']:
     turbine.load_blade_info()
 
 # Instantiate controller tuning and tune controller

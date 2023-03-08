@@ -1302,7 +1302,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ServoDyn']['YawManRat'] = float_read(f.readline().split()[0])
         self.fst_vt['ServoDyn']['NacYawF']   = float_read(f.readline().split()[0])
 
-        # Aero flow control
+        # Aero flow control TODO bem: might need to add variables for DAC control methods
         f.readline()
         self.fst_vt['ServoDyn']['AfCmode']      = int(f.readline().split()[0])
         self.fst_vt['ServoDyn']['AfC_Mean']     = float_read(f.readline().split()[0])

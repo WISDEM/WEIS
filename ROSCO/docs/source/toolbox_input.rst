@@ -1,7 +1,7 @@
 
 .. toctree::
 
-.. _rt_tuning_yaml: 
+.. _rt_tuning_yaml:
 
 **************************
 ROSCO_Toolbox tuning .yaml
@@ -226,7 +226,7 @@ controller_params
 
     *Default* = 0
 
-    *Minimum* = 0    *Maximum* = 2
+    *Minimum* = 0    *Maximum* = 4
 
 
 :code:`PwC_Mode` : Float
@@ -942,4 +942,3 @@ Inputs used for tuning ROSCO using linear (level 2) models
     Desired maximum stability margin
 
     *Default* = 0.1
-

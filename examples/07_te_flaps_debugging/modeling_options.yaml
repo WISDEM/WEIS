@@ -2,7 +2,10 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: BAR10
-        OF_run_dir: temp/BAR10          # The relative path where OpenFAST output will be stored
+      #  OF_run_dir: temp/BAR10_BangBang_flap_01    # new flap mode results
+      #  OF_run_dir: temp/BAR10_1              # old flap mode results
+      #  OF_run_dir: temp/BAR10_AlwaysOn         # Always on results (mode 4)
+        OF_run_dir: temp/BAR10_AlwaysOff         # Always off results (mode 4)
 WISDEM:
     RotorSE:
         flag: True
@@ -64,7 +67,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AfCmode: 5
 
     xfoil:
-        path: /home/mertzb/Xfoil/bin/xfoil  # Will need to set this to the user's specific path to xfoil
+        path: /Users/agmotes/home/codes/bin/xfoil
 
 ROSCO:
     flag: False
@@ -74,13 +77,16 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 0
     Fl_Mode: 0
-    DAC_Mode: 4                 # Control mode for DAC devices (0 - No DAC control, 1 - Constant DAC parameter, 2 - PI DAC Control, 3 - Cyclic (1P) DAC control, 4 - Bang-Bang DAC control)
-    DAC_Model: 2                # This chooses whether to use xfoil for flaps (DAC_Model = 1) or general dac model (for instance for LEMS, DAC_Model = 2)
-    dac_bb_threshold: 19000000 # Root bending moment threshold for actuation of DAC devices. For the current DLC driver settings, will initiate several deployments of the flaps in bang-bang control mode
-    #dac_bb_startDelay: 1       # Sets a delay time (s) in the sim before the bang-bang controller begins running, defaults to 0 if not specified
-    #dac_bb_depTime: 1          # Sets a minimum deployment time for the flaps (once deployed) in bang-bang control mode. Defaults to 0 if not specified
-    #dac_bb_useIDAC: 1          # A flag for indicating if individual blade DAC bang bang controls are being used (1), or group DAC bang-bang controls are being used (0). Defaults to 0 if not specified 
-    dac_maxval: 0.1745          # 10 degrees max flap angle, note that this is limited to the maximum angle allowed by the settings in BAR_USC_flaps.yaml
+    DAC_Mode: 4 # Control mode for DAC devices (0 - No DAC control, 1 - Constant DAC parameter, 2 - PI DAC Control, 3 - Cyclic (1P) DAC control, 4 - Bang-Bang DAC control)
+    DAC_Model: 1 # This chooses whether to use xfoil for flaps (DAC_Model = 1) or general dac model (for instance for LEMS, DAC_Model = 2)
+    #dac_bb_threshold: 25000  #Gerrit always on
+    #dac_bb_threshold: 99000000  #Gerrit always off
+    dac_bb_threshold: 19000000 # attempting a temp switch
+    #dac_bb_startDelay: 1
+    #dac_bb_depTime: 1
+    dac_bb_useIDAC: 1
+    dac_maxval: 0.1745 # 10 degrees max flap angle
+    #dac_maxval: 9 #Ben: lems 9 mm
     zeta_dac: 0.7
     omega_dac: 2.63
     zeta_pc: [1.2]

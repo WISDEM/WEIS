@@ -491,7 +491,7 @@ class Turbine():
         '''
         Loads wind turbine blade data from an OpenFAST model. 
 
-        Should be used if blade information is needed (i.e. for flap controller tuning), 
+        Should be used if blade information is needed (i.e. for dac controller tuning), 
         but a rotor performance file is defined and and cc-blade does not need to be run. 
         
         Parameters:
