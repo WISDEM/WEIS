@@ -420,6 +420,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
         self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
         self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
+        self.add_output('Ct_out', val=np.zeros(n_ws_dlc11), desc='rotor aero thrust coefficient')
         self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
         self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
@@ -2407,11 +2408,12 @@ class FASTLoadCases(ExplicitComponent):
         # Calculate AEP and Performance Data
         if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
             pp = PowerProduction(discrete_inputs['turbine_class'])
-            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RotSpeed", "BldPitch1"]
+            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RtFldCt", "RotSpeed", "BldPitch1"]
             AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
             outputs['P_out'] = perf_data['GenPwr']['mean'] * 1.e3
             outputs['Cp_out'] = perf_data['RtFldCp']['mean']
+            outputs['Ct_out'] = perf_data['RtFldCt']['mean']
             outputs['Omega_out'] = perf_data['RotSpeed']['mean']
             outputs['pitch_out'] = perf_data['BldPitch1']['mean']
             outputs['AEP'] = AEP
@@ -2419,6 +2421,7 @@ class FASTLoadCases(ExplicitComponent):
             # If DLC 1.1 was run
             if len(stats_pwrcrv['RtFldCp']['mean']): 
                 outputs['Cp_out'] = stats_pwrcrv['RtFldCp']['mean']
+                outputs['Ct_out'] = stats_pwrcrv['RtFldCt']['mean']
                 outputs['Omega_out'] = stats_pwrcrv['RotSpeed']['mean']
                 outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
@@ -2427,6 +2430,7 @@ class FASTLoadCases(ExplicitComponent):
                 logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
                 outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
+                outputs['Ct_out'] = sum_stats['RtFldCt']['mean'].mean()
                 outputs['Omega_out'] = sum_stats['RotSpeed']['mean'].mean()
                 outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
