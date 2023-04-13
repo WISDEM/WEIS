@@ -252,7 +252,11 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             for ii in range(s_ballast.shape[0]):
                 iball = np.where(s_ballast[ii,0] >= s_grid)[0][-1]
                 rho_fill[iball] = rho_ballast[ii]
-                l_fill[iball] = inputs[f"member{k}:height"] * h_ballast[ii] if rho_ballast[ii] > 1100.0 else var_height[k]
+                # RAFT's l_fill is in absolute coordinates, WISDEM is relative to member
+                if rho_ballast[ii] > 1100.0: # not variable/water
+                    l_fill[iball] = inputs[f"member{k}:height"] * h_ballast[ii]
+                else:
+                    l_fill[iball] = inputs[f"member{k}:height"] * var_height[k]
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
 
