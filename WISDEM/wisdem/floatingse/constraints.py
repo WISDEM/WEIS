@@ -97,8 +97,8 @@ class FloatingConstraints(om.ExplicitComponent):
             dz1 = zp1 - zp1_h        # change in freeboard
             dz2 = zp2_h - zp2       # change in keel/draft
 
-            draft_margin[k] = -(dz2 + Hsig * gamma) / xyz2[2]
-            freeboard_margin[k] = (dz1 + Hsig * gamma) / xyz1[2]
+            draft_margin[k] = -dz2 / xyz2[2]
+            freeboard_margin[k] = dz1 / xyz1[2]
 
         # Ensure members have enough clearance from the waterline
         outputs["constr_freeboard_heel_margin"] = freeboard_margin
