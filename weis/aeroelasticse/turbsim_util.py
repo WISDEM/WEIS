@@ -221,7 +221,7 @@ class Turbsim_wrapper(object):
 
 def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, i_case):
 
-    if dlc_generator.cases[i_case].turbulent_wind:
+    if dlc_generator.cases[i_case].turbulent:
         # Write out turbsim input file
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef +
@@ -273,7 +273,7 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
             wind_file_type = 2
         else:
-            wind_file_type = 1
-            wind_file_name = 'unused'
+            wind_file_type = 2
+            wind_file_name = dlc_generator.cases[i_case].wind_file
 
     return wind_file_type, wind_file_name

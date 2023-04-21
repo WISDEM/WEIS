@@ -1739,7 +1739,16 @@ class FASTLoadCases(ExplicitComponent):
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
         metocean = modopt['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        dlc_generator = DLCGenerator(
+            metocean,
+            **{
+                'ws_cut_in': cut_in, 
+                'ws_cut_out':cut_out, 
+                'MHK': modopt['flags']['marine_hydro'],
+                'fix_wind_seeds': fix_wind_seeds,
+                'fix_wave_seeds': fix_wave_seeds,                
+            })
+        # dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
@@ -1775,7 +1784,7 @@ class FASTLoadCases(ExplicitComponent):
         nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
         for i_case in range(dlc_generator.n_cases):
-            if dlc_generator.cases[i_case].turbulent_wind:
+            if dlc_generator.cases[i_case].turbulent:
                 # Assign values common to all DLCs
                 # Wind turbulence class
                 if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case
@@ -1785,11 +1794,11 @@ class FASTLoadCases(ExplicitComponent):
                     dlc_generator.cases[i_case].IECturbc = wt_class
                 # Reference height for wind speed
                 if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].RefHt = hub_height
+                    dlc_generator.cases[i_case].RefHt = np.abs(hub_height)
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
-                dlc_generator.cases[i_case].HubHt = hub_height
+                dlc_generator.cases[i_case].HubHt = np.abs(hub_height)
                 # Height of wind grid, it stops 1 mm above the ground
-                dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
+                dlc_generator.cases[i_case].GridHeight = 2. * np.abs(hub_height) - 1.e-3
                 # If OLAF is called, make wind grid 3x higher, taller, and wider
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
                     dlc_generator.cases[i_case].HubHt *= 3.
@@ -1891,7 +1900,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
         case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
-        case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[hub_height], 'group':0}
+        case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[np.abs(hub_height)], 'group':0}   #TODO: check if this is the distance from sea level or bottom
         # Initial conditions for rotor speed, pitch, and azimuth
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
@@ -2473,7 +2482,7 @@ class FASTLoadCases(ExplicitComponent):
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
-        outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
+        # outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         if not modopt['Level3']['from_openfast']:

@@ -28,10 +28,65 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
-    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
-    AeroDyn:
-        WakeMod: 2
+    openfast_file: MHK_RM1_Floating.fst
+    openfast_dir: /Users/dzalkind/Downloads/FloatingRM1/
+    simulation:
+        DT: 0.0125
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 3
+        CompIce: 0
+        OutFileFmt: 3
+        Gravity: 9.81
+        # WtrDpth: 35
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : False
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
+        PtfmSgDOF: False
+        PtfmSwDOF: False
+        PtfmHvDOF: False
+        PtfmRDOF : False
+        PtfmPDOF : False
+        PtfmYDOF : False
+        TwrNodes: 20
+    # HydroDyn:
+    #     WaveSeed1: 123456789
+    #     WaveSeed2: 1011121314
+    #     AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+    #     WaveMod: 2
+    #     WaveTMax: 850
+    #     WvLowCOff: 0.111527
+    #     WvHiCOff: 0.783827
+    #     WvSumQTF: True
+    #     RdtnMod: 1
+    #     PotMod: 1
+    #     ExctnMod: 1
+    #     DiffQTF: 0
+    #     PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+    # ServoDyn:
+    #     PitManRat(1): 2.
+    #     PitManRat(2): 2.
+    #     PitManRat(3): 2.
+    # SubDyn:
+    #     SDdeltaT: 0.005
+
+    # InflowWind:
+    #     RefHt: 150.0
     
 ROSCO:
     flag: True

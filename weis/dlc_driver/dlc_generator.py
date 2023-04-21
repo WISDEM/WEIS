@@ -235,6 +235,8 @@ class DLCGenerator(object):
         return wave_gamma
 
     def get_wave_heading(self, options):
+        if not options['wave_heading']:
+            options['wave_heading'] = [0]
         if len(options['wave_heading']) > 0:
             wave_heading = np.array( [float(m) for m in options['wave_heading']] )
         else:
@@ -310,18 +312,24 @@ class DLCGenerator(object):
         return metocean_case_info
 
     def generate(self, label, options):
+        universal_dlcs = [12.1]  # apply to both WT, MHK in same way
+
         if self.MHK:
             known_dlcs = [1.1, 1.2, 1.3, 6.1]
             gen_func_ext = '_mhk'
         else:
-            known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4, 6.5, 12.1]
+            known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4, 6.5]
             gen_func_ext = ''
 
         # Get extreme wind speeds, TODO: make MHK replacement
         self.IECwind()
 
         found = False
-        for ilab in known_dlcs:
+        for ilab in known_dlcs + universal_dlcs:
+
+            if float(label) in universal_dlcs: # drop extension
+                gen_func_ext = ''
+
             func_name = f'generate_{ilab:.1f}{gen_func_ext}'.replace('.','p')
 
             if label in [ilab, str(ilab)]: # Match either 1.1 or '1.1'
@@ -464,7 +472,8 @@ class DLCGenerator(object):
         metocean['wave_Hs'] = [self.mo_Hs_NSS[-1]]
 
         # Wave headings from 0 to 360 in 30 deg increments
-        options['wave_heading'] = np.arange(0,360,30)
+        if not options['wave_heading']:
+            options['wave_heading'] = np.arange(0,360,30)
 
         # Make cartesian product of current speeds (x number of seeds) with wave heading
         speed_heading_product = list(itertools.product(*[options['wave_heading'],metocean['current_speeds']]))
@@ -555,6 +564,7 @@ class DLCGenerator(object):
         for ws in metocean['current_speeds']:
             idlc = DLCInstance(options=options)
             idlc.URef = ws
+            idlc.turbulent = True
             idlc.RandSeed1 = metocean['rand_seeds'][mc.i_seed]
             idlc.wave_seed1 = metocean['wave_seeds'][mc.i_wave_seed]
             idlc.wave_height = metocean['wave_Hs'][mc.i_Hs]

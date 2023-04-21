@@ -3025,7 +3025,7 @@ properties:
                         wave_heading:
                             type: array
                             description: Heading of the waves with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: [0.]
+                            default: []
                             items:
                                 type: number
                                 unit: deg
@@ -3365,6 +3365,17 @@ properties:
                         type: array
                         description: Array of wind speeds to tabulate Hs and Tp
                         default: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 50.0
+                            uniqueItems: true
+                    current_speed:
+                        type: array
+                        description: Array of current speeds to tabulate Hs and Tp for MHK turbines
+                        default: [0.5 , 0.85, 1.2 , 1.55, 1.9 , 2.25, 2.6 , 2.95, 3.3 , 3.65, 4.  ]
                         items:
                             type: number
                             unit: m/s
