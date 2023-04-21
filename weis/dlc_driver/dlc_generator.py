@@ -235,8 +235,6 @@ class DLCGenerator(object):
         return wave_gamma
 
     def get_wave_heading(self, options):
-        if not options['wave_heading']:
-            options['wave_heading'] = [0]
         if len(options['wave_heading']) > 0:
             wave_heading = np.array( [float(m) for m in options['wave_heading']] )
         else:
@@ -472,7 +470,7 @@ class DLCGenerator(object):
         metocean['wave_Hs'] = [self.mo_Hs_NSS[-1]]
 
         # Wave headings from 0 to 360 in 30 deg increments
-        if not options['wave_heading']:
+        if list(options['wave_heading']) == [0]:  # this is default, if it were selected, could be confusing
             options['wave_heading'] = np.arange(0,360,30)
 
         # Make cartesian product of current speeds (x number of seeds) with wave heading

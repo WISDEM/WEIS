@@ -3025,7 +3025,7 @@ properties:
                         wave_heading:
                             type: array
                             description: Heading of the waves with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: []
+                            default: [0]
                             items:
                                 type: number
                                 unit: deg
