@@ -301,7 +301,16 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Other case outputs
         self.add_output('stats_wind_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wind input')
         self.add_output('stats_wave_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wave input')
-        
+
+        # Natural periods
+        self.add_output('rigid_body_periods', val = np.zeros(6), desc = 'Rigid body natural period', units = 's') 
+        self.add_output('surge_period', val = 0, desc = 'Surge natural period', units = 's') 
+        self.add_output('sway_period', val = 0, desc = 'Sway natural period', units = 's') 
+        self.add_output('heave_period', val = 0, desc = 'Heave natural period', units = 's') 
+        self.add_output('roll_period', val = 0, desc = 'Roll natural period', units = 's') 
+        self.add_output('pitch_period', val = 0, desc = 'Pitch natural period', units = 's') 
+        self.add_output('yaw_period', val = 0, desc = 'Yaw natural period', units = 's') 
+
         # Aggregate outputs
         self.add_output('Max_Offset', val = 0, desc = 'Maximum distance in surge/sway direction', units = 'm') 
         self.add_output('heave_avg', val = 0, desc = 'Average heave over all cases', units = 'm') 
@@ -664,6 +673,17 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:
             outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
+
+        # natural periods
+        model.solveEigen()
+        outputs["rigid_body_periods"] = 1/results['eigen']['frequencies']
+
+        outputs["surge_period"] = outputs["rigid_body_periods"][0]
+        outputs["sway_period"] = outputs["rigid_body_periods"][1]
+        outputs["heave_period"] = outputs["rigid_body_periods"][2]
+        outputs["roll_period"] = outputs["rigid_body_periods"][3]
+        outputs["pitch_period"] = outputs["rigid_body_periods"][4]
+        outputs["yaw_period"] = outputs["rigid_body_periods"][5]
 
         # Compute some aggregate outputs manually
         outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max'][case_mask]**2 + outputs['stats_sway_max'][case_mask]**2).max()
