@@ -31,10 +31,9 @@ jobs:
           channels: conda-forge
           extra-specs: |
             python=${{ matrix.python-version }}
-            petsc4py
             mpi4py
-            openmpi
-            sel(osx): compilers
+            sel(linux) petsc4py openmpi
+            sel(osx): compilers petsc4py openmpi
             sel(win): m2w64-toolchain libpython`
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
