@@ -276,6 +276,7 @@ class ComputePowerCurve(ExplicitComponent):
             desc="Lift over drag distribution along blade span at cut-in wind speed",
         )
         self.add_output("Cp_regII", val=0.0, desc="power coefficient at cut-in wind speed")
+        self.add_output("Ct_regII", val=0.0, desc="thrust coefficient at cut-in wind speed")
         self.add_output(
             "cl_regII", val=np.zeros(n_span), desc="lift coefficient distribution along blade span at cut-in wind speed"
         )
@@ -812,6 +813,7 @@ class ComputePowerCurve(ExplicitComponent):
         outputs["cd_regII"] = loads["Cd"]
         outputs["L_D"] = loads["Cl"] / loads["Cd"]
         outputs["Cp_regII"] = Cp_aero[id_regII]
+        outputs["Ct_regII"] = Ct_aero[id_regII]
 
 
 class ComputeSplines(ExplicitComponent):
@@ -873,11 +875,9 @@ class ComputeSplines(ExplicitComponent):
 # Class to define a constraint so that the blade cannot operate in stall conditions
 class NoStallConstraint(ExplicitComponent):
     def initialize(self):
-
         self.options.declare("modeling_options")
 
     def setup(self):
-
         modeling_options = self.options["modeling_options"]
         self.n_span = n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
         self.n_aoa = n_aoa = modeling_options["WISDEM"]["RotorSE"]["n_aoa"]  # Number of angle of attacks
@@ -913,7 +913,6 @@ class NoStallConstraint(ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         i_min = np.argmin(abs(inputs["min_s"] - inputs["s"]))
 
         for i in range(self.n_span):
@@ -942,7 +941,6 @@ class NoStallConstraint(ExplicitComponent):
 
 class AEP(ExplicitComponent):
     def initialize(self):
-
         self.options.declare("nspline")
 
     def setup(self):
@@ -967,7 +965,6 @@ class AEP(ExplicitComponent):
         # self.declare_partials('*', '*', method='fd', form='central', step=1e-6)
 
     def compute(self, inputs, outputs):
-
         lossFactor = inputs["lossFactor"]
         P = inputs["P"]
         CDF_V = inputs["CDF_V"]
@@ -991,7 +988,6 @@ class AEP(ExplicitComponent):
 
 
 def compute_P_and_eff(aeroPower, ratedPower, Omega_rpm, drivetrainType, drivetrainEff):
-
     if not np.any(drivetrainEff):
         drivetrainType = drivetrainType.upper()
         if drivetrainType == "GEARED":
