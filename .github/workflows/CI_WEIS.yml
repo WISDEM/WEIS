@@ -32,9 +32,13 @@ jobs:
           extra-specs: |
             python=${{ matrix.python-version }}
             mpi4py
-            sel(linux) petsc4py openmpi
-            sel(osx): compilers petsc4py openmpi
-            sel(win): m2w64-toolchain libpython`
+            sel(linux) petsc4py
+            sel(linux) openmpi
+            sel(osx): compilers
+            sel(osx): petsc4py
+            sel(osx): openmpi
+            sel(win): m2w64-toolchain
+            sel(win): libpython`
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
