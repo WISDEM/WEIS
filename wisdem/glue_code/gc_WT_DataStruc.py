@@ -946,18 +946,17 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         # If devices are defined along span, manipulate the grid s to always have a grid point where it is needed, and reinterpolate the blade quantities, namely chord, twist, pitch axis, and reference axis
         if len(inputs["span_end"]) > 0:
             nd_span_orig = np.linspace(0.0, 1.0, self.n_span)
 
-            chord_orig = np.interp(nd_span_orig, inputs["s_default"], inputs["chord_yaml"])
-            twist_orig = np.interp(nd_span_orig, inputs["s_default"], inputs["twist_yaml"])
-            pitch_axis_orig = np.interp(nd_span_orig, inputs["s_default"], inputs["pitch_axis_yaml"])
+            chord_orig = PchipInterpolator(inputs["s_default"], inputs["chord_yaml"])(nd_span_orig)
+            twist_orig = PchipInterpolator(inputs["s_default"], inputs["twist_yaml"])(nd_span_orig)
+            pitch_axis_orig = PchipInterpolator(inputs["s_default"], inputs["pitch_axis_yaml"])(nd_span_orig)
             ref_axis_orig = np.zeros((self.n_span, 3))
-            ref_axis_orig[:, 0] = np.interp(nd_span_orig, inputs["s_default"], inputs["ref_axis_yaml"][:, 0])
-            ref_axis_orig[:, 1] = np.interp(nd_span_orig, inputs["s_default"], inputs["ref_axis_yaml"][:, 1])
-            ref_axis_orig[:, 2] = np.interp(nd_span_orig, inputs["s_default"], inputs["ref_axis_yaml"][:, 2])
+            ref_axis_orig[:, 0] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 0])(nd_span_orig)
+            ref_axis_orig[:, 1] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 1])(nd_span_orig)
+            ref_axis_orig[:, 2] = PchipInterpolator(inputs["s_default"], inputs["ref_axis_yaml"][:, 2])(nd_span_orig)
 
             outputs["s"] = copy.copy(nd_span_orig)
 
@@ -978,13 +977,13 @@ class Compute_Blade_Outer_Shape_BEM(om.ExplicitComponent):
                 idx_flap_end += 1
             outputs["s"][idx_flap_start] = flap_start
             outputs["s"][idx_flap_end] = flap_end
-            outputs["chord"] = np.interp(outputs["s"], nd_span_orig, chord_orig)
-            outputs["twist"] = np.interp(outputs["s"], nd_span_orig, twist_orig)
-            outputs["pitch_axis"] = np.interp(outputs["s"], nd_span_orig, pitch_axis_orig)
+            outputs["chord"] = PchipInterpolator(nd_span_orig, chord_orig)(outputs["s"])
+            outputs["twist"] = PchipInterpolator(nd_span_orig, twist_orig)(outputs["s"])
+            outputs["pitch_axis"] = PchipInterpolator(nd_span_orig, pitch_axis_orig)(outputs["s"])
 
-            outputs["ref_axis"][:, 0] = np.interp(outputs["s"], nd_span_orig, ref_axis_orig[:, 0])
-            outputs["ref_axis"][:, 1] = np.interp(outputs["s"], nd_span_orig, ref_axis_orig[:, 1])
-            outputs["ref_axis"][:, 2] = np.interp(outputs["s"], nd_span_orig, ref_axis_orig[:, 2])
+            outputs["ref_axis"][:, 0] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 0])(outputs["s"])
+            outputs["ref_axis"][:, 1] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 1])(outputs["s"])
+            outputs["ref_axis"][:, 2] = PchipInterpolator(nd_span_orig, ref_axis_orig[:, 2])(outputs["s"])
         else:
             outputs["s"] = inputs["s_default"]
             outputs["chord"] = inputs["chord_yaml"]
@@ -1097,7 +1096,6 @@ class Blade_Interp_Airfoils(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Reconstruct the blade relative thickness along span with a pchip
         r_thick_used = np.zeros(self.n_af_span)
         ac_used = np.zeros(self.n_af_span)
@@ -1430,8 +1428,8 @@ class INN_Airfoils(om.ExplicitComponent):
             cdmax = 1.5
             polar = inn_polar.extrapolate(cdmax)  # Extrapolate polars for alpha between -180 deg and 180 deg
 
-            cl_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cl)
-            cd_interp = np.interp(np.degrees(inputs["aoa"]), polar.alpha, polar.cd)
+            cl_interp = PchipInterpolator(polar.alpha, polar.cl)(np.degrees(inputs["aoa"]))
+            cd_interp = PchipInterpolator(polar.alpha, polar.cd)(np.degrees(inputs["aoa"]))
 
             for j in range(self.n_Re):
                 outputs["cl_interp"][i, :, j, 0] = cl_interp
@@ -1489,7 +1487,6 @@ class Blade_Lofted_Shape(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs):
-
         for i in range(self.n_span):
             x = inputs["coord_xy_dim"][i, :, 0]
             y = inputs["coord_xy_dim"][i, :, 1]
@@ -1848,7 +1845,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
         # self.declare_partials('web_start_nd', ['coord_xy_dim', 'twist'], method='fd')
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         # Initialize temporary arrays for the outputs
         web_rotation = np.zeros((self.n_webs, self.n_span))
         layer_rotation = np.zeros((self.n_layers, self.n_span))
@@ -1877,7 +1873,6 @@ class Compute_Blade_Internal_Structure_2D_FEM(om.ExplicitComponent):
 
             # Loop through the webs and compute non-dimensional start and end positions along the profile
             for j in range(self.n_webs):
-
                 offset = inputs["web_offset_y_pa_yaml"][j, i]
                 # Geometry checks on webs
                 if offset < ratio_Websmax * (-chord * p_le_i) or offset > ratio_Websmax * (chord * (1.0 - p_le_i)):
@@ -2505,11 +2500,11 @@ class MemberGrid(om.ExplicitComponent):
         s_grid = inputs["s_grid"]
 
         if len(inputs["outer_diameter_in"]) > 1:
-            outputs["outer_diameter"] = np.interp(s_grid, s_in, inputs["outer_diameter_in"])
+            outputs["outer_diameter"] = PchipInterpolator(s_in, inputs["outer_diameter_in"])(s_grid)
         else:
             outputs["outer_diameter"][:] = inputs["outer_diameter_in"]
         for k in range(n_layers):
-            outputs["layer_thickness"][k, :] = np.interp(s_grid, s_in, inputs["layer_thickness_in"][k, :])
+            outputs["layer_thickness"][k, :] = PchipInterpolator(s_in, inputs["layer_thickness_in"][k, :])(s_grid)
 
 
 class AggregateJoints(om.ExplicitComponent):
@@ -2593,7 +2588,7 @@ class AggregateJoints(om.ExplicitComponent):
                     s_axial = inputs["member_" + iname + ":grid_axial_joints"][a]
                     joints_xyz[count, :] = joint1xyz + s_axial * dxyz
 
-                    Ra = np.interp(s_axial, s, Rk)
+                    Ra = PchipInterpolator(s, Rk)(s_axial)
                     node_r[count] = max(node_r[count], Ra)
                     intersects[count] += 1
 
@@ -2819,7 +2814,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         self.options.declare("composites", default=True)
 
     def setup(self):
-
         mat_init_options = self.options["mat_init_options"]
         self.n_mat = n_mat = mat_init_options["n_mat"]
 
@@ -2882,7 +2876,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
         )
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
-
         density_resin = 0.0
         for i in range(self.n_mat):
             if discrete_inputs["name"][i] == "resin":
@@ -2899,7 +2892,6 @@ class ComputeMaterialsProperties(om.ExplicitComponent):
 
         for i in range(self.n_mat):
             if discrete_inputs["component_id"][i] > 1:  # It's a composite
-
                 # Formula to estimate the fiber volume fraction fvf from the laminate and the fiber densities
                 fvf[i] = (inputs["rho"][i] - density_resin) / (inputs["rho_fiber"][i] - density_resin)
                 if inputs["fvf_from_yaml"][i] > 0.0:
@@ -3341,9 +3333,15 @@ class Airfoil3DCorrection(om.ExplicitComponent):
                             inputs["chord"][i] / inputs["r_blade"][i],
                             inputs["rated_TSR"],
                         )
-                        cl_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cl)
-                        cd_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cd)
-                        cm_corrected[i, :, j, k] = np.interp(np.degrees(inputs["aoa"]), polar3d.alpha, polar3d.cm)
+                        cl_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cl)(
+                            np.degrees(inputs["aoa"])
+                        )
+                        cd_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cd)(
+                            np.degrees(inputs["aoa"])
+                        )
+                        cm_corrected[i, :, j, k] = PchipInterpolator(polar3d.alpha, polar3d.cm)(
+                            np.degrees(inputs["aoa"])
+                        )
             else:
                 cl_corrected[i, :, :, :] = inputs["cl"][i, :, :, :]
                 cd_corrected[i, :, :, :] = inputs["cd"][i, :, :, :]

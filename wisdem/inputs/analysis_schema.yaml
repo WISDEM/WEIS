@@ -1065,6 +1065,18 @@ properties:
                                 units: kWh
                                 default: 1.0
                                 minimum: 1.0
+                    thrust_coeff:
+                        type: object
+                        description: (EXPERIMENTAL) Bound the ccblade thrust coefficient away from unconstrained optimal when optimizing for power, for highly-loaded rotors
+                        default: {}
+                        properties:
+                            flag: *flag
+                            lower:
+                                type: number
+                                minimum: 0.0
+                            upper:
+                                type: number
+                                minimum: 0.0
             tower: &towcon
                 type: object
                 default: {}
@@ -1476,6 +1488,11 @@ properties:
                         default: 100
                         minimum: 0
                         maximum: 100000
+                    time_limit:
+                        type: integer
+                        description: Max seconds of major iteration runtime for SNOPT
+                        default: 0
+                        minimum: 0
                     max_function_calls:
                         type: integer
                         description: Max number of calls to objective function evaluation
