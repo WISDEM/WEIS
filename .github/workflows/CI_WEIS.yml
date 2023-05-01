@@ -32,11 +32,9 @@ jobs:
           extra-specs: |
             python=${{ matrix.python-version }}
             mpi4py
-            sel(linux) petsc4py
-            sel(linux) openmpi
+            petsc4py
+            openmpi
             sel(osx): compilers
-            sel(osx): petsc4py
-            sel(osx): openmpi
             sel(win): m2w64-toolchain
             sel(win): libpython`
     
