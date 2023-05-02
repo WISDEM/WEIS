@@ -5,13 +5,14 @@ channels:
 dependencies:
   - alabaster
   - babel
-  - cmake>=3.21.1
+  - cmake
   - control
   - coveralls
   - cython
   - dill
   - docutils
   - et-xmlfile
+  - fatpack
   - future
   - git
   - gdown
@@ -28,8 +29,8 @@ dependencies:
   - numpy
   - numpydoc
   - openmdao
-  - openpyxl=3.1.0
-  - osqp
+  - openpyxl
+  #- osqp # Works with the pip version, but not the conda version
   - pandas
   - patsy
   - pip
@@ -44,7 +45,7 @@ dependencies:
   - ruamel_yaml
   - scipy
   - seaborn
-  - setuptools<60.0
+  - setuptools
   - simpy
   - slycot
   - smt
@@ -63,8 +64,8 @@ dependencies:
 #  - versioneer
   - pip:
     - dearpygui
-    - fatpack
     - marmot-agents
+    - osqp
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

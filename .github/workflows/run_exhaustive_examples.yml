@@ -17,22 +17,38 @@ jobs:
       fail-fast: true
       matrix:
         os: ["ubuntu-latest"] #, "macOS-latest"]
-        python-version: ["3.9","3.10"]
+        python-version: ["3.9","3.10", "3.11"]
         
     steps:
       - uses: actions/checkout@v3
 
-      # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
-      - uses: conda-incubator/setup-miniconda@v2
-        # https://github.com/marketplace/actions/setup-miniconda
+      # Even miniconda gets bogged down- try mamba
+      - name: Install Conda environment with Micromamba
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          miniconda-version: "latest"
-          channels: conda-forge
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
-          activate-environment: test
-          auto-activate-base: false
+          environment-name: test
+          channels: conda-forge
+          extra-specs: |
+            python=${{ matrix.python-version }}
+            mpi4py
+            petsc4py
+            openmpi
+            sel(osx): compilers
+            sel(win): m2w64-toolchain
+            sel(win): libpython`
+
+      # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
+      #- uses: conda-incubator/setup-miniconda@v2
+      #  # https://github.com/marketplace/actions/setup-miniconda
+      #  with:
+      #    miniconda-version: "latest"
+      #    channels: conda-forge
+      #    auto-update-conda: true
+      #    python-version: ${{ matrix.python-version }}
+      #    environment-file: environment.yml
+      #    activate-environment: test
+      #    auto-activate-base: false
         
       # This is a less official, but more lightweight way to do miniconda
       #- uses: s-weigand/setup-conda@v1
@@ -51,26 +67,26 @@ jobs:
       #      printenv
 
       # Install dependencies of WISDEM specific to windows
-      - name: Add dependencies mac specific
-        if: contains( matrix.os, 'mac')
-        run: |
-            conda install -y compilers
-            gfortran --version
+      #- name: Add dependencies mac specific
+      #  if: contains( matrix.os, 'mac')
+      #  run: |
+      #      conda install -y compilers
+      #      gfortran --version
             
       # Install dependencies of WISDEM specific to windows
-      - name: Add dependencies windows specific
-        if: contains( matrix.os, 'windows')
-        run: |
-          conda install -y m2w64-toolchain libpython
+      #- name: Add dependencies windows specific
+      #  if: contains( matrix.os, 'windows')
+      #  run: |
+      #    conda install -y m2w64-toolchain libpython
       
       # Install dependencies of WEIS specific to ubuntu
-      - name: Add dependencies ubuntu specific
-        if: false == contains( matrix.os, 'windows')
-        # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
-        # Mpi only seems to work with the shell command though, so instead rely on system compilers
-        run: |
-          conda install -y petsc4py mpi4py openmpi
-          python -c "import platform; print(platform.node())"
+      #- name: Add dependencies ubuntu specific
+      #  if: false == contains( matrix.os, 'windows')
+      #  # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
+      #  # Mpi only seems to work with the shell command though, so instead rely on system compilers
+      #  run: |
+      #    conda install -y petsc4py mpi4py openmpi
+      #    python -c "import platform; print(platform.node())"
 
       - name: Show custom environment
         run: |
