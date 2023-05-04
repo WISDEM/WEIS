@@ -355,25 +355,47 @@ components:
         drivetrain:
             uptilt: 0
             distance_tt_hub: 0
+            distance_hub_mb: 0
+            distance_mb_mb: 0
             overhang: 5
-            drag_coefficient: 
-            distance_hub2mb: 
-            distance_mb2mb: 
-            lss_diameter: []
-            lss_wall_thickness: []
-            nose_diameter: []
-            nose_wall_thickness: [] 
             generator_length: 2
-            bedplate_wall_thickness:
+            generator_radius_user: 0
+            generator_mass_user: 0
+            generator_rpm_efficiency_user: 
                 grid: []
                 values: []
             gear_ratio: 1
+            gearbox_length_user: 0
+            gearbox_radius_user: 0
+            gearbox_mass_user: 0
             gearbox_efficiency: 1.0
+            damping_ratio: 0
+            lss_diameter: []
+            lss_wall_thickness: []
+            lss_material: ''
+            hss_length: 0
+            hss_diameter: []
+            hss_wall_thickness: []
+            hss_material: ''
+            nose_diameter: []
+            nose_wall_thickness: [] 
+            bedplate_wall_thickness:
+                grid: []
+                values: []
+            bedplate_flange_width: 0
+            bedplate_flange_thickness: 0
+            bedplate_web_thickness: 0
+            bedplate_material: ''
             mb1Type: 'CARB'
             mb2Type: 'CARB'
             uptower: True
-            lss_material: ''
-            bedplate_material: ''
+            gear_configuration: ''
+            planet_numbers: []
+
+#            drag_coefficient: ?
+#            distance_hub2mb: no longer part of schema
+#            distance_mb2mb: no longer part of schema
+
         generator:
             generator_type: 'DFIG'
             rho_Fe: 0
@@ -473,24 +495,46 @@ components:
                   thickness:
                     grid: []
                     values: []
+    monopile: 
+        transition_piece_mass: 0
+        outer_shape_bem:
+            reference_axis: &monopile_ref_axis
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
+            outer_diameter:
+                grid: []
+                values: []
+            drag_coefficient:
+                grid: []
+                values: []
+        internal_structure_2d_fem:
+            outfitting_factor: 1
+            reference_axis: *monopile_ref_axis
+            layers:
+               -  name: ''
+                  material: ''
+                  thickness:
+                      grid: []
+                      values: []
+        transition_piece_cost: 0.0
+        gravity_foundation_mass: 0.0
     floating_platform:
         joints:
             - name: ''
               location: []
-
-            - name: ''
-              location: []
-              transition: false
-
-            - name: ''
-              location: []
               cylindrical: false
+              #transition: false
         members:
             - name: ''
               joint1: ''
               joint2: ''
-              Ca: 0
-              Cd: 0
               outer_shape:
                 shape: 'circular'
                 outer_diameter:
@@ -501,152 +545,45 @@ components:
                     - name: ''
                       material: ''
                       thickness:
-                        grid: []
-                        values: []
+                        grid: [0, 0]
+                        values: [0, 0] 
                 ballasts:
-                    - variable_flag: 
-                      material: ''
-                      volume: 
-                      grid: []
-                    - variable_flag: 
-                      grid: []
+                    - #variable_flag: 
+                      #material: ''
+                      #volume: 
+                      #grid: []
+                    - #variable_flag: 
+                      #grid: []
                 bulkhead:
                     material: ''
                     thickness:
                         grid:   []
                         values: []
+                #longitudinal_stiffeners
+                #ring_stiffeners
+                #outfitting_factor
+              Ca: 0
+              Cd: 0
+              Cp: 0
               axial_joints:
                 - name: ''
                   grid: 0
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: &outerShape1
-                shape: 'circular'
-                outer_diameter:
-                    grid: []
-                    values: []
-              internal_structure: &innerShape1
-                layers:
-                    - name: ''
-                      material: ''
-                      thickness:
-                        grid: []
-                        values: []
-                bulkhead:
-                    material: ''
-                    thickness:
-                        grid: []
-                        values: []
-                ballasts:
-                    - variable_flag: 
-                      material: ''
-                      volume: 
-                      grid: []
-                    - variable_flag: 
-                      grid: []
-              axial_joints:
-                - name: ''
-                  grid: 0
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: *outerShape1
-              internal_structure: *innerShape1
-              axial_joints:
-                - name: ''
-                  grid: 0
-
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: *outerShape1
-              internal_structure: *innerShape1
-              axial_joints:
-                - name: ''
-                  grid: 0
-
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: &outerShape2
-                shape: 'circular'
-                outer_diameter:
-                    grid: []
-                    values: []
-              internal_structure: &innerShape2
-                layers:
-                    - name: ''
-                      material: ''
-                      thickness:
-                        grid: []
-                        values: []
-
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: *outerShape2
-              internal_structure: *innerShape2
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: *outerShape2
-              internal_structure: *innerShape2
-            - name: ''
-              joint1: ''
-              joint2: ''
-              Ca: 0
-              Cd: 0
-              outer_shape: &outerShape3
-                shape: 'circular'
-                outer_diameter:
-                    grid: []
-                    values: []
-              internal_structure: &innerShape3
-                layers:
-                    - name: ''
-                      material: ''
-                      thickness:
-                        grid: []
-                        values: []
-                ballasts:
-                    - variable_flag: True
-                      grid: [0.0, 1.0]
-
-            - name: ''
-              joint1: ''
-              joint2: ''
-              outer_shape: *outerShape3
-              internal_structure: *innerShape3
-            - name: ''
-              joint1: ''
-              joint2: ''
-              outer_shape: *outerShape3
-              internal_structure: *innerShape3
         transition_piece_mass: 0
         transition_piece_cost: 0
     mooring:
         nodes:
             - name: ''
               node_type: 'fixed'
+              node_mass: 0
+              node_volume: 0
               joint: ''
               anchor_type: ''
               location: [] # added by NRM, not in schema
 
             - name: ''
               node_type: 'vessel'
+              node_mass: 0
+              node_volume: 0
               joint: ''
               fairlead_type: 'rigid'
               location: [] # added by NRM, not in schema
