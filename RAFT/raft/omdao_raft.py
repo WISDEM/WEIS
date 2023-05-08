@@ -316,7 +316,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('heave_avg', val = 0, desc = 'Average heave over all cases', units = 'm') 
         self.add_output('Max_PtfmPitch', val = 0, desc = 'Maximum platform pitch over all cases', units = 'deg') 
         self.add_output('Std_PtfmPitch', val = 0, desc = 'Average platform pitch std. over all cases', units = 'deg') 
-        self.add_output('max_nacelle_Ax', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
+        self.add_output('max_nac_accel', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
         self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
         self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
 
@@ -690,7 +690,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs['heave_avg'] = outputs['stats_heave_avg'][case_mask].mean()
         outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'][case_mask].max()
         outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'][case_mask].mean()
-        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'][case_mask].max()
+        outputs['max_nac_accel'] = outputs['stats_AxRNA_std'][case_mask].max()
         outputs['rotor_overspeed'] = (outputs['stats_omega_max'][case_mask].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'][case_mask].max()
         
