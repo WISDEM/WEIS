@@ -271,7 +271,9 @@ class PoseOptimizationWEIS(PoseOptimization):
         
         # Nacelle Accelleration magnitude
         if control_constraints['nacelle_acceleration']['flag']:
-            wt_opt.model.add_constraint('aeroelastic.max_nac_accel',
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize with nacelle_acceleration constraint.')
+            wt_opt.model.add_constraint(f'{self.floating_solve_component}.max_nac_accel',
                     upper = control_constraints['nacelle_acceleration']['max'])
         
         # Max platform pitch
