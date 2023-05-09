@@ -258,7 +258,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('properties_Buoyancy (pgV)', val=0.0, units='N', desc='Buoyancy (pgV)')
         self.add_output('properties_Center of Buoyancy', val=np.zeros(ndim), units='m', desc='Center of buoyancy')
         self.add_output('properties_C stiffness matrix', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix')
-        self.add_output('properties_F_lines0', val=np.zeros(nlines), units='N', desc='Mean mooring force')  # Check this!
+        self.add_output('properties_F_lines0', val=np.zeros(ndof), units='N', desc='Mean mooring force from all lines')
         self.add_output('properties_C_lines0', val=np.zeros((ndof,ndof)), units='Pa', desc='Mooring stiffness')
         self.add_output('properties_M support structure', val=np.zeros((ndof,ndof)), units='kg', desc='Mass matrix for platform')
         self.add_output('properties_A support structure', val=np.zeros((ndof,ndof)), desc='Added mass matrix for platform')
