@@ -22,6 +22,7 @@ class DLCInstance(object):
         self.transient_time = 120.
         self.shutdown_time = 9999.
         self.IEC_WindType = 'NTM'
+        self.IECturbc = -1   # Default in weis modeling options
         self.turbine_status = 'operating'
         self.wave_spectrum = 'JONSWAP'
         self.turbulent = False
@@ -127,6 +128,7 @@ class DLCGenerator(object):
         self.mo_Cu_F = metocean['current_fatigue']
         self.mo_Hs_SSS = metocean['wave_height_SSS']
         self.mo_Tp_SSS = metocean['wave_period_SSS']
+        self.mo_current_std = metocean['current_std']
         if len(self.mo_ws)!=len(self.mo_Hs_NSS):
             raise Exception('The vector of metocean conditions wave_height_NSS in the modeling options must have the same length of the tabulated wind speeds')
         if len(self.mo_ws)!=len(self.mo_Tp_NSS):
@@ -306,6 +308,7 @@ class DLCGenerator(object):
         metocean_case_info['wave_gamma'] = wave_gamma
         metocean_case_info['wave_heading'] = wave_heading
         metocean_case_info['probabilities'] = probabilities       
+        metocean_case_info['current_std'] = self.mo_current_std       
         
         return metocean_case_info
 
@@ -397,6 +400,12 @@ class DLCGenerator(object):
         if len(metocean['wave_Tp'])==0:
             metocean['wave_Tp'] = np.interp(metocean['current_speeds'], self.mo_ws, self.mo_Tp_NSS)
 
+        # Resample/interpolate current_std (u_prime) to wind speeds in cases
+        current_std = np.interp(metocean['current_speeds'], self.mo_ws, self.mo_current_std)
+
+        # Turbulence intensity in percent
+        TIs = 100 * current_std / metocean['current_speeds']
+
         mc = MetoceanCounters(metocean)
 
         for ws in metocean['current_speeds']:
@@ -410,6 +419,7 @@ class DLCGenerator(object):
             idlc.wave_gamma = metocean['wave_gamma'][mc.i_gamma]
             idlc.wave_heading = metocean['wave_heading'][mc.i_wave_heading]
             idlc.turbulent = True
+            idlc.IECturbc  = TIs[mc.i_seed]
             idlc.label = '1.1'
             if options['analysis_time'] > 0:
                 idlc.analysis_time = options['analysis_time']

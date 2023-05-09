@@ -403,6 +403,7 @@ class WindPark(om.Group):
             # Connections to aeroelasticse
             self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
             self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
+            self.connect('env.water_depth',                 'aeroelastic.water_depth')
 
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
@@ -415,7 +416,6 @@ class WindPark(om.Group):
                 self.connect('env.rho_air',                     'aeroelastic.rho')
                 self.connect('env.speed_sound_air',             'aeroelastic.speed_sound_air')
                 self.connect('env.mu_air',                      'aeroelastic.mu')
-                self.connect('env.water_depth',                 'aeroelastic.water_depth')
                 self.connect('env.rho_water',                   'aeroelastic.rho_water')
                 self.connect('env.mu_water',                    'aeroelastic.mu_water')
                 self.connect('env.Hsig_wave',                    'aeroelastic.Hsig_wave')     # TODO: these depend on wind speed

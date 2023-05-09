@@ -3022,6 +3022,16 @@ properties:
                                 minItems: 1
                                 minimum: 0.0
                                 maximum: 100.0
+                        current_std:
+                            type: array
+                            description: Standard deviation of water current speed. Versus current_speed for MHK. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_height is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
+                            default: []
+                            items:
+                                type: number
+                                unit: m/s
+                                minItems: 1
+                                minimum: 0.0
+                                maximum: 100.0
                         wave_heading:
                             type: array
                             description: Heading of the waves with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
@@ -3227,7 +3237,7 @@ properties:
                                     description: Name of the file that contains input profiles for WindProfileType='USR' and/or TurbModel='USRVKM' [-]
                                 RefHt:
                                     type: number
-                                    default: 1.e+2
+                                    default: 0
                                     minimum: 0
                                     maximum: 1.e+5
                                     unit: m
@@ -3383,6 +3393,16 @@ properties:
                             minimum: 0.0
                             maximum: 50.0
                             uniqueItems: true
+                    current_std:
+                        type: array
+                        description: Default standard deviation of water current speed versus current_speed for MHK. 
+                        default: []
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
                     wave_height_NSS:
                         type: array
                         description: Array of Hs for NSS conditional to wind speed
