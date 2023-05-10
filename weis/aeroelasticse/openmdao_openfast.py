@@ -1815,6 +1815,18 @@ class FASTLoadCases(ExplicitComponent):
         nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
         nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
+        # fix hub height if MHK
+        if modopt['flags']['marine_hydro']:
+            # make grid span whole water depth for now, ref height will be actual hub height to get speed right
+            # in deeper water, will need something better than this
+            grid_height = 2. * np.abs(hub_height) - 1.e-3
+            hub_height = grid_height/ 2
+            ref_height = float(inputs['water_depth'] - np.abs(inputs['hub_height']))
+
+        else:
+            ref_height = hub_height
+
+
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent:
                 # Assign values common to all DLCs
@@ -1826,7 +1838,7 @@ class FASTLoadCases(ExplicitComponent):
                     dlc_generator.cases[i_case].IECturbc = wt_class
                 # Reference height for wind speed
                 if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].RefHt = np.abs(hub_height)
+                    dlc_generator.cases[i_case].RefHt = ref_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
                 dlc_generator.cases[i_case].HubHt = np.abs(hub_height)
                 # Height of wind grid, it stops 1 mm above the ground
