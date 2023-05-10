@@ -243,7 +243,13 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.TSR_operational  = float(inputs['tsr_operational'])
         WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'])
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
-        WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
+        
+        if float(inputs['edge_freq']):
+            WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
+        else:
+            # If edgewise freq not calculated, 5\omega_rated is a good placeholder
+            # This becomes the LPF frequency, and should be adjustable as a control input in the future
+            WISDEM_turbine.bld_edgewise_freq = 5 * WISDEM_turbine.rated_rotor_speed
         
         # Floating Feedback Filters
         if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated

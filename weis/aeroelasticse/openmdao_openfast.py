@@ -1064,8 +1064,8 @@ class FASTLoadCases(ExplicitComponent):
             print("WEIS Warning: Setting FlapDOF2 to False in ElastoDyn because mode shapes were not calculated")
 
         if all(np.isnan(fst_vt['ElastoDynBlade']['BldEdgSh'])):
-            fst_vt['ElastoDyn']['EdgeDOF1'] = False
-            fst_vt['ElastoDynBlade']['BldFl1Sh'] = [1,0,0,0,0]
+            fst_vt['ElastoDyn']['EdgeDOF'] = False
+            fst_vt['ElastoDynBlade']['BldEdgSh'] = [1,0,0,0,0]
             print("WEIS Warning: Setting EdgeDOF1 to False in ElastoDyn because mode shapes were not calculated")
         
         # Update AeroDyn15
