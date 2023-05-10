@@ -246,7 +246,8 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
         # Floating Feedback Filters
-        rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
+        if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated
+            rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
         rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
 
         # Load Cp tables
