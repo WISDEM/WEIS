@@ -1318,7 +1318,7 @@ class Bedplate_IBeam_Frame(om.ExplicitComponent):
             myframe.addLoadCase(load)
 
         # myframe.write('myframe4.3dd') # Debugging
-        if False:
+        if self.options['modeling_options']['frame3dd']['flag']:
             displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
             # Loop over DLCs and append to outputs

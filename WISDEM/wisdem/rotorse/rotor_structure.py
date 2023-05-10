@@ -475,8 +475,8 @@ class RunFrame3DD(ExplicitComponent):
         # Debugging
         # blade.write('blade.3dd')
 
-        # run the analysis
-        if False:
+        # run the analysis, if frame3dd flag enabled (default is true)
+        if self.options['modeling_options']['WISDEM']['RotorSE']['frame3dd']['flag']:
             displacements, forces, reactions, internalForces, mass, modal = blade.run()
 
             # For now, just 1 load case and blade

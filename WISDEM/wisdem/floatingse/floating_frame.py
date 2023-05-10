@@ -272,7 +272,7 @@ class FrameAnalysis(om.ExplicitComponent):
 
         # myframe.write("system.3dd")
         # myframe.draw()
-        if False:
+        if self.options['options']['WISDEM']['FloatingSE']['frame3dd']['flag']:
             displacements, forces, reactions, internalForces, mass, modal = myframe.run()
 
             # Determine reaction forces
