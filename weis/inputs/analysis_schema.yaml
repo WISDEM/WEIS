@@ -323,6 +323,18 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.0
                             max: *rotor_overspeed
+                    Max_TwrBsMyt:
+                        type: object
+                        description: Maximum tower base moment
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max: 
+                                type: number
+                                default: 6.0e5
+                                minimum: 0.0
+                                maximum: 30.0e8
+                                unit: kNM
                     Max_PtfmPitch:
                         type: object
                         description: Maximum platform pitch displacement
