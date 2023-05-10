@@ -1405,11 +1405,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
             # Use coarse member nodes for HydroDyn
 
-            # Simplify members if using potential model only
-            if modopt["Level1"]["potential_model_override"] == 2:
-                joints_xyz = np.array([[0,0,0],[0,0,-1]])
-                N1 = np.array([N1[0]])
-                N2 = np.array([N2[0]])
                 
             # Tweak z-position
             idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
