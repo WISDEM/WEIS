@@ -84,6 +84,9 @@ class FASTLoadCases(ExplicitComponent):
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+        self.add_input(
+            "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
+            )
 
         if not self.options['modeling_options']['Level3']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
@@ -271,9 +274,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('rho',         val=0.0, units='kg/m**3',  desc='density of air')
             self.add_input('mu',          val=0.0, units='kg/(m*s)', desc='dynamic viscosity of air')
             self.add_input('speed_sound_air',  val=340.,    units='m/s',        desc='Speed of sound in air.')
-            self.add_input(
-                    "water_depth", val=0.0, units="m", desc="Water depth for analysis.  Values > 0 mean offshore"
-                )
             self.add_input('rho_water',   val=0.0, units='kg/m**3',  desc='density of water')
             self.add_input('mu_water',    val=0.0, units='kg/(m*s)', desc='dynamic viscosity of water')
             self.add_input('beta_wave',    val=0.0, units='deg', desc='Incident wave propagation heading direction')
