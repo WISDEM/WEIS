@@ -999,6 +999,27 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynTower']['TwFAM2Sh'] = inputs['fore_aft_modes'][1, :]  / sum(inputs['fore_aft_modes'][1, :])
         fst_vt['ElastoDynTower']['TwSSM1Sh'] = inputs['side_side_modes'][0, :] / sum(inputs['side_side_modes'][0, :])
         fst_vt['ElastoDynTower']['TwSSM2Sh'] = inputs['side_side_modes'][1, :] / sum(inputs['side_side_modes'][1, :])
+
+        # Catch cases where modes not calculated
+        if all(np.isnan(fst_vt['ElastoDynTower']['TwFAM1Sh'])):
+            fst_vt['ElastoDyn']['TwFADOF1'] = False
+            fst_vt['ElastoDynTower']['TwFAM1Sh'] = [1,0,0,0,0]  # placeholder is required in OpenFAST
+            print("WEIS Warning: Setting TwFADOF1 to False in ElastoDyn because mode shapes were not calculated")
+
+        if all(np.isnan(fst_vt['ElastoDynTower']['TwFAM2Sh'])):
+            fst_vt['ElastoDyn']['TwFADOF2'] = False
+            fst_vt['ElastoDynTower']['TwFAM2Sh'] = [1,0,0,0,0]  # placeholder is required in OpenFAST
+            print("WEIS Warning: Setting TwFADOF2 to False in ElastoDyn because mode shapes were not calculated")
+
+        if all(np.isnan(fst_vt['ElastoDynTower']['TwSSM1Sh'])):
+            fst_vt['ElastoDyn']['TwSSDOF1'] = False
+            fst_vt['ElastoDynTower']['TwSSM1Sh'] = [1,0,0,0,0]  # placeholder is required in OpenFAST
+            print("WEIS Warning: Setting TwSSDOF1 to False in ElastoDyn because mode shapes were not calculated")
+
+        if all(np.isnan(fst_vt['ElastoDynTower']['TwSSM2Sh'])):
+            fst_vt['ElastoDyn']['TwSSDOF2'] = False
+            fst_vt['ElastoDynTower']['TwSSM2Sh'] = [1,0,0,0,0]  # placeholder is required in OpenFAST
+            print("WEIS Warning: Setting TwSSDOF2 to False in ElastoDyn because mode shapes were not calculated")
         
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
@@ -1031,6 +1052,22 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
             fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
 
+        # if flap/other mode shapes are all 0s, then the DOF should be disabled because they were not calculated
+        if all(np.isnan(fst_vt['ElastoDynBlade']['BldFl1Sh'])):
+            fst_vt['ElastoDyn']['FlapDOF1'] = False
+            fst_vt['ElastoDynBlade']['BldFl1Sh'] = [1,0,0,0,0]
+            print("WEIS Warning: Setting FlapDOF1 to False in ElastoDyn because mode shapes were not calculated")
+
+        if all(np.isnan(fst_vt['ElastoDynBlade']['BldFl2Sh'])):
+            fst_vt['ElastoDyn']['FlapDOF2'] = False
+            fst_vt['ElastoDynBlade']['BldFl2Sh'] = [1,0,0,0,0]
+            print("WEIS Warning: Setting FlapDOF2 to False in ElastoDyn because mode shapes were not calculated")
+
+        if all(np.isnan(fst_vt['ElastoDynBlade']['BldEdgSh'])):
+            fst_vt['ElastoDyn']['EdgeDOF1'] = False
+            fst_vt['ElastoDynBlade']['BldFl1Sh'] = [1,0,0,0,0]
+            print("WEIS Warning: Setting EdgeDOF1 to False in ElastoDyn because mode shapes were not calculated")
+        
         # Update AeroDyn15
         fst_vt['AeroDyn15']['AirDens']   = float(inputs['rho'])
         fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
