@@ -6,6 +6,8 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.inputs.validation import get_geometry_schema, write_geometry_yaml
 from wisdem.inputs import validate_without_defaults
 from ROSCO_toolbox.utilities import read_DISCON
+from weis.aeroelasticse.FileTools import remove_numpy
+import os
 
 #=========================================================================================================================
 # OTHER FUNCTIONS
@@ -32,13 +34,17 @@ def compute_relThk(x,y):
   return max_thk
 
 # ===============================================================================================================
+# Constants
+this_dir = os.path.dirname(__file__)
+
+# ===============================================================================================================
 # Inputs
 
 # OpenFAST
 fast = InputReader_OpenFAST()
 fast.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
 #fast.FAST_InputFile = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-fast.FAST_directory = '/home/nmendoza/Projects/Ct-Opt/OpenFAST/openfast/examples/IEA-15MW-RWT'   # Path to fst directory files
+fast.FAST_directory = os.path.join(this_dir,'..','01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')
 fast.execute()
 print('successfully imported fast.fst_vt')
 
@@ -46,7 +52,7 @@ print('successfully imported fast.fst_vt')
 fast.fst_vt['DISCON_in'] = read_DISCON(fast.fst_vt['ServoDyn']['DLL_InFile'])
 
 # WEIS
-finput        = '/home/nmendoza/Projects/Ct-Opt/WEIS/examples/06_IEA-15-240-RWT/IEA-15-floating_blank.yaml'
+finput        = os.path.join(this_dir,'IEA-15-floating_blank.yaml')   # blank input here
 merged_schema = get_geometry_schema()
 weis_obj      = validate_without_defaults(finput, merged_schema)
 print('successfully imported blank weis dictionary')
@@ -68,12 +74,12 @@ weis_obj['environment']['shear_exp']            = fast.fst_vt['InflowWind']['PLe
 
 # Optional
 weis_obj['environment']['gravity']              = fast.fst_vt['Fst']['Gravity']
-weis_obj['environment']['weib_shape_parameter'] = 0 # NOT AVAILABLE IN OPENFAST
+weis_obj['environment']['weib_shape_parameter'] = merged_schema['properties']['environment']['properties']['weib_shape_parameter']['default'] # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
 weis_obj['environment']['water_density']        = fast.fst_vt['Fst']['WtrDens']
-weis_obj['environment']['water_dyn_viscosity']  = 0
+weis_obj['environment']['water_dyn_viscosity']  = merged_schema['properties']['environment']['properties']['water_dyn_viscosity']['default'] # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
 weis_obj['environment']['water_depth']          = fast.fst_vt['Fst']['WtrDpth']
-#weis_obj['environment']['soil_shear_modulus']   = 0 # NOT AVAILABLE IN OPENFAST
-#weis_obj['environment']['soil_poisson']         = 0 # NOT AVAILABLE IN OPENFAST
+weis_obj['environment']['soil_shear_modulus']   = merged_schema['properties']['environment']['properties']['soil_shear_modulus']['default'] # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
+weis_obj['environment']['soil_poisson']         = merged_schema['properties']['environment']['properties']['soil_poisson']['default'] # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
 weis_obj['environment']['air_pressure']         = fast.fst_vt['Fst']['Patm']
 weis_obj['environment']['air_vapor_pressure']   = fast.fst_vt['Fst']['Pvap']
 
@@ -83,10 +89,10 @@ print('Done')
 # -----------------------------------------------------------------------------------------------------------------------
 print('Converting the assembly properties to WEIS geometry schema and dictionary .............', end="", flush=True)
 
-weis_obj['assembly']['turbine_class']     = '' # NOT AVAILABLE IN OPENFAST
-weis_obj['assembly']['turbulence_class']  = '' # NOT AVAILABLE IN OPENFAST
+weis_obj['assembly']['turbine_class']     = merged_schema['properties']['assembly']['properties']['turbine_class']['default'] # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
+weis_obj['assembly']['turbulence_class']  = merged_schema['properties']['assembly']['properties']['turbulence_class']['default'] # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
 weis_obj['assembly']['rated_power']       = fast.fst_vt['DISCON_in']['VS_RtPwr']
-weis_obj['assembly']['lifetime']          = 0  # NOT AVAILABLE IN OPENFAST
+weis_obj['assembly']['lifetime']          = merged_schema['properties']['assembly']['properties']['lifetime']['default']  # NOT AVAILABLE IN OPENFAST, WEIS DEFAULT
 
 if fast.fst_vt['ElastoDyn']['GBRatio'] == 1:
   weis_obj['assembly']['drivetrain']      = 'direct_drive'
@@ -114,12 +120,12 @@ weis_obj['airfoils'] = [copy.deepcopy(AF_obj) for x in range(len(numAF))] # deep
 for i in numAF:
     #print('i = ',i)
     # coordinates
-    weis_obj['airfoils'][i]['coordinates']['x']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['x']
-    weis_obj['airfoils'][i]['coordinates']['y']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['y']
+    weis_obj['airfoils'][i]['coordinates']['x']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['x'].tolist()
+    weis_obj['airfoils'][i]['coordinates']['y']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['y'].tolist()
     # properties
-    weis_obj['airfoils'][i]['name']                       = str(fast.fst_vt['AeroDynBlade']['BlAFID'][i])
-    weis_obj['airfoils'][i]['aerodynamic_center']         = fast.fst_vt['AeroDyn15']['ac'][i]
-    weis_obj['airfoils'][i]['relative_thickness']         = compute_relThk(weis_obj['airfoils'][i]['coordinates']['x'],weis_obj['airfoils'][i]['coordinates']['y'])
+    weis_obj['airfoils'][i]['name']                       = f"airfoil_{int(fast.fst_vt['AeroDynBlade']['BlAFID'][i])}"
+    weis_obj['airfoils'][i]['aerodynamic_center']         = float(fast.fst_vt['AeroDyn15']['ac'][i])
+    weis_obj['airfoils'][i]['relative_thickness']         = float(compute_relThk(weis_obj['airfoils'][i]['coordinates']['x'],weis_obj['airfoils'][i]['coordinates']['y']))
     # polars
     AoA = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Alpha']
     weis_obj['airfoils'][i]['polars'][0]['c_l']['grid']   = [A * pi/180 for A in AoA]
@@ -140,7 +146,7 @@ blade_length = fast.fst_vt['AeroDynBlade']['BlSpn'][-1]
 BlSpn = fast.fst_vt['AeroDynBlade']['BlSpn']
 # Airfoil Positions
 weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = [L / blade_length for L in BlSpn]
-weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = str(fast.fst_vt['AeroDynBlade']['BlAFID'])
+weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = [f'{int(afid)}' for afid in fast.fst_vt['AeroDynBlade']['BlAFID']]
 # Chord
 weis_obj['components']['blade']['outer_shape_bem']['chord']['grid']                 = [L / blade_length for L in BlSpn]
 weis_obj['components']['blade']['outer_shape_bem']['chord']['values']               = fast.fst_vt['AeroDynBlade']['BlChord']
@@ -206,8 +212,8 @@ weis_obj['components']['nacelle']['drivetrain']['gear_ratio']                   
 weis_obj['components']['nacelle']['drivetrain']['gearbox_length_user']                     = 0
 weis_obj['components']['nacelle']['drivetrain']['gearbox_radius_user']                     = 0
 weis_obj['components']['nacelle']['drivetrain']['gearbox_mass_user']                       = 0
-weis_obj['components']['nacelle']['drivetrain']['gearbox_efficiency']                      = fast.fst_vt['ElastoDyn']['GBoxEff']
-weis_obj['components']['nacelle']['drivetrain']['damping_ratio']                           = 0 #fast.fst_vt['ElastoDyn']['DTTorDmp']???
+weis_obj['components']['nacelle']['drivetrain']['gearbox_efficiency']                      = fast.fst_vt['ElastoDyn']['GBoxEff'] / 100
+weis_obj['components']['nacelle']['drivetrain']['damping_ratio']                           = 0 #fast.fst_vt['ElastoDyn']['DTTorDmp']???  Not quite.  I'm not sure we can get it with the OpenFAST info
 weis_obj['components']['nacelle']['drivetrain']['lss_diameter']                            = []
 weis_obj['components']['nacelle']['drivetrain']['lss_wall_thickness']                      = []
 weis_obj['components']['nacelle']['drivetrain']['lss_material']                            = ''
@@ -473,8 +479,8 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
   N_obj               = weis_obj['components']['mooring']['nodes'][0] # LT_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['mooring']['nodes'] = [copy.deepcopy(N_obj) for x in range(len(numN))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
   for n in numN:
-    weis_obj['components']['mooring']['nodes'][n]['name']        = fast.fst_vt['MoorDyn']['Point_ID'][n]
-    weis_obj['components']['mooring']['nodes'][n]['node_type']   = fast.fst_vt['MoorDyn']['Attachment'][n]
+    weis_obj['components']['mooring']['nodes'][n]['name']        = f"node_{fast.fst_vt['MoorDyn']['Point_ID'][n]}"
+    weis_obj['components']['mooring']['nodes'][n]['node_type']   = fast.fst_vt['MoorDyn']['Attachment'][n].lower()
     weis_obj['components']['mooring']['nodes'][n]['node_mass']   = fast.fst_vt['MoorDyn']['M'][n]
     weis_obj['components']['mooring']['nodes'][n]['node_volume'] = fast.fst_vt['MoorDyn']['V'][n]
     weis_obj['components']['mooring']['nodes'][n]['location']    = [fast.fst_vt['MoorDyn']['X'][n], fast.fst_vt['MoorDyn']['Y'][n], fast.fst_vt['MoorDyn']['Z'][n]]
@@ -491,12 +497,13 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
   numL                = range(len(fast.fst_vt['MoorDyn']['Line_ID']))
   L_obj               = weis_obj['components']['mooring']['lines'][0] # LT_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['mooring']['lines'] = [copy.deepcopy(L_obj) for x in range(len(numL))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+  node_names = [node['name'] for node in weis_obj['components']['mooring']['nodes']]
   for l in numL:
-    weis_obj['components']['mooring']['lines'][l]['name']               = fast.fst_vt['MoorDyn']['Line_ID'][l]
+    weis_obj['components']['mooring']['lines'][l]['name']               = f"line_{fast.fst_vt['MoorDyn']['Line_ID'][l]}"
     weis_obj['components']['mooring']['lines'][l]['line_type']          = fast.fst_vt['MoorDyn']['LineType'][l]
     weis_obj['components']['mooring']['lines'][l]['unstretched_length'] = fast.fst_vt['MoorDyn']['UnstrLen'][l]
-    weis_obj['components']['mooring']['lines'][l]['node1']              = fast.fst_vt['MoorDyn']['AttachA'][l]
-    weis_obj['components']['mooring']['lines'][l]['node2']              = fast.fst_vt['MoorDyn']['AttachB'][l]
+    weis_obj['components']['mooring']['lines'][l]['node1']              = node_names[fast.fst_vt['MoorDyn']['AttachA'][l]-1]
+    weis_obj['components']['mooring']['lines'][l]['node2']              = node_names[fast.fst_vt['MoorDyn']['AttachB'][l]-1]
 
   # Anchor Types
   weis_obj['components']['mooring']['anchor_types'][0]['name'] = ''
@@ -830,19 +837,61 @@ weis_obj['materials'][10]['fiber_density'] = 0
 weis_obj['materials'][10]['area_density_dry'] = 0
 weis_obj['materials'][10]['roll_mass'] = 0
 
+# Required user inputs, use defaults
+# -----------------------------------------------------------------------------------------------------------------------
+
+
+# Drivetrain
+drive_props = merged_schema['properties']['components']['properties']['nacelle']['properties']['drivetrain']['properties']
+
+weis_obj['components']['nacelle']['drivetrain']['mb1Type']                                 = drive_props['mb1Type']['default']
+weis_obj['components']['nacelle']['drivetrain']['mb2Type']                                 = drive_props['mb2Type']['default']
+
+gen_props = merged_schema['properties']['components']['properties']['nacelle']['properties']['generator']['properties']
+
+weis_obj['components']['nacelle']['generator']['generator_type']                           = gen_props['generator_type']['default']
+
+
+# Mooring
+if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
+
+  # Line Types
+  for lt in numLT:
+    weis_obj['components']['mooring']['line_types'][lt]['type']     = 'chain' # MATERIAL NOT AVAILABLE IN OPENFAST: [chain, chain_stud, nylon, polyester, polypropylene, wire_fiber, fiber, wire, wire_wire, iwrc, Chain, Chain_Stud, Nylon, Polyester, Polypropylene, Wire, Wire_Fiber, Fiber, Wire, Wire_Wire, IWRC, CHAIN, CHAIN_STUD, NYLON, POLYESTER, POLYPROPYLENE, WIRE, WIRE_FIBER, FIBER, WIRE, WIRE_WIRE, custom, Custom, CUSTOM]
+
+  # Nodes (same as Points)
+  numN                = range(len(fast.fst_vt['MoorDyn']['Point_ID']))
+  for n in numN:
+    if fast.fst_vt['MoorDyn']['Attachment'][0].lower() == 'fixed':
+      # then also need joint, anchor_type
+      # weis_obj['components']['mooring']['nodes'][n]['joint'] = ''   # This comes from HydroDyn
+      weis_obj['components']['mooring']['nodes'][n]['anchor_type'] = 'rigid' # must be one from list below
+    elif fast.fst_vt['MoorDyn']['Attachment'][0].lower() == 'vessel':
+      # then also need joint, fairlead_type ()
+      # weis_obj['components']['mooring']['nodes'][n]['joint'] = ''   # Also from hydrodyn?? May
+      weis_obj['components']['mooring']['nodes'][n]['fairlead_type'] = 'rigid' # must be one of ['rigid','actuated','ball']
+
+  weis_obj['components']['mooring']['anchor_types'][0]['name'] = 'drag_embedment'
+  weis_obj['components']['mooring']['anchor_types'][0]['type'] = 'drag_embedment' # must be one of [drag_embedment, suction, plate, micropile, sepla, Drag_Embedment, Suction, Plate, Micropile, Sepla, DRAG_EMBEDMENT, SUCTION, PLATE, MICROPILE, SEPLA, custom, Custom, CUSTOM]
+
+
+
 #=========================================================================================================================
 # OUTPUTS
 
 # Print out the final, new weis geometry yaml input file
 project_name = fast.FAST_InputFile.split('.')[0]
 print('Write the clean output geometry yaml file .........', end="", flush=True)
-#write_geometry_yaml(weis_obj, fast.FAST_directory + '/' + project_name + '_CLEAN.yaml')
+weis_obj = remove_numpy(weis_obj)
+write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_CLEAN.yaml'))
 print('Done')
 
 #=========================================================================================================================
 # ASSUMPTIONS
 
 # Insert assumed variable values here
+
+
 
 # Turbine System Costs
 # -----------------------------------------------------------------------------------------------------------------------
@@ -895,7 +944,7 @@ weis_obj['bos']['design_install_plan_cost']          = 2.5e6
 
 # Print out the final, weis geometry yaml input file with assumptions
 print('Writing the output geometry yaml file with assumptions, approximations, and estimates .........', end="", flush=True)
-#write_geometry_yaml(weis_obj, fast.FAST_directory + '/' + project_name + '_GUESTIMATED.yaml')
+write_geometry_yaml(weis_obj, fast.FAST_directory + '/' + project_name + '_GUESTIMATED.yaml')
 print('Done')
 
 exit()
