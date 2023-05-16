@@ -3192,21 +3192,21 @@ properties:
                                     description: Usable length of output time series [seconds] (program will add GridWidth/MeanHHWS seconds unless UsableTime is 'ALL')
                                 HubHt:
                                     type: number
-                                    default: 1.e+2
+                                    default: 0
                                     minimum: 1.e+1
                                     maximum: 5.e+2
                                     unit: m
                                     description: Hub height [m] (should be > 0.5*GridHeight)
                                 GridHeight:
                                     type: number
-                                    default: 1.e+2
+                                    default: 0
                                     minimum: 1.e+1
                                     maximum: 5.e+2
                                     unit: m
                                     description: Grid height [m]
                                 GridWidth:
                                     type: number
-                                    default: 1.e+2
+                                    default: 0
                                     minimum: 1.e+1
                                     maximum: 5.e+2
                                     unit: m
@@ -3254,7 +3254,7 @@ properties:
                                     description: Name of the file that contains input profiles for WindProfileType='USR' and/or TurbModel='USRVKM' [-]
                                 RefHt:
                                     type: number
-                                    default: 1.e+2
+                                    default: 0
                                     minimum: 0
                                     maximum: 1.e+5
                                     unit: m
