@@ -3,7 +3,7 @@ import copy, numpy as np
 import weis.inputs as inp
 from math import degrees, radians, pi, sin, cos
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.inputs.validation import get_geometry_schema, write_geometry_yaml
+from weis.inputs.validation import get_geometry_schema, write_geometry_yaml, load_geometry_yaml
 from wisdem.inputs import validate_without_defaults
 from ROSCO_toolbox.utilities import read_DISCON
 from weis.aeroelasticse.FileTools import remove_numpy
@@ -144,25 +144,27 @@ print('Converting the blade planform properties to WEIS geometry schema and dict
 # Blade nodes = nondimensionalize
 blade_length = fast.fst_vt['AeroDynBlade']['BlSpn'][-1]
 BlSpn = fast.fst_vt['AeroDynBlade']['BlSpn']
+blade_fraction = [L / blade_length for L in BlSpn]
+
 # Airfoil Positions
-weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = [L / blade_length for L in BlSpn]
+weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = [f'{int(afid)}' for afid in fast.fst_vt['AeroDynBlade']['BlAFID']]
 # Chord
-weis_obj['components']['blade']['outer_shape_bem']['chord']['grid']                 = [L / blade_length for L in BlSpn]
+weis_obj['components']['blade']['outer_shape_bem']['chord']['grid']                 = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['chord']['values']               = fast.fst_vt['AeroDynBlade']['BlChord']
 # Twist
-weis_obj['components']['blade']['outer_shape_bem']['twist']['grid']                 = [L / blade_length for L in BlSpn]
+weis_obj['components']['blade']['outer_shape_bem']['twist']['grid']                 = blade_fraction
 twist = fast.fst_vt['AeroDynBlade']['BlTwist'] # convert to radians
 weis_obj['components']['blade']['outer_shape_bem']['twist']['values']               = [T * pi/180 for T in twist]
 # Pitch Axis
-weis_obj['components']['blade']['outer_shape_bem']['pitch_axis']['grid']            = [L / blade_length for L in BlSpn]
-weis_obj['components']['blade']['outer_shape_bem']['pitch_axis']['values']          = fast.fst_vt['ElastoDynBlade']['PitchAxis']
+weis_obj['components']['blade']['outer_shape_bem']['pitch_axis']['grid']            = blade_fraction
+weis_obj['components']['blade']['outer_shape_bem']['pitch_axis']['values']          = np.interp(blade_fraction,fast.fst_vt['ElastoDynBlade']['BlFract'],fast.fst_vt['ElastoDynBlade']['PitchAxis'])
 # Reference Axis (normal prebend is negative in weis)
-weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']   = [L / blade_length for L in BlSpn]
+weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['x']['grid']   = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['x']['values'] = [-x for x in fast.fst_vt['AeroDynBlade']['BlCrvAC']]
-weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['y']['grid']   = [L / blade_length for L in BlSpn]
+weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['y']['grid']   = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['y']['values'] = fast.fst_vt['AeroDynBlade']['BlSwpAC']
-weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['z']['grid']   = [L / blade_length for L in BlSpn]
+weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['z']['grid']   = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['z']['values'] = fast.fst_vt['AeroDynBlade']['BlSpn']
 
 print('Done')
@@ -428,7 +430,7 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameteri
   M_obj      = weis_obj['components']['floating_platform']['members'][0] # M_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['floating_platform']['members'] = [copy.deepcopy(M_obj) for x in range(numMembers)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
   for m in range(numMembers):
-    weis_obj['components']['floating_platform']['members'][m]['name']               = str(fast.fst_vt['HydroDyn']['MemberID'][m])
+    weis_obj['components']['floating_platform']['members'][m]['name']               = f"member_{int(fast.fst_vt['HydroDyn']['MemberID'][m])}"
     weis_obj['components']['floating_platform']['members'][m]['joint1']             = str(fast.fst_vt['HydroDyn']['MJointID1'][m])
     weis_obj['components']['floating_platform']['members'][m]['joint2']             = str(fast.fst_vt['HydroDyn']['MJointID2'][m])
     #weis_obj['components']['floating_platform']['members'][m]['Ca']                 = 0 # ONLY AVAILABLE FOR JOINTS
@@ -729,7 +731,7 @@ weis_obj['materials'][6]['fiber_density'] = 2535.5
 weis_obj['materials'][6]['area_density_dry'] = 1.4454324430914534
 weis_obj['materials'][6]['roll_mass'] = 181.4368
 
-weis_obj['materials'][7]['name'] = 'carbonUD'
+weis_obj['materials'][7]['name'] = 'CarbonUD'
 weis_obj['materials'][7]['description'] = ''
 weis_obj['materials'][7]['source'] = ''
 weis_obj['materials'][7]['orth'] = 1
@@ -889,62 +891,141 @@ print('Done')
 #=========================================================================================================================
 # ASSUMPTIONS
 
-# Insert assumed variable values here
+assumed_model_file = os.path.join(this_dir,'IEA-15-floating_wTMDs.yaml')
+assumed_model = load_geometry_yaml(assumed_model_file)
 
+# Insert assumed variable values below here
 
 
 # Turbine System Costs
 # -----------------------------------------------------------------------------------------------------------------------
-weis_obj['costs']['wake_loss_factor']                      = 0.15
-weis_obj['costs']['fixed_charge_rate']                     = 0.056
-weis_obj['costs']['bos_per_kW']                            = 4053.
-weis_obj['costs']['opex_per_kW']                           = 137.
-weis_obj['costs']['turbine_number']                        = 40.
-weis_obj['costs']['labor_rate']                            = 58.8
-weis_obj['costs']['painting_rate']                         = 30.0
-weis_obj['costs']['blade_mass_cost_coeff']                 = 14.6
-weis_obj['costs']['hub_mass_cost_coeff']                   = 3.9
-weis_obj['costs']['pitch_system_mass_cost_coeff']          = 22.1
-weis_obj['costs']['spinner_mass_cost_coeff']               = 11.1
-weis_obj['costs']['lss_mass_cost_coeff']                   = 11.9
-weis_obj['costs']['bearing_mass_cost_coeff']               = 4.5
-weis_obj['costs']['gearbox_mass_cost_coeff']               = 12.9
-weis_obj['costs']['hss_mass_cost_coeff']                   = 6.8
-weis_obj['costs']['generator_mass_cost_coeff']             = 12.4
-weis_obj['costs']['bedplate_mass_cost_coeff']              = 2.9
-weis_obj['costs']['yaw_mass_cost_coeff']                   = 8.3
-weis_obj['costs']['converter_mass_cost_coeff']             = 18.8
-weis_obj['costs']['transformer_mass_cost_coeff']           = 18.8
-weis_obj['costs']['hvac_mass_cost_coeff']                  = 124.0
-weis_obj['costs']['cover_mass_cost_coeff']                 = 5.7
-weis_obj['costs']['elec_connec_machine_rating_cost_coeff'] = 41.85
-weis_obj['costs']['platforms_mass_cost_coeff']             = 17.1
-weis_obj['costs']['tower_mass_cost_coeff']                 = 2.9
-weis_obj['costs']['controls_machine_rating_cost_coeff']    = 21.15
-weis_obj['costs']['crane_cost']                            = 12e3
+weis_obj['costs'] = assumed_model['costs'].copy()
+
+
+# weis_obj['costs']['wake_loss_factor']                      = 0.15
+# weis_obj['costs']['fixed_charge_rate']                     = 0.056
+# weis_obj['costs']['bos_per_kW']                            = 4053.
+# weis_obj['costs']['opex_per_kW']                           = 137.
+# weis_obj['costs']['turbine_number']                        = 40.
+# weis_obj['costs']['labor_rate']                            = 58.8
+# weis_obj['costs']['painting_rate']                         = 30.0
+# weis_obj['costs']['blade_mass_cost_coeff']                 = 14.6
+# weis_obj['costs']['hub_mass_cost_coeff']                   = 3.9
+# weis_obj['costs']['pitch_system_mass_cost_coeff']          = 22.1
+# weis_obj['costs']['spinner_mass_cost_coeff']               = 11.1
+# weis_obj['costs']['lss_mass_cost_coeff']                   = 11.9
+# weis_obj['costs']['bearing_mass_cost_coeff']               = 4.5
+# weis_obj['costs']['gearbox_mass_cost_coeff']               = 12.9
+# weis_obj['costs']['hss_mass_cost_coeff']                   = 6.8
+# weis_obj['costs']['generator_mass_cost_coeff']             = 12.4
+# weis_obj['costs']['bedplate_mass_cost_coeff']              = 2.9
+# weis_obj['costs']['yaw_mass_cost_coeff']                   = 8.3
+# weis_obj['costs']['converter_mass_cost_coeff']             = 18.8
+# weis_obj['costs']['transformer_mass_cost_coeff']           = 18.8
+# weis_obj['costs']['hvac_mass_cost_coeff']                  = 124.0
+# weis_obj['costs']['cover_mass_cost_coeff']                 = 5.7
+# weis_obj['costs']['elec_connec_machine_rating_cost_coeff'] = 41.85
+# weis_obj['costs']['platforms_mass_cost_coeff']             = 17.1
+# weis_obj['costs']['tower_mass_cost_coeff']                 = 2.9
+# weis_obj['costs']['controls_machine_rating_cost_coeff']    = 21.15
+# weis_obj['costs']['crane_cost']                            = 12e3
 
 # Balance of System Costs
 # -----------------------------------------------------------------------------------------------------------------------
-weis_obj['bos']['plant_turbine_spacing']             = 7
-weis_obj['bos']['plant_row_spacing']                 = 7
-weis_obj['bos']['commissioning_pct']                 = 0.01
-weis_obj['bos']['decommissioning_pct']               = 0.15
-weis_obj['bos']['distance_to_substation']            = 1.0
-weis_obj['bos']['distance_to_interconnection']       = 8.5
-weis_obj['bos']['interconnect_voltage']              = 130.
-weis_obj['bos']['distance_to_site']                  = 115.
-weis_obj['bos']['distance_to_landfall']              = 50.
-weis_obj['bos']['port_cost_per_month']               = 2e6
-weis_obj['bos']['site_auction_price']                = 100e6
-weis_obj['bos']['site_assessment_plan_cost']         = 1e6
-weis_obj['bos']['site_assessment_cost']              = 25e6
-weis_obj['bos']['construction_operations_plan_cost'] = 2.5e6
-weis_obj['bos']['boem_review_cost']                  = 0.0
-weis_obj['bos']['design_install_plan_cost']          = 2.5e6
+weis_obj['bos'] = assumed_model['bos'].copy()
+
+# weis_obj['bos']['plant_turbine_spacing']             = 7
+# weis_obj['bos']['plant_row_spacing']                 = 7
+# weis_obj['bos']['commissioning_pct']                 = 0.01
+# weis_obj['bos']['decommissioning_pct']               = 0.15
+# weis_obj['bos']['distance_to_substation']            = 1.0
+# weis_obj['bos']['distance_to_interconnection']       = 8.5
+# weis_obj['bos']['interconnect_voltage']              = 130.
+# weis_obj['bos']['distance_to_site']                  = 115.
+# weis_obj['bos']['distance_to_landfall']              = 50.
+# weis_obj['bos']['port_cost_per_month']               = 2e6
+# weis_obj['bos']['site_auction_price']                = 100e6
+# weis_obj['bos']['site_assessment_plan_cost']         = 1e6
+# weis_obj['bos']['site_assessment_cost']              = 25e6
+# weis_obj['bos']['construction_operations_plan_cost'] = 2.5e6
+# weis_obj['bos']['boem_review_cost']                  = 0.0
+# weis_obj['bos']['design_install_plan_cost']          = 2.5e6
+
+
+# Generator info: all generator info provided above looked like placeholders
+weis_obj['components']['nacelle']['generator'] = assumed_model['components']['nacelle']['generator']
+
+# Drivetrain info: some can be inferred from OpenFAST model, try to keep that
+drivetrain_params = [
+  'distance_hub_mb',
+  'distance_mb_mb',
+  'generator_length',
+  'generator_radius_user',
+  'generator_mass_user',
+  'gearbox_length_user',
+  'gearbox_radius_user',
+  'gearbox_mass_user',
+  'damping_ratio',
+  'lss_diameter',
+  'lss_wall_thickness',
+  'lss_material',
+  'hss_length',
+  'hss_diameter',
+  'hss_wall_thickness',
+  'hss_material',
+  'nose_diameter',
+  'nose_wall_thickness',
+  'bedplate_flange_width',
+  'bedplate_flange_thickness',
+  'bedplate_web_thickness',
+  'bedplate_material',
+  'brake_mass_user',
+  'hvac_mass_coefficient',
+  'converter_mass_user',
+  'transformer_mass_user',
+  'mb1Type',
+  'mb2Type',
+  'uptower',
+  'gear_configuration',
+  'planet_numbers'
+]
+
+weis_drivetrain = weis_obj['components']['nacelle']['drivetrain']
+assumed_drivetrain = assumed_model['components']['nacelle']['drivetrain']
+for param in drivetrain_params:
+  weis_drivetrain[param] = assumed_drivetrain[param]
+
+
+weis_drivetrain['generator_rpm_efficiency_user']['grid']    = assumed_drivetrain['generator_rpm_efficiency_user']['grid']
+weis_drivetrain['generator_rpm_efficiency_user']['values']  = assumed_drivetrain['generator_rpm_efficiency_user']['values'] 
+weis_drivetrain['bedplate_wall_thickness']['grid']          = assumed_drivetrain['bedplate_wall_thickness']['grid']
+weis_drivetrain['bedplate_wall_thickness']['values']        = assumed_drivetrain['bedplate_wall_thickness']['values']
+
+# Blade Structure
+# -----------------------------------------------------------------------------------------------------------------------
+weis_obj['components']['blade']['internal_structure_2d_fem'] = assumed_model['components']['blade']['internal_structure_2d_fem'].copy()
+
+# Tower Structure
+# -----------------------------------------------------------------------------------------------------------------------
+weis_obj['components']['tower']['internal_structure_2d_fem'] = assumed_model['components']['tower']['internal_structure_2d_fem'].copy()
+
+
+
+# Platform internal structure
+if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameterize the floating hull/platform  
+  
+  assumed_members = assumed_model['components']['floating_platform']['members']
+  members = weis_obj['components']['floating_platform']['members']
+  
+  for member, assumed_member in zip(members,assumed_members):
+    member['internal_structure'] = assumed_member['internal_structure'].copy()
+
+
 
 # Print out the final, weis geometry yaml input file with assumptions
 print('Writing the output geometry yaml file with assumptions, approximations, and estimates .........', end="", flush=True)
-write_geometry_yaml(weis_obj, fast.FAST_directory + '/' + project_name + '_GUESTIMATED.yaml')
+write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_ASSUMED.yaml'))
+
 print('Done')
 
 exit()
