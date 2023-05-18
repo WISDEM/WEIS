@@ -3,8 +3,8 @@ import copy, numpy as np
 import weis.inputs as inp
 from math import degrees, radians, pi, sin, cos
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.inputs.validation import get_geometry_schema, write_geometry_yaml
-from wisdem.inputs import validate_without_defaults
+from weis.inputs.validation import get_geometry_schema
+from wisdem.inputs import validate_without_defaults, write_yaml
 from ROSCO_toolbox.utilities import read_DISCON
 
 #=========================================================================================================================
@@ -79,6 +79,7 @@ weis_obj['environment']['air_vapor_pressure']   = fast.fst_vt['Fst']['Pvap']
 
 print('Done')
 
+
 # Assembly
 # -----------------------------------------------------------------------------------------------------------------------
 print('Converting the assembly properties to WEIS geometry schema and dictionary .............', end="", flush=True)
@@ -103,6 +104,7 @@ weis_obj['assembly']['rotor_diameter']    = 2*fast.fst_vt['ElastoDyn']['TipRad']
 weis_obj['assembly']['hub_height']        = fast.fst_vt['ElastoDyn']['TowerHt'] + fast.fst_vt['ElastoDyn']['Twr2Shft']+abs(fast.fst_vt['ElastoDyn']['OverHang'])*sin(radians(abs(fast.fst_vt['ElastoDyn']['ShftTilt'])))
 
 print('Done')
+
 
 # Airfoils
 # -----------------------------------------------------------------------------------------------------------------------
@@ -130,6 +132,7 @@ for i in numAF:
     weis_obj['airfoils'][i]['polars'][0]['c_m']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cm']
 
 print('Done')
+
 
 # Blades
 # -----------------------------------------------------------------------------------------------------------------------
@@ -161,6 +164,7 @@ weis_obj['components']['blade']['outer_shape_bem']['reference_axis']['z']['value
 
 print('Done')
 
+
 # Hub
 # -----------------------------------------------------------------------------------------------------------------------
 print('Converting the hub properties to WEIS geometry schema and dictionary .........', end="", flush=True)
@@ -186,6 +190,7 @@ weis_obj['components']['hub']['drag_coefficient'] = 0.0 # NOT AVAILABLE IN OPENF
 #weis_obj['components']['hub']['spinner_material'] = 
 
 print('Done')
+
 
 # Nacelle
 # -----------------------------------------------------------------------------------------------------------------------
@@ -291,6 +296,7 @@ weis_obj['components']['nacelle']['generator']['rho_PM']           = 0
 
 print('Done')
 
+
 # Tower
 # -----------------------------------------------------------------------------------------------------------------------
 print('Converting the tower properties to WEIS geometry schema and dictionary .........', end="", flush=True)
@@ -333,6 +339,7 @@ weis_obj['components']['tower']['internal_structure_2d_fem']['layers'][0]['thick
 # Elastic Properties (Multi-body)? - optional
 
 print('Done')
+
 
 # Monopile
 # -----------------------------------------------------------------------------------------------------------------------
@@ -399,25 +406,53 @@ if fast.fst_vt['Fst']['CompSub'] == 1: # if there is no mooring, then its fixed-
 
   print('Done')
 
+
 # Floating Platform
 # -----------------------------------------------------------------------------------------------------------------------
-# Pietro: we model floaters in hydrodyn + wamit
-
 # Logic to determine if the system is fixed-bottom or floating
-if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameterize the floating hull/platform  
+if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then its floating so parameterize the floating hull/platform  
   print('Converting the floating platform properties to WEIS geometry schema and dictionary .........', end="", flush=True)
 
   # Required
-  numJoints = fast.fst_vt['HydroDyn']['NJoints']
+  
+  # Joints
+  numJoints = fast.fst_vt['HydroDyn']['NJoints'] + len(fast.fst_vt['MoorDyn']['Point_ID']) # total number of joints from both HydroDyn and MoorDyn
   J_obj     = weis_obj['components']['floating_platform']['joints'][0] # J_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['floating_platform']['joints'] = [copy.deepcopy(J_obj) for x in range(numJoints)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
-  for j in range(numJoints):
+
+  max_height = max(fast.fst_vt['HydroDyn']['Jointzi'])
+  for j in range(fast.fst_vt['HydroDyn']['NJoints']):
     weis_obj['components']['floating_platform']['joints'][j]['name']        = str(fast.fst_vt['HydroDyn']['JointID'][j])
     weis_obj['components']['floating_platform']['joints'][j]['location']    = [fast.fst_vt['HydroDyn']['Jointxi'][j], fast.fst_vt['HydroDyn']['Jointyi'][j], fast.fst_vt['HydroDyn']['Jointzi'][j]]
     weis_obj['components']['floating_platform']['joints'][j]['cylindrical'] = False # are cylindrical coordinates used to describe the location of this joint?
     #weis_obj['components']['floating_platform']['joints'][j]['reactions']   = [] # joint DOFs
-    #weis_obj['components']['floating_platform']['joints'][j]['transition']  = False # does the transition between tower and platform happen at this joint?
-    
+    # does the transition between tower and platform happen at this joint?
+    if (abs(fast.fst_vt['HydroDyn']['Jointxi'][j]) < 0.001) and (abs(fast.fst_vt['HydroDyn']['Jointyi'][j]) < 0.001) and (abs(fast.fst_vt['HydroDyn']['Jointzi'][j]) == max_height):
+      weis_obj['components']['floating_platform']['joints'][j]['transition']  = True
+    else: 
+      weis_obj['components']['floating_platform']['joints'][j]['transition']  = False
+
+  j = j + 1
+  anchor_count = 1
+  fairlead_count = 1
+  
+  # Add the joints (nodes) from MoorDyn
+  for k in range(len(fast.fst_vt['MoorDyn']['Point_ID'])): 
+    if fast.fst_vt['MoorDyn']['Attachment'][k].lower() == 'fixed':
+      weis_obj['components']['floating_platform']['joints'][j]['name']        = 'anchor' + str(anchor_count)
+      anchor_count = anchor_count + 1
+    elif fast.fst_vt['MoorDyn']['Attachment'][k].lower() == 'vessel':
+      weis_obj['components']['floating_platform']['joints'][j]['name']        = 'fairlead' + str(fairlead_count)
+      fairlead_count = fairlead_count + 1
+    else:
+      weis_obj['components']['floating_platform']['joints'][j]['name']        = ''
+      
+    weis_obj['components']['floating_platform']['joints'][j]['location']    = [fast.fst_vt['MoorDyn']['X'][k], fast.fst_vt['MoorDyn']['Y'][k], fast.fst_vt['MoorDyn']['Z'][k]]
+    weis_obj['components']['floating_platform']['joints'][j]['cylindrical'] = False # are cylindrical coordinates used to describe the location of this joint?
+    #weis_obj['components']['floating_platform']['joints'][j]['reactions']   = [] # joint DOFs
+    j = j + 1
+
+  # Members
   numMembers = fast.fst_vt['HydroDyn']['NMembers']
   M_obj      = weis_obj['components']['floating_platform']['members'][0] # M_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['floating_platform']['members'] = [copy.deepcopy(M_obj) for x in range(numMembers)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
@@ -439,7 +474,10 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameteri
     weis_obj['components']['floating_platform']['members'][m]['internal_structure']['layers'][0]['material']            = '' # NOT AVAILABLE IN OPENFAST
     weis_obj['components']['floating_platform']['members'][m]['internal_structure']['layers'][0]['thickness']['grid']   = [0, 1]
     weis_obj['components']['floating_platform']['members'][m]['internal_structure']['layers'][0]['thickness']['values'] = [fast.fst_vt['HydroDyn']['PropThck'][idxProp], fast.fst_vt['HydroDyn']['PropThck'][idxProp]]
-    #weis_obj['components']['floating_platform']['members'][m]['axial_joints']       = ''
+    
+  # TODO: axial joints
+  #weis_obj['components']['floating_platform']['members'][m]['axial_joints'][?]['name']  = fast.fst_vt['MoorDyn']['Point_ID'][vessel_idx(z1)]
+  #weis_obj['components']['floating_platform']['members'][m]['axial_joints'][?]['grid']  = 0.0 # will need to update
 
   # Optional
   #weis_obj['components']['floating_platform']['rigid_bodies']['joint1']             = ''
@@ -453,43 +491,16 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameteri
 
   print('Done')
 
+
 # Mooring
 # -----------------------------------------------------------------------------------------------------------------------
 # Logic to determine if the system is fixed-bottom or floating
 if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
   print('Converting the mooring properties to WEIS geometry schema and dictionary .........', end="", flush=True)
 
-  # Line Types
-  numLT                = range(len(fast.fst_vt['MoorDyn']['Name']))
-  LT_obj               = weis_obj['components']['mooring']['line_types'][0] # LT_obj is now a pointer to the first index of the dictionary
-  weis_obj['components']['mooring']['line_types'] = [copy.deepcopy(LT_obj) for x in range(len(numLT))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
-  for lt in numLT:
-    weis_obj['components']['mooring']['line_types'][lt]['name']     = fast.fst_vt['MoorDyn']['Name'][lt]
-    weis_obj['components']['mooring']['line_types'][lt]['diameter'] = fast.fst_vt['MoorDyn']['Diam'][lt]
-    weis_obj['components']['mooring']['line_types'][lt]['type']     = '' # MATERIAL NOT AVAILABLE IN OPENFAST: [chain, chain_stud, nylon, polyester, polypropylene, wire_fiber, fiber, wire, wire_wire, iwrc, Chain, Chain_Stud, Nylon, Polyester, Polypropylene, Wire, Wire_Fiber, Fiber, Wire, Wire_Wire, IWRC, CHAIN, CHAIN_STUD, NYLON, POLYESTER, POLYPROPYLENE, WIRE, WIRE_FIBER, FIBER, WIRE, WIRE_WIRE, custom, Custom, CUSTOM]
-
-  # Nodes (same as Points)
-  numN                = range(len(fast.fst_vt['MoorDyn']['Point_ID']))
-  N_obj               = weis_obj['components']['mooring']['nodes'][0] # LT_obj is now a pointer to the first index of the dictionary
-  weis_obj['components']['mooring']['nodes'] = [copy.deepcopy(N_obj) for x in range(len(numN))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
-  for n in numN:
-    weis_obj['components']['mooring']['nodes'][n]['name']        = fast.fst_vt['MoorDyn']['Point_ID'][n]
-    weis_obj['components']['mooring']['nodes'][n]['node_type']   = fast.fst_vt['MoorDyn']['Attachment'][n]
-    weis_obj['components']['mooring']['nodes'][n]['node_mass']   = fast.fst_vt['MoorDyn']['M'][n]
-    weis_obj['components']['mooring']['nodes'][n]['node_volume'] = fast.fst_vt['MoorDyn']['V'][n]
-    weis_obj['components']['mooring']['nodes'][n]['location']    = [fast.fst_vt['MoorDyn']['X'][n], fast.fst_vt['MoorDyn']['Y'][n], fast.fst_vt['MoorDyn']['Z'][n]]
-    if fast.fst_vt['MoorDyn']['Attachment'][0].lower() == 'fixed':
-      # then also need joint, anchor_type
-      weis_obj['components']['mooring']['nodes'][n]['joint'] = ''
-      weis_obj['components']['mooring']['nodes'][n]['anchor_type'] = '' # must be one from list below
-    elif fast.fst_vt['MoorDyn']['Attachment'][0].lower() == 'vessel':
-      # then also need joint, fairlead_type ()
-      weis_obj['components']['mooring']['nodes'][n]['joint'] = ''
-      weis_obj['components']['mooring']['nodes'][n]['fairlead_type'] = '' # must be one of ['rigid','actuated','ball']
-
   # Lines
   numL                = range(len(fast.fst_vt['MoorDyn']['Line_ID']))
-  L_obj               = weis_obj['components']['mooring']['lines'][0] # LT_obj is now a pointer to the first index of the dictionary
+  L_obj               = weis_obj['components']['mooring']['lines'][0] # L_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['mooring']['lines'] = [copy.deepcopy(L_obj) for x in range(len(numL))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
   for l in numL:
     weis_obj['components']['mooring']['lines'][l]['name']               = fast.fst_vt['MoorDyn']['Line_ID'][l]
@@ -498,12 +509,52 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
     weis_obj['components']['mooring']['lines'][l]['node1']              = fast.fst_vt['MoorDyn']['AttachA'][l]
     weis_obj['components']['mooring']['lines'][l]['node2']              = fast.fst_vt['MoorDyn']['AttachB'][l]
 
-  # Anchor Types
-  weis_obj['components']['mooring']['anchor_types'][0]['name'] = ''
-  weis_obj['components']['mooring']['anchor_types'][0]['type'] = '' # must be one of [drag_embedment, suction, plate, micropile, sepla, Drag_Embedment, Suction, Plate, Micropile, Sepla, DRAG_EMBEDMENT, SUCTION, PLATE, MICROPILE, SEPLA, custom, Custom, CUSTOM]
-  # if its a custom type, then will also need mass, cost, max_lateral_load, max_vertical_load
+  # Line Types
+  numLT                = range(len(fast.fst_vt['MoorDyn']['Name']))
+  LT_obj               = weis_obj['components']['mooring']['line_types'][0] # LT_obj is now a pointer to the first index of the dictionary
+  weis_obj['components']['mooring']['line_types'] = [copy.deepcopy(LT_obj) for x in range(len(numLT))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+  for lt in numLT:
+    weis_obj['components']['mooring']['line_types'][lt]['name']     = fast.fst_vt['MoorDyn']['Name'][lt]
+    weis_obj['components']['mooring']['line_types'][lt]['diameter'] = fast.fst_vt['MoorDyn']['Diam'][lt]
+    weis_obj['components']['mooring']['line_types'][lt]['type']     = '' # MATERIAL NOT AVAILABLE IN OPENFAST: must be one of lower(chain, chain_stud, nylon, polyester, polypropylene, wire_fiber, fiber, wire, wire_wire, iwrc, custom]
+
+  # Nodes (same as Points)
+  numN                = range(len(fast.fst_vt['MoorDyn']['Point_ID']))
+  N_obj               = weis_obj['components']['mooring']['nodes'][0] # LT_obj is now a pointer to the first index of the dictionary
+  weis_obj['components']['mooring']['nodes'] = [copy.deepcopy(N_obj) for x in range(len(numN))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+ 
+  num_anchors         = anchor_count - 1
+  anchor_obj          = weis_obj['components']['mooring']['anchor_types'][0] # anchor_obj is now a pointer to the first index of the dictionary
+  weis_obj['components']['mooring']['anchor_types'] = [copy.deepcopy(anchor_obj) for x in range(num_anchors)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+
+  anchor_count = 0
+  start_index = fast.fst_vt['HydroDyn']['NJoints']
+  for n in numN:
+    weis_obj['components']['mooring']['nodes'][n]['name']        = fast.fst_vt['MoorDyn']['Point_ID'][n]
+    weis_obj['components']['mooring']['nodes'][n]['node_type']   = fast.fst_vt['MoorDyn']['Attachment'][n].lower()
+    weis_obj['components']['mooring']['nodes'][n]['node_mass']   = fast.fst_vt['MoorDyn']['M'][n]
+    weis_obj['components']['mooring']['nodes'][n]['node_volume'] = fast.fst_vt['MoorDyn']['V'][n]
+    weis_obj['components']['mooring']['nodes'][n]['location']    = [fast.fst_vt['MoorDyn']['X'][n], fast.fst_vt['MoorDyn']['Y'][n], fast.fst_vt['MoorDyn']['Z'][n]]
+    if weis_obj['components']['mooring']['nodes'][n]['node_type'] == 'fixed':
+      # then also need joint, anchor_type
+      weis_obj['components']['mooring']['nodes'][n]['joint'] = weis_obj['components']['floating_platform']['joints'][start_index+n]['name']
+      weis_obj['components']['mooring']['nodes'][n]['anchor_type'] = '' # must be of lower(drag_embedment, suction, plate, micropile, sepla, custom)
+      weis_obj['components']['mooring']['anchor_types'][anchor_count]['name'] = 'anchor'+str(anchor_count+1)
+      weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'] = '' # must be one of lower(drag_embedment, suction, plate, micropile, sepla, custom)
+      # if its a custom anchor type, then will also need mass, cost, max_lateral_load, max_vertical_load
+      if weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'].lower() == 'custom':
+        weis_obj['components']['mooring']['anchor_types'][anchor_count]['mass'] = 0.0
+        weis_obj['components']['mooring']['anchor_types'][anchor_count]['cost'] = 0.0
+        weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_lateral_load'] = 0.0
+        weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_vertical_load'] = 0.0
+      anchor_count = anchor_count + 1
+    elif weis_obj['components']['mooring']['nodes'][n]['node_type'] == 'vessel':
+      # then also need joint, fairlead_type ()
+      weis_obj['components']['mooring']['nodes'][n]['joint'] = weis_obj['components']['floating_platform']['joints'][start_index+n]['name']
+      weis_obj['components']['mooring']['nodes'][n]['fairlead_type'] = '' # must be one of ['rigid','actuated','ball']
 
   print('Done')
+
 
 # Control
 # -----------------------------------------------------------------------------------------------------------------------
@@ -523,320 +574,322 @@ weis_obj['control']['pitch']['min_pitch']        = fast.fst_vt['DISCON_in']['PC_
 
 print('Done')
 
+
 # Materials
 # -----------------------------------------------------------------------------------------------------------------------
 # Go with database approach - fixed for now
 
 # Initialize database
-numMat              = range(20) # can be whatever size
-Mat_obj             = weis_obj['materials'][0] # Mat_obj is now a pointer to the first index of the dictionary
+numMat                = range(20) # can be whatever size, 20 is arbritrarily big enough
+Mat_obj               = weis_obj['materials'][0] # Mat_obj is now a pointer to the first index of the dictionary
 weis_obj['materials'] = [copy.deepcopy(Mat_obj) for x in range(len(numMat))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
 
 # GelCoat
-weis_obj['materials'][0]['name'] = 'gelcoat'
-weis_obj['materials'][0]['description'] = ''
-weis_obj['materials'][0]['source'] = ''
-weis_obj['materials'][0]['orth'] = 0
-weis_obj['materials'][0]['rho'] = 1235.0
-weis_obj['materials'][0]['E'] = 3.440e+009
-weis_obj['materials'][0]['G'] = 1.323e+009
-weis_obj['materials'][0]['nu'] = 0.3
-weis_obj['materials'][0]['alpha'] = 0.0
-weis_obj['materials'][0]['Xt'] = 74
-weis_obj['materials'][0]['Xc'] = 87
-weis_obj['materials'][0]['Xy'] = 0
-weis_obj['materials'][0]['S'] = 2.126E7
-weis_obj['materials'][0]['GIc'] = 303
-weis_obj['materials'][0]['GIIc'] = 3446
-weis_obj['materials'][0]['alp0'] = 53
-weis_obj['materials'][0]['ply_t'] = 5.0E-4
-weis_obj['materials'][0]['m'] = 0
-weis_obj['materials'][0]['waste'] = 0.25
-weis_obj['materials'][0]['unit_cost'] = 7.23
-weis_obj['materials'][0]['component_id'] = 0
-weis_obj['materials'][0]['fvf'] = 0
-weis_obj['materials'][0]['fwf'] = 0
-weis_obj['materials'][0]['fiber_density'] = 0
+weis_obj['materials'][0]['name']             = 'gelcoat'
+weis_obj['materials'][0]['description']      = ''
+weis_obj['materials'][0]['source']           = ''
+weis_obj['materials'][0]['orth']             = 0
+weis_obj['materials'][0]['rho']              = 1235.0
+weis_obj['materials'][0]['E']                = 3.440e+009
+weis_obj['materials'][0]['G']                = 1.323e+009
+weis_obj['materials'][0]['nu']               = 0.3
+weis_obj['materials'][0]['alpha']            = 0.0
+weis_obj['materials'][0]['Xt']               = 74
+weis_obj['materials'][0]['Xc']               = 87
+weis_obj['materials'][0]['Xy']               = 0
+weis_obj['materials'][0]['S']                = 2.126E7
+weis_obj['materials'][0]['GIc']              = 303
+weis_obj['materials'][0]['GIIc']             = 3446
+weis_obj['materials'][0]['alp0']             = 53
+weis_obj['materials'][0]['ply_t']            = 5.0E-4
+weis_obj['materials'][0]['m']                = 0
+weis_obj['materials'][0]['waste']            = 0.25
+weis_obj['materials'][0]['unit_cost']        = 7.23
+weis_obj['materials'][0]['component_id']     = 0
+weis_obj['materials'][0]['fvf']              = 0
+weis_obj['materials'][0]['fwf']              = 0
+weis_obj['materials'][0]['fiber_density']    = 0
 weis_obj['materials'][0]['area_density_dry'] = 0
-weis_obj['materials'][0]['roll_mass'] = 0
+weis_obj['materials'][0]['roll_mass']        = 0
 
-weis_obj['materials'][1]['name'] = 'steel'
-weis_obj['materials'][1]['description'] = 'Steel of the tower and monopile ASTM A572 Grade 50'
-weis_obj['materials'][1]['source'] = 'http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f'
-weis_obj['materials'][1]['orth'] = 0
-weis_obj['materials'][1]['rho'] = 7800
-weis_obj['materials'][1]['E'] = 200.e+009
-weis_obj['materials'][1]['G'] = 79.3e+009
-weis_obj['materials'][1]['nu'] = 0.3
-weis_obj['materials'][1]['alpha'] = 0.0
-weis_obj['materials'][1]['Xt'] = 450.e+006
-weis_obj['materials'][1]['Xc'] = 450.e+006
-weis_obj['materials'][1]['Xy'] = 345.e+6
-weis_obj['materials'][1]['S'] = 0
-weis_obj['materials'][1]['GIc'] = 0
-weis_obj['materials'][1]['GIIc'] = 0
-weis_obj['materials'][1]['alp0'] = 0
-weis_obj['materials'][1]['ply_t'] = 0
-weis_obj['materials'][1]['m'] = 3
-weis_obj['materials'][1]['waste'] = 0
-weis_obj['materials'][1]['unit_cost'] = 0.7
-weis_obj['materials'][1]['component_id'] = 0
-weis_obj['materials'][1]['fvf'] = 0
-weis_obj['materials'][1]['fwf'] = 0
-weis_obj['materials'][1]['fiber_density'] = 0
+weis_obj['materials'][1]['name']             = 'steel'
+weis_obj['materials'][1]['description']      = 'Steel of the tower and monopile ASTM A572 Grade 50'
+weis_obj['materials'][1]['source']           = 'http://www.matweb.com/search/DataSheet.aspx?MatGUID=9ced5dc901c54bd1aef19403d0385d7f'
+weis_obj['materials'][1]['orth']             = 0
+weis_obj['materials'][1]['rho']              = 7800
+weis_obj['materials'][1]['E']                = 200.e+009
+weis_obj['materials'][1]['G']                = 79.3e+009
+weis_obj['materials'][1]['nu']               = 0.3
+weis_obj['materials'][1]['alpha']            = 0.0
+weis_obj['materials'][1]['Xt']               = 450.e+006
+weis_obj['materials'][1]['Xc']               = 450.e+006
+weis_obj['materials'][1]['Xy']               = 345.e+6
+weis_obj['materials'][1]['S']                = 0
+weis_obj['materials'][1]['GIc']              = 0
+weis_obj['materials'][1]['GIIc']             = 0
+weis_obj['materials'][1]['alp0']             = 0
+weis_obj['materials'][1]['ply_t']            = 0
+weis_obj['materials'][1]['m']                = 3
+weis_obj['materials'][1]['waste']            = 0
+weis_obj['materials'][1]['unit_cost']        = 0.7
+weis_obj['materials'][1]['component_id']     = 0
+weis_obj['materials'][1]['fvf']              = 0
+weis_obj['materials'][1]['fwf']              = 0
+weis_obj['materials'][1]['fiber_density']    = 0
 weis_obj['materials'][1]['area_density_dry'] = 0
-weis_obj['materials'][1]['roll_mass'] = 0
+weis_obj['materials'][1]['roll_mass']        = 0
 
-weis_obj['materials'][2]['name'] = 'steel_drive'
-weis_obj['materials'][2]['description'] = 'Steel of the drivetrain ASTM 4140 40Cr1Mo28'
-weis_obj['materials'][2]['source'] = 'http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6'
-weis_obj['materials'][2]['orth'] = 0
-weis_obj['materials'][2]['rho'] = 7850
-weis_obj['materials'][2]['E'] = 205.e+009
-weis_obj['materials'][2]['G'] = 80.0e+009
-weis_obj['materials'][2]['nu'] = 0.3
-weis_obj['materials'][2]['alpha'] = 0
-weis_obj['materials'][2]['Xt'] = 814.e+006
-weis_obj['materials'][2]['Xc'] = 814.e+006
-weis_obj['materials'][2]['Xy'] = 485.e+6
-weis_obj['materials'][2]['S'] = 0
-weis_obj['materials'][2]['GIc'] = 0
-weis_obj['materials'][2]['GIIc'] = 0
-weis_obj['materials'][2]['alp0'] = 0
-weis_obj['materials'][2]['ply_t'] = 0
-weis_obj['materials'][2]['m'] = 3
-weis_obj['materials'][2]['waste'] = 0
-weis_obj['materials'][2]['unit_cost'] = 0.9
-weis_obj['materials'][2]['component_id'] = 0
-weis_obj['materials'][2]['fvf'] = 0
-weis_obj['materials'][2]['fwf'] = 0
-weis_obj['materials'][2]['fiber_density'] = 0
+weis_obj['materials'][2]['name']             = 'steel_drive'
+weis_obj['materials'][2]['description']      = 'Steel of the drivetrain ASTM 4140 40Cr1Mo28'
+weis_obj['materials'][2]['source']           = 'http://www.matweb.com/search/DataSheet.aspx?MatGUID=38108bfd64c44b4c9c6a02af78d5b6c6'
+weis_obj['materials'][2]['orth']             = 0
+weis_obj['materials'][2]['rho']              = 7850
+weis_obj['materials'][2]['E']                = 205.e+009
+weis_obj['materials'][2]['G']                = 80.0e+009
+weis_obj['materials'][2]['nu']               = 0.3
+weis_obj['materials'][2]['alpha']            = 0
+weis_obj['materials'][2]['Xt']               = 814.e+006
+weis_obj['materials'][2]['Xc']               = 814.e+006
+weis_obj['materials'][2]['Xy']               = 485.e+6
+weis_obj['materials'][2]['S']                = 0
+weis_obj['materials'][2]['GIc']              = 0
+weis_obj['materials'][2]['GIIc']             = 0
+weis_obj['materials'][2]['alp0']             = 0
+weis_obj['materials'][2]['ply_t']            = 0
+weis_obj['materials'][2]['m']                = 3
+weis_obj['materials'][2]['waste']            = 0
+weis_obj['materials'][2]['unit_cost']        = 0.9
+weis_obj['materials'][2]['component_id']     = 0
+weis_obj['materials'][2]['fvf']              = 0
+weis_obj['materials'][2]['fwf']              = 0
+weis_obj['materials'][2]['fiber_density']    = 0
 weis_obj['materials'][2]['area_density_dry'] = 0
-weis_obj['materials'][2]['roll_mass'] = 0
+weis_obj['materials'][2]['roll_mass']        = 0
 
-weis_obj['materials'][3]['name'] = 'cast_iron'
-weis_obj['materials'][3]['description'] = 'Cast iron for hub and nacelle components'
-weis_obj['materials'][3]['source'] = ''
-weis_obj['materials'][3]['orth'] = 0
-weis_obj['materials'][3]['rho'] = 7200
-weis_obj['materials'][3]['E'] = 118.e+009
-weis_obj['materials'][3]['G'] = 47.6e+009
-weis_obj['materials'][3]['nu'] = 0.3
-weis_obj['materials'][3]['alpha'] = 0
-weis_obj['materials'][3]['Xt'] = 310.e+006
-weis_obj['materials'][3]['Xc'] = 310.e+006
-weis_obj['materials'][3]['Xy'] = 265.e+6
-weis_obj['materials'][3]['S'] = 0
-weis_obj['materials'][3]['GIc'] = 0
-weis_obj['materials'][3]['GIIc'] = 0
-weis_obj['materials'][3]['alp0'] = 0
-weis_obj['materials'][3]['ply_t'] = 0
-weis_obj['materials'][3]['m'] = 3
-weis_obj['materials'][3]['waste'] = 0
-weis_obj['materials'][3]['unit_cost'] = 0.5
-weis_obj['materials'][3]['component_id'] = 0
-weis_obj['materials'][3]['fvf'] = 0
-weis_obj['materials'][3]['fwf'] = 0
-weis_obj['materials'][3]['fiber_density'] = 0
+weis_obj['materials'][3]['name']             = 'cast_iron'
+weis_obj['materials'][3]['description']      = 'Cast iron for hub and nacelle components'
+weis_obj['materials'][3]['source']           = ''
+weis_obj['materials'][3]['orth']             = 0
+weis_obj['materials'][3]['rho']              = 7200
+weis_obj['materials'][3]['E']                = 118.e+009
+weis_obj['materials'][3]['G']                = 47.6e+009
+weis_obj['materials'][3]['nu']               = 0.3
+weis_obj['materials'][3]['alpha']            = 0
+weis_obj['materials'][3]['Xt']               = 310.e+006
+weis_obj['materials'][3]['Xc']               = 310.e+006
+weis_obj['materials'][3]['Xy']               = 265.e+6
+weis_obj['materials'][3]['S']                = 0
+weis_obj['materials'][3]['GIc']              = 0
+weis_obj['materials'][3]['GIIc']             = 0
+weis_obj['materials'][3]['alp0']             = 0
+weis_obj['materials'][3]['ply_t']            = 0
+weis_obj['materials'][3]['m']                = 3
+weis_obj['materials'][3]['waste']            = 0
+weis_obj['materials'][3]['unit_cost']        = 0.5
+weis_obj['materials'][3]['component_id']     = 0
+weis_obj['materials'][3]['fvf']              = 0
+weis_obj['materials'][3]['fwf']              = 0
+weis_obj['materials'][3]['fiber_density']    = 0
 weis_obj['materials'][3]['area_density_dry'] = 0
-weis_obj['materials'][3]['roll_mass'] = 0
+weis_obj['materials'][3]['roll_mass']        = 0
 
-weis_obj['materials'][4]['name'] = 'glass_uni'
-weis_obj['materials'][4]['description'] = 'Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy'
-weis_obj['materials'][4]['source'] = 'MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34'
-weis_obj['materials'][4]['orth'] = 1
-weis_obj['materials'][4]['rho'] = 1940.0
-weis_obj['materials'][4]['E'] = [4.46E10, 1.7E10, 1.67E10]
-weis_obj['materials'][4]['G'] = [3.27E9, 3.48E9, 3.5E9]
-weis_obj['materials'][4]['nu'] = [0.262, 0.35, 0.264]
-weis_obj['materials'][4]['alpha'] = []
-weis_obj['materials'][4]['Xt'] = [6.092E8, 3.81E7, 1.529E7]
-weis_obj['materials'][4]['Xc'] = [4.7471E8, 1.1264E8, 1.1322E8]
-weis_obj['materials'][4]['Xy'] = 0
-weis_obj['materials'][4]['S'] = [1.891E7, 1.724E7, 1.316E7]
-weis_obj['materials'][4]['GIc'] = 303
-weis_obj['materials'][4]['GIIc'] = 3446
-weis_obj['materials'][4]['alp0'] = 53
-weis_obj['materials'][4]['ply_t'] = 0.005
-weis_obj['materials'][4]['m'] = 10
-weis_obj['materials'][4]['waste'] = 0.05
-weis_obj['materials'][4]['unit_cost'] = 1.87
-weis_obj['materials'][4]['component_id'] = 5
-weis_obj['materials'][4]['fvf'] = 0.57
-weis_obj['materials'][4]['fwf'] = 0.7450682696347697
-weis_obj['materials'][4]['fiber_density'] = 2535.5
+weis_obj['materials'][4]['name']             = 'glass_uni'
+weis_obj['materials'][4]['description']      = 'Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy'
+weis_obj['materials'][4]['source']           = 'MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34'
+weis_obj['materials'][4]['orth']             = 1
+weis_obj['materials'][4]['rho']              = 1940.0
+weis_obj['materials'][4]['E']                = [4.46E10, 1.7E10, 1.67E10]
+weis_obj['materials'][4]['G']                = [3.27E9, 3.48E9, 3.5E9]
+weis_obj['materials'][4]['nu']               = [0.262, 0.35, 0.264]
+weis_obj['materials'][4]['alpha']            = []
+weis_obj['materials'][4]['Xt']               = [6.092E8, 3.81E7, 1.529E7]
+weis_obj['materials'][4]['Xc']               = [4.7471E8, 1.1264E8, 1.1322E8]
+weis_obj['materials'][4]['Xy']               = 0
+weis_obj['materials'][4]['S']                = [1.891E7, 1.724E7, 1.316E7]
+weis_obj['materials'][4]['GIc']              = 303
+weis_obj['materials'][4]['GIIc']             = 3446
+weis_obj['materials'][4]['alp0']             = 53
+weis_obj['materials'][4]['ply_t']            = 0.005
+weis_obj['materials'][4]['m']                = 10
+weis_obj['materials'][4]['waste']            = 0.05
+weis_obj['materials'][4]['unit_cost']        = 1.87
+weis_obj['materials'][4]['component_id']     = 5
+weis_obj['materials'][4]['fvf']              = 0.57
+weis_obj['materials'][4]['fwf']              = 0.7450682696347697
+weis_obj['materials'][4]['fiber_density']    = 2535.5
 weis_obj['materials'][4]['area_density_dry'] = 7.227162215457267
-weis_obj['materials'][4]['roll_mass'] = 0
+weis_obj['materials'][4]['roll_mass']        = 0
 
-weis_obj['materials'][5]['name'] = 'glass_biax'
-weis_obj['materials'][5]['description'] = 'Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy'
-weis_obj['materials'][5]['source'] = 'MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34'
-weis_obj['materials'][5]['orth'] = 1
-weis_obj['materials'][5]['rho'] = 1940.0
-weis_obj['materials'][5]['E'] = [1.11E10, 1.11E10, 1.67E10]
-weis_obj['materials'][5]['G'] = [1.353E10, 3.49E9, 3.49E9]
-weis_obj['materials'][5]['nu'] = [0.5, 0.0, 0.066]
-weis_obj['materials'][5]['alpha'] = []
-weis_obj['materials'][5]['Xt'] = [4.29E7, 4.26E7, 1.53E7]
-weis_obj['materials'][5]['Xc'] = [7.07E7, 7.07E7, 1.132E8]
-weis_obj['materials'][5]['Xy'] = 0
-weis_obj['materials'][5]['S'] = [1.034E8, 1.72E7, 1.32E7]
-weis_obj['materials'][5]['GIc'] = 303
-weis_obj['materials'][5]['GIIc'] = 3446
-weis_obj['materials'][5]['alp0'] = 53
-weis_obj['materials'][5]['ply_t'] = 0.001
-weis_obj['materials'][5]['m'] = 10
-weis_obj['materials'][5]['waste'] = 0.15
-weis_obj['materials'][5]['unit_cost'] = 3.0
-weis_obj['materials'][5]['component_id'] = 3
-weis_obj['materials'][5]['fvf'] = 0.57
-weis_obj['materials'][5]['fwf'] = 0.7450682696347697
-weis_obj['materials'][5]['fiber_density'] = 2535.5
+weis_obj['materials'][5]['name']             = 'glass_biax'
+weis_obj['materials'][5]['description']      = 'Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy'
+weis_obj['materials'][5]['source']           = 'MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34'
+weis_obj['materials'][5]['orth']             = 1
+weis_obj['materials'][5]['rho']              = 1940.0
+weis_obj['materials'][5]['E']                = [1.11E10, 1.11E10, 1.67E10]
+weis_obj['materials'][5]['G']                = [1.353E10, 3.49E9, 3.49E9]
+weis_obj['materials'][5]['nu']               = [0.5, 0.0, 0.066]
+weis_obj['materials'][5]['alpha']            = []
+weis_obj['materials'][5]['Xt']               = [4.29E7, 4.26E7, 1.53E7]
+weis_obj['materials'][5]['Xc']               = [7.07E7, 7.07E7, 1.132E8]
+weis_obj['materials'][5]['Xy']               = 0
+weis_obj['materials'][5]['S']                = [1.034E8, 1.72E7, 1.32E7]
+weis_obj['materials'][5]['GIc']              = 303
+weis_obj['materials'][5]['GIIc']             = 3446
+weis_obj['materials'][5]['alp0']             = 53
+weis_obj['materials'][5]['ply_t']            = 0.001
+weis_obj['materials'][5]['m']                = 10
+weis_obj['materials'][5]['waste']            = 0.15
+weis_obj['materials'][5]['unit_cost']        = 3.0
+weis_obj['materials'][5]['component_id']     = 3
+weis_obj['materials'][5]['fvf']              = 0.57
+weis_obj['materials'][5]['fwf']              = 0.7450682696347697
+weis_obj['materials'][5]['fiber_density']    = 2535.5
 weis_obj['materials'][5]['area_density_dry'] = 1.4454324430914534
-weis_obj['materials'][5]['roll_mass'] = 181.4368
+weis_obj['materials'][5]['roll_mass']        = 181.4368
 
-weis_obj['materials'][6]['name'] = 'glass_triax'
-weis_obj['materials'][6]['description'] = 'Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy'
-weis_obj['materials'][6]['source'] = 'MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34'
-weis_obj['materials'][6]['orth'] = 1.0
-weis_obj['materials'][6]['rho'] = 1940.0
-weis_obj['materials'][6]['E'] = [2.87E10, 1.66E10, 1.67E10]
-weis_obj['materials'][6]['G'] = [8.4E9, 3.49E9, 3.49E9]
-weis_obj['materials'][6]['nu'] = [0.5, 0.0, 0.17]
-weis_obj['materials'][6]['alpha'] = []
-weis_obj['materials'][6]['Xt'] = [3.96E8, 7.64E7, 1.53E7]
-weis_obj['materials'][6]['Xc'] = [4.489E8, 1.747E8, 1.132E8]
-weis_obj['materials'][6]['Xy'] = 0
-weis_obj['materials'][6]['S'] = [1.034E8, 1.72E7, 1.32E7]
-weis_obj['materials'][6]['GIc'] = 303
-weis_obj['materials'][6]['GIIc'] = 3446
-weis_obj['materials'][6]['alp0'] = 53
-weis_obj['materials'][6]['ply_t'] = 0.001
-weis_obj['materials'][6]['m'] = 10
-weis_obj['materials'][6]['waste'] = 0.15
-weis_obj['materials'][6]['unit_cost'] = 2.86
-weis_obj['materials'][6]['component_id'] = 2
-weis_obj['materials'][6]['fvf'] = 0.57
-weis_obj['materials'][6]['fwf'] = 0.7450682696347697
-weis_obj['materials'][6]['fiber_density'] = 2535.5
+weis_obj['materials'][6]['name']             = 'glass_triax'
+weis_obj['materials'][6]['description']      = 'Vectorply E-LT-5500, Epikote MGS RIMR 135/Epicure MGS RIMH 1366 epoxy'
+weis_obj['materials'][6]['source']           = 'MSU composites database 3D property tests, Engineering Mechanics of Composite Materials, Daniel, I & Ishai, O., 1994, pg. 34'
+weis_obj['materials'][6]['orth']             = 1.0
+weis_obj['materials'][6]['rho']              = 1940.0
+weis_obj['materials'][6]['E']                = [2.87E10, 1.66E10, 1.67E10]
+weis_obj['materials'][6]['G']                = [8.4E9, 3.49E9, 3.49E9]
+weis_obj['materials'][6]['nu']               = [0.5, 0.0, 0.17]
+weis_obj['materials'][6]['alpha']            = []
+weis_obj['materials'][6]['Xt']               = [3.96E8, 7.64E7, 1.53E7]
+weis_obj['materials'][6]['Xc']               = [4.489E8, 1.747E8, 1.132E8]
+weis_obj['materials'][6]['Xy']               = 0
+weis_obj['materials'][6]['S']                = [1.034E8, 1.72E7, 1.32E7]
+weis_obj['materials'][6]['GIc']              = 303
+weis_obj['materials'][6]['GIIc']             = 3446
+weis_obj['materials'][6]['alp0']             = 53
+weis_obj['materials'][6]['ply_t']            = 0.001
+weis_obj['materials'][6]['m']                = 10
+weis_obj['materials'][6]['waste']            = 0.15
+weis_obj['materials'][6]['unit_cost']        = 2.86
+weis_obj['materials'][6]['component_id']     = 2
+weis_obj['materials'][6]['fvf']              = 0.57
+weis_obj['materials'][6]['fwf']              = 0.7450682696347697
+weis_obj['materials'][6]['fiber_density']    = 2535.5
 weis_obj['materials'][6]['area_density_dry'] = 1.4454324430914534
-weis_obj['materials'][6]['roll_mass'] = 181.4368
+weis_obj['materials'][6]['roll_mass']        = 181.4368
 
-weis_obj['materials'][7]['name'] = 'carbonUD'
-weis_obj['materials'][7]['description'] = ''
-weis_obj['materials'][7]['source'] = ''
-weis_obj['materials'][7]['orth'] = 1
-weis_obj['materials'][7]['rho'] = 1220.0
-weis_obj['materials'][7]['E'] = [114500000000.0, 8390000000.0, 8390000000.0]
-weis_obj['materials'][7]['G'] = [5990000000.0, 5990000000.0, 5990000000.0]
-weis_obj['materials'][7]['nu'] = [0.27, 0.27, 0.27]
-weis_obj['materials'][7]['alpha'] = []
-weis_obj['materials'][7]['Xt'] = [1546.e6, 0.0, 0.0]
-weis_obj['materials'][7]['Xc'] = [1047.e6, 0.0, 0.0]
-weis_obj['materials'][7]['Xy'] = 0
-weis_obj['materials'][7]['S'] = [0.0, 0.0, 0.0]
-weis_obj['materials'][7]['GIc'] = 0
-weis_obj['materials'][7]['GIIc'] = 0
-weis_obj['materials'][7]['alp0'] = 0
-weis_obj['materials'][7]['ply_t'] = 0.005158730158730159
-weis_obj['materials'][7]['m'] = 16.1
-weis_obj['materials'][7]['waste'] = 0.05
-weis_obj['materials'][7]['unit_cost'] = 30.0
-weis_obj['materials'][7]['component_id'] = 4
-weis_obj['materials'][7]['fvf'] = 0.1076923076923077
-weis_obj['materials'][7]['fwf'] = 0.15889029003783103
-weis_obj['materials'][7]['fiber_density'] = 1800.0
+weis_obj['materials'][7]['name']             = 'carbonUD'
+weis_obj['materials'][7]['description']      = ''
+weis_obj['materials'][7]['source']           = ''
+weis_obj['materials'][7]['orth']             = 1
+weis_obj['materials'][7]['rho']              = 1220.0
+weis_obj['materials'][7]['E']                = [114500000000.0, 8390000000.0, 8390000000.0]
+weis_obj['materials'][7]['G']                = [5990000000.0, 5990000000.0, 5990000000.0]
+weis_obj['materials'][7]['nu']               = [0.27, 0.27, 0.27]
+weis_obj['materials'][7]['alpha']            = []
+weis_obj['materials'][7]['Xt']               = [1546.e6, 0.0, 0.0]
+weis_obj['materials'][7]['Xc']               = [1047.e6, 0.0, 0.0]
+weis_obj['materials'][7]['Xy']               = 0
+weis_obj['materials'][7]['S']                = [0.0, 0.0, 0.0]
+weis_obj['materials'][7]['GIc']              = 0
+weis_obj['materials'][7]['GIIc']             = 0
+weis_obj['materials'][7]['alp0']             = 0
+weis_obj['materials'][7]['ply_t']            = 0.005158730158730159
+weis_obj['materials'][7]['m']                = 16.1
+weis_obj['materials'][7]['waste']            = 0.05
+weis_obj['materials'][7]['unit_cost']        = 30.0
+weis_obj['materials'][7]['component_id']     = 4
+weis_obj['materials'][7]['fvf']              = 0.1076923076923077
+weis_obj['materials'][7]['fwf']              = 0.15889029003783103
+weis_obj['materials'][7]['fiber_density']    = 1800.0
 weis_obj['materials'][7]['area_density_dry'] = 1.0
-weis_obj['materials'][7]['roll_mass'] = 0
+weis_obj['materials'][7]['roll_mass']        = 0
 
-weis_obj['materials'][8]['name'] = 'medium_density_foam'
-weis_obj['materials'][8]['description'] = 'Airex C70.130 PVC Foam'
-weis_obj['materials'][8]['source'] = 'https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf'
-weis_obj['materials'][8]['orth'] = 0.0
-weis_obj['materials'][8]['rho'] = 130.0
-weis_obj['materials'][8]['E'] = 1.292E8
-weis_obj['materials'][8]['G'] = 4.8946969696969695E7
-weis_obj['materials'][8]['nu'] = 0.32
-weis_obj['materials'][8]['alpha'] = []
-weis_obj['materials'][8]['Xt'] = 2083000.0
-weis_obj['materials'][8]['Xc'] = 1563000.0
-weis_obj['materials'][8]['Xy'] = 0
-weis_obj['materials'][8]['S'] = 1250000.0
-weis_obj['materials'][8]['GIc'] = 303
-weis_obj['materials'][8]['GIIc'] = 3446
-weis_obj['materials'][8]['alp0'] = 53
-weis_obj['materials'][8]['ply_t'] = 0
-weis_obj['materials'][8]['m'] = 0
-weis_obj['materials'][8]['waste'] = 0.2
-weis_obj['materials'][8]['unit_cost'] = 13
-weis_obj['materials'][8]['component_id'] = 1
-weis_obj['materials'][8]['fvf'] = 0
-weis_obj['materials'][8]['fwf'] = 0
-weis_obj['materials'][8]['fiber_density'] = 0
+weis_obj['materials'][8]['name']             = 'medium_density_foam'
+weis_obj['materials'][8]['description']      = 'Airex C70.130 PVC Foam'
+weis_obj['materials'][8]['source']           = 'https://www.3accorematerials.com/uploads/documents/TDS-AIREX-C70-E_1106.pdf'
+weis_obj['materials'][8]['orth']             = 0.0
+weis_obj['materials'][8]['rho']              = 130.0
+weis_obj['materials'][8]['E']                = 1.292E8
+weis_obj['materials'][8]['G']                = 4.8946969696969695E7
+weis_obj['materials'][8]['nu']               = 0.32
+weis_obj['materials'][8]['alpha']            = []
+weis_obj['materials'][8]['Xt']               = 2083000.0
+weis_obj['materials'][8]['Xc']               = 1563000.0
+weis_obj['materials'][8]['Xy']               = 0
+weis_obj['materials'][8]['S']                = 1250000.0
+weis_obj['materials'][8]['GIc']              = 303
+weis_obj['materials'][8]['GIIc']             = 3446
+weis_obj['materials'][8]['alp0']             = 53
+weis_obj['materials'][8]['ply_t']            = 0
+weis_obj['materials'][8]['m']                = 0
+weis_obj['materials'][8]['waste']            = 0.2
+weis_obj['materials'][8]['unit_cost']        = 13
+weis_obj['materials'][8]['component_id']     = 1
+weis_obj['materials'][8]['fvf']              = 0
+weis_obj['materials'][8]['fwf']              = 0
+weis_obj['materials'][8]['fiber_density']    = 0
 weis_obj['materials'][8]['area_density_dry'] = 0
-weis_obj['materials'][8]['roll_mass'] = 0
+weis_obj['materials'][8]['roll_mass']        = 0
 
-weis_obj['materials'][9]['name'] = 'resin'
-weis_obj['materials'][9]['description'] = 'epoxy'
-weis_obj['materials'][9]['source'] = ''
-weis_obj['materials'][9]['orth'] = 0
-weis_obj['materials'][9]['rho'] = 1150.0
-weis_obj['materials'][9]['E'] = 1.e+6
-weis_obj['materials'][9]['G'] = 312500.0
-weis_obj['materials'][9]['nu'] = 0.3
-weis_obj['materials'][9]['alpha'] = 0
-weis_obj['materials'][9]['Xt'] = 0
-weis_obj['materials'][9]['Xc'] = 0
-weis_obj['materials'][9]['Xy'] = 0
-weis_obj['materials'][9]['S'] = 0
-weis_obj['materials'][9]['GIc'] = 0
-weis_obj['materials'][9]['GIIc'] = 0
-weis_obj['materials'][9]['alp0'] = 0
-weis_obj['materials'][9]['ply_t'] = 0
-weis_obj['materials'][9]['m'] = 0
-weis_obj['materials'][9]['waste'] = 0
-weis_obj['materials'][9]['unit_cost'] = 3.63
-weis_obj['materials'][9]['component_id'] = 0
-weis_obj['materials'][9]['fvf'] = 0
-weis_obj['materials'][9]['fwf'] = 0
-weis_obj['materials'][9]['fiber_density'] = 0
+weis_obj['materials'][9]['name']             = 'resin'
+weis_obj['materials'][9]['description']      = 'epoxy'
+weis_obj['materials'][9]['source']           = ''
+weis_obj['materials'][9]['orth']             = 0
+weis_obj['materials'][9]['rho']              = 1150.0
+weis_obj['materials'][9]['E']                = 1.e+6
+weis_obj['materials'][9]['G']                = 312500.0
+weis_obj['materials'][9]['nu']               = 0.3
+weis_obj['materials'][9]['alpha']            = 0
+weis_obj['materials'][9]['Xt']               = 0
+weis_obj['materials'][9]['Xc']               = 0
+weis_obj['materials'][9]['Xy']               = 0
+weis_obj['materials'][9]['S']                = 0
+weis_obj['materials'][9]['GIc']              = 0
+weis_obj['materials'][9]['GIIc']             = 0
+weis_obj['materials'][9]['alp0']             = 0
+weis_obj['materials'][9]['ply_t']            = 0
+weis_obj['materials'][9]['m']                = 0
+weis_obj['materials'][9]['waste']            = 0
+weis_obj['materials'][9]['unit_cost']        = 3.63
+weis_obj['materials'][9]['component_id']     = 0
+weis_obj['materials'][9]['fvf']              = 0
+weis_obj['materials'][9]['fwf']              = 0
+weis_obj['materials'][9]['fiber_density']    = 0
 weis_obj['materials'][9]['area_density_dry'] = 0
-weis_obj['materials'][9]['roll_mass'] = 0
+weis_obj['materials'][9]['roll_mass']        = 0
 
-weis_obj['materials'][10]['name'] = 'adhesive'
-weis_obj['materials'][10]['description'] = 'Sample adhesive'
-weis_obj['materials'][10]['source'] = 'https://www.nrel.gov/docs/fy19osti/73585.pdf'
-weis_obj['materials'][10]['orth'] = 0
-weis_obj['materials'][10]['rho'] = 1100.0
-weis_obj['materials'][10]['E'] = 4.56e+006
-weis_obj['materials'][10]['G'] = 1520000.0
-weis_obj['materials'][10]['nu'] = 0.49
-weis_obj['materials'][10]['alpha'] = 0.0
-weis_obj['materials'][10]['Xt'] = 0.69e+006
-weis_obj['materials'][10]['Xc'] = 0.4e+006
-weis_obj['materials'][10]['Xy'] = 0
-weis_obj['materials'][10]['S'] = 0.31e+006
-weis_obj['materials'][10]['GIc'] = 0
-weis_obj['materials'][10]['GIIc'] = 0
-weis_obj['materials'][10]['alp0'] = 0
-weis_obj['materials'][10]['ply_t'] = 0
-weis_obj['materials'][10]['m'] = 0
-weis_obj['materials'][10]['waste'] = 0
-weis_obj['materials'][10]['unit_cost'] = 9.0
-weis_obj['materials'][10]['component_id'] = 0
-weis_obj['materials'][10]['fvf'] = 0
-weis_obj['materials'][10]['fwf'] = 0
-weis_obj['materials'][10]['fiber_density'] = 0
+weis_obj['materials'][10]['name']             = 'adhesive'
+weis_obj['materials'][10]['description']      = 'Sample adhesive'
+weis_obj['materials'][10]['source']           = 'https://www.nrel.gov/docs/fy19osti/73585.pdf'
+weis_obj['materials'][10]['orth']             = 0
+weis_obj['materials'][10]['rho']              = 1100.0
+weis_obj['materials'][10]['E']                = 4.56e+006
+weis_obj['materials'][10]['G']                = 1520000.0
+weis_obj['materials'][10]['nu']               = 0.49
+weis_obj['materials'][10]['alpha']            = 0.0
+weis_obj['materials'][10]['Xt']               = 0.69e+006
+weis_obj['materials'][10]['Xc']               = 0.4e+006
+weis_obj['materials'][10]['Xy']               = 0
+weis_obj['materials'][10]['S']                = 0.31e+006
+weis_obj['materials'][10]['GIc']              = 0
+weis_obj['materials'][10]['GIIc']             = 0
+weis_obj['materials'][10]['alp0']             = 0
+weis_obj['materials'][10]['ply_t']            = 0
+weis_obj['materials'][10]['m']                = 0
+weis_obj['materials'][10]['waste']            = 0
+weis_obj['materials'][10]['unit_cost']        = 9.0
+weis_obj['materials'][10]['component_id']     = 0
+weis_obj['materials'][10]['fvf']              = 0
+weis_obj['materials'][10]['fwf']              = 0
+weis_obj['materials'][10]['fiber_density']    = 0
 weis_obj['materials'][10]['area_density_dry'] = 0
-weis_obj['materials'][10]['roll_mass'] = 0
+weis_obj['materials'][10]['roll_mass']        = 0
 
 #=========================================================================================================================
 # OUTPUTS
 
 # Print out the final, new weis geometry yaml input file
 project_name = fast.FAST_InputFile.split('.')[0]
-print('Write the clean output geometry yaml file .........', end="", flush=True)
-#write_geometry_yaml(weis_obj, fast.FAST_directory + '/' + project_name + '_CLEAN.yaml')
+fileName = fast.FAST_directory + '/' + project_name + '_CLEAN.yaml'
+print('Writing the clean output geometry yaml file .........', end="", flush=True)
+#write_yaml(weis_obj, fileName)
 print('Done')
 
 #=========================================================================================================================
