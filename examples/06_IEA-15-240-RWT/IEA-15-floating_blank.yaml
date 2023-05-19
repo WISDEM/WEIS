@@ -488,7 +488,16 @@ components:
                 values: []
         internal_structure_2d_fem:
             outfitting_factor: 1
-            reference_axis: *ref_axis_tower
+            reference_axis: 
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
             layers:
                 - name: ''
                   material: '' 
@@ -682,20 +691,20 @@ control:
         limit_type: 
         limit_value: 
 
-TMDs:
-    - name: ''
-      component: ''
-      location: []
-      mass: 0
-      stiffness: 0
-      damping: 0
+# TMDs:
+#     - name: ''
+#       component: ''
+#       location: []
+#       mass: 0
+#       stiffness: 0
+#       damping: 0
     
-      natural_frequency: -1
-      damping_ratio: -1
-      X_DOF: False
-      Y_DOF: False
-      Z_DOF: False
-      preload_spring: True
+#       natural_frequency: -1
+#       damping_ratio: -1
+#       X_DOF: False
+#       Y_DOF: False
+#       Z_DOF: False
+#       preload_spring: True
 
 environment:
     air_density: 0
