@@ -1113,8 +1113,8 @@ class InputReader_OpenFAST(object):
                 f.close()
 
     def read_Coords(self,f,n_coords,afi):
-        x = np.zeros(n_coords)
-        y = np.zeros(n_coords)
+        x = np.zeros(n_coords-1)
+        y = np.zeros(n_coords-1)
         skip_comments(f)
         self.fst_vt['AeroDyn15']['ac'][afi] = float(f.readline().split()[0])
         skip_comments(f)
