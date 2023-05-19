@@ -18,12 +18,19 @@ WISDEM:
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
+        frame3dd:
+            flag: False
     TowerSE:
         flag: True
+        frame3dd:
+            flag: False
     DriveSE:
         flag: True
+        frame3dd:
+            flag: False
     FloatingSE:
         flag: True
+        rank_and_file: True
     # BOS:
     #     flag: True
 
@@ -35,10 +42,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompInflow: 1
         CompAero: 2
         CompServo: 1
-        CompHydro: 1
-        CompSub: 0
-        CompMooring: 3
-        CompIce: 0
+        # CompHydro: 1
+        # CompSub: 0
+        # CompMooring: 3
+        # CompIce: 0
         OutFileFmt: 3
         NumCrctn: 1
     linearization:
