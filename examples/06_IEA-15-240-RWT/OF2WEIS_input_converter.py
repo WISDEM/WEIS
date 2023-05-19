@@ -68,7 +68,7 @@ print('successfully imported blank weis dictionary')
 print('Converting the environment to WEIS geometry schema and dictionary .............', end="", flush=True)
 
 weis_obj['environment']['air_density']          = fast.fst_vt['Fst']['AirDens']
-weis_obj['environment']['air_dyn_viscosity']    = 0
+weis_obj['environment']['air_dyn_viscosity']    = merged_schema['properties']['environment']['properties']['air_dyn_viscosity']['default']
 weis_obj['environment']['air_speed_sound']      = fast.fst_vt['Fst']['SpdSound']
 weis_obj['environment']['shear_exp']            = fast.fst_vt['InflowWind']['PLexp']
 
@@ -148,7 +148,7 @@ blade_fraction = [L / blade_length for L in BlSpn]
 
 # Airfoil Positions
 weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = blade_fraction
-weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = [f'{int(afid)}' for afid in fast.fst_vt['AeroDynBlade']['BlAFID']]
+weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = [f'airfoil_{int(afid)}' for afid in fast.fst_vt['AeroDynBlade']['BlAFID']]
 # Chord
 weis_obj['components']['blade']['outer_shape_bem']['chord']['grid']                 = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['chord']['values']               = fast.fst_vt['AeroDynBlade']['BlChord']
@@ -324,12 +324,14 @@ weis_obj['components']['tower']['outer_shape_bem']['drag_coefficient']['values']
 
 # Internal Structure
 num_tower_struct_nodes = fast.fst_vt['ElastoDynTower']['NTwInpSt']
-weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['x']['grid']      = fast.fst_vt['ElastoDynTower']['HtFract'] # non-dimensional
-weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['x']['values']    = [0 for j in range(num_tower_struct_nodes)] # x is positive upwind to downwind
-weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['y']['grid']      = fast.fst_vt['ElastoDynTower']['HtFract'] # non-dimensional
-weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['y']['values']    = [0 for j in range(num_tower_struct_nodes)] # y follows the right-hand-rule
-weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['z']['grid']      = fast.fst_vt['ElastoDynTower']['HtFract'] # non-dimensional
-weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['z']['values']    = [T * tower_height for T in fast.fst_vt['ElastoDynTower']['HtFract']] # z is positive upwards
+# weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['x']['grid']      = fast.fst_vt['ElastoDynTower']['HtFract'] # non-dimensional
+# weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['x']['values']    = [0 for j in range(num_tower_struct_nodes)] # x is positive upwind to downwind
+# weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['y']['grid']      = fast.fst_vt['ElastoDynTower']['HtFract'] # non-dimensional
+# weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['y']['values']    = [0 for j in range(num_tower_struct_nodes)] # y follows the right-hand-rule
+# weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['z']['grid']      = fast.fst_vt['ElastoDynTower']['HtFract'] # non-dimensional
+# weis_obj['components']['tower']['internal_structure_2d_fem']['reference_axis']['z']['values']    = [T * tower_height for T in fast.fst_vt['ElastoDynTower']['HtFract']] # z is positive upwards
+
+# Reference axes in blank input are linked, this could be problematic if an assumed geometry has a different reference axis
 
 weis_obj['components']['tower']['internal_structure_2d_fem']['outfitting_factor']                = fast.fst_vt['ElastoDynTower']['AdjTwMa'] # tower mass scaling factor
 
@@ -951,6 +953,8 @@ weis_obj['bos'] = assumed_model['bos'].copy()
 # weis_obj['bos']['boem_review_cost']                  = 0.0
 # weis_obj['bos']['design_install_plan_cost']          = 2.5e6
 
+# Hub info
+weis_obj['components']['hub'] = assumed_model['components']['hub']
 
 # Generator info: all generator info provided above looked like placeholders
 weis_obj['components']['nacelle']['generator'] = assumed_model['components']['nacelle']['generator']
@@ -1008,7 +1012,7 @@ weis_obj['components']['blade']['internal_structure_2d_fem'] = assumed_model['co
 # Tower Structure
 # -----------------------------------------------------------------------------------------------------------------------
 weis_obj['components']['tower']['internal_structure_2d_fem'] = assumed_model['components']['tower']['internal_structure_2d_fem'].copy()
-
+# Note that reference axis of internal_structure_2d_fem could change outer_shape_bem because they are linked in yaml
 
 
 # Platform internal structure
@@ -1021,10 +1025,20 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameteri
     member['internal_structure'] = assumed_member['internal_structure'].copy()
 
 
+# Use assumed model materials
+weis_obj['materials'] = assumed_model['materials']
 
 # Print out the final, weis geometry yaml input file with assumptions
 print('Writing the output geometry yaml file with assumptions, approximations, and estimates .........', end="", flush=True)
 write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_ASSUMED.yaml'))
+
+print('Done')
+
+# Write yaml without floating platform for testing
+del(weis_obj['components']['monopile'])
+del(weis_obj['components']['floating_platform'])
+del(weis_obj['components']['mooring'])
+write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_ASSUMED_NoPtfm.yaml'))
 
 print('Done')
 
