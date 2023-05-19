@@ -549,14 +549,14 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
       # then also need joint, anchor_type
       weis_obj['components']['mooring']['nodes'][n]['joint'] = weis_obj['components']['floating_platform']['joints'][start_index+n]['name']
       weis_obj['components']['mooring']['nodes'][n]['anchor_type'] = '' # must be of lower(drag_embedment, suction, plate, micropile, sepla, custom)
-      weis_obj['components']['mooring']['anchor_types'][anchor_count]['name'] = 'anchor'+str(anchor_count+1)
-      weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'] = '' # must be one of lower(drag_embedment, suction, plate, micropile, sepla, custom)
+      # weis_obj['components']['mooring']['anchor_types'][anchor_count]['name'] = 'anchor'+str(anchor_count+1)
+      # weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'] = '' # must be one of lower(drag_embedment, suction, plate, micropile, sepla, custom)
       # if its a custom anchor type, then will also need mass, cost, max_lateral_load, max_vertical_load
-      if weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'].lower() == 'custom':
-        weis_obj['components']['mooring']['anchor_types'][anchor_count]['mass'] = 0.0
-        weis_obj['components']['mooring']['anchor_types'][anchor_count]['cost'] = 0.0
-        weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_lateral_load'] = 0.0
-        weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_vertical_load'] = 0.0
+      # if weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'].lower() == 'custom':
+      #   weis_obj['components']['mooring']['anchor_types'][anchor_count]['mass'] = 0.0
+      #   weis_obj['components']['mooring']['anchor_types'][anchor_count]['cost'] = 0.0
+      #   weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_lateral_load'] = 0.0
+      #   weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_vertical_load'] = 0.0
       anchor_count = anchor_count + 1
     elif weis_obj['components']['mooring']['nodes'][n]['node_type'] == 'vessel':
       # then also need joint, fairlead_type ()
