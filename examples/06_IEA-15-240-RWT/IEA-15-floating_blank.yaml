@@ -587,6 +587,7 @@ components:
               node_volume: 0
               joint: ''
               anchor_type: ''
+              fairlead_type: 'rigid'
               location: [] # added by NRM, not in schema
 
             - name: ''
@@ -615,6 +616,10 @@ components:
         anchor_types:
             - name: ''
               type: 'drag_embedment'
+              mass: 0
+              cost: 0
+              max_lateral_load: 0
+              max_vertical_load: 0
 
 airfoils:
    -  name: ''
