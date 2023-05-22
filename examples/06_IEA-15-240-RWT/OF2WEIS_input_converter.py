@@ -136,6 +136,8 @@ for i in numAF:
     weis_obj['airfoils'][i]['polars'][0]['c_d']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cd']
     weis_obj['airfoils'][i]['polars'][0]['c_m']['grid']   = [A * pi/180 for A in AoA]
     weis_obj['airfoils'][i]['polars'][0]['c_m']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cm']
+    # Reynolds number
+    weis_obj['airfoils'][i]['polars'][0]['re'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Re']
 
 print('Done')
 
