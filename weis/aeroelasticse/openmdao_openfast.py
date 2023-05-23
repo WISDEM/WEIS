@@ -1339,8 +1339,8 @@ class FASTLoadCases(ExplicitComponent):
                 nk = joints_xyz.shape[0]
                 N1 = np.append(N1, nk + inode_range + 1)
                 N2 = np.append(N2, nk + inode_range + 2)
-                d_coarse = np.append(d_coarse, id_coarse)
-                t_coarse = np.append(t_coarse, it_coarse)
+                d_coarse = np.append(d_coarse, np.mean(id_coarse))  # OpenFAST only wants one thickness
+                t_coarse = np.append(t_coarse, np.mean(it_coarse))  # OpenFAST only wants one thickness
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
                 
         if modopt['flags']['offshore']:
