@@ -124,15 +124,15 @@ DEFAULT                RdtnDT      - Time step for wave radiation kernel calcula
  PropSetID     PropD     PropThck  
     (-)         (m)         (m)    
      1         10.0        0.15    
-     2         10.0        0.15    
+     2         12.5        0.075   
      3         12.5        0.075   
      4         12.5        0.075   
-     5         12.5        0.075   
-     6         12.5        0.075   
-     7         12.5        0.075   
-     8         12.5        0.075   
-     9         0.91        0.02    
-    10         0.91        0.02    
+     5         0.91        0.02    
+     6         0.91        0.02    
+     7         0.91        0.02    
+     8        9.6148       0.04    
+     9        9.6148       0.04    
+    10        9.6148       0.04    
 ---------------------- SIMPLE HYDRODYNAMIC COEFFICIENTS (model 1) --------------
   SimplCd    SimplCdMG    SimplCa    SimplCaMG    SimplCp    SimplCpMG   SimplAxCd  SimplAxCdMG  SimplAxCa  SimplAxCaMG  SimplAxCp  SimplAxCpMG
     (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)         (-)    
