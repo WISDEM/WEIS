@@ -3,13 +3,12 @@ pCrunch
 
 IO and Post Processing Interface for OpenFAST Results.
 
-:Version: 0.2.0
 :Authors: Jake Nunemaker, Nikhar Abbas
 
 Installation
 ------------
 
-pCrunch is installable through pip via ``pip install pCrunch``.
+pCrunch is installable through pip via ``pip install pCrunch`` or conda, ``conda install pCrunch``.
 
 Development Setup
 -----------------
@@ -24,7 +23,7 @@ To set up pCrunch for development, follow these steps:
 
     .. code-block:: console
 
-        conda create -n pcrunch-dev python=3.7
+        conda create -n pcrunch-dev
 
    To activate/deactivate the environment, use the following commands.
 
@@ -56,12 +55,3 @@ Examples
 
 For an up to date example of the core functionalities, see `example.ipynb`. More
 examples coming soon.
-
-Other Scripts
--------------
-
-Warning: These scripts have not been updated since the move to version 0.2.0.
-
-There are also several utility scripts provided in this repo. The HPC_tools
-folder contains utility functions for working on the NREL HPC. postProcessing
-contains a script for analyzing the results of multiple runs.

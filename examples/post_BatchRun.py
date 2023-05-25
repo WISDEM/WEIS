@@ -7,12 +7,18 @@ __email__ = ["nikhar.abbas@nrel.gov", "jake.nunemaker@nrel.gov"]
 import os
 from fnmatch import fnmatch
 
-import numpy as np
+#import numpy as np
 import pandas as pd
-import ruamel.yaml as ry
+try:
+    import ruamel_yaml as ry
+except:
+    try:
+        import ruamel.yaml as ry
+    except:
+        raise ImportError("No module named ruamel.yaml or ruamel_yaml")
 
-from pCrunch import LoadsAnalysis, PowerProduction
-from pCrunch.io import load_FAST_out
+from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+#from pCrunch.io import load_FAST_out
 from pCrunch.utility import save_yaml, get_windspeeds, convert_summary_stats
 
 
@@ -21,7 +27,7 @@ def valid_extension(fp):
 
 
 # Define input files paths
-output_dir = "/Users/jnunemak/Projects/pCrunch/BAR10/rank_0/"
+output_dir = "/Users/gbarter/devel/WEIS/examples/05_IEA-3.4-130-RWT/temp/iea34"
 results_dir = os.path.join(output_dir, "results")
 save_results = True
 
@@ -40,7 +46,10 @@ magnitude_channels = {
     "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
 }
 
-fatigue_channels = {"RootMc1": 10, "RootMc2": 10, "RootMc3": 10}
+fatigue_channels = {"RootMc1": FatigueParams(lifetime=25, slope=10),
+                    "RootMc2": FatigueParams(lifetime=25, slope=10),
+                    "RootMc3": FatigueParams(lifetime=25, slope=10),
+                    }
 
 channel_extremes = [
     "RotSpeed",
@@ -59,7 +68,7 @@ la = LoadsAnalysis(
     extreme_channels=channel_extremes,
     trim_data=(0,),
 )
-la.process_outputs(cores=4)
+la.process_outputs(cores=1)
 
 if save_results:
     save_yaml(
