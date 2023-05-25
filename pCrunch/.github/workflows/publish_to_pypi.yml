@@ -1,25 +1,44 @@
-name: Upload to PyPi
+name: Build and upload to PyPI
 
-on: push
+# Build on every branch push, tag push, and pull request change:
+#on: [push, pull_request]
+# Alternatively, to publish when a (published) GitHub Release is created, use the following:
+on:
+    push:
+    pull_request:
+    release:
+        types:
+            - published
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python 3.7
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.7
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install setuptools wheel twine
-    - name: Build and publish
-      if: startsWith(github.ref, 'refs/tags')
-      env:
-        TWINE_USERNAME: __token__
-        TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-      run: |
-        python setup.py sdist bdist_wheel
-        twine upload dist/*
+    build_and_upload_pypi:
+        runs-on: ubuntu-latest
+                
+        # upload to PyPI on every tag starting with 'v'
+        #if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        # alternatively, to publish when a GitHub Release is created, use the following rule:
+        if: github.event_name == 'release' && github.event.action == 'published'
+        steps:
+            - name: checkout repository
+              uses: actions/checkout@v3
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              id: cp
+              with:
+                  python-version: "3.11"
+                  update-environment: true
+
+            - name: Install pypa/build
+              run: |
+                  '${{ steps.cp.outputs.python-path }}' -m pip install build
+
+            - name: Build a binary wheel and a source tarball
+              run: |
+                  '${{ steps.cp.outputs.python-path }}' -m build .
+
+            - uses: pypa/gh-action-pypi-publish@v1.8.5
+              with:
+                  user: __token__
+                  password: ${{ secrets.PYPI_API_TOKEN }}
+                  # To test: repository_url: https://test.pypi.org/legacy/
