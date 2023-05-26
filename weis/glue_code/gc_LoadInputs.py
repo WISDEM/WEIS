@@ -51,7 +51,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
                 
             if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(os.getcwd(), 'openfast_runs')
+                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
+                    self.analysis_options['general']['folder_output'], 
+                    'openfast_runs'
+                    )
                 
             # Find the path to the WEIS controller
             weis_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
