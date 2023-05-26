@@ -38,6 +38,9 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
         self.modeling_options["Level1"]['BEM_dir'] = bemDir
 
+        # Directory of modeling option input, if we want to use it for relative paths
+        mod_opt_dir = os.path.split(self.modeling_options['fname_input_modeling'])[0]
+
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
@@ -113,6 +116,15 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
+        # OpenFAST dir
+        if self.modeling_options["Level3"]["from_openfast"]:
+            if not os.path.isabs(self.modeling_options['Level3']['openfast_dir']):
+                # Make relative to modeling options input
+                self.modeling_options['Level3']['openfast_dir'] = os.path.realpath(os.path.join(
+                    mod_opt_dir,
+                    self.modeling_options['Level3']['openfast_dir']
+                    ))
+        
         # RAFT
         if self.modeling_options["flags"]["floating"]:
             bool_init = True if self.modeling_options["Level1"]["potential_model_override"]==2 else False
@@ -129,6 +141,14 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.modeling_options['ROSCO']['flag'] = (self.modeling_options['Level1']['flag'] or
                                                   self.modeling_options['Level2']['flag'] or
                                                   self.modeling_options['Level3']['flag'])
+        
+        if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
+            # Make path absolute if not, relative to modeling options input
+            if not os.path.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
+                self.modeling_options['ROSCO']['tuning_yaml'] = os.path.realpath(os.path.join(
+                    mod_opt_dir,
+                    self.modeling_options['ROSCO']['tuning_yaml']
+                    ))
         
         # XFoil
         if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:

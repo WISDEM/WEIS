@@ -577,10 +577,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             fast_reader = InputReader_OpenFAST()
             fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
-            if os.path.isabs(modopt['Level3']['openfast_dir']):
-                fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
-            else:
-                fast_reader.FAST_directory  = os.path.join(weis_dir, modopt['Level3']['openfast_dir'])
+            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt

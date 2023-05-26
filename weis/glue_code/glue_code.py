@@ -55,20 +55,16 @@ class WindPark(om.Group):
 
         # ROSCO tuning parameters
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
-            # Make path absolute if not
-            if not os.path.isabs(modeling_options['ROSCO']['tuning_yaml']):
-                modeling_options['ROSCO']['tuning_yaml'] = os.path.join(weis_dir,modeling_options['ROSCO']['tuning_yaml'])
+        if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
             inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
-            rosco_init_options         = inps['controller_params']
-            rosco_init_options['linmodel_tuning'] = inps['linmodel_tuning']
+            modeling_options['ROSCO'].update(inps['controller_params'])
 
             # Apply changes in modeling options, should have already been validated
             modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
+            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
             for option, value in modopts_no_defaults['ROSCO'].items():
-                rosco_init_options[option] = value
-
-            modeling_options['ROSCO'] = rosco_init_options
+                if option not in skip_options:
+                    modeling_options['ROSCO'][option] = value
 
 
         tune_rosco_ivc = om.IndepVarComp()

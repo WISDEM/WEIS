@@ -2739,7 +2739,7 @@ properties:
             openfast_dir: 
                 type: string
                 default: unused
-                description: OpenFAST input directory, containing .fst file
+                description: OpenFAST input directory, containing .fst file.  Absolute path or relative to modeling input
             xfoil:
                 type: object
                 default: {}
@@ -3586,7 +3586,7 @@ properties:
         properties: 
             tuning_yaml:
                 type: string
-                description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model.  Absolute path or relative to WEIS/
+                description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model.  Absolute path or relative to modeling input.
                 default: none
 
     OL2CL:
