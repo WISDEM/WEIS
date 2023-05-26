@@ -521,17 +521,12 @@ class ROSCO_Turbine(ExplicitComponent):
         if parameter_filename == 'none':
             raise Exception('A ROSCO tuning_yaml must be specified in the modeling_options if from_OpenFAST is True')
 
-        if not os.path.isabs(parameter_filename):
-            parameter_filename = os.path.join(weis_dir,parameter_filename)
-
         inps = load_rosco_yaml(parameter_filename)
         self.turbine_params         = inps['turbine_params']
         self.control_params         = inps['controller_params']
 
         FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
         FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
-        if not os.path.isabs(FAST_directory):
-            FAST_directory = os.path.join(weis_dir,FAST_directory)
             
 
         # Instantiate turbine, controller, and file processing classes
