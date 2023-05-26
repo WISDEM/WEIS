@@ -18,6 +18,13 @@ class PoseOptimizationWEIS(PoseOptimization):
             self.floating_solve_component = 'raft'
         else:
             self.floating_solve_component = 'floatingse'
+
+        # aeroelastic won't compute floating period, execpt in special sims
+        if modeling_options['Level1']['flag']:
+            self.floating_period_solve_component = 'raft'
+        else:
+            self.floating_period_solve_component = 'floatingse'
+        
         
     def get_number_design_variables(self):
         # Determine the number of design variables
