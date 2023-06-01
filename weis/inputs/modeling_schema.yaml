@@ -699,6 +699,62 @@ properties:
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
+                    SensorType:
+                        type: integer
+                        enum: [0,1,2,3]
+                        default: 0
+                        description: Switch for lidar configuration (0 = None, 1 = Single Point Beam(s), 2 = Continuous, 3 = Pulsed)
+                    NumPulseGate:
+                        type: integer
+                        default: 0
+                        description: Number of lidar measurement gates (used when SensorType = 3)
+                    PulseSpacing:
+                        type: number
+                        default: 0
+                        description: Distance between range gates (m) (used when SensorType = 3)
+                    NumBeam:
+                        type: integer
+                        enum: [0,1,2,3,4,5]
+                        default: 0
+                        description: Number of lidar measurement beams (0-5)(used when SensorType = 1)
+                    FocalDistanceX:
+                        type: number
+                        default: 0
+                        description: Focal distance coordinates of the lidar beam in the x direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
+                    FocalDistanceY:
+                        type: number
+                        default: 0.
+                        description: Focal distance coordinates of the lidar beam in the y direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
+                    FocalDistanceZ:
+                        type: number
+                        default: 0.
+                        description: Focal distance coordinates of the lidar beam in the z direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
+                    RotorApexOffsetPos:
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Offset of the lidar from hub height (m)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                    URefLid:
+                        type: number
+                        default: 0.
+                        minimum: 0.
+                        description: Reference average wind speed for the lidar [m/s]
+                    MeasurementInterval:
+                        type: number
+                        default: 0.
+                        minimum: 0.
+                        description: Time between each measurement [s]
+                    LidRadialVel:
+                        type: boolean
+                        default: False
+                        description: TRUE => return radial component, FALSE => return 'x' direction estimate
+                    ConsiderHubMotion:
+                        type: integer
+                        default: 1
+                        description: Flag whether to consider the hub motion's impact on Lidar measurements    
             AeroDyn: &ofaerodyn
                 type: object
                 default: {}
