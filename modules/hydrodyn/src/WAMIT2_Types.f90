@@ -105,7 +105,7 @@ IMPLICIT NONE
 ! =========  WAMIT2_MiscVarType  =======
   TYPE, PUBLIC :: WAMIT2_MiscVarType
     INTEGER(IntKi) , DIMENSION(:), ALLOCATABLE  :: LastIndWave      !< Index for last interpolation step of 2nd order forces [-]
-    REAL(ReKi) , DIMENSION(1:6)  :: F_Waves2      !< 2nd order force from this timestep [-]
+    REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: F_Waves2      !< 2nd order force from this timestep [-]
   END TYPE WAMIT2_MiscVarType
 ! =======================
 ! =========  WAMIT2_ParameterType  =======
@@ -280,15 +280,27 @@ ENDIF
     DstInitInputData%WvHiCOffS = SrcInitInputData%WvHiCOffS
  END SUBROUTINE WAMIT2_CopyInitInput
 
- SUBROUTINE WAMIT2_DestroyInitInput( InitInputData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyInitInput( InitInputData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_InitInputType), INTENT(INOUT) :: InitInputData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyInitInput'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyInitInput'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
 IF (ALLOCATED(InitInputData%PtfmRefxt)) THEN
   DEALLOCATE(InitInputData%PtfmRefxt)
 ENDIF
@@ -863,15 +875,27 @@ ENDIF
     DstInitOutputData%NULLVAL = SrcInitOutputData%NULLVAL
  END SUBROUTINE WAMIT2_CopyInitOutput
 
- SUBROUTINE WAMIT2_DestroyInitOutput( InitOutputData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyInitOutput( InitOutputData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_InitOutputType), INTENT(INOUT) :: InitOutputData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyInitOutput'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyInitOutput'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
  END SUBROUTINE WAMIT2_DestroyInitOutput
 
  SUBROUTINE WAMIT2_PackInitOutput( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -988,15 +1012,27 @@ ENDIF
     DstContStateData%DummyContState = SrcContStateData%DummyContState
  END SUBROUTINE WAMIT2_CopyContState
 
- SUBROUTINE WAMIT2_DestroyContState( ContStateData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyContState( ContStateData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_ContinuousStateType), INTENT(INOUT) :: ContStateData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyContState'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyContState'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
  END SUBROUTINE WAMIT2_DestroyContState
 
  SUBROUTINE WAMIT2_PackContState( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1113,15 +1149,27 @@ ENDIF
     DstDiscStateData%DummyDiscState = SrcDiscStateData%DummyDiscState
  END SUBROUTINE WAMIT2_CopyDiscState
 
- SUBROUTINE WAMIT2_DestroyDiscState( DiscStateData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyDiscState( DiscStateData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_DiscreteStateType), INTENT(INOUT) :: DiscStateData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyDiscState'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyDiscState'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
  END SUBROUTINE WAMIT2_DestroyDiscState
 
  SUBROUTINE WAMIT2_PackDiscState( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1238,15 +1286,27 @@ ENDIF
     DstConstrStateData%DummyConstrState = SrcConstrStateData%DummyConstrState
  END SUBROUTINE WAMIT2_CopyConstrState
 
- SUBROUTINE WAMIT2_DestroyConstrState( ConstrStateData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyConstrState( ConstrStateData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_ConstraintStateType), INTENT(INOUT) :: ConstrStateData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyConstrState'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyConstrState'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
  END SUBROUTINE WAMIT2_DestroyConstrState
 
  SUBROUTINE WAMIT2_PackConstrState( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1363,15 +1423,27 @@ ENDIF
     DstOtherStateData%DummyOtherState = SrcOtherStateData%DummyOtherState
  END SUBROUTINE WAMIT2_CopyOtherState
 
- SUBROUTINE WAMIT2_DestroyOtherState( OtherStateData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyOtherState( OtherStateData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_OtherStateType), INTENT(INOUT) :: OtherStateData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyOtherState'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyOtherState'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
  END SUBROUTINE WAMIT2_DestroyOtherState
 
  SUBROUTINE WAMIT2_PackOtherState( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -1498,20 +1570,46 @@ IF (ALLOCATED(SrcMiscData%LastIndWave)) THEN
   END IF
     DstMiscData%LastIndWave = SrcMiscData%LastIndWave
 ENDIF
+IF (ALLOCATED(SrcMiscData%F_Waves2)) THEN
+  i1_l = LBOUND(SrcMiscData%F_Waves2,1)
+  i1_u = UBOUND(SrcMiscData%F_Waves2,1)
+  IF (.NOT. ALLOCATED(DstMiscData%F_Waves2)) THEN 
+    ALLOCATE(DstMiscData%F_Waves2(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+      CALL SetErrStat(ErrID_Fatal, 'Error allocating DstMiscData%F_Waves2.', ErrStat, ErrMsg,RoutineName)
+      RETURN
+    END IF
+  END IF
     DstMiscData%F_Waves2 = SrcMiscData%F_Waves2
+ENDIF
  END SUBROUTINE WAMIT2_CopyMisc
 
- SUBROUTINE WAMIT2_DestroyMisc( MiscData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyMisc( MiscData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_MiscVarType), INTENT(INOUT) :: MiscData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyMisc'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyMisc'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
 IF (ALLOCATED(MiscData%LastIndWave)) THEN
   DEALLOCATE(MiscData%LastIndWave)
+ENDIF
+IF (ALLOCATED(MiscData%F_Waves2)) THEN
+  DEALLOCATE(MiscData%F_Waves2)
 ENDIF
  END SUBROUTINE WAMIT2_DestroyMisc
 
@@ -1555,7 +1653,11 @@ ENDIF
     Int_BufSz   = Int_BufSz   + 2*1  ! LastIndWave upper/lower bounds for each dimension
       Int_BufSz  = Int_BufSz  + SIZE(InData%LastIndWave)  ! LastIndWave
   END IF
+  Int_BufSz   = Int_BufSz   + 1     ! F_Waves2 allocated yes/no
+  IF ( ALLOCATED(InData%F_Waves2) ) THEN
+    Int_BufSz   = Int_BufSz   + 2*1  ! F_Waves2 upper/lower bounds for each dimension
       Re_BufSz   = Re_BufSz   + SIZE(InData%F_Waves2)  ! F_Waves2
+  END IF
   IF ( Re_BufSz  .GT. 0 ) THEN 
      ALLOCATE( ReKiBuf(  Re_BufSz  ), STAT=ErrStat2 )
      IF (ErrStat2 /= 0) THEN 
@@ -1598,10 +1700,21 @@ ENDIF
         Int_Xferred = Int_Xferred + 1
       END DO
   END IF
-    DO i1 = LBOUND(InData%F_Waves2,1), UBOUND(InData%F_Waves2,1)
-      ReKiBuf(Re_Xferred) = InData%F_Waves2(i1)
-      Re_Xferred = Re_Xferred + 1
-    END DO
+  IF ( .NOT. ALLOCATED(InData%F_Waves2) ) THEN
+    IntKiBuf( Int_Xferred ) = 0
+    Int_Xferred = Int_Xferred + 1
+  ELSE
+    IntKiBuf( Int_Xferred ) = 1
+    Int_Xferred = Int_Xferred + 1
+    IntKiBuf( Int_Xferred    ) = LBOUND(InData%F_Waves2,1)
+    IntKiBuf( Int_Xferred + 1) = UBOUND(InData%F_Waves2,1)
+    Int_Xferred = Int_Xferred + 2
+
+      DO i1 = LBOUND(InData%F_Waves2,1), UBOUND(InData%F_Waves2,1)
+        ReKiBuf(Re_Xferred) = InData%F_Waves2(i1)
+        Re_Xferred = Re_Xferred + 1
+      END DO
+  END IF
  END SUBROUTINE WAMIT2_PackMisc
 
  SUBROUTINE WAMIT2_UnPackMisc( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -1649,12 +1762,24 @@ ENDIF
         Int_Xferred = Int_Xferred + 1
       END DO
   END IF
-    i1_l = LBOUND(OutData%F_Waves2,1)
-    i1_u = UBOUND(OutData%F_Waves2,1)
-    DO i1 = LBOUND(OutData%F_Waves2,1), UBOUND(OutData%F_Waves2,1)
-      OutData%F_Waves2(i1) = ReKiBuf(Re_Xferred)
-      Re_Xferred = Re_Xferred + 1
-    END DO
+  IF ( IntKiBuf( Int_Xferred ) == 0 ) THEN  ! F_Waves2 not allocated
+    Int_Xferred = Int_Xferred + 1
+  ELSE
+    Int_Xferred = Int_Xferred + 1
+    i1_l = IntKiBuf( Int_Xferred    )
+    i1_u = IntKiBuf( Int_Xferred + 1)
+    Int_Xferred = Int_Xferred + 2
+    IF (ALLOCATED(OutData%F_Waves2)) DEALLOCATE(OutData%F_Waves2)
+    ALLOCATE(OutData%F_Waves2(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+       CALL SetErrStat(ErrID_Fatal, 'Error allocating OutData%F_Waves2.', ErrStat, ErrMsg,RoutineName)
+       RETURN
+    END IF
+      DO i1 = LBOUND(OutData%F_Waves2,1), UBOUND(OutData%F_Waves2,1)
+        OutData%F_Waves2(i1) = ReKiBuf(Re_Xferred)
+        Re_Xferred = Re_Xferred + 1
+      END DO
+  END IF
  END SUBROUTINE WAMIT2_UnPackMisc
 
  SUBROUTINE WAMIT2_CopyParam( SrcParamData, DstParamData, CtrlCode, ErrStat, ErrMsg )
@@ -1735,15 +1860,27 @@ ENDIF
     DstParamData%UnOutFile = SrcParamData%UnOutFile
  END SUBROUTINE WAMIT2_CopyParam
 
- SUBROUTINE WAMIT2_DestroyParam( ParamData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyParam( ParamData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_ParameterType), INTENT(INOUT) :: ParamData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyParam'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyParam'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
 IF (ALLOCATED(ParamData%WaveTime)) THEN
   DEALLOCATE(ParamData%WaveTime)
 ENDIF
@@ -1752,7 +1889,8 @@ IF (ALLOCATED(ParamData%WaveExctn2)) THEN
 ENDIF
 IF (ALLOCATED(ParamData%OutParam)) THEN
 DO i1 = LBOUND(ParamData%OutParam,1), UBOUND(ParamData%OutParam,1)
-  CALL NWTC_Library_Destroyoutparmtype( ParamData%OutParam(i1), ErrStat, ErrMsg )
+  CALL NWTC_Library_Destroyoutparmtype( ParamData%OutParam(i1), ErrStat2, ErrMsg2, DEALLOCATEpointers_local )
+     CALL SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName)
 ENDDO
   DEALLOCATE(ParamData%OutParam)
 ENDIF
@@ -2204,16 +2342,29 @@ ENDIF
          IF (ErrStat>=AbortErrLev) RETURN
  END SUBROUTINE WAMIT2_CopyInput
 
- SUBROUTINE WAMIT2_DestroyInput( InputData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyInput( InputData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_InputType), INTENT(INOUT) :: InputData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyInput'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyInput'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
-  CALL MeshDestroy( InputData%Mesh, ErrStat, ErrMsg )
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
+  CALL MeshDestroy( InputData%Mesh, ErrStat2, ErrMsg2 )
+     CALL SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName)
  END SUBROUTINE WAMIT2_DestroyInput
 
  SUBROUTINE WAMIT2_PackInput( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
@@ -2413,16 +2564,29 @@ ENDIF
          IF (ErrStat>=AbortErrLev) RETURN
  END SUBROUTINE WAMIT2_CopyOutput
 
- SUBROUTINE WAMIT2_DestroyOutput( OutputData, ErrStat, ErrMsg )
+ SUBROUTINE WAMIT2_DestroyOutput( OutputData, ErrStat, ErrMsg, DEALLOCATEpointers )
   TYPE(WAMIT2_OutputType), INTENT(INOUT) :: OutputData
   INTEGER(IntKi),  INTENT(  OUT) :: ErrStat
   CHARACTER(*),    INTENT(  OUT) :: ErrMsg
-  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyOutput'
+  LOGICAL,OPTIONAL,INTENT(IN   ) :: DEALLOCATEpointers
+  
   INTEGER(IntKi)                 :: i, i1, i2, i3, i4, i5 
-! 
+  LOGICAL                        :: DEALLOCATEpointers_local
+  INTEGER(IntKi)                 :: ErrStat2
+  CHARACTER(ErrMsgLen)           :: ErrMsg2
+  CHARACTER(*),    PARAMETER :: RoutineName = 'WAMIT2_DestroyOutput'
+
   ErrStat = ErrID_None
   ErrMsg  = ""
-  CALL MeshDestroy( OutputData%Mesh, ErrStat, ErrMsg )
+
+  IF (PRESENT(DEALLOCATEpointers)) THEN
+     DEALLOCATEpointers_local = DEALLOCATEpointers
+  ELSE
+     DEALLOCATEpointers_local = .true.
+  END IF
+  
+  CALL MeshDestroy( OutputData%Mesh, ErrStat2, ErrMsg2 )
+     CALL SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName)
  END SUBROUTINE WAMIT2_DestroyOutput
 
  SUBROUTINE WAMIT2_PackOutput( ReKiBuf, DbKiBuf, IntKiBuf, Indata, ErrStat, ErrMsg, SizeOnly )
