@@ -709,6 +709,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['InflowWind']['WindType']       = int(f.readline().split()[0])
         self.fst_vt['InflowWind']['PropagationDir'] = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['VFlowAng']       = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['VelInterpCubic'] = bool_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['NWindVel']       = int(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindVxiList']    = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['WindVyiList']    = float_read(f.readline().split()[0])
