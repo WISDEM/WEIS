@@ -779,7 +779,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['InflowWind']['URefLid'] = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['MeasurementInterval'] = float_read(f.readline().split()[0])
         self.fst_vt['InflowWind']['LidRadialVel'] = bool_read(f.readline().split()[0])
-        self.fst_vt['InflowWind']['ConsiderHubMotion'] = float_read(f.readline().split()[0])
+        self.fst_vt['InflowWind']['ConsiderHubMotion'] = int(f.readline().split()[0])
 
         # Inflow Wind Output Parameters (inflow_out_params)
         f.readline()
