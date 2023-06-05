@@ -31,7 +31,7 @@ jobs:
 
       # Even miniconda gets bogged down- try mamba
       - name: Install Conda environment with Micromamba
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: environment.yml
           environment-name: test
@@ -43,7 +43,7 @@ jobs:
             openmpi
             sel(win): m2w64-toolchain
             sel(win): libpython`
-            #sel(osx): compilers
+
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
