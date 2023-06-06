@@ -35,14 +35,12 @@ jobs:
         with:
           environment-file: environment.yml
           environment-name: test
-          create-args: |
+          post-cleanup: none
+          create-args: >-
             python=${{ matrix.python-version }}
             mpi4py
             petsc4py
             openmpi
-            sel(win): m2w64-toolchain
-            sel(win): libpython
-            sel(osx): compilers
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
@@ -72,18 +70,18 @@ jobs:
       #      cat $GITHUB_ENV
       #      printenv
 
-      # Install dependencies of WISDEM specific to windows
-      #- name: Add dependencies mac specific
-      #  if: contains( matrix.os, 'mac')
-      #  run: |
-      #      conda install -y compilers
-      #      gfortran --version
+      # Install dependencies of WISDEM specific to mac
+      - name: Add dependencies mac specific
+        if: contains( matrix.os, 'mac')
+        run: |
+            mamba install -y compilers
+            gfortran --version
             
       # Install dependencies of WISDEM specific to windows
-      #- name: Add dependencies windows specific
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #    conda install -y m2w64-toolchain libpython
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          mamba install -y m2w64-toolchain libpython
       
       # Install dependencies of WEIS specific to ubuntu
       #- name: Add dependencies ubuntu specific
