@@ -97,7 +97,7 @@ jobs:
 
       - name: Show custom environment
         run: |
-            mamba list
+            conda list
 
       # Debugging session
       #- name: Setup tmate session
