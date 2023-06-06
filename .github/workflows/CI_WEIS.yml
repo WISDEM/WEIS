@@ -3,9 +3,6 @@ name: CI_WEIS
 # We run CI on push commits on all branches
 on: [push, pull_request]
 
-env:
-  FC: gfortran-12
-  
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -23,10 +20,6 @@ jobs:
         python-version: ["3.9","3.10","3.11"]
         
     steps:
-      - name: Setup GNU Fortran
-      ##  if: false == contains( matrix.os, 'windows')
-        uses: awvwgk/setup-fortran@main #modflowpy/install-intelfortran-action@v1 #
-              
       - uses: actions/checkout@v3
 
       # Even miniconda gets bogged down- try mamba
@@ -78,8 +71,10 @@ jobs:
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
+            brew install gcc gfortran
             micromamba install -y compilers
             gfortran --version
+            gcc --version
             
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
