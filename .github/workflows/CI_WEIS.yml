@@ -36,6 +36,10 @@ jobs:
           environment-file: environment.yml
           environment-name: test
           post-cleanup: none
+          init-shell: bash
+          condarc: |
+              channels:
+                  - conda-forge
           create-args: >-
             python=${{ matrix.python-version }}
             mpi4py
@@ -74,14 +78,14 @@ jobs:
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
-            mamba install -y compilers
+            micromamba install -y compilers
             gfortran --version
             
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          mamba install -y m2w64-toolchain libpython
+          micromamba install -y m2w64-toolchain libpython
       
       # Install dependencies of WEIS specific to ubuntu
       #- name: Add dependencies ubuntu specific
@@ -94,7 +98,7 @@ jobs:
 
       - name: Show custom environment
         run: |
-            conda list
+            micromamba list
 
       # Debugging session
       #- name: Setup tmate session
