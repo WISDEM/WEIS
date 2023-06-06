@@ -35,8 +35,7 @@ jobs:
         with:
           environment-file: environment.yml
           environment-name: test
-          channels: conda-forge
-          extra-specs: |
+          create-args: |
             python=${{ matrix.python-version }}
             mpi4py
             petsc4py
