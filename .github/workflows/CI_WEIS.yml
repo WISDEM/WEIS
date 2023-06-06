@@ -3,8 +3,8 @@ name: CI_WEIS
 # We run CI on push commits on all branches
 on: [push, pull_request]
 
-#env:
-#  FC: gfortran-12
+env:
+  FC: gfortran-12
   
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -23,9 +23,9 @@ jobs:
         python-version: ["3.9","3.10","3.11"]
         
     steps:
-      #- name: Setup GNU Fortran
+      - name: Setup GNU Fortran
       ##  if: false == contains( matrix.os, 'windows')
-      #  uses: awvwgk/setup-fortran@main #modflowpy/install-intelfortran-action@v1 #
+        uses: awvwgk/setup-fortran@main #modflowpy/install-intelfortran-action@v1 #
               
       - uses: actions/checkout@v3
 
@@ -43,7 +43,7 @@ jobs:
             openmpi
             sel(win): m2w64-toolchain
             sel(win): libpython
-            sel(osx): gfortran
+            sel(osx): compilers
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
@@ -97,7 +97,7 @@ jobs:
 
       - name: Show custom environment
         run: |
-            conda list
+            mamba list
 
       # Debugging session
       #- name: Setup tmate session
