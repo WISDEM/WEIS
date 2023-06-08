@@ -33,6 +33,44 @@ def compute_relThk(x,y):
   max_thk = 2*np.round(max(abs(np.array(thickness))),2) # thickness is symmetric about the camber line
   return max_thk
 
+def point_in_cylinder(point, cylinder_start, cylinder_end, cylinder_radius):
+    # Extract coordinates of the point and cylinder endpoints
+    x, y, z = point
+    x1, y1, z1 = cylinder_start
+    x2, y2, z2 = cylinder_end
+
+    # Calculate the vector from the start point to the end point of the cylinder
+    v = (x2 - x1, y2 - y1, z2 - z1)
+
+    # Calculate the vector from the start point to the given point
+    w = (x - x1, y - y1, z - z1)
+
+    # Calculate the dot product of v and w
+    dot_product = v[0] * w[0] + v[1] * w[1] + v[2] * w[2]
+
+    # Calculate the squared length of v
+    length_squared = v[0] ** 2 + v[1] ** 2 + v[2] ** 2
+
+    # Calculate the parameter along the line of the closest point to the given point
+    # t is also axial joint, return this?
+    t = dot_product / length_squared
+
+    # t is projection of the point onto the line, if it's within (0,1) it's within the cylinder
+    if 0 <= t <= 1:
+      # Find the closest point on the line to the given point
+      closest_point = (x1 + t * v[0], y1 + t * v[1], z1 + t * v[2])
+
+      # Calculate the distance between the closest point and the given point
+      distance = np.sqrt((x - closest_point[0]) ** 2 + (y - closest_point[1]) ** 2 + (z - closest_point[2]) ** 2)
+
+      # Check if the distance is within the cylinder radius
+      if distance <= cylinder_radius:
+          # Check if the closest point is within the cylinder's height range
+          if min(z1, z2) <= closest_point[2] <= max(z1, z2):
+              return True, t
+
+    return False, t
+
 # ===============================================================================================================
 # Constants
 this_dir = os.path.dirname(__file__)
@@ -428,50 +466,59 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then its floati
   # Required
   
   # Joints
-  numJoints = fast.fst_vt['HydroDyn']['NJoints'] + len(fast.fst_vt['MoorDyn']['Point_ID']) # total number of joints from both HydroDyn and MoorDyn
+  numJoints = fast.fst_vt['HydroDyn']['NJoints']  # total number of joints from HydroDyn
   J_obj     = weis_obj['components']['floating_platform']['joints'][0] # J_obj is now a pointer to the first index of the dictionary
-  weis_obj['components']['floating_platform']['joints'] = [copy.deepcopy(J_obj) for x in range(numJoints)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+
+  # First get all joints
+  ptfm_joints = [copy.deepcopy(J_obj) for x in range(numJoints)]
 
   max_height = max(fast.fst_vt['HydroDyn']['Jointzi'])
   for j in range(fast.fst_vt['HydroDyn']['NJoints']):
-    weis_obj['components']['floating_platform']['joints'][j]['name']        = str(fast.fst_vt['HydroDyn']['JointID'][j])
-    weis_obj['components']['floating_platform']['joints'][j]['location']    = [fast.fst_vt['HydroDyn']['Jointxi'][j], fast.fst_vt['HydroDyn']['Jointyi'][j], fast.fst_vt['HydroDyn']['Jointzi'][j]]
-    weis_obj['components']['floating_platform']['joints'][j]['cylindrical'] = False # are cylindrical coordinates used to describe the location of this joint?
-    #weis_obj['components']['floating_platform']['joints'][j]['reactions']   = [] # joint DOFs
+    ptfm_joints[j]['name']        = f"joint_{fast.fst_vt['HydroDyn']['JointID'][j]}"
+    ptfm_joints[j]['location']    = [fast.fst_vt['HydroDyn']['Jointxi'][j], fast.fst_vt['HydroDyn']['Jointyi'][j], fast.fst_vt['HydroDyn']['Jointzi'][j]]
+    ptfm_joints[j]['cylindrical'] = False # are cylindrical coordinates used to describe the location of this joint?
+    #ptfm_joints[j]['reactions']   = [] # joint DOFs
     # does the transition between tower and platform happen at this joint?
     if (abs(fast.fst_vt['HydroDyn']['Jointxi'][j]) < 0.001) and (abs(fast.fst_vt['HydroDyn']['Jointyi'][j]) < 0.001) and (abs(fast.fst_vt['HydroDyn']['Jointzi'][j]) == max_height):
-      weis_obj['components']['floating_platform']['joints'][j]['transition']  = True
+      ptfm_joints[j]['transition']  = True
     else: 
-      weis_obj['components']['floating_platform']['joints'][j]['transition']  = False
+      ptfm_joints[j]['transition']  = False
 
   j = j + 1
   anchor_count = 1
   fairlead_count = 1
+  n_moor_joints = len(fast.fst_vt['MoorDyn']['Point_ID'])
   
+  moor_joints = []
+
   # Add the joints (nodes) from MoorDyn
-  for k in range(len(fast.fst_vt['MoorDyn']['Point_ID'])): 
-    if fast.fst_vt['MoorDyn']['Attachment'][k].lower() == 'fixed':
-      weis_obj['components']['floating_platform']['joints'][j]['name']        = 'anchor' + str(anchor_count)
+  for j in range(n_moor_joints): 
+    moor_joint = copy.deepcopy(J_obj)
+    if fast.fst_vt['MoorDyn']['Attachment'][j].lower() == 'fixed':
+      moor_joint['name']        = 'anchor' + str(anchor_count)
       anchor_count = anchor_count + 1
-    elif fast.fst_vt['MoorDyn']['Attachment'][k].lower() == 'vessel':
-      weis_obj['components']['floating_platform']['joints'][j]['name']        = 'fairlead' + str(fairlead_count)
+    elif fast.fst_vt['MoorDyn']['Attachment'][j].lower() == 'vessel':
+      moor_joint['name']        = 'fairlead' + str(fairlead_count)
       fairlead_count = fairlead_count + 1
     else:
-      weis_obj['components']['floating_platform']['joints'][j]['name']        = ''
+      moor_joint['name']        = ''
       
-    weis_obj['components']['floating_platform']['joints'][j]['location']    = [fast.fst_vt['MoorDyn']['X'][k], fast.fst_vt['MoorDyn']['Y'][k], fast.fst_vt['MoorDyn']['Z'][k]]
-    weis_obj['components']['floating_platform']['joints'][j]['cylindrical'] = False # are cylindrical coordinates used to describe the location of this joint?
-    #weis_obj['components']['floating_platform']['joints'][j]['reactions']   = [] # joint DOFs
-    j = j + 1
+    moor_joint['location']    = [fast.fst_vt['MoorDyn']['X'][j], fast.fst_vt['MoorDyn']['Y'][j], fast.fst_vt['MoorDyn']['Z'][j]]
+    moor_joint['cylindrical'] = False # are cylindrical coordinates used to describe the location of this joint?
+    #moor_joints[j]['reactions']   = [] # joint DOFs
+    moor_joints.append(moor_joint)
 
   # Members
   numMembers = fast.fst_vt['HydroDyn']['NMembers']
   M_obj      = weis_obj['components']['floating_platform']['members'][0] # M_obj is now a pointer to the first index of the dictionary
+  empty_axial_joint = M_obj['axial_joints'][0].copy()
+  M_obj['axial_joints'] = []  # leave axial joints empty 
+
   weis_obj['components']['floating_platform']['members'] = [copy.deepcopy(M_obj) for x in range(numMembers)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
   for m in range(numMembers):
     weis_obj['components']['floating_platform']['members'][m]['name']               = f"member_{int(fast.fst_vt['HydroDyn']['MemberID'][m])}"
-    weis_obj['components']['floating_platform']['members'][m]['joint1']             = str(fast.fst_vt['HydroDyn']['MJointID1'][m])
-    weis_obj['components']['floating_platform']['members'][m]['joint2']             = str(fast.fst_vt['HydroDyn']['MJointID2'][m])
+    weis_obj['components']['floating_platform']['members'][m]['joint1']             = f"joint_{fast.fst_vt['HydroDyn']['MJointID1'][m]}"
+    weis_obj['components']['floating_platform']['members'][m]['joint2']             = f"joint_{fast.fst_vt['HydroDyn']['MJointID2'][m]}"
     #weis_obj['components']['floating_platform']['members'][m]['Ca']                 = 0 # ONLY AVAILABLE FOR JOINTS
     #weis_obj['components']['floating_platform']['members'][m]['Cd']                 = 0 # ONLY AVAILABLE FOR JOINTS
     #weis_obj['components']['floating_platform']['members'][m]['Cp']                 = 0 # ONLY AVAILABLE FOR JOINTS
@@ -488,8 +535,112 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then its floati
     weis_obj['components']['floating_platform']['members'][m]['internal_structure']['layers'][0]['thickness']['values'] = [fast.fst_vt['HydroDyn']['PropThck'][idxProp], fast.fst_vt['HydroDyn']['PropThck'][idxProp]]
     
   # TODO: axial joints
-  #weis_obj['components']['floating_platform']['members'][m]['axial_joints'][?]['name']  = fast.fst_vt['MoorDyn']['Point_ID'][vessel_idx(z1)]
-  #weis_obj['components']['floating_platform']['members'][m]['axial_joints'][?]['grid']  = 0.0 # will need to update
+  members = weis_obj['components']['floating_platform']['members']
+  new_members = copy.deepcopy(members)
+  ptfm_joint_names = [joint['name'] for joint in ptfm_joints]
+  moor_joint_names = [joint['name'] for joint in moor_joints]
+  all_joint_names = ptfm_joint_names + moor_joint_names
+
+  # For each member (keep copy of new_members handy)
+  for mem_i, new_mem_i in zip(members, new_members):
+    # Find endpoints
+    mem_i_joint_1 = ptfm_joints[ptfm_joint_names.index(mem_i['joint1'])]['location']
+    mem_i_joint_2 = ptfm_joints[ptfm_joint_names.index(mem_i['joint2'])]['location']
+
+    # Do these endpoints fall within or near the cylinder of another member
+    for mem_j, new_mem_j in zip(members, new_members):
+      if mem_j == mem_i:
+        continue
+
+      margin = 1e-2
+
+      cyl_radius = (mem_j['outer_shape']['outer_diameter']['values'][0] + margin)/2   # assuming straight cols for now
+      mem_j_joint_1 = ptfm_joints[ptfm_joint_names.index(mem_j['joint1'])]['location']
+      mem_j_joint_2 = ptfm_joints[ptfm_joint_names.index(mem_j['joint2'])]['location']
+
+      # Is the 1st joint of mem_i in mem_j?
+      pic = point_in_cylinder(mem_i_joint_1, mem_j_joint_1, mem_j_joint_2, cyl_radius)
+      if pic[0]:
+        print(f"Member {mem_i['name']} joint1 ({mem_i['joint1']}) falls in member {mem_j['name']}")
+        # Make axial joint
+        ax_joint = empty_axial_joint.copy()
+        ax_joint['name'] = f"{mem_i['name']}_connect_a"
+        ax_joint['grid'] = pic[1]
+        
+        # Add to mem_j, member where joint was found
+        new_mem_j['axial_joints'].append(ax_joint)
+        
+        # Rename joint of mem_i to axial joint name
+        new_mem_i['joint1'] = ax_joint['name']  # reassign mem
+        
+        # Remove joint from list
+        all_joint_names.remove(mem_i['joint1'])
+
+      # Is the 2nd joint of mem_i in mem_j?
+      pic = point_in_cylinder(mem_i_joint_2, mem_j_joint_1, mem_j_joint_2, cyl_radius)
+      if pic[0]:
+        print(f"Member {mem_i['name']} joint2 ({mem_i['joint2']}) falls in member {mem_j['name']}")
+        # Make axial joint
+        ax_joint = empty_axial_joint.copy()
+        ax_joint['name'] = f"{mem_i['name']}_connect_b"
+        ax_joint['grid'] = pic[1]
+        
+        # Add to mem_j, member where joint was found
+        new_mem_j['axial_joints'].append(ax_joint)
+
+        # Rename joint of mem_i to axial joint name
+        new_mem_i['joint2'] = ax_joint['name']
+        
+        # Remove joint from list
+        all_joint_names.remove(mem_i['joint2'])
+
+  # Check if mooring points lie on members
+  for mj in moor_joints:
+    # Is mooring joint in a member?
+    for mem_i, new_mem_i in zip(members, new_members):
+      mem_i_joint_1 = ptfm_joints[ptfm_joint_names.index(mem_i['joint1'])]['location']
+      mem_i_joint_2 = ptfm_joints[ptfm_joint_names.index(mem_i['joint2'])]['location']
+      cyl_radius = (mem_i['outer_shape']['outer_diameter']['values'][0] + margin)/2   # assuming straight cols for now
+      pic = point_in_cylinder(mj['location'], mem_i_joint_1, mem_i_joint_2, cyl_radius)
+      if pic[0]:
+        print(f"Mooring joint {mj['name']} falls in member {mem_i['name']}")
+        ax_joint = empty_axial_joint.copy()
+        ax_joint['name'] = mj['name']
+        ax_joint['grid'] = pic[1]
+        new_mem_i['axial_joints'].append(ax_joint)
+        all_joint_names.remove(mj['name'])
+
+
+
+  # # Remove duplicated axial joints?  Leave out for now. I think WISDEM will handle this
+  # for mem_i in new_members:
+  #   joint_locs = []
+  #   joint_names = []
+  #   for aj in mem_i['axial_joints']:
+  #     if aj['grid'] not in joint_locs:
+  #       joint_locs.append(aj['grid'])
+  #       joint_names.append(aj['name'])
+  #     else:  # duplicate, need to reassign member endpoint
+  #       for mem_j in new_members:
+  #         if mem_j['joint1'] == aj['name']:
+  #           mem_j['joint1'] = joint_names[joint_locs.index(aj['grid'])]
+  #           mem_i['axial_joints'].remove(aj)
+  #           print('here')
+
+  # Make joints without axial joints
+  floating_joints = []
+  for pj in ptfm_joints:
+    if pj['name'] in all_joint_names:
+      floating_joints.append(pj)
+
+  for mj in moor_joints:
+    if mj['name'] in all_joint_names:
+      floating_joints.append(mj)
+
+  # Apply floating_joints and new_members to floating WEIS definition
+  weis_obj['components']['floating_platform']['joints'] = floating_joints
+  weis_obj['components']['floating_platform']['members'] = new_members
+
 
   # Optional
   #weis_obj['components']['floating_platform']['rigid_bodies']['joint1']             = ''
@@ -533,24 +684,25 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
   # Nodes (same as Points)
   numN                = range(len(fast.fst_vt['MoorDyn']['Point_ID']))
   N_obj               = weis_obj['components']['mooring']['nodes'][0] # LT_obj is now a pointer to the first index of the dictionary
-  weis_obj['components']['mooring']['nodes'] = [copy.deepcopy(N_obj) for x in range(len(numN))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+  mooring_nodes = [copy.deepcopy(N_obj) for x in range(len(numN))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
  
   num_anchors         = anchor_count - 1
   anchor_obj          = weis_obj['components']['mooring']['anchor_types'][0] # anchor_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['mooring']['anchor_types'] = [copy.deepcopy(anchor_obj) for x in range(num_anchors)] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
 
   anchor_count = 0
-  start_index = fast.fst_vt['HydroDyn']['NJoints']
-  for n in numN:
-    weis_obj['components']['mooring']['nodes'][n]['name']        = f"node_{fast.fst_vt['MoorDyn']['Point_ID'][n]}"
-    weis_obj['components']['mooring']['nodes'][n]['node_type']   = fast.fst_vt['MoorDyn']['Attachment'][n].lower()
-    weis_obj['components']['mooring']['nodes'][n]['node_mass']   = fast.fst_vt['MoorDyn']['M'][n]
-    weis_obj['components']['mooring']['nodes'][n]['node_volume'] = fast.fst_vt['MoorDyn']['V'][n]
-    weis_obj['components']['mooring']['nodes'][n]['location']    = [fast.fst_vt['MoorDyn']['X'][n], fast.fst_vt['MoorDyn']['Y'][n], fast.fst_vt['MoorDyn']['Z'][n]]
-    if weis_obj['components']['mooring']['nodes'][n]['node_type'] == 'fixed':
+
+  # Make each mooring joint a node
+  for n, mj in enumerate(moor_joints):
+    mooring_nodes[n]['name']        = mj['name']
+    mooring_nodes[n]['node_type']   = fast.fst_vt['MoorDyn']['Attachment'][n].lower()
+    mooring_nodes[n]['joint']       = mj['name']
+    # mooring_nodes[n]['node_mass']   = fast.fst_vt['MoorDyn']['M'][n]
+    # mooring_nodes[n]['node_volume'] = fast.fst_vt['MoorDyn']['V'][n]
+    # mooring_nodes[n]['location']    = [fast.fst_vt['MoorDyn']['X'][n], fast.fst_vt['MoorDyn']['Y'][n], fast.fst_vt['MoorDyn']['Z'][n]]
+    if mooring_nodes[n]['node_type'] == 'fixed':
       # then also need joint, anchor_type
-      weis_obj['components']['mooring']['nodes'][n]['joint'] = weis_obj['components']['floating_platform']['joints'][start_index+n]['name']
-      weis_obj['components']['mooring']['nodes'][n]['anchor_type'] = '' # must be of lower(drag_embedment, suction, plate, micropile, sepla, custom)
+      mooring_nodes[n]['anchor_type'] = 'drag_embedment' # must be of lower(drag_embedment, suction, plate, micropile, sepla, custom)
       # weis_obj['components']['mooring']['anchor_types'][anchor_count]['name'] = 'anchor'+str(anchor_count+1)
       # weis_obj['components']['mooring']['anchor_types'][anchor_count]['type'] = '' # must be one of lower(drag_embedment, suction, plate, micropile, sepla, custom)
       # if its a custom anchor type, then will also need mass, cost, max_lateral_load, max_vertical_load
@@ -560,16 +712,18 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
       #   weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_lateral_load'] = 0.0
       #   weis_obj['components']['mooring']['anchor_types'][anchor_count]['max_vertical_load'] = 0.0
       anchor_count = anchor_count + 1
-    elif weis_obj['components']['mooring']['nodes'][n]['node_type'] == 'vessel':
+    elif mooring_nodes[n]['node_type'] == 'vessel':
       # then also need joint, fairlead_type ()
-      weis_obj['components']['mooring']['nodes'][n]['joint'] = weis_obj['components']['floating_platform']['joints'][start_index+n]['name']
-      weis_obj['components']['mooring']['nodes'][n]['fairlead_type'] = '' # must be one of ['rigid','actuated','ball']
+      mooring_nodes[n]['fairlead_type'] = 'rigid' # must be one of ['rigid','actuated','ball']
+
+  weis_obj['components']['mooring']['nodes'] = mooring_nodes
+
 
   # Lines
   numL                = range(len(fast.fst_vt['MoorDyn']['Line_ID']))
   L_obj               = weis_obj['components']['mooring']['lines'][0] # LT_obj is now a pointer to the first index of the dictionary
   weis_obj['components']['mooring']['lines'] = [copy.deepcopy(L_obj) for x in range(len(numL))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
-  node_names = [node['name'] for node in weis_obj['components']['mooring']['nodes']]
+  node_names = [node['name'] for node in mooring_nodes]
   for l in numL:
     weis_obj['components']['mooring']['lines'][l]['name']               = f"line_{fast.fst_vt['MoorDyn']['Line_ID'][l]}"
     weis_obj['components']['mooring']['lines'][l]['line_type']          = fast.fst_vt['MoorDyn']['LineType'][l]
@@ -578,8 +732,8 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
     weis_obj['components']['mooring']['lines'][l]['node2']              = node_names[fast.fst_vt['MoorDyn']['AttachB'][l]-1]
 
   # Anchor Types
-  weis_obj['components']['mooring']['anchor_types'][0]['name'] = ''
-  weis_obj['components']['mooring']['anchor_types'][0]['type'] = '' # must be one of [drag_embedment, suction, plate, micropile, sepla, Drag_Embedment, Suction, Plate, Micropile, Sepla, DRAG_EMBEDMENT, SUCTION, PLATE, MICROPILE, SEPLA, custom, Custom, CUSTOM]
+  weis_obj['components']['mooring']['anchor_types'][0]['name'] = 'drag_embedment'
+  weis_obj['components']['mooring']['anchor_types'][0]['type'] = 'drag_embedment' # must be one of [drag_embedment, suction, plate, micropile, sepla, Drag_Embedment, Suction, Plate, Micropile, Sepla, DRAG_EMBEDMENT, SUCTION, PLATE, MICROPILE, SEPLA, custom, Custom, CUSTOM]
   # if its a custom type, then will also need mass, cost, max_lateral_load, max_vertical_load
 
   print('Done')
@@ -938,12 +1092,12 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, use it!
   for n in numN:
     if fast.fst_vt['MoorDyn']['Attachment'][0].lower() == 'fixed':
       # then also need joint, anchor_type
-      # weis_obj['components']['mooring']['nodes'][n]['joint'] = ''   # This comes from HydroDyn
-      weis_obj['components']['mooring']['nodes'][n]['anchor_type'] = 'rigid' # must be one from list below
+      # mooring_nodes[n]['joint'] = ''   # This comes from HydroDyn
+      mooring_nodes[n]['anchor_type'] = 'rigid' # must be one from list below
     elif fast.fst_vt['MoorDyn']['Attachment'][0].lower() == 'vessel':
       # then also need joint, fairlead_type ()
-      # weis_obj['components']['mooring']['nodes'][n]['joint'] = ''   # Also from hydrodyn?? May
-      weis_obj['components']['mooring']['nodes'][n]['fairlead_type'] = 'rigid' # must be one of ['rigid','actuated','ball']
+      # mooring_nodes[n]['joint'] = ''   # Also from hydrodyn?? May
+      mooring_nodes[n]['fairlead_type'] = 'rigid' # must be one of ['rigid','actuated','ball']
 
   weis_obj['components']['mooring']['anchor_types'][0]['name'] = 'drag_embedment'
   weis_obj['components']['mooring']['anchor_types'][0]['type'] = 'drag_embedment' # must be one of [drag_embedment, suction, plate, micropile, sepla, Drag_Embedment, Suction, Plate, Micropile, Sepla, DRAG_EMBEDMENT, SUCTION, PLATE, MICROPILE, SEPLA, custom, Custom, CUSTOM]
@@ -1093,6 +1247,9 @@ if fast.fst_vt['Fst']['CompMooring'] > 0: # if there is mooring, then parameteri
   
   for member, assumed_member in zip(members,assumed_members):
     member['internal_structure'] = assumed_member['internal_structure'].copy()
+
+# Anchor types
+weis_obj['components']['mooring']['anchor_types'] = assumed_model['components']['mooring']['anchor_types']
 
 
 # Use assumed model materials
