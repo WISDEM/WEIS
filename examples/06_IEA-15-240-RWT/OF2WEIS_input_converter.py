@@ -1255,6 +1255,17 @@ weis_obj['components']['mooring']['anchor_types'] = assumed_model['components'][
 # Use assumed model materials
 weis_obj['materials'] = assumed_model['materials']
 
+
+# Tidy WEIS object
+
+# Remove mooring node locations
+for node in weis_obj['components']['mooring']['nodes']:
+  del(node['location'])
+
+# Remove monopile
+del(weis_obj['components']['monopile'])
+
+
 # Print out the final, weis geometry yaml input file with assumptions
 print('Writing the output geometry yaml file with assumptions, approximations, and estimates .........', end="", flush=True)
 write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_ASSUMED.yaml'))
@@ -1262,7 +1273,6 @@ write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_ASSUMED.yam
 print('Done')
 
 # Write yaml without floating platform for testing
-del(weis_obj['components']['monopile'])
 del(weis_obj['components']['floating_platform'])
 del(weis_obj['components']['mooring'])
 write_geometry_yaml(weis_obj, os.path.join(this_dir,project_name + '_ASSUMED_NoPtfm.yaml'))

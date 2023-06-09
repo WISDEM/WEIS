@@ -430,108 +430,51 @@ components:
         gravity_foundation_mass: 0.0
     floating_platform:
         joints:
-           -  name: '1'
+           -  name: joint_1
               location: [0.0, 0.0, -20.0]
               cylindrical: false
               transition: false
-           -  name: '2'
+           -  name: joint_2
               location: [0.0, 0.0, 15.0]
               cylindrical: false
               transition: true
-           -  name: '3'
+           -  name: joint_3
               location: [-51.75, 1.857717892943034e-07, -20.0]
               cylindrical: false
               transition: false
-           -  name: '4'
+           -  name: joint_4
               location: [-51.75, 1.857717892943034e-07, 15.0]
               cylindrical: false
               transition: false
-           -  name: '5'
+           -  name: joint_5
               location: [25.874997812786937, 44.81681590863268, -20.0]
               cylindrical: false
               transition: false
-           -  name: '6'
+           -  name: joint_6
               location: [25.875002294468402, 44.81681332113268, 15.0]
               cylindrical: false
               transition: false
-           -  name: '7'
+           -  name: joint_7
               location: [25.874997812786937, -44.81681590863268, -20.0]
               cylindrical: false
               transition: false
-           -  name: '8'
+           -  name: joint_8
               location: [25.874997812786937, -44.81681590863268, 15.0]
               cylindrical: false
               transition: false
-           -  name: '9'
-              location: [-5.0, 1.794896514920806e-08, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '10'
-              location: [-45.5, 1.6333558285779333e-07, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '11'
-              location: [2.5000002160586035, 4.330126894180693, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '12'
-              location: [22.75000196613329, 39.40415473704431, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '13'
-              location: [2.499999788675067, -4.330127140930694, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '14'
-              location: [22.749998076943104, -39.40415698246931, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '15'
-              location: [-5.0, 1.794896514920806e-08, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '16'
-              location: [-45.5, 1.6333558285779333e-07, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '17'
-              location: [2.499999831976338, 4.330127115930695, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '18'
-              location: [22.74999847098466, 39.40415675496931, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '19'
-              location: [2.499999788675067, -4.330127140930694, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '20'
-              location: [22.749998076943104, -39.40415698246931, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: fairlead1
-              location: [-58.0, 0.0, -14.0]
-              cylindrical: false
            -  name: anchor1
               location: [-837.6, 0.0, -200.0]
               cylindrical: false
-           -  name: fairlead2
-              location: [29.0, 50.229, -14.0]
-              cylindrical: false
            -  name: anchor2
               location: [418.8, 725.383, -200.0]
-              cylindrical: false
-           -  name: fairlead3
-              location: [29.0, -50.229, -14.0]
               cylindrical: false
            -  name: anchor3
               location: [418.8, -725.383, -200.0]
               cylindrical: false
         members:
            -  name: member_1
-              joint1: '1'
-              joint2: '2'
+              joint1: joint_1
+              joint2: joint_2
               outer_shape:
                   shape: circular
                   outer_diameter:
@@ -555,15 +498,20 @@ components:
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_5_connect_a, grid: 0.987}
+                 -  {name: member_6_connect_a, grid: 0.987}
+                 -  {name: member_7_connect_a, grid: 0.987}
+                 -  {name: member_8_connect_a, grid: 0.1}
+                 -  {name: member_9_connect_a, grid: 0.1}
+                 -  {name: member_10_connect_a, grid: 0.1}
            -  name: member_2
-              joint1: '3'
-              joint2: '4'
+              joint1: joint_3
+              joint2: joint_4
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [10.0, 10.0]
+                      values: [12.5, 12.5]
                   shape]: circular
               internal_structure:
                   layers:
@@ -571,7 +519,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.15, 0.15]
+                            values: [0.075, 0.075]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -582,10 +530,12 @@ components:
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_5_connect_b, grid: 0.987}
+                 -  {name: member_8_connect_b, grid: 0.1}
+                 -  {name: fairlead1, grid: 0.17142857142857143}
            -  name: member_3
-              joint1: '5'
-              joint2: '6'
+              joint1: joint_5
+              joint2: joint_6
               outer_shape:
                   shape: circular
                   outer_diameter:
@@ -609,10 +559,12 @@ components:
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_6_connect_b, grid: 0.9869999999999987}
+                 -  {name: member_9_connect_b, grid: 0.100000000000001}
+                 -  {name: fairlead2, grid: 0.17142857142957832}
            -  name: member_4
-              joint1: '7'
-              joint2: '8'
+              joint1: joint_7
+              joint2: joint_8
               outer_shape:
                   shape: circular
                   outer_diameter:
@@ -636,15 +588,17 @@ components:
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_7_connect_b, grid: 0.987}
+                 -  {name: member_10_connect_b, grid: 0.1}
+                 -  {name: fairlead3, grid: 0.17142857142857143}
            -  name: member_5
-              joint1: '9'
-              joint2: '10'
+              joint1: member_5_connect_a
+              joint2: member_5_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [0.91, 0.91]
                   shape]: circular
               internal_structure:
                   layers:
@@ -652,7 +606,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.075, 0.075]
+                            values: [0.02, 0.02]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -662,16 +616,15 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_6
-              joint1: '11'
-              joint2: '12'
+              joint1: member_6_connect_a
+              joint2: member_6_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [0.91, 0.91]
                   shape]: circular
               internal_structure:
                   layers:
@@ -679,7 +632,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.075, 0.075]
+                            values: [0.02, 0.02]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -689,16 +642,15 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_7
-              joint1: '13'
-              joint2: '14'
+              joint1: member_7_connect_a
+              joint2: member_7_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [0.91, 0.91]
                   shape]: circular
               internal_structure:
                   layers:
@@ -706,7 +658,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.075, 0.075]
+                            values: [0.02, 0.02]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -716,16 +668,15 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_8
-              joint1: '15'
-              joint2: '16'
+              joint1: member_8_connect_a
+              joint2: member_8_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [9.6148, 9.6148]
                   shape]: circular
               internal_structure:
                   layers:
@@ -733,7 +684,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.075, 0.075]
+                            values: [0.04, 0.04]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -743,16 +694,15 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_9
-              joint1: '17'
-              joint2: '18'
+              joint1: member_9_connect_a
+              joint2: member_9_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [0.91, 0.91]
+                      values: [9.6148, 9.6148]
                   shape]: circular
               internal_structure:
                   layers:
@@ -760,7 +710,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.02, 0.02]
+                            values: [0.04, 0.04]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -770,16 +720,15 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_10
-              joint1: '19'
-              joint2: '20'
+              joint1: member_10_connect_a
+              joint2: member_10_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [0.91, 0.91]
+                      values: [9.6148, 9.6148]
                   shape]: circular
               internal_structure:
                   layers:
@@ -787,7 +736,7 @@ components:
                         material: ''
                         thickness:
                             grid: [0, 1]
-                            values: [0.02, 0.02]
+                            values: [0.04, 0.04]
                   ballasts: [!!null '', !!null '']
                   bulkhead:
                       material: ''
@@ -797,64 +746,63 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
         transition_piece_mass: 0
         transition_piece_cost: 0
     mooring:
         nodes:
-           -  name: node_1
+           -  name: fairlead1
               node_type: vessel
-              node_mass: 0.0
-              node_volume: 0.0
+              node_mass: 0
+              node_volume: 0
               joint: fairlead1
               anchor_type: ''
               fairlead_type: rigid
-              location: [-58.0, 0.0, -14.0]
-           -  name: node_2
+              location: []
+           -  name: anchor1
               node_type: fixed
-              node_mass: 0.0
-              node_volume: 0.0
+              node_mass: 0
+              node_volume: 0
               joint: anchor1
-              anchor_type: ''
+              anchor_type: drag_embedment
               fairlead_type: rigid
-              location: [-837.6, 0.0, -200.0]
-           -  name: node_3
+              location: []
+           -  name: fairlead2
               node_type: vessel
-              node_mass: 0.0
-              node_volume: 0.0
+              node_mass: 0
+              node_volume: 0
               joint: fairlead2
               anchor_type: ''
               fairlead_type: rigid
-              location: [29.0, 50.229, -14.0]
-           -  name: node_4
+              location: []
+           -  name: anchor2
               node_type: fixed
-              node_mass: 0.0
-              node_volume: 0.0
+              node_mass: 0
+              node_volume: 0
               joint: anchor2
-              anchor_type: ''
+              anchor_type: drag_embedment
               fairlead_type: rigid
-              location: [418.8, 725.383, -200.0]
-           -  name: node_5
+              location: []
+           -  name: fairlead3
               node_type: vessel
-              node_mass: 0.0
-              node_volume: 0.0
+              node_mass: 0
+              node_volume: 0
               joint: fairlead3
               anchor_type: ''
               fairlead_type: rigid
-              location: [29.0, -50.229, -14.0]
-           -  name: node_6
+              location: []
+           -  name: anchor3
               node_type: fixed
-              node_mass: 0.0
-              node_volume: 0.0
+              node_mass: 0
+              node_volume: 0
               joint: anchor3
-              anchor_type: ''
+              anchor_type: drag_embedment
               fairlead_type: rigid
-              location: [418.8, -725.383, -200.0]
+              location: []
         lines:
-           -  {name: line_1, node1: node_2, node2: node_1, line_type: main, unstretched_length: 850.0}
-           -  {name: line_2, node1: node_4, node2: node_3, line_type: main, unstretched_length: 850.0}
-           -  {name: line_3, node1: node_6, node2: node_5, line_type: main, unstretched_length: 850.0}
+           -  {name: line_1, node1: anchor1, node2: fairlead1, line_type: main, unstretched_length: 850.0}
+           -  {name: line_2, node1: anchor2, node2: fairlead2, line_type: main, unstretched_length: 850.0}
+           -  {name: line_3, node1: anchor3, node2: fairlead3, line_type: main, unstretched_length: 850.0}
         line_types:
            -  {name: main, diameter: 0.333, type: chain, damping: 0, transverse_added_mass: 0, tangential_added_mass: 0, transverse_drag: 0, tangential_drag: 0}
         anchor_types:
@@ -2144,6 +2092,6 @@ control:
     torque: {control_type: !!null '', tsr: 9.0, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 4500000.0, VS_minspd: 0.5236, VS_maxspd: 0.79168}
     setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
     shutdown: {limit_type: !!null '', limit_value: !!null ''}
-environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, air_speed_sound: 335.0, shear_exp: 0.12, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 103500.0, air_vapor_pressure: 1700.0, significant_wave_height: !!null '', significant_wave_period: !!null ''}
+environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, air_speed_sound: 335.0, shear_exp: 0.12, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 200.0, air_pressure: 103500.0, air_vapor_pressure: 1700.0, significant_wave_height: !!null '', significant_wave_period: !!null ''}
 bos: {plant_turbine_spacing: 1, plant_row_spacing: 1, commissioning_pct: 0, decommissioning_pct: 0, distance_to_substation: 0, distance_to_interconnection: 0, interconnect_voltage: 0, distance_to_site: 0, distance_to_landfall: 0, port_cost_per_month: 0, site_auction_price: 0, site_assessment_plan_cost: 0, site_assessment_cost: 0, construction_operations_plan_cost: 0, boem_review_cost: 0, design_install_plan_cost: 0}
 costs: {wake_loss_factor: 0, fixed_charge_rate: 0, bos_per_kW: 0, opex_per_kW: 0, turbine_number: 0, labor_rate: 0, painting_rate: 0, blade_mass_cost_coeff: 0, hub_mass_cost_coeff: 0, pitch_system_mass_cost_coeff: 0, spinner_mass_cost_coeff: 0, lss_mass_cost_coeff: 0, bearing_mass_cost_coeff: 0, gearbox_mass_cost_coeff: 0, hss_mass_cost_coeff: 0, generator_mass_cost_coeff: 0, bedplate_mass_cost_coeff: 0, yaw_mass_cost_coeff: 0, converter_mass_cost_coeff: 0, transformer_mass_cost_coeff: 0, hvac_mass_cost_coeff: 0, cover_mass_cost_coeff: 0, elec_connec_machine_rating_cost_coeff: 0, platforms_mass_cost_coeff: 0, tower_mass_cost_coeff: 0, controls_machine_rating_cost_coeff: 0, crane_cost: 0, electricity_price: 0, reserve_margin_price: 0, capacity_credit: 0, benchmark_price: 0}

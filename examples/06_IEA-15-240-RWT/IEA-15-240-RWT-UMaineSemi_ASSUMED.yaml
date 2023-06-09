@@ -404,140 +404,53 @@ components:
                   thickness:
                       grid: [0.0, 0.10047454902385111, 0.20094909804770222, 0.30142364707155334, 0.40189819609540445, 0.5023727451192556, 0.6028472941431067, 0.7033218431669578, 0.8037963921908089, 0.90427094121466, 1.0]
                       values: [0.09, 0.0870568244887821, 0.06969791129654272, 0.06659467020278927, 0.048969783194233195, 0.04562355995431616, 0.028128174258004363, 0.025616868141627953, 0.009881156462835017, 0.009941082963793929, 0.005931142626464429]
-    monopile:
-        transition_piece_mass: 0
-        outer_shape_bem:
-            reference_axis: &id002
-                x:
-                    grid: []
-                    values: []
-                y:
-                    grid: []
-                    values: []
-                z:
-                    grid: []
-                    values: []
-            outer_diameter:
-                grid: []
-                values: []
-            drag_coefficient:
-                grid: []
-                values: []
-        internal_structure_2d_fem:
-            outfitting_factor: 1
-            reference_axis: *id002
-            layers:
-               -  name: ''
-                  material: ''
-                  thickness:
-                      grid: []
-                      values: []
-        transition_piece_cost: 0.0
-        gravity_foundation_mass: 0.0
     floating_platform:
         joints:
-           -  name: '1'
+           -  name: joint_1
               location: [0.0, 0.0, -20.0]
               cylindrical: false
               transition: false
-           -  name: '2'
+           -  name: joint_2
               location: [0.0, 0.0, 15.0]
               cylindrical: false
               transition: true
-           -  name: '3'
+           -  name: joint_3
               location: [-51.75, 1.857717892943034e-07, -20.0]
               cylindrical: false
               transition: false
-           -  name: '4'
+           -  name: joint_4
               location: [-51.75, 1.857717892943034e-07, 15.0]
               cylindrical: false
               transition: false
-           -  name: '5'
+           -  name: joint_5
               location: [25.874997812786937, 44.81681590863268, -20.0]
               cylindrical: false
               transition: false
-           -  name: '6'
+           -  name: joint_6
               location: [25.875002294468402, 44.81681332113268, 15.0]
               cylindrical: false
               transition: false
-           -  name: '7'
+           -  name: joint_7
               location: [25.874997812786937, -44.81681590863268, -20.0]
               cylindrical: false
               transition: false
-           -  name: '8'
+           -  name: joint_8
               location: [25.874997812786937, -44.81681590863268, 15.0]
               cylindrical: false
               transition: false
-           -  name: '9'
-              location: [-5.0, 1.794896514920806e-08, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '10'
-              location: [-45.5, 1.6333558285779333e-07, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '11'
-              location: [2.5000002160586035, 4.330126894180693, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '12'
-              location: [22.75000196613329, 39.40415473704431, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '13'
-              location: [2.499999788675067, -4.330127140930694, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '14'
-              location: [22.749998076943104, -39.40415698246931, 14.545000000000002]
-              cylindrical: false
-              transition: false
-           -  name: '15'
-              location: [-5.0, 1.794896514920806e-08, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '16'
-              location: [-45.5, 1.6333558285779333e-07, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '17'
-              location: [2.499999831976338, 4.330127115930695, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '18'
-              location: [22.74999847098466, 39.40415675496931, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '19'
-              location: [2.499999788675067, -4.330127140930694, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: '20'
-              location: [22.749998076943104, -39.40415698246931, -16.5]
-              cylindrical: false
-              transition: false
-           -  name: fairlead1
-              location: [-58.0, 0.0, -14.0]
-              cylindrical: false
            -  name: anchor1
               location: [-837.6, 0.0, -200.0]
               cylindrical: false
-           -  name: fairlead2
-              location: [29.0, 50.229, -14.0]
-              cylindrical: false
            -  name: anchor2
               location: [418.8, 725.383, -200.0]
-              cylindrical: false
-           -  name: fairlead3
-              location: [29.0, -50.229, -14.0]
               cylindrical: false
            -  name: anchor3
               location: [418.8, -725.383, -200.0]
               cylindrical: false
         members:
            -  name: member_1
-              joint1: '1'
-              joint2: '2'
+              joint1: joint_1
+              joint2: joint_2
               outer_shape:
                   shape: circular
                   outer_diameter:
@@ -568,29 +481,34 @@ components:
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_5_connect_a, grid: 0.987}
+                 -  {name: member_6_connect_a, grid: 0.987}
+                 -  {name: member_7_connect_a, grid: 0.987}
+                 -  {name: member_8_connect_a, grid: 0.1}
+                 -  {name: member_9_connect_a, grid: 0.1}
+                 -  {name: member_10_connect_a, grid: 0.1}
            -  name: member_2
-              joint1: '3'
-              joint2: '4'
+              joint1: joint_3
+              joint2: joint_4
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [10.0, 10.0]
+                      values: [12.5, 12.5]
                   shape]: circular
               internal_structure:
-                  layers: &id003
+                  layers: &id002
                      -  name: col_twall
                         material: steel
                         thickness:
                             grid: [0.0, 1.0]
                             values: [0.075, 0.075]
-                  bulkhead: &id004
+                  bulkhead: &id003
                       material: steel
                       thickness:
                           grid: [0.0, 0.05, 0.2, 1.0]
                           values: [0.075, 0.075, 0.075, 0.075]
-                  ballasts: &id005
+                  ballasts: &id004
                      -  variable_flag: false
                         material: slurry
                         volume: 519
@@ -602,10 +520,12 @@ components:
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_5_connect_b, grid: 0.987}
+                 -  {name: member_8_connect_b, grid: 0.1}
+                 -  {name: fairlead1, grid: 0.17142857142857143}
            -  name: member_3
-              joint1: '5'
-              joint2: '6'
+              joint1: joint_5
+              joint2: joint_6
               outer_shape:
                   shape: circular
                   outer_diameter:
@@ -613,18 +533,20 @@ components:
                       values: [12.5, 12.5]
                   shape]: circular
               internal_structure:
-                  layers: *id003
-                  bulkhead: *id004
-                  ballasts: *id005
+                  layers: *id002
+                  bulkhead: *id003
+                  ballasts: *id004
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_6_connect_b, grid: 0.9869999999999987}
+                 -  {name: member_9_connect_b, grid: 0.100000000000001}
+                 -  {name: fairlead2, grid: 0.17142857142957832}
            -  name: member_4
-              joint1: '7'
-              joint2: '8'
+              joint1: joint_7
+              joint2: joint_8
               outer_shape:
                   shape: circular
                   outer_diameter:
@@ -632,26 +554,28 @@ components:
                       values: [12.5, 12.5]
                   shape]: circular
               internal_structure:
-                  layers: *id003
-                  bulkhead: *id004
-                  ballasts: *id005
+                  layers: *id002
+                  bulkhead: *id003
+                  ballasts: *id004
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
               axial_joints:
-                 -  {name: '', grid: 0}
+                 -  {name: member_7_connect_b, grid: 0.987}
+                 -  {name: member_10_connect_b, grid: 0.1}
+                 -  {name: fairlead3, grid: 0.17142857142857143}
            -  name: member_5
-              joint1: '9'
-              joint2: '10'
+              joint1: member_5_connect_a
+              joint2: member_5_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [0.91, 0.91]
                   shape]: circular
               internal_structure:
-                  layers: &id006
+                  layers: &id005
                      -  name: pontoon_upper_twall
                         material: steel
                         thickness:
@@ -661,165 +585,115 @@ components:
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_6
-              joint1: '11'
-              joint2: '12'
+              joint1: member_6_connect_a
+              joint2: member_6_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [0.91, 0.91]
                   shape]: circular
               internal_structure:
-                  layers: *id006
+                  layers: *id005
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_7
-              joint1: '13'
-              joint2: '14'
+              joint1: member_7_connect_a
+              joint2: member_7_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [0.91, 0.91]
                   shape]: circular
               internal_structure:
-                  layers: *id006
+                  layers: *id005
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_8
-              joint1: '15'
-              joint2: '16'
+              joint1: member_8_connect_a
+              joint2: member_8_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [12.5, 12.5]
+                      values: [9.6148, 9.6148]
                   shape]: circular
               internal_structure:
-                  layers: &id007
+                  layers: &id006
                      -  name: pontoon_lower_twall
                         material: steel
                         thickness:
                             grid: [0.0, 1.0]
                             values: [0.04, 0.04]
-                  ballasts: &id008
+                  ballasts: &id007
                      -  variable_flag: true
                         grid: [0.0, 1.0]
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_9
-              joint1: '17'
-              joint2: '18'
+              joint1: member_9_connect_a
+              joint2: member_9_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [0.91, 0.91]
+                      values: [9.6148, 9.6148]
                   shape]: circular
               internal_structure:
-                  layers: *id007
-                  ballasts: *id008
+                  layers: *id006
+                  ballasts: *id007
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
            -  name: member_10
-              joint1: '19'
-              joint2: '20'
+              joint1: member_10_connect_a
+              joint2: member_10_connect_b
               outer_shape:
                   shape: circular
                   outer_diameter:
                       grid: [0, 1]
-                      values: [0.91, 0.91]
+                      values: [9.6148, 9.6148]
                   shape]: circular
               internal_structure:
-                  layers: *id007
-                  ballasts: *id008
+                  layers: *id006
+                  ballasts: *id007
                   outfitting_factor: 1.0
               Ca: 0
               Cd: 0
               Cp: 0
-              axial_joints:
-                 -  {name: '', grid: 0}
+              axial_joints: []
         transition_piece_mass: 0
         transition_piece_cost: 0
     mooring:
         nodes:
-           -  name: node_1
-              node_type: vessel
-              node_mass: 0.0
-              node_volume: 0.0
-              joint: fairlead1
-              anchor_type: ''
-              fairlead_type: rigid
-              location: [-58.0, 0.0, -14.0]
-           -  name: node_2
-              node_type: fixed
-              node_mass: 0.0
-              node_volume: 0.0
-              joint: anchor1
-              anchor_type: ''
-              fairlead_type: rigid
-              location: [-837.6, 0.0, -200.0]
-           -  name: node_3
-              node_type: vessel
-              node_mass: 0.0
-              node_volume: 0.0
-              joint: fairlead2
-              anchor_type: ''
-              fairlead_type: rigid
-              location: [29.0, 50.229, -14.0]
-           -  name: node_4
-              node_type: fixed
-              node_mass: 0.0
-              node_volume: 0.0
-              joint: anchor2
-              anchor_type: ''
-              fairlead_type: rigid
-              location: [418.8, 725.383, -200.0]
-           -  name: node_5
-              node_type: vessel
-              node_mass: 0.0
-              node_volume: 0.0
-              joint: fairlead3
-              anchor_type: ''
-              fairlead_type: rigid
-              location: [29.0, -50.229, -14.0]
-           -  name: node_6
-              node_type: fixed
-              node_mass: 0.0
-              node_volume: 0.0
-              joint: anchor3
-              anchor_type: ''
-              fairlead_type: rigid
-              location: [418.8, -725.383, -200.0]
+           -  {name: fairlead1, node_type: vessel, node_mass: 0, node_volume: 0, joint: fairlead1, anchor_type: '', fairlead_type: rigid}
+           -  {name: anchor1, node_type: fixed, node_mass: 0, node_volume: 0, joint: anchor1, anchor_type: drag_embedment, fairlead_type: rigid}
+           -  {name: fairlead2, node_type: vessel, node_mass: 0, node_volume: 0, joint: fairlead2, anchor_type: '', fairlead_type: rigid}
+           -  {name: anchor2, node_type: fixed, node_mass: 0, node_volume: 0, joint: anchor2, anchor_type: drag_embedment, fairlead_type: rigid}
+           -  {name: fairlead3, node_type: vessel, node_mass: 0, node_volume: 0, joint: fairlead3, anchor_type: '', fairlead_type: rigid}
+           -  {name: anchor3, node_type: fixed, node_mass: 0, node_volume: 0, joint: anchor3, anchor_type: drag_embedment, fairlead_type: rigid}
         lines:
-           -  {name: line_1, node1: node_2, node2: node_1, line_type: main, unstretched_length: 850.0}
-           -  {name: line_2, node1: node_4, node2: node_3, line_type: main, unstretched_length: 850.0}
-           -  {name: line_3, node1: node_6, node2: node_5, line_type: main, unstretched_length: 850.0}
+           -  {name: line_1, node1: anchor1, node2: fairlead1, line_type: main, unstretched_length: 850.0}
+           -  {name: line_2, node1: anchor2, node2: fairlead2, line_type: main, unstretched_length: 850.0}
+           -  {name: line_3, node1: anchor3, node2: fairlead3, line_type: main, unstretched_length: 850.0}
         line_types:
            -  {name: main, diameter: 0.333, type: chain, damping: 0, transverse_added_mass: 0, tangential_added_mass: 0, transverse_drag: 0, tangential_drag: 0}
         anchor_types:
-           -  {name: drag_embedment, type: drag_embedment, mass: 0, cost: 0, max_lateral_load: 0, max_vertical_load: 0}
-           -  {name: '', type: drag_embedment, mass: 0, cost: 0, max_lateral_load: 0, max_vertical_load: 0}
-           -  {name: '', type: drag_embedment, mass: 0, cost: 0, max_lateral_load: 0, max_vertical_load: 0}
+           -  {name: drag_embedment, type: drag_embedment}
 airfoils:
    -  name: airfoil_1
       coordinates:
@@ -1828,6 +1702,6 @@ control:
     torque: {control_type: !!null '', tsr: 9.0, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 4500000.0, VS_minspd: 0.5236, VS_maxspd: 0.79168}
     setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
     shutdown: {limit_type: !!null '', limit_value: !!null ''}
-environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, air_speed_sound: 335.0, shear_exp: 0.12, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 103500.0, air_vapor_pressure: 1700.0, significant_wave_height: !!null '', significant_wave_period: !!null ''}
+environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, air_speed_sound: 335.0, shear_exp: 0.12, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 200.0, air_pressure: 103500.0, air_vapor_pressure: 1700.0, significant_wave_height: !!null '', significant_wave_period: !!null ''}
 bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_pct: 0.01, decommissioning_pct: 0.15, distance_to_substation: 1.0, distance_to_interconnection: 8.5, interconnect_voltage: 130.0, distance_to_site: 115.0, distance_to_landfall: 50.0, port_cost_per_month: 2000000.0, site_auction_price: 100000000.0, site_assessment_plan_cost: 1000000.0, site_assessment_cost: 25000000.0, construction_operations_plan_cost: 2500000.0, boem_review_cost: 0.0, design_install_plan_cost: 2500000.0}
 costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.056, bos_per_kW: 4053.0, opex_per_kW: 137.0, turbine_number: 40.0, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_mass_cost_coeff: 12.9, hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0, electricity_price: 0.04, reserve_margin_price: 120.0, capacity_credit: 0.0, benchmark_price: 0.071}
