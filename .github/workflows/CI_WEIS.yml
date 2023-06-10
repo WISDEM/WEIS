@@ -3,9 +3,9 @@ name: CI_WEIS
 # We run CI on push commits on all branches
 on: [push, pull_request]
 
-env:
-    FC: gfortran-12
-    FORTAN_COMPILER: gfortran-12
+#env:
+#    FC: gfortran-12
+#    FORTAN_COMPILER: gfortran-12
     
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
