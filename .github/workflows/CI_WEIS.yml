@@ -11,7 +11,7 @@ jobs:
 
     defaults:
         run:
-            shell: bash -l {0}
+            shell: bash -el {0}
 
     strategy:
       fail-fast: false
@@ -64,17 +64,11 @@ jobs:
       #    activate-conda: true
       #- run: conda env update --file environment.yml
 
-      #- name: Show custom environment
-      #  shell: bash
-      #  run: |
-      #      cat $GITHUB_ENV
-      #      printenv
-
       # Install dependencies of WISDEM specific to mac
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
-            mamba install -y compilers petsc4py mpi4py openmpi
+            mamba install -y compilers petsc4py mpi4py openmpi libgcc openblas libopenblas
             gfortran --version
             clang --version
             gcc --version
@@ -97,12 +91,12 @@ jobs:
       - name: Show custom environment
         run: |
             mamba list
-            printenv
+            printenv | sort
 
       # Debugging session
-      - name: Setup tmate session
-        if: contains( matrix.os, 'mac')
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  if: contains( matrix.os, 'mac')
+      #  uses: mxschmitt/action-tmate@v3
           
       # Install WEIS
       - name: Install WEIS
