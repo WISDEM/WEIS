@@ -100,9 +100,9 @@ jobs:
             printenv
 
       # Debugging session
-      #- name: Setup tmate session
-      #  if: contains( matrix.os, 'mac')
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        if: contains( matrix.os, 'mac')
+        uses: mxschmitt/action-tmate@v3
           
       # Install WEIS
       - name: Install WEIS
