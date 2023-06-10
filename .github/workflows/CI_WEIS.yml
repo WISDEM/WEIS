@@ -14,7 +14,7 @@ jobs:
             shell: bash -l {0}
 
     strategy:
-      fail-fast: true
+      #fail-fast: true
       matrix:
         os: ["ubuntu-latest", "macOS-latest"]
         python-version: ["3.9","3.10","3.11"]
@@ -46,13 +46,13 @@ jobs:
           #miniconda-version: "latest"
           miniforge-version: latest
           #mamba-version: "*"
-          auto-update-conda: true
-          python-version: ${{ matrix.python-version }}
-          environment-file: environment.yml
-          #activate-environment: test
-          auto-activate-base: true
           #channels: conda-forge,defaults
           #channel-priority: true          
+          #auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
         
       # This is a less official, but more lightweight way to do miniconda
       #- uses: s-weigand/setup-conda@v1
