@@ -24,9 +24,9 @@ jobs:
         python-version: ["3.9","3.10","3.11"]
         
     steps:
-      - name: Setup GNU Fortran
-        #  if: false == contains( matrix.os, 'windows')
-        uses: awvwgk/setup-fortran@main
+      #- name: Setup GNU Fortran
+      #  #  if: false == contains( matrix.os, 'windows')
+      #  uses: awvwgk/setup-fortran@main
         
       - uses: actions/checkout@v3
 
@@ -76,7 +76,7 @@ jobs:
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
-            mamba install -y petsc4py mpi4py openmpi
+            mamba install -y petsc4py mpi4py openmpi gfortran libgfortran
             
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
