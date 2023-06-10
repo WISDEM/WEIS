@@ -100,6 +100,8 @@ jobs:
       - name: Setup tmate session
         if: contains( matrix.os, 'mac')
         uses: mxschmitt/action-tmate@v3
+        with:
+            limit-access-to-actor: true
           
       # Install WEIS
       - name: Install WEIS
