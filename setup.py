@@ -55,6 +55,7 @@ class CMakeBuildExt(build_ext):
             cmake_args = ['-DBUILD_SHARED_LIBS=ON',
                           '-DDOUBLE_PRECISION:BOOL=OFF',
                           '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
+                          '-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON',
                           '-DCMAKE_INSTALL_PREFIX='+localdir,
                           '-DCMAKE_BUILD_TYPE='+buildtype]
             buildtype = buildtype.upper()

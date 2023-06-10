@@ -64,11 +64,11 @@ jobs:
       #    activate-conda: true
       #- run: conda env update --file environment.yml
 
-      # Install dependencies of WISDEM specific to mac
+      # Install dependencies of WISDEM specific to mac # libgcc openblas libopenblas
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
-            mamba install -y compilers petsc4py mpi4py openmpi libgcc openblas libopenblas
+            mamba install -y compilers petsc4py mpi4py openmpi
             gfortran --version
             clang --version
             gcc --version
