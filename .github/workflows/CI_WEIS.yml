@@ -3,9 +3,13 @@ name: CI_WEIS
 # We run CI on push commits on all branches
 on: [push, pull_request]
 
-#env:
-#    FC: gfortran-12
-#    FORTAN_COMPILER: gfortran-12
+env:
+    FC: gfortran
+    CC: clang
+    CXX: clang++
+    FORTAN_COMPILER: gfortran
+    C_COMPILER: clang
+    CXX_COMPILER: clang++
     
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -76,7 +80,7 @@ jobs:
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
-            mamba install -y petsc4py mpi4py openmpi gfortran libgfortran libgcc
+            mamba install -y petsc4py mpi4py openmpi gfortran libgfortran clang libclang
             
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
