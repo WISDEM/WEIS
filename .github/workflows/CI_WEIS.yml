@@ -4,6 +4,7 @@ name: CI_WEIS
 on: [push, pull_request]
 
 #env:
+#    CONDA_BUILD: 1
 #    FC: gfortran
 #    CC: clang
 #    CXX: clang++
@@ -66,7 +67,7 @@ jobs:
           channel-priority: true          
           #auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          #environment-file: environment.yml
+          environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
         
@@ -100,10 +101,6 @@ jobs:
         run: |
           mamba install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"
-
-      - name: Install environment
-        run: |
-            mamba env update --file environment.yml
             
       - name: Show custom environment
         run: |
