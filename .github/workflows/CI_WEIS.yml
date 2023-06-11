@@ -4,12 +4,16 @@ name: CI_WEIS
 on: [push, pull_request]
 
 env:
-    FC: gfortran
-    CC: clang
-    CXX: clang++
-    FORTAN_COMPILER: gfortran
-    C_COMPILER: clang
-    CXX_COMPILER: clang++
+    #FC: gfortran
+    #CC: clang
+    #CXX: clang++
+    C_FLAGS: "-fuse-ld=lld"
+    CXX_FLAGS: "-fuse-ld=lld"
+    FFLAGS: "-fuse-ld=lld"
+    LD_FLAGS: "-fuse-ld=lld"
+    #FORTAN_COMPILER: gfortran
+    #C_COMPILER: clang
+    #CXX_COMPILER: clang++
     
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -80,7 +84,7 @@ jobs:
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
-            mamba install -y petsc4py mpi4py openmpi gfortran libgfortran clang libclang
+            mamba install -y petsc4py mpi4py openmpi compilers
             
       # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
