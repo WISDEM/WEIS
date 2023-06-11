@@ -3,17 +3,17 @@ name: CI_WEIS
 # We run CI on push commits on all branches
 on: [push, pull_request]
 
-env:
-    #FC: gfortran
-    #CC: clang
-    #CXX: clang++
-    C_FLAGS: "-fuse-ld=lld"
-    CXX_FLAGS: "-fuse-ld=lld"
-    FFLAGS: "-fuse-ld=lld"
-    LD_FLAGS: "-fuse-ld=lld"
-    #FORTAN_COMPILER: gfortran
-    #C_COMPILER: clang
-    #CXX_COMPILER: clang++
+#env:
+#    FC: gfortran
+#    CC: clang
+#    CXX: clang++
+#    C_FLAGS: "-fuse-ld=lld"
+#    CXX_FLAGS: "-fuse-ld=lld"
+#    FFLAGS: "-fuse-ld=lld"
+#    LD_FLAGS: "-fuse-ld=lld"
+#    FORTAN_COMPILER: gfortran
+#    C_COMPILER: clang
+#    CXX_COMPILER: clang++
     
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -66,7 +66,7 @@ jobs:
           channel-priority: true          
           #auto-update-conda: true
           python-version: ${{ matrix.python-version }}
-          environment-file: environment.yml
+          #environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
         
@@ -101,6 +101,10 @@ jobs:
           mamba install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"
 
+      - name: Install environment
+        run: |
+            mamba env update --file environment.yml
+            
       - name: Show custom environment
         run: |
             mamba list
