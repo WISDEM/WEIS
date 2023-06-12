@@ -4,10 +4,10 @@ module AeroDyn_Inflow
    use NWTC_Library
    use AeroDyn_Inflow_Types
    use AeroDyn_Types
-   use AeroDyn, only: AD_Init, AD_ReInit, AD_CalcOutput, AD_UpdateStates
+   use AeroDyn, only: AD_Init, AD_ReInit, AD_CalcOutput, AD_UpdateStates, AD_End
    use AeroDyn, only: AD_NumWindPoints, AD_GetExternalWind, AD_SetExternalWindPositions
    use AeroDyn_IO, only: AD_SetVTKSurface
-   use InflowWind, only: InflowWind_Init, InflowWind_CalcOutput
+   use InflowWind, only: InflowWind_Init, InflowWind_CalcOutput, InflowWind_End
 
    implicit none
 
@@ -169,6 +169,10 @@ subroutine ADI_End( u, p, x, xd, z, OtherState, y, m, errStat, errMsg )
    integer(IntKi) :: i
    errStat = ErrID_None
    errMsg  = ""
+
+   ! End modules
+   call AD_End(u(1)%AD, p%AD, x%AD, xd%AD, z%AD, OtherState%AD, y%AD, m%AD, ErrStat, ErrMsg)
+   call InflowWind_End(m%IW%u, m%IW%p, m%IW%x, m%IW%xd, m%IW%z, m%IW%OtherSt, m%IW%y, m%IW%m, ErrStat, ErrMsg)
 
    ! Destroy the input data:
    !if (allocated(u)) then
@@ -338,7 +342,8 @@ subroutine ADI_InitInflowWind(Root, i_IW, u_AD, o_AD, IW, dt, InitOutData, errSt
       if (.not. i_IW%UseInputFile) then
          call NWTC_Library_Copyfileinfotype( i_IW%PassedFileData, InitInData%PassedFileData, MESH_NEWCOPY, errStat2, errMsg2 ); if (Failed()) return
       endif
-      InitInData%RootName         = Root
+      InitInData%RootName         = trim(Root)//'.IfW'
+      InitInData%MHK              = i_IW%MHK
       CALL InflowWind_Init( InitInData, IW%u, IW%p, &
                      IW%x, IW%xd, IW%z, IW%OtherSt, &
                      IW%y, IW%m, dt,  InitOutData, errStat2, errMsg2 )
@@ -478,12 +483,16 @@ subroutine ADI_CalcOutput_IW(t, u_IfW, IW, errStat, errMsg)
       call InflowWind_CalcOutput(t, u_IfW, IW%p, IW%x, IW%xd, IW%z, IW%OtherSt, IW%y, IW%m, errStat2, errMsg2)
       call SetErrStat(errStat2, errMsg2, errStat, errMsg, 'ADI_CalcOutput_IW') 
    else
+      !$OMP PARALLEL DEFAULT(SHARED)
+      !$OMP DO PRIVATE(j,z) schedule(runtime)
       do j=1,size(u_IfW%PositionXYZ,2)
          z = u_IfW%PositionXYZ(3,j)
          IW%y%VelocityUVW(1,j) = IW%HWindSpeed*(z/IW%RefHt)**IW%PLExp
          IW%y%VelocityUVW(2,j) = 0.0_ReKi !V
          IW%y%VelocityUVW(3,j) = 0.0_ReKi !W      
       end do 
+      !$OMP END DO 
+      !$OMP END PARALLEL
    endif
 end subroutine ADI_CalcOutput_IW
 !----------------------------------------------------------------------------------------------------------------------------------
