@@ -2,19 +2,6 @@ name: CI_WEIS
 
 # We run CI on push commits on all branches
 on: [push, pull_request]
-
-#env:
-#    CONDA_BUILD: 1
-#    FC: gfortran
-#    CC: clang
-#    CXX: clang++
-#    C_FLAGS: "-fuse-ld=lld"
-#    CXX_FLAGS: "-fuse-ld=lld"
-#    FFLAGS: "-fuse-ld=lld"
-#    LD_FLAGS: "-fuse-ld=lld"
-#    FORTAN_COMPILER: gfortran
-#    C_COMPILER: clang
-#    CXX_COMPILER: clang++
     
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -38,23 +25,6 @@ jobs:
       #  uses: awvwgk/setup-fortran@main
         
       - uses: actions/checkout@v3
-
-      # Even miniconda gets bogged down- try mamba
-      #- name: Install Conda environment with Micromamba
-      #  uses: mamba-org/setup-micromamba@v1
-      #  with:
-      #    environment-file: environment.yml
-      #    environment-name: test
-      #    post-cleanup: none
-      #    init-shell: bash
-      #    condarc: |
-      #        channels:
-      #            - conda-forge
-      #    create-args: >-
-      #      python=${{ matrix.python-version }}
-      #      mpi4py
-      #      petsc4py
-      #      openmpi
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       - uses: conda-incubator/setup-miniconda@v2
@@ -70,16 +40,6 @@ jobs:
           environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
-        
-      # This is a less official, but more lightweight way to do miniconda
-      #- uses: s-weigand/setup-conda@v1
-      #  # https://github.com/marketplace/actions/setup-conda
-      #  with:
-      #    update-conda: true
-      #    python-version: ${{ matrix.python-version }}
-      #    conda-channels: conda-forge
-      #    activate-conda: true
-      #- run: conda env update --file environment.yml
 
       # Install dependencies of WISDEM specific to mac # libgcc openblas libopenblas
       - name: Add dependencies mac specific
