@@ -52,8 +52,8 @@ class CMakeBuildExt(build_ext):
 
             # CMAKE profiles default for all
             buildtype = 'RelWithDebInfo' # Hydrodyn has issues with Debug
-            cmake_args = ['-DBUILD_SHARED_LIBS=ON',
-                          '-DDOUBLE_PRECISION:BOOL=OFF',
+            cmake_args = ['-DDOUBLE_PRECISION:BOOL=OFF',
+                          #'-DBUILD_SHARED_LIBS=ON', # Don't need this with the python wrapper part of standard build now
                           '-DCMAKE_POSITION_INDEPENDENT_CODE=ON',
                           '-DCMAKE_INSTALL_PREFIX='+localdir,
                           '-DCMAKE_BUILD_TYPE='+buildtype]

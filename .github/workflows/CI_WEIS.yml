@@ -2,7 +2,7 @@ name: CI_WEIS
 
 # We run CI on push commits on all branches
 on: [push, pull_request]
-
+    
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -11,89 +11,65 @@ jobs:
 
     defaults:
         run:
-            shell: bash -l {0}
+            shell: bash -el {0}
 
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macOS-latest"]
         python-version: ["3.9","3.10","3.11"]
         
     steps:
+      #- name: Setup GNU Fortran
+      #  #  if: false == contains( matrix.os, 'windows')
+      #  uses: awvwgk/setup-fortran@main
+        
       - uses: actions/checkout@v3
-
-      # Even miniconda gets bogged down- try mamba
-      - name: Install Conda environment with Micromamba
-        uses: mamba-org/provision-with-micromamba@main
-        with:
-          environment-file: environment.yml
-          environment-name: test
-          channels: conda-forge
-          extra-specs: |
-            python=${{ matrix.python-version }}
-            mpi4py
-            petsc4py
-            openmpi
-            sel(osx): compilers
-            sel(win): m2w64-toolchain
-            sel(win): libpython`
     
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
-      #- uses: conda-incubator/setup-miniconda@v2
-      #  # https://github.com/marketplace/actions/setup-miniconda
-      #  with:
-      #    miniconda-version: "latest"
-      #    channels: conda-forge
-      #    auto-update-conda: true
-      #    python-version: ${{ matrix.python-version }}
-      #    environment-file: environment.yml
-      #    activate-environment: test
-      #    auto-activate-base: false
-        
-      # This is a less official, but more lightweight way to do miniconda
-      #- uses: s-weigand/setup-conda@v1
-      #  # https://github.com/marketplace/actions/setup-conda
-      #  with:
-      #    update-conda: true
-      #    python-version: ${{ matrix.python-version }}
-      #    conda-channels: conda-forge
-      #    activate-conda: true
-      #- run: conda env update --file environment.yml
+      - uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          #miniconda-version: "latest"
+          #miniforge-version: "latest"
+          mamba-version: "*"
+          channels: conda-forge,defaults
+          channel-priority: true          
+          #auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
 
-      #- name: Show custom environment
-      #  shell: bash
-      #  run: |
-      #      cat $GITHUB_ENV
-      #      printenv
-
-      # Install dependencies of WISDEM specific to windows
-      #- name: Add dependencies mac specific
-      #  if: contains( matrix.os, 'mac')
-      #  run: |
-      #      conda install -y compilers
-      #      gfortran --version
+      # Install dependencies of WISDEM specific to mac # libgcc openblas libopenblas
+      - name: Add dependencies mac specific
+        if: contains( matrix.os, 'mac')
+        run: |
+            mamba install -y petsc4py mpi4py openmpi compilers
             
       # Install dependencies of WISDEM specific to windows
-      #- name: Add dependencies windows specific
-      #  if: contains( matrix.os, 'windows')
-      #  run: |
-      #    conda install -y m2w64-toolchain libpython
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          mamba install -y m2w64-toolchain libpython
       
       # Install dependencies of WEIS specific to ubuntu
-      #- name: Add dependencies ubuntu specific
-      #  if: false == contains( matrix.os, 'windows')
-      #  # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
-      #  # Mpi only seems to work with the shell command though, so instead rely on system compilers
-      #  run: |
-      #    conda install -y petsc4py mpi4py openmpi
-      #    python -c "import platform; print(platform.node())"
-
+      - name: Add dependencies ubuntu specific
+        if: contains( matrix.os, 'ubuntu')
+        # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
+        # Mpi only seems to work with the shell command though, so instead rely on system compilers
+        run: |
+          mamba install -y petsc4py mpi4py openmpi
+          python -c "import platform; print(platform.node())"
+            
       - name: Show custom environment
         run: |
-            conda list
+            mamba list
+            printenv | sort
 
       # Debugging session
       #- name: Setup tmate session
+      #  if: contains( matrix.os, 'mac')
       #  uses: mxschmitt/action-tmate@v3
           
       # Install WEIS
