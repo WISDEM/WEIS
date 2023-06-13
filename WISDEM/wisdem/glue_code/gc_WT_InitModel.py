@@ -1252,7 +1252,7 @@ def assign_environment_values(wt_opt, environment, offshore, blade_flag):
         wt_opt["env.Hsig_wave"] = environment["significant_wave_height"]
         wt_opt["env.Tsig_wave"] = environment["significant_wave_period"]
     wt_opt["env.weibull_k"] = environment["weib_shape_parameter"]
-    wt_opt["env.speed_sound_air"] = environment["air_speed_sound"]
+    wt_opt["env.speed_sound_air"] = environment["speed_sound"]
     wt_opt["env.shear_exp"] = environment["shear_exp"]
     wt_opt["env.G_soil"] = environment["soil_shear_modulus"]
     wt_opt["env.nu_soil"] = environment["soil_poisson"]

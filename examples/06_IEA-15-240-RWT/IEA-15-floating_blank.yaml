@@ -714,7 +714,7 @@ control:
 environment:
     air_density: 0
     air_dyn_viscosity: 0
-    air_speed_sound: 340
+    speed_sound: 340
     shear_exp: 0
 
     gravity: 0

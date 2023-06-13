@@ -107,7 +107,7 @@ print('Converting the environment to WEIS geometry schema and dictionary .......
 
 weis_obj['environment']['air_density']          = fast.fst_vt['Fst']['AirDens']
 weis_obj['environment']['air_dyn_viscosity']    = merged_schema['properties']['environment']['properties']['air_dyn_viscosity']['default']
-weis_obj['environment']['air_speed_sound']      = fast.fst_vt['Fst']['SpdSound']
+weis_obj['environment']['speed_sound']          = fast.fst_vt['Fst']['SpdSound']
 weis_obj['environment']['shear_exp']            = fast.fst_vt['InflowWind']['PLexp']
 
 # Optional
