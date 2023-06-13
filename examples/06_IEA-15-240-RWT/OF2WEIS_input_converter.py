@@ -745,11 +745,11 @@ print('Converting the control parameters to WEIS geometry schema and dictionary 
 
 weis_obj['control']['supervisory']['Vin']        = fast.fst_vt['DISCON_in']['PS_WindSpeeds'][0]
 weis_obj['control']['supervisory']['Vout']       = fast.fst_vt['DISCON_in']['PS_WindSpeeds'][-1]
-weis_obj['control']['supervisory']['maxTS']      = fast.fst_vt['DISCON_in']['VS_TSRopt'] * fast.fst_vt['InflowWind']['HWindSpeed']
+# weis_obj['control']['supervisory']['maxTS']      = fast.fst_vt['DISCON_in']['VS_TSRopt'] * fast.fst_vt['InflowWind']['HWindSpeed']
 
 weis_obj['control']['torque']['tsr']             = fast.fst_vt['DISCON_in']['VS_TSRopt'] 
-weis_obj['control']['torque']['VS_minspd']       = fast.fst_vt['DISCON_in']['VS_MinOMSpd'] # both WEIS and OpenFAST are in rad/s
-weis_obj['control']['torque']['VS_maxspd']       = fast.fst_vt['DISCON_in']['VS_RefSpd']   # both WEIS and OpenFAST are in rad/s
+# weis_obj['control']['torque']['VS_minspd']       = fast.fst_vt['DISCON_in']['VS_MinOMSpd'] # both WEIS and OpenFAST are in rad/s
+# weis_obj['control']['torque']['VS_maxspd']       = fast.fst_vt['DISCON_in']['VS_RefSpd']   # both WEIS and OpenFAST are in rad/s
 weis_obj['control']['torque']['max_torque_rate'] = fast.fst_vt['DISCON_in']['VS_MaxRat']   # both WEIS and OpenFAST are in Nm/s
 
 weis_obj['control']['pitch']['max_pitch_rate']   = fast.fst_vt['DISCON_in']['PC_MaxRat']
