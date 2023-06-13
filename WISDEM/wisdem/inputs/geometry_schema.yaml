@@ -1143,7 +1143,7 @@ properties:
                                     grid:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                        $ref: "#/definitions/distributed_data/polar_coeff"
                     elastic_properties_mb:
                         type: object
                         properties:
@@ -1253,7 +1253,7 @@ properties:
                                     grid:
                                         $ref: "#/definitions/distributed_data/grid_nd"
                                     values:
-                                        $ref: "#/definitions/distributed_data/grid_nd"
+                                        $ref: "#/definitions/distributed_data/polar_coeff"
                     elastic_properties_mb:
                         type: object
                         properties:
