@@ -156,6 +156,7 @@ print('Converting the airfoils to WEIS geometry schema and dictionary ..........
 numAF                = range(fast.fst_vt['AeroDyn15']['NumAFfiles'])
 AF_obj               = weis_obj['airfoils'][0] # AF_obj is now a pointer to the first index of the dictionary
 weis_obj['airfoils'] = [copy.deepcopy(AF_obj) for x in range(len(numAF))] # deepcopy recursively copies the dictionary structure, creates duplicate, *ALWAYS USE DEEPCOPY*
+airfoil_names        = [os.path.split(afn)[1].split('.dat')[0] for afn in fast.fst_vt['AeroDyn15']['AFNames']]  # assumes .dat extension!
 
 for i in numAF:
     #print('i = ',i)
@@ -163,7 +164,7 @@ for i in numAF:
     weis_obj['airfoils'][i]['coordinates']['x']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['x'].tolist()
     weis_obj['airfoils'][i]['coordinates']['y']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['y'].tolist()
     # properties
-    weis_obj['airfoils'][i]['name']                       = f"airfoil_{int(fast.fst_vt['AeroDynBlade']['BlAFID'][i])}"
+    weis_obj['airfoils'][i]['name']                       = airfoil_names[i]
     weis_obj['airfoils'][i]['aerodynamic_center']         = float(fast.fst_vt['AeroDyn15']['ac'][i])
     weis_obj['airfoils'][i]['relative_thickness']         = float(compute_relThk(weis_obj['airfoils'][i]['coordinates']['x'],weis_obj['airfoils'][i]['coordinates']['y']))
     # polars
@@ -172,8 +173,9 @@ for i in numAF:
     weis_obj['airfoils'][i]['polars'][0]['c_l']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cl']
     weis_obj['airfoils'][i]['polars'][0]['c_d']['grid']   = [A * pi/180 for A in AoA]
     weis_obj['airfoils'][i]['polars'][0]['c_d']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cd']
-    weis_obj['airfoils'][i]['polars'][0]['c_m']['grid']   = [A * pi/180 for A in AoA]
-    weis_obj['airfoils'][i]['polars'][0]['c_m']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cm']
+    if fast.fst_vt['AeroDyn15']['InCol_Cm']:
+      weis_obj['airfoils'][i]['polars'][0]['c_m']['grid']   = [A * pi/180 for A in AoA]
+      weis_obj['airfoils'][i]['polars'][0]['c_m']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cm']
     # Reynolds number
     weis_obj['airfoils'][i]['polars'][0]['re'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Re']
 
