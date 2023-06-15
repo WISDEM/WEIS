@@ -9,6 +9,69 @@ The changes are tabulated according to the line number, and flag name.
 The line number corresponds to the resulting line number after all changes are implemented.
 Thus, be sure to implement each in order so that subsequent line numbers are correct.
 
+2.7.0 to 2.8.0
+-------------------------------
+Optional Inputs
+- ROSCO now reads in the whole input file and searches for keywords to set the inputs.  Blank spaces and specific ordering are no longer required.
+- Input requirements depend on control modes.  E.g., open loop inputs are not required if `OL_Mode = 0``
+Cable Control
+- Can control OpenFAST cables (MoorDyn or SubDyn) using ROSCO
+Structural Control
+- Can control OpenFAST structural control elements (ServoDyn) using ROSCO
+Active wake control
+- Added Active Wake Control (AWC) implementation
+
+====== =================    ======================================================================================================================================================================================================
+New in ROSCO 2.8.0
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Line    Input Name           Example Value
+====== =================    ======================================================================================================================================================================================================
+6      Echo                 0               ! Echo		    - (0 - no Echo, 1 - Echo input data to <RootName>.echo)
+25     AWC_Mode             0			    ! AWC_Mode       - Active wake control mode [0 - not used, 1 - complex number method, 2 - Coleman transform method]
+28     CC_Mode              0               ! CC_Mode           - Cable control mode [0- unused, 1- User defined, 2- Open loop control]
+29     StC_Mode             0               ! StC_Mode          - Structural control mode [0- unused, 1- User defined, 2- Open loop control]
+139    Ind_CableControl     0               ! Ind_CableControl  - The column(s) in OL_Filename that contains the cable control inputs in m [Used with CC_Mode = 2, must be the same size as CC_Group_N]
+140    Ind_StructControl    0               ! Ind_StructControl - The column(s) in OL_Filename that contains the structural control inputs [Used with StC_Mode = 2, must be the same size as StC_Group_N]
+148    Empty Line
+149    AWC_Section          !------- Active Wake Control -----------------------------------------------------
+150    AWC_NumModes         1               ! AWC_NumModes    - AWC- Number of modes to include [-]
+151    AWC_n                1               ! AWC_n           - AWC azimuthal mode [-] (only used in complex number method)
+152    AWC_harmonic         1               ! AWC_harmonic    - AWC Coleman transform harmonic [-] (only used in Coleman transform method)
+153    AWC_freq             0.03            ! AWC_freq        - AWC frequency [Hz]
+154    AWC_amp              2.0             ! AWC_amp         - AWC amplitude [deg]
+155    AWC_clockangle       0.0             ! AWC_clockangle  - AWC clock angle [deg]
+165    Empty Line          
+166    CC_Section           !------- Cable Control ---------------------------------------------------------
+167    CC_Group_N           3               ! CC_Group_N		- Number of cable control groups
+168    CC_GroupIndex        2601 2603 2605  ! CC_GroupIndex  - First index for cable control group, should correspond to deltaL
+169    CC_ActTau            20.000000       ! CC_ActTau		- Time constant for line actuator [s]
+170    Empty Line          
+171    StC_Section          !------- Structural Controllers ---------------------------------------------------------
+172    StC_Group_N          3               ! StC_Group_N		- Number of cable control groups
+173    StC_GroupIndex       2818 2838 2858  ! StC_GroupIndex     - First index for structural control group, options specified in ServoDyn summary output   
+====== =================    ======================================================================================================================================================================================================
+
+
+2.6.0 to 2.7.0
+-------------------------------
+Pitch Faults
+- Constant pitch actuator offsets (PF_Mode = 1)
+IPC Saturation Modes
+- Added options for saturating the IPC command with the peak shaving limit
+
+====== =================    ======================================================================================================================================================================================================
+New in ROSCO 2.7.0
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Line    Input Name           Example Value
+====== =================    ======================================================================================================================================================================================================
+23     PF_Mode              0                   ! PF_Mode           - Pitch fault mode {0 - not used, 1 - constant offset on one or more blades}
+56     IPC_SatMode          2                   ! IPC_SatMode		- IPC Saturation method (0 - no saturation (except by PC_MinPit), 1 - saturate by PS_BldPitchMin, 2 - saturate sotfly (full IPC cycle) by PC_MinPit, 3 - saturate softly by PS_BldPitchMin)
+139    PF_Section           !------- Pitch Actuator Faults ---------------------------------------------------------
+140    PF_Offsets           0.00000000 0.00000000 0.00000000                 ! PF_Offsets     - Constant blade pitch offsets for blades 1-3 [rad]
+141    Empty Line          
+====== =================    ======================================================================================================================================================================================================
+
+
 2.5.0 to 2.6.0
 -------------------------------
 IPC
@@ -27,7 +90,7 @@ Updated yaw control
 - Filter wind direction with deadband, and yaw until direction error changes signs (https://iopscience.iop.org/article/10.1088/1742-6596/1037/3/032011)
 
 ====== =================    ======================================================================================================================================================================================================
-New in ROSCO develop
+New in ROSCO 2.6.0
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Line    Input Name           Example Value
 ====== =================    ======================================================================================================================================================================================================
@@ -54,17 +117,17 @@ Line    Input Name           Example Value
 ====== =================    ======================================================================================================================================================================================================
 
 ====== =================    ======================================================================================================================================================================================================
-Modified in ROSCO develop
+Modified in ROSCO 2.6.0
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Line    Input Name           Example Value
 ====== =================    ======================================================================================================================================================================================================
-97     Y_ErrThresh          4.000000  8.000000   ! Y_ErrThresh    - Yaw error threshold/deadband. Turbine begins to yaw when it passes this. If Y_uSwitch is zero, only the first value is used. [deg].
+97     Y_ErrThresh          4.000000  8.000000  ! Y_ErrThresh    - Yaw error threshold/deadbands. Turbine begins to yaw when it passes this. If Y_uSwitch is zero, only the second value is used. [deg].
 98     Y_Rate               0.00870              ! Y_Rate			- Yaw rate [rad/s]
 99     Y_MErrSet            0.00000              ! Y_MErrSet		- Integrator saturation (maximum signal amplitude contribution to pitch from yaw-by-IPC), [rad]
 ====== =================    ======================================================================================================================================================================================================
 
 ====== =================    ======================================================================================================================================================================================================
-Removed in ROSCO develop
+Removed in ROSCO 2.6.0
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 Line    Input Name           Example Value
 ====== =================    ======================================================================================================================================================================================================
