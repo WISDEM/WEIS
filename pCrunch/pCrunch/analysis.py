@@ -572,7 +572,11 @@ class PowerProduction:
 
         perf_data = {"U": unique}
         for var in pwr_curve_vars:
-            perf_array = stats.loc[:, (var, "mean")].to_frame()
+            try:
+                perf_array = stats.loc[:, (var, "mean")].to_frame()
+            except KeyError:
+                print(var,"not found. . . continuing")
+                continue
             perf_array["windspeed"] = windspeeds
             perf_array = perf_array.groupby("windspeed").mean()
             perf_data[var] = perf_array[var]

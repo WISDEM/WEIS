@@ -4,8 +4,4 @@ __maintainer__ = ["Nikhar Abbas", "Jake Nunemaker"]
 __email__ = ["nikhar.abbas@nrel.gov", "jake.nunemaker@nrel.gov"]
 
 
-from ._version import get_versions
 from .analysis import LoadsAnalysis, PowerProduction, FatigueParams
-
-__version__ = get_versions()["version"]
-del get_versions
