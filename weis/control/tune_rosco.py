@@ -533,7 +533,7 @@ class ROSCO_Turbine(ExplicitComponent):
         self.turbine         = ROSCO_turbine.Turbine(self.turbine_params)
 
         # Load turbine data from OpenFAST and compute Cp surface here
-        self.turbine.load_from_fast(FAST_InputFile, FAST_directory, dev_branch=True)
+        self.turbine.load_from_fast(FAST_InputFile, FAST_directory)
 
         self.add_output('rotor_inertia',     val=0.0,        units='kg*m**2',        desc='Rotor inertia')
         self.add_output('rho',               val=0.0,        units='kg/m**3',        desc='Air Density')
