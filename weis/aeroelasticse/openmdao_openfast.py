@@ -1088,10 +1088,24 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldEdgSh'] = [1,0,0,0,0]
             print("WEIS Warning: Setting EdgeDOF1 to False in ElastoDyn because mode shapes were not calculated")
         
-        # Update AeroDyn15
-        fst_vt['AeroDyn15']['AirDens']   = float(inputs['rho'])
-        fst_vt['AeroDyn15']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
-        fst_vt['AeroDyn15']['SpdSound']  = float(inputs['speed_sound_air'])
+        # Update AeroDyn15, Fst inputs for environment
+        fst_vt['Fst']['AirDens']   = float(inputs['rho'])
+        fst_vt['Fst']['SpdSound']  = float(inputs['speed_sound_air'])
+        if modopt['flags']['marine_hydro']:
+            fst_vt['Fst']['KinVisc']   = inputs['mu_water'][0] / inputs['rho_water'][0]
+        else:
+            fst_vt['Fst']['KinVisc']   = inputs['mu'][0] / inputs['rho'][0]
+
+        # Use defaults in AeroDyn
+        fst_vt['AeroDyn15']['AirDens']  = 'default'
+        fst_vt['AeroDyn15']['KinVisc']  = 'default'
+        fst_vt['AeroDyn15']['SpdSound'] = 'default'
+        fst_vt['AeroDyn15']['Patm']     = 'default'
+        fst_vt['AeroDyn15']['Pvap']     = 'default'
+
+        if modopt['flags']['marine_hydro']:
+            fst_vt['AeroDyn15']['Buoyancy'] = True
+            # fst_vt['AeroDyn15']['CavitCheck'] = True   # Disabling since WISDEM doesn't keep track of Cpmin yet
 
         # Update AeroDyn15 Blade Input File
         r = (inputs['r']-inputs['Rhub'])
