@@ -863,15 +863,30 @@ class FASTLoadCases(ExplicitComponent):
 
         modopt = self.options['modeling_options']
 
+        modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+
         # Update fst_vt nested dictionary with data coming from WISDEM
 
         # Comp flags in main input
-        if modopt['flags']['offshore']:
-            fst_vt['Fst']['CompHydro'] = 1  # Use HydroDyn if not set in modeling inputs 
+        if modopt['flags']['offshore'] and modopts_no_defaults['Level3']['simulation'].get('CompHydro',1):
+            fst_vt['Fst']['CompHydro'] = 1  # Use HydroDyn if CompHydro not specifically set in modeling inputs 
 
         # If there's mooring and  CompMooring not set in modeling inputs
         if modopt["flags"]["mooring"] and not fst_vt['Fst']['CompMooring']:
-            fst_vt['Fst']['CompMooring'] = 3  # Use MoorDyn             
+            fst_vt['Fst']['CompMooring'] = 3  # Use MoorDyn    
+
+        # Set MHK flag
+        if modopt['flags']['marine_hydro']:
+            if modopt['flags']['floating']:
+                fst_vt['Fst']['MHK'] = 2
+            else:
+                fst_vt['Fst']['MHK'] = 1
+        else:
+            fst_vt['Fst']['MHK'] = 0
+        
+        # Overwrite with user input
+        if 'MHK' in modopts_no_defaults['Level3']['simulation']:
+            fst_vt['Fst']['MHK'] = modopts_no_defaults['Level3']['simulation']['MHK']
 
         # Update ElastoDyn
         fst_vt['ElastoDyn']['NumBl']  = self.n_blades
