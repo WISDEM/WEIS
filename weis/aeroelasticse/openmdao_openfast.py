@@ -1859,6 +1859,9 @@ class FASTLoadCases(ExplicitComponent):
             hub_height = grid_height/ 2
             ref_height = float(inputs['water_depth'] - np.abs(inputs['hub_height']))
 
+            # Inflow wind wants these relative to sea bed
+            fst_vt['InflowWind']['WindVziList'] = ref_height
+
         else:
             ref_height = hub_height
 
