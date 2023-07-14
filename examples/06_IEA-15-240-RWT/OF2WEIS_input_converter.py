@@ -13,6 +13,9 @@ import os
 # OTHER FUNCTIONS
 
 def compute_relThk(x,y):
+
+  if not x[0]:
+    x = 1 - np.array(x)  # hacky way to get airfoils nice
   
   LE_index = np.argmin(x)
   x_upper = np.flip(x[0:LE_index+1]) # python skips the last item
@@ -80,9 +83,9 @@ this_dir = os.path.dirname(__file__)
 
 # OpenFAST
 fast = InputReader_OpenFAST()
-fast.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
+fast.FAST_InputFile = 'MHK_RM1_Floating.fst'   # FAST input file (ext=.fst)
 #fast.FAST_InputFile = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-fast.FAST_directory = os.path.join(this_dir,'..','01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi')
+fast.FAST_directory = '/Users/dzalkind/Projects/FloatingRM1_Controls/OpenFAST'
 fast.execute()
 print('successfully imported fast.fst_vt')
 
@@ -94,6 +97,15 @@ finput        = os.path.join(this_dir,'IEA-15-floating_blank.yaml')   # blank in
 merged_schema = get_geometry_schema()
 weis_obj      = validate_without_defaults(finput, merged_schema)
 print('successfully imported blank weis dictionary')
+
+# ASSUMED Inputs
+
+assumed_model_file = os.path.join(this_dir,'IEA-15-floating_wTMDs.yaml')
+assumed_model = load_geometry_yaml(assumed_model_file)
+
+# Custom changes
+iea_3_file = os.path.join(this_dir,'../05_IEA-3.4-130-RWT/IEA-3p4-130-RWT.yaml')
+iea_3 = load_geometry_yaml(iea_3_file)
 
 # FOR VERIFICATION ONLY
 #weis_complete = inp.load_geometry_yaml('/home/nmendoza/Projects/Ct-Opt/WEIS/examples/06_IEA-15-240-RWT/IEA-15-floating_wTMDs.yaml')
@@ -146,6 +158,7 @@ else:
 weis_obj['assembly']['number_of_blades']  = fast.fst_vt['ElastoDyn']['NumBl']
 weis_obj['assembly']['rotor_diameter']    = 2*fast.fst_vt['ElastoDyn']['TipRad']
 weis_obj['assembly']['hub_height']        = fast.fst_vt['ElastoDyn']['TowerHt'] + fast.fst_vt['ElastoDyn']['Twr2Shft']+abs(fast.fst_vt['ElastoDyn']['OverHang'])*sin(radians(abs(fast.fst_vt['ElastoDyn']['ShftTilt'])))
+weis_obj['assembly']['marine_hydro']      = bool(fast.fst_vt['Fst']['MHK'])
 
 print('Done')
 
@@ -163,6 +176,13 @@ for i in numAF:
     # coordinates
     weis_obj['airfoils'][i]['coordinates']['x']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['x'].tolist()
     weis_obj['airfoils'][i]['coordinates']['y']           = fast.fst_vt['AeroDyn15']['af_coord'][i]['y'].tolist()
+    
+    x = weis_obj['airfoils'][i]['coordinates']['x']
+    if not x[0]:
+      x = 1 - np.array(x)
+      x = x.tolist()
+      weis_obj['airfoils'][i]['coordinates']['x'] = x
+    
     # properties
     weis_obj['airfoils'][i]['name']                       = airfoil_names[i]
     weis_obj['airfoils'][i]['aerodynamic_center']         = float(fast.fst_vt['AeroDyn15']['ac'][i])
@@ -173,9 +193,12 @@ for i in numAF:
     weis_obj['airfoils'][i]['polars'][0]['c_l']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cl']
     weis_obj['airfoils'][i]['polars'][0]['c_d']['grid']   = [A * pi/180 for A in AoA]
     weis_obj['airfoils'][i]['polars'][0]['c_d']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cd']
+    weis_obj['airfoils'][i]['polars'][0]['c_m']['grid']   = [A * pi/180 for A in AoA]
     if fast.fst_vt['AeroDyn15']['InCol_Cm']:
-      weis_obj['airfoils'][i]['polars'][0]['c_m']['grid']   = [A * pi/180 for A in AoA]
       weis_obj['airfoils'][i]['polars'][0]['c_m']['values'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Cm']
+    else:
+      weis_obj['airfoils'][i]['polars'][0]['c_m']['values'] = np.zeros_like(AoA).tolist()
+
     # Reynolds number
     weis_obj['airfoils'][i]['polars'][0]['re'] = fast.fst_vt['AeroDyn15']['af_data'][i][0]['Re']
 
@@ -193,7 +216,7 @@ blade_fraction = [L / blade_length for L in BlSpn]
 
 # Airfoil Positions
 weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['grid']      = blade_fraction
-weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = [f'airfoil_{int(afid)}' for afid in fast.fst_vt['AeroDynBlade']['BlAFID']]
+weis_obj['components']['blade']['outer_shape_bem']['airfoil_position']['labels']    = [airfoil_names[int(id)-1] for id in fast.fst_vt['AeroDynBlade']['BlAFID']]
 # Chord
 weis_obj['components']['blade']['outer_shape_bem']['chord']['grid']                 = blade_fraction
 weis_obj['components']['blade']['outer_shape_bem']['chord']['values']               = fast.fst_vt['AeroDynBlade']['BlChord']
@@ -750,8 +773,8 @@ weis_obj['control']['supervisory']['Vout']       = fast.fst_vt['DISCON_in']['PS_
 # weis_obj['control']['supervisory']['maxTS']      = fast.fst_vt['DISCON_in']['VS_TSRopt'] * fast.fst_vt['InflowWind']['HWindSpeed']
 
 weis_obj['control']['torque']['tsr']             = fast.fst_vt['DISCON_in']['VS_TSRopt'] 
-# weis_obj['control']['torque']['VS_minspd']       = fast.fst_vt['DISCON_in']['VS_MinOMSpd'] # both WEIS and OpenFAST are in rad/s
-# weis_obj['control']['torque']['VS_maxspd']       = fast.fst_vt['DISCON_in']['VS_RefSpd']   # both WEIS and OpenFAST are in rad/s
+# weis_obj['control']['torque']['VS_minspd']       = fast.fst_vt['DISCON_in']['VS_MinOMSpd'] / fast.fst_vt['DISCON_in']['WE_GearboxRatio'] # both WEIS and OpenFAST are in rad/s
+weis_obj['control']['torque']['VS_maxspd']       = fast.fst_vt['DISCON_in']['VS_RefSpd'] / fast.fst_vt['DISCON_in']['WE_GearboxRatio']  # both in rad/s, WEIS is low speed, ROSCO is high speed
 weis_obj['control']['torque']['max_torque_rate'] = fast.fst_vt['DISCON_in']['VS_MaxRat']   # both WEIS and OpenFAST are in Nm/s
 
 weis_obj['control']['pitch']['max_pitch_rate']   = fast.fst_vt['DISCON_in']['PC_MaxRat']
@@ -1119,9 +1142,6 @@ print('Done')
 #=========================================================================================================================
 # ASSUMPTIONS
 
-assumed_model_file = os.path.join(this_dir,'IEA-15-floating_wTMDs.yaml')
-assumed_model = load_geometry_yaml(assumed_model_file)
-
 # Insert assumed variable values below here
 
 
@@ -1181,9 +1201,13 @@ weis_obj['bos'] = assumed_model['bos'].copy()
 
 # Hub info
 weis_obj['components']['hub'] = assumed_model['components']['hub']
+weis_obj['components']['hub']['diameter']         = 2*fast.fst_vt['ElastoDyn']['HubRad']
+weis_obj['components']['hub']['cone_angle']       = radians(fast.fst_vt['ElastoDyn']['PreCone(1)']) # assumes all three blades are at the same cone angle (very reasonable and practical assumption)
+weis_obj['components']['hub']['drag_coefficient'] = 0.0 # NOT AVAILABLE IN OPENFAST
 
 # Generator info: all generator info provided above looked like placeholders
-weis_obj['components']['nacelle']['generator'] = assumed_model['components']['nacelle']['generator']
+nacelle_model = iea_3
+weis_obj['components']['nacelle']['generator'] = nacelle_model['components']['nacelle']['generator']
 
 # Drivetrain info: some can be inferred from OpenFAST model, try to keep that
 drivetrain_params = [
@@ -1221,7 +1245,7 @@ drivetrain_params = [
 ]
 
 weis_drivetrain = weis_obj['components']['nacelle']['drivetrain']
-assumed_drivetrain = assumed_model['components']['nacelle']['drivetrain']
+assumed_drivetrain = nacelle_model['components']['nacelle']['drivetrain']
 for param in drivetrain_params:
   weis_drivetrain[param] = assumed_drivetrain[param]
 
@@ -1266,6 +1290,16 @@ for node in weis_obj['components']['mooring']['nodes']:
 
 # Remove monopile
 del(weis_obj['components']['monopile'])
+
+# More customizations
+weis_obj['control']['supervisory']['Vin']        = 0.5
+weis_obj['control']['supervisory']['Vout']       = 4.
+# weis_obj['control']['supervisory']['maxTS']      = fast.fst_vt['DISCON_in']['VS_TSRopt'] * fast.fst_vt['InflowWind']['HWindSpeed']
+
+weis_obj['control']['torque']['tsr']             = fast.fst_vt['DISCON_in']['VS_TSRopt'] 
+weis_obj['control']['torque']['VS_minspd']       = 0.
+weis_obj['assembly']['rated_power']              = 500000  # There's an error in current DISCON
+
 
 
 # Print out the final, weis geometry yaml input file with assumptions
