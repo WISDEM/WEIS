@@ -316,76 +316,77 @@ class Hub_Rotor_LSS_Frame(om.ExplicitComponent):
             myframe.addLoadCase(load)
 
         # myframe.write('myframe1.3dd') # Debugging
-        displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
+        if self.options['modeling_options']['frame3dd']['flag']:
+            displacements, forces, reactions, internalForces, mass3dd, modal = myframe.run()
 
-        # Loop over DLCs and append to outputs
-        rotor_gearbox_deflection = np.zeros(n_dlcs)
-        rotor_gearbox_rotation = np.zeros(n_dlcs)
-        outputs["F_mb1"] = np.zeros((3, n_dlcs))
-        outputs["F_mb2"] = np.zeros((3, n_dlcs))
-        outputs["F_torq"] = np.zeros((3, n_dlcs))
-        outputs["M_mb1"] = np.zeros((3, n_dlcs))
-        outputs["M_mb2"] = np.zeros((3, n_dlcs))
-        outputs["M_torq"] = np.zeros((3, n_dlcs))
-        outputs["lss_axial_stress"] = np.zeros((n - 1, n_dlcs))
-        outputs["lss_shear_stress"] = np.zeros((n - 1, n_dlcs))
-        outputs["constr_lss_vonmises"] = np.zeros((n - 1, n_dlcs))
-        for k in range(n_dlcs):
-            # Deflections and rotations at torq attachment
-            rotor_gearbox_deflection[k] = np.sqrt(
-                displacements.dx[k, itorq - 1] ** 2
-                + displacements.dy[k, itorq - 1] ** 2
-                + displacements.dz[k, itorq - 1] ** 2
-            )
-            rotor_gearbox_rotation[k] = (
-                displacements.dxrot[k, itorq - 1]
-                + displacements.dyrot[k, itorq - 1]
-                + displacements.dzrot[k, itorq - 1]
-            )
+            # Loop over DLCs and append to outputs
+            rotor_gearbox_deflection = np.zeros(n_dlcs)
+            rotor_gearbox_rotation = np.zeros(n_dlcs)
+            outputs["F_mb1"] = np.zeros((3, n_dlcs))
+            outputs["F_mb2"] = np.zeros((3, n_dlcs))
+            outputs["F_torq"] = np.zeros((3, n_dlcs))
+            outputs["M_mb1"] = np.zeros((3, n_dlcs))
+            outputs["M_mb2"] = np.zeros((3, n_dlcs))
+            outputs["M_torq"] = np.zeros((3, n_dlcs))
+            outputs["lss_axial_stress"] = np.zeros((n - 1, n_dlcs))
+            outputs["lss_shear_stress"] = np.zeros((n - 1, n_dlcs))
+            outputs["constr_lss_vonmises"] = np.zeros((n - 1, n_dlcs))
+            for k in range(n_dlcs):
+                # Deflections and rotations at torq attachment
+                rotor_gearbox_deflection[k] = np.sqrt(
+                    displacements.dx[k, itorq - 1] ** 2
+                    + displacements.dy[k, itorq - 1] ** 2
+                    + displacements.dz[k, itorq - 1] ** 2
+                )
+                rotor_gearbox_rotation[k] = (
+                    displacements.dxrot[k, itorq - 1]
+                    + displacements.dyrot[k, itorq - 1]
+                    + displacements.dzrot[k, itorq - 1]
+                )
 
-            # shear and bending, one per element (convert from local to global c.s.)
-            Fx = forces.Nx[k, 1::2]
-            Vy = forces.Vy[k, 1::2]
-            Vz = -forces.Vz[k, 1::2]
-            F = np.sqrt(Vz ** 2 + Vy ** 2)
+                # shear and bending, one per element (convert from local to global c.s.)
+                Fx = forces.Nx[k, 1::2]
+                Vy = forces.Vy[k, 1::2]
+                Vz = -forces.Vz[k, 1::2]
+                F = np.sqrt(Vz ** 2 + Vy ** 2)
 
-            Mxx = forces.Txx[k, 1::2]
-            Myy = forces.Myy[k, 1::2]
-            Mzz = -forces.Mzz[k, 1::2]
-            M = np.sqrt(Myy ** 2 + Mzz ** 2)
+                Mxx = forces.Txx[k, 1::2]
+                Myy = forces.Myy[k, 1::2]
+                Mzz = -forces.Mzz[k, 1::2]
+                M = np.sqrt(Myy ** 2 + Mzz ** 2)
 
-            # Record total forces and moments
-            outputs["F_mb1"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
-            outputs["F_mb2"][:, k] = -1.0 * np.array([reactions.Fx[k, 1], reactions.Fy[k, 1], reactions.Fz[k, 1]])
-            outputs["F_torq"][:, k] = -1.0 * np.array([reactions.Fx[k, 2], reactions.Fy[k, 2], reactions.Fz[k, 2]])
-            outputs["M_mb1"][:, k] = -1.0 * np.array([reactions.Mxx[k, 0], reactions.Myy[k, 0], reactions.Mzz[k, 0]])
-            outputs["M_mb2"][:, k] = -1.0 * np.array([reactions.Mxx[k, 1], reactions.Myy[k, 1], reactions.Mzz[k, 1]])
-            outputs["M_torq"][:, k] = -1.0 * np.array([reactions.Mxx[k, 2], reactions.Myy[k, 2], reactions.Mzz[k, 2]])
-            outputs["lss_axial_stress"][:, k] = np.abs(Fx) / Ax + M / S
-            outputs["lss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
-            hoop = np.zeros(F.shape)
+                # Record total forces and moments
+                outputs["F_mb1"][:, k] = -1.0 * np.array([reactions.Fx[k, 0], reactions.Fy[k, 0], reactions.Fz[k, 0]])
+                outputs["F_mb2"][:, k] = -1.0 * np.array([reactions.Fx[k, 1], reactions.Fy[k, 1], reactions.Fz[k, 1]])
+                outputs["F_torq"][:, k] = -1.0 * np.array([reactions.Fx[k, 2], reactions.Fy[k, 2], reactions.Fz[k, 2]])
+                outputs["M_mb1"][:, k] = -1.0 * np.array([reactions.Mxx[k, 0], reactions.Myy[k, 0], reactions.Mzz[k, 0]])
+                outputs["M_mb2"][:, k] = -1.0 * np.array([reactions.Mxx[k, 1], reactions.Myy[k, 1], reactions.Mzz[k, 1]])
+                outputs["M_torq"][:, k] = -1.0 * np.array([reactions.Mxx[k, 2], reactions.Myy[k, 2], reactions.Mzz[k, 2]])
+                outputs["lss_axial_stress"][:, k] = np.abs(Fx) / Ax + M / S
+                outputs["lss_shear_stress"][:, k] = 2.0 * F / As + np.abs(Mxx) / C
+                hoop = np.zeros(F.shape)
 
-            outputs["constr_lss_vonmises"][:, k] = vonMisesStressUtilization(
-                outputs["lss_axial_stress"][:, k],
-                hoop,
-                outputs["lss_shear_stress"][:, k],
-                gamma_f * gamma_m * gamma_n,
-                sigma_y,
-            )
-        outputs["torq_deflection"] = rotor_gearbox_deflection.max()
-        outputs["torq_rotation"] = rotor_gearbox_rotation.max()
+                outputs["constr_lss_vonmises"][:, k] = vonMisesStressUtilization(
+                    outputs["lss_axial_stress"][:, k],
+                    hoop,
+                    outputs["lss_shear_stress"][:, k],
+                    gamma_f * gamma_m * gamma_n,
+                    sigma_y,
+                )
+            outputs["torq_deflection"] = rotor_gearbox_deflection.max()
+            outputs["torq_rotation"] = rotor_gearbox_rotation.max()
 
-        # Load->stress conversion for fatigue
-        ax_load2stress = np.zeros(6)
-        ax_load2stress[0] = 1.0 / Ax[0]
-        ax_load2stress[4] = 1.0 / S[0]
-        ax_load2stress[5] = 1.0 / S[0]
-        sh_load2stress = np.zeros(6)
-        sh_load2stress[1] = 1.0 / As[0]
-        sh_load2stress[2] = 1.0 / As[0]
-        sh_load2stress[3] = 1.0 / C[0]
-        outputs["lss_axial_load2stress"] = ax_load2stress
-        outputs["lss_shear_load2stress"] = sh_load2stress
+            # Load->stress conversion for fatigue
+            ax_load2stress = np.zeros(6)
+            ax_load2stress[0] = 1.0 / Ax[0]
+            ax_load2stress[4] = 1.0 / S[0]
+            ax_load2stress[5] = 1.0 / S[0]
+            sh_load2stress = np.zeros(6)
+            sh_load2stress[1] = 1.0 / As[0]
+            sh_load2stress[2] = 1.0 / As[0]
+            sh_load2stress[3] = 1.0 / C[0]
+            outputs["lss_axial_load2stress"] = ax_load2stress
+            outputs["lss_shear_load2stress"] = sh_load2stress
 
 
 class HSS_Frame(om.ExplicitComponent):
