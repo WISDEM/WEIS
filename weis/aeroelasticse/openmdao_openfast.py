@@ -989,15 +989,22 @@ class FASTLoadCases(ExplicitComponent):
         twr_d     = inputs['tower_outer_diameter']
         twr_index = np.argmin(abs(twr_elev - np.maximum(1.0, tower_base_height)))
         cd_index  = 0
-        if twr_elev[twr_index] <= 1.:
+        if twr_elev[twr_index] <= 1. and not modopt['flags']['marine_hydro']:
             twr_index += 1
             cd_index  += 1
-        fst_vt['AeroDyn15']['NumTwrNds'] = len(twr_elev[twr_index:])
-        fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_index:]
-        fst_vt['AeroDyn15']['TwrDiam']   = twr_d[twr_index:]
+
+        # Select tower indices
+        if modopt['flags']['marine_hydro']:
+            twr_ids = np.flip(np.arange(twr_index+1))      # may want to catch similar case to above, where tower base is above water for MHKs
+        else:
+            twr_ids = np.arange(twr_index,len(twr_elev))
+
+        fst_vt['AeroDyn15']['NumTwrNds'] = len(twr_elev[twr_ids])
+        fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_ids]
+        fst_vt['AeroDyn15']['TwrDiam']   = twr_d[twr_ids]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
-        fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
-        fst_vt['AeroDyn15']['TwrCb']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrCb']
+        fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_ids])) * fst_vt['AeroDyn15']['TwrTI']
+        fst_vt['AeroDyn15']['TwrCb']     = np.ones(len(twr_elev[twr_ids])) * fst_vt['AeroDyn15']['TwrCb']
         fst_vt['AeroDyn15']['tau1_const'] = 0.24 * float(inputs['Rtip']) # estimated using a=0.3 and U0=7.5
 
         z_tow = twr_elev
