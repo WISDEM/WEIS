@@ -581,9 +581,6 @@ class FASTLoadCases(ExplicitComponent):
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
-            # Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
-            modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
-            fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
 
             # Fix TwrTI: WEIS modeling options have it as a single value...
             if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
@@ -598,6 +595,10 @@ class FASTLoadCases(ExplicitComponent):
             if modopt['ROSCO']['flag']:
                 fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
                 
+        #  Allow user-defined OpenFAST options to override WISDEM-generated ones
+        #  Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
+        modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+        fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
                 
         if self.model_only == True:
             # Write input OF files, but do not run OF
