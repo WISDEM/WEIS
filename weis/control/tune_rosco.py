@@ -87,6 +87,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('v_max',             val=0.0,        units='m/s',            desc='Maximum wind speed (cut-out)')
         self.add_input('max_pitch_rate',    val=0.0,        units='rad/s',          desc='Maximum allowed blade pitch rate')
         self.add_input('max_torque_rate',   val=0.0,        units='N*m/s',          desc='Maximum allowed generator torque rate')
+        self.add_input('generator_inertia', val=0.0,        units='kg*m**2',        desc='Generator inertia')
         self.add_input('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
@@ -224,7 +225,7 @@ class TuneROSCO(ExplicitComponent):
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
         WISDEM_turbine.v_min        = float(inputs['v_min'])
-        WISDEM_turbine.J            = float(inputs['rotor_inertia'])        # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
+        WISDEM_turbine.J            = float(inputs['rotor_inertia']) + float(inputs['gear_ratio'])**2 * float(inputs['generator_inertia'])       # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
         WISDEM_turbine.rho          = float(inputs['rho'])
         WISDEM_turbine.rotor_radius = float(inputs['R'])
         WISDEM_turbine.Ng           = float(inputs['gear_ratio'])
