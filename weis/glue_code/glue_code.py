@@ -152,8 +152,6 @@ class WindPark(om.Group):
                 self.connect('xf.cd_interp_flaps',             'sse_tune.airfoils_cd')
                 self.connect('xf.cm_interp_flaps',             'sse_tune.airfoils_cm')
                 self.connect('configuration.n_blades',         'sse_tune.nBlades')
-                self.connect('env.rho_air',                    'sse_tune.rho')
-                self.connect('env.mu_air',                     'sse_tune.mu')
                 self.connect('blade.pa.chord_param',           'sse_tune.chord')
                 self.connect('blade.pa.twist_param',           'sse_tune.theta')
 
@@ -178,6 +176,15 @@ class WindPark(om.Group):
                 self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
                 self.connect('control.max_pitch_rate' ,         'sse_tune.tune_rosco.max_pitch_rate')
                 self.connect('control.max_torque_rate' ,        'sse_tune.tune_rosco.max_torque_rate')
+                self.connect('drivese.generator_rotor_I',       'sse_tune.tune_rosco.generator_inertia', src_indices=[0])
+                if modeling_options['flags']['marine_hydro']:
+                    self.connect('env.rho_water',   'sse_tune.rho')
+                    self.connect('env.mu_water',    'sse_tune.mu')
+                else:
+                    self.connect('env.mu_air',                     'sse_tune.mu')
+                    self.connect('env.rho_air',                    'sse_tune.rho')
+
+
 
             else:       # reading openfast model using ROSCO toolbox via rosco_turbine
                 self.connect('rosco_turbine.v_rated'            ,   ['sse_tune.tune_rosco.v_rated'])
