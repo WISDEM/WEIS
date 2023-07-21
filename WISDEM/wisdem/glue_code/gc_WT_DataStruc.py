@@ -2795,14 +2795,15 @@ class MooringJoints(om.ExplicitComponent):
         node_anch = node_loc[ianch, :]
         ang_fair = np.arctan2(node_fair[:, 1], node_fair[:, 0])
         ang_anch = np.arctan2(node_anch[:, 1], node_anch[:, 0])
-        node_fair = node_fair[np.argsort(ang_fair), :]
-        node_anch = node_anch[np.argsort(ang_anch), :]
+        node_fair = np.unique(node_fair[np.argsort(ang_fair), :], axis=0)
+        node_anch = np.unique(node_anch[np.argsort(ang_anch), :], axis=0)
 
         outputs["fairlead_nodes"] = node_fair
         outputs["anchor_nodes"] = node_anch
         outputs["fairlead"] = -z_fair  # Positive is defined below the waterline here
-        outputs["fairlead_radius"] = np.sqrt(np.sum(node_loc[ifair, :2] ** 2, axis=1))
-        outputs["anchor_radius"] = np.sqrt(np.sum(node_loc[ianch, :2] ** 2, axis=1))
+        outputs["fairlead_radius"] = np.sqrt(np.sum(node_fair[:,:2] ** 2, axis=1))
+        outputs["anchor_radius"] = np.sqrt(np.sum(node_anch[:,:2] ** 2, axis=1))
+
 
 
 class ComputeMaterialsProperties(om.ExplicitComponent):
