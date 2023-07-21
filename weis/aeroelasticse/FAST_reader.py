@@ -1024,7 +1024,7 @@ class InputReader_OpenFAST(object):
             except ValueError:  # points to coord file, read normal way
                 self.fst_vt['AeroDyn15']['coords_in_af_file'] = False
 
-            if self.fst_vt['AeroDyn15']['coords_in_af_file']:
+            if self.fst_vt['AeroDyn15']['coords_in_af_file'] and polar['NumCoords']:
                 self.fst_vt['AeroDyn15']['af_coord'].append({})
                 self.read_Coords(f,polar['NumCoords'],afi)  # This can also throw a ValueError and 
 
