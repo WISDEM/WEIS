@@ -1370,7 +1370,7 @@ class FASTLoadCases(ExplicitComponent):
 
 
         # HydroDyn inputs
-        if modopt['Level3']['simulation']['CompHydro']:
+        if fst_vt['Fst']['CompHydro']:
             if modopt['flags']['monopile']:
                 z_coarse = make_coarse_grid(mono_elev[1:], mono_d[1:])
                 # Don't want any nodes near zero for annoying hydrodyn errors
