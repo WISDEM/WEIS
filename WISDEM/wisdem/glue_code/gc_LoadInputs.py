@@ -292,6 +292,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["joints"]["name"] = [""] * n_joints
             self.modeling_options["floating"]["joints"]["transition"] = [False] * n_joints
             self.modeling_options["floating"]["joints"]["cylindrical"] = [False] * n_joints
+            self.modeling_options["floating"]["joints"]["axial_coeffs"] = [{}]* n_joints
             for i in range(n_joints):
                 self.modeling_options["floating"]["joints"]["name"][i] = self.wt_init["components"][
                     "floating_platform"
@@ -302,6 +303,11 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["floating"]["joints"]["cylindrical"][i] = self.wt_init["components"][
                     "floating_platform"
                 ]["joints"][i]["cylindrical"]
+                # Axial coefficients: pass through for now.  If we want them to be a DV someday, will need to make part openmdao glue code
+                self.modeling_options["floating"]["joints"]["axial_coeffs"][i] = self.wt_init["components"][
+                    "floating_platform"
+                ]["joints"][i]["axial_coeffs"]
+                
 
             # Create name->index dictionary for joint names, will add on axial joints later
             name2idx = dict(zip(self.modeling_options["floating"]["joints"]["name"], range(n_joints)))

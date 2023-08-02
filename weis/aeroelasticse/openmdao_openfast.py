@@ -1386,6 +1386,7 @@ class FASTLoadCases(ExplicitComponent):
                 
             elif modopt['flags']['floating']:
                 joints_xyz = np.empty((0, 3))
+                axial_coeffs = np.empty((0, 3))
                 N1 = np.array([], dtype=np.int_)
                 N2 = np.array([], dtype=np.int_)
                 d_coarse = np.array([])
@@ -1412,6 +1413,41 @@ class FASTLoadCases(ExplicitComponent):
                     d_coarse = np.append(d_coarse, np.mean(id_coarse))  # OpenFAST only wants one thickness
                     t_coarse = np.append(t_coarse, np.mean(it_coarse))  # OpenFAST only wants one thickness
                     joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
+
+                    joint_1_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint1'][k]]
+                    joint_2_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint2'][k]]
+                    
+                    # may need to check if joint is in original list, axial joints will not be
+                    if modopt['floating']['members']['joint1'][k] in modopt['floating']['joints']['name'] and \
+                        modopt['floating']['members']['joint2'][k] in modopt['floating']['joints']['name'] :
+
+                        i_axial_coeff_1 = [
+                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cd'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Ca'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cp']
+                        ]
+
+                        i_axial_coeff_2 = [
+                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cd'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Ca'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cp']
+                        ]
+                    else:
+                        # not originally defined
+                        i_axial_coeff_1 = np.zeros(3)
+                        i_axial_coeff_2 = np.zeros(3)
+
+
+                    i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
+
+                    axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
+
+
+
+
+
+
+
                     
             if modopt['flags']['offshore']:
                 fst_vt['HydroDyn']['WtrDens'] = float(inputs['rho_water'])
@@ -1432,11 +1468,18 @@ class FASTLoadCases(ExplicitComponent):
                 if np.any(BQuad):
                     logger.warning('WARNING: You are adding in additional drag terms that may double count strip theory estimated viscous drag terms.  Please zero out the BQuad entries or use modeling options SimplCd/a/p and/or potential_model_override and/or potential_bem_members to suppress strip theory for the members')
                 fst_vt['HydroDyn']['AddBQuad'] = BQuad
-                fst_vt['HydroDyn']['NAxCoef'] = 1
-                fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
-                fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
-                fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
-                fst_vt['HydroDyn']['AxCp'] = np.ones( fst_vt['HydroDyn']['NAxCoef'] )
+                if modopt['flags']['floating']:
+                    fst_vt['HydroDyn']['NAxCoef'] = axial_coeffs.shape[0]
+                    fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
+                    fst_vt['HydroDyn']['AxCd'] = axial_coeffs[:,0]
+                    fst_vt['HydroDyn']['AxCa'] = axial_coeffs[:,1]
+                    fst_vt['HydroDyn']['AxCp'] = axial_coeffs[:,2]
+                else:
+                    fst_vt['HydroDyn']['NAxCoef'] = 1
+                    fst_vt['HydroDyn']['AxCoefID'] = 1 + np.arange( fst_vt['HydroDyn']['NAxCoef'], dtype=np.int_)
+                    fst_vt['HydroDyn']['AxCd'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
+                    fst_vt['HydroDyn']['AxCa'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
+                    fst_vt['HydroDyn']['AxCp'] = np.zeros( fst_vt['HydroDyn']['NAxCoef'] )
                 # Use coarse member nodes for HydroDyn
 
                     
@@ -1464,7 +1507,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = imembers
                 fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
                 fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-                fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+                fst_vt['HydroDyn']['JointAxID'] = fst_vt['HydroDyn']['AxCoefID']  # joints and axial coeffs should be 1 to 1
                 fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
                 fst_vt['HydroDyn']['NCoefDpth'] = 0
                 fst_vt['HydroDyn']['NCoefMembers'] = 0
