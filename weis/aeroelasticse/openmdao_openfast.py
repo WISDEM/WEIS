@@ -1968,6 +1968,11 @@ class FASTLoadCases(ExplicitComponent):
                 if tMin[i_case] > self.TMax:
                     logger.warning("OLAF runs are too short in time, the wake is not at convergence")
 
+        # Current
+        CurrMod = np.zeros(dlc_generator.n_cases,dtype=int)
+        CurrDIV = np.array([c.current for c in dlc_generator.cases])
+        CurrMod[CurrDIV > 0] = 1
+
         # Parameteric inputs
         case_inputs = {}
         # Main fst
@@ -2000,6 +2005,9 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
         case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
         case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
+
+        case_inputs[("HydroDyn","CurrMod")] = {'vals':CurrMod, 'group':1} 
+        case_inputs[("HydroDyn","CurrDIV")] = {'vals':CurrDIV, 'group':1} 
 
         # Inputs to AeroDyn (parking)
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
