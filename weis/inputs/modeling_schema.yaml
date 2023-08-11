@@ -76,6 +76,10 @@ properties:
                         type: number
                         default: -9999
                         decription: All OpenFAST outputs will be filled with this if the simulation fails. 
+                    write_stdout:
+                        type: boolean
+                        default: False
+                        description: Write standard output to own file.  Output will not print to screen.
             goodman_correction:
                 type: boolean
                 default: False
