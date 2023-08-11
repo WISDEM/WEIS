@@ -1958,6 +1958,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
         fastBatch.fail_value        = modopt['General']['openfast_configuration']['fail_value']
+        fastBatch.write_stdout      = modopt['General']['openfast_configuration']['write_stdout']
         if self.FAST_exe_user is not None:
             fastBatch.FAST_exe      = self.FAST_exe_user
         if self.FAST_lib_user is not None:
