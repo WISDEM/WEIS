@@ -359,6 +359,18 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
+                    DEL_TwrBsMyt:
+                        type: object
+                        description: Tower base damage equivalent load
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 2.0
+                                minimum: 0.0
+                                maximum: 1.0E+20
+                                unit: kNm
                     nacelle_acceleration:
                         type: object
                         description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2)
