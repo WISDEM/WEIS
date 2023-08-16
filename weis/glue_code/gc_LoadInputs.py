@@ -30,6 +30,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
         # BEM dir, all levels
         base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
+        if base_run_dir == 'none':
+           base_run_dir = self.analysis_options['general']['folder_output']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
             bemDir = os.path.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
