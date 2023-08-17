@@ -1404,7 +1404,7 @@ class FASTLoadCases(ExplicitComponent):
                     xyz0 = inputs[f"member{k}:joint1"]
                     xyz1 = inputs[f"member{k}:joint2"]
                     dxyz = xyz1 - xyz0
-                    inode_xyz = np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :]
+                    inode_xyz = np.r_[[xyz0],[xyz1]]   #  old way: np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :], OpenFAST doesn't want all these joints if they don't make new memebers
                     inode_range = np.arange(inode_xyz.shape[0] - 1)
 
                     nk = joints_xyz.shape[0]
@@ -1441,10 +1441,6 @@ class FASTLoadCases(ExplicitComponent):
                     i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
 
                     axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
-
-
-
-
 
 
 
