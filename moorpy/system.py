@@ -20,7 +20,11 @@ from moorpy.line import Line
 from moorpy.lineType import LineType
 import matplotlib as mpl
 #import moorpy.MoorSolve as msolve
-from moorpy.helpers import rotationMatrix, rotatePosition, getH, printVec, set_axes_equal, dsolve2, SolveError, MoorPyError, loadLineProps, getLineProps, read_mooring_file, printMat, printVec
+from moorpy.helpers import (rotationMatrix, rotatePosition, getH, printVec, 
+                            set_axes_equal, dsolve2, SolveError, MoorPyError, 
+                            loadLineProps, getLineProps, read_mooring_file, 
+                            printMat, printVec, getInterpNums, unitVector,
+                            getFromDict)
 
 
 
@@ -30,7 +34,7 @@ class System():
     # >>> note: system module will need to import Line, Point, Body for its add/creation routines 
     #     (but line/point/body modules shouldn't import system) <<<
     
-    def __init__(self, file="", dirname="", rootname="", depth=0, rho=1025, g=9.81, qs=1, Fortran=True, lineProps=None):
+    def __init__(self, file="", dirname="", rootname="", depth=0, rho=1025, g=9.81, qs=1, Fortran=True, lineProps=None, **kwargs):
         '''Creates an empty MoorPy mooring system data structure and will read an input file if provided.
 
         Parameters
@@ -70,6 +74,27 @@ class System():
         self.rho   = rho    # water density [kg/m^3]
         self.g     = g      # gravitational acceleration [m/s^2]
         
+        # water current - currentMod 0 = no current; 1 = steady uniform current
+        self.currentMod = 0         # flag for current model to use
+        self.current = np.zeros(3)  # current velocity vector [m/s]
+        if 'current' in kwargs:
+            self.currentMod = 1
+            self.current = getFromDict(kwargs, 'current', shape=3)
+            
+        # seabed bathymetry - seabedMod 0 = flat; 1 = uniform slope, 2 = grid
+        self.seabedMod = 0
+        
+        if 'xSlope' in kwargs or 'ySlope' in kwargs:
+            self.seabedMod = 1
+            self.xSlope = getFromDict(kwargs, 'xSlope', default=0)
+            self.ySlope = getFromDict(kwargs, 'ySlope', default=0)
+        
+        if 'bathymetry' in kwargs:
+            self.seabedMod = 2
+            self.bathGrid_Xs, self.bathGrid_Ys, self.bathGrid = self.readBathymetryFile(kwargs['bathymetry'])
+        
+        
+        # initializing variables and lists        
         self.nDOF = 0       # number of (free) degrees of freedom of the mooring system (needs to be set elsewhere)        
         self.freeDOFs = []  # array of the values of the free DOFs of the system at different instants (2D list)
         
@@ -79,6 +104,7 @@ class System():
         self.display = 0    # a flag that controls how much printing occurs in methods within the System (Set manually. Values > 0 cause increasing output.)
         
         self.MDoptions = {} # dictionary that can hold any MoorDyn options read in from an input file, so they can be saved in a new MD file if need be
+
         
         # read in data from an input file if a filename was provided
         if len(file) > 0:
@@ -925,7 +951,7 @@ class System():
         # allocate the Xs, Ys, and main bathymetry grid arrays
         bathGrid_Xs = np.zeros(nGridX)
         bathGrid_Ys = np.zeros(nGridY)
-        bathGrid = np.zeros([nGridX, nGridY])
+        bathGrid = np.zeros([nGridY, nGridX])  # MH swapped order June 30
         # read in the fourth line to the Xs array
         line = next(f)
         bathGrid_Xs = [float(line.split()[i]) for i in range(nGridX)]
@@ -2873,7 +2899,83 @@ class System():
                     print('Line does not hold tension data')
                     return 
             return(ratios)
-                
+    
+
+    def getDepthFromBathymetry(self, x, y):   #BathymetryGrid, BathGrid_Xs, BathGrid_Ys, LineX, LineY, depth, nvec)
+        ''' interpolates local seabed depth and normal vector
+        
+        Parameters
+        ----------
+        x, y : float
+            x and y coordinates to find depth and slope at [m]
+        
+        Returns
+        -------        
+        depth : float
+            local seabed depth (positive down) [m]
+        nvec : array of size 3
+            local seabed surface normal vector (positive out) 
+        '''
+        
+        # if no bathymetry info stored, just return uniform depth
+        if self.seabedMod == 0:
+            return self.depth, np.array([0,0,1])
+        
+        if self.seabedMod == 1:
+            depth = self.depth - self.xSlope*x - self.ySlope*y
+            nvec  = unitVector([-self.xSlope, -self.ySlope, 1])            
+            return depth, nvec
+
+        if self.seabedMod == 2:
+            # get interpolation indices and fractions for the relevant grid panel
+            ix0, fx = getInterpNums(self.bathGrid_Xs, x)
+            iy0, fy = getInterpNums(self.bathGrid_Ys, y)
+
+
+            # handle end case conditions
+            if fx == 0:
+                ix1 = ix0
+            else:
+                ix1 = min(ix0+1, self.bathGrid.shape[1])  # don't overstep bounds
+            
+            if fy == 0:
+                iy1 = iy0
+            else:
+                iy1 = min(iy0+1, self.bathGrid.shape[0])  # don't overstep bounds
+            
+
+            # get corner points of the panel
+            c00 = self.bathGrid[iy0, ix0]
+            c01 = self.bathGrid[iy1, ix0]
+            c10 = self.bathGrid[iy0, ix1]
+            c11 = self.bathGrid[iy1, ix1]
+
+            # get interpolated points and local value
+            cx0    = c00 *(1.0-fx) + c10 *fx
+            cx1    = c01 *(1.0-fx) + c11 *fx
+            c0y    = c00 *(1.0-fy) + c01 *fy
+            c1y    = c10 *(1.0-fy) + c11 *fy
+            depth  = cx0 *(1.0-fy) + cx1 *fy
+
+            # get local slope
+            dx = self.bathGrid_Xs[ix1] - self.bathGrid_Xs[ix0]
+            dy = self.bathGrid_Ys[iy1] - self.bathGrid_Ys[iy0]
+            
+            if dx > 0.0:
+                dc_dx = (c1y-c0y)/dx
+            else:
+                dc_dx = 0.0  # maybe this should raise an error
+            
+            if dx > 0.0:
+                dc_dy = (cx1-cx0)/dy
+            else:
+                dc_dy = 0.0  # maybe this should raise an error
+            
+            nvec = unitVector([dc_dx, dc_dy, 1.0])  # compute unit vector      
+
+            return depth, nvec
+    
+    
     def loadData(self, dirname, rootname, sep='.MD.'):
         '''Loads time series data from main MoorDyn output file (for example driver.MD.out)
         Parameters
@@ -3070,8 +3172,8 @@ class System():
                     ax.text((line.rA[0]+line.rB[0])/2, (line.rA[1]+line.rB[1])/2, (line.rA[2]+line.rB[2])/2, j)
             
         if cbar_tension:
-            maxten = max([max(line.getLineTens()) for line in self.lineList])   # find the max tension in the System
-            minten = min([min(line.getLineTens()) for line in self.lineList])   # find the min tension in the System
+            maxten = max([max(line.Ts) for line in self.lineList])   # find the max tension in the System
+            minten = min([min(line.Ts) for line in self.lineList])   # find the min tension in the System
             bounds = range(int(minten),int(maxten), int((maxten-minten)/256)) 
             norm = mpl.colors.BoundaryNorm(bounds, 256)     # set the bounds in a norm object, with 256 being the length of all colorbar strings
             fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap_tension), label='Tension (N)')  # add the colorbar
@@ -3267,8 +3369,8 @@ class System():
                 ax.text(xloc,yloc,j)
         
         if cbar_tension:
-            maxten = max([max(line.getLineTens()) for line in self.lineList])   # find the max tension in the System
-            minten = min([min(line.getLineTens()) for line in self.lineList])   # find the min tension in the System
+            maxten = max([max(line.Ts) for line in self.lineList])   # find the max tension in the System
+            minten = min([min(line.Ts) for line in self.lineList])   # find the min tension in the System
             bounds = range(int(minten),int(maxten), int((maxten-minten)/256)) 
             norm = mpl.colors.BoundaryNorm(bounds, 256)     # set the bounds in a norm object, with 256 being the length of all colorbar strings
             fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap_tension), label='Tension (N)')  # add the colorbar

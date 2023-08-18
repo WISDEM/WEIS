@@ -43,10 +43,22 @@ def test_catenary_symmetricU():
     (fAHU, fAVU, fBHU, fBVU, infoU) = catenary(100,  0, 130, 1e12, 100.0, CB=-20, Tol=0.00001, MaxIter=50)
 
     assert_allclose([fAHU, fAVU, fBHU, fBVU], [-fBH1, fBV1, fBH1, fBV1], rtol=1e-05, atol=0, verbose=True)
+
+
+def test_sloped_mirror():
+    '''Tests two mirror-image sloped seabed scenarios'''
+    
+    # seabed slope is 10 deg. dz = (60 m)*tan(alpha) = 10.5796
+    hB = 40 - 10.5796
+    
+    (fAH1, fAV1, fBH1, fBV1, info1) = catenary(60,  40, 80, 1e12, 100.0, CB=  0, alpha= 10, Tol=0.00001, MaxIter=50)
+    (fAH2, fAV2, fBH2, fBV2, info2) = catenary(60, -40, 80, 1e12, 100.0, CB=-hB, alpha=-10, Tol=0.00001, MaxIter=50)
+
+    assert_allclose([fAH1, fAV1, fBH1, fBV1], [-fBH2, fBV2, -fAH2, fAV2], rtol=1e-05, atol=0, verbose=True)
+    
     
 
 if __name__ == '__main__':
     for i in range(len(indata)):
         test_catenary_solutions(i)
         
-        #catenary(0.007335040615956245, 46.969250518704726, 100.0, 257826627.22942558, 512.1255141001664, CB=-532.0307494812953, HF0=2169047.825684437, VF0=1165782.713912318, Tol=2.0000000000000003e-06, MaxIter=50, plots=1)

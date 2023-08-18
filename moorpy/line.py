@@ -1,10 +1,12 @@
-
+import pdb
 
 import numpy as np
 from matplotlib import cm
 from moorpy.Catenary import catenary
 from moorpy.nonlinear import nonlinear                                      
-from moorpy.helpers import LineError, CatenaryError, rotationMatrix, makeTower, read_mooring_file, quiver_data_to_segments
+from moorpy.helpers import (unitVector, LineError, CatenaryError, 
+                     rotationMatrix, makeTower, read_mooring_file, 
+                     quiver_data_to_segments, printVec, printMat)
 from os import path
 
  
@@ -49,6 +51,7 @@ class Line():
         
         self.nNodes = int(nSegs) + 1
         self.cb = float(cb)    # friction coefficient (will automatically be set negative if line is fully suspended)
+        self.sbnorm = []    # Seabed Normal Vector (to be filled with a 3x1 normal vector describing seabed orientation)
         
         self.rA = np.zeros(3) # end coordinates
         self.rB = np.zeros(3)
@@ -69,6 +72,8 @@ class Line():
         #print("Created Line "+str(self.number))
         self.color = 'k'
         self.lw=0.5
+        
+        self.fCurrent = np.zeros(3)  # total current force vector on the line [N]
         
         
 
@@ -158,12 +163,16 @@ class Line():
             # --- Read in additional data if available ---
 
             # segment tension  <<< to be changed to nodal tensions in future MD versions
-            #if "Seg1Te" in ch
             if "Seg1Ten" in ch:
                 self.Tendata = True
-                self.Ten = np.zeros([nT,self.nNodes-1])
+                self.Te = np.zeros([nT,self.nNodes-1])
                 for i in range(self.nNodes-1):
-                    self.Ten[:,i] = data[:, ch['Seg'+str(i+1)+'Ten']]
+                    self.Te[:,i] = data[:, ch['Seg'+str(i+1)+'Ten']]
+            elif "Seg1Te" in ch:
+                self.Tendata = True
+                self.Te = np.zeros([nT,self.nNodes-1])
+                for i in range(self.nNodes-1):
+                    self.Te[:,i] = data[:, ch['Seg'+str(i+1)+'Te']]
             else:
                 self.Tendata = False
                         
@@ -319,47 +328,17 @@ class Line():
     
         # if a quasi-static analysis, just call the catenary function to return the line coordinates
         elif self.qs==1:
-        
-            depth = self.sys.depth
-        
-            dr =  self.rB - self.rA                 
-            LH = np.hypot(dr[0], dr[1])     # horizontal spacing of line ends
-            LV = dr[2]                      # vertical offset from end A to end B
-            if LH >0:
-                cosBeta = dr[0]/LH                 # cos of line heading
-                sinBeta = dr[1]/LH                 # sin of line heading
-                self.th = np.arctan2(dr[1],dr[0])  # line heading
-            else:   # special case of vertical line: line heading is undefined - use zero as default
-                cosBeta = 0.0
-                sinBeta = 0.0
-                self.th = 0.0
             
-            if np.min([self.rA[2],self.rB[2]]) > -depth:
-                self.cb = -depth - np.min([self.rA[2],self.rB[2]])   # if this line's lower end is off the seabed, set cb negative and to the distance off the seabed
-            elif self.cb < 0:   # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
-                self.cb = 0.0     # set to zero so that the line includes seabed interaction.
-        
-            # ----- check for linear vs nonlinear line elasticity -----
-        
-            #If EA is found in the line properties we will run the original catenary function 
-            if 'EA' in self.type:
+            self.staticSolve(profiles=1) # call with flag to tell Catenary to return node info
             
-                try:
-                    (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], 
-                                                      self.cb, HF0=self.HF, VF0=self.VF, nNodes=n, plots=1) 
-                except CatenaryError as error:
-                    raise LineError(self.number, error.message)
-
-                 #(fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, HF0=self.HF, VF0=self.VF, nNodes=n, plots=1)   # call line model
-
-            #If EA isnt found then we will use the ten-str relationship defined in the input file 
-            else:
-                 (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],self.type['w']) 
-            
-            Xs = self.rA[0] + info["X"]*cosBeta 
-            Ys = self.rA[1] + info["X"]*sinBeta 
-            Zs = self.rA[2] + info["Z"]
-            Ts = info["Te"]
+            #Xs = self.rA[0] + self.info["X"]*self.cosBeta 
+            #Ys = self.rA[1] + self.info["X"]*self.sinBeta 
+            #Zs = self.rA[2] + self.info["Z"]
+            #Ts = self.info["Te"]
+            Xs = self.Xs
+            Ys = self.Ys
+            Zs = self.Zs
+            Ts = self.Ts
             return Xs, Ys, Zs, Ts
             
         # otherwise, count on read-in time-series data
@@ -398,7 +377,7 @@ class Line():
                     Te = 0.5*(np.append(self.Te[ts,0], self.Te[ts,:]) +np.append(self.Te[ts,:], self.Te[ts,-1]))
                 except: # otherwise return zeros to avoid an error (might want a warning in some cases?)
                     Te = np.zeros(self.nNodes)
-                    
+                
                 return self.xp[ts,:], self.yp[ts,:], self.zp[ts,:], Te
     
     
@@ -466,21 +445,20 @@ class Line():
         else:            
             # >>> can probably streamline the next bit of code a fair bit <<<
             if self.qs==1:
-                Xs, Ys, Zs, tensions = self.getLineCoords(Time)
+                Xs, Ys, Zs, Ts = self.getLineCoords(Time)
             elif self.qs==0:
                 Xs, Ys, Zs, Ts = self.getLineCoords(Time)
                 self.rA = np.array([Xs[0], Ys[0], Zs[0]])
                 self.rB = np.array([Xs[-1], Ys[-1], Zs[-1]])
-                tensions = self.getLineTens()   
             
             # apply any 3D to 2D transformation here to provide desired viewing angle
             Xs2d = Xs*Xuvec[0] + Ys*Xuvec[1] + Zs*Xuvec[2] + Xoff
             Ys2d = Xs*Yuvec[0] + Ys*Yuvec[1] + Zs*Yuvec[2] + Yoff
             
             if colortension:    # if the mooring lines want to be plotted with colors based on node tensions
-                maxt = np.max(tensions); mint = np.min(tensions)
+                maxT = np.max(Ts); minT = np.min(Ts)
                 for i in range(len(Xs)-1):          # for each node in the line
-                    color_ratio = ((tensions[i] + tensions[i+1])/2 - mint)/(maxt - mint)  # ratio of the node tension in relation to the max and min tension
+                    color_ratio = ((Ts[i] + Ts[i+1])/2 - minT)/(maxT - minT)  # ratio of the node tension in relation to the max and min tension
                     cmap_obj = cm.get_cmap(cmap)    # create a cmap object based on the desired colormap
                     rgba = cmap_obj(color_ratio)    # return the rbga values of the colormap of where the node tension is
                     linebit.append(ax.plot(Xs2d[i:i+2], Ys2d[i:i+2], color=rgba))
@@ -559,15 +537,14 @@ class Line():
             if self.qs==1:  # returns the node positions and tensions of the line, doesn't matter what time
                 Xs, Ys, Zs, tensions = self.getLineCoords(Time)
             elif self.qs==0: # returns the node positions and time data at the given time
-                Xs, Ys, Zs, Ts = self.getLineCoords(Time)
+                Xs, Ys, Zs, tensions = self.getLineCoords(Time)
                 self.rA = np.array([Xs[0], Ys[0], Zs[0]])
                 self.rB = np.array([Xs[-1], Ys[-1], Zs[-1]])
-                tensions = self.getLineTens()
             
             if colortension:    # if the mooring lines want to be plotted with colors based on node tensions
-                maxt = np.max(tensions); mint = np.min(tensions)
+                maxT = np.max(tensions); minT = np.min(tensions)
                 for i in range(len(Xs)-1):          # for each node in the line
-                    color_ratio = ((tensions[i] + tensions[i+1])/2 - mint)/(maxt - mint)  # ratio of the node tension in relation to the max and min tension
+                    color_ratio = ((tensions[i] + tensions[i+1])/2 - minT)/(maxT - minT)  # ratio of the node tension in relation to the max and min tension
                     cmap_obj = cm.get_cmap(cmap_tension)    # create a cmap object based on the desired colormap
                     rgba = cmap_obj(color_ratio)    # return the rbga values of the colormap of where the node tension is
                     linebit.append(ax.plot(Xs[i:i+2], Ys[i:i+2], Zs[i:i+2], color=rgba, zorder=100))
@@ -636,12 +613,11 @@ class Line():
             if colortension:
                 self.rA = np.array([Xs[0], Ys[0], Zs[0]])       # update the line ends based on the MoorDyn data
                 self.rB = np.array([Xs[-1], Ys[-1], Zs[-1]])
-                tensions = self.getLineTens()                   # get the tensions of the line calculated quasi-statically
-                maxt = np.max(tensions); mint = np.min(tensions)
+                maxT = np.max(Ts); minT = np.min(Ts)
                 cmap_obj = cm.get_cmap(cmap_tension)               # create the colormap object
                 
                 for i in range(len(Xs)-1):  # for each node in the line, find the relative tension of the segment based on the max and min tensions
-                    color_ratio = ((tensions[i] + tensions[i+1])/2 - mint)/(maxt - mint)
+                    color_ratio = ((Ts[i] + Ts[i+1])/2 - minT)/(maxT - minT)
                     rgba = cmap_obj(color_ratio)
                     linebit[i][0]._color = rgba         # set the color of the segment to a new color based on its updated tension
                     linebit[i][0].set_data(Xs[i:i+2],Ys[i:i+2])     # set the x and y coordinates
@@ -732,103 +708,192 @@ class Line():
 
         '''
 
-        depth = self.sys.depth
-        
-        dr =  self.rB - self.rA
-        LH = np.hypot(dr[0], dr[1])     # horizontal spacing of line ends
-        LV = dr[2]                # vertical offset from end A to end B
-        if LH >0:
-            cosBeta = dr[0]/LH                 # cos of line heading
-            sinBeta = dr[1]/LH                 # sin of line heading
-            self.th = np.arctan2(dr[1],dr[0])  # line heading
-        else:   # special case of vertical line: line heading is undefined - use zero as default
-            cosBeta = 0.0
-            sinBeta = 0.0
-            self.th = 0.0
-
-        if self.rA[2] < -depth:
-            raise LineError("Line {} end A is lower than the seabed.".format(self.number))
-        elif self.rB[2] < -depth:
-            raise LineError("Line {} end B is lower than the seabed.".format(self.number))
-        elif np.min([self.rA[2],self.rB[2]]) > -depth:
-            self.cb = -depth - np.min([self.rA[2],self.rB[2]])   # if this line's lower end is off the seabed, set cb negative and to the distance off the seabed
-        elif self.cb < 0:   # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
-            self.cb = 0.0     # set to zero so that the line includes seabed interaction.
-        
-        
-        if self.HF < 0:  # or self.VF < 0:  <<<<<<<<<<< it shouldn't matter if VF is negative - this could happen for buoyant lines, etc.
+        # deal with horizontal tension starting point
+        if self.HF < 0:
             raise LineError("Line HF cannot be negative") # this could be a ValueError too...
             
         if reset==True:   # Indicates not to use previous fairlead force values to start catenary 
             self.HF = 0   # iteration with, and insteady use the default values.
+        
+        
+        # ensure line profile information is computed if needed for computing current loads
+        if self.sys.currentMod == 1 and profiles == 0:
+            profiles = 1
+
+        # get seabed depth and slope under each line end
+        depthA, nvecA = self.sys.getDepthFromBathymetry(self.rA[0], self.rA[1])
+        depthB, nvecB = self.sys.getDepthFromBathymetry(self.rB[0], self.rB[1])
+        
+        # deal with height off seabed issues
+        if self.rA[2] < -depthA:
+            self.rA[2] = -depthA
+            self.cb = 0
+            #raise LineError("Line {} end A is lower than the seabed.".format(self.number)) <<< temporarily adjust to seabed depth
+        elif self.rB[2] < -depthB:
+            raise LineError("Line {} end B is lower than the seabed.".format(self.number))
+        else:
+            self.cb = -depthA - self.rA[2]  # when cb < 0, -cb is defined as height of end A off seabed (in catenary)
+
+        
+        # ----- Perform rotation/transformation to 2D plane of catenary -----
+        
+        dr =  self.rB - self.rA
+        
+        # if a current force is present, include it in the catenary solution
+        if np.sum(np.abs(self.fCurrent)) > 0:
+        
+            # total line exernal force per unit length vector (weight plus current drag)
+            w_vec = self.fCurrent/self.L + np.array([0, 0, -self.type["w"]])
+            w = np.linalg.norm(w_vec)
+            w_hat = w_vec/w
             
-        # ----- get line results for linear or nonlinear elasticity -----
+            # get rotation matrix from gravity down to w_vec being down
+            if w_hat[0] == 0 and w_hat[1] == 0: 
+                if w_hat[2] < 0:
+                    R_curr = np.eye(3,3)
+                else:
+                    R_curr = -np.eye(3,3)
+            else:
+                R_curr = RotFrm2Vect(w_hat, np.array([0, 0, -1]))  # rotation matrix to make w vertical
+        
+            # vector from A to B needs to be put into the rotated frame
+            dr = np.matmul(R_curr, dr)  
+        
+        # if no current force, things are simple
+        else:
+            R_curr = np.eye(3,3)
+            w = self.type["w"]
+        
+        
+        # apply a rotation about Z' to align the line profile with the X'-Z' plane
+        theta_z = -np.arctan2(dr[1], dr[0])
+        R_z = rotationMatrix(0, 0, theta_z)
+        
+        # overall rotation matrix (global to catenary plane)
+        R = np.matmul(R_z, R_curr)   
+        
+        # figure out slope in plane (only if contacting the seabed)
+        if self.rA[2] <= -depthA or self.rB[2] <= -depthB:
+            nvecA_prime = np.matmul(R, nvecA)
+        
+            dz_dx = -nvecA_prime[0]*(1.0/nvecA_prime[2])  # seabed slope components
+            dz_dy = -nvecA_prime[1]*(1.0/nvecA_prime[2])  # seabed slope components
+            # we only care about dz_dx since the line is in the X-Z plane in this rotated situation
+            alpha = np.degrees(np.arctan(dz_dx))
+            cb = self.cb
+        else:
+            if np.sum(np.abs(self.fCurrent)) > 0 or nvecA[2] < 1: # if there is current or seabed slope
+                alpha = 0
+                cb = min(0, dr[2]) - 100  # put the seabed out of reach (model limitation)
+            else:  # otherwise proceed as usual (this is the normal case)
+                alpha = 0
+                cb = self.cb
+        
+        # horizontal and vertical dimensions of line profile (end A to B)
+        LH = np.linalg.norm(dr[:2])
+        LV = dr[2]
+        
+        
+        # ----- call catenary function or alternative and save results -----
         
         #If EA is found in the line properties we will run the original catenary function 
         if 'EA' in self.type:
             try:
-                (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=profiles)   # call line model
-                                                                                                                                    
+                (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], w,
+                                                      CB=cb, alpha=alpha, HF0=self.HF, VF0=self.VF, 
+                                                      Tol=tol, nNodes=self.nNodes, plots=profiles)                                                    
             except CatenaryError as error:
                 raise LineError(self.number, error.message)       
-       #If EA isnt found then we will use the ten-str relationship defined in the input file 
+        #If EA isnt found then we will use the ten-str relationship defined in the input file 
         else:
-             (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],self.type['w']) 
-            
+            (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],np.linalg.norm(w)) 
+    
+    
+        # save line profile coordinates in global frame (involves inverse rotation)
+        if profiles > 0:
+            # note: instantiating new arrays rather than writing directly to self.Xs 
+            # seems to be necessary to avoid plots auto-updating to the current 
+            # profile of the Line object.
+            Xs = np.zeros(self.nNodes)
+            Ys = np.zeros(self.nNodes)
+            Zs = np.zeros(self.nNodes)
+            # apply inverse rotation to node positions
+            for i in range(0,self.nNodes):
+                temp_array = np.array([info['X'][i], 0 ,info['Z'][i]])
+                unrot_pos = np.matmul(temp_array, R)
+                
+                Xs[i] = self.rA[0] + unrot_pos[0]
+                Ys[i] = self.rA[1] + unrot_pos[1]
+                Zs[i] = self.rA[2] + unrot_pos[2]
+
+            self.Xs = Xs
+            self.Ys = Ys
+            self.Zs = Zs
+            self.Ts = info["Te"]
+        
+        # save fairlead tension components for use as ICs next iteration
         self.HF = info["HF"]
         self.VF = info["VF"]
-        self.KA2 = info["stiffnessA"]
-        self.KB2 = info["stiffnessB"]
+        
+        # save other important info
         self.LBot = info["LBot"]
         self.info = info
+        
+        # save forces in global reference frame
+        self.fA = np.matmul(np.array([fAH, 0, fAV]), R)
+        self.fB = np.matmul(np.array([fBH, 0, fBV]), R)
+        self.TA = np.linalg.norm(self.fA) # end tensions
+        self.TB = np.linalg.norm(self.fB)
+        
+        # save 3d stiffness matrix in global orientation for both line ends (3 DOF + 3 DOF)
+        self.KA  = from2Dto3Drotated(info['stiffnessA'], -fBH, LH, R.T)  # reaction at A due to motion of A
+        self.KB  = from2Dto3Drotated(info['stiffnessB'], -fBH, LH, R.T)  # reaction at B due to motion of B
+        self.KAB = from2Dto3Drotated(info['stiffnessAB'], fBH, LH, R.T)  # reaction at B due to motion of A
+
+        # may want to skip stiffness calcs when just getting profiles for plotting...
+        
+        
+        # ----- calculate current loads if applicable, for use next time -----
+        
+        if self.sys.currentMod == 1: 
+
+            U = self.sys.current  # 3D current velocity [m/s]  (could be changed to depth-dependent profile)
             
-        self.fA[0] = fAH*cosBeta
-        self.fA[1] = fAH*sinBeta
-        self.fA[2] = fAV
-        self.fB[0] = fBH*cosBeta
-        self.fB[1] = fBH*sinBeta
-        self.fB[2] = fBV
-        self.TA = np.sqrt(fAH*fAH + fAV*fAV) # end tensions
-        self.TB = np.sqrt(fBH*fBH + fBV*fBV)
-        
-        # ----- compute 3d stiffness matrix for both line ends (3 DOF + 3 DOF) -----
-        
-        # solve for required variables to set up the perpendicular stiffness. Keep it horizontal
-        #L_xy = np.linalg.norm(self.rB[:2] - self.rA[:2])
-        #T_xy = np.linalg.norm(self.fB[:2])
-        
-        # create the rotation matrix based on the heading angle that the line is from the horizontal
-        R = rotationMatrix(0,0,self.th)
-        
-        # initialize the line's analytic stiffness matrix in the "in-line" plane then rotate the matrix to be about the global frame [K'] = [R][K][R]^T
-        def from2Dto3Drotated(K2D, F, L):
-            if L > 0:
-                Kt = F/L         # transverse stiffness term
-            else:
-                Kt = 0.0
+            fCurrent = np.zeros(3)  # total current force on line in x, y, z [N]        
             
-            K2 = np.array([[K2D[0,0], 0 , K2D[0,1]],
-                           [  0     , Kt,   0     ],
-                           [K2D[1,0], 0 , K2D[1,1]]])
-            return np.matmul(np.matmul(R, K2), R.T)
-            
-        
-        self.KA  = from2Dto3Drotated(info['stiffnessA'], -fBH, LH)   # stiffness matrix describing reaction force on end A due to motion of end A
-        self.KB  = from2Dto3Drotated(info['stiffnessB'], -fBH, LH)   # stiffness matrix describing reaction force on end B due to motion of end B
-        self.KAB = from2Dto3Drotated(info['stiffnessAB'], fBH, LH)  # stiffness matrix describing reaction force on end B due to motion of end A
+            # Loop through each segment along the line and add up the drag forces.
+            # This is in contrast to MoorDyn calculating for nodes.
+            for i in range(self.nNodes-1):
+                #For each segment find the tangent vector and then calculate the current loading
+                dr_seg = np.array([self.Xs[i+1] - self.Xs[i], 
+                                   self.Ys[i+1] - self.Ys[i], 
+                                   self.Zs[i+1] - self.Zs[i]])  # segment vector
+                ds_seg = np.linalg.norm(dr_seg)
                 
-        #self.K6 = np.block([[ from2Dto3Drotated(self.KA),  from2Dto3Drotated(self.KAB.T)],
-        #                    [ from2Dto3Drotated(self.KAB), from2Dto3Drotated(self.KB)  ]])
-        
-        
-        
+                if ds_seg > 0:                   # only include if segment length > 0
+                    q = dr_seg/ds_seg
+                    # transverse and axial current velocity components
+                    Uq = np.dot(U, q) * q
+                    Up = U - Uq          
+                    # transverse and axial drag forces on segment
+                    dp = 0.5*self.sys.rho*self.type["Cd"]        *self.type["d_vol"]*ds_seg*np.linalg.norm(Up)*Up
+                    dq = 0.5*self.sys.rho*self.type["CdAx"]*np.pi*self.type["d_vol"]*ds_seg*np.linalg.norm(Uq)*Uq
+                    # add to total current force on line
+                    fCurrent += dp + dq    
+            
+            self.fCurrent = fCurrent  # save for use next call
+        else:
+            self.fCurrent = np.zeros(3)  # if no current, ensure this force is zero
+
+
+        # ----- plot the profile if requested -----
         if profiles > 1:
             import matplotlib.pyplot as plt
-            plt.plot(info['X'], info['Z'])
+            plt.plot(self.info['X'], self.info['Z'])
             plt.show()
-        
     
-        
+    
+    """ These 3 functions no longer used - can delete  
     def getEndForce(self, endB):
         '''Returns the force of the line at the specified end based on the endB value
 
@@ -855,7 +920,6 @@ class Line():
             return self.fA
         else:
             raise LineError("getEndForce: endB value has to be either 1 or 0")
-            
             
             
     def getStiffnessMatrix(self):
@@ -906,42 +970,16 @@ class Line():
         KB_rot = np.matmul(np.matmul(R, KB), R.T)
         
         return KA_rot, KB_rot
-
+    
     
     def getLineTens(self):
         '''Calls the catenary function to return the tensions of the Line for a quasi-static analysis'''
-
-        # >>> this can probably be done using data already generated by static Solve <<<
-
-        depth = self.sys.depth
-    
-        dr =  self.rB - self.rA                 
-        LH = np.hypot(dr[0], dr[1])     # horizontal spacing of line ends
-        LV = dr[2]                      # vertical offset from end A to end B
         
-        if np.min([self.rA[2],self.rB[2]]) > -depth:
-            self.cb = -depth - np.min([self.rA[2],self.rB[2]])   # if this line's lower end is off the seabed, set cb negative and to the distance off the seabed
-        elif self.cb < 0:   # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
-            self.cb = 0.0     # set to zero so that the line includes seabed interaction.
-    
-        tol = 0.0001
-    
-        #If EA is found in the line properties we will run the original catenary function 
-        if 'EA' in self.type:
-            try:
-                tol = 0.000001 #TODO figure out why tol and profiles are not defined. These values are hardcoded from defaults in other function calls
-                profiles = 1
-                (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=profiles)   # call line model
-                                                                                                                  
-            except CatenaryError as error:
-                raise LineError(self.number, error.message) 
-        #If EA isnt found then we will use the ten-str relationship defined in the input file 
-        else:
-             (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],self.type['w']) 
+        self.staticSolve(profiles=1) # call with flag to tell Catenary to return node info (may be unnecessary)
 
-        Ts = info["Te"]
+        Ts = self.info["Te"]
         return Ts
-    
+    """
 
     def getTension(self, s):
         '''Returns tension at a given point along the line
@@ -1005,5 +1043,52 @@ class Line():
     def attachLine(self, lineID, endB):
         pass
 
+
+def from2Dto3Drotated(K2D, F, L, R): 
+    '''Initialize a line end's analytic stiffness matrix in the 
+    plane of the catenary then rotate the matrix to be about the 
+    global frame using [K'] = [R][K][R]^T
     
+    Parameters
+    ----------
+    K2D : 2x2 matrix
+        Planar stiffness matrix of line end [N/m]
+    F : float
+        Line horizontal tension component [N]
+    L : float
+        Line horizontal distance end-to-end [m]
+    R : 3x3 matrix
+        Rotation matrix from global frame to plane to the local
+        X-Z plane of the line
+        
+    Returns
+    -------
+    3x3 stiffness matrix in global orientation [N/m].
+    '''
+
+    if L > 0:
+        Kt = F/L         # transverse stiffness term
+    else:
+        Kt = 0.0
     
+    K2 = np.array([[K2D[0,0], 0 , K2D[0,1]],
+                   [  0     , Kt,   0     ],
+                   [K2D[1,0], 0 , K2D[1,1]]])
+    
+    return np.matmul(np.matmul(R, K2), R.T)    
+    
+
+
+def RotFrm2Vect( A, B):
+    '''Rodriguez rotation function, which returns the rotation matrix 
+    that transforms vector A into Vector B.
+    '''
+    
+    v = np.cross(A,B)
+    ssc = np.array([[0, -v[2], v[1]],
+                [v[2], 0, -v[0]],
+                [-v[1], v[0], 0]])
+         
+    R =  np.eye(3,3) + ssc + np.matmul(ssc,ssc)*(1-np.dot(A,B))/(np.linalg.norm(v)*np.linalg.norm(v))            
+
+    return R
