@@ -83,6 +83,7 @@ accessed afterward are as follows:
  - **f6Ext**: applied external forces and moments vector in global orientation 
    (not including weight/buoyancy) [N]. The default is np.zeros(6).
    
+   
 
 The MoorPy System Object
 ------------------------
@@ -91,3 +92,36 @@ The System object in MoorPy is used to hold all the objects being simulated as w
 information like the line types dictionary, water density, and water depth. Most user
 interactions with the mooring system are supported through methods of the System class. 
 These methods are listed on the :ref:`API` page. More description to be added here in future...
+
+Bathymetry
+^^^^^^^^^^
+
+MoorPy supports three different approaches to the seabed surface, which
+are defined by the seabedMod flag:
+
+0. Uniform flat seabed specified by a depth value.
+1. Uniform sloped seabed specified by a depth value at x,y = 0,0 along 
+   with xSlope and ySlope valus that specify the slope (rise/run). If 
+   only one of these values, the other is assumed to be zero.
+2. A bathymetry grid where the seabed depth is interpolated as a function
+   of x and y coorinates based on bilinear interpolation from a rectangular
+   grid of depth data. This grid is usually read in from a specially formatted
+   file similar to MoorDyn (link to be added).
+
+Further usage of these features will be described in (link to usage section to be added).
+
+Current
+^^^^^^^
+
+The effect of current in terms of drag forces on the mooring lines can be 
+included, as controlled by the currentMod flag:
+
+0. No current is considered.
+1. A steady uniform current is considered, specified by the System current
+   vector. The drag force from this current will be added to the weight
+   vector each time the catenary equations are used to solve the mooring
+   line profiles.
+2. XX A steady current that is uniform in the horizontal direction but can
+   change with depth according to a lookup table (typically from an input 
+   file following the same format as in MoorDyn. This feature is NOT YET
+   IMPLEMENTED.

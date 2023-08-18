@@ -14,7 +14,8 @@ MoorPy is available on PyPi via:
 pip install MoorPy
 ```
 
-For an editable install that relies on the local source code, first clone the repository.  Then, from the command line in the main MoorPy directory, run the following commands based on your additional needs...
+For an editable install that relies on the local source code, first clone the repository.  Then, from the command line in the main MoorPy directory, run the following commands (with a "-e" for "editable") based on your additional needs.
+The "dev", "test", and "docs" flags will install necessary packages related to development, testing, or documentation (e.g., the docs flag installs "sphinx" for documentation).
 
 #### General
 ```pycon

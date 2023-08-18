@@ -145,8 +145,10 @@ class Point():
             raise ValueError(f"Point setPosition method requires an argument of size 3 or nDOF, but size {len(r):d} was provided")
         
         # update the point's depth and position based on relation to seabed
-        self.zSub = np.max([-self.zTol, -self.r[2] - self.sys.depth])   # depth of submergence in seabed if > -zTol
-        self.r = np.array([self.r[0], self.r[1], np.max([self.r[2], -self.sys.depth])]) # don't let it sink below the seabed
+        depth, _ = self.sys.getDepthFromBathymetry(self.r[0], self.r[1]) 
+        
+        self.zSub = np.max([-self.zTol, -self.r[2] - depth])   # depth of submergence in seabed if > -zTol
+        self.r = np.array([self.r[0], self.r[1], np.max([self.r[2], -depth])]) # don't let it sink below the seabed
         
         # update the position of any attached Line ends
         for LineID,endB in zip(self.attached,self.attachedEndB):
@@ -208,7 +210,11 @@ class Point():
                 
         # add forces from attached lines
         for LineID,endB in zip(self.attached,self.attachedEndB):
-            f += self.sys.lineList[LineID-1].getEndForce(endB)
+            # f += self.sys.lineList[LineID-1].getEndForce(endB)
+            if endB:
+                f += self.sys.lineList[LineID-1].fB
+            else:
+                f += self.sys.lineList[LineID-1].fA
         
         if xyz:
             return f

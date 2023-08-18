@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "MoorPy"
-version = "1.0.1"
+version = "1.1.0"
 description = "A design-oriented mooring system library for Python"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -100,7 +100,7 @@ namespaces = true
 [tool.setuptools.package-data]
 # If there are data files included in your packages that need to be
 # installed, specify them here.
-"*" = ["*.txt", "*.md"]
+"*" = ["*.txt", "*.md", "*.yaml"]
 
 #[tool.black]
 #line-length = 120
