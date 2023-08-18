@@ -139,7 +139,13 @@ def getLineProps(dmm, type="chain", stud="studless", source="Orcaflex-altered", 
             EA = 1.06e6*d**2*1000           #[N]
             MBL = 105990*d**2*1000          #[N]
             d_vol = 0.80*d                  #[m]
-            cost = (0.42059603*MBL/1000/9.81) + 109.5   # [$/m] from old NREL-internal
+            cost = 1.0*((0.42059603*MBL/1000/9.81) + 109.5)   # [$/m] from old NREL-internal
+        elif type=="hmpe":
+            massden = 0.4526*d**2*1000      #[kg/m]
+            EA = 38.17e6*d**2*1000          #[N]
+            MBL = 619000*d**2*1000          #[N]
+            d_vol = 1.01*d                  #[m]
+            cost = (0.01*MBL/1000/9.81)     # [$/m] from old NREL-internal
         elif type=="wire-fiber" or type=="fiber":
             massden = 3.6109*d**2*1000      #[kg/m]
             EA = 3.67e7*d**2*1000           #[N]
@@ -230,6 +236,23 @@ def getAnchorProps(fx, fz, type="drag-embedment", display=0):
         anchorMatCost = 1.08*capacity           # material cost
         anchorInstCost = 179331*euros2dollars   # installation cost
         anchorDecomCost = 125532*euros2dollars  # decommissioning cost
+    
+    elif type == 'deadweight-granite':
+        capacity_x = 1.6*fx/9.81    # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity_z = 2.0*fz/9.81    # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity = np.linalg.norm([capacity_x, capacity_z])
+        anchorMatCost = 0.05*capacity   # cost of a granite deadweight anchor is about $50 per ton (from Senu)
+        anchorInstCost = 0
+        anchorDecomCost = 0
+    
+    elif type == 'deadweight-concrete':
+        capacity_x = 1.6*fx/9.81    # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity_z = 2.0*fz/9.81    # no safety factors given explicitly for deadweight anchors in the standards; assuming these safety factors are the same as piles/gravity/plates
+        capacity = np.linalg.norm([capacity_x, capacity_z])
+        anchorMatCost = 0.075*capacity   # cost of a concrete deadweight anchor is about $75 per ton (from Senu)
+        # reinforced concrete is about $1000 per ton ($1 per kg), but we don't need reinforced concrete for deadweight anchors
+        anchorInstCost = 0
+        anchorDecomCost = 0
     
     elif type == "plate":
         capacity_x = 2.0*fx/9.81

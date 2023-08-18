@@ -11,3 +11,7 @@ from moorpy.system import System
 
 from moorpy.helpers import *
 from moorpy.Catenary import catenary
+from moorpy.MoorProps import *
+
+import os
+moorpy_dir = os.path.dirname(os.path.realpath(__file__))

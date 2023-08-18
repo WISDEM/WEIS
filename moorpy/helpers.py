@@ -1,7 +1,8 @@
 
 import numpy as np
 import time
-
+import yaml
+import os
 
 
  
@@ -156,7 +157,7 @@ def transformPosition(rRelPoint, r6):
     rRelPoint : array
         x,y,z coordinates of a point relative to a local frame [m]
     r6 : array
-        6DOF position vector of the origin of the local frame, in the global frame coorindates [m]
+        6DOF position vector of the origin of the local frame, in the global frame coorindates [m, rad]
 
     Returns
     -------
@@ -200,6 +201,41 @@ def translateForce3to6DOF(r, Fin):
     return Fout
 
 
+def set_plot_center(ax, x=None, y=None, z=None):
+    '''Sets the center point in x and y of a 3d plot'''
+    
+    # adjust the center point of the figure if requested, by moving out one of the bounds
+    if not x is None:
+        xlims = ax.get_xlim3d()
+        if   x > np.mean(xlims): ax.set_xlim([xlims[0], x + (x - xlims[0])])
+        elif x < np.mean(xlims): ax.set_xlim([x - (xlims[1] - x), xlims[1]])
+        
+    if not y is None:
+        ylims = ax.get_ylim3d()
+        if   y > np.mean(ylims): ax.set_ylim([ylims[0], y + (y - ylims[0])])
+        elif y < np.mean(ylims): ax.set_ylim([y - (ylims[1] - y), ylims[1]])
+    
+    if not z is None:
+        zlims = ax.get_zlim3d()
+        if   z > np.mean(zlims): ax.set_zlim([zlims[0], z + (z - zlims[0])])
+        elif z < np.mean(zlims): ax.set_zlim([z - (zlims[1] - z), zlims[1]])
+        
+    # make sure the aspect ratio stays equal
+    set_axes_equal(ax)
+        
+    '''    
+        # set the AXIS bounds on the axis (changing these bounds can change the perspective of the matplotlib figure)
+        if xbounds != None:
+            ax.set_xbound(xbounds[0], xbounds[1])
+            ax.autoscale(enable=False, axis='x')
+        if ybounds != None:
+            ax.set_ybound(ybounds[0], ybounds[1])
+            ax.autoscale(enable=False, axis='y')
+        if zbounds != None:
+            ax.set_zbound(zbounds[0], zbounds[1])
+            ax.autoscale(enable=False, axis='x')
+    '''
+
 def set_axes_equal(ax):
     '''Sets 3D plot axes to equal scale
 
@@ -221,7 +257,16 @@ def set_axes_equal(ax):
     ax.set_box_aspect([rangex, rangey, rangez])  # note: this may require a matplotlib update
     
 
+def quiver_data_to_segments(X, Y, Z, u, v, w, scale=1):
+    '''function to help with animation of 3d quivers'''
+    
+    if scale < 0.0:  # negative scale input will be treated as setting the desired RMS quiver length
+        scale = -scale/np.sqrt(np.mean(u**2 + v**2 + w**2))
 
+    segments = (X, Y, Z, X+u*scale, Y+v*scale, Z+w*scale)
+    segments = np.array(segments).reshape(6,-1)
+    return [[[x1, y1, z1], [x2, y2, z2]] for x1, y1, z1, x2, y2, z2 in zip(*list(segments))]
+    
 
 def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, ytol=0, maxIter=20, 
            Xmin=[], Xmax=[], a_max=2.0, dX_last=[], stepfac=4, display=0, dodamping=False):
@@ -406,7 +451,6 @@ def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, ytol
             if display > 2:
                 print("  limiting oscillation with alpha="+str(alpha))
                 print(f"   dX_last was {dX_last}, dX was going to be {dX}, now it'll be {alpha*dX}")
-                print(f"   dX_last was {dX_last/1000}, dX was going to be {dX/1000}, now it'll be {alpha*dX/1000}")
             
             dX = alpha*dX  # scale down dX
             
@@ -496,3 +540,315 @@ def dsolve2(eval_func, X0, Ytarget=[], step_func=None, args=[], tol=0.0001, ytol
 
     return X, Y, dict(iter=iter, err=err, dX=dX_last, oths=oths, Xs=Xs, Es=Es, success=success, dXlist=dXlist, dXlist2=dXlist2)
 
+
+def dsolvePlot(info):
+    '''Plots dsolve or dsolve solution process based on based dict of dsolve output data'''
+
+    import matplotlib.pyplot as plt
+
+    n = info['Xs'].shape[1]  # number of variables
+
+    if n < 8:
+        fig, ax = plt.subplots(2*n, 1, sharex=True)
+        for i in range(n):
+            ax[  i].plot(info['Xs'][:info['iter']+1,i])
+            ax[n+i].plot(info['Es'][:info['iter']+1,i])
+        ax[-1].set_xlabel("iteration")
+    else:
+        fig, ax = plt.subplots(n, 2, sharex=True)
+        for i in range(n):
+            ax[i,0].plot(info['Xs'][:info['iter']+1,i])
+            ax[i,1].plot(info['Es'][:info['iter']+1,i])
+        ax[-1,0].set_xlabel("iteration, X")
+        ax[-1,1].set_xlabel("iteration, Error")
+    plt.show()
+
+
+
+def getLineProps(dnommm, material, lineProps=None, source=None, name="", rho=1025.0, g=9.81, **kwargs):
+    '''Sets up a dictionary that represents a mooring line type based on the 
+    specified diameter and material type. The
+
+    - This function requires at least one input: the line diameter in millimeters.
+    - The rest of the inputs are optional: describe the desired type of line (chain, polyester, wire, etc.),
+    the type of chain (studless or studlink), the source of data (Orcaflex-original or altered), or a name identifier
+    - The function will output a MoorPy linetype object
+
+    # support options for :
+    
+    # 1. dictionary passed in (this is what will be done when called from a System method)
+    
+        (a) by default, System will load in MoorPy's default line property information YAML
+        
+        (b) or user specify's alternate YAML file when making the system
+        
+    
+    # 2. yaml filename pass in or use default moorpy yaml and load yaml (used when called independently)
+    
+    System.linePropsDatabase will be a dictionary of stored YAML coefficients
+    
+    System.lineTypes will become a dictionary of LineType DICTIONARIES
+        
+        
+    Parameters
+    ----------
+    dnommm : float
+        nominal diameter [mm].
+    material : string
+        string identifier of the material type be used.
+    source : dict or filename (optional)
+        YAML file name or dictionary containing line property scaling coefficients
+    name : any dict index (optional)
+        Identifier for the line type (otherwise will be generated automatically).    
+    '''
+    
+    if lineProps==None and source==None:
+        raise Exception("Either lineProps or source keyword arguments must be provided")
+    
+    # deal with the source (is it a dictionary, or reading in a new yaml?)
+    if not source==None:
+        lineProps = loadLineProps(source)
+        if not lineProps==None:
+            print('Warning: both lineProps and source arguments were passed to getLineProps. lineProps will be ignored.')
+        
+    # raise an error if the material isn't in the source dictionary
+    if not material in lineProps:
+        raise ValueError(f'Specified mooring line material, {material}, is not in the database.')
+    
+    # calculate the relevant properties for this specific line type
+    mat = lineProps[material]       # shorthand for the sub-dictionary of properties for the material in question    
+    d = dnommm*0.001                # convert nominal diameter from mm to m    
+    d_vol = mat['dvol_dnom']*d    
+    mass = mat['mass_0'] + mat['mass_d']*d + mat['mass_d2']*d**2 + mat['mass_d3']*d**3 
+    MBL  = mat[ 'MBL_0'] + mat[ 'MBL_d']*d + mat[ 'MBL_d2']*d**2 + mat[ 'MBL_d3']*d**3 
+    EA   = mat[  'EA_0'] + mat[  'EA_d']*d + mat[  'EA_d2']*d**2 + mat[  'EA_d3']*d**3 + mat['EA_MBL']*MBL 
+    cost =(mat['cost_0'] + mat['cost_d']*d + mat['cost_d2']*d**2 + mat['cost_d3']*d**3 
+                         + mat['cost_mass']*mass + mat['cost_EA']*EA + mat['cost_MBL']*MBL)
+    w = (mass - np.pi/4*d_vol**2 *rho)*g
+    
+    # Set up a main identifier for the linetype unless one is provided
+    if name=="":
+        typestring = f"{type}{dnommm:.0f}"
+    else:
+        typestring = name
+    
+    notes = f"made with getLineProps"
+
+    lineType = dict(name=typestring, d_vol=d_vol, m=mass, EA=EA, w=w,
+                    MBL=MBL, cost=cost, notes=notes, input_type=type, input_d=d, material=material)
+
+    lineType.update(kwargs)   # add any custom arguments provided in the call to the lineType's dictionary
+          
+    return lineType
+
+
+def loadLineProps(source):
+    '''Loads a set of MoorPy mooring line property scaling coefficients from
+    a specified YAML file or passed dictionary. Any coefficients not included
+    will take a default value (zero for everything except diameter ratio, 
+    which is 1). It returns a dictionary containing the complete mooring line
+    property scaling coefficient set to use for any provided mooring line types.
+    
+    Parameters
+    ----------
+    
+    source : dict or filename
+        YAML file name or dictionary containing line property scaling coefficients
+            
+    '''
+
+    if type(source) is dict:
+        source = source
+        
+    elif source is None or source=="default":
+        import os
+        mpdir = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(mpdir,"MoorProps_default.yaml")) as file:
+            source = yaml.load(file, Loader=yaml.FullLoader)
+        
+    elif type(source) is str:
+        with open(source) as file:
+            source = yaml.load(file, Loader=yaml.FullLoader)
+
+    else:
+        raise Exception("loadLineProps supplied with invalid source")
+
+    if 'lineProps' in source:
+        lineProps = source['lineProps']
+    else:
+        raise Exception("YAML file or dictionary must have a 'lineProps' field containing the data")
+
+    
+    output = dict()  # output dictionary combining default values with loaded coefficients
+    
+    # combine loaded coefficients and default values into dictionary that will be saved for each material
+    for mat, props in lineProps.items():    
+        output[mat] = {}
+        output[mat]['mass_0'   ] = getFromDict(props, 'mass_0'   , default=0.0)
+        output[mat]['mass_d'   ] = getFromDict(props, 'mass_d'   , default=0.0)
+        output[mat]['mass_d2'  ] = getFromDict(props, 'mass_d2'  , default=0.0)
+        output[mat]['mass_d3'  ] = getFromDict(props, 'mass_d3'  , default=0.0)
+        output[mat]['EA_0'     ] = getFromDict(props, 'EA_0'     , default=0.0)
+        output[mat]['EA_d'     ] = getFromDict(props, 'EA_d'     , default=0.0)
+        output[mat]['EA_d2'    ] = getFromDict(props, 'EA_d2'    , default=0.0)
+        output[mat]['EA_d3'    ] = getFromDict(props, 'EA_d3'    , default=0.0)
+        output[mat]['EA_MBL'   ] = getFromDict(props, 'EA_MBL'   , default=0.0)
+        output[mat]['MBL_0'    ] = getFromDict(props, 'MBL_0'    , default=0.0)
+        output[mat]['MBL_d'    ] = getFromDict(props, 'MBL_d'    , default=0.0)
+        output[mat]['MBL_d2'   ] = getFromDict(props, 'MBL_d2'   , default=0.0)
+        output[mat]['MBL_d3'   ] = getFromDict(props, 'MBL_d3'   , default=0.0)
+        output[mat]['dvol_dnom'] = getFromDict(props, 'dvol_dnom', default=1.0)
+        output[mat]['cost_0'   ] = getFromDict(props, 'cost_0'   , default=0.0)
+        output[mat]['cost_d'   ] = getFromDict(props, 'cost_d'   , default=0.0)
+        output[mat]['cost_d2'  ] = getFromDict(props, 'cost_d2'  , default=0.0)
+        output[mat]['cost_d3'  ] = getFromDict(props, 'cost_d3'  , default=0.0)
+        output[mat]['cost_mass'] = getFromDict(props, 'cost_mass', default=0.0)
+        output[mat]['cost_EA'  ] = getFromDict(props, 'cost_EA'  , default=0.0)
+        output[mat]['cost_MBL' ] = getFromDict(props, 'cost_MBL' , default=0.0)
+    
+    return output
+
+
+def getFromDict(dict, key, shape=0, dtype=float, default=None):
+    '''
+    Function to streamline getting values from design dictionary from YAML file, including error checking.
+
+    Parameters
+    ----------
+    dict : dict
+        the dictionary
+    key : string
+        the key in the dictionary
+    shape : list, optional
+        The desired shape of the output. If not provided, assuming scalar output. If -1, any input shape is used.
+    dtype : type
+        Must be a python type than can serve as a function to format the input value to the right type.
+    default : number, optional
+        The default value to fill in if the item isn't in the dictionary. Otherwise will raise error if the key doesn't exist.
+    '''
+    # in future could support nested keys   if type(key)==list: ...
+
+    if key in dict:
+        val = dict[key]                                      # get the value from the dictionary
+        if shape==0:                                         # scalar input expected
+            if np.isscalar(val):
+                return dtype(val)
+            else:
+                raise ValueError(f"Value for key '{key}' is expected to be a scalar but instead is: {val}")
+        elif shape==-1:                                      # any input shape accepted
+            if np.isscalar(val):
+                return dtype(val)
+            else:
+                return np.array(val, dtype=dtype)
+        else:
+            if np.isscalar(val):                             # if a scalar value is provided and we need to produce an array (of any shape)
+                return np.tile(dtype(val), shape)
+
+            elif np.isscalar(shape):                         # if expecting a 1D array
+                if len(val) == shape:
+                    return np.array([dtype(v) for v in val])
+                else:
+                    raise ValueError(f"Value for key '{key}' is not the expected size of {shape} and is instead: {val}")
+
+            else:                                            # must be expecting a multi-D array
+                vala = np.array(val, dtype=dtype)            # make array
+
+                if list(vala.shape) == shape:                      # if provided with the right shape
+                    return vala
+                elif len(shape) > 2:
+                    raise ValueError("Function getFromDict isn't set up for shapes larger than 2 dimensions")
+                elif vala.ndim==1 and len(vala)==shape[1]:   # if we expect an MxN array, and an array of size N is provided, tile it M times
+                    return np.tile(vala, [shape[0], 1] )
+                else:
+                    raise ValueError(f"Value for key '{key}' is not a compatible size for target size of {shape} and is instead: {val}")
+
+    else:
+        if default == None:
+            raise ValueError(f"Key '{key}' not found in input file...")
+        else:
+            if shape==0 or shape==-1:
+                return default
+            else:
+                return np.tile(default, shape)
+
+
+def makeTower(twrH, twrRad):
+    '''Sets up mesh points for visualizing a cylindrical structure (should align with RAFT eventually.'''
+    
+    n = 8
+    X = []
+    Y = []
+    Z = []
+    ax=np.zeros(n+1)
+    ay=np.zeros(n+1)
+    for jj in range(n+1):
+        ax[jj] = np.cos(float(jj)/float(n)*2.0*np.pi)
+        ay[jj] = np.sin(float(jj)/float(n)*2.0*np.pi)
+        
+    for ii in range(int(len(twrRad)-1)):
+        z0 = twrH*float(ii)/float(len(twrRad)-1)
+        z1 = twrH*float(ii+1)/float(len(twrRad)-1)
+        for jj in range(n+1):
+            X.append(twrRad[ii]*ax[jj])
+            Y.append(twrRad[ii]*ay[jj])
+            Z.append(z0)            
+            X.append(twrRad[ii+1]*ax[jj])
+            Y.append(twrRad[ii+1]*ay[jj])
+            Z.append(z1)
+    
+    Xs = np.array(X)
+    Ys = np.array(Y)
+    Zs = np.array(Z)    
+    
+    return Xs, Ys, Zs
+
+
+def read_mooring_file(dirName,fileName):
+    # Taken from line system.... maybe should be a helper function?
+    # load data from time series for single mooring line
+    
+    print('attempting to load '+dirName+fileName)
+    
+    f = open(dirName+fileName, 'r')
+    
+    channels = []
+    units = []
+    data = []
+    i=0
+    
+    for line in f:          # loop through lines in file
+    
+        if (i == 0):
+            for entry in line.split():      # loop over the elemets, split by whitespace
+                channels.append(entry)      # append to the last element of the list
+                
+        elif (i == 1):
+            for entry in line.split():      # loop over the elemets, split by whitespace
+                units.append(entry)         # append to the last element of the list
+        
+        elif len(line.split()) > 0:
+            data.append([])  # add a new sublist to the data matrix
+            import re
+            r = re.compile(r"(?<=\d)\-(?=\d)")  # catch any instances where a large negative exponent has been written with the "E"
+            line2 = r.sub("E-",line)            # and add in the E
+            
+            
+            for entry in line2.split():      # loop over the elemets, split by whitespace
+                data[-1].append(entry)      # append to the last element of the list
+            
+        else:
+            break
+    
+        i+=1
+    
+    f.close()  # close data file
+    
+    # use a dictionary for convenient access of channel columns (eg. data[t][ch['PtfmPitch'] )
+    ch = dict(zip(channels, range(len(channels))))
+    
+    data2 = np.array(data)
+    
+    data3 = data2.astype(float)
+    
+    return data3, ch, channels, units    
+   

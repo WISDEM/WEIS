@@ -50,6 +50,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
     
     '''
 
+    vertical_threshold = 0.0001  # the XF/ZF ratio below which the line will be approximated as vertical to avoid catenary errors (this could become an input parameter)
     
     # make info dict to contain any additional outputs
     info = dict(error=False)
@@ -82,9 +83,10 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         reverseFlag = False
     
     # ensure the input variables are realistic
-    if XF <= 0.0:
-        raise CatenaryError("XF is zero or negative!")
+    if XF < 0.0:
+        raise CatenaryError("XF is negative!")
     if L <= 0.0:
+        breakpoint()
         raise CatenaryError("L is zero or negative!")
     if EA <= 0.0:
         raise CatenaryError("EA is zero or negative!")
@@ -99,14 +101,16 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
     # ProfileType=3: A portion of the line must rest on the seabed and the anchor tension is zero
     # ProfileType=4: The line is negatively buoyant, seabed interaction is enabled, and the line 
         # is longer than a full L between end points (including stretching) i.e. it is horizontal
-        # along the seabed from the anchor, then vertical to the fairlaed. Computes the maximum
+        # along the seabed from the anchor, then vertical to the fairlead. Computes the maximum
         # stretched length of the line with seabed interaction beyond which the line would have to 
         # double-back on itself; the line forms an "L" between the anchor and fairlead. Then it 
         # models it as bunched up on the seabed (instead of throwing an error)
+    # ProfileType=5: Similar to above but both ends are off seabed, so it's U shaped and fully slack
+    # ProfileType=6: Completely vertical line that is off the seabed (on the seabed is handled by 4 and 5)
     
     EA_W = EA/W
     
-    # calculate what line length would be hanging it it were fully slack, vertical
+    # calculate the unstretched length that would be hanging if the line was fully slack (vertical down to flat on the seabed)
     if CB < 0:  # free floating (potentially U shaped case)
         LHanging1 = np.sqrt(2.0*(  -CB)*EA_W + EA_W*EA_W) - EA_W  # unstretched hanging length at end A
         LHanging2 = np.sqrt(2.0*(ZF-CB)*EA_W + EA_W*EA_W) - EA_W  # unstretched hanging length at end B
@@ -120,7 +124,6 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
         #return W*(z0*W/H + 1)/np.sqrt( (z0*W/H + 1)**2 - 1)   # inelastic apprxoimation
         return W # returning a fully slack line approximation, 
         #   because a large value here risks adding a bad cross coupling term in the system stiffness matrix
-    
 
     # ProfileType 0 case - entirely along seabed
     if ZF==0.0 and CB >= 0.0 and W > 0:
@@ -185,7 +188,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
     # ProfileType 4 case - fully slack
     elif (W > 0.0) and (L >= XF + LHanging):
         
-        if CB >= 0.0:
+        if CB >= 0.0:  # one end on seabed
             ProfileType = 4        
             # this is a special case that requires no iteration
             
@@ -212,8 +215,8 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                     if s[I] > L-LHanging:   # this node is on the suspended/hanging portion of the line
                     
                         Xs[I] = XF
-                        Zs[I] = ZF - ( L-s[I] + 0.5*W/EA*(L-s[I])**2 )   # <<<< double check this
-                        Te[I] = W*(L-s[I])
+                        Zs[I] = ZF - ( L-s[I] + 0.5*W/EA*(L-s[I])**2 )
+                        Te[I] = W*(s[I]-(L-LHanging))
                         
                     else:                   # this node is on the seabed
                         
@@ -261,7 +264,87 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                         Zs[I] = ZF - Lms - W/EA*(LHanging2*Lms - 0.5*Lms**2 )
                         Te[I] = W*Lms
         
+    
+
+    # ProfileType 6 case - vertical line without seabed contact     
+    elif (ZF > 0 and XF/ZF < vertical_threshold):
+        ProfileType = 6    
+        
+        dz_hanging = L + 0.5*W/EA*L**2   # stretched length if it was hanging from one end
+        
+        # slack case
+        if dz_hanging >= ZF:
+        
+            # figure out how line will hang
+            LB = (ZF + L + W*L**2/2/EA)/(2+W*L/EA)  # unstretched length of line from lowest point up to end B
+            hB = LB + W/2/EA*LB**2                  # stretched of the above
+            LA = L - LB
+            hA = hB - ZF
             
+            HF = 0.0
+            VF = W*LB
+            HA = 0.0
+            VA = W*LA
+                    
+            info["HF"] = HF     # solution to be used to start next call (these are the solved variables, may be for anchor if line is reversed)
+            info["VF"] = VF
+            info["stiffnessB"]  = np.array([[ VF/ZF, 0.0], [0.0, 0.5*W]])
+            info["stiffnessA"]  = np.array([[ VF/ZF, 0.0], [0.0, 0.5*W]]) 
+            info["stiffnessAB"] = np.array([[-VF/ZF, 0.0], [0.0,-0.5*W]])
+            info["LBot"] = 0.0
+            info['ProfileType'] = 6
+            info['Zextreme'] = -hA
+
+
+            if plots > 0:
+        
+                for I in range(nNodes):
+                    if s[I] <   LA:          # the 1st suspended/hanging portion of the line
+                        Xs[I] = XF*(s[I]/L)         # approximate
+                        Zs[I] = -s[I] - W/EA*(LA*s[I] - 0.5*s[I]**2 )
+                        Te[I] = W*(LA - s[I])
+                    else:                           # the 2nd suspended/hanging portion of the line
+                        Lms = L - s[I]              # distance from end B
+                        Xs[I] = XF*(s[I]/L)         # approximate
+                        Zs[I] = ZF - Lms - W/EA*(LB*Lms - 0.5*Lms**2 )
+                        Te[I] = W*(s[I] - LA)
+                    
+        # taut case
+        else:
+        
+            # figure out how line will hang
+            #LB = (ZF + L + W*L**2/2/EA)/(2+W*L/EA)  # unstretched length of line from lowest point up to end B
+            #hB = LB + W/2/EA*LB**2                  # stretched of the above
+            #LA = L - LB
+            #hA = hB - ZF
+            
+            uniform_strain = (ZF - dz_hanging)/L  # the constrant strain due only to stretch - to be added to weight-based strain
+            Tstretch = uniform_strain*EA          # the constant tension component to be added to weight-based tension
+            
+            HF = 0.0
+            VF = Tstretch + W*L
+            HA = 0.0
+            VA = Tstretch
+                    
+            info["HF"] = HF     # solution to be used to start next call (these are the solved variables, may be for anchor if line is reversed)
+            info["VF"] = VF
+            info["stiffnessB"]  = np.array([[ VF/ZF, 0.0], [0.0, EA/L]])
+            info["stiffnessA"]  = np.array([[ VF/ZF, 0.0], [0.0, EA/L]]) 
+            info["stiffnessAB"] = np.array([[-VF/ZF, 0.0], [0.0,-EA/L]])
+            info["LBot"] = 0.0
+            info['ProfileType'] = 6
+            info['Zextreme'] = 0
+
+
+            if plots > 0:
+                for I in range(nNodes):
+                    Lms = L - s[I]              # distance from end B
+                    Xs[I] = XF*(s[I]/L)         # approximate
+                    Zs[I] = ZF - Lms*(1+uniform_strain) - W/EA*(L*Lms - 0.5*Lms**2 )
+                    Te[I] = Tstretch + W*s[I]
+                    
+    
+        
         
     # Use an iterable solver function to solve for the forces on the line
     else: 
@@ -479,7 +562,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             
             
         # handle special case of a U-shaped line that has seabed contact (using 2 new catenary solves)
-        if info['ProfileType']==1 and info["Zextreme"] < CB:
+        if info['ProfileType']==1 and info["Zextreme"] < min(CB, 0):
         
             # we will solve this as two separate lines to form the U shape
             info['ProfileType'] = 'U'
@@ -531,10 +614,11 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             X, Y, infoU = dsolve2(eval_func_U, [X1_0], step_func=step_func_U, ytol=0.25*Tol, stepfac=1, maxIter=20, a_max=1.2, display=0)
             X1 = X[0]
             X2 = XF-X1
+            nNodes1 = int(L1/L*nNodes + 0.5)  # set number of nodes in the first line proportionally to its length, rounded.
             
             # call one more time to get final values
-            (fAH1, fAV1, fBH1, fBV1, info1) = catenary(X1, Z1, L1, EA, W, CB=0, Tol=0.5*Tol, MaxIter=MaxIter, plots=plots)
-            (fAH2, fAV2, fBH2, fBV2, info2) = catenary(X2, Z2, L2, EA, W, CB=0, Tol=0.5*Tol, MaxIter=MaxIter, plots=plots)
+            (fAH1, fAV1, fBH1, fBV1, info1) = catenary(X1, Z1, L1, EA, W, CB=0, Tol=0.5*Tol, MaxIter=MaxIter, plots=plots, nNodes=nNodes1)
+            (fAH2, fAV2, fBH2, fBV2, info2) = catenary(X2, Z2, L2, EA, W, CB=0, Tol=0.5*Tol, MaxIter=MaxIter, plots=plots, nNodes=nNodes-nNodes1)
 
             if plots > 0 or (info1['error'] and info2['error']):
             
@@ -571,7 +655,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
             info['stiffnessB'] = np.array([[ dH_dX               ,  K2[0,1] *K1[0,0]*dxdH        ], 
                                            [K2[1,0] *K1[0,0]*dxdH,  K2[1,1] -K2[1,0]*dxdH*K2[0,1]]])
                                      
-            info['stiffnessAB']= np.array([[-K1[0,0] *K2[0,0]*dxdH, -K1[0,1] *K2[0,0]*dxdH ],    # this is the lower-left submatrix, A motions, B reaction forces
+            info['stiffnessAB']= np.array([[-K1[0,0] *K2[0,0]*dxdH,  K1[0,1] *K2[0,0]*dxdH ],    # this is the lower-left submatrix, A motions, B reaction forces (corrected/flipped sign of entry 0,1)
                                            [-K1[0,0] *dxdH*K2[1,0], -K1[0,1] *dxdH*K2[1,0] ]])
 
             
@@ -678,7 +762,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                         Zs[I] = ( SQRT1VFMinWLs_HF2 - SQRT1VFMinWL_HF2 )*HF_W + s_EA*( VFMinWL + 0.5*Ws );
                         Te[I] = np.sqrt( HF*HF + VFMinWLs*VFMinWLs );
                  
-                    # A portion of the line must rest on the seabed and the anchor tension is zero
+                    # A portion of the line must rest on the seabed
                     elif ProfileType in [2,3]:             
                             
                         if CB > 0:
@@ -687,7 +771,7 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                             xB = 0.0
                         xBlim = max(xB, 0.0) 
                             
-                        if  s[I] <= xB:  # (aka Lbot - s > HF/(CB*W) ) if this node rests on the seabed and the tension is zero
+                        if  s[I] <= xB and CB > 0:  # (aka Lbot - s > HF/(CB*W) ) if this node rests on the seabed and the tension is zero
                         
                             Xs[I] = s[I];
                             Zs[I] = 0.0;
@@ -703,8 +787,8 @@ def catenary(XF, ZF, L, EA, W, CB=0, HF0=0, VF0=0, Tol=0.000001, nNodes=20, MaxI
                         
                             Xs[I] = LBot + HF_W*np.log( VFMinWLs_HF + SQRT1VFMinWLs_HF2 ) + HF*s_EA + 0.5*CB*W/EA *(-LBot*LBot + xB*xBlim);
                             Zs[I] = ( -1.0  + SQRT1VFMinWLs_HF2)*HF_W + s_EA*(VFMinWL + 0.5*Ws ) + 0.5*   VFMinWL*VFMinWL/WEA;
-                            Te[I] = np.sqrt( HF*HF + VFMinWLs*VFMinWLs );
-                    
+                            Te[I] = np.sqrt( HF*HF + VFMinWLs*VFMinWLs )
+    
     if plots > 0:            
         # re-reverse line distributed data back to normal if applicable
         if reverseFlag:  
@@ -956,7 +1040,7 @@ def eval_func_cat(X, args):
     info["ProfileType"] = ProfileType
         
     #print("EX={:5.2e}, EZ={:5.2e}".format(EXF, EZF))
-        
+    
     return Y, info, False
 
 
@@ -1056,12 +1140,14 @@ if __name__ == "__main__":
     #(fAH, fAV, fBH, fBV, info) = catenary(205, -3.9, 250, 1229760000.0, 2442, CB=-55, Tol=1e-06, MaxIter=50, plots=3)
     
     
-    (fAH1, fAV1, fBH1, fBV1, info1) = catenary( 400, 100,  470, 1e12, 100.0, CB=-10, Tol=0.001, MaxIter=50, plots=4)
+    #(fAH1, fAV1, fBH1, fBV1, info1) = catenary( 400, 100,  470, 1e12, 100.0, CB=-10, Tol=0.001, MaxIter=50, plots=4)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(2306.4589923684835, 1.225862496312402e-05, 1870.0799339749528, 203916714.02425563, 405.04331583394304, CB=0.0, HF0=58487689.78903873, VF0=0.0, Tol=4.000000000000001e-06, MaxIter=50, plots=1)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(459.16880261639346, 0.0004792939078015479, 447.67890341877506, 2533432597.6567926, 5032.201233267459, CB=0.0, HF0=65021800.32966018, VF0=17487.252675845888, Tol=4.000000000000001e-06, MaxIter=50, plots=1)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(0.00040612281105723014, 391.558570722038, 400.0, 3300142385.3140063, 6555.130220040344, CB=-287.441429277962, HF0=2127009.4122708915, VF0=10925834.69512347, Tol=4.000000000000001e-06, MaxIter=100, plots=1)
     #(fAH1, fAV1, fBH1, fBV1, info1) = catenary(0.0004959907076624859, 69.87150531147275, 110.89397565668423, 80297543.26800226, 146.26820268238743, CB=-509.12849468852727, HF0=1322712.3676957292, VF0=1045583.1849462093, Tol=4.000000000000001e-06, MaxIter=50, plots=1)
     
+    (fAH1, fAV1, fBH1, fBV1, info1) = catenary(2.203138228651369e-05, 378.2807133834522, 383.34011790636976, 260525391.7172965, 474.5672065262173, CB=-7.719286616547777, 
+             HF0=0.012438428537800724, VF0=179721.2163869108, Tol=4.000000000000001e-06, MaxIter=100, plots=1)
     
     plt.plot(info1['X'], info1['Z'] )
     #plt.plot(infoU['X'], infoU['Z'] )
@@ -1076,8 +1162,6 @@ if __name__ == "__main__":
     print('')
     
     from moorpy.helpers import printMat
-    printMat(info1['K'])
-    print('')
     printMat(info1['stiffnessA'])
     print('')
     printMat(info1['stiffnessB'])

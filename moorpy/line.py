@@ -3,14 +3,15 @@
 import numpy as np
 from matplotlib import cm
 from moorpy.Catenary import catenary
-from moorpy.helpers import LineError, CatenaryError, rotationMatrix
-   
+from moorpy.nonlinear import nonlinear                                      
+from moorpy.helpers import LineError, CatenaryError, rotationMatrix, makeTower, read_mooring_file, quiver_data_to_segments
+from os import path
 
  
 class Line():
     '''A class for any mooring line that consists of a single material'''
 
-    def __init__(self, mooringSys, num, L, lineTypeName, nSegs=100, cb=0, isRod=0, attachments = [0,0]):
+    def __init__(self, mooringSys, num, L, lineType, nSegs=100, cb=0, isRod=0, attachments = [0,0]):
         '''Initialize Line attributes
 
         Parameters
@@ -21,8 +22,8 @@ class Line():
             indentifier number
         L : float
             line unstretched length [m]
-        lineTypeName : string
-            string identifier of LineType object that this Line is to be
+        lineType : dict
+            dictionary containing the coefficients needed to describe the line (could reference an entry of System.lineTypes).
         nSegs : int, optional
             number of segments to split the line into. Used in MoorPy just for plotting. The default is 100.
         cb : float, optional
@@ -30,7 +31,7 @@ class Line():
         isRod : boolean, optional
             determines whether the line is a rod or not. The default is 0.
         attachments : TYPE, optional
-            ID numbers of any Points attached to the Line. The default is [0,0].
+            ID numbers of any Points attached to the Line. The default is [0,0]. << consider removing
 
         Returns
         -------
@@ -43,9 +44,8 @@ class Line():
         self.number = num
         self.isRod = isRod
             
-        
         self.L = L  # line unstretched length
-        self.type = lineTypeName    # string that should match a lineTypes dict entry
+        self.type = lineType    # dictionary of a System.lineTypes entry
         
         self.nNodes = int(nSegs) + 1
         self.cb = float(cb)    # friction coefficient (will automatically be set negative if line is fully suspended)
@@ -65,154 +65,228 @@ class Line():
         self.info = {}        # to hold all info provided by catenary
         
         self.qs = 1  # flag indicating quasi-static analysis (1). Set to 0 for time series data
-        
+        self.show = True      # a flag that will be set to false if we don't want to show the line (e.g. if results missing)
         #print("Created Line "+str(self.number))
+        self.color = 'k'
+        self.lw=0.5
         
         
 
     
-    def loadData(self, dirname, rootname):
+    def loadData(self, dirname, rootname, sep='.MD.'):
         '''Loads line-specific time series data from a MoorDyn output file'''
         
         self.qs = 0 # signals time series data
-    
-        # load time series data
-        if self.isRod > 0:
-            data, ch, channels, units = self.read_mooring_file(dirname+rootname+".MD.", "Rod"+str(self.number)+".out") # remember number starts on 1 rather than 0
-        else:
-            data, ch, channels, units = self.read_mooring_file(dirname+rootname+".MD.", "Line"+str(self.number)+".out") # remember number starts on 1 rather than 0
-                
-        # get time info
-        if ("Time" in ch):
-            self.Tdata = data[:,ch["Time"]]
-            self.dt = self.Tdata[1]-self.Tdata[0]
-        else:
-            raise LineError("loadData: could not find Time channel for mooring line "+str(self.number))
-    
         
-        nT = len(self.Tdata)  # number of time steps
+        if self.isRod==1:
+            strtype='Rod'
+        elif self.isRod==0:
+            strtype='Line'
+
+        filename = dirname+rootname+sep+strtype+str(self.number)+'.out'
         
-        # check for position data <<<<<<
+        if path.exists(filename):
+
+
+        # try:
         
-        self.xp = np.zeros([nT,self.nNodes])
-        self.yp = np.zeros([nT,self.nNodes])
-        self.zp = np.zeros([nT,self.nNodes])
+            # load time series data
+            data, ch, channels, units = read_mooring_file("", filename) # remember number starts on 1 rather than 0
+
+            # get time info
+            if ("Time" in ch):
+                self.Tdata = data[:,ch["Time"]]
+                self.dt = self.Tdata[1]-self.Tdata[0]
+            else:
+                raise LineError("loadData: could not find Time channel for mooring line "+str(self.number))
         
-        
-        for i in range(self.nNodes):
-            self.xp[:,i] = data[:, ch['Node'+str(i)+'px']]
-            self.yp[:,i] = data[:, ch['Node'+str(i)+'py']]
-            self.zp[:,i] = data[:, ch['Node'+str(i)+'pz']]
             
-        if self.isRod==0:
-            self.Te = np.zeros([nT,self.nNodes-1])   # read in tension data if available
-            if "Seg1Te" in ch:
+            nT = len(self.Tdata)  # number of time steps
+            
+            # check for position data <<<<<<
+            
+            self.xp = np.zeros([nT,self.nNodes])
+            self.yp = np.zeros([nT,self.nNodes])
+            self.zp = np.zeros([nT,self.nNodes])
+            
+            
+            for i in range(self.nNodes):
+                self.xp[:,i] = data[:, ch['Node'+str(i)+'px']]
+                self.yp[:,i] = data[:, ch['Node'+str(i)+'py']]
+                self.zp[:,i] = data[:, ch['Node'+str(i)+'pz']]
+            
+            '''
+            if self.isRod==0:
+                self.Te = np.zeros([nT,self.nNodes-1])   # read in tension data if available
+                if "Seg1Te" in ch:
+                    for i in range(self.nNodes-1):
+                        self.Te[:,i] = data[:, ch['Seg'+str(i+1)+'Te']]
+                        
+                self.Ku = np.zeros([nT,self.nNodes])   # read in curvature data if available
+                if "Node0Ku" in ch:
+                    for i in range(self.nNodes):
+                        self.Ku[:,i] = data[:, ch['Node'+str(i)+'Ku']]
+            else:
+                # read in Rod buoyancy force data if available
+                if "Node0Box" in ch:
+                    self.Bx = np.zeros([nT,self.nNodes])   
+                    self.By = np.zeros([nT,self.nNodes])
+                    self.Bz = np.zeros([nT,self.nNodes])
+                    for i in range(self.nNodes):
+                        self.Bx[:,i] = data[:, ch['Node'+str(i)+'Box']]
+                        self.By[:,i] = data[:, ch['Node'+str(i)+'Boy']]
+                        self.Bz[:,i] = data[:, ch['Node'+str(i)+'Boz']]
+
+            if "Node0Ux" in ch:
+                self.Ux = np.zeros([nT,self.nNodes])   # read in fluid velocity data if available
+                self.Uy = np.zeros([nT,self.nNodes])
+                self.Uz = np.zeros([nT,self.nNodes])
+                for i in range(self.nNodes):
+                    self.Ux[:,i] = data[:, ch['Node'+str(i)+'Ux']]
+                    self.Uy[:,i] = data[:, ch['Node'+str(i)+'Uy']]
+                    self.Uz[:,i] = data[:, ch['Node'+str(i)+'Uz']]
+            
+            #Read in tension data if available
+            if "Seg1Ten" in ch:
+                self.Ten = np.zeros([nT,self.nNodes-1])   
                 for i in range(self.nNodes-1):
-                    self.Te[:,i] = data[:, ch['Seg'+str(i+1)+'Te']]
-                    
-            self.Ku = np.zeros([nT,self.nNodes])   # read in curvature data if available
+                    self.Ten[:,i] = data[:, ch['Seg'+str(i+1)+'Ten']]
+            '''
+            
+            
+            
+            # --- Read in additional data if available ---
+
+            # segment tension  <<< to be changed to nodal tensions in future MD versions
+            #if "Seg1Te" in ch
+            if "Seg1Ten" in ch:
+                self.Tendata = True
+                self.Ten = np.zeros([nT,self.nNodes-1])
+                for i in range(self.nNodes-1):
+                    self.Ten[:,i] = data[:, ch['Seg'+str(i+1)+'Ten']]
+            else:
+                self.Tendata = False
+                        
+            # curvature at node
             if "Node0Ku" in ch:
+                self.Kudata = True
+                self.Ku = np.zeros([nT,self.nNodes])   
                 for i in range(self.nNodes):
                     self.Ku[:,i] = data[:, ch['Node'+str(i)+'Ku']]
-
-        self.Ux = np.zeros([nT,self.nNodes])   # read in fluid velocity data if available
-        self.Uy = np.zeros([nT,self.nNodes])
-        self.Uz = np.zeros([nT,self.nNodes])
-        if "Node0Ux" in ch:
-            for i in range(self.nNodes):
-                self.Ux[:,i] = data[:, ch['Node'+str(i)+'Ux']]
-                self.Uy[:,i] = data[:, ch['Node'+str(i)+'Uy']]
-                self.Uz[:,i] = data[:, ch['Node'+str(i)+'Uz']]
-
-
-        self.xpi= self.xp[0,:]
-        self.ypi= self.yp[0,:]
-        self.zpi= self.zp[0,:]
-        
-        # calculate the dynamic LBot !!!!!!! doesn't work for sloped bathymetry yet !!!!!!!!!!
-        for i in range(len(self.zp[0])):
-            if np.max(self.zp[:,i]) > self.zp[0,0]:
-                inode = i
-                break
             else:
-                inode = i
-        self.LBotDyn = (inode-1)*self.L/(self.nNodes-1)
-        
-        # get length (constant)
-        self.L = np.sqrt( (self.xpi[-1]-self.xpi[0])**2 + (self.ypi[-1]-self.ypi[0])**2 + (self.zpi[-1]-self.zpi[0])**2 )
-        # ^^^^^^^ why are we changing the self.L value to not the unstretched length specified in MoorDyn?
-        # moved this below the dynamic LBot calculation because I wanted to use the original self.L
-        
-        
-        # check for tension data <<<<<<<
-        
-    def read_mooring_file(self, dirName,fileName):
-
-        # load data from time series for single mooring line
-        
-        print('attempting to load '+dirName+fileName)
-        
-        f = open(dirName+fileName, 'r')
-        
-        channels = []
-        units = []
-        data = []
-        i=0
-        
-        for line in f:          # loop through lines in file
-        
-            if (i == 0):
-                for entry in line.split():      # loop over the elemets, split by whitespace
-                    channels.append(entry)      # append to the last element of the list
-                    
-            elif (i == 1):
-                for entry in line.split():      # loop over the elemets, split by whitespace
-                    units.append(entry)         # append to the last element of the list
+                self.Kudata = False
             
-            elif len(line.split()) > 0:
-                data.append([])  # add a new sublist to the data matrix
-                import re
-                r = re.compile(r"(?<=\d)\-(?=\d)")  # catch any instances where a large negative exponent has been written with the "E"
-                line2 = r.sub("E-",line)            # and add in the E
-                
-                
-                for entry in line2.split():      # loop over the elemets, split by whitespace
-                    data[-1].append(entry)      # append to the last element of the list
-                
+            # water velocity data 
+            if "Node0Ux" in ch:  
+                self.Udata = True
+                self.Ux = np.zeros([nT,self.nNodes])
+                self.Uy = np.zeros([nT,self.nNodes])
+                self.Uz = np.zeros([nT,self.nNodes])
+                for i in range(self.nNodes):
+                    self.Ux[:,i] = data[:, ch['Node'+str(i)+'Ux']]
+                    self.Uy[:,i] = data[:, ch['Node'+str(i)+'Uy']]
+                    self.Uz[:,i] = data[:, ch['Node'+str(i)+'Uz']]
             else:
-                break
+                self.Udata = False
+                
+            # buoyancy force data
+            if "Node0Box" in ch:  
+                self.Bdata = True
+                self.Bx = np.zeros([nT,self.nNodes])
+                self.By = np.zeros([nT,self.nNodes])
+                self.Bz = np.zeros([nT,self.nNodes])
+                for i in range(self.nNodes):
+                    self.Bx[:,i] = data[:, ch['Node'+str(i)+'Box']]
+                    self.By[:,i] = data[:, ch['Node'+str(i)+'Boy']]
+                    self.Bz[:,i] = data[:, ch['Node'+str(i)+'Boz']]
+            else:
+                self.Bdata = False
+                
+            # hydro drag data
+            if "Node0Dx" in ch: 
+                self.Ddata = True
+                self.Dx = np.zeros([nT,self.nNodes])   # read in fluid velocity data if available
+                self.Dy = np.zeros([nT,self.nNodes])
+                self.Dz = np.zeros([nT,self.nNodes])
+                for i in range(self.nNodes):
+                    self.Dx[:,i] = data[:, ch['Node'+str(i)+'Dx']]
+                    self.Dy[:,i] = data[:, ch['Node'+str(i)+'Dy']]
+                    self.Dz[:,i] = data[:, ch['Node'+str(i)+'Dz']]
+            else:
+                self.Ddata = False
+                
+            # weight data
+            if "Node0Wx" in ch: 
+                self.Wdata = True
+                self.Wx = np.zeros([nT,self.nNodes])   # read in fluid velocity data if available
+                self.Wy = np.zeros([nT,self.nNodes])
+                self.Wz = np.zeros([nT,self.nNodes])
+                for i in range(self.nNodes):
+                    self.Wx[:,i] = data[:, ch['Node'+str(i)+'Wx']]
+                    self.Wy[:,i] = data[:, ch['Node'+str(i)+'Wy']]
+                    self.Wz[:,i] = data[:, ch['Node'+str(i)+'Wz']]
+            else:
+                self.Wdata = False
+            
+            
+            
+            # initialize positions (is this used?)
+            self.xpi= self.xp[0,:]
+            self.ypi= self.yp[0,:]
+            self.zpi= self.zp[0,:]
+            
+            # calculate the dynamic LBot !!!!!!! doesn't work for sloped bathymetry yet !!!!!!!!!!
+            for i in range(len(self.zp[0])):
+                if np.max(self.zp[:,i]) > self.zp[0,0]:
+                    inode = i
+                    break
+                else:
+                    inode = i
+            self.LBotDyn = (inode-1)*self.L/(self.nNodes-1)
+            
+            # get length (constant)
+            #self.L = np.sqrt( (self.xpi[-1]-self.xpi[0])**2 + (self.ypi[-1]-self.ypi[0])**2 + (self.zpi[-1]-self.zpi[0])**2 )
+            # ^^^^^^^ why are we changing the self.L value to not the unstretched length specified in MoorDyn?
+            # moved this below the dynamic LBot calculation because I wanted to use the original self.L
+            # >>> this is probably needed for Rods - should look into using for Rods only <<<
+            
+            # check for tension data <<<<<<<
+            
+            self.show = True
+            
+        else:
+            self.Tdata = []
+            self.show = False
+            print(f"Error geting data for {'Rod' if self.isRod else 'Line'} {self.number}: {filename}")
+            print("dirname: {} or rootname: {} is incorrect".format(dirname, rootname))
+            
+         
+        # >>> this was another option for handling issues - maybe no longer needed <<<
+        #except Exception as e:
+        #    # don't fail if there's an issue finding data, just flag that the line shouldn't be shown/plotted
+        #    print(f"Error geting data for {'Rod' if self.isRod else 'Line'} {self.number}: ")
+        #    print(e)
+        #    self.show = False
         
-            i+=1
         
-        f.close()  # close data file
-        
-        # use a dictionary for convenient access of channel columns (eg. data[t][ch['PtfmPitch'] )
-        ch = dict(zip(channels, range(len(channels))))
-        
-        data2 = np.array(data)
-        
-        data3 = data2.astype(float)
-        
-        return data3, ch, channels, units
-    
-    
-        
+
     def getTimestep(self, Time):
         '''Get the time step to use for showing time series data'''
         
         if Time < 0: 
-            ts = np.int(-Time)  # negative value indicates passing a time step index
+            ts = np.int_(-Time)  # negative value indicates passing a time step index
         else:           # otherwise it's a time in s, so find closest time step
-            for index, item in enumerate(self.Tdata):
-                #print "index is "+str(index)+" and item is "+str(item)
-                ts = -1
-                if item > Time:
-                    ts = index
-                    break
-            if ts==-1:
-                raise LineError("getTimestep: requested time likely out of range")
+            if len(self.Tdata) > 0:
+                for index, item in enumerate(self.Tdata):                
+                    ts = -1
+                    if item > Time:
+                        ts = index
+                        break
+                if ts==-1:
+                    raise LineError(self.number, "getTimestep: requested time likely out of range")
+            else:
+                raise LineError(self.number, "getTimestep: zero time steps are stored")
 
-                
         return ts
         
         
@@ -222,49 +296,90 @@ class Line():
         
         if n==0: n = self.nNodes
     
+        # special temporary case to draw a rod for visualization. This assumes the rod end points have already been set somehow
+        if self.qs==1 and self.isRod > 0:
+        
+            # make points for appropriately sized cylinder
+            d = self.type['d_vol']
+            Xs, Ys, Zs = makeTower(self.L, np.array([d/2, d/2]))   # add in makeTower method once you start using Rods
+            
+            # get unit vector and orientation matrix
+            k = (self.rB-self.rA)/self.L
+            Rmat = np.array(rotationMatrix(0, np.arctan2(np.hypot(k[0],k[1]), k[2]), np.arctan2(k[1],k[0])))
+        
+            # translate and rotate into proper position for Rod
+            coords = np.vstack([Xs, Ys, Zs])
+            newcoords = np.matmul(Rmat,coords)
+            Xs = newcoords[0,:] + self.rA[0]
+            Ys = newcoords[1,:] + self.rA[1]
+            Zs = newcoords[2,:] + self.rA[2]
+            
+            return Xs, Ys, Zs, None
+        
+    
         # if a quasi-static analysis, just call the catenary function to return the line coordinates
-        if self.qs==1:
+        elif self.qs==1:
         
             depth = self.sys.depth
         
             dr =  self.rB - self.rA                 
             LH = np.hypot(dr[0], dr[1])     # horizontal spacing of line ends
             LV = dr[2]                      # vertical offset from end A to end B
+            if LH >0:
+                cosBeta = dr[0]/LH                 # cos of line heading
+                sinBeta = dr[1]/LH                 # sin of line heading
+                self.th = np.arctan2(dr[1],dr[0])  # line heading
+            else:   # special case of vertical line: line heading is undefined - use zero as default
+                cosBeta = 0.0
+                sinBeta = 0.0
+                self.th = 0.0
             
             if np.min([self.rA[2],self.rB[2]]) > -depth:
                 self.cb = -depth - np.min([self.rA[2],self.rB[2]])   # if this line's lower end is off the seabed, set cb negative and to the distance off the seabed
             elif self.cb < 0:   # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
                 self.cb = 0.0     # set to zero so that the line includes seabed interaction.
         
-            try:
-                (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.sys.lineTypes[self.type].EA, 
-                                                  self.sys.lineTypes[self.type].w, self.cb, HF0=self.HF, VF0=self.VF, nNodes=n, plots=1) 
-            except CatenaryError as error:
-                raise LineError(self.number, error.message)
+            # ----- check for linear vs nonlinear line elasticity -----
+        
+            #If EA is found in the line properties we will run the original catenary function 
+            if 'EA' in self.type:
             
-            Xs = self.rA[0] + info["X"]*dr[0]/LH
-            Ys = self.rA[1] + info["X"]*dr[1]/LH
+                try:
+                    (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], 
+                                                      self.cb, HF0=self.HF, VF0=self.VF, nNodes=n, plots=1) 
+                except CatenaryError as error:
+                    raise LineError(self.number, error.message)
+
+                 #(fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, HF0=self.HF, VF0=self.VF, nNodes=n, plots=1)   # call line model
+
+            #If EA isnt found then we will use the ten-str relationship defined in the input file 
+            else:
+                 (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],self.type['w']) 
+            
+            Xs = self.rA[0] + info["X"]*cosBeta 
+            Ys = self.rA[1] + info["X"]*sinBeta 
             Zs = self.rA[2] + info["Z"]
             Ts = info["Te"]
             return Xs, Ys, Zs, Ts
             
         # otherwise, count on read-in time-series data
         else:
+
             # figure out what time step to use
             ts = self.getTimestep(Time)
             
             # drawing rods
             if self.isRod > 0:
             
-                k1 = np.array([ self.xp[ts,-1]-self.xp[ts,0], self.yp[ts,-1]-self.yp[ts,0], self.zp[ts,-1]-self.zp[ts,0] ]) / self.length # unit vector
+                k1 = np.array([ self.xp[ts,-1]-self.xp[ts,0], self.yp[ts,-1]-self.yp[ts,0], self.zp[ts,-1]-self.zp[ts,0] ]) / self.L # unit vector
                 
                 k = np.array(k1) # make copy
             
                 Rmat = np.array(rotationMatrix(0, np.arctan2(np.hypot(k[0],k[1]), k[2]), np.arctan2(k[1],k[0])))  # <<< should fix this up at some point, MattLib func may be wrong
                 
                 # make points for appropriately sized cylinder
-                d = self.sys.lineTypes[self.type].d
-                Xs, Ys, Zs = makeTower(self.length, np.array([d, d]))   # add in makeTower method once you start using Rods
+                d = self.type['d_vol']
+                Xs, Ys, Zs = makeTower(self.L, np.array([d/2, d/2]))   # add in makeTower method once you start using Rods
                 
                 # translate and rotate into proper position for Rod
                 coords = np.vstack([Xs, Ys, Zs])
@@ -278,7 +393,13 @@ class Line():
             # drawing lines
             else:
                 
-                return self.xp[ts,:], self.yp[ts,:], self.zp[ts,:], self.Tdata[ts:]
+                # handle whether or not there is tension data
+                try:  # use average to go from segment tension to node tensions <<< can skip this once MD is updated to output node tensions
+                    Te = 0.5*(np.append(self.Te[ts,0], self.Te[ts,:]) +np.append(self.Te[ts,:], self.Te[ts,-1]))
+                except: # otherwise return zeros to avoid an error (might want a warning in some cases?)
+                    Te = np.zeros(self.nNodes)
+                    
+                return self.xp[ts,:], self.yp[ts,:], self.zp[ts,:], Te
     
     
     def getCoordinate(self, s, n=100):
@@ -299,7 +420,7 @@ class Line():
         
     
     
-    def drawLine2d(self, Time, ax, color="k", Xuvec=[1,0,0], Yuvec=[0,0,1], colortension=False, cmap='rainbow'):
+    def drawLine2d(self, Time, ax, color="k", Xuvec=[1,0,0], Yuvec=[0,0,1], Xoff=0, Yoff=0, colortension=False, cmap='rainbow', plotnodes=[], plotnodesline=[], label="", alpha=1.0):
         '''Draw the line on 2D plot (ax must be 2D)
 
         Parameters
@@ -342,19 +463,19 @@ class Line():
                 linebit.append(ax.plot(Xs2d[[2*i+1,2*i+3]],Ys2d[[2*i+1,2*i+3]], lw=0.5, color=color))  # end B edges
         
         # drawing lines...
-        else:
-            
+        else:            
+            # >>> can probably streamline the next bit of code a fair bit <<<
             if self.qs==1:
                 Xs, Ys, Zs, tensions = self.getLineCoords(Time)
             elif self.qs==0:
                 Xs, Ys, Zs, Ts = self.getLineCoords(Time)
                 self.rA = np.array([Xs[0], Ys[0], Zs[0]])
                 self.rB = np.array([Xs[-1], Ys[-1], Zs[-1]])
-                tensions = self.getLineTens()
+                tensions = self.getLineTens()   
             
             # apply any 3D to 2D transformation here to provide desired viewing angle
-            Xs2d = Xs*Xuvec[0] + Ys*Xuvec[1] + Zs*Xuvec[2] 
-            Ys2d = Xs*Yuvec[0] + Ys*Yuvec[1] + Zs*Yuvec[2] 
+            Xs2d = Xs*Xuvec[0] + Ys*Xuvec[1] + Zs*Xuvec[2] + Xoff
+            Ys2d = Xs*Yuvec[0] + Ys*Yuvec[1] + Zs*Yuvec[2] + Yoff
             
             if colortension:    # if the mooring lines want to be plotted with colors based on node tensions
                 maxt = np.max(tensions); mint = np.min(tensions)
@@ -364,7 +485,12 @@ class Line():
                     rgba = cmap_obj(color_ratio)    # return the rbga values of the colormap of where the node tension is
                     linebit.append(ax.plot(Xs2d[i:i+2], Ys2d[i:i+2], color=rgba))
             else:
-                linebit.append(ax.plot(Xs2d, Ys2d, lw=1, color=color)) # previously had lw=1 (linewidth)
+                linebit.append(ax.plot(Xs2d, Ys2d, lw=1, color=color, label=label, alpha=alpha)) # previously had lw=1 (linewidth)
+            
+            if len(plotnodes) > 0:
+                for i,node in enumerate(plotnodes):
+                    if self.number==plotnodesline[i]:
+                        linebit.append(ax.plot(Xs2d[node], Ys2d[node], 'o', color=color, markersize=5))   
             
         self.linebit = linebit # can we store this internally?
         
@@ -400,6 +526,9 @@ class Line():
             list of axes and points on which the line can be plotted
         '''
         
+        if not self.show:  # exit if this line isn't set to be shown
+            return 0
+        
         if color == 'self':
             color = self.color  # attempt to allow custom colors
             lw = self.lw
@@ -410,6 +539,9 @@ class Line():
     
         if self.isRod > 0:
             
+            if color==None:
+                color = [0.3, 0.3, 0.3]  # if no color provided, default to dark grey rather than rainbow rods
+                
             Xs, Ys, Zs, Ts = self.getLineCoords(Time)
             
             for i in range(int(len(Xs)/2-1)):
@@ -418,12 +550,12 @@ class Line():
                 linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color=color))  # end B edges
             
             # scatter points for line ends 
-            if endpoints == True:
-                linebit.append(ax.scatter([Xs[0], Xs[-1]], [Ys[0], Ys[-1]], [Zs[0], Zs[-1]], color = color))
+            #if endpoints == True:
+            #    linebit.append(ax.scatter([Xs[0], Xs[-1]], [Ys[0], Ys[-1]], [Zs[0], Zs[-1]], color = color))
         
         # drawing lines...
         else:
-            
+            # >>> can probably streamline the next bit of code a fair bit <<<
             if self.qs==1:  # returns the node positions and tensions of the line, doesn't matter what time
                 Xs, Ys, Zs, tensions = self.getLineCoords(Time)
             elif self.qs==0: # returns the node positions and time data at the given time
@@ -448,15 +580,25 @@ class Line():
             if endpoints == True:
                 linebit.append(ax.scatter([Xs[0], Xs[-1]], [Ys[0], Ys[-1]], [Zs[0], Zs[-1]], color = color))
                 
-            # drawing water velocity vectors (not for Rods for now) <<< should handle this better (like in getLineCoords) <<<
-            if self.qs == 0:
+                    
+            # draw additional data if available (should make this for rods too eventually - drawn along their axis nodes)
+            if self.qs == 0:              
                 ts = self.getTimestep(Time)
-                Ux = self.Ux[ts,:]
-                Uy = self.Uy[ts,:]
-                Uz = self.Uz[ts,:]      
-                self.Ubits = ax.quiver(Xs, Ys, Zs, Ux, Uy, Uz)  # make quiver plot and save handle to line object
                 
-            
+                if self.Tendata:
+                    pass
+                if self.Kudata:
+                    pass        
+                if self.Udata:
+                    self.Ubits = ax.quiver(Xs, Ys, Zs, self.Ux[ts,:], self.Uy[ts,:], self.Uz[ts,:], color="blue")  # make quiver plot and save handle to line object
+                if self.Bdata:
+                    self.Bbits = ax.quiver(Xs, Ys, Zs, self.Bx[ts,:], self.By[ts,:], self.Bz[ts,:], color="red")
+                if self.Ddata:
+                    self.Dbits = ax.quiver(Xs, Ys, Zs, self.Dx[ts,:], self.Dy[ts,:], self.Dz[ts,:], color="green")
+                if self.Wdata:
+                    self.Wbits = ax.quiver(Xs, Ys, Zs, self.Wx[ts,:], self.Wy[ts,:], self.Wz[ts,:], color="orange")
+                
+                
         self.linebit = linebit # can we store this internally?
         
         self.X = np.array([Xs, Ys, Zs])
@@ -468,7 +610,7 @@ class Line():
 
         
         
-    def redrawLine(self, Time, colortension=False, cmap_tension='rainbow'):  #, linebit):
+    def redrawLine(self, Time, colortension=False, cmap_tension='rainbow', drawU=True):  #, linebit):
         '''Update 3D line drawing based on instantaneous position'''
         
         linebit = self.linebit
@@ -511,14 +653,25 @@ class Line():
                     
             
         
-            # drawing water velocity vectors (not for Rods for now)
+            # draw additional data if available (should make this for rods too eventually - drawn along their axis nodes)
             if self.qs == 0:
-                ts = self.getTimestep(Time)
-                Ux = self.Ux[ts,:]
-                Uy = self.Uy[ts,:]
-                Uz = self.Uz[ts,:]                  
-                #segments = quiver_data_to_segments(Xs, Ys, Zs, Ux, Uy, Uz, scale=2)
-                #self.Ubits.set_segments(segments)
+                ts = self.getTimestep(Time)                    
+                s = 0.0002
+                
+                if self.Tendata:
+                    pass
+                if self.Kudata:
+                    pass        
+                if self.Udata:
+                    self.Ubits.set_segments(quiver_data_to_segments(Xs, Ys, Zs, self.Ux[ts,:], self.Uy[ts,:], self.Uz[ts,:], scale=10.))
+                if self.Bdata:
+                    self.Bbits.set_segments(quiver_data_to_segments(Xs, Ys, Zs, self.Bx[ts,:], self.By[ts,:], self.Bz[ts,:], scale=s))
+                if self.Ddata:
+                    self.Dbits.set_segments(quiver_data_to_segments(Xs, Ys, Zs, self.Dx[ts,:], self.Dy[ts,:], self.Dz[ts,:], scale=s))
+                if self.Wdata:
+                    self.Wbits.set_segments(quiver_data_to_segments(Xs, Ys, Zs, self.Wx[ts,:], self.Wy[ts,:], self.Wz[ts,:], scale=s))
+                
+                
         
         return linebit
         
@@ -581,9 +734,17 @@ class Line():
 
         depth = self.sys.depth
         
-        dr =  self.rB - self.rA                 
+        dr =  self.rB - self.rA
         LH = np.hypot(dr[0], dr[1])     # horizontal spacing of line ends
         LV = dr[2]                # vertical offset from end A to end B
+        if LH >0:
+            cosBeta = dr[0]/LH                 # cos of line heading
+            sinBeta = dr[1]/LH                 # sin of line heading
+            self.th = np.arctan2(dr[1],dr[0])  # line heading
+        else:   # special case of vertical line: line heading is undefined - use zero as default
+            cosBeta = 0.0
+            sinBeta = 0.0
+            self.th = 0.0
 
         if self.rA[2] < -depth:
             raise LineError("Line {} end A is lower than the seabed.".format(self.number))
@@ -601,13 +762,19 @@ class Line():
         if reset==True:   # Indicates not to use previous fairlead force values to start catenary 
             self.HF = 0   # iteration with, and insteady use the default values.
             
-        try:
-            (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.sys.lineTypes[self.type].EA, self.sys.lineTypes[self.type].w, 
-                                                  CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=profiles)   # call line model
-        except CatenaryError as error:
-            raise LineError(self.number, error.message)
+        # ----- get line results for linear or nonlinear elasticity -----
+        
+        #If EA is found in the line properties we will run the original catenary function 
+        if 'EA' in self.type:
+            try:
+                (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=profiles)   # call line model
+                                                                                                                                    
+            except CatenaryError as error:
+                raise LineError(self.number, error.message)       
+       #If EA isnt found then we will use the ten-str relationship defined in the input file 
+        else:
+             (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],self.type['w']) 
             
-        self.th = np.arctan2(dr[1],dr[0])  # probably a more efficient way to handle this <<<
         self.HF = info["HF"]
         self.VF = info["VF"]
         self.KA2 = info["stiffnessA"]
@@ -615,11 +782,11 @@ class Line():
         self.LBot = info["LBot"]
         self.info = info
             
-        self.fA[0] = fAH*dr[0]/LH
-        self.fA[1] = fAH*dr[1]/LH
+        self.fA[0] = fAH*cosBeta
+        self.fA[1] = fAH*sinBeta
         self.fA[2] = fAV
-        self.fB[0] = fBH*dr[0]/LH
-        self.fB[1] = fBH*dr[1]/LH
+        self.fB[0] = fBH*cosBeta
+        self.fB[1] = fBH*sinBeta
         self.fB[2] = fBV
         self.TA = np.sqrt(fAH*fAH + fAV*fAV) # end tensions
         self.TB = np.sqrt(fBH*fBH + fBV*fBV)
@@ -634,15 +801,21 @@ class Line():
         R = rotationMatrix(0,0,self.th)
         
         # initialize the line's analytic stiffness matrix in the "in-line" plane then rotate the matrix to be about the global frame [K'] = [R][K][R]^T
-        def from2Dto3Drotated(K2D, Kt):
+        def from2Dto3Drotated(K2D, F, L):
+            if L > 0:
+                Kt = F/L         # transverse stiffness term
+            else:
+                Kt = 0.0
+            
             K2 = np.array([[K2D[0,0], 0 , K2D[0,1]],
                            [  0     , Kt,   0     ],
                            [K2D[1,0], 0 , K2D[1,1]]])
             return np.matmul(np.matmul(R, K2), R.T)
+            
         
-        self.KA  = from2Dto3Drotated(info['stiffnessA'], -fBH/LH)   # stiffness matrix describing reaction force on end A due to motion of end A
-        self.KB  = from2Dto3Drotated(info['stiffnessB'], -fBH/LH)   # stiffness matrix describing reaction force on end B due to motion of end B
-        self.KAB = from2Dto3Drotated(info['stiffnessAB'], fBH/LH)  # stiffness matrix describing reaction force on end B due to motion of end A
+        self.KA  = from2Dto3Drotated(info['stiffnessA'], -fBH, LH)   # stiffness matrix describing reaction force on end A due to motion of end A
+        self.KB  = from2Dto3Drotated(info['stiffnessB'], -fBH, LH)   # stiffness matrix describing reaction force on end B due to motion of end B
+        self.KAB = from2Dto3Drotated(info['stiffnessAB'], fBH, LH)  # stiffness matrix describing reaction force on end B due to motion of end A
                 
         #self.K6 = np.block([[ from2Dto3Drotated(self.KA),  from2Dto3Drotated(self.KAB.T)],
         #                    [ from2Dto3Drotated(self.KAB), from2Dto3Drotated(self.KB)  ]])
@@ -751,11 +924,20 @@ class Line():
         elif self.cb < 0:   # if a line end is at the seabed, but the cb is still set negative to indicate off the seabed
             self.cb = 0.0     # set to zero so that the line includes seabed interaction.
     
-        try:
-            (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.sys.lineTypes[self.type].EA, 
-                                              self.sys.lineTypes[self.type].w, self.cb, HF0=self.HF, VF0=self.VF, nNodes=self.nNodes, plots=1) 
-        except CatenaryError as error:
-            raise LineError(self.number, error.message)
+        tol = 0.0001
+    
+        #If EA is found in the line properties we will run the original catenary function 
+        if 'EA' in self.type:
+            try:
+                tol = 0.000001 #TODO figure out why tol and profiles are not defined. These values are hardcoded from defaults in other function calls
+                profiles = 1
+                (fAH, fAV, fBH, fBV, info) = catenary(LH, LV, self.L, self.type['EA'], self.type['w'], CB=self.cb, Tol=tol, HF0=self.HF, VF0=self.VF, plots=profiles)   # call line model
+                                                                                                                  
+            except CatenaryError as error:
+                raise LineError(self.number, error.message) 
+        #If EA isnt found then we will use the ten-str relationship defined in the input file 
+        else:
+             (fAH, fAV, fBH, fBV, info) = nonlinear(LH, LV, self.L, self.type['Str'], self.type['Ten'],self.type['w']) 
 
         Ts = info["Te"]
         return Ts
@@ -819,6 +1001,9 @@ class Line():
         Zs = self.rA[2] + z
         
         return np.vstack([ Xs, Ys, Zs])
+    
+    def attachLine(self, lineID, endB):
+        pass
 
     
     
