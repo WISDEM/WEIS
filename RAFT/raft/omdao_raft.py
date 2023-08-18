@@ -357,7 +357,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # set up design
         design = {}
         design['type'] = ['input dictionary for RAFT']
-        design['name'] = ['spiderfloat']
+        design['name'] = [f"weis_{analysis_options['general']['fname_output']}"]
         design['comments'] = ['none']
         
         design['settings'] = {}
