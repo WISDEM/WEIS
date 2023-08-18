@@ -1410,6 +1410,7 @@ properties:
                                 axial_coeffs:
                                     description: Axial hydrodynamic coefficients used in OpenFAST, unused in WISDEM
                                     type: object
+                                    default: {}
                                     optional:
                                         - Ca
                                         - Cd
