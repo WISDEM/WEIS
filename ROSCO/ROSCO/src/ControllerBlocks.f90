@@ -49,12 +49,15 @@ CONTAINS
         
         ! ----- Torque controller reference errors -----
         ! Define VS reference generator speed [rad/s]
-        IF ((CntrPar%VS_ControlMode == 2) .OR. (CntrPar%VS_ControlMode == 3)) THEN
+        IF (CntrPar%VS_ControlMode == 2) THEN
             VS_RefSpd = (CntrPar%VS_TSRopt * LocalVar%We_Vw_F / CntrPar%WE_BladeRadius) * CntrPar%WE_GearboxRatio
-            VS_RefSpd = saturate(VS_RefSpd,CntrPar%VS_MinOMSpd, CntrPar%VS_RefSpd)
+        ELSEIF (CntrPar%VS_ControlMode == 3) THEN
+            VS_RefSpd = (LocalVar%VS_GenPwr/CntrPar%VS_Rgn2K)**(1./3.) ! Genspeed reference that doesnt depend on wind speed estimate (https://doi.org/10.2172/1259805)
         ELSE
             VS_RefSpd = CntrPar%VS_RefSpd
         ENDIF 
+
+        VS_RefSpd = saturate(VS_RefSpd,CntrPar%VS_MinOMSpd, CntrPar%VS_RefSpd)
         
         ! Implement setpoint smoothing
         IF (LocalVar%SS_DelOmegaF > 0) THEN
@@ -107,7 +110,7 @@ CONTAINS
         IF (LocalVar%iStatus == 0) THEN ! .TRUE. if we're on the first call to the DLL
 
             IF (LocalVar%PitCom(1) >= LocalVar%VS_Rgn3Pitch) THEN ! We are in region 3
-                IF (CntrPar%VS_ControlMode == 1) THEN ! Constant power tracking
+                IF (CntrPar%VS_ConstPower == 1) THEN ! Constant power tracking
                     LocalVar%VS_State = 5
                     LocalVar%PC_State = 1
                 ELSE ! Constant torque tracking
@@ -131,7 +134,7 @@ CONTAINS
             ! --- Torque control state machine ---
             IF (LocalVar%PC_PitComT >= LocalVar%VS_Rgn3Pitch) THEN       
 
-                IF (CntrPar%VS_ControlMode == 1) THEN                   ! Region 3
+                IF (CntrPar%VS_ConstPower == 1) THEN                   ! Region 3
                     LocalVar%VS_State = 5 ! Constant power tracking
                 ELSE 
                     LocalVar%VS_State = 4 ! Constant torque tracking
@@ -248,8 +251,8 @@ CONTAINS
                 ! Initialize recurring values
                 LocalVar%WE%om_r = WE_Inp_Speed
                 LocalVar%WE%v_t = 0.0
-                LocalVar%WE%v_m = LocalVar%HorWindV
-                LocalVar%WE%v_h = LocalVar%HorWindV
+                LocalVar%WE%v_m = max(LocalVar%HorWindV, 3.0_DbKi)   ! avoid divide by 0 below if HorWindV is 0, which some AMRWind setups create
+                LocalVar%WE%v_h = max(LocalVar%HorWindV, 3.0_DbKi)   ! avoid divide by 0 below if HorWindV is 0, which some AMRWind setups create
                 lambda = WE_Inp_Speed * CntrPar%WE_BladeRadius/LocalVar%WE%v_h
                 LocalVar%WE%xh = RESHAPE((/LocalVar%WE%om_r, LocalVar%WE%v_t, LocalVar%WE%v_m/),(/3,1/))
                 LocalVar%WE%P = RESHAPE((/0.01, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0/),(/3,3/))
