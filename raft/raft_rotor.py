@@ -630,6 +630,7 @@ class Rotor:
             heading = getFromDict(case, 'wind_heading', shape=0, default=0.0)
             
         turbine_heading = getFromDict(case, 'turbine_heading', shape=0, default=0.0)  # [deg]
+        #turbine_heading = self.turbine_heading  #<<<<  USE THIS IN FUTURE <<<<<<
         yaw_misalign = heading - turbine_heading  # inflow misalignment heading relative to turbine heading [deg]
 
         # call CCBlade
@@ -649,6 +650,8 @@ class Rotor:
         # calculate steady aero forces and moments
         F_aero0 = np.array([loads["T" ][0], loads["Y"  ][0], loads["Z"  ][0],
                             loads["My" ][0], loads["Q" ][0], loads["Mz" ][0] ])
+        
+        #>>> need a rotor heading rotation somewhere applied to the forces <<<<
         
         # calculate rotor-averaged turbulent wind spectrum
         _,_,_,S_rot = self.IECKaimal(case, current=current)   # PSD [(m/s)^2/rad]

@@ -277,7 +277,7 @@ class FOWT():
         # solve the mooring system equilibrium of this FOWT's own MoorPy system
         if self.ms:
             self.ms.solveEquilibrium()
-            self.C_moor = self.ms.getCoupledStiffnessA()   # remember this might not be perfect because of its double inverse approach
+            self.C_moor = self.ms.getCoupledStiffnessA()
             self.F_moor0 = self.ms.bodyList[0].getForces(lines_only=True)
         
 
@@ -1295,7 +1295,7 @@ class FOWT():
 
                     D_hydro += translateForce3to6DOF(D, mem.r[il,:] - self.r6[:3])  # sum as forces and moments about PRP
                     
-                    self.D_hydro = D_hydro
+        self.D_hydro = D_hydro  # save hydro drag forces/moments to FOWT for later access
 
         return D_hydro
 
@@ -1660,3 +1660,17 @@ class FOWT():
 
         # in future should consider ability to animate mode shapes and also to animate response at each frequency
         # including hydro excitation vectors stored in each member
+
+
+    def plot2d(self, ax, color='k', station_plot=[], Xuvec=[1,0,0], Yuvec=[0,0,1]):
+        '''plots the FOWT in 2d - only the platform and moorings so far...'''
+
+        R = rotationMatrix(self.r6[3], self.r6[4], self.r6[5])  # note: eventually Rotor could handle orientation internally <<<
+
+        if self.ms:
+            self.ms.plot2d(ax=ax, color=color, Xuvec=Xuvec, Yuvec=Yuvec)
+
+        # loop through each member and plot it
+        for mem in self.memberList:
+            mem.setPosition()
+            mem.plot(ax, r_ptfm=self.r6[:3], R_ptfm=R, color=color, plot2d=True, Xuvec=Xuvec, Yuvec=Yuvec)

@@ -858,8 +858,18 @@ class Member:
         return Fvec, Cmat, V_UW, r_center, AWP, IWP, xWP, yWP
 
 
-    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[], color='k', nodes=0, station_plot=[]):
-        '''Draws the member on the passed axes, and optional platform offset and rotation matrix'''
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[], color='k', nodes=0, 
+             station_plot=[], plot2d=False, Xuvec=[1,0,0], Yuvec=[0,0,1]):
+        '''Draws the member on the passed axes, and optional platform offset and rotation matrix
+        
+        Parameters
+        ----------
+        
+        plot2d: bool
+            If true, produces a 2d plot on the axes defined by Xuvec and Yuvec. 
+            Otherwise produces a 3d plot (default).
+        
+        '''
 
         # --- get coordinates of member edges in member reference frame -------------------
 
@@ -918,21 +928,31 @@ class Member:
         
         # plot on the provided axes
         linebit = []  # make empty list to hold plotted lines, however many there are
-        for i in range(n):  #range(int(len(Xs)/2-1)):
-            #linebit.append(ax.plot(Xs[2*i:2*i+2],Ys[2*i:2*i+2],Zs[2*i:2*i+2]            , color='k'))  # side edges
-            #linebit.append(ax.plot(Xs[[2*i,2*i+2]],Ys[[2*i,2*i+2]],Zs[[2*i,2*i+2]]      , color='k'))  # end A edges
-            #linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color='k'))  # end B edges
-
-            linebit.append(ax.plot(Xs[nm*i:nm*i+nm],Ys[nm*i:nm*i+nm],Zs[nm*i:nm*i+nm]            , color=color, lw=0.5, zorder=2))  # side edges
-
-        for j in range(nm):
-            linebit.append(ax.plot(Xs[j::nm], Ys[j::nm], Zs[j::nm]            , color=color, lw=0.5, zorder=2))  # station rings
-
-
-        # plot nodes if asked
-        if nodes > 0:
-            ax.scatter(self.r[:,0], self.r[:,1], self.r[:,2])
-
+        
+        if plot2d:  # new 2d plotting option
+                
+            # apply any 3D to 2D transformation here to provide desired viewing angle
+            Xs2d = Xs*Xuvec[0] + Ys*Xuvec[1] + Zs*Xuvec[2] 
+            Ys2d = Xs*Yuvec[0] + Ys*Yuvec[1] + Zs*Yuvec[2] 
+            
+            for i in range(n): 
+                linebit.append(ax.plot(Xs2d[nm*i:nm*i+nm],Ys2d[nm*i:nm*i+nm], color=color, lw=0.5, zorder=2))  # side edges
+            
+            for j in range(nm):
+                linebit.append(ax.plot(Xs2d[j::nm], Ys2d[j::nm], color=color, lw=0.5, zorder=2))  # station rings
+        
+        else:  # normal 3d case
+            
+            for i in range(n): 
+                linebit.append(ax.plot(Xs[nm*i:nm*i+nm],Ys[nm*i:nm*i+nm],Zs[nm*i:nm*i+nm], color=color, lw=0.5, zorder=2))  # side edges
+            
+            for j in range(nm):
+                linebit.append(ax.plot(Xs[j::nm], Ys[j::nm], Zs[j::nm], color=color, lw=0.5, zorder=2))  # station rings
+            
+            # plot nodes if asked
+            if nodes > 0:
+                ax.scatter(self.r[:,0], self.r[:,1], self.r[:,2])
+        
         return linebit
 
 
