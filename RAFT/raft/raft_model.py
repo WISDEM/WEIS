@@ -205,17 +205,32 @@ class Model():
         
         # >>> this whole method needs to be updated or possibly removed <<<
         
+        if len(self.fowtList) > 0:
+            raise Exception('analyzeUnloaded is an old method that only works for a single FOWT.')
+        
         # need to zero out external loads >>>
         self.fowtList[0].D_hydr0 = np.zeros(6)
         self.fowtList[0].F_aero0 = np.zeros([6,self.fowtList[0].nrotors])
         
-            
+        
         # get mooring system characteristics about undisplaced platform position (useful for baseline and verification)
-        try: 
-            self.C_moor0 = self.ms.getCoupledStiffness(lines_only=True)                             # this method accounts for eqiuilibrium of free objects in the system
-            self.F_moor0 = self.ms.getForces(DOFtype="coupled", lines_only=True)
-        except Exception as e:
-            raise RuntimeError('An error occured when getting linearized mooring properties in undisplaced state: '+e.message)
+        self.C_moor0 = np.zeros([6,6])
+        self.F_moor0 = np.zeros(6)
+        
+        if self.ms:
+            try: 
+                self.C_moor0 += self.ms.getCoupledStiffness(lines_only=True)        
+                self.F_moor0 += self.ms.getForces(DOFtype="coupled", lines_only=True)
+            except Exception as e:
+                raise RuntimeError('An error occured when getting linearized mooring properties in undisplaced state: '+e.message)
+        
+        if self.fowtList[0].ms:
+            try: 
+                self.C_moor0 += self.fowtList[0].ms.getCoupledStiffness(lines_only=True)        
+                self.F_moor0 += self.fowtList[0].ms.getForces(DOFtype="coupled", lines_only=True)
+            except Exception as e:
+                raise RuntimeError('An error occured when getting linearized mooring properties in undisplaced state: '+e.message)
+        
         
         # calculate the system's constant properties
         #self.calcSystemConstantProps()
@@ -240,7 +255,8 @@ class Model():
         self.results['properties'] = {}   # signal this data is available by adding a section to the results dictionary
             
         # calculate platform offsets and mooring system equilibrium state
-        self.calcMooringAndOffsets()
+        #self.calcMooringAndOffsets()
+        self.solveStatics(None)  # passing none should imply no load case (no WWC)
         self.results['properties']['offset_unloaded'] = self.fowtList[0].Xi0
         
         # TODO: add printing of summary info here - mass, stiffnesses, etc
@@ -621,22 +637,17 @@ class Model():
         
         X_initial = np.zeros(self.nDOF)  # position vector of all FOWTs
         
-        caseorig = copy.deepcopy(case) # save original case data in new dict
-        if type(case['wind_speed']) == list :
-            print('List of wind speeds found!')
-            
-            if len(case['wind_speed']) != len(self.fowtList):
-                raise IndexError("List of wind speeds must be the same length as the list of wind turbines")
+        if case:
+            caseorig = copy.deepcopy(case) # save original case data in new dict
+            if type(case['wind_speed']) == list :
+                print('List of wind speeds found!')
+                
+                if len(case['wind_speed']) != len(self.fowtList):
+                    raise IndexError("List of wind speeds must be the same length as the list of wind turbines")
             
         # set initial values before solving        
         for i, fowt in enumerate(self.fowtList):
             
-            # If list of wind speeds, set each turbine case with corresponding wind speed
-            if type(caseorig['wind_speed']) == list :
-                case['wind_speed'] = caseorig['wind_speed'][i]
-                print('Fowt ' + str(i))
-                print(case)
-                
             if display > 0:  print(f"FOWT {i+1:}")
         
             #X_initial[6*i:6*i+6] = fowt.r6 - np.array([fowt.xref, fowt.yref,0,0,0,0])
@@ -651,7 +662,14 @@ class Model():
                 
                 if display > 0:  print(" F_undisplaced "+"  ".join(["{:+8.2e}"]*6).format(*F_undisplaced[6*i:6*i+6]))
 
-            if forcing_mod == 0:
+            if forcing_mod == 0 and case:
+                
+                # If list of wind speeds, set each turbine case with corresponding wind speed
+                if type(caseorig['wind_speed']) == list :
+                    case['wind_speed'] = caseorig['wind_speed'][i]
+                    print('Fowt ' + str(i))
+                    print(case)
+                
                 fowt.calcTurbineConstants(case, ptfm_pitch=0)  # for turbine forces >>> still need to update to use current fowt pose <<<
                 fowt.calcHydroConstants(case, memberList=fowt.memberList) # prep for drag force (and eventually mean drift)
                 #for rotor in fowt.rotorList:    # for blade members (bladeMemberList will be empty if rotors are not underwater) ??
@@ -660,6 +678,26 @@ class Model():
                 F_env_constant[6*i:6*i+6] = np.sum(fowt.F_aero0, axis=1) + fowt.calcCurrentLoads(case)
                 
                 if display > 0:  print(" F_env_constant"+"  ".join(["{:+8.2e}"]*6).format(*F_env_constant[6*i:6*i+6]))
+        
+        # preliminary approach to provide uniform currents on the mooring system(s)
+        currentMod = 0
+        currentU = np.zeros(3)
+        if case:
+            cur_speed = getFromDict(case, 'current_speed', shape=0, default=0.0)
+            cur_heading = getFromDict(case, 'current_heading', shape=0, default=0)
+            if cur_speed > 0:
+                currentMod = 1
+                currentU = np.array([cur_speed*np.cos(np.radians(cur_heading)),
+                                     cur_speed*np.sin(np.radians(cur_heading)), 0])
+        
+        if self.ms:
+            self.ms.currentMod = currentMod
+            self.ms.current = currentU
+        
+        for fowt in self.fowtList:
+            if fowt.ms:
+                fowt.ms.currentMod = currentMod
+                fowt.ms.current = currentU
         
         
         # ----- calculate platform offsets and mooring system equilibrium state -----
@@ -682,7 +720,7 @@ class Model():
                 fowt.setPosition(r6)                  # this updates the fowt's position and its own MoorPy system's state (including new F and K)
                 if self.ms:
                     self.ms.bodyList[i].setPosition(r6)   # FOWT body in array level MoorPy system
-
+            
             # update array-level mooring system's internal equilibrium (free DOFs only)
             if self.ms:
                 self.ms.solveEquilibrium()
@@ -693,18 +731,8 @@ class Model():
             
             for i, fowt in enumerate(self.fowtList):
                 
-                # If list of wind speeds, set each turbine case with corresponding wind speed
-                if type(caseorig['wind_speed']) == list :
-                    case['wind_speed'] = caseorig['wind_speed'][i]
-                
                 Xi0 = X[6*i:6*i+6] - np.array([fowt.x_ref, fowt.y_ref,0,0,0,0])  # fowt mean offset from its reference position
-            
-                # mooring forces
-                Fnet[6*i:6*i+6] += fowt.F_moor0 # fowt.ms.bodyList[0].getForces(lines_only=True)  # individual mooring forces
-                if self.ms:
-                    Fnet[6*i:6*i+6] += self.ms.bodyList[i].getForces(lines_only=True)     # array-level mooring forces
-                
-            
+
                 # update FOWT hydrostatic loads
                 if statics_mod == 0 :  # constant linear hydrostatics option
                     Fnet[6*i:6*i+6] += F_undisplaced[6*i:6*i+6]  # add original hydrostatics forces
@@ -727,6 +755,10 @@ class Model():
                         Fnet[6*i:6*i+6] += F_env_constant[6*i:6*i+6]
                     
                     elif forcing_mod == 1:  # updated loads approach
+                    
+                        # If list of wind speeds, set each turbine case with corresponding wind speed
+                        if type(caseorig['wind_speed']) == list :
+                            case['wind_speed'] = caseorig['wind_speed'][i]
                         
                         fowt.calcTurbineConstants(case, ptfm_pitch=r6[4])  # for turbine forces >>> still need to update to use current fowt pose <<<
                         fowt.calcHydroConstants(case, memberList=fowt.memberList) # prep for drag force (and eventually mean drift)
@@ -739,7 +771,12 @@ class Model():
 
                         
                     # This could eventually include FLORIS. If it's slow, FLORIS could be updated only every 5 or 10 iterations...
-                #breakpoint()
+                
+                # mooring forces (includes if currents were updated above)
+                Fnet[6*i:6*i+6] += fowt.F_moor0 # fowt.ms.bodyList[0].getForces(lines_only=True)  # individual mooring forces
+                if self.ms:
+                    Fnet[6*i:6*i+6] += self.ms.bodyList[i].getForces(lines_only=True)     # array-level mooring forces
+                
             
             # note that the above also calculates many stiffnes terms that are used in step_func_equil
             
@@ -755,7 +792,7 @@ class Model():
             if display > 0:
                 RMSeForce  = np.linalg.norm([Y[6*i  :6*i+3] for i in range(self.nFOWT)])
                 RMSeMoment = np.linalg.norm([Y[6*i+3:6*i+6] for i in range(self.nFOWT)])
-                print(f"Iteration RMS force adn moment errors: {RMSeForce:8.2e} {RMSeMoment:8.2e}")
+                print(f"Iteration RMS force and moment errors: {RMSeForce:8.2e} {RMSeMoment:8.2e}")
                 if RMSeForce < 100 and RMSeMoment < 100:
                     if display > 1:
                         breakpoint()
@@ -1416,7 +1453,8 @@ class Model():
 
 
     def plot(self, ax=None, hideGrid=False, draw_body=True, color='k', nodes=0, 
-             xbounds=None, ybounds=None, zbounds=None, plot_rotor=True, airfoils=False, station_plot=[]):
+             xbounds=None, ybounds=None, zbounds=None, plot_rotor=True, airfoils=False, 
+             station_plot=[], figsize=(6,4)):
         '''plots the whole model, including FOWTs and mooring system...'''
 
         # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
@@ -1429,9 +1467,10 @@ class Model():
         # if axes not passed in, make a new figure
         if ax == None:    
             if self.ms:
-                fig, ax = self.ms.plot(color=color, draw_body=draw_body, xbounds=xbounds, ybounds=ybounds, zbounds=zbounds)
+                fig, ax = self.ms.plot(color=color, draw_body=draw_body,figsize=figsize,
+                                       xbounds=xbounds, ybounds=ybounds, zbounds=zbounds)
             else:   
-                fig = plt.figure(figsize=(6,4))
+                fig = plt.figure(figsize=figsize)
                 ax = plt.axes(projection='3d')
             
         else:
@@ -1456,6 +1495,45 @@ class Model():
             
         return fig, ax
     
+    
+    def plot2d(self, ax=None, hideGrid=False, draw_body=True, color='k', 
+               station_plot=[], Xuvec=[1,0,0], Yuvec=[0,0,1], figsize=(6,4)):
+        '''plots the whole model, including FOWTs and mooring system...'''
+
+        # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
+        #self.ms.bodyList[0].setPosition(np.zeros(6))
+        #self.ms.initialize()
+        
+        #fig = plt.figure(figsize=(20/2.54,12/2.54))
+        #ax = Axes3D(fig)
+
+        # if axes not passed in, make a new figure
+        if ax == None:    
+            if self.ms:
+                fig, ax = self.ms.plot2d(color=color, draw_body=draw_body, Xuvec=Xuvec, Yuvec=Yuvec, figsize=figsize)
+            else:   
+                fig, ax = plt.subplots(1,1, figsize=figsize)
+            
+        else:
+            fig = ax.get_figure()
+            if self.ms:
+                self.ms.plot2d(ax=ax, color=color, draw_body=draw_body, Xuvec=Xuvec, Yuvec=Yuvec)
+
+        # plot each FOWT
+        for fowt in self.fowtList:
+            fowt.plot2d(ax, color=color, station_plot=station_plot, Xuvec=Xuvec, Yuvec=Yuvec)
+        
+        ax.axis("equal")
+        
+        if hideGrid:       
+            ax.set_xticks([])    # Hide axes ticks
+            ax.set_yticks([])
+            ax.grid(False)       # Hide grid lines
+            ax.grid(b=None)
+            ax.axis('off')
+            ax.set_frame_on(False)
+            
+        return fig, ax
     
     
     def adjustBallast(self, fowt, heave_tol=1, l_fill_adj=1e-2, rtn=0, display=0):
@@ -1984,6 +2062,7 @@ if __name__ == "__main__":
     #model = runRAFT(os.path.join(raft_dir,'designs/OC3spar.yaml'), plot=1)
     #model = runRAFT(os.path.join(raft_dir,'designs/OC4semi.yaml'), plot=1)
     model = runRAFT(os.path.join(raft_dir,'designs/VolturnUS-S.yaml'), plot=1)
+    #model = runRAFT(os.path.join(raft_dir,'OC3spar-SlenderBody-Farm.yaml'), plot=1)
     
     
 
