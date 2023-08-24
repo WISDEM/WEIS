@@ -834,6 +834,38 @@ def getFromDict(dict, key, shape=0, dtype=float, default=None):
                 return np.tile(default, shape)
 
 
+def addToDict(dict1, dict2, key1, key2, default=None):
+    '''
+    Function to streamline getting values from one dictionary and 
+    putting them in another dictionary (potentially under a different key),
+    including error checking.
+
+    Parameters
+    ----------
+    dict1 : dict
+        the input dictionary
+    dict2 : dict
+        the output dictionary
+    key1 : string
+        the key in the input dictionary
+    key2 : string
+        the key in the output dictionary
+    default : number, optional
+        The default value to fill in if the item isn't in the input dictionary.
+        Otherwise will raise error if the key doesn't exist.
+    '''
+    
+    if key in dict1:
+        val = dict1[key]  
+    else:
+        if default == None:
+            raise ValueError(f"Key '{key1}' not found in input dictionary...")
+        else:
+            val = default
+    
+    dict2[key2] = val
+
+
 def makeTower(twrH, twrRad):
     '''Sets up mesh points for visualizing a cylindrical structure (should align with RAFT eventually.'''
     
