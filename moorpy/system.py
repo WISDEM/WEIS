@@ -24,7 +24,7 @@ from moorpy.helpers import (rotationMatrix, rotatePosition, getH, printVec,
                             set_axes_equal, dsolve2, SolveError, MoorPyError, 
                             loadLineProps, getLineProps, read_mooring_file, 
                             printMat, printVec, getInterpNums, unitVector,
-                            getFromDict)
+                            getFromDict, addToDict)
 
 
 
@@ -851,14 +851,19 @@ class System():
         
         # line types
         for d in data['line_types']:
+            name = d['name']
             dia = float(d['diameter']    )
             w   = float(d['mass_density'])*self.g
             EA  = float(d['stiffness']   )
-            if d['breaking_load']:
-                MBL = float(d['breaking_load'])
-            else:
-                MBL = 0
-            self.lineTypes[d['name']] = dict(name=d['name'], d_vol=dia, w=w, EA=EA, MBL=MBL)
+            self.lineTypes[name] = dict(name=name, d_vol=dia, w=w, EA=EA)
+            
+            addToDict(d, self.lineTypes[name], 'breaking_load'        , 'MBL' , default=0)
+            addToDict(d, self.lineTypes[name], 'cost'                 , 'cost', default=0)
+            addToDict(d, self.lineTypes[name], 'transverse_drag'      , 'Cd'  , default=0)
+            addToDict(d, self.lineTypes[name], 'tangential_drag'      , 'CdAx', default=0)
+            addToDict(d, self.lineTypes[name], 'transverse_added_mass', 'Ca'  , default=0)
+            addToDict(d, self.lineTypes[name], 'tangential_added_mass', 'CaAx', default=0)
+            
             
         # rod types TBD
         
