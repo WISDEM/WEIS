@@ -1764,7 +1764,8 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["RotThrust", "LSShftFxs", "LSShftFys", "LSShftFzs", "LSShftFxa", "LSShftFya", "LSShftFza"]
         channels_out += ["RotTorq", "LSSTipMxs", "LSSTipMys", "LSSTipMzs", "LSSTipMxa", "LSSTipMya", "LSSTipMza"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
-        channels_out += ["PtfmSurge", "PtfmSway", "PtfmHeave", "PtfmRoll", "PtfmPitch", "PtfmYaw","NcIMURAys"]
+        channels_out += ["PtfmSurge", "PtfmSway", "PtfmHeave", "PtfmRoll", "PtfmPitch", "PtfmYaw"]
+        channels_out += ["NcIMUTAxs","NcIMUTAys","NcIMUTAzs","NcIMURAxs","NcIMURAys","NcIMURAzs"]
         if self.n_blades == 3:
             channels_out += ["TipDxc3", "TipDyc3", "TipDzc3", "RootMxc3", "RootMyc3", "RootMzc3", "TipDxb3", "TipDyb3", "TipDzb3", "RootMxb3",
                              "RootMyb3", "RootMzb3", "RootFxc3", "RootFyc3", "RootFzc3", "RootFxb3", "RootFyb3", "RootFzb3", "BldPitch3"]
@@ -2121,7 +2122,7 @@ class FASTLoadCases(ExplicitComponent):
         fatigue_channels =  dict( fastwrap.fatigue_channels_default )
 
         # Nacelle accelleration
-        magnitude_channels['NcIMUTA'] = ['NcIMUTAxs','NcIMUTAzs','NcIMUTAzs']
+        magnitude_channels['NcIMUTA'] = ['NcIMUTAxs','NcIMUTAys','NcIMUTAzs']
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
         # Convert ultstress and S_intercept values to kPa with 1e-3 factor
