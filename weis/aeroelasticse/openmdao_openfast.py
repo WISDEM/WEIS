@@ -2721,7 +2721,7 @@ class FASTLoadCases(ExplicitComponent):
             # TODO: weight based on WS distribution, or something else
             outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
-        outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+        outputs['Max_PtfmPitch']  = np.max(np.abs(np.r_[sum_stats['PtfmPitch']['max'],sum_stats['PtfmPitch']['min']]))
 
         # Max platform offset        
         for timeseries in chan_time:
