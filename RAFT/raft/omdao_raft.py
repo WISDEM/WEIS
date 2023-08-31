@@ -641,13 +641,15 @@ class RAFT_OMDAO(om.ExplicitComponent):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
                 outputs['properties_'+name] = results['properties'][name]
+            '''
+            Note: dynamic results should be taken from results['case metrics']
             elif outs[i][0].startswith('response_'):
                 name = outs[i][0].split('response_')[1]
                 if np.iscomplex(results['response'][name]).any():
                     outputs['response_'+name] = np.abs(results['response'][name])
                 else:
                     outputs['response_'+name] = results['response'][name]
-
+            '''
 
         # Pattern matching for case-by-case outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']

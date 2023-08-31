@@ -267,6 +267,7 @@ class Model():
         
         nCases = len(self.design['cases']['data'])
         
+        self.results['properties'] = {}  # signal that the properties calcs will be done
         
         # set up output arrays for load cases >>> put these into an initialization function <<<
         
@@ -1285,7 +1286,7 @@ class Model():
         
         
         # ----- response outputs (always in standard units) ---------------------------------------
-        
+        '''
         if 'response' in self.results:
             
             RAOmag      = abs(self.Xi          /fowt.zeta)  # magnitudes of motion RAO
@@ -1293,6 +1294,7 @@ class Model():
             self.results['response']['frequencies'] = self.w/2/np.pi         # Hz
             self.results['response']['wave elevation'] = fowt.zeta
             self.results['response']['Xi'         ] = self.Xi
+            
             self.results['response']['surge RAO'  ] = RAOmag[0,:]
             self.results['response'][ 'sway RAO'  ] = RAOmag[1,:]
             self.results['response']['heave RAO'  ] = RAOmag[2,:]
@@ -1303,7 +1305,7 @@ class Model():
             # save dynamic derived quantities
             #self.results['response']['mooring tensions'] = ...
             self.results['response']['nacelle acceleration'] = self.w**2 * (self.Xi[0] + self.Xi[4]*fowt.hHub)
-        
+        '''
     
         
         return self.results
@@ -2044,6 +2046,7 @@ def runRAFT(input_file, turbine_file="", plot=0, ballast=False, station_plot=[])
     print(" --- analyzing cases ---")
     model.analyzeCases(display=1)
     
+    model.calcOutputs()
     
     if plot:
         #model.plot(station_plot=station_plot, zbounds=[-model.ms.depth, model.ms.depth + 2*model.ms.bodyList[0].r6[2]], hideGrid=True, draw_body=True)        
