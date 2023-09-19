@@ -17,7 +17,6 @@ from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
-from pCrunch import PowerProduction
 from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse import FileTools
@@ -2264,7 +2263,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
 
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
-        outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
 
         outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
@@ -2519,7 +2518,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs
 
-    def calculate_AEP(self, sum_stats, case_list, dlc_generator, discrete_inputs, outputs, discrete_outputs):
+    def calculate_AEP(self, sum_stats, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
         """
         Calculates annual energy production of the relevant DLCs in `case_list`.
 
@@ -2544,7 +2543,15 @@ class FASTLoadCases(ExplicitComponent):
 
         # Calculate AEP and Performance Data
         if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
-            pp = PowerProduction(discrete_inputs['turbine_class'])
+            user_dist = self.options['modeling_options']['DLC_driver']['metocean_conditions']['user_probability']
+            
+            pp = PowerProduction(**{
+                'turbine_class': discrete_inputs['turbine_class'],
+                'cut_in': float(inputs['V_cutin']), 
+                'cut_out':float(inputs['V_cutout']), 
+                'MHK': self.options['modeling_options']['flags']['marine_hydro'],
+                'user_dist': user_dist
+            })
             pwr_curve_vars   = ["GenPwr", "RtFldCp", "RotSpeed", "BldPitch1"]
             AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
@@ -2579,7 +2586,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs, discrete_outputs
 
-    def get_weighted_DELs(self, dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs):
+    def get_weighted_DELs(self, dlc_generator, DELs, damage, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
         # See if we have fatigue DLCs
@@ -2599,7 +2606,13 @@ class FASTLoadCases(ExplicitComponent):
         
         # Get wind distribution probabilities, make sure they are normalized
         # This should also take care of averaging across seeds
-        pp = PowerProduction(discrete_inputs['turbine_class'])
+        pp = PowerProduction(**{
+                'turbine_class': discrete_inputs['turbine_class'],
+                'cut_in': float(inputs['V_cutin']), 
+                'cut_out':float(inputs['V_cutout']), 
+                'MHK': self.options['modeling_options']['flags']['marine_hydro'],
+                'user_dist': self.options['modeling_options']['DLC_driver']['metocean_conditions']['user_probability']
+            })
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
         ws_prob /= ws_prob.sum()
 

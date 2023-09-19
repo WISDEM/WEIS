@@ -3638,6 +3638,21 @@ properties:
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
+                    user_distribution:
+                            type: object
+                            description: User probability mass distribution
+                            default: {}
+                            properties:
+                                speed:
+                                    type: array
+                                    description: Flow speeds (m/s)
+                                    items:
+                                        type: number
+                                probability:
+                                    type: array
+                                    description: Probability mass distirbution
+                                    items:
+                                        type: number
 
     ROSCO:
         type: object

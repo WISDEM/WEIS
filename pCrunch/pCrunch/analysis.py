@@ -481,6 +481,29 @@ class PowerProduction:
         """
 
         self.turbine_class = turbine_class
+        self.MHK = False
+        self.user_dist = None
+        self.cut_in = 4
+        self.cut_out = 25
+        self.u_step = None
+
+        # Optional population class attributes from key word arguments
+        for (k, w) in kwargs.items():
+            try:
+                setattr(self, k, w)
+            except:
+                pass
+
+        # Wind speed used to index
+        if not self.u_step:
+            if self.MHK:
+                self.u_step = 0.5
+            else:
+                self.u_step = 2.0
+
+        # Wind speeds used as common index for power, probability
+        # Sampled speeds are interpolated to these speeds
+        self.uu = np.arange(self.cut_in,self.cut_out + self.u_step, self.u_step)
 
     def prob_WindDist(self, windspeed, disttype="pdf"):
         """
@@ -534,6 +557,9 @@ class PowerProduction:
             raise ValueError(
                 f"The {disttype} probability distribution type is invalid"
             )
+        
+        if self.user_dist:
+            wind_prob = np.interp(self.uu,self.user_dist['speed'],self.user_dist['probability'])
 
         return wind_prob
 
@@ -563,14 +589,17 @@ class PowerProduction:
         pwr["windspeeds"] = windspeeds
         pwr = pwr.groupby("windspeeds").mean()
 
-        # Wind probability
-        unique = list(np.unique(windspeeds))
-        wind_prob = self.prob_WindDist(unique, disttype="pdf")
+        # Create interpolated power curve, corresponds to self.uu
+        pwr_interp = np.interp(self.uu,np.unique(windspeeds),pwr['GenPwr']['mean'].to_numpy())      # check if unique is needed with groupby
 
-        # Calculate AEP
-        AEP = np.trapz(pwr.T * wind_prob, unique) * 8760
+        # Wind probability mass dist, corresponds to self.uu
+        wind_prob = self.prob_WindDist(self.uu,disttype="pdf")
+        wind_prob = wind_prob / np.sum(wind_prob)  # normalize, so it sums to 1
 
-        perf_data = {"U": unique}
+        # Calculate AEP in kWh
+        AEP = np.sum(wind_prob * pwr_interp) * 8760
+
+        perf_data = {"U": np.unique(windspeeds)}
         for var in pwr_curve_vars:
             perf_array = stats.loc[:, (var, "mean")].to_frame()
             perf_array["windspeed"] = windspeeds
