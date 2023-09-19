@@ -205,7 +205,7 @@ class Model():
         
         # >>> this whole method needs to be updated or possibly removed <<<
         
-        if len(self.fowtList) > 0:
+        if len(self.fowtList) > 1:
             raise Exception('analyzeUnloaded is an old method that only works for a single FOWT.')
         
         # need to zero out external loads >>>
@@ -1553,7 +1553,7 @@ class Model():
         mass = (fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2])/fowt.g
         dmass = mass - fowt.M_struc[0,0]
         sumFz = -fowt.M_struc[0,0]*fowt.g + fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2]
-        heave = sumFz/(fowt.rho_water*fowt.g*fowt.body.AWP)
+        heave = sumFz/(fowt.rho_water*fowt.g*fowt.AWP)
         if display==1: print(mass, dmass, heave)
         
         # loop through each member and adjust the l_fill of each to match the volume needed to balance the mass
@@ -1655,7 +1655,7 @@ class Model():
                         # check if heave equilibrium was reached by only changing this ballast section of the member
                         fowt.calcStatics()
                         sumFz = -fowt.M_struc[0,0]*fowt.g + fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2]
-                        heave = sumFz/(fowt.rho_water*fowt.g*fowt.body.AWP)
+                        heave = sumFz/(fowt.rho_water*fowt.g*fowt.AWP)
                         if display==1: print('heave', heave, heave_tol)
                         if abs(heave) < heave_tol:  # congrats, you've ballasted to achieve the given heave tolerance
                             member_break_flag=True  # break out of the outer member for loop as well
@@ -1702,7 +1702,7 @@ class Model():
         
         # check for any instances of zero-density ballast and ensure the corresponding fill length is zero        
         for member in fowt.memberList:
-            if type(member.l_fill) is float:  # if there is only one section of ballast in the member            
+            if not hasattr(member.l_fill,'__len__'):  # not array, there is only one section of ballast in the member            
                 if member.rho_fill == 0.0:
                     member.l_fill = 0.0
             else:
@@ -1713,7 +1713,7 @@ class Model():
         # compute ballast and check initial offset
         fowt.calcStatics()
         sumFz = -fowt.M_struc[0,0]*fowt.g + fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2]
-        heave = sumFz/(fowt.rho_water*fowt.g*fowt.body.AWP)        
+        heave = sumFz/(fowt.rho_water*fowt.g*fowt.AWP)        
         print(f" Original sumFz is {sumFz/1000:.0f} kN and heave is ~{heave:.3f} m")
         
         # total up the ballast volume
@@ -1743,7 +1743,7 @@ class Model():
         # recompute ballast and check adjusted offset
         fowt.calcStatics()
         sumFz = -fowt.M_struc[0,0]*fowt.g + fowt.V*fowt.rho_water*fowt.g + self.F_moor0[2]
-        heave = sumFz/(fowt.rho_water*fowt.g*fowt.body.AWP)
+        heave = sumFz/(fowt.rho_water*fowt.g*fowt.AWP)
         
         print(f" New sumFz is {sumFz/1000:.0f} kN and heave is ~{heave:.3f} m")
         
