@@ -2265,7 +2265,7 @@ class FASTLoadCases(ExplicitComponent):
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
         outputs, discrete_outputs = self.calculate_AEP(summary_stats, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
 
-        outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
+        outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, inputs, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 

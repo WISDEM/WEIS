@@ -559,7 +559,7 @@ class PowerProduction:
             )
         
         if self.user_dist:
-            wind_prob = np.interp(self.uu,self.user_dist['speed'],self.user_dist['probability'])
+            wind_prob = np.interp(windspeed,self.user_dist['speed'],self.user_dist['probability'])
 
         return wind_prob
 
