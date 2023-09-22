@@ -158,6 +158,14 @@ properties:
                 type: boolean
                 default: True
                 description: Flag to run pyHAMS
+            analyze_cases:
+                type: boolean
+                default: True
+                description: Run cases in RAFT, outputs will be in stats_, along with a few aggregate statistics
+            use_props_in_openfast:
+                type: boolean
+                default: True
+                description: Run cases in RAFT, outputs will be in stats_, along with a few aggregate statistics
     Level3: &ofmodopt
         type: object
         default: {}

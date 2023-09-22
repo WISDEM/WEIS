@@ -499,7 +499,7 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                     self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    if modeling_options['Level1']['flag']:
+                    if modeling_options['Level1']['use_props_in_openfast']:
                         ptfm_data_source = 'raft'
                     else:
                         ptfm_data_source = 'floatingse'
