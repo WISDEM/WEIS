@@ -1386,6 +1386,7 @@ properties:
                                 - reactions
                                 - transition
                                 - cylindrical
+                                - relative
                                 - axial_coeffs
                             properties:
                                 name:
@@ -1407,6 +1408,16 @@ properties:
                                     description: Whether to use cylindrical coordinates (r,θ,z), with (r,θ) lying in the x/y-plane, instead of Cartesian coordinates.
                                     type: boolean
                                     default: False
+                                relative:
+                                    description: Make this joint relative to the stated joint, non-cylindrical only
+                                    default: origin
+                                    type: string
+                                relative_dims:
+                                    description: Three dimensional boolean array denoting which dimensions are relative
+                                    default: [True, True, True]
+                                    type: array
+                                    items:
+                                        type: boolean
                                 axial_coeffs:
                                     description: Axial hydrodynamic coefficients used in OpenFAST, unused in WISDEM
                                     type: object

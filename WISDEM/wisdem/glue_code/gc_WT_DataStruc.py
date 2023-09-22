@@ -2548,6 +2548,20 @@ class AggregateJoints(om.ExplicitComponent):
         locations_xyz = locations.copy()
         locations_xyz[icyl, 0] = locations[icyl, 0] * np.cos(locations[icyl, 1])
         locations_xyz[icyl, 1] = locations[icyl, 0] * np.sin(locations[icyl, 1])
+
+        # Handle relative joints, there is probably a more elegant solution
+        joint_names = floating_init_options['joints']['name']
+        for i_joint in range(floating_init_options['joints']['n_joints']):
+            rel_joint = floating_init_options['joints']['relative'][i_joint]
+            if rel_joint != 'origin':  # is a relative joint
+                if rel_joint not in joint_names:
+                    raise Exception(f'The relative joint {joint_names[i_joint]} is not relative to an existing joint.  Relative joint provided: {rel_joint}')
+                
+                rel_joint_location = locations_xyz[name2idx[rel_joint]]
+                relative_dimensions = np.array(floating_init_options['joints']['relative_dims'][i_joint])  # These joints are relative
+                locations_xyz[i_joint][relative_dimensions] += rel_joint_location[relative_dimensions]
+
+
         joints_xyz[:n_joints, :] = locations_xyz.copy()
 
         # Initial biggest radius at each node

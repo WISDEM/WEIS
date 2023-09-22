@@ -292,6 +292,8 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["joints"]["name"] = [""] * n_joints
             self.modeling_options["floating"]["joints"]["transition"] = [False] * n_joints
             self.modeling_options["floating"]["joints"]["cylindrical"] = [False] * n_joints
+            self.modeling_options["floating"]["joints"]["relative"] = ['origin'] * n_joints
+            self.modeling_options["floating"]["joints"]["relative_dims"] = [[True,True,True]] * n_joints
             self.modeling_options["floating"]["joints"]["axial_coeffs"] = [{}]* n_joints
             for i in range(n_joints):
                 self.modeling_options["floating"]["joints"]["name"][i] = self.wt_init["components"][
@@ -303,6 +305,12 @@ class WindTurbineOntologyPython(object):
                 self.modeling_options["floating"]["joints"]["cylindrical"][i] = self.wt_init["components"][
                     "floating_platform"
                 ]["joints"][i]["cylindrical"]
+                self.modeling_options["floating"]["joints"]["relative"][i] = self.wt_init["components"][
+                    "floating_platform"
+                ]["joints"][i]["relative"]
+                self.modeling_options["floating"]["joints"]["relative_dims"][i] = self.wt_init["components"][
+                    "floating_platform"
+                ]["joints"][i]["relative_dims"]
                 # Axial coefficients: pass through for now.  If we want them to be a DV someday, will need to make part openmdao glue code
                 self.modeling_options["floating"]["joints"]["axial_coeffs"][i] = self.wt_init["components"][
                     "floating_platform"
