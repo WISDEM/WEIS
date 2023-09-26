@@ -342,6 +342,7 @@ class WindTurbineOntologyPython(object):
             self.modeling_options["floating"]["members"]["n_ballasts"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_bulkheads"] = np.zeros(n_members, dtype=int)
             self.modeling_options["floating"]["members"]["n_axial_joints"] = np.zeros(n_members, dtype=int)
+            self.modeling_options["floating"]["members"]["no_intersect"] = np.full(n_members, fill_value=False)
             ballast_types = []
             for i in range(n_members):
                 self.modeling_options["floating"]["members"]["name"][i] = self.wt_init["components"][
@@ -499,6 +500,8 @@ class WindTurbineOntologyPython(object):
                         ] = len(name2idx)
                 else:
                     self.modeling_options["floating"]["members"]["n_axial_joints"][i] = 0
+
+                self.modeling_options['floating']['members']['no_intersect'][i] = self.wt_init['components']['floating_platform']['members'][i]['no_intersect']
 
                 final_grid = np.unique(grid)
                 final_geom_grid = np.unique(geom_grid)

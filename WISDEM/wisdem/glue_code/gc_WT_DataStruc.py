@@ -2615,12 +2615,14 @@ class AggregateJoints(om.ExplicitComponent):
             outputs["member_" + iname + ":joint2"] = joint2xyz
             outputs["member_" + iname + ":height"] = hk
 
-            # Largest radius at connection points for this member
-            Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
-            node_r[joint1id] = max(node_r[joint1id], Rk[0])
-            node_r[joint2id] = max(node_r[joint2id], Rk[-1])
-            intersects[joint1id] += 1
-            intersects[joint2id] += 1
+            # Largest radius at connection points for this member,
+            # Don't check radius if members are paralell, it's a flag for now, but can probably check if orthogonal in the future
+            if not floating_init_options['members']['no_intersect'][k]:
+                Rk = 0.5 * inputs["member_" + iname + ":outer_diameter"]
+                node_r[joint1id] = max(node_r[joint1id], Rk[0])
+                node_r[joint2id] = max(node_r[joint2id], Rk[-1])
+                intersects[joint1id] += 1
+                intersects[joint2id] += 1
 
         # Store the ghost node non-dimensional locations
         for k in range(n_members):
