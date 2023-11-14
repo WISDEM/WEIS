@@ -1,14 +1,15 @@
-name: test
-
 channels:
   - conda-forge
   - defaults
 
 dependencies:
-  - openblas
+  - cmake
   - meson
   - ninja
   - numpy
+  - openblas
+  - openmp
   - pip
+  - pkg-config
   - python
   - setuptools
