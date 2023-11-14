@@ -8,7 +8,8 @@ from moorpy.helpers import transformPosition, rotationMatrix, rotatePosition, tr
 class Body():
     '''A class for any object in the mooring system that will have its own reference frame'''
     
-    def __init__(self, mooringSys, num, type, r6, m=0, v=0, rCG=np.zeros(3), AWP=0, rM=np.zeros(3), f6Ext=np.zeros(6)):
+    def __init__(self, mooringSys, num, type, r6, m=0, v=0, rCG=np.zeros(3), AWP=0, rM=np.zeros(3), 
+                                   f6Ext=np.zeros(6), I=np.zeros(3), CdA=np.zeros(3), Ca=np.zeros(3)):
         '''Initialize Body attributes
 
         Parameters
@@ -33,6 +34,12 @@ class Body():
             coorindates or height of metacenter relative to body reference frame [m]. The default is np.zeros(3).
         f6Ext : array, optional
             applied external forces and moments vector in global orientation (not including weight/buoyancy) [N]. The default is np.zeros(6).
+        I : array, optional
+            Mass moment of inertia about 3 axes.
+        CdA : array, optional
+            Product of drag coefficient and frontal area in three directions [m^2].
+        Ca : array, optional
+            Added mass coefficient in three directions.
         attachedP: list, int
             list of ID numbers of any Points attached to the Body
         rPointRel: list, float
@@ -56,15 +63,32 @@ class Body():
         if np.isscalar(rM):
             self.rM = np.array([0,0,rM], dtype=np.float_) # coordinates of body metacenter relative to body reference frame [m]
         else:
-            self.rM = np.array(rM, dtype=np.float_)          
+            self.rM = np.array(rM, dtype=np.float_)       
+
+        # >>> should streamline the below <<<
+        if np.isscalar(I):
+            self.I = np.array([I,I,I], dtype=float)
+        else:
+            self.I = np.array(I, dtype=float)    
+
+        if np.isscalar(CdA):
+            self.CdA = np.array([CdA,CdA,CdA], dtype=float)
+        else:
+            self.CdA = np.array(CdA, dtype=float)    
+            
+        if np.isscalar(Ca):
+            self.Ca = np.array([Ca,Ca,Ca], dtype=float) 
+        else:
+            self.Ca = np.array(Ca, dtype=float)                
                 
-        self.f6Ext  = np.array(f6Ext, dtype=np.float_)    # for adding external forces and moments in global orientation (not including weight/buoyancy)
+        self.f6Ext  = np.array(f6Ext, dtype=float)    # for adding external forces and moments in global orientation (not including weight/buoyancy)
         
         
         self.attachedP   = []          # ID numbers of any Points attached to the Body
         self.rPointRel   = []          # coordinates of each attached Point relative to the Body reference frame
         
         self.attachedR   = []          # ID numbers of any Rods attached to the Body (not yet implemented)
+        self.r6RodRel   = []           # coordinates and unit vector of each attached Rod relative to the Body reference frame
         
         self.R = np.eye(3)             # body orientation rotation matrix
         #print("Created Body "+str(self.number))
@@ -89,8 +113,33 @@ class Body():
         self.attachedP.append(pointID)
         self.rPointRel.append(np.array(rAttach))
         
-        #print("attached Point "+str(pointID)+" to Body "+str(self.number))
+        if self.sys.display > 1:
+            print("attached Point "+str(pointID)+" to Body "+str(self.number))
     
+    
+    def attachRod(self, rodID, endCoords):
+        '''Adds a Point to the Body, at the specified relative position on the body.
+        
+        Parameters
+        ----------
+        rodID : int
+            The identifier ID number of a point
+        endCoords : array
+            The position of the Rods two ends relative to the body reference frame [m]
+
+        Returns
+        -------
+        None.
+
+        '''
+    
+        k = (endCoords[3:]-endCoords[:3])/np.linalg.norm(endCoords[3:]-endCoords[:3])
+    
+        self.attachedR.append(rodID)
+        self.r6RodRel.append(np.hstack([ endCoords[:3], k]))
+        
+        print("attached Rod "+str(rodID)+" to Body "+str(self.number))
+        
     
     def setPosition(self, r6):
         '''Sets the position of the Body, along with that of any dependent objects.
@@ -122,6 +171,13 @@ class Body():
         for PointID,rPointRel in zip(self.attachedP,self.rPointRel):
             rPoint = np.matmul(self.R, rPointRel) + self.r6[:3]  # rPoint = transformPosition(rPointRel, r6)            
             self.sys.pointList[PointID-1].setPosition(rPoint)
+            
+        # update the position of any attached Rods        
+        for rodID,r6Rel in zip(self.attachedR,self.r6RodRel):        
+            rA = np.matmul(self.R, r6Rel[:3]) + self.r6[:3] 
+            k = np.matmul(self.R, r6Rel[3:])
+            self.sys.rodList[rodID-1].rA = rA
+            self.sys.rodList[rodID-1].rB = rA + k*self.sys.rodList[rodID-1].L
    
         if self.sys.display > 3:     
             printVec(rPoint)
@@ -131,6 +187,8 @@ class Body():
    
     def getForces(self, lines_only=False):
         '''Sums the forces and moments on the Body, including its own plus those from any attached objects.
+        Forces and moments are aligned with global x/y/z directions but are relative 
+        to the body's local reference point.
 
         Parameters
         ----------
@@ -175,21 +233,19 @@ class Body():
             
             
         # All forces and moments on the body should now be summed, and are in global/unrotated orientations.
-        
+        '''
         # For application to the body DOFs, convert the moments to be about the body's local/rotated x/y/z axes <<< do we want this in all cases? 
         rotMat = rotationMatrix(*self.r6[3:])                                       # get rotation matrix for body
         moment_about_body_ref = np.matmul(rotMat.T, f6[3:])                         # transform moments so that they are about the body's local/rotated axes
         f6[3:] = moment_about_body_ref                                              # use these moments
-        
-        
+        '''
         return f6
     
 
     
     def getStiffness(self, X = [], tol=0.0001, dx = 0.1):
         '''Gets the stiffness matrix of a Body due only to mooring lines with all other objects free to equilibriate.
-        The rotational indicies of the stiffness matrix correspond to the local/rotated axes of the body rather than
-        the global x/y/z directions.
+        The rotational indices of the stiffness matrix correspond to the global x/y/z directions.
         
         Parameters
         ----------
@@ -252,11 +308,11 @@ class Body():
             6x6 analytic stiffness matrix.
 
         '''
-        
-        #print("Getting Body "+str(self.number)+" stiffness matrix...")
-        
+                
         K = np.zeros([6,6])
         
+        
+        # stiffness contributions from attached points (and any of their attached lines)
         for PointID,rPointRel in zip(self.attachedP,self.rPointRel):
             
             r = rotatePosition(rPointRel, self.r6[3:])          # relative position of Point about body ref point in unrotated reference frame  
@@ -267,12 +323,12 @@ class Body():
             H = getH(r)
             K[:3,:3] += K3
             K[:3,3:] += np.matmul(K3, H)                        # only add up one off-diagonal sub-matrix for now, then we'll mirror at the end
-            K[3:,3:] += np.matmul(np.matmul(H, K3), H.T) + np.matmul( getH(f3), H.T)
-            #K[3:,3:] += np.matmul(np.matmul(H, K3), H.T) - np.matmul( getH(f3), H)  # <<< should be the same
-                
+            K[3:,3:] += -np.matmul(getH(f3), H) - np.matmul(H, np.matmul(K3,H))   # updated 2023-05-02
+   
         K[3:,:3] = K[:3,3:].T                                   # copy over other off-diagonal sub-matrix
         
         
+        # body's own stiffness components
         if lines_only == False:
         
             # rotational stiffness effect of weight
@@ -288,6 +344,7 @@ class Body():
             
             K[3:,3:] += Kw + Kb
             K[2 ,2 ] += Kwp
+            
         
         return K
     
@@ -351,8 +408,4 @@ class Body():
         linebit[2][0].set_3d_properties([self.r6[2], rz[2]])
         '''
         return linebit
-    
-    
-    
-#
     
