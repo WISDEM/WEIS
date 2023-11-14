@@ -2063,14 +2063,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['Nmodes']    = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['JDampings'] = float_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['GuyanDampMod'] = int_read(f.readline().split()[0])
-        temp = f.readline().split()[:3]
-        self.fst_vt['SubDyn']['RayleighDamp'] = np.zeros(2)
-        self.fst_vt['SubDyn']['RayleighDamp'][0] = float(temp[0])
-        if temp[1] ==',':
-            id=2
-        else:
-            id=1
-        self.fst_vt['SubDyn']['RayleighDamp'][1] = float(temp[id])
+        self.fst_vt['SubDyn']['RayleighDamp'] = read_array(f,2,array_type=float)
         self.fst_vt['SubDyn']['GuyanDampSize'] = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['GuyanDamp'] = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(self.fst_vt['SubDyn']['GuyanDampSize'])])
         f.readline()
