@@ -273,7 +273,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('response_roll RAO', val=np.zeros(nfreq), units='rad', desc='Roll RAO')
         self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='rad', desc='Yaw RAO')
         self.add_output('response_nacelle acceleration', val=np.zeros(nfreq), units='m/s**2', desc='Nacelle acceleration')
-        # case specific
+        # case specific, note: only DLCs supported in RAFT will have non-zero outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
         stats = ['avg','std','max','PSD','DEL']
         for n in names:
@@ -283,8 +283,6 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 
                 if n == 'Tmoor':
                     myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, 2*nlines, nfreq))
-                elif n == 'Mbase':
-                    myval = np.zeros(n_cases) if s not in ['PSD','std'] else np.zeros((n_cases, nfreq))
                 else:
                     myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
                 
@@ -652,13 +650,15 @@ class RAFT_OMDAO(om.ExplicitComponent):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
                 outputs['properties_'+name] = results['properties'][name]
+            '''
+            Note: dynamic results should be taken from results['case metrics']
             elif outs[i][0].startswith('response_'):
                 name = outs[i][0].split('response_')[1]
                 if np.iscomplex(results['response'][name]).any():
                     outputs['response_'+name] = np.abs(results['response'][name])
                 else:
                     outputs['response_'+name] = results['response'][name]
-
+            '''
 
         # Pattern matching for case-by-case outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
@@ -668,7 +668,8 @@ class RAFT_OMDAO(om.ExplicitComponent):
             for s in stats:
                 if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['stats_'+iout][case_mask] = np.squeeze( results['case_metrics'][iout] )
+                # need to squeeze this because raft makes some outputs 2D for multiple rotors, we only support 1 right now
+                outputs['stats_'+iout][case_mask] = np.squeeze(results['case_metrics'][iout])
 
         # Other case outputs
         for n in ['wind_PSD','wave_PSD']:

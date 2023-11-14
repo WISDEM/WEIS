@@ -1,10 +1,10 @@
 type: input file for RAFT
-name: IEA 15 MW with VolturnUS-S steel semi
-
+name: IEA 15 MW with VolturnUS-S steel semi - a farm of four
+comments: updated to use tuned hydro coefficients from Torque 2022 paper and peak-thrust-clipping control
 
 settings:                   # global Settings
-    min_freq     :  0.005   #  [Hz]       lowest frequency to consider, also the frequency bin width 
-    max_freq     :  0.40    #  [Hz]       highest frequency to consider
+    min_freq     :  0.001   #  [Hz]       lowest frequency to consider, also the frequency bin width 
+    max_freq     :  0.1    #  [Hz]       highest frequency to consider
     XiStart      :   0      # sets initial amplitude of each DOF for all frequencies
     nIter        :  10      # sets how many iterations to perform in Model.solveDynamics()
     
@@ -15,12 +15,37 @@ site:
     mu_air      : 1.81e-05   #          air dynamic viscosity
     shearExp    : 0.12       #          shear exponent
     
-cases:
+cases:          # new
     keys : [wind_speed, wind_heading, turbulence, turbine_status, yaw_misalign, wave_spectrum, wave_period, wave_height, wave_heading  ]
     data :  #   m/s        deg    % or e.g. 2B_NTM    string            deg         string          (s)         (m)         (deg)
-        -  [    12,         0,            0.01,       operating,          0,        JONSWAP,         13.1,        8.5,           0        ]
+        #-  [    12,         0,            0.01,       parked   ,          0,        JONSWAP,         12,         6,           0        ]
+        -  [    10.5,         0,            0.01,       operating,          0,        JONSWAP,         12,         6,           0        ]
 
 
+array:         # new
+    keys : [turbineID, platformID, mooringID,   x_location,     y_location,   heading_adjust]
+    data : #    ID#        ID#        ID#          [m]             [m]           [deg]
+        #-  [     1,         1,         1,             0,              0,            0   ]  # single
+        #-  [     1,         1,         1,          800,            800,            0   ]   # 4 square array, individual moorings
+        #-  [     1,         1,         1,         -800,            800,            0   ]
+        #-  [     1,         1,         1,         -800,           -800,            0   ]
+        #-  [     1,         1,         1,          800,           -800,          180   ]
+        #-  [     1,         1,         1,          800,           -800,          180   ]
+        -  [     1,         1,         0,             0,              0,          180   ]    # 2 array, shared moorings
+        -  [     1,         1,         0,          1600,              0,            0   ]  
+
+
+
+    # note: 0 could indicate not included at the fowt level for this fowt
+    #       1-n could indicate multiple options (or all use the same mooring design if only one option)
+    
+
+
+    
+array_mooring:  # option for array-level mooring system
+    file: SharedMooring2.dat    # MoorDyn shared mooring input file (same as would be used in FAST.Farm)
+
+    
 turbine:
     
     mRNA          :     991000        #  [kg]       RNA mass 
@@ -1045,7 +1070,8 @@ turbine:
       Fl_Kp: -9.35
     wt_ops:          # operating points: wind speed [m/s], blade pitch [deg], rotor speed [rpm]
         v: [3.0, 3.266896551724138, 3.533793103448276, 3.800689655172414, 4.067586206896552, 4.334482758620689, 4.601379310344828, 4.868275862068966, 5.135172413793104, 5.402068965517241, 5.6689655172413795, 5.935862068965518, 6.2027586206896554, 6.469655172413793, 6.736551724137931, 7.00344827586207, 7.270344827586207, 7.537241379310345, 7.804137931034483, 8.071034482758622, 8.337931034482759, 8.604827586206897, 8.871724137931036, 9.138620689655173, 9.405517241379311, 9.672413793103448, 9.939310344827586, 10.206206896551725, 10.473103448275863, 10.74, 11.231724137931035, 11.723448275862069, 12.215172413793104, 12.706896551724139, 13.198620689655172, 13.690344827586207, 14.182068965517242, 14.673793103448276, 15.16551724137931, 15.657241379310346, 16.14896551724138, 16.640689655172416, 17.13241379310345, 17.624137931034483, 18.11586206896552, 18.607586206896553, 19.099310344827586, 19.591034482758623, 20.082758620689653, 20.57448275862069, 21.066206896551726, 21.557931034482756, 22.049655172413793, 22.54137931034483, 23.03310344827586, 23.524827586206897, 24.016551724137933, 24.508275862068963, 25.0]
-        pitch_op: [-0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, 3.57152, 5.12896, 6.36736, 7.43866, 8.40197, 9.28843, 10.1161, 10.8974,  11.641, 12.3529,  13.038, 13.6997, 14.3409, 14.9642, 15.5713, 16.1639, 16.7435, 17.3109, 17.8673, 18.4136, 18.9506, 19.4788, 19.9989, 20.5112, 21.0164, 21.5147, 22.0067, 22.4925, 22.9724]
+        #pitch_op: [-0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, 3.57152, 5.12896, 6.36736, 7.43866, 8.40197, 9.28843, 10.1161, 10.8974,  11.641, 12.3529,  13.038, 13.6997, 14.3409, 14.9642, 15.5713, 16.1639, 16.7435, 17.3109, 17.8673, 18.4136, 18.9506, 19.4788, 19.9989, 20.5112, 21.0164, 21.5147, 22.0067, 22.4925, 22.9724] # original
+        pitch_op: [3.44, 3.44, 3.44, 3.44, 3.44, 3.44, 3.19, 2.94, 2.65, 2.32, 1.97, 1.59, 1.19, 0.79, 0.38, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.46, 1.27, 1.99, 2.61, 3.05, 3.69, 5.13, 6.37, 7.44, 8.40, 9.29, 10.12, 10.90, 11.64, 12.35, 13.04, 13.70, 14.34, 14.96, 15.57, 16.16, 16.74, 17.31, 17.87, 18.41, 18.95, 19.48, 20.00, 20.51, 21.02, 21.51, 22.01, 22.49, 22.97] # updated with min pitch to achieve peak thrust shaving
         omega_op: [2.1486, 2.3397, 2.5309,  2.722, 2.9132, 3.1043, 3.2955, 3.4866, 3.6778, 3.8689, 4.0601, 4.2512, 4.4424, 4.6335, 4.8247, 5.0159,  5.207, 5.3982, 5.5893, 5.7805, 5.9716, 6.1628, 6.3539, 6.5451, 6.7362, 6.9274, 7.1185, 7.3097, 7.5008, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56, 7.56]
     gear_ratio: 1
     torque_control:
@@ -1084,7 +1110,7 @@ platform:
 
     potModMaster :   1      # [int] master switch for potMod variables; 0=keeps all member potMod vars the same, 1=turns all potMod vars to False (no HAMS), 2=turns all potMod vars to True (no strip)
     dlsMax       :  5.0     # maximum node splitting section amount for platform members; can't be 0
-
+    
     members:   # list all members here
         
       - name      :  center_column             # [-]    an identifier (no longer has to be number)       
@@ -1098,10 +1124,10 @@ platform:
         stations  :  [0, 1]                    # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
         d         :  10.0                      # [m]    diameters if circular or side lengths if rectangular (can be pairs)
         t         :  0.05                      # [m]    wall thicknesses (scalar or list of same length as stations)
-        Cd        :  0.8                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
-        Ca        :  1.0                       # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
+        Cd        :  0.6                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
+        Ca        :  0.93                      # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
         CdEnd     :  0.6                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
-        CaEnd     :  0.6                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
+        CaEnd     :  1.0                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
         rho_shell :  7850                      # [kg/m3] 
         # --- handling of end caps or any internal structures if we need them ---
         cap_stations :  [ 0    ]               # [m]  location along member of any inner structures (in same scaling as set by 'stations')
@@ -1121,10 +1147,10 @@ platform:
         stations  :  [0, 35]                   # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
         d         :  12.5                      # [m]    diameters if circular or side lengths if rectangular (can be pairs)
         t         :  0.05                      # [m]    wall thicknesses (scalar or list of same length as stations)
-        Cd        :  0.8                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
-        Ca        :  1.0                       # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
-        CdEnd     :  0.6                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
-        CaEnd     :  0.6                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
+        Cd        :  0.6                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
+        Ca        :  0.93                      # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
+        CdEnd     :  1.0                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
+        CaEnd     :  0.7 # value of 3.0 gives more heave response        # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
         rho_shell :  7850                      # [kg/m3] 
         # --- ballast ---
         l_fill    :  1.4                       # [m]
@@ -1145,12 +1171,12 @@ platform:
         potMod    :  False                     # [bool] Whether to model the member with potential flow (BEM model) plus viscous drag or purely strip theory
         # --- outer shell including hydro---
         stations  :  [0, 40.5]                 # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
-        d         :  [12.5, 7.0]               # [m]    diameters if circular or side lengths if rectangular (can be pairs)
+        d         :  [12.4, 7.0]               # [m]    diameters if circular or side lengths if rectangular (can be pairs)
         t         :  0.05                      # [m]    wall thicknesses (scalar or list of same length as stations)
-        Cd        :  0.8                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
-        Ca        :  1.0                       # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
-        CdEnd     :  0.6                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
-        CaEnd     :  0.6                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
+        Cd        :  [1.5, 2.2 ]               # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
+        Ca        :  [2.2, 0.2 ]               # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
+        CdEnd     :  0.0                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
+        CaEnd     :  0.0                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
         rho_shell :  7850                      # [kg/m3]
         l_fill    :  40.5                      # [m]
         rho_fill  :  1025.0                    # [kg/m3]
@@ -1168,13 +1194,14 @@ platform:
         stations  :  [0, 1]                    # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
         d         :  0.91                      # [m]    diameters if circular or side lengths if rectangular (can be pairs)
         t         :  0.01                      # [m]    wall thicknesses (scalar or list of same length as stations)
-        Cd        :  0.8                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
-        Ca        :  1.0                       # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
-        CdEnd     :  0.6                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
-        CaEnd     :  0.6                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
+        Cd        :  0.0                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
+        Ca        :  0.0                       # [-]    transverse added mass coefficient (optional, scalar or list of same length as stations)
+        CdEnd     :  0.0                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
+        CaEnd     :  0.0                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
         rho_shell :  7850                      # [kg/m3] 
      
 
+   
 mooring:
     water_depth: 200                                  # [m]       uniform water depth
     

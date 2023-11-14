@@ -5,7 +5,7 @@
 *.egg-info
 build/
 develop-eggs/
-dist/s
+dist/
 
 # HAMS-generated data
 raft/data/cylinder/Output/Hams_format/

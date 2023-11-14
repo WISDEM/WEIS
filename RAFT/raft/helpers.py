@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # ---------------------------- misc classes -----------------------------------
@@ -62,8 +63,27 @@ def FrustumVCV(dA, dB, H, rtn=0):
         return hc
 
 
-def getVelocity(r, Xi, ws):
-    '''Get node complex velocity spectrum based on platform motion's and relative position from PRP'''
+def getKinematics(r, Xi, ws):
+    '''Get node complex displacement, velocity, and acceleration complex 
+    amplitudes based on platform motion's and relative position from 
+    platform reference point PRP).
+    
+    Parameters
+    ----------
+    r : array
+        X, y, z coordinates of point of interest relative to PRP [m].
+    Xi : complex 2D array
+        Complex amplitudes of 6 degree of freedom as a function of frequency
+        (size 6 by nw).
+    ws : array
+        Frequency vector of length nw [rad/s].
+    
+    Returns
+    -------
+    dr, v, a : complex 2D array
+        Each is a 3 by nw array of the complex amplitudes of the point's
+        displacements, velocities, and accelerations, respectively.
+    '''
 
     nw = len(ws)
 
@@ -181,6 +201,10 @@ def VecVecTrans(vec):
 
     return vvt
 
+
+def intrp(x, xA, xB, yA, yB):  
+    '''Do simple interpolation between two points.'''
+    return yA + (x-xA)*(yB-yA)/(xB-xA)
 
 # produce alternator matrix
 def getH(r):
@@ -358,12 +382,26 @@ def rotateMatrix6(Min, rotMat):
     rotMat : array(3,3)  
         rotation matrix (DCM)
     '''    
-    outMat = np.zeros([6,6])  # rotated matrix
+    outMat = np.zeros_like(Min)  # rotated matrix
 
-    outMat[:3,:3] = rotateMatrix3(Min[:3,:3], rotMat)    # mass matrix
-    outMat[:3,3:] = rotateMatrix3(Min[:3,3:], rotMat)    # product of inertia matrix
-    outMat[3:,:3] = outMat[:3,3:].T
-    outMat[3:,3:] = rotateMatrix3(Min[3:,3:], rotMat)    # moment of inertia matrix
+    shape = Min.shape
+    if not (shape[0]==6 and shape[1]==6):
+        raise Exception('The input matrix must be 6x6 (with an optional third dimension).')
+
+    if len(shape) == 2:
+        outMat[:3,:3] = rotateMatrix3(Min[:3,:3], rotMat)    # mass matrix
+        outMat[:3,3:] = rotateMatrix3(Min[:3,3:], rotMat)    # product of inertia matrix
+        outMat[3:,:3] = outMat[:3,3:].T
+        outMat[3:,3:] = rotateMatrix3(Min[3:,3:], rotMat)    # moment of inertia matrix
+    
+    elif len(shape) == 3:
+        for i in range(shape[2]):  # process each 6x6 slice
+            outMat[:3,:3, i] = rotateMatrix3(Min[:3,:3, i], rotMat)
+            outMat[:3,3:, i] = rotateMatrix3(Min[:3,3:, i], rotMat)
+            outMat[3:,:3, i] = outMat[:3,3:, i].T
+            outMat[3:,3:, i] = rotateMatrix3(Min[3:,3:, i], rotMat)
+    else:
+        raise Exception('Input matrix must be two- or three-dimensional.')
 
     return outMat
 
@@ -382,19 +420,51 @@ def rotateMatrix3(Min, rotMat):
     return np.matmul( np.matmul(rotMat, Min), rotMat.T )
 
 
-def getRMS(xi, dw):
-    '''Calculates standard deviation or RMS of inputted (complex) response amplitude vector.'''
+def RotFrm2Vect( A, B):
+    '''Rodriguez rotation function, which returns the rotation matrix 
+    that transforms vector A into Vector B.
+    '''
     
-    return np.sqrt( np.sum( np.abs(xi)**2 )*dw )
-
-
-def getPSD(xi):
-    '''Calculates power spectral density from inputted (complex) response amplitude vector. Units of [unit]^2/(rad/s)'''
     
-    return np.abs(xi)**2
+    v = np.cross(A,B)
+    
+    if np.sum(v**2)==0:  # if something goes wrong (or A==B), no transformation
+        return np.eye(3)
+        
+    ssc = np.array([[0, -v[2], v[1]],
+                [v[2], 0, -v[0]],
+                [-v[1], v[0], 0]])
+         
+    R =  np.eye(3,3) + ssc + np.matmul(ssc,ssc)*(1-np.dot(A,B))/(np.linalg.norm(v)*np.linalg.norm(v))            
+
+    return R
+
+def getRMS(xi):
+    '''Calculates standard deviation or RMS of inputted (complex) response amplitude vector.
+    If a matrix is provided, the first dimension is considered to be multiple cases and the
+    second dimension is considered to be frequencies. Results are summed across cases for 
+    each frequency. The calculation is the same regardless.'''
+    
+    return np.sqrt( np.sum( np.abs(xi)**2 ) )
 
 
-def JONSWAP(ws, Hs, Tp, Gamma=1.0):
+def getPSD(xi, dw):
+    '''Calculates power spectral density from inputted (complex) response amplitude vector. Units of [unit]^2/(rad/s).
+    If a matrix is provided, the first dimension is considered to be multiple cases and the
+    second dimension is considered to be frequencies. Results are summed across cases for 
+    each frequency.'''
+    
+    if len(xi.shape) == 1:
+        psd = 0.5*np.abs(xi)**2/dw
+    elif len(xi.shape) == 2:
+        psd = np.sum(0.5*np.abs(xi)**2/dw, axis=0)  # sum squares across excitation sources for each frequency
+    else:
+        raise Exception("getPSD must be passed an array with 1 or 2 dimensions.")
+    
+    return psd
+
+
+def JONSWAP(ws, Hs, Tp, Gamma=None):
     '''Returns the JONSWAP wave spectrum for the given frequencies and parameters.
 
     Parameters
@@ -422,6 +492,17 @@ def JONSWAP(ws, Hs, Tp, Gamma=1.0):
     on what's documented in IEC 61400-3.
     '''
 
+    # If peak shape parameter gamma is not specified, use the recommendation 
+    # from IEC 61400-3 as a function of Hs and Tp. For PM spectrum, use 1.
+    if not Gamma:
+        TpOvrSqrtHs = Tp/np.sqrt(Hs)
+        if TpOvrSqrtHs <= 3.6:
+            Gamma = 5.0
+        elif TpOvrSqrtHs >= 5.0:
+            Gamma = 1.0
+        else:
+            Gamma = np.exp( 5.75 - 1.15*TpOvrSqrtHs )
+    
     # handle both scalar and array inputs
     if isinstance(ws, (list, tuple, np.ndarray)):
         ws = np.array(ws)
@@ -446,14 +527,14 @@ def JONSWAP(ws, Hs, Tp, Gamma=1.0):
 def printMat(mat):
     '''Print a matrix'''
     for i in range(mat.shape[0]):
-        print( "\t".join(["{:+8.3e}"]*mat.shape[1]).format( *mat[i,:] ))
+        print( "  ".join(["{:+10.3e}"]*mat.shape[1]).format( *mat[i,:] ))
 
 def printVec(vec):
     '''Print a vector'''
-    print( "\t".join(["{:+8.3e}"]*len(vec)).format( *vec ))
+    print( "  ".join(["{:+10.3e}"]*len(vec)).format( *vec ))
 
 
-def getFromDict(dict, key, shape=0, dtype=float, default=None):
+def getFromDict(dict, key, shape=0, dtype=float, default=None, index=None):
     '''
     Function to streamline getting values from design dictionary from YAML file, including error checking.
 
@@ -467,8 +548,10 @@ def getFromDict(dict, key, shape=0, dtype=float, default=None):
         The desired shape of the output. If not provided, assuming scalar output. If -1, any input shape is used.
     dtype : type
         Must be a python type than can serve as a function to format the input value to the right type.
-    default : number, optional
-        The default value to fill in if the item isn't in the dictionary. Otherwise will raise error if the key doesn't exist.
+    default : number or list, optional
+        The default value to fill in if the item isn't in the dictionary. 
+        Otherwise will raise error if the key doesn't exist. It may be a list
+        (to be tiled shape times if shape > 1) but may not be a numpy array.
     '''
     # in future could support nested keys   if type(key)==list: ...
 
@@ -488,9 +571,22 @@ def getFromDict(dict, key, shape=0, dtype=float, default=None):
             if np.isscalar(val):                             # if a scalar value is provided and we need to produce an array (of any shape)
                 return np.tile(dtype(val), shape)
 
-            elif np.isscalar(shape):                         # if expecting a 1D array
-                if len(val) == shape:
-                    return np.array([dtype(v) for v in val])
+            elif np.isscalar(shape):                         # if expecting a 1D array (or if wanting the result to have the same length as the input)
+                if len(val) == shape:                        # throw an error if the input is not the same length as the shape, meaning the user is missing data
+                    if index == None:
+                        return np.array([dtype(v) for v in val])    # if no index is provided, do normally and return the array input
+                    else:
+                        keyshape = np.array(val).shape              # otherwise, use the index to create the output arrays desired
+                        if len(keyshape) == 1:                      # if the input is 1D, shape=n, and index!=None, then tile the indexed value of length shape
+                            if index in range(keyshape[0]):
+                                return np.tile(val[index], shape)
+                            else:
+                                raise ValueError(f"Value for index '{index}' is not within the size of {val} (len={keyshape[0]})")
+                        else:                                               # if the input is 2D, len(val)=shape, and index!=None
+                            if index in range(keyshape[1]):
+                                return np.array([v[index] for v in val])    # then pull the indexed value out of each row of 2D input
+                            else:
+                                raise ValueError(f"Value for index '{index}' is not within the size of {val} (len={keyshape[0]})")
                 else:
                     raise ValueError(f"Value for key '{key}' is not the expected size of {shape} and is instead: {val}")
 
@@ -513,7 +609,10 @@ def getFromDict(dict, key, shape=0, dtype=float, default=None):
             if shape==0 or shape==-1:
                 return default
             else:
-                return np.tile(default, shape)
+                if np.isscalar(default):
+                    return np.tile(default, shape)
+                else:
+                    return np.tile(default, [shape, 1])
 
 def convertIEAturbineYAML2RAFT(fname_turbine):
     '''
@@ -667,6 +766,314 @@ def convertIEAturbineYAML2RAFT(fname_turbine):
     return d
     
     
+# ----- additional helper functions from Joep van der Spek -----                                 
+    
+    
+def getUniqueCaseHeadings(keys, values):
+    '''
+    Function to obtain unique heading values for calculation in BEM.
+
+    Parameters
+    ----------
+    keys : dict
+        dict with keys of design data
+    values : dict
+        dict of all design data
+    '''
+    caseHeadings = []
+    data = [dict(zip(keys, value)) for value in values]
+    wave_headings = [float(data_head['wave_heading']) for data_head in data]
+    wave_headings += [float(data_head['wave_heading2']) for data_head in data]
+    for wh in wave_headings:
+        if wh not in caseHeadings:
+            caseHeadings.append(wh)
+    # print(caseHeadings)
+    maxHeading = max(caseHeadings)
+    minHeading = min(caseHeadings)
+    if len(caseHeadings) == 2:
+        headingStep = maxHeading - minHeading
+        numberOfHeadings = 2
+    elif len(caseHeadings) > 2:
+        headingStep = np.min(np.abs(np.diff(np.sort(caseHeadings))))
+        numberOfHeadings = int((maxHeading - minHeading) / headingStep + 1)
+        # this is different from only two headings, as it requires headings in between
+    else:
+        headingStep = 0
+        numberOfHeadings = 1
+    return caseHeadings, headingStep, numberOfHeadings # only have unique values in evaluated list, otherwise possibly issues with np.diff
+
+
+def getSigmaXPSD(TBFA, TBSS, frequencies, angles=np.linspace(0,2*np.pi,50), d = 10, thickness= 0.083):
+    """Function to retrieve Axial stress (sigma_x) around tower base circumference using tower base bending"""
+    # angles = np.linspace(0,2*np.pi,dAngles) # Array with angles to calculate for anywhere around tower.
+
+    angleMeshFA, TBFAMesh = np.meshgrid(angles, TBFA)
+    angleMeshSS, TBSSMesh = np.meshgrid(angles, TBSS)
+    # print('TBFA',TBFA)
+    # print('TBFSS', TBSS)
+    Izz = np.pi/8*thickness*d**3 # Bending moment of inertia, assume thin walled
+
+    sigmaX = ((TBFAMesh*np.cos(angleMeshFA)-TBSSMesh*np.sin(angleMeshSS))*d/2)/Izz # Return?
+    # print(sigmaX)
+    # sigmaX = psdTBFAMesh*(np.cos(angleMeshFA)*d/2/Izz)**2+psdTBSSMesh*(np.sin(angleMeshSS)*d/2/Izz)**2
+    ANGLESMesh, FREQMesh = np.meshgrid(angles, frequencies)
+    return getPSD(sigmaX/10**6, frequencies[1]-frequencies[0]), ANGLESMesh, FREQMesh
+
+
+def parametricAnalysisBuilder(design, changeType, startValueSensitivityStudy, parametricAnalysis= False):
+
+    if parametricAnalysis:
+        misalignmentAngle = getFromDict(design['parametricAnalysis'], 'misalignmentAngle', default=0)
+        numMisalignAngles = getFromDict(design['parametricAnalysis'], 'numMisalign', dtype=int, default=0)
+        if misalignmentAngle is not None and numMisalignAngles is not None and changeType == 'misalignment':
+            design['cases']['data'][0][13] = startValueSensitivityStudy
+            for misalign in range(numMisalignAngles):
+                add_design = design['cases']['data'][0].copy()
+                add_design[13] += misalignmentAngle * (misalign + 1)
+                design['cases']['data'].append(add_design)
+
+        windMisalignmentAngle = getFromDict(design['parametricAnalysis'], 'windMisalignmentAngle', default=0)
+        numWindMisalignAngles = getFromDict(design['parametricAnalysis'], 'numWindMisalign', dtype=int, default=0)
+        if windMisalignmentAngle is not None and numWindMisalignAngles is not None and changeType == 'windMisalignment':
+            design['cases']['data'][0][1] = startValueSensitivityStudy
+            for angle in range(numWindMisalignAngles):
+                add_design = design['cases']['data'][0].copy()
+                add_design[1] += windMisalignmentAngle * (angle + 1)
+                design['cases']['data'].append(add_design)
+
+        rotationAngle = getFromDict(design['parametricAnalysis'], 'rotationAngle', default=0)
+        numRotations = getFromDict(design['parametricAnalysis'], 'numRotations', dtype=int, default=0)
+        if rotationAngle is not None and numRotations is not None and changeType == 'floaterRotation':
+            for misalign in range(numRotations):
+                add_design = design['cases']['data'][0].copy()
+                add_design[1] += rotationAngle * (misalign + 1)
+                add_design[8] += rotationAngle * (misalign + 1)
+                add_design[13] += rotationAngle * (misalign + 1)
+                design['cases']['data'].append(add_design)
+
+        windSpeedIncrement = getFromDict(design['parametricAnalysis'], 'windSpeedIncrement', default=0)
+        numWSIncrements = getFromDict(design['parametricAnalysis'], 'numWSIncrements', dtype=int, default=0)
+        if windSpeedIncrement is not None and numWSIncrements is not None and changeType == 'windSpeed':
+            design['cases']['data'][0][0] = startValueSensitivityStudy
+            for numIncr in range(numWSIncrements):
+                add_design = design['cases']['data'][0].copy()
+                add_design[0] += windSpeedIncrement * (numIncr + 1)
+                design['cases']['data'].append(add_design)
+
+        waveHeightIncrement1 = getFromDict(design['parametricAnalysis'], 'waveHeightIncrement1', default=0)
+        numWHincrements1 = getFromDict(design['parametricAnalysis'], 'numWHIncrements1', dtype=int, default=0)
+        if waveHeightIncrement1 is not None and numWHincrements1 is not None and changeType == 'waveHeight1':
+            design['cases']['data'][0][7] = startValueSensitivityStudy
+            for numIncr in range(numWHincrements1):
+                add_design = design['cases']['data'][0].copy()
+                add_design[7] += waveHeightIncrement1 * (numIncr + 1)
+                design['cases']['data'].append(add_design)
+
+        waveHeightIncrement2 = getFromDict(design['parametricAnalysis'], 'waveHeightIncrement2', default=0)
+        numWHincrements2 = getFromDict(design['parametricAnalysis'], 'numWHIncrements2', dtype=int, default=0)
+        if waveHeightIncrement2 is not None and numWHincrements2 is not None and changeType == 'waveHeight2':
+            design['cases']['data'][0][12] = startValueSensitivityStudy
+            for numIncr in range(numWHincrements2):
+                add_design = design['cases']['data'][0].copy()
+                add_design[12] += waveHeightIncrement2 * (numIncr + 1)
+                design['cases']['data'].append(add_design)
+
+        wavePeriodIncrement1 = getFromDict(design['parametricAnalysis'], 'wavePeriodIncrement1', default=0)
+        numWPincrements1 = getFromDict(design['parametricAnalysis'], 'numWPIncrements1', dtype=int, default=0)
+        if wavePeriodIncrement1 is not None and numWPincrements1 is not None and changeType == 'wavePeriod1':
+            design['cases']['data'][0][6] = startValueSensitivityStudy
+            for numIncr in range(numWPincrements1):
+                add_design = design['cases']['data'][0].copy()
+                add_design[6] += wavePeriodIncrement1 * (numIncr + 1)
+                design['cases']['data'].append(add_design)
+
+        wavePeriodIncrement2 = getFromDict(design['parametricAnalysis'], 'wavePeriodIncrement2', default=0)
+        numWPincrements2 = getFromDict(design['parametricAnalysis'], 'numWPIncrements2', dtype=int, default=0)
+        if wavePeriodIncrement2 is not None and numWPincrements2 is not None and changeType == 'wavePeriod2':
+            design['cases']['data'][0][11] = startValueSensitivityStudy
+            for numIncr in range(numWPincrements2):
+                add_design = design['cases']['data'][0].copy()
+                add_design[11] += wavePeriodIncrement2 * (numIncr + 1)
+                design['cases']['data'].append(add_design)
+
+        return design
+    else:
+        return design
+
+
+def retrieveAxisParAnalysis(iCase, cases, changeType, variableXaxis, parametricAnalysisDict):
+
+    if changeType == 'misalignment':
+        variableXaxis.append(cases['wave_heading2'])
+        string_x_axis = 'Misalignment second wave system [deg]'
+        title_string = f'Misalignment WS 2 $= {variableXaxis[-1]:10.2f}$ [deg]'
+    elif changeType == 'misalignment1':
+        variableXaxis.append(cases['wave_heading1'])
+        string_x_axis = 'Misalignment first wave system [deg]'
+        title_string = f'Misalignment WS 1 $= {variableXaxis[-1]:10.2f}$ [deg]'
+    elif changeType == 'windMisalignment':
+        variableXaxis.append(cases['wind_heading'])
+        string_x_axis = 'Wind heading [deg]'
+        title_string = f'Misalignment Wind $= {variableXaxis[-1]:10.2f}$ [deg]'
+
+    elif changeType == 'floaterRotation':
+        rotationAngle = getFromDict(parametricAnalysisDict, 'rotationAngle')
+        variableXaxis.append(iCase * rotationAngle)  # not robust, now only works for single base case being rotated
+        string_x_axis = 'Floater rotation [deg]'
+        title_string = f'Floater Rotation $= {variableXaxis[-1]:10.2f}$ [deg]'
+    elif changeType == 'windSpeed':
+        variableXaxis.append(cases['wind_speed'])
+        string_x_axis = 'Average Wind Speed [m/s]'
+        title_string = f'$U_{{ave}} = {variableXaxis[-1]:10.2f}$ [m/s]'
+    elif changeType == 'waveHeight1':
+        variableXaxis.append(cases['wave_height'])
+        string_x_axis = 'Wave Height system 1 [m]'
+        title_string = f'WS1 $H_{{s}}={variableXaxis[-1]:10.2f}$ [m]'
+    elif changeType == 'waveHeight2':
+        variableXaxis.append(cases['wave_height2'])
+        string_x_axis = 'Wave Height system 2 [m]'
+        title_string = f'WS2 $H_{{s}}={variableXaxis[-1]:10.2f}$ [m]'
+    elif changeType == 'wavePeriod1':
+        variableXaxis.append(cases['wave_period'])
+        string_x_axis = 'Wave Period system 1 [s]'
+        title_string = f'WS1 $T_{{p}}={variableXaxis[-1]:10.2f}$ [s]'
+    elif changeType == 'wavePeriod2':
+        variableXaxis.append(cases['wave_period2'])
+        string_x_axis = 'Wave Period system 2 [s]'
+        title_string = f'WS2 $T{{p}}={variableXaxis[-1]:10.2f}$ [s]'
+    else:
+        variableXaxis.append(iCase)
+        string_x_axis = 'Case number'
+        title_string = f'Base Case {iCase+1}'
+
+    return variableXaxis, string_x_axis, title_string
+
+
+def plotFloaterRotation_min_max_moments(equivalent_moment_list, floater_rotations):
+
+    max_moment = []
+    min_moment = []
+
+    for index, equivalent_moment_list_in_list in enumerate(equivalent_moment_list):
+        max_moment.append([np.amax(equivalent_moment_list_in_list)])
+        min_moment.append([np.amax(equivalent_moment_list_in_list)])
+
+    fig, ax = plt.subplots(figsize=get_figsize(400))
+    ax.plot(floater_rotations, max_moment, label='Max eq stress')
+    ax.plot(floater_rotations, min_moment, label='Min eq stress')
+    ax.set_xlabel('Floater Rotation angle [deg]')
+    ax.set_ylabel('Equivalent Moment [MNm]')
+    ax.set_ylim(bottom=0)
+    ax.set_title(f'Equivalent Moment for changing different floater rotations')
+    ax.legend()
+    ax.grid()
+
+
+def get_figsize(width, fraction=1, subplots=(1, 1)):
+    """Set figure dimensions to avoid scaling in LaTeX.
+
+    Parameters
+    ----------
+    width: float or string
+            Document width in points, or string of predined document type
+    fraction: float, optional
+            Fraction of the width which you wish the figure to occupy
+    subplots: array-like, optional
+            The number of rows and columns of subplots.
+    Returns
+    -------
+    fig_dim: tuple
+            Dimensions of figure in inches
+    """
+    if width == 'thesis':
+        width_pt = 426.79135
+    elif width == 'beamer':
+        width_pt = 307.28987
+    else:
+        width_pt = width
+
+    # Width of figure (in pts)
+    fig_width_pt = width_pt * fraction
+    # Convert from pt to inches
+    inches_per_pt = 1 / 72.27
+
+    # Golden ratio to set aesthetic figure height
+    # https://disq.us/p/2940ij3
+    golden_ratio = (5**.5 - 1) / 2
+
+    # Figure width in inches
+    fig_width_in = fig_width_pt * inches_per_pt
+    # Figure height in inches
+    fig_height_in = fig_width_in * golden_ratio * (subplots[0] / subplots[1])
+
+    return (fig_width_in, fig_height_in)
+
+
+def bmatrix(a):
+    """Returns a LaTeX bmatrix
+
+    :a: numpy array
+    :returns: LaTeX bmatrix as a string
+    """
+
+    if len(a.shape) > 2:
+        raise ValueError('bmatrix can at most display two dimensions')
+    lines = str(a).replace('[', '').replace(']', '').splitlines()
+    rv = [r'\begin{bmatrix}']
+    rv += ['  ' + ' & '.join(l.split()) + r'\\' for l in lines]
+    rv +=  [r'\end{bmatrix}']
+    return '\n'.join(rv)
+
+
+def printCaseToTable(cases, keys):
+    parameters = ['U$_{ave}$ [m/s]', 'Turbulence Intensity [-]', 'Misalignment Angle [deg]', 'Yaw error [deg]'
+                  ,'T$_p$ system 1 [s]', 'H$_s$ system 1 [m]', '$\gamma$ system 1 [-]', 'Misalignment angle system 1 [deg]'
+                  ,'T$_p$ system 2 [s]', 'H$_s$ system 2 [m]', '$\gamma$ system 2 [-]', 'Misalignment angle system 2 [deg]']
+    for iCase, item in enumerate(cases):
+        case = dict(zip(keys, cases[iCase]))
+        parameters[0] += f" & {case['wind_speed']:.2f}"
+        parameters[1] += f" & {case['turbulence']:.2f}"
+        parameters[2] += f" & {case['wind_heading']:.2f}"
+        parameters[3] += f" & {case['yaw_misalign']:.2f}"
+        parameters[4] += f" & {case['wave_period']:.2f}"
+        parameters[5] += f" & {case['wave_height']:.2f}"
+        parameters[6] += f" & {case['gamma_ws1']:.2f}"
+        parameters[7] += f" & {case['wave_heading']:.2f}"
+        parameters[8] += f" & {case['wave_period2']:.2f}"
+        parameters[9] += f" & {case['wave_height2']:.2f}"
+        parameters[10] += f" & {case['gamma_ws2']:.2f}"
+        parameters[11] += f" & {case['wave_heading2']:.2f}"
+
+    for p, temp in enumerate(parameters):
+        parameters[p] += f' \\\ \hline'
+        print(parameters[p])
+
+
+def adjustMooring(ms, design):
+    '''
+    ms: moorpy system 
+    design: RAFT input dictionary 
+    
+    Returns updated design dictionary to match moorpy mooring system (hackish method - will not work for every mooring system!)
+    '''
+    
+    design['mooring']['water_depth'] = ms.depth
+    for i, linetype in enumerate(ms.lineTypes):
+        #design['mooring']['line_types'][i]['name'] = linetype
+        design['mooring']['line_types'][i]['diameter'] = ms.lineTypes[linetype]['input_d']
+        design['mooring']['line_types'][i]['mass_density'] = ms.lineTypes[linetype]['m']
+        design['mooring']['line_types'][i]['stiffness'] = ms.lineTypes[linetype]['EA']
+   
+    nLines = len(ms.lineList)
+    for i in range(nLines):
+        design['mooring']['points'][i]['location'] = list(ms.pointList[i*2].r)
+        design['mooring']['points'][i+3]['location'] = list(ms.pointList[i*2+1].r)
+    
+        design['mooring']['lines'][i]['length'] = ms.lineList[i].L
+    
+    return(design)
+
+
 if __name__ == '__main__':
     
     
