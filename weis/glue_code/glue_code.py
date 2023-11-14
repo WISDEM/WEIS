@@ -173,7 +173,7 @@ class WindPark(om.Group):
 
                 self.connect('nacelle.gear_ratio',              'sse_tune.tune_rosco.gear_ratio')
                 self.connect("blade.high_level_blade_props.rotor_radius", "sse_tune.tune_rosco.R")
-                self.connect('rotorse.re.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
+                self.connect('rotorse.I_all_blades',            'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
                 self.connect('rotorse.rs.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
                 self.connect('rotorse.rs.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
                 self.connect('rotorse.rp.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
@@ -266,7 +266,7 @@ class WindPark(om.Group):
             self.connect('sse_tune.tune_rosco.Fl_Kp',           'raft.Fl_Kp')
             self.connect('sse_tune.tune_rosco.VS_Kp',           'raft.rotor_TC_VS_Kp')
             self.connect('sse_tune.tune_rosco.VS_Ki',           'raft.rotor_TC_VS_Ki')
-            self.connect('rotorse.re.precomp.I_all_blades',     'raft.rotor_inertia', src_indices=[0])
+            self.connect('rotorse.I_all_blades',     'raft.rotor_inertia', src_indices=[0])
             self.connect('rotorse.rp.powercurve.rated_V',       'raft.Vrated')
             self.connect('control.V_in',                    'raft.V_cutin')
             self.connect('control.V_out',                   'raft.V_cutout')
@@ -660,10 +660,10 @@ class WindPark(om.Group):
                     self.connect('aeroelastic.hub_Fxyz',       'drivese_post.F_hub')
                     self.connect('aeroelastic.hub_Mxyz',       'drivese_post.M_hub')
                     self.connect('aeroelastic.max_RootMyb',     'drivese_post.pitch_system.BRFM')
-                    self.connect('blade.pa.chord_param',         'drivese_post.blade_root_diameter', src_indices=[0])
-                    self.connect('rotorse.re.precomp.blade_mass',        'drivese_post.blade_mass')
-                    self.connect('rotorse.re.precomp.mass_all_blades',   'drivese_post.blades_mass')
-                    self.connect('rotorse.re.precomp.I_all_blades',      'drivese_post.blades_I')
+                    self.connect('blade.pa.chord_param',        'drivese_post.blade_root_diameter', src_indices=[0])
+                    self.connect('rotorse.blade_mass',          'drivese_post.blade_mass')
+                    self.connect('rotorse.mass_all_blades',     'drivese_post.blades_mass')
+                    self.connect('rotorse.I_all_blades',        'drivese_post.blades_I')
 
                     self.connect('nacelle.distance_hub2mb',           'drivese_post.L_h1')
                     self.connect('nacelle.distance_mb2mb',            'drivese_post.L_12')
@@ -901,7 +901,7 @@ class WindPark(om.Group):
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
 
-                self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
+                self.connect('rotorse.blade_mass',  'outputs_2_screen_weis.blade_mass')
                 self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
 
             if modeling_options['General']['openfast_configuration']['model_only'] == False:
