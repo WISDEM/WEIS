@@ -24,6 +24,8 @@ from weis.frequency.raft_wrapper import RAFT_WEIS
 from weis.control.tmd import TMD_group
 from ROSCO_toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
+from wisdem.commonse.cylinder_member import get_nfull
+
 
 weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
@@ -369,10 +371,18 @@ class WindPark(om.Group):
 
             # TODO: FIX NDLC HERE
             if modeling_options["flags"]["tower"]:
-                self.add_subsystem('towerse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["TowerSE"], n_dlc=1))
+                # This is needed for some reason because TowerSE isn't already called?  Should probably re-use that
+                n_height = modeling_options['WISDEM']['TowerSE']["n_height"]
+                n_refine = modeling_options['WISDEM']['TowerSE']["n_refine"]
+                n_full = get_nfull(n_height, nref=n_refine)
+                self.add_subsystem('towerse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["TowerSE"], n_dlc=1, n_full = n_full))
                 
             if modeling_options["flags"]["monopile"]:
-                self.add_subsystem('fixedse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["FixedBottomSE"], n_dlc=1))
+                n_height = modeling_options['WISDEM']['FixedBottomSE']["n_height"]
+                n_refine = modeling_options['WISDEM']['FixedBottomSE']["n_refine"]
+                n_full = get_nfull(n_height, nref=n_refine)
+                
+                self.add_subsystem('fixedse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["FixedBottomSE"], n_dlc=1, n_full = n_full))
                 
             if not modeling_options['Level3']['from_openfast']:
                 self.add_subsystem('tcons_post',     TurbineConstraints(modeling_options = modeling_options))
