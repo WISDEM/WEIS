@@ -1,0 +1,190 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "MoorPy"
+version = "1.1.0"
+description = "A design-oriented mooring system library for Python"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "BSD-3-Clause"}
+keywords = ["wind", "floating", "mooring", "design", "water"]
+authors = [
+  {name = "National Renewable Energy Laboratory", email = "matthew.hall@nrel.gov" }
+]
+maintainers = [
+  {name = "Matthew Hall", email = "matthew.hall@nrel.gov"},
+  {name = "Stein Housner", email = "stein.housner@nrel.gov"},
+]
+classifiers = [  # Optional
+  # How mature is this project? Common values are
+  #   3 - Alpha
+  #   4 - Beta
+  #   5 - Production/Stable
+  "Development Status :: 4 - Beta",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering",
+
+  "License :: OSI Approved :: BSD License",
+  
+  # Specify the Python versions you support here. In particular, ensure
+  # that you indicate you support Python 3. These classifiers are *not*
+  # checked by "pip install". See instead "python_requires" below.
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Fortran",
+  
+  "Operating System :: OS Independent",
+]
+
+# List additional groups of dependencies here (e.g. development
+# dependencies). Users will be able to install these using the "extras"
+# syntax, for example:
+#
+#   $ pip install sampleproject[dev]
+#
+# Similar to `dependencies` above, these must be valid existing
+# projects.
+dependencies = [
+  "matplotlib",
+  "numpy",
+  "scipy",
+  "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pre-commit"]
+docs = [
+    "sphinx",
+    "sphinx-rtd-theme"
+]
+test = [
+  "pytest",
+  "pytest-cov",
+  "pytest-xdist",
+]
+
+# List URLs that are relevant to your project
+#
+# This field corresponds to the "Project-URL" and "Home-Page" metadata fields:
+# https://packaging.python.org/specifications/core-metadata/#project-url-multiple-use
+# https://packaging.python.org/specifications/core-metadata/#home-page-optional
+#
+# Examples listed include a pattern for specifying where the package tracks
+# issues, where the source is hosted, where to say thanks to the package
+# maintainers, and where to support the project financially. The key is
+# what's used to render the link text on PyPI.
+[project.urls]  # Optional
+"Homepage" = "https://github.com/NREL/MoorPy"
+"Documentation" = "https://moorpy.readthedocs.io"
+
+# This is configuration specific to the `setuptools` build backend.
+# If you are using a different build backend, you will need to change this.
+[tool.setuptools]
+include-package-data = true
+
+#[tool.setuptools.packages]
+#find = {}
+
+[tool.setuptools.packages.find]
+exclude = ["docs", "examples", "tests"]
+namespaces = true
+
+[tool.setuptools.package-data]
+# If there are data files included in your packages that need to be
+# installed, specify them here.
+"*" = ["*.txt", "*.md", "*.yaml"]
+
+#[tool.black]
+#line-length = 120
+#target-version = ['py311']
+#preview=true
+#exclude = '''
+#/(
+#    \.git
+#  | \.hg
+#  | \.mypy_cache
+#  | \.tox
+#  | \.venv
+#  | _build
+#  | buck-out
+#  | build
+#  | dist
+#)/
+#'''
+
+[tool.isort]
+# https://github.com/PyCQA/isort
+multi_line_output = "3"
+include_trailing_comma = true
+force_grid_wrap = false
+use_parentheses = true
+line_length = "120"
+sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+known_first_party = ["wisdem"]
+length_sort = "1"
+profile = "black"
+skip_glob = ['__init__.py']
+atomic = true
+#lines_after_imports = 2
+#lines_between_types = 1
+#src_paths=isort,test
+
+[tool.ruff]
+select = ["A", "C", "E", "F", "I"]
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "C", "E", "F", "I"]
+unfixable = []  # fix all
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+per-file-ignores = {}  # ignore no specific files and checks
+
+line-length = 88
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+target-version = "py311"
+
+[tool.ruff.mccabe]
+max-complexity = 10
+
+#[tool.docformatter]
+#blank=true
+#close-quotes-on-newline=true
+#in-place=true
+#make-summary-multi-line=true
+#pre-summary-newline=true
+#recursive=true
+#wrap-descriptions=68
+#wrap-summaries=88

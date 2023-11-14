@@ -20,11 +20,11 @@ import moorpy
 # -- Project information -----------------------------------------------------
 
 project = 'MoorPy'
-copyright = '2021, NREL'
-author = 'NREL'
+copyright = '2021, National Renewable Energy Laboratory'
+author = 'NREL MoorPy team'
 
 # The full version, including alpha/beta/rc tags
-release = '0.9.0'
+release = '0.9.1'
 
 
 # -- General configuration ---------------------------------------------------
