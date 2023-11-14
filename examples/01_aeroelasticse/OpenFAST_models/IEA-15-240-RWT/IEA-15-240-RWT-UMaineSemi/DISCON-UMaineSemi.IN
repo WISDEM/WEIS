@@ -1,11 +1,12 @@
 ! Controller parameter input file for the IEA-15-240-RWT-UMaineSemi wind turbine
-!    - File written using ROSCO version 2.6.0 controller tuning logic on 08/10/22
+!    - File written using ROSCO version 2.8.0 controller tuning logic on 11/13/23
 
 !------- DEBUG ------------------------------------------------------------
-1                   ! LoggingLevel		- {0: write no debug files, 1: write standard output .dbg-file, 2: LoggingLevel 1 + ROSCO LocalVars (.dbg2) 3: LoggingLevel 2 + complete avrSWAP-array (.dbg3)}
+1                   ! LoggingLevel		- (0: write no debug files, 1: write standard output .dbg-file, 2: LoggingLevel 1 + ROSCO LocalVars (.dbg2) 3: LoggingLevel 2 + complete avrSWAP-array (.dbg3))
+0                   ! Echo		        - (0 - no Echo, 1 - Echo input data to <RootName>.echo)
 
 !------- CONTROLLER FLAGS -------------------------------------------------
-2                   ! F_LPFType			- {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals
+2                   ! F_LPFType			- (1: first-order low-pass filter, 2: second-order low-pass filter), [rad/s] (currently filters generator speed and pitch control signals
 2                   ! F_NotchType		- Notch on the measured generator speed and/or tower fore-aft motion (for floating) {0: disable, 1: generator speed, 2: tower-top fore-aft motion, 3: generator speed and tower-top fore-aft motion}
 0                   ! IPC_ControlMode	- Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}
 2                   ! VS_ControlMode	- Generator torque control mode in above rated conditions {0: constant torque, 1: constant power, 2: TSR tracking PI control with constant torque, 3: TSR tracking PI control with constant power}
@@ -20,8 +21,12 @@
 0                   ! Flp_Mode          - Flap control mode {0: no flap control, 1: steady state flap angle, 2: Proportional flap control, 2: Cyclic (1P) flap control}
 0                   ! OL_Mode           - Open loop control mode {0: no open loop control, 1: open loop control vs. time}
 0                   ! PA_Mode           - Pitch actuator mode {0 - not used, 1 - first order filter, 2 - second order filter}
+0                   ! PF_Mode           - Pitch fault mode {0 - not used, 1 - constant offset on one or more blades}
+0                   ! AWC_Mode          - Active wake control {0 - not used, 1 - complex number method, 2 - Coleman transform method}
 0                   ! Ext_Mode          - External control mode {0 - not used, 1 - call external dynamic library}
-0                   ! ZMQ_Mode          - Fuse ZeroMQ interaface {0: unused, 1: Yaw Control}
+0                   ! ZMQ_Mode          - Fuse ZeroMQ interface {0: unused, 1: Yaw Control}
+0                   ! CC_Mode           - Cable control mode [0- unused, 1- User defined, 2- Open loop control]
+0                   ! StC_Mode          - Structural control mode [0- unused, 1- User defined, 2- Open loop control]
 
 !------- FILTERS ----------------------------------------------------------
 1.00810             ! F_LPFCornerFreq	- Corner frequency (-3dB point) in the low-pass filters, [rad/s]
@@ -52,6 +57,7 @@
 
 !------- INDIVIDUAL PITCH CONTROL -----------------------------------------
 8.592000  10.740000  ! IPC_Vramp		- Start and end wind speeds for cut-in ramp function. First entry: IPC inactive, second entry: IPC fully active. [m/s]
+2                   ! IPC_SatMode		- IPC Saturation method (0 - no saturation (except by PC_MinPit), 1 - saturate by PS_BldPitchMin, 2 - saturate sotfly (full IPC cycle) by PC_MinPit, 3 - saturate softly by PS_BldPitchMin)
 0.3                 ! IPC_IntSat		- Integrator saturation (maximum signal amplitude contribution to pitch from IPC), [rad]
 0.000e+00 0.000e+00 ! IPC_KP			- Proportional gain for the individual pitch controller: first parameter for 1P reductions, second for 2P reductions, [-]
 0.000e+00 0.000e+00 ! IPC_KI			- Integral gain for the individual pitch controller: first parameter for 1P reductions, second for 2P reductions, [-]
@@ -93,8 +99,8 @@
 -0.02465686 -0.02685047 -0.02904408 -0.03123769 -0.03343130 -0.03562491 -0.03781853 -0.04001214 -0.04220575 -0.04439936 -0.04659297 -0.04878658 -0.05098019 -0.05317380 -0.05536741 -0.05756102 -0.05975463 -0.06194824 -0.06414185 -0.06633546 -0.06852907 -0.07072268 -0.07291629 -0.07510990 -0.07730351 -0.07949712 -0.08169074 -0.08388435 -0.08607796 -0.08367786 -0.05601496 -0.05845251 -0.06491969 -0.07343523 -0.08331020 -0.09419764 -0.10588646 -0.11825801 -0.13123772 -0.14476398 -0.15881875 -0.17327736 -0.18819599 -0.20358260 -0.21929818 -0.23545859 -0.25196259 -0.26884815 -0.28608407 -0.30367233 -0.32159721 -0.33983661 -0.35840660 -0.37728873 -0.39643034 -0.41591476 -0.43565664 -0.45565512 -0.47592625 -0.49646875               ! WE_FOPoles        - First order system poles [1/s]
 
 !------- YAW CONTROL ------------------------------------------------------
-0.00000             ! Y_uSwitch		- Wind speed to switch between Y_ErrThresh. If zero, only the first value of Y_ErrThresh is used [m/s]
-4.000000  8.000000  ! Y_ErrThresh    - Yaw error threshold/deadband. Turbine begins to yaw when it passes this. If Y_uSwitch is zero, only the first value is used. [deg].
+0.00000             ! Y_uSwitch		- Wind speed to switch between Y_ErrThresh. If zero, only the second value of Y_ErrThresh is used [m/s]
+4.000000  8.000000  ! Y_ErrThresh    - Yaw error threshold/deadbands. Turbine begins to yaw when it passes this. If Y_uSwitch is zero, only the second value is used. [deg].
 0.00870             ! Y_Rate			- Yaw rate [rad/s]
 0.00000             ! Y_MErrSet		- Integrator saturation (maximum signal amplitude contribution to pitch from yaw-by-IPC), [rad]
 0.00000             ! Y_IPC_IntSat		- Integrator saturation (maximum signal amplitude contribution to pitch from yaw-by-IPC), [rad]
@@ -129,11 +135,24 @@
 0                   ! Ind_Breakpoint    - The column in OL_Filename that contains the breakpoint (time if OL_Mode = 1)
 0                   ! Ind_BldPitch      - The column in OL_Filename that contains the blade pitch input in rad
 0                   ! Ind_GenTq         - The column in OL_Filename that contains the generator torque in Nm
-0                   ! Ind_YawRate       - The column in OL_Filename that contains the generator torque in Nm
+0                   ! Ind_YawRate       - The column in OL_Filename that contains the nacelle yaw rate rad/s
+0                   ! Ind_CableControl  - The column(s) in OL_Filename that contains the cable control inputs in m [Used with CC_Mode = 2, must be the same size as CC_Group_N]
+0                   ! Ind_StructControl - The column(s) in OL_Filename that contains the structural control inputs [Used with StC_Mode = 2, must be the same size as StC_Group_N]
 
 !------- Pitch Actuator Model -----------------------------------------------------
 3.140000000000        ! PA_CornerFreq     - Pitch actuator bandwidth/cut-off frequency [rad/s]
 0.707000000000        ! PA_Damping        - Pitch actuator damping ratio [-, unused if PA_Mode = 1]
+
+!------- Pitch Actuator Faults -----------------------------------------------------
+0.00000000 0.00000000 0.00000000                 ! PF_Offsets     - Constant blade pitch offsets for blades 1-3 [rad]
+
+!------- Active Wake Control -----------------------------------------------------
+1                     ! AWC_NumModes       - Number of user-defined AWC forcing modes 
+1                     ! AWC_n              - Azimuthal mode number(s) (i.e., the number and direction of the lobes of the wake structure)
+1                     ! AWC_harmonic       - Harmonic(s) to apply in the AWC Inverse Coleman Transformation (only used when AWC_Mode = 2)
+0.0500                ! AWC_freq           - Frequency(s) of forcing mode(s) [Hz]
+1.0000                ! AWC_amp            - Pitch amplitude(s) of individual forcing mode(s) [deg]
+0.0000                ! AWC_clockangle     - Initial angle(s) of forcing mode(s) [deg]
 
 !------- External Controller Interface -----------------------------------------------------
 "unused"            ! DLL_FileName        - Name/location of the dynamic library in the Bladed-DLL format
@@ -143,3 +162,12 @@
 !------- ZeroMQ Interface ---------------------------------------------------------
 "tcp://localhost:5555"            ! ZMQ_CommAddress     - Communication address for ZMQ server, (e.g. "tcp://localhost:5555") 
 2                   ! ZMQ_UpdatePeriod    - Call ZeroMQ every [x] seconds, [s]
+
+!------- Cable Control ---------------------------------------------------------
+1                   ! CC_Group_N        - Number of cable control groups
+  0                 ! CC_GroupIndex     - First index for cable control group, should correspond to deltaL
+20.000000           ! CC_ActTau         - Time constant for line actuator [s]
+
+!------- Structural Controllers ---------------------------------------------------------
+1                   ! StC_Group_N       - Number of cable control groups
+  0                 ! StC_GroupIndex    - First index for structural control group, options specified in ServoDyn summary output
