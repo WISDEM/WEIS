@@ -116,6 +116,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(cwd, potpath) )
                         elif osp.exists( osp.join(weis_dir, potpath+'.1') ):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(weis_dir, potpath) )
+                        elif osp.exists( osp.join(mod_opt_dir, potpath+'.1') ):
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(mod_opt_dir, potpath) )
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
