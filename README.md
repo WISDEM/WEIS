@@ -28,7 +28,7 @@ WEIS integrates in a unique workflow four models:
 Software Model Versions:
 Software        |       Version
 ---             |       ---
-OpenFAST        |       3.4.0
+OpenFAST        |       3.5.0
 ROSCO           |       develop ([05d7b3b](https://github.com/NREL/ROSCO/commit/05d7b3b948c12ad40892941b6f92f3b08f5c6894))
 WISDEM          |       develop ([6f15fc9](https://github.com/WISDEM/WISDEM/commit/6f15fc9ed7f7fd1282d32af5518d2ae37dbc9466))
 
