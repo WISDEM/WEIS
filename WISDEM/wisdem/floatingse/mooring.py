@@ -179,7 +179,7 @@ class Mooring(om.ExplicitComponent):
 
         if not line_obj is None:
             min_break_load = line_obj.MBL
-            mass_den = line_obj.mlin
+            mass_den = line_obj.m
             ea_stiff = line_obj.EA
             cost_rate = line_obj.cost
 
@@ -307,7 +307,7 @@ class Mooring(om.ExplicitComponent):
             fbody = ms.mooringEq([surge, sway, 0, 0, 0, 0], DOFtype="coupled")
             Frestore[ia] = np.dot(fbody[:2], idir)
             for k in range(n_lines):
-                f = ms.lineList[0].getEndForce(endB=0)
+                f = ms.lineList[0].TB
                 Fa[k] = np.sqrt(np.sum(f**2))
 
             Tmax[ia] = np.abs(Fa).max()
@@ -347,7 +347,7 @@ class Mooring(om.ExplicitComponent):
             line_obj = props.getLineProps(1e3 * d, type=line_mat)
 
         if not line_obj is None:
-            mass_den = line_obj.mlin
+            mass_den = line_obj.m
             cost_rate = line_obj.cost
 
         # Cost of anchors
