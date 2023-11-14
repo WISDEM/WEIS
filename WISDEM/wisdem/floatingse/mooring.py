@@ -179,7 +179,7 @@ class Mooring(om.ExplicitComponent):
 
         if not line_obj is None:
             min_break_load = line_obj.MBL
-            mass_den = line_obj.m
+            mass_den = line_obj.mlin
             ea_stiff = line_obj.EA
             cost_rate = line_obj.cost
 
@@ -347,7 +347,7 @@ class Mooring(om.ExplicitComponent):
             line_obj = props.getLineProps(1e3 * d, type=line_mat)
 
         if not line_obj is None:
-            mass_den = line_obj.m
+            mass_den = line_obj.mlin
             cost_rate = line_obj.cost
 
         # Cost of anchors
