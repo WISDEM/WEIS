@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import interp1d, interp2d, griddata
 
-import pyhams.pyhams     as ph
 import raft.member2pnl as pnl
 from raft.helpers import *
 from raft.raft_member import Member
@@ -578,7 +577,7 @@ class FOWT():
         headings : list of floats
             incident wave headings to be considered, default [0] (deg). <<<<<<<< capability still needs to be added, after adjustments to pyHAMS
         '''
-                
+        
         # go through members to be modeled with BEM and calculated their nodes and panels lists
         nodes = []
         panels = []
@@ -601,6 +600,8 @@ class FOWT():
 
         # only try to save a mesh and run HAMS if some members DO have potMod=True
         if len(panels) > 0:
+            
+            import pyhams.pyhams as ph  # import PyHAMS only if we're going to use it
             
             pnl.writeMesh(nodes, panels, oDir=os.path.join(meshDir,'Input')) # generate a mesh file in the HAMS .pnl format
             

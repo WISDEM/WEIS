@@ -255,9 +255,10 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('properties_roll inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Roll inertia sub CG')
         self.add_output('properties_pitch inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Pitch inertia sub CG')
         self.add_output('properties_yaw inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Yaw inertia sub CG')
-        self.add_output('properties_Buoyancy (pgV)', val=0.0, units='N', desc='Buoyancy (pgV)')
-        self.add_output('properties_Center of Buoyancy', val=np.zeros(ndim), units='m', desc='Center of buoyancy')
-        self.add_output('properties_C stiffness matrix', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix')
+        self.add_output('properties_buoyancy (pgV)', val=0.0, units='N', desc='Buoyancy (pgV)')
+        self.add_output('properties_center of buoyancy', val=np.zeros(ndim), units='m', desc='Center of buoyancy')
+        self.add_output('properties_C hydrostatic', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix')
+        self.add_output('properties_C system', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix of full system')
         self.add_output('properties_F_lines0', val=np.zeros(ndof), units='N', desc='Mean mooring force from all lines')
         self.add_output('properties_C_lines0', val=np.zeros((ndof,ndof)), units='Pa', desc='Mooring stiffness')
         self.add_output('properties_M support structure', val=np.zeros((ndof,ndof)), units='kg', desc='Mass matrix for platform')
@@ -282,7 +283,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 iout = f'{n}_{s}'
                 
                 if n == 'Tmoor':
-                    myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, 2*nlines, nfreq))
+                    myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, nfreq, 2*nlines))
                 else:
                     myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
                 
@@ -640,7 +641,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # option to run level 1 load cases
         if True: #processCases:
-            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=modeling_opt['BEM_dir'])
+            model.analyzeCases(meshDir=modeling_opt['BEM_dir'])
             
         # get and process results
         results = model.calcOutputs()
@@ -661,19 +662,22 @@ class RAFT_OMDAO(om.ExplicitComponent):
             '''
 
         # Pattern matching for case-by-case outputs
-        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
-        stats = ['avg','std','max','PSD','DEL']
+        # names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']   # these are not always outputted, need to catch better
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','Tmoor']
+        stats = ['avg','std','max','PSD']
         case_mask = np.array(case_mask)
         for n in names:
             for s in stats:
-                if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                # need to squeeze this because raft makes some outputs 2D for multiple rotors, we only support 1 right now
-                outputs['stats_'+iout][case_mask] = np.squeeze(results['case_metrics'][iout])
+
+                # use only first rotor/turbine
+                case_metrics = [cm[0] for cm in results['case_metrics'].values()]
+                stat = np.squeeze(np.array([cm[iout] for cm in case_metrics]))
+                outputs['stats_'+iout][case_mask] = stat
 
         # Other case outputs
-        for n in ['wind_PSD','wave_PSD']:
-            outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
+        # for n in ['wind_PSD','wave_PSD']:
+        #     outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
 
         # natural periods
         model.solveEigen()
