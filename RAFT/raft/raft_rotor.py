@@ -47,8 +47,9 @@ class Rotor:
         self.coords = getFromDict(turbine, 'rotorCoords', dtype=list, shape=turbine['nrotors'], default=[[0,0]])[ir]
         
         self.nBlades    = getFromDict(turbine, 'nBlades', shape=turbine['nrotors'], dtype=int)[ir]         # [-]
-        self.headings   = getFromDict(turbine, 'headings', shape=-1, default=[90,210,330])  # [deg]
-        self.nBlades    = len(self.headings)
+        
+        default_headings    = list(np.arange(self.nBlades) * 360 / self.nBlades) # equally distribute blades
+        self.headings       = getFromDict(turbine, 'headings', shape=-1, default=default_headings)  # [deg]
 
         self.axis       = getFromDict(turbine, 'axis', shape=turbine['nrotors'], default=[1,0,0])[ir]  # unit vector of rotor axis, facing downflow [-]
 
@@ -824,11 +825,11 @@ class Rotor:
         # ----- rotation matricse ----- 
         # (blade pitch would be a -rotation about local z)
         R_precone = rotationMatrix(0, -self.ccblade.precone, 0)  
-        R_azimuth = [rotationMatrix(azimuth + azi, 0, 0) for azi in 2*np.pi/3.*np.arange(3)]
+        R_azimuth = [rotationMatrix(azimuth + azi, 0, 0) for azi in 2*np.pi/self.nBlades*np.arange(self.nBlades)]
         R_tilt    = rotationMatrix(0, np.deg2rad(self.shaft_tilt), 0)   # # define x as along shaft downwind, y is same as ptfm y
         
         # ----- transform coordinates -----
-        for ib in range(3):
+        for ib in range(self.nBlades):
         
             P2 = np.matmul(R_precone, P)
             P2 = np.matmul(R_azimuth[ib], P2)
