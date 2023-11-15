@@ -1066,10 +1066,10 @@ class Rotor:
 
         if current:
             speed = getFromDict(case, 'current_speed', shape=0, default=1.0)
-            turbulence = getFromDict(case, 'current_turbulence', shape=0, default=0.0)
+            turbulence = getFromDict(case, 'current_turbulence', shape=0, default=0.0,dtype=str)
         else:
             speed = getFromDict(case, 'wind_speed', shape=0, default=10.0)
-            turbulence = getFromDict(case, 'turbulence', shape=0, default=0.0)
+            turbulence = getFromDict(case, 'turbulence', shape=0, default=0.0,dtype=str)
 
         # Set inputs (f, V_ref, HH, Class, Categ, TurbMod, R)
         f = self.w / 2 / np.pi    # frequency in Hz

@@ -1,4 +1,1 @@
-#from .raft_model import Model
-
-import raft.raft_model as model
-
+from raft.raft_model import Model
