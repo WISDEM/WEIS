@@ -105,7 +105,7 @@ jobs:
       - name: Test postprocessing notebooks
         run: |
           cd examples/16_postprocessing
-          gdown --no-check-certificate 13dPaui_TW1LqZBCvWTzfqrlLWPUl1VAR
+          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
           unzip outputs
           treon plot_FAST.ipynb
           treon rev_DLCs_WEIS.ipynb
