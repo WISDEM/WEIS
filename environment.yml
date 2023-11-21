@@ -35,6 +35,7 @@ dependencies:
   - patsy
   - pip
   - pygments
+  - pyhams
   - pyoptsparse
   - pytest
   - pytest-cov
