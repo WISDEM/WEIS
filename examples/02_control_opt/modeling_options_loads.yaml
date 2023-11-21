@@ -86,10 +86,6 @@ DLC_driver:
           analysis_time: 20.
           shutdown_time: 10.
           transient_time: 0.0
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 220
-              GridWidth: 220
         # - DLC: "6.5"
         #   yaw_misalign: [-8.,8.]
         #   wave_height: [12.57]
