@@ -7,7 +7,7 @@ all_scripts = [
     "01_aeroelasticse/run_nodalOutputs",
     "02_control_opt/weis_driver_loads",
     #"03_NREL5MW_OC3_spar/weis_driver", # executed in the test_OC3.py
-    "03_NREL5MW_OC3_spar/weis_freq_driver",
+    # "03_NREL5MW_OC3_spar/weis_freq_driver", # executed in examples_skinny
     "04_NREL5MW_OC4_semi/weis_driver",
     "04_NREL5MW_OC4_semi/weis_freq_driver",
     "05_IEA-3.4-130-RWT/weis_driver", # also executed via mpi in the gitthub workflow
