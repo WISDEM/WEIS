@@ -1802,6 +1802,8 @@ class FASTLoadCases(ExplicitComponent):
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
                     dlc_generator.cases[i_case].HubHt *= 3.
                     dlc_generator.cases[i_case].GridHeight *= 3.
+                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
+                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
