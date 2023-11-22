@@ -24,17 +24,19 @@ IMPLICIT NONE
 CONTAINS
 ! -----------------------------------------------------------------------------------
     ! Calculate setpoints for primary control actions    
-    SUBROUTINE ComputeVariablesSetpoints(CntrPar, LocalVar, objInst)
-        USE ROSCO_Types, ONLY : ControlParameters, LocalVariables, ObjectInstances
+    SUBROUTINE ComputeVariablesSetpoints(CntrPar, LocalVar, ErrVar, objInst)
+        USE ROSCO_Types, ONLY : ControlParameters, LocalVariables, ObjectInstances, ErrorVariables
         USE Constants
         ! Allocate variables
         TYPE(ControlParameters),    INTENT(INOUT)       :: CntrPar
         TYPE(LocalVariables),       INTENT(INOUT)       :: LocalVar
+        TYPE(ErrorVariables),       INTENT(INOUT)       :: ErrVar
         TYPE(ObjectInstances),      INTENT(INOUT)       :: objInst
 
         REAL(DbKi)                                      :: VS_RefSpd        ! Referece speed for variable speed torque controller, [rad/s] 
         REAL(DbKi)                                      :: PC_RefSpd        ! Referece speed for pitch controller, [rad/s] 
         REAL(DbKi)                                      :: Omega_op         ! Optimal TSR-tracking generator speed, [rad/s]
+        REAL(DbKi)                                      :: sig         ! Optimal TSR-tracking generator speed, [rad/s]
 
         ! ----- Pitch controller speed and power error -----
         ! Implement setpoint smoothing
@@ -57,6 +59,11 @@ CONTAINS
         ELSE
             LocalVar%VS_RefSpd = CntrPar%VS_RefSpd
         ENDIF 
+
+
+        sig = sigma(LocalVar%Time, 0.0, 20.0, 1.0, 0.0, ErrVar)
+        ! WRITE(400,*) "sig: ", sig
+        LocalVar%VS_RefSpd = CntrPar%VS_RefSpd * sig + LocalVar%VS_RefSpd * (1-sig)
 
         LocalVar%VS_RefSpd = saturate(LocalVar%VS_RefSpd,CntrPar%VS_MinOMSpd, CntrPar%VS_RefSpd)
         

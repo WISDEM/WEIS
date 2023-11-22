@@ -1096,17 +1096,17 @@ CONTAINS
             ErrVar%ErrMsg  = 'VS_RtTq must not be negative.'
         ENDIF
 
-        ! VS_KP
-        IF (CntrPar%VS_KP(1) > 0.0) THEN
-            ErrVar%aviFAIL = -1
-            ErrVar%ErrMsg  = 'VS_KP must be less than zero.'
-        ENDIF
+        ! ! VS_KP
+        ! IF (CntrPar%VS_KP(1) > 0.0) THEN
+        !     ErrVar%aviFAIL = -1
+        !     ErrVar%ErrMsg  = 'VS_KP must be less than zero.'
+        ! ENDIF
         
-        ! VS_KI
-        IF (CntrPar%VS_KI(1) > 0.0) THEN
-            ErrVar%aviFAIL = -1
-            ErrVar%ErrMsg  = 'VS_KI must be less than zero.'
-        ENDIF
+        ! ! VS_KI
+        ! IF (CntrPar%VS_KI(1) > 0.0) THEN
+        !     ErrVar%aviFAIL = -1
+        !     ErrVar%ErrMsg  = 'VS_KI must be less than zero.'
+        ! ENDIF
 
         ! VS_TSRopt
         IF (CntrPar%VS_TSRopt < 0.0) THEN
