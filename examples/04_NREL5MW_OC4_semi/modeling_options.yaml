@@ -78,7 +78,7 @@ DLC_driver:
           n_seeds: 1
           analysis_time: 5.
           transient_time: 5.
-          turbulent_wind:
-              HubHt: 110
-              GridHeight: 160
-              GridWidth: 160
+        #   turbulent_wind:
+            #   HubHt: 110
+            #   GridHeight: 160
+            #   GridWidth: 160
