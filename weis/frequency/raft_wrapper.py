@@ -252,11 +252,27 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             for ii in range(s_ballast.shape[0]):
                 iball = np.where(s_ballast[ii,0] >= s_grid)[0][-1]
                 rho_fill[iball] = rho_ballast[ii]
-                # RAFT's l_fill is in absolute coordinates, WISDEM is relative to member
+                # Initial ballast fill values
                 if rho_ballast[ii] > 1100.0: # not variable/water
                     l_fill[iball] = h_ballast[ii]
                 else:
                     l_fill[iball] = var_height[k]
+
+            # fix ballast l_fill for RAFT: it does not want l_fill > section size
+            # add ballast from last section to next
+            remaining_fill = 0
+            for i_sec, l in enumerate(l_fill):
+                sec_length = s_grid[i_sec+1] - s_grid[i_sec]
+                l += remaining_fill     # add fill from previous section
+                if l > sec_length:
+                    l_fill[i_sec] = sec_length
+                    remaining_fill = l - sec_length
+                else:
+                    l_fill[i_sec] = l
+                    remaining_fill = 0
+
+            if remaining_fill:  # there is ballast still to be filled
+                print('WEIS Warning: Not all ballast was assigned to a RAFT section.')
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
 
