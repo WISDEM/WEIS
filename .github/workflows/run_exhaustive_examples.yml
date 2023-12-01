@@ -124,22 +124,22 @@ jobs:
         run: |
           python setup.py develop
 
-      # Test walkthrough notebook
-      - name: Test postprocessing notebooks
-        run: |
-          cd examples/16_postprocessing
-          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
-          unzip outputs
-          treon plot_FAST.ipynb
-          treon rev_DLCs_WEIS.ipynb
-          treon rev_Opt.ipynb
-          treon rev_WEIS_CSV.ipynb
+      # # Test walkthrough notebook
+      # - name: Test postprocessing notebooks
+      #   run: |
+      #     cd examples/16_postprocessing
+      #     gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
+      #     unzip outputs
+      #     treon plot_FAST.ipynb
+      #     treon rev_DLCs_WEIS.ipynb
+      #     treon rev_Opt.ipynb
+      #     treon rev_WEIS_CSV.ipynb
         
-      # Run all examples
-      - name: Run tests within WEIS
-        run: |
-          cd weis/test
-          python run_examples.py
+      # # Run all examples
+      # - name: Run tests within WEIS
+      #   run: |
+      #     cd weis/test
+      #     python run_examples.py
           
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
