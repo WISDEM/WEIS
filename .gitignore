@@ -19,3 +19,6 @@ raft/HullMesh.pnl
 raft/platform.gdf
 tests/BEM/
 tests/platform.gdf
+
+# Emacs
+*~

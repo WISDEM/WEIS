@@ -139,6 +139,7 @@ def meshMember(stations, diameters, rA, rB, dz_max=0, da_max=0, savedNodes=[], s
         # make subdivision
         # local panel longitudinal discretization
         n_z = int(np.ceil( np.sqrt(dr_s*dr_s + dz_s*dz_s) / dz_ps ))
+
         # local panel longitudinal dimension
         d_l = np.sqrt(dr_s*dr_s + dz_s*dz_s)/n_z;
         for i_z in range(1,n_z+1):

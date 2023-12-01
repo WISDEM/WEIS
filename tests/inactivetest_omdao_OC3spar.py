@@ -1,12 +1,11 @@
 import numpy as np
 import openmdao.api as om
-import numpy as np
 import os
 import yaml
 
 import raft
-from raft.omdao_raft import RAFT_OMDAO
-from common import check, test
+from raft.omdao_raft import RAFT_Group
+from common import test
 
 # -----------------------------------
 # OMDAO
@@ -24,6 +23,7 @@ opt['modeling']['potModMaster'] = 1
 opt['modeling']['XiStart'] = 0
 opt['modeling']['nIter'] = 0
 opt['modeling']['dlsMax'] = 5.0
+opt['modeling']['n_cases'] = 1
 
 opt['turbine'] = {}
 opt['turbine']['npts'] = 11
@@ -50,8 +50,13 @@ opt['mooring']['nlines'] = 3
 opt['mooring']['nline_types'] = 1
 opt['mooring']['nconnections'] = 6
 
+opt['analysis'] = {}
+opt['analysis']['general'] = {}
+opt['analysis']['general']['folder_output'] = 'output'
+
 prob = om.Problem()
-prob.model = RAFT_OMDAO(modeling_options=opt['modeling'],
+prob.model = RAFT_Group(modeling_options=opt['modeling'],
+                        analysis_options=opt['analysis'],
                         turbine_options=opt['turbine'],
                         mooring_options=opt['mooring'],
                         member_options=opt['members'])

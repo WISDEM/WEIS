@@ -48,11 +48,10 @@ class Rotor:
         self.coords = getFromDict(turbine, 'rotorCoords', dtype=list, shape=turbine['nrotors'], default=[[0,0]])[ir]
         self.speed_gain = getFromDict(turbine, 'speed_gain', shape=turbine['nrotors'], default=1.0)[ir]
         
-        self.headings   = getFromDict(turbine, 'headings', shape=-1, default=[90,210,330])  # [deg]
-        if 'headings' not in turbine:
-            self.nBlades    = getFromDict(turbine, 'nBlades', shape=turbine['nrotors'], dtype=int)[ir]         # [-]
-        else:
-            self.nBlades = len(self.headings)
+        self.nBlades    = getFromDict(turbine, 'nBlades', shape=turbine['nrotors'], dtype=int)[ir]         # [-]
+        
+        default_headings    = list(np.arange(self.nBlades) * 360 / self.nBlades) # equally distribute blades
+        self.headings       = getFromDict(turbine, 'headings', shape=-1, default=default_headings)  # [deg]
 
         self.axis       = getFromDict(turbine, 'axis', shape=turbine['nrotors'], default=[1,0,0])[ir]  # unit vector of rotor axis, facing downflow [-]
 
