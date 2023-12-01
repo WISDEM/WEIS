@@ -154,8 +154,8 @@ class TestOC3Spar(unittest.TestCase):
 #npt.assert_array_equal
 #assertAlmostEqual
         
-
-unittest.main()
+if __name__ == "__main__":
+    unittest.main()
 
 
 

@@ -4,6 +4,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
+from matplotlib.patches import Circle
+import mpl_toolkits.mplot3d.art3d as art3d
 import yaml
 
 try:
@@ -275,6 +277,7 @@ class Model():
         
         # calculate the system's constant properties
         for fowt in self.fowtList:
+            fowt.setPosition([fowt.x_ref, fowt.y_ref,0,0,0,0])
             fowt.calcStatics()
 
         for i, fowt in enumerate(self.fowtList):
@@ -382,7 +385,10 @@ class Model():
                     self.results['case_metrics'][iCase]['array_mooring']['Tmoor_max'][iT] = T_moor[iT] + 3*TRMS
                     self.results['case_metrics'][iCase]['array_mooring']['Tmoor_PSD'][iT,:] = getPSD(T_moor_amps[:,iT,:], self.w[0]) # PSD in N^2/(rad/s)
                     #self.results['case_metrics']['array_mooring']['Tmoor_DEL'][iCase,iT] = 
-        
+                
+                # log the maximum line tensions predicted by RAFT for MoorPy use
+                # self.ms.saveMaxTensions(self.results['case_metrics'][iCase]['array_mooring']['Tmoor_max'])
+                
                 if display > 0:
             
                     metrics = self.results['case_metrics'][iCase]['array_mooring']
@@ -1387,7 +1393,8 @@ class Model():
 
     def plot(self, ax=None, hideGrid=False, draw_body=True, color=None, nodes=0, 
              xbounds=None, ybounds=None, zbounds=None, plot_rotor=True, airfoils=False, 
-             station_plot=[], zorder=2, figsize=(6,4)):
+             station_plot=[], zorder=2, figsize=(6,4), plot_water=False, plot_soil=False):
+
         '''plots the whole model, including FOWTs and mooring system...'''
 
         # for now, start the plot via the mooring system, since MoorPy doesn't yet know how to draw on other codes' plots
@@ -1427,6 +1434,21 @@ class Model():
             ax.grid(b=None)
             ax.axis('off')
             ax.set_frame_on(False)
+
+        #vx = np.array( ax.get_xlim() )
+        #vy = np.array( ax.get_ylim() )
+        r = 75 #0.1*np.maximum(vx.max(), vy.max())
+
+        if plot_water:
+            water_color = (0.122, 0.4667, 0.706)
+            p_sea = Circle((0,0), r, color=water_color, alpha=0.3)
+            ax.add_patch(p_sea)
+            art3d.pathpatch_2d_to_3d(p_sea, z=0, zdir="z")
+        if plot_soil:
+            soil_color = (0.703125, 0.390625, 0.0)
+            p_soil = Circle((0,0), r, color=soil_color, alpha=0.5)
+            ax.add_patch(p_soil)
+            art3d.pathpatch_2d_to_3d(p_soil, z=-self.depth, zdir="z")
             
         return fig, ax
     
