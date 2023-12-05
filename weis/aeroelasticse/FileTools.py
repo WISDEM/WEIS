@@ -2,13 +2,7 @@ import os, copy, operator
 import numpy as np
 import yaml
 from functools import reduce
-try:
-    import ruamel_yaml as ry
-except:
-    try:
-        import ruamel.yaml as ry
-    except:
-        raise ImportError('No module named ruamel.yaml or ruamel_yaml')
+import ruamel.yaml as ry
 
 """
 Common utilites for handling the text I/O for using AeroelasticSE

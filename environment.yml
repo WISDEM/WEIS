@@ -43,7 +43,7 @@ dependencies:
   - pyyaml
   - pyzmq
   - qdldl-python
-  - ruamel_yaml
+  - ruamel.yaml
   - scipy
   - seaborn
   - setuptools
