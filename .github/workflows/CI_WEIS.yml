@@ -88,12 +88,12 @@ jobs:
       # List the collected tests for debugging purposes
       - name: List tests
         run: |
-          pytest weis --collect-only
+          pytest --collect-only weis 
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
         run: |
-          pytest weis --cov-config=.coverageac --cov=weis no:warnings --disable-warnings
+          pytest --cov-config=.coverageac --cov=weis -p no:warnings --disable-warnings weis 
       
       # Run coveralls
       - name: Run coveralls
