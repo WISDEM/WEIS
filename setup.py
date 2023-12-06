@@ -110,7 +110,7 @@ class CMakeBuildExt(build_ext):
 # All of the extensions
 fastExt    = CMakeExtension('openfast','OpenFAST')
 roscoExt   = CMakeExtension('rosco','ROSCO/ROSCO')
-extList = [roscoExt] if platform.system() == "Windows" else  [roscoExt, fastExt]
+extList = [roscoExt] #if platform.system() == "Windows" else  [roscoExt, fastExt]
 
 # Setup content
 with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
@@ -133,7 +133,8 @@ weis_pkgs       = find_packages()
 
 # Install the python sub-packages
 print(sys.argv)
-for pkg in ['WISDEM','ROSCO','pCrunch','MoorPy','RAFT','dtqpy']:
+#for pkg in ['WISDEM','ROSCO','pCrunch','MoorPy','RAFT','dtqpy']:
+for pkg in ['ROSCO']:
     os.chdir(pkg)
     if pkg in ['WISDEM']:
         # This option runs `python setup.py install/develop` on each package

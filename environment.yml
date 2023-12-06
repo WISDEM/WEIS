@@ -24,15 +24,19 @@ dependencies:
   - markupsafe
   - matplotlib-base
   - meson
+  - moorpy
   - ninja
   - nlopt
-  - numpy
+  - numpy>=1.26
   - numpydoc
-  - openmdao
+  - openfast
+  - openmdao<3.28
+  - openraft
   - openpyxl
   #- osqp # Works with the pip version, but not the conda version
   - pandas
   - patsy
+  - pcrunch
   - pip
   - pygments
   - pyhams
@@ -61,6 +65,7 @@ dependencies:
   - swig
   - treon
   - pyzmq
+  - wisdem
 #  - versioneer
   - pip:
     - dearpygui

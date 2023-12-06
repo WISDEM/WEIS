@@ -1,8 +1,0 @@
-# Requirements list for MoorPy (work in progress)
-
-matplotlib
-numpy
-scipy
-sphinx>2.0
-numpydoc
-sphinx-rtd-theme
