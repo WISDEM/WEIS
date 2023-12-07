@@ -5,8 +5,6 @@ postprocess or plot further.
 
 import glob
 import os
-import sys
-import time
 
 import numpy as np
 
