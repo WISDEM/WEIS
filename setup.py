@@ -134,7 +134,7 @@ weis_pkgs       = find_packages()
 # Install the python sub-packages
 print(sys.argv)
 #for pkg in ['WISDEM','ROSCO','pCrunch','MoorPy','RAFT','dtqpy']:
-for pkg in ['ROSCO']:
+for pkg in ['ROSCO','dtqy']:
     os.chdir(pkg)
     if pkg in ['WISDEM']:
         # This option runs `python setup.py install/develop` on each package
