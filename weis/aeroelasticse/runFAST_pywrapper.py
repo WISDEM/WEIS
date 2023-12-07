@@ -18,11 +18,11 @@ from pCrunch import LoadsAnalysis, FatigueParams
 import numpy as np
 
 
-weis_dir = os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) )
-lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
-openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
-sys.path.append(openfast_pydir)
-from openfast_library import FastLibAPI
+#weis_dir = os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) )
+#lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
+#openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
+#sys.path.append(openfast_pydir)
+from weis.aeroelasticse.openfast_library import FastLibAPI
 
 mactype = platform.system().lower()
 if mactype in ["linux", "linux2"]:
