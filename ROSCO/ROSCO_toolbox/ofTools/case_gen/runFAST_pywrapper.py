@@ -5,7 +5,9 @@ programmatically with minimal additional dependencies.
 """
 # Hacky way of doing relative imports
 from __future__ import print_function
-import os, platform
+import os
+import platform
+import shutil
 import multiprocessing as mp
 
 from ROSCO_toolbox.ofTools.fast_io.FAST_reader import InputReader_OpenFAST
@@ -227,8 +229,8 @@ class runFAST_pywrapper_batch(object):
 
     def __init__(self):
 
-        run_dir                 = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-        self.FAST_exe           = os.path.join(run_dir, 'local/bin/openfast')   # Path to executable
+        #run_dir                 = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+        self.FAST_exe           = shutil.which('openfast')
         # self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
         self.FAST_InputFile     = None
         self.FAST_directory     = None

@@ -5,7 +5,7 @@ programmatically with minimal additional dependencies.
 """
 
 import os
-import sys
+import shutil
 import platform
 import multiprocessing as mp
 
@@ -14,15 +14,15 @@ from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis, FatigueParams
+from weis.aeroelasticse.openfast_library import FastLibAPI
 
 import numpy as np
 
 
-#weis_dir = os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) )
-#lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
+of_dir = shutil.which('openfast')
+lib_dir  = os.path.abspath( os.path.join(os.path.dirname(of_dir), '..', 'lib') )
 #openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
 #sys.path.append(openfast_pydir)
-from weis.aeroelasticse.openfast_library import FastLibAPI
 
 mactype = platform.system().lower()
 if mactype in ["linux", "linux2"]:
@@ -272,8 +272,7 @@ class runFAST_pywrapper(object):
 class runFAST_pywrapper_batch(object):
 
     def __init__(self):
-
-        self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
+        self.FAST_exe           = of_dir   # Path to executable
         self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
         self.FAST_InputFile     = None
         self.FAST_directory     = None

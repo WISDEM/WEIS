@@ -5,10 +5,13 @@ from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper
 from weis.aeroelasticse.LinearFAST import LinearFAST
 import os.path as osp
+import shutil
 import platform
 
 examples_dir    = osp.join( osp.dirname( osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) ) ), 'examples')
 weis_dir        = osp.dirname( osp.dirname( osp.dirname( osp.dirname(osp.realpath(__file__) ) ) ) ) # get path to this file
+of_dir = shutil.which('openfast')
+lib_dir  = osp.abspath( osp.join(osp.dirname(of_dir), '..', 'lib') )
 
 
 mactype = platform.system().lower()
@@ -62,7 +65,7 @@ class TestOFutils(unittest.TestCase):
                 self.assertEqual('Writing','Success')
 
         # Execute the written file
-        fast_wrap.FAST_exe = osp.join(weis_dir,'local/bin/openfast')   # Path to executable
+        fast_wrap.FAST_exe = of_dir   # Path to executable
         fast_wrap.FAST_InputFile = osp.join(fast_writer.FAST_namingOut+'.fst')
         with self.subTest('Running', i=2):
             try:
@@ -73,7 +76,7 @@ class TestOFutils(unittest.TestCase):
 
         # Test the whole sequence in one go
         fast_obj.FAST_exe = None
-        fast_obj.FAST_lib = osp.join(weis_dir, 'local', 'lib', 'libopenfastlib'+libext)
+        fast_obj.FAST_lib = osp.join(lib_dir, 'libopenfastlib'+libext)
         fast_obj.case     = fst_vt
         with self.subTest('Batching', i=3):
             try:
@@ -85,7 +88,7 @@ class TestOFutils(unittest.TestCase):
     def testLinearFAST(self):
 
         lin_fast = LinearFAST(debug_level=2)
-        lin_fast.FAST_exe = osp.join(weis_dir,'local/bin/openfast')   # Path to executable
+        lin_fast.FAST_exe = of_dir
         lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = osp.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
         lin_fast.FAST_runDirectory        = osp.join(weis_dir,'outputs','iea_mono_lin')

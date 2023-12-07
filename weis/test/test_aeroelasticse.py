@@ -7,6 +7,7 @@ Example script to compute the steady-state performance in OpenFAST
 import os
 import platform
 import unittest
+import shutil
 
 import numpy as np
 
@@ -16,12 +17,13 @@ from weis.test.utils import compare_regression_values
 
 this_file_dir = os.path.dirname(os.path.realpath(__file__))
 weis_dir = os.path.dirname(os.path.dirname(this_file_dir))
+of_dir = shutil.which('openfast')
 
 class TestGeneral(unittest.TestCase):
     def test_run(self):
         # Paths calling the standard modules of WEIS
         fastBatch = runFAST_pywrapper_batch()
-        fastBatch.FAST_exe          = os.path.join(weis_dir, 'local','bin','openfast')   # Path to executable
+        fastBatch.FAST_exe          = of_dir   # Path to executable
         fastBatch.FAST_directory    = os.path.join(weis_dir,'examples','01_aeroelasticse', 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
         fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
