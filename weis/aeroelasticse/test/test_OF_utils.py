@@ -26,6 +26,10 @@ elif mactype == "cygwin":
 else:
     raise ValueError('Unknown platform type: '+mactype)
 
+lib_path = osp.join(lib_dir, 'libopenfastlib'+libext)
+if not osp.exists(lib_path):
+    lib_path = osp.join(lib_dir, 'openfastlib'+libext)
+
 class TestOFutils(unittest.TestCase):
 
     def testOF_utils(self):
@@ -76,7 +80,7 @@ class TestOFutils(unittest.TestCase):
 
         # Test the whole sequence in one go
         fast_obj.FAST_exe = None
-        fast_obj.FAST_lib = osp.join(lib_dir, 'libopenfastlib'+libext)
+        fast_obj.FAST_lib = lib_path
         fast_obj.case     = fst_vt
         with self.subTest('Batching', i=3):
             try:

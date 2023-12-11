@@ -34,6 +34,9 @@ elif mactype == "darwin":
 else:
     raise ValueError('Unknown platform type: '+mactype)
 
+lib_path = os.path.join(lib_dir, 'libopenfastlib'+libext)
+if not os.path.exists(lib_path):
+    lib_path = os.path.join(lib_dir, 'openfastlib'+libext)
 
 magnitude_channels_default = {
     'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
@@ -273,7 +276,7 @@ class runFAST_pywrapper_batch(object):
 
     def __init__(self):
         self.FAST_exe           = of_dir   # Path to executable
-        self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
+        self.FAST_lib           = lib_path
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
