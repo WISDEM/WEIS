@@ -10,8 +10,9 @@ import platform
 
 examples_dir    = osp.join( osp.dirname( osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) ) ), 'examples')
 weis_dir        = osp.dirname( osp.dirname( osp.dirname( osp.dirname(osp.realpath(__file__) ) ) ) ) # get path to this file
-of_dir = shutil.which('openfast')
-lib_dir  = osp.abspath( osp.join(osp.dirname(of_dir), '..', 'lib') )
+of_path = shutil.which('openfast')
+bin_dir  = osp.dirname(of_path)
+lib_dir  = osp.abspath( osp.join(osp.dirname(bin_dir), 'lib') )
 
 
 mactype = platform.system().lower()
@@ -29,11 +30,10 @@ else:
 
 found = False
 for libname in ['libopenfastlib', 'openfastlib']:
-    for ext in [libext, staticext]:
-        lib_path = osp.join(lib_dir, libname+libext)
+    for d in [lib_dir, bin_dir]:
+        lib_path = osp.join(d, libname+libext)
         if osp.exists(lib_path):
             found = True
-            static_flag = ext == staticext
             break
     if found:
         break
@@ -77,7 +77,7 @@ class TestOFutils(unittest.TestCase):
                 self.assertEqual('Writing','Success')
 
         # Execute the written file
-        fast_wrap.FAST_exe = of_dir   # Path to executable
+        fast_wrap.FAST_exe = of_path   # Path to executable
         fast_wrap.FAST_InputFile = osp.join(fast_writer.FAST_namingOut+'.fst')
         with self.subTest('Running', i=2):
             try:
@@ -100,7 +100,7 @@ class TestOFutils(unittest.TestCase):
     def testLinearFAST(self):
 
         lin_fast = LinearFAST(debug_level=2)
-        lin_fast.FAST_exe = of_dir
+        lin_fast.FAST_exe = of_path
         lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = osp.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
         lin_fast.FAST_runDirectory        = osp.join(weis_dir,'outputs','iea_mono_lin')

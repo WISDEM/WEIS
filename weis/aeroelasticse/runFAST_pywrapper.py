@@ -19,8 +19,9 @@ from weis.aeroelasticse.openfast_library import FastLibAPI
 import numpy as np
 
 
-of_dir = shutil.which('openfast')
-lib_dir  = os.path.abspath( os.path.join(os.path.dirname(of_dir), '..', 'lib') )
+of_path = shutil.which('openfast')
+bin_dir  = os.path.dirname(of_path)
+lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
 #openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
 #sys.path.append(openfast_pydir)
 
@@ -39,15 +40,15 @@ else:
 
 found = False
 for libname in ['libopenfastlib', 'openfastlib']:
-    for ext in [libext, staticext]:
-        lib_path = os.path.join(lib_dir, libname+libext)
+    for d in [lib_dir, bin_dir]:
+        lib_path = os.path.join(d, libname+libext)
         if os.path.exists(lib_path):
             found = True
-            static_flag = ext == staticext
             break
     if found:
         break
 
+    
 magnitude_channels_default = {
     'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
     'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
@@ -285,7 +286,7 @@ class runFAST_pywrapper(object):
 class runFAST_pywrapper_batch(object):
 
     def __init__(self):
-        self.FAST_exe           = of_dir   # Path to executable
+        self.FAST_exe           = of_path   # Path to executable
         self.FAST_lib           = lib_path
         self.FAST_InputFile     = None
         self.FAST_directory     = None
