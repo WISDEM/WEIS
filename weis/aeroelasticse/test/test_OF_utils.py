@@ -15,20 +15,28 @@ lib_dir  = osp.abspath( osp.join(osp.dirname(of_dir), '..', 'lib') )
 
 
 mactype = platform.system().lower()
-if mactype == "linux" or mactype == "linux2":
+if mactype in ["linux", "linux2"]:
     libext = ".so"
+    staticext = ".a"
+elif mactype in ["win32", "windows", "cygwin"]: #NOTE: platform.system()='Windows', sys.platform='win32'
+    libext = '.dll'
+    staticext = ".lib"
 elif mactype == "darwin":
     libext = '.dylib'
-elif mactype == "win32" or mactype == "windows": #NOTE: platform.system()='Windows', sys.platform='win32'
-    libext = '.dll'
-elif mactype == "cygwin":
-    libext = ".dll"
+    staticext = ".a"
 else:
     raise ValueError('Unknown platform type: '+mactype)
 
-lib_path = osp.join(lib_dir, 'libopenfastlib'+libext)
-if not osp.exists(lib_path):
-    lib_path = osp.join(lib_dir, 'openfastlib'+libext)
+found = False
+for libname in ['libopenfastlib', 'openfastlib']:
+    for ext in [libext, staticext]:
+        lib_path = osp.join(lib_dir, libname+libext)
+        if osp.exists(lib_path):
+            found = True
+            static_flag = ext == staticext
+            break
+    if found:
+        break
 
 class TestOFutils(unittest.TestCase):
 

@@ -27,16 +27,26 @@ lib_dir  = os.path.abspath( os.path.join(os.path.dirname(of_dir), '..', 'lib') )
 mactype = platform.system().lower()
 if mactype in ["linux", "linux2"]:
     libext = ".so"
+    staticext = ".a"
 elif mactype in ["win32", "windows", "cygwin"]: #NOTE: platform.system()='Windows', sys.platform='win32'
     libext = '.dll'
+    staticext = ".lib"
 elif mactype == "darwin":
     libext = '.dylib'
+    staticext = ".a"
 else:
     raise ValueError('Unknown platform type: '+mactype)
 
-lib_path = os.path.join(lib_dir, 'libopenfastlib'+libext)
-if not os.path.exists(lib_path):
-    lib_path = os.path.join(lib_dir, 'openfastlib'+libext)
+found = False
+for libname in ['libopenfastlib', 'openfastlib']:
+    for ext in [libext, staticext]:
+        lib_path = os.path.join(lib_dir, libname+libext)
+        if os.path.exists(lib_path):
+            found = True
+            static_flag = ext == staticext
+            break
+    if found:
+        break
 
 magnitude_channels_default = {
     'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
