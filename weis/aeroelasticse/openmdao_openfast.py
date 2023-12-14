@@ -856,6 +856,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['OLAF'] = {}
         if fst_vt['ElastoDyn']['DT'] == 0.:
             fst_vt['ElastoDyn']['DT'] = 'Default'
+        if fst_vt['Fst']['DT_Out'] == 0.:
+            fst_vt['Fst']['DT_Out'] = 'Default'
 
         return fst_vt
 
