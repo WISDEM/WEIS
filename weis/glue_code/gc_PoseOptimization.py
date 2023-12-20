@@ -89,6 +89,8 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             
         elif self.opt['merit_figure'] == 'rotor_overspeed':
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
             wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
         
         elif self.opt['merit_figure'] == 'Std_PtfmPitch':
