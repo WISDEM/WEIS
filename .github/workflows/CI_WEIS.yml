@@ -70,14 +70,14 @@ jobs:
           python setup.py develop
 
       # Debugging session
-      - name: Setup tmate session
-        if: contains( matrix.os, 'windows')
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  if: contains( matrix.os, 'windows')
+      #  uses: mxschmitt/action-tmate@v3
         
       - name: Show openfast environment
         run: |
             which -a openfast
-            openfast.exe -h
+            /c/Miniconda3/envs/test/Library/bin/openfast -h
             cd examples/01_aeroelasticse/OpenFAST_models/IEA-3.4-130-RWT/
             openfast IEA-3.4-130-RWT.fst
             cd ../../../03_NREL5MW_OC3_spar
