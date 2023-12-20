@@ -68,7 +68,12 @@ jobs:
       - name: Install WEIS
         run: |
           python setup.py develop
-            
+
+      # Debugging session
+      - name: Setup tmate session
+        if: contains( matrix.os, 'windows')
+        uses: mxschmitt/action-tmate@v3
+        
       - name: Show openfast environment
         run: |
             which -a openfast
@@ -77,11 +82,6 @@ jobs:
             openfast IEA-3.4-130-RWT.fst
             cd ../../../03_NREL5MW_OC3_spar
             python weis_driver.py
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  if: contains( matrix.os, 'windows')
-      #  uses: mxschmitt/action-tmate@v3
           
       # List the collected tests for debugging purposes
       - name: List tests
