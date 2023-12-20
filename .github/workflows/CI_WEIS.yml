@@ -68,6 +68,10 @@ jobs:
       - name: Install WEIS
         run: |
           python setup.py develop
+            
+      - name: Show openfast environment
+        run: |
+            which -a openfast
 
       # Debugging session
       - name: Setup tmate session
