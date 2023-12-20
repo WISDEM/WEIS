@@ -72,11 +72,13 @@ jobs:
       - name: Show openfast environment
         run: |
             which -a openfast
+            cd examples/03_NREL5MW_OC3_spar
+            python weis_driver.py
 
       # Debugging session
-      - name: Setup tmate session
-        if: contains( matrix.os, 'windows')
-        uses: mxschmitt/action-tmate@v3
+      #- name: Setup tmate session
+      #  if: contains( matrix.os, 'windows')
+      #  uses: mxschmitt/action-tmate@v3
           
       # List the collected tests for debugging purposes
       - name: List tests
