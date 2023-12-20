@@ -72,7 +72,9 @@ jobs:
       - name: Show openfast environment
         run: |
             which -a openfast
-            cd examples/03_NREL5MW_OC3_spar
+            cd examples/01_aeroelasticse/OpenFAST_models/IEA-3.4-130-RWT/
+            openfast IEA-3.4-130-RWT.fst
+            cd ../../../03_NREL5MW_OC3_spar
             python weis_driver.py
 
       # Debugging session
