@@ -1384,21 +1384,21 @@ class FASTLoadCases(ExplicitComponent):
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
+            ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
             imembers = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['HydroDyn']['NJoints'] = n_joints
-            fst_vt['HydroDyn']['JointID'] = 1 + np.arange( n_joints, dtype=np.int_)
+            fst_vt['HydroDyn']['JointID'] = ijoints
             fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
             fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
             fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-            fst_vt['HydroDyn']['NPropSets'] = n_members
-            fst_vt['HydroDyn']['PropSetID'] = imembers
+            fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
+            fst_vt['HydroDyn']['PropSetID'] = ijoints
             fst_vt['HydroDyn']['PropD'] = d_coarse
             fst_vt['HydroDyn']['PropThck'] = t_coarse
             fst_vt['HydroDyn']['NMembers'] = n_members
             fst_vt['HydroDyn']['MemberID'] = imembers
-            fst_vt['HydroDyn']['MJointID1'] = N1
-            fst_vt['HydroDyn']['MJointID2'] = N2
-            fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = imembers
+            fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
+            fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
