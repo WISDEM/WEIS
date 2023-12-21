@@ -70,9 +70,9 @@ jobs:
           python setup.py develop
 
       # Debugging session
-      #- name: Setup tmate session
-      #  if: contains( matrix.os, 'windows')
-      #  uses: mxschmitt/action-tmate@v3
+      - name: Setup tmate session
+        if: contains( matrix.os, 'windows')
+        uses: mxschmitt/action-tmate@v3
         
       - name: Show openfast environment
         run: |
