@@ -187,7 +187,7 @@ class runFAST_pywrapper(object):
         # Make sure pCrunch is ready
         self.init_crunch()
             
-        if not self.use_exe: # Use library
+        if True: #not self.use_exe: # Use library
 
             FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
             
