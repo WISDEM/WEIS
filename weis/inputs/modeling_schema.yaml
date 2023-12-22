@@ -3048,7 +3048,7 @@ properties:
                                 unit: none
                                 minItems: 1
                                 uniqueItems: true
-                        wave_seed:
+                        wave_seeds:
                             type: array
                             default: []
                             description: Wave random number generator seeds for HydroDyn
