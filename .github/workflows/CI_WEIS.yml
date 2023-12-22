@@ -78,6 +78,7 @@ jobs:
         run: |
             which -a openfast
             cd /c/Miniconda3/envs/test/Library/bin/
+            ls *fast*.dll
             python -c "import ctypes; ctypes.cdll.LoadLibrary('openfastlib.dll')"
             cd examples/03_NREL5MW_OC3_spar
             python weis_driver.py
