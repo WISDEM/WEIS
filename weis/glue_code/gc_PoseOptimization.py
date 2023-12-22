@@ -130,7 +130,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                                                             upper=control_opt['servo']['torque_control']['omega']['max'])
         if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
             wt_opt.model.add_design_var('tune_rosco_ivc.zeta_vs', lower=control_opt['servo']['torque_control']['zeta']['min'], 
-                                                           upper=control_opt['servo']['torque_control']['zeta_max'])
+                                                           upper=control_opt['servo']['torque_control']['zeta']['max'])
         if control_opt['servo']['ipc_control']['Kp']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Kp1p', lower=control_opt['servo']['ipc_control']['Kp']['min'],
                                                             upper=control_opt['servo']['ipc_control']['Kp']['max'],
