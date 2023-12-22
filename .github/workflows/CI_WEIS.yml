@@ -79,7 +79,7 @@ jobs:
             which -a openfast
             cd /c/Miniconda3/envs/test/Library/bin/
             ls *fast*.exe
-            ls *fast*.lib
+            ls *fast*.dll
             openfast -h
             python -c "import ctypes; ctypes.cdll.LoadLibrary('openfastlib.dll')"
             ls *fast*.dll
