@@ -140,7 +140,9 @@ class TestGeneral(unittest.TestCase):
             sfx = 'dylib'
         else:
             sfx = 'so'
-        path2dll = os.path.join(weis_dir, 'local','lib','libdiscon.'+sfx)
+        bin_dir = os.path.dirname( shutil.which('wheel') ) # should find the conda bin directory
+        lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
+        path2dll = os.path.join(lib_dir, 'libdiscon'+sfx)
 
         case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 

@@ -1,5 +1,6 @@
 import os
 import os.path as osp
+import shutil
 import platform
 import multiprocessing as mp
 import weis.inputs as sch
@@ -7,6 +8,14 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from wisdem.commonse.mpi_tools              import MPI
+
+if platform.system() == 'Windows':
+    sfx = ".dll"
+elif platform.system() == 'Darwin':
+    sfx = ".dylib"
+else:
+    sfx = ".so"
+                    
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
@@ -32,9 +41,9 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
-            bemDir = os.path.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
         else:
-            bemDir = os.path.join(base_run_dir,'BEM')
+            bemDir = osp.join(base_run_dir,'BEM')
 
         self.modeling_options["Level1"]['BEM_dir'] = bemDir
         if MPI:
@@ -42,7 +51,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options["Level1"]['save_designs'] = False
 
         # Directory of modeling option input, if we want to use it for relative paths
-        mod_opt_dir = os.path.split(self.modeling_options['fname_input_modeling'])[0]
+        mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
@@ -60,22 +69,20 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     'openfast_runs'
                     )
                 
-            # Find the path to the WEIS controller
-            weis_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
-            if platform.system() == 'Windows':
-                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.dll')
-            elif platform.system() == 'Darwin':
-                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.dylib')
-            else:
-                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.so')
-
             # User-defined control dylib (path2dll)
-            if self.modeling_options['General']['openfast_configuration']['path2dll'] == 'none':   #Default option, use above
-                self.modeling_options['General']['openfast_configuration']['path2dll'] = path2dll
+            path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
+            if path2dll == 'none':   #Default option, use above
+                # Find the path to the WEIS controller if not specified
+                bin_dir = osp.dirname( shutil.which('wheel') ) # should find the conda bin directory
+                lib_dir  = osp.abspath( osp.join(osp.dirname(bin_dir), 'lib') )
+                self.modeling_options['General']['openfast_configuration']['path2dll'] = osp.join(lib_dir, 'libdiscon'+sfx)
             else:
-                if not os.path.isabs(self.modeling_options['General']['openfast_configuration']['path2dll']):  # make relative path absolute
+                if not osp.isabs(path2dll):  # make relative path absolute
                     self.modeling_options['General']['openfast_configuration']['path2dll'] = \
-                        os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_lib'])
+                        osp.join(osp.dirname(self.options['modeling_options']['fname_input_modeling']), path2dll)
+            path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
+            if not osp.exists( path2dll ):
+                raise NameError("Cannot find DISCON library: "+path2dll)
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["offshore"] or self.modeling_options["Level3"]["from_openfast"]:
@@ -123,12 +130,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
         # OpenFAST dir
         if self.modeling_options["Level3"]["from_openfast"]:
-            if not os.path.isabs(self.modeling_options['Level3']['openfast_dir']):
+            if not osp.isabs(self.modeling_options['Level3']['openfast_dir']):
                 # Make relative to modeling options input
-                self.modeling_options['Level3']['openfast_dir'] = os.path.realpath(os.path.join(
-                    mod_opt_dir,
-                    self.modeling_options['Level3']['openfast_dir']
-                    ))
+                self.modeling_options['Level3']['openfast_dir'] = osp.realpath(osp.join(
+                    mod_opt_dir, self.modeling_options['Level3']['openfast_dir'] ))
         
         # RAFT
         if self.modeling_options["flags"]["floating"]:
@@ -149,11 +154,9 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         
         if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
             # Make path absolute if not, relative to modeling options input
-            if not os.path.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
-                self.modeling_options['ROSCO']['tuning_yaml'] = os.path.realpath(os.path.join(
-                    mod_opt_dir,
-                    self.modeling_options['ROSCO']['tuning_yaml']
-                    ))
+            if not osp.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
+                self.modeling_options['ROSCO']['tuning_yaml'] = osp.realpath(osp.join(
+                    mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
         
         # XFoil
         if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:

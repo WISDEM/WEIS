@@ -694,7 +694,7 @@ class FASTLoadCases(ExplicitComponent):
                     else:       # if using fst_vt inputs from openfast_openmdao
                         discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
 
-                    lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
+                    lib_name = modopt['General']['openfast_configuration']['path2dll']
 
                     ss = {}
                     et = {}

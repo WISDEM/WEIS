@@ -47,6 +47,7 @@ dependencies:
   - pyyaml
   - pyzmq
   - qdldl-python
+  - rosco
   - ruamel.yaml
   - scipy
   - seaborn

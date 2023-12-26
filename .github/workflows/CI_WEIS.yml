@@ -16,8 +16,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-latest"] #"ubuntu-latest", "macOS-latest", "windows-latest"]
-        python-version: ["3.11"] #"3.9","3.10","3.11"]
+        os: ["ubuntu-latest", "macOS-latest"] #, "windows-latest"]
+        python-version: ["3.9","3.10","3.11"]
         
     steps:
       #- name: Setup GNU Fortran
@@ -74,17 +74,17 @@ jobs:
       #  if: contains( matrix.os, 'windows')
       #  uses: mxschmitt/action-tmate@v3
         
-      - name: Show openfast environment
-        run: |
-            which -a openfast
-            cd /c/Miniconda3/envs/test/Library/bin/
-            ls *fast*.exe
-            ls *fast*.dll
-            openfast -h
-            python -c "import ctypes; ctypes.cdll.LoadLibrary('openfastlib.dll')"
-            ls *fast*.dll
-            cd examples/03_NREL5MW_OC3_spar
-            python weis_driver.py
+      #- name: Show openfast environment
+      #  run: |
+      #      which -a openfast
+      #      cd /c/Miniconda3/envs/test/Library/bin/
+      #      ls *fast*.exe
+      #      ls *fast*.dll
+      #      openfast -h
+      #      python -c "import ctypes; ctypes.cdll.LoadLibrary('openfastlib.dll')"
+      #      ls *fast*.dll
+      #      cd examples/03_NREL5MW_OC3_spar
+      #      python weis_driver.py
           
       # List the collected tests for debugging purposes
       - name: List tests
