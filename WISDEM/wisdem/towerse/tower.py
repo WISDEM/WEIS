@@ -396,7 +396,6 @@ class TowerFrame(om.ExplicitComponent):
         outputs["fore_aft_modes"] = mshapes_x[:NFREQ2, :]
         outputs["side_side_modes"] = mshapes_y[:NFREQ2, :]
         outputs["torsion_modes"] = mshapes_z[:NFREQ2, :]
-        
 
         # deflections due to loading (from cylinder top and wind/wave loads)
         outputs["tower_deflection"] = np.sqrt(displacements.dx**2 + displacements.dy**2).T
@@ -547,7 +546,7 @@ class TowerSE(om.Group):
 
         self.add_subsystem(
             "post",
-            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC),
+            mem.CylinderPostFrame(modeling_options=mod_opt, n_dlc=nLC, n_full = n_full),
             promotes=[
                 "z_full",
                 "d_full",

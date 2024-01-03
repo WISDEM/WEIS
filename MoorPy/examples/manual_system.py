@@ -15,7 +15,7 @@ rAnchor   = 1600                            # anchor radius/spacing [m]
 zFair     = -21                             # fairlead z elevation [m]
 rFair     = 20                              # fairlead radius [m]
 lineLength= 1800                            # line unstretched length [m]
-typeName  = "chain"                         # identifier string for the line type
+typeName  = "chain1"                        # identifier string for the line type
 
 
 # ----- set up the mooring system and floating body -----
@@ -24,7 +24,7 @@ typeName  = "chain"                         # identifier string for the line typ
 ms = mp.System(depth=depth)
 
 # add a line type
-ms.lineTypes[typeName] = getLineProps(120, name=typeName)  # this would be 120 mm chain
+ms.setLineType(dnommm=120, material='chain', name=typeName)  # this would be 120 mm chain
 
 # Add a free, body at [0,0,0] to the system (including some properties to make it hydrostatically stiff)
 ms.addBody(0, np.zeros(6), m=1e6, v=1e3, rM=100, AWP=1e3)
@@ -49,7 +49,7 @@ ms.initialize()                                             # make sure everythi
 
 ms.solveEquilibrium()                                       # equilibrate
 fig, ax = ms.plot()                                         # plot the system in original configuration
-ms.unload("sample.txt")                                     # export to MD input file
+ms.unload("sample_from_manual.txt")                         # export to MD input file
 
 ms.bodyList[0].f6Ext = np.array([3e6, 0, 0, 0, 0, 0])       # apply an external force on the body 
 ms.solveEquilibrium3()                                      # equilibrate

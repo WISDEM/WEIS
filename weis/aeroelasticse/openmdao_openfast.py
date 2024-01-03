@@ -578,10 +578,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             fast_reader = InputReader_OpenFAST()
             fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
-            if os.path.isabs(modopt['Level3']['openfast_dir']):
-                fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
-            else:
-                fast_reader.FAST_directory  = os.path.join(weis_dir, modopt['Level3']['openfast_dir'])
+            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
@@ -859,6 +856,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['OLAF'] = {}
         if fst_vt['ElastoDyn']['DT'] == 0.:
             fst_vt['ElastoDyn']['DT'] = 'Default'
+        if fst_vt['Fst']['DT_Out'] == 0.:
+            fst_vt['Fst']['DT_Out'] = 'Default'
 
         return fst_vt
 
@@ -1339,8 +1338,8 @@ class FASTLoadCases(ExplicitComponent):
                 nk = joints_xyz.shape[0]
                 N1 = np.append(N1, nk + inode_range + 1)
                 N2 = np.append(N2, nk + inode_range + 2)
-                d_coarse = np.append(d_coarse, id_coarse)
-                t_coarse = np.append(t_coarse, it_coarse)
+                d_coarse = np.append(d_coarse, id_coarse)  
+                t_coarse = np.append(t_coarse, it_coarse)  
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
                 
         if modopt['flags']['offshore']:
@@ -1382,21 +1381,21 @@ class FASTLoadCases(ExplicitComponent):
             # Store data
             n_joints = joints_xyz.shape[0]
             n_members = N1.shape[0]
+            ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
             imembers = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['HydroDyn']['NJoints'] = n_joints
-            fst_vt['HydroDyn']['JointID'] = 1 + np.arange( n_joints, dtype=np.int_)
+            fst_vt['HydroDyn']['JointID'] = ijoints
             fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
             fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
             fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-            fst_vt['HydroDyn']['NPropSets'] = n_members
-            fst_vt['HydroDyn']['PropSetID'] = imembers
+            fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
+            fst_vt['HydroDyn']['PropSetID'] = ijoints
             fst_vt['HydroDyn']['PropD'] = d_coarse
             fst_vt['HydroDyn']['PropThck'] = t_coarse
             fst_vt['HydroDyn']['NMembers'] = n_members
             fst_vt['HydroDyn']['MemberID'] = imembers
-            fst_vt['HydroDyn']['MJointID1'] = N1
-            fst_vt['HydroDyn']['MJointID2'] = N2
-            fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = imembers
+            fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
+            fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
@@ -1788,15 +1787,23 @@ class FASTLoadCases(ExplicitComponent):
                 if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
                     dlc_generator.cases[i_case].RefHt = hub_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
-                dlc_generator.cases[i_case].HubHt = hub_height
+                if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].HubHt = hub_height
+
+                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].GridHeight =  2. * hub_height - 1.e-3
+
+                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
                 # Height of wind grid, it stops 1 mm above the ground
-                dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
+                # dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
                 # If OLAF is called, make wind grid 3x higher, taller, and wider
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
                     dlc_generator.cases[i_case].HubHt *= 3.
                     dlc_generator.cases[i_case].GridHeight *= 3.
-                # Width of wind grid, same of height
-                dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
+                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
                     dlc_generator.cases[i_case].PLExp = PLExp

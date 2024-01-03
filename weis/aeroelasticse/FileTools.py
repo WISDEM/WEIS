@@ -22,6 +22,8 @@ def remove_numpy(fst_vt):
         return reduce(operator.getitem, branch, vartree)
 
     def loop_dict(vartree, branch):
+        if type(vartree) is not dict:
+            return fst_vt
         for var in vartree.keys():
             branch_i = copy.copy(branch)
             branch_i.append(var)
@@ -38,6 +40,9 @@ def remove_numpy(fst_vt):
                     get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = bool(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
                 elif data_type in [np.ndarray]:
                     get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = get_dict(fst_vt, branch_i[:-1])[branch_i[-1]].tolist()
+                elif data_type in [list,tuple]:
+                    for item in get_dict(fst_vt, branch_i[:-1])[branch_i[-1]]:
+                        remove_numpy(item)
 
     # set fast variables to update values
     loop_dict(fst_vt, [])

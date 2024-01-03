@@ -255,10 +255,11 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('properties_roll inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Roll inertia sub CG')
         self.add_output('properties_pitch inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Pitch inertia sub CG')
         self.add_output('properties_yaw inertia at subCG', val=np.zeros(ndim), units='kg*m**2', desc='Yaw inertia sub CG')
-        self.add_output('properties_Buoyancy (pgV)', val=0.0, units='N', desc='Buoyancy (pgV)')
-        self.add_output('properties_Center of Buoyancy', val=np.zeros(ndim), units='m', desc='Center of buoyancy')
-        self.add_output('properties_C stiffness matrix', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix')
-        self.add_output('properties_F_lines0', val=np.zeros(nconnections), units='N', desc='Mean mooring force')
+        self.add_output('properties_buoyancy (pgV)', val=0.0, units='N', desc='Buoyancy (pgV)')
+        self.add_output('properties_center of buoyancy', val=np.zeros(ndim), units='m', desc='Center of buoyancy')
+        self.add_output('properties_C hydrostatic', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix')
+        self.add_output('properties_C system', val=np.zeros((ndof,ndof)), units='Pa', desc='C stiffness matrix of full system')
+        self.add_output('properties_F_lines0', val=np.zeros(ndof), units='N', desc='Mean mooring force from all lines')
         self.add_output('properties_C_lines0', val=np.zeros((ndof,ndof)), units='Pa', desc='Mooring stiffness')
         self.add_output('properties_M support structure', val=np.zeros((ndof,ndof)), units='kg', desc='Mass matrix for platform')
         self.add_output('properties_A support structure', val=np.zeros((ndof,ndof)), desc='Added mass matrix for platform')
@@ -273,7 +274,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         self.add_output('response_roll RAO', val=np.zeros(nfreq), units='rad', desc='Roll RAO')
         self.add_output('response_yaw RAO', val=np.zeros(nfreq), units='rad', desc='Yaw RAO')
         self.add_output('response_nacelle acceleration', val=np.zeros(nfreq), units='m/s**2', desc='Nacelle acceleration')
-        # case specific
+        # case specific, note: only DLCs supported in RAFT will have non-zero outputs
         names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
         stats = ['avg','std','max','PSD','DEL']
         for n in names:
@@ -282,9 +283,9 @@ class RAFT_OMDAO(om.ExplicitComponent):
                 iout = f'{n}_{s}'
                 
                 if n == 'Tmoor':
-                    myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, 2*nlines, nfreq))
+                    myval = np.zeros((n_cases, 2*nlines)) if s not in ['PSD'] else np.zeros((n_cases, nfreq, 2*nlines))
                 elif n == 'Mbase':
-                    myval = np.zeros(n_cases) if s not in ['PSD','std'] else np.zeros((n_cases, nfreq))
+                    myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
                 else:
                     myval = np.zeros(n_cases) if s not in ['PSD'] else np.zeros((n_cases, nfreq))
                 
@@ -301,13 +302,22 @@ class RAFT_OMDAO(om.ExplicitComponent):
         # Other case outputs
         self.add_output('stats_wind_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wind input')
         self.add_output('stats_wave_PSD', val=np.zeros((n_cases,nfreq)), desc='Power spectral density of wave input')
-        
+
+        # Natural periods
+        self.add_output('rigid_body_periods', val = np.zeros(6), desc = 'Rigid body natural period', units = 's') 
+        self.add_output('surge_period', val = 0, desc = 'Surge natural period', units = 's') 
+        self.add_output('sway_period', val = 0, desc = 'Sway natural period', units = 's') 
+        self.add_output('heave_period', val = 0, desc = 'Heave natural period', units = 's') 
+        self.add_output('roll_period', val = 0, desc = 'Roll natural period', units = 's') 
+        self.add_output('pitch_period', val = 0, desc = 'Pitch natural period', units = 's') 
+        self.add_output('yaw_period', val = 0, desc = 'Yaw natural period', units = 's') 
+
         # Aggregate outputs
         self.add_output('Max_Offset', val = 0, desc = 'Maximum distance in surge/sway direction', units = 'm') 
         self.add_output('heave_avg', val = 0, desc = 'Average heave over all cases', units = 'm') 
         self.add_output('Max_PtfmPitch', val = 0, desc = 'Maximum platform pitch over all cases', units = 'deg') 
         self.add_output('Std_PtfmPitch', val = 0, desc = 'Average platform pitch std. over all cases', units = 'deg') 
-        self.add_output('max_nacelle_Ax', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
+        self.add_output('max_nac_accel', val = 0, desc = 'Maximum nacelle accelleration over all cases', units = 'm/s**2') 
         self.add_output('rotor_overspeed', val = 0, desc = 'Fraction above rated rotor speed') 
         self.add_output('max_tower_base', val = 0, desc = 'Maximum tower base moment over all cases', units = 'N*m') 
 
@@ -633,7 +643,7 @@ class RAFT_OMDAO(om.ExplicitComponent):
         
         # option to run level 1 load cases
         if True: #processCases:
-            model.analyzeCases(runPyHAMS=modeling_opt['runPyHAMS'], meshDir=modeling_opt['BEM_dir'])
+            model.analyzeCases(meshDir=modeling_opt['BEM_dir'])
             
         # get and process results
         results = model.calcOutputs()
@@ -643,34 +653,51 @@ class RAFT_OMDAO(om.ExplicitComponent):
             if outs[i][0].startswith('properties_'):
                 name = outs[i][0].split('properties_')[1]
                 outputs['properties_'+name] = results['properties'][name]
+            '''
+            Note: dynamic results should be taken from results['case metrics']
             elif outs[i][0].startswith('response_'):
                 name = outs[i][0].split('response_')[1]
                 if np.iscomplex(results['response'][name]).any():
                     outputs['response_'+name] = np.abs(results['response'][name])
                 else:
                     outputs['response_'+name] = results['response'][name]
-
+            '''
 
         # Pattern matching for case-by-case outputs
-        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']
-        stats = ['avg','std','max','PSD','DEL']
+        # names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','omega','torque','power','bPitch','Tmoor']   # these are not always outputted, need to catch better
+        names = ['surge','sway','heave','roll','pitch','yaw','AxRNA','Mbase','Tmoor']
+        stats = ['avg','std','max','PSD']
         case_mask = np.array(case_mask)
         for n in names:
             for s in stats:
-                if s == 'DEL' and not n in ['Tmoor','Mbase']: continue
                 iout = f'{n}_{s}'
-                outputs['stats_'+iout][case_mask] = np.squeeze( results['case_metrics'][iout] )
+
+                # use only first rotor/turbine
+                case_metrics = [cm[0] for cm in results['case_metrics'].values()]
+                stat = np.squeeze(np.array([cm[iout] for cm in case_metrics]))
+                outputs['stats_'+iout][case_mask] = stat
 
         # Other case outputs
-        for n in ['wind_PSD','wave_PSD']:
-            outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
+        # for n in ['wind_PSD','wave_PSD']:
+        #     outputs['stats_'+n][case_mask,:] = results['case_metrics'][n]
+
+        # natural periods
+        model.solveEigen()
+        outputs["rigid_body_periods"] = 1/results['eigen']['frequencies']
+
+        outputs["surge_period"] = outputs["rigid_body_periods"][0]
+        outputs["sway_period"] = outputs["rigid_body_periods"][1]
+        outputs["heave_period"] = outputs["rigid_body_periods"][2]
+        outputs["roll_period"] = outputs["rigid_body_periods"][3]
+        outputs["pitch_period"] = outputs["rigid_body_periods"][4]
+        outputs["yaw_period"] = outputs["rigid_body_periods"][5]
 
         # Compute some aggregate outputs manually
         outputs['Max_Offset'] = np.sqrt(outputs['stats_surge_max'][case_mask]**2 + outputs['stats_sway_max'][case_mask]**2).max()
         outputs['heave_avg'] = outputs['stats_heave_avg'][case_mask].mean()
         outputs['Max_PtfmPitch'] = outputs['stats_pitch_max'][case_mask].max()
         outputs['Std_PtfmPitch'] = outputs['stats_pitch_std'][case_mask].mean()
-        outputs['max_nacelle_Ax'] = outputs['stats_AxRNA_std'][case_mask].max()
+        outputs['max_nac_accel'] = outputs['stats_AxRNA_std'][case_mask].max()
         outputs['rotor_overspeed'] = (outputs['stats_omega_max'][case_mask].max() - inputs['rated_rotor_speed']) / inputs['rated_rotor_speed']
         outputs['max_tower_base'] = outputs['stats_Mbase_max'][case_mask].max()
         
@@ -682,3 +709,24 @@ class RAFT_OMDAO(om.ExplicitComponent):
         outputs["platform_I_total"][:3] = np.r_[outputs['properties_roll inertia at subCG'][0],
                                            outputs['properties_pitch inertia at subCG'][0],
                                            outputs['properties_yaw inertia at subCG'][0]]
+
+        
+class RAFT_Group(om.Group):
+    def initialize(self):
+        self.options.declare('modeling_options')
+        self.options.declare('turbine_options')
+        self.options.declare('mooring_options')
+        self.options.declare('member_options')
+        self.options.declare('analysis_options')
+
+    def setup(self):
+        modeling_opt = self.options['modeling_options']
+        analysis_opt = self.options['analysis_options']
+        turbine_opt = self.options['turbine_options']
+        members_opt = self.options['member_options']
+        mooring_opt = self.options['mooring_options']
+        self.add_subsystem("raft", RAFT_OMDAO(modeling_options=modeling_opt,
+                                              analysis_options=analysis_opt,
+                                              turbine_options=turbine_opt,
+                                              mooring_options=mooring_opt,
+                                              member_options=members_opt), promotes=["*"])

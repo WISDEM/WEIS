@@ -2,7 +2,6 @@ import os
 
 import openmdao.api as om
 import matplotlib.pyplot as plt
-import numpy as np
 
 from wisdem.commonse.mpi_tools import MPI
 

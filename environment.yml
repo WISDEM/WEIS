@@ -35,6 +35,7 @@ dependencies:
   - patsy
   - pip
   - pygments
+  - pyhams
   - pyoptsparse
   - pytest
   - pytest-cov
@@ -42,7 +43,7 @@ dependencies:
   - pyyaml
   - pyzmq
   - qdldl-python
-  - ruamel_yaml
+  - ruamel.yaml
   - scipy
   - seaborn
   - setuptools

@@ -271,6 +271,8 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['Fst']['VTK_fields'], 'VTK_fields', '- Write mesh fields to VTK data files? (flag) {true/false} [unused if WrVTK=0]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['VTK_fps'], 'VTK_fps', '- Frame rate for VTK output (frames per second){will use closest integer multiple of DT} [used only if WrVTK=2]\n'))
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDyn(self):
@@ -430,6 +432,8 @@ class InputWriter_OpenFAST(object):
             f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         
         f.write('---------------------------------------------------------------------------------------\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDynBlade(self):
@@ -481,6 +485,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][3], 'BldEdgSh(5)', '-            , coeff of x^5\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][4], 'BldEdgSh(6)', '-            , coeff of x^6\n'))      
          
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDynTower(self):
@@ -537,6 +543,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwSSM2Sh'][3], 'TwSSM2Sh(5)', '-       , coefficient of x^5 term\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwSSM2Sh'][4], 'TwSSM2Sh(6)', '-       , coefficient of x^6 term\n'))
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_BeamDyn(self):
@@ -620,6 +628,8 @@ class InputWriter_OpenFAST(object):
             f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         
         f.write('---------------------------------------------------------------------------------------')
+        f.flush()
+        os.fsync(f)
         f.close()
 
         # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn'][''], '', '\n'))
@@ -739,6 +749,8 @@ class InputWriter_OpenFAST(object):
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
   
     def write_AeroDyn15(self):
@@ -868,6 +880,8 @@ class InputWriter_OpenFAST(object):
             f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         
         f.write('---------------------------------------------------------------------------------------\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_AeroDyn15Blade(self):
@@ -894,6 +908,8 @@ class InputWriter_OpenFAST(object):
         for Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, AFID in zip(BlSpn, BlCrvAC, BlSwpAC, BlCrvAng, BlTwist, BlChord, BlAFID):
             f.write('{: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 8d}\n'.format(Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, int(AFID)))
         
+        f.flush()
+        os.fsync(f)
         f.close()
         
     def write_AeroDyn15Polar(self):
@@ -941,7 +957,8 @@ class InputWriter_OpenFAST(object):
                 num_tab = len(self.fst_vt['AeroDyn15']['af_data'][afi])
             elif self.fst_vt['AeroDyn15']['AFTabMod'] == 3:
                 # for tab_orig in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] - 1):
-                if self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
+                if len( self.fst_vt['AeroDyn15']['af_data'][afi]) == 1 or \
+                    self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
                     num_tab = 1  # assume that all Ctrl angles of the flaps are identical if the first two are -> no flaps!
                 else:
                     num_tab = self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']
@@ -1037,6 +1054,8 @@ class InputWriter_OpenFAST(object):
                 for row in polar:
                     f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             
+            f.flush()
+            os.fsync(f)
             f.close()
             
     def write_AeroDyn15Coord(self):
@@ -1063,6 +1082,9 @@ class InputWriter_OpenFAST(object):
             f.write('!  x/c        y/c\n')
             for row in coord:
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
+            
+            f.flush()
+            os.fsync(f)
             f.close()
 
     def write_AeroDyn14(self):
@@ -1138,6 +1160,8 @@ class InputWriter_OpenFAST(object):
         for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
             f.write('{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
 
+        f.flush()
+        os.fsync(f)
         f.close()        
 
     def write_AeroDyn14Tower(self):
@@ -1161,6 +1185,8 @@ class InputWriter_OpenFAST(object):
         for Re, CD in zip(self.fst_vt['AeroDynTower']['TwrRe'], self.fst_vt['AeroDynTower']['TwrCD']):
             f.write('% 2.15e' %Re + '   '.join(['% 2.15e'%cdi for cdi in CD]) + '\n')
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_AeroDyn14Polar(self, filename, a_i):
@@ -1191,6 +1217,8 @@ class InputWriter_OpenFAST(object):
                 for a, cl, cd in zip(param['alpha'], param['cl'], param['cd']):
                     f.write('{: 6e}  {: 6e}  {: 6e}\n'.format(a, cl, cd))
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_OLAF(self):
@@ -1247,6 +1275,8 @@ class InputWriter_OpenFAST(object):
         f.write('--------------------------- ADVANCED OPTIONS --------------------------------------------------\n')
         f.write('===============================================================================================\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
     
     def write_ServoDyn(self):
@@ -1375,6 +1405,8 @@ class InputWriter_OpenFAST(object):
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_DISCON_in(self):
@@ -1715,6 +1747,9 @@ class InputWriter_OpenFAST(object):
             
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
         
+
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_SubDyn(self):
@@ -1743,7 +1778,7 @@ class InputWriter_OpenFAST(object):
         else: # list of floats
             f.write('{:<22} {:<11} {:}'.format(", ".join([f'{d:f}' for d in self.fst_vt['SubDyn']['JDampings']]), 'JDampings', '- Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['GuyanDampMod'], 'GuyanDampMod', '- Guyan damping {0=none, 1=Rayleigh Damping, 2=user specified 6x6 matrix}.\n'))
-        f.write('{:<10}, {:<10} {:<11} {:}'.format(self.fst_vt['SubDyn']['RayleighDamp'][0], self.fst_vt['SubDyn']['RayleighDamp'][1], 'RayleighDamp', '- Mass and stiffness proportional damping  coefficients (Rayleigh Damping) [only if GuyanDampMod=1].\n'))
+        f.write('{:<10} {:<10} {:<11} {:}'.format(self.fst_vt['SubDyn']['RayleighDamp'][0], self.fst_vt['SubDyn']['RayleighDamp'][1], 'RayleighDamp', '- Mass and stiffness proportional damping  coefficients (Rayleigh Damping) [only if GuyanDampMod=1].\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['GuyanDampSize'], 'GuyanDampSize', '- Guyan damping matrix (6x6) [only if GuyanDampMod=2].\n'))
         for j in range(self.fst_vt['SubDyn']['GuyanDampSize']):
             try:
@@ -1923,6 +1958,8 @@ class InputWriter_OpenFAST(object):
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_MAP(self):
@@ -1984,6 +2021,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<11s}'.format('(-)')+'\n')
         f.write("\n".join(self.fst_vt['MAP']['Option']).strip() + '\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_MoorDyn(self):
@@ -2066,6 +2105,8 @@ class InputWriter_OpenFAST(object):
         f.write('END\n')
         f.write('------------------------- need this line --------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
         
         
@@ -2168,6 +2209,8 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(StC_vt['PrescribedForcesFile'], 'PrescribedForcesFile', '- Time series force and moment (7 columns of time, FX, FY, FZ, MX, MY, MZ)\n'))
         f.write('-------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
 if __name__=="__main__":

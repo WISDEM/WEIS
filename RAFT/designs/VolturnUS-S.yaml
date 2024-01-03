@@ -1118,7 +1118,7 @@ platform:
         gamma     :  0.0                       # [deg]  twist angle about the member's z-axis
         potMod    :  True                      # [bool] Whether to model the member with potential flow (BEM model) plus viscous drag or purely strip theory
         # --- outer shell including hydro---
-        stations  :  [0, 1]                    # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
+        stations  :  [0, 35]                   # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
         d         :  12.5                      # [m]    diameters if circular or side lengths if rectangular (can be pairs)
         t         :  0.05                      # [m]    wall thicknesses (scalar or list of same length as stations)
         Cd        :  0.8                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
@@ -1144,7 +1144,7 @@ platform:
         gamma     :  0.0                       # [deg]  twist angle about the member's z-axis
         potMod    :  False                     # [bool] Whether to model the member with potential flow (BEM model) plus viscous drag or purely strip theory
         # --- outer shell including hydro---
-        stations  :  [0, 1]                    # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
+        stations  :  [0, 40.5]                 # [-]    location of stations along axis. Will be normalized such that start value maps to rA and end value to rB
         d         :  [12.5, 7.0]               # [m]    diameters if circular or side lengths if rectangular (can be pairs)
         t         :  0.05                      # [m]    wall thicknesses (scalar or list of same length as stations)
         Cd        :  0.8                       # [-]    transverse drag coefficient       (optional, scalar or list of same length as stations)
@@ -1152,7 +1152,7 @@ platform:
         CdEnd     :  0.6                       # [-]    end axial drag coefficient        (optional, scalar or list of same length as stations)
         CaEnd     :  0.6                       # [-]    end axial added mass coefficient  (optional, scalar or list of same length as stations)
         rho_shell :  7850                      # [kg/m3]
-        l_fill    :  43.0                      # [m]
+        l_fill    :  40.5                      # [m]
         rho_fill  :  1025.0                    # [kg/m3]
         
         

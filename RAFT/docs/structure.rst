@@ -42,6 +42,17 @@ the use of the BEM solver, `pyHAMS <https://github.com/WISDEM/pyHAMS>`_, or it c
 It can also calculate the hydrodynamic damping and forcing as a result of nonlinear drag, which is dependent upon the platform positions.
 Lastly, it can calculate the aerodynamic added mass, damping, and forcing matrices of the rotor. 
 
+The FOWT object processes and stores a large set of information about a 
+floating system. Some of the key properties are:
+
+- M_struc: 6x6 mass matrix of the complete structure (excluding mooring 
+  system and hydrodynamic added mass)
+- C_struc: 6x6 stiffness matrix of the complete structure considering
+  only the effect of weight
+- AWP: waterplane area
+- rCG: overall center of gravity location
+- rCG_sub: substructure center of gravity location (excludes turbine)
+
 
 Member
 ^^^^^^

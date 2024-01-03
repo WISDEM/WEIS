@@ -10,6 +10,22 @@ import shutil
 import setuptools
 import subprocess
 
+#######
+# This forces wheels to be platform specific
+from setuptools.dist import Distribution
+from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
+
+class bdist_wheel(_bdist_wheel):
+    def finalize_options(self):
+        _bdist_wheel.finalize_options(self)
+        self.root_is_pure = False
+
+class BinaryDistribution(Distribution):
+    """Distribution which always forces a binary package with platform name"""
+    def has_ext_modules(foo):
+        return True
+#######
+
 
 def run_meson_build(staging_dir):
     prefix = os.path.join(os.getcwd(), staging_dir)
@@ -19,6 +35,8 @@ def run_meson_build(staging_dir):
     meson_args = ""
     if "MESON_ARGS" in os.environ:
         meson_args = os.environ["MESON_ARGS"]
+        # A weird add-on on mac github action runners needs to be removed
+        if meson_args.find("buildtype") >= 0: meson_args = ""
 
     if platform.system() == "Windows":
         if not "FC" in os.environ:
@@ -28,14 +46,15 @@ def run_meson_build(staging_dir):
 
     # configure
     meson_path = shutil.which("meson")
-    meson_call = (
-        f"{meson_path} setup {staging_dir} --prefix={prefix} "
-        + f"-Dpython.purelibdir={purelibdir} -Dpython.platlibdir={purelibdir} {meson_args}"
-    )
-    sysargs = meson_call.split(" ")
-    sysargs = [arg for arg in sysargs if arg != ""]
-    print(sysargs)
-    p1 = subprocess.run(sysargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if meson_path is None:
+        raise OSError("The meson command cannot be found on the system")
+        
+    meson_call = [meson_path, "setup", staging_dir, "--wipe",
+                  f"--prefix={prefix}", f"-Dpython.purelibdir={purelibdir}",
+                  f"-Dpython.platlibdir={purelibdir}", meson_args]
+    meson_call = [m for m in meson_call if m != ""]
+    print(meson_call)
+    p1 = subprocess.run(meson_call, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     os.makedirs(staging_dir, exist_ok=True)
     setup_log = os.path.join(staging_dir, "setup.log")
     with open(setup_log, "wb") as f:
@@ -43,23 +62,20 @@ def run_meson_build(staging_dir):
     if p1.returncode != 0:
         with open(setup_log, "r") as f:
             print(f.read())
-        raise OSError(sysargs, f"The meson setup command failed! Check the log at {setup_log} for more information.")
+        raise OSError(meson_call, f"The meson setup command failed! Check the log at {setup_log} for more information.")
 
     # build
-    meson_call = f"{meson_path} compile -vC {staging_dir}"
-    sysargs = meson_call.split(" ")
-    sysargs = [arg for arg in sysargs if arg != ""]
-    print(sysargs)
-    p2 = subprocess.run(sysargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    meson_call = [meson_path, "compile", "-vC", staging_dir]
+    meson_call = [m for m in meson_call if m != ""]
+    print(meson_call)
+    p2 = subprocess.run(meson_call, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     compile_log = os.path.join(staging_dir, "compile.log")
     with open(compile_log, "wb") as f:
         f.write(p2.stdout)
     if p2.returncode != 0:
         with open(compile_log, "r") as f:
             print(f.read())
-        raise OSError(
-            sysargs, f"The meson compile command failed! Check the log at {compile_log} for more information."
-        )
+        raise OSError(meson_call, f"The meson compile command failed! Check the log at {compile_log} for more information.")
 
 
 def copy_shared_libraries():
@@ -75,7 +91,7 @@ def copy_shared_libraries():
                 match = re.search(staging_dir, new_path)
                 new_path = new_path[match.span()[1] + 1 :]
                 print(f"Copying build file {file_path} -> {new_path}")
-                shutil.copy(file_path, new_path)
+                shutil.move(file_path, new_path)
 
 
 if __name__ == "__main__":
@@ -83,19 +99,12 @@ if __name__ == "__main__":
     # used as the sources for setuptools
     staging_dir = "meson_build"
 
-    # If on Windows, use the compiled exe from Yingyi
-    if ( (not platform.system() == "Windows") and
-         ("dist" not in str(os.path.abspath(__file__))) ):
+    # this keeps the meson build system from running more than once
+    if "dist" not in str(os.path.abspath(__file__)):
         cwd = os.getcwd()
         run_meson_build(staging_dir)
         os.chdir(cwd)
         copy_shared_libraries()
-
-    #docs_require = ""
-    #req_txt = os.path.join("doc", "requirements.txt")
-    #if os.path.isfile(req_txt):
-    #    with open(req_txt) as f:
-    #        docs_require = f.read().splitlines()
 
     init_file = os.path.join("pyhams", "__init__.py")
     #__version__ = re.findall(
@@ -103,27 +112,7 @@ if __name__ == "__main__":
     #    open(init_file).read(),
     #)[0]
 
-    setuptools.setup(
-        name='pyHAMS',
-        version='1.0.0',
-        description='Python module wrapping around HAMS',
-        long_description="pyHAM is a Python interface to the HAMS boundary-element solver for underwater potential flow solutions",
-        author='NREL WISDEM Team',
-        author_email='systems.engineering@nrel.gov',
-        license='Apache License, Version 2.0',
-        install_requires=[
-            "numpy",
-            "meson",
-            "ninja",
-        ],
-        extras_require={
-            "testing": ["pytest"],
-        },
-        python_requires=">=3.8",
-        package_data={"": ["*.yaml", "*.so", "*.lib", "*.pyd", "*.pdb", "*.dylib", "*.dll"]},
-        packages=['pyhams'],
-        zip_safe=False,
-    )
+    setuptools.setup(cmdclass={'bdist_wheel': bdist_wheel}, distclass=BinaryDistribution)
 
 #os.environ['NPY_DISTUTILS_APPEND_FLAGS'] = '1'
 

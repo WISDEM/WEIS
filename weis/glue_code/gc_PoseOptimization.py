@@ -5,17 +5,26 @@ class PoseOptimizationWEIS(PoseOptimization):
 
     def __init__(self, wt_init, modeling_options, analysis_options):
         
-        # Set solve component for some optimization constraints, and merit figures (RAFT or openfast)
-        if modeling_options['Level3']['flag']:
-            self.solve_component = 'aeroelastic'
-        else:
-            self.solve_component = 'raft'
-
         self.level_flags = np.array([modeling_options[level]['flag'] for level in ['Level1','Level2','Level3']])
         # if sum(self.level_flags) > 1:
             # raise Exception('Only one level in WEIS can be enabled at the same time')
 
         super(PoseOptimizationWEIS, self).__init__(wt_init, modeling_options, analysis_options)
+
+        # Set solve component for some optimization constraints, and merit figures (RAFT or openfast)
+        if modeling_options['Level3']['flag']:
+            self.floating_solve_component = 'aeroelastic'
+        elif modeling_options['Level1']['flag']:
+            self.floating_solve_component = 'raft'
+        else:
+            self.floating_solve_component = 'floatingse'
+
+        # aeroelastic won't compute floating period, execpt in special sims
+        if modeling_options['Level1']['flag']:
+            self.floating_period_solve_component = 'raft'
+        else:
+            self.floating_period_solve_component = 'floatingse'
+        
         
     def get_number_design_variables(self):
         # Determine the number of design variables
@@ -80,7 +89,9 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             
         elif self.opt['merit_figure'] == 'rotor_overspeed':
-            wt_opt.model.add_objective(f'{self.solve_component}.rotor_overspeed')
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
+            wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
         
         elif self.opt['merit_figure'] == 'Std_PtfmPitch':
             wt_opt.model.add_objective('aeroelastic.Std_PtfmPitch')
@@ -119,7 +130,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                                                             upper=control_opt['servo']['torque_control']['omega']['max'])
         if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
             wt_opt.model.add_design_var('tune_rosco_ivc.zeta_vs', lower=control_opt['servo']['torque_control']['zeta']['min'], 
-                                                           upper=control_opt['servo']['torque_control']['zeta_max'])
+                                                           upper=control_opt['servo']['torque_control']['zeta']['max'])
         if control_opt['servo']['ipc_control']['Kp']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Kp1p', lower=control_opt['servo']['ipc_control']['Kp']['min'],
                                                             upper=control_opt['servo']['ipc_control']['Kp']['max'],
@@ -263,7 +274,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         if control_constraints['rotor_overspeed']['flag']:
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
-            wt_opt.model.add_constraint(f'{self.solve_component}.rotor_overspeed',
+            wt_opt.model.add_constraint(f'{self.floating_solve_component}.rotor_overspeed',
                 lower = control_constraints['rotor_overspeed']['min'],
                 upper = control_constraints['rotor_overspeed']['max'])
         
@@ -276,21 +287,23 @@ class PoseOptimizationWEIS(PoseOptimization):
         
         # Nacelle Accelleration magnitude
         if control_constraints['nacelle_acceleration']['flag']:
-            wt_opt.model.add_constraint('aeroelastic.max_nac_accel',
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize with nacelle_acceleration constraint.')
+            wt_opt.model.add_constraint(f'{self.floating_solve_component}.max_nac_accel',
                     upper = control_constraints['nacelle_acceleration']['max'])
         
         # Max platform pitch
         if control_constraints['Max_PtfmPitch']['flag']:
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize Max_PtfmPitch constraints.')
-            wt_opt.model.add_constraint(f'{self.solve_component}.Max_PtfmPitch',
+            wt_opt.model.add_constraint(f'{self.floating_solve_component}.Max_PtfmPitch',
                 upper = control_constraints['Max_PtfmPitch']['max'])
         
         # Platform pitch motion
         if control_constraints['Std_PtfmPitch']['flag']:
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize Std_PtfmPitch constraints.')
-            wt_opt.model.add_constraint(f'{self.solve_component}.Std_PtfmPitch',
+            wt_opt.model.add_constraint(f'{self.floating_solve_component}.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
         if control_constraints['Max_TwrBsMyt']['flag']:
             if self.modeling['Level3']['flag'] != True:
@@ -302,7 +315,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
             wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt_ratio', 
                 upper = 1.0)
-
+            
         # Blade pitch travel
         if control_constraints['avg_pitch_travel']['flag']:
             if self.modeling['Level3']['flag'] != True:
@@ -328,7 +341,7 @@ class PoseOptimizationWEIS(PoseOptimization):
             if not any(self.level_flags):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize with openfast_failed constraint.')
             wt_opt.model.add_constraint(
-                f'{self.solve_component}.Max_Offset',
+                f'{self.floating_solve_component}.Max_Offset',
                 upper = self.opt['constraints']['floating']['Max_Offset']['max']
                 )
                 

@@ -4,24 +4,27 @@ import numpy as np
 
 from raft.helpers import *
 
+from moorpy.helpers import transformPosition
+
 ## This class represents linear (for now cylindrical and rectangular) components in the substructure.
 #  It is meant to correspond to Member objects in the WEIS substructure ontology, but containing only
 #  the properties relevant for the Level 1 frequency-domain model, as well as additional data strucutres
 #  used during the model's operation.
 class Member:
 
-    def __init__(self, mi, nw, BEM=[]):
+    def __init__(self, mi, nw, BEM=[], heading=0):
         '''Initialize a Member. For now, this function accepts a space-delimited string with all member properties.
 
         PARAMETERS
         ----------
 
-        min : dict
+        mi : dict
             Dictionary containing the member description data structure
         nw : int
             Number of frequencies in the analysis - used for initializing.
         heading : float, optional
-            Rotation to apply to the coordinates when setting up the member - used for circular patterns of members.
+            Heading rotation to apply to the coordinates when setting up the 
+            member. Used for member arrangements or FOWT heading offsets [deg].
 
         '''
 
@@ -30,8 +33,12 @@ class Member:
         self.name  = str(mi['name'])
         self.type  = int(mi['type'])                                 # set the type of the member (for now, just arbitrary numbers: 0,1,2, etc.)
 
-        self.rA = np.array(mi['rA'], dtype=np.double)                # [x,y,z] coordinates of lower node [m]
-        self.rB = np.array(mi['rB'], dtype=np.double)                # [x,y,z] coordinates of upper node [m]
+        self.rA0 = np.array(mi['rA'], dtype=np.double)               # [x,y,z] coordinates of lower node relative to PRP [m]
+        self.rB0 = np.array(mi['rB'], dtype=np.double)               # [x,y,z] coordinates of upper node relative to PRP [m]
+        if (self.rA0[2] == 0 or self.rB0[2] == 0) and self.type != 3:
+            raise ValueError("RAFT Members cannot start or end on the waterplane")
+        if self.rB0[2] < self.rA0[2]:
+            raise ValueError(f"The z position of rA is {self.rA0[2]}, and the z position of rB is {self.rB0[2]}. RAFT Members must have their rA position below the rB position. Try changing your input design yaml rA/rB values.")
 
         shape      = str(mi['shape'])                                # the shape of the cross section of the member as a string (the first letter should be c or r)
 
@@ -39,28 +46,41 @@ class Member:
         
 
         # heading feature for rotation members about the z axis (used for rotated patterns)
+        '''
         self.headings = getFromDict(mi, 'headings', shape=-1, default=0.0)
         self.heading = getFromDict(mi, 'heading', default=0.0)            # rotation about z axis to apply to the member [deg]
         if self.heading != 0.0:
             c = np.cos(np.deg2rad(self.heading))
             s = np.sin(np.deg2rad(self.heading))
+        '''
+        if heading != 0.0:
+            c = np.cos(np.deg2rad(heading))
+            s = np.sin(np.deg2rad(heading))
             rotMat = np.array([[c, -s, 0], [s, c, 0], [0, 0, 1]])
-            self.rA = np.matmul(rotMat, self.rA)
-            self.rB = np.matmul(rotMat, self.rB)
+            self.rA0 = np.matmul(rotMat, self.rA0)
+            self.rB0 = np.matmul(rotMat, self.rB0)
 
 
-        rAB = self.rB-self.rA                                        # The relative coordinates of upper node from lower node [m]
-        self.l = np.linalg.norm(rAB)                                 # member length [m]
+        rAB = self.rB0-self.rA0                                     # The relative coordinates of upper node from lower node [m]
+        self.l = np.linalg.norm(rAB)                                # member length [m]
     
 
-        # station positions
-        n = len(mi['stations'])                                     # number of stations
+        # ----- process station positions and other distributed inputs -----
+        
+        # Station inputs are mapped linearly over the length of the member from
+        # end A to B. The inputted station list must be in increasing order.
+        st = np.array(mi['stations'], dtype=float)      # station input values (abritrary units/scale)
+        n = len(st)                                    # number of stations
+        
         if n < 2:
             raise ValueError("At least two stations entries must be provided")
-
-        A = np.array(mi['stations'], dtype=float)
-        self.stations = (A - A[0])/(A[-1] - A[0])*self.l             # calculate station positions along the member axis from 0 to l [m]
-
+            
+        # ensure the stations are in ascending order (assumed to be from end A to B)
+        if not sorted(st) == st.tolist():
+            raise ValueError(f"Member {self.name}: the station list is not in ascending order.")
+        
+        # calculate station positions along the member axis from 0 to l [m]
+        self.stations = (st - st[0])/(st[-1] - st[0])*self.l
 
         # shapes
         if shape[0].lower() == 'c':
@@ -80,16 +100,38 @@ class Member:
             raise ValueError('The only allowable shape strings are circular and rectangular')
 
 
-        self.t         = getFromDict(mi, 't', shape=n)               # shell thickness of the nodes [m]
+        self.t         = getFromDict(mi, 't', shape=n)               # shell thickness at each station [m]
+        self.rho_shell = getFromDict(mi, 'rho_shell', shape=0, default=8500.) # shell mass density [kg/m^3]
         
-        self.l_fill    = getFromDict(mi, 'l_fill'  , shape=-1, default=0.0)   # length of member (from end A to B) filled with ballast [m]
-        self.rho_fill  = getFromDict(mi, 'rho_fill', shape=-1, default=0.0)   # density of ballast in member [kg/m^3]
         
-        if isinstance(self.l_fill, np.ndarray):
-            if len(self.l_fill) != n-1 or len(self.rho_fill) != n-1:
-                raise ValueError(f"Member '{self.name}': The number of stations ({n}) should always be 1 greater than the number of ballast sections, l_fill ({len(self.l_fill)}) and rho_fill ({len(self.rho_fill)})")
-            
-        self.rho_shell = getFromDict(mi, 'rho_shell', default=8500.) # shell mass density [kg/m^3]
+        # ----- ballast inputs (for each section between stations) -----
+        
+        # read the ballast fill level of each section (same units/scale as stations list)
+        st_fill = getFromDict(mi, 'l_fill'  , shape=n-1, default=0)   
+        
+        #ensure each ballast entry is valid (fill level doesn't exceed section length)
+        for i in range(n-1):
+            if st_fill[i] < 0: 
+                raise Exception(f"Member {self.name}: ballast level in section {i+1} is negative.")
+            if st_fill[i] > st[i+1] - st[i]: 
+                raise Exception(f"Member {self.name}: ballast level in section {i+1} exceeds section length."
+                                +f" ({st_fill[i]} > {st[i+1] - st[i]}).")
+        
+        # convert ballast fill levels into length units [m]
+        self.l_fill = st_fill/(st[-1] - st[0])*self.l  
+
+        # density of ballast in member [kg/m^3]
+        rho_fill = getFromDict(mi, 'rho_fill', shape=-1, default=1025)
+        
+        if np.isscalar(rho_fill):
+            self.rho_fill = np.zeros(n-1) + rho_fill
+        else:
+            if len(rho_fill) == n-1:
+                self.rho_fill = np.array(rho_fill)
+            else:
+                raise Exception(f"Member {self.name}: the number of provided ballast densities (rho_fill) must be 1 less than the number of stations.")
+        
+        # raise ValueError(f"Member '{self.name}': The number of stations ({n}) should always be 1 greater than the number of ballast sections, l_fill ({len(self.l_fill)}) and rho_fill ({len(self.rho_fill)})")
 
 
         # initialize member orientation variables
@@ -99,42 +141,52 @@ class Member:
         self.R = np.eye(3)                                          # rotation matrix from global x,y,z to member q,p1,p2
 
 
-        # store end cap and bulkhead info
+        # ----- end cap and bulkhead info -----
 
         cap_stations = getFromDict(mi, 'cap_stations', shape=-1, default=[])   # station location inputs before scaling
-        if cap_stations == []:
+        if len(cap_stations) == 0:
             self.cap_t        = []
             self.cap_d_in     = []
             self.cap_stations = []
         else:
             self.cap_t        = getFromDict(mi, 'cap_t'   , shape=cap_stations.shape[0])   # thicknesses [m]
             self.cap_d_in     = getFromDict(mi, 'cap_d_in', shape=cap_stations.shape[0])   # inner diameter (if it isn't a solid plate) [m]
-            self.cap_stations = (cap_stations - A[0])/(A[-1] - A[0])*self.l             # calculate station positions along the member axis from 0 to l [m]
+            self.cap_stations = (cap_stations - st[0])/(st[-1] - st[0])*self.l             # calculate station positions along the member axis from 0 to l [m]
             
 
         # Drag coefficients
         self.Cd_q   = getFromDict(mi, 'Cd_q' , shape=n, default=0.0 )     # axial drag coefficient
+        self.Cd_p1  = getFromDict(mi, 'Cd'   , shape=n, default=0.6, index=0)      # transverse1 drag coefficient
+        self.Cd_p2  = getFromDict(mi, 'Cd'   , shape=n, default=0.6, index=1)      # transverse2 drag coefficient
+        self.Cd_End = getFromDict(mi, 'CdEnd', shape=n, default=0.6 )     # end drag coefficient
+        '''
         if not np.isscalar(mi['Cd']) and len(mi['Cd'])==2:  # special case for rectangular members with directional coefficients
             self.Cd_p1 = np.tile(float(mi['Cd'][0]), [n])
             self.Cd_p2 = np.tile(float(mi['Cd'][1]), [n])
         else:
             self.Cd_p1  = getFromDict(mi, 'Cd'   , shape=n, default=0.6 )     # transverse1 drag coefficient
             self.Cd_p2  = getFromDict(mi, 'Cd'   , shape=n, default=0.6 )     # transverse2 drag coefficient
-        self.Cd_End = getFromDict(mi, 'CdEnd', shape=n, default=0.6 )     # end drag coefficient
+        '''
         # Added mass coefficients
         self.Ca_q   = getFromDict(mi, 'Ca_q' , shape=n, default=0.0 )     # axial added mass coefficient
+        self.Ca_p1  = getFromDict(mi, 'Ca'   , shape=n, default=0.97, index=0)     # transverse1 added mass coefficient
+        self.Ca_p2  = getFromDict(mi, 'Ca'   , shape=n, default=0.97, index=1)     # transverse2 added mass coefficient
+        self.Ca_End = getFromDict(mi, 'CaEnd', shape=n, default=0.6 )     # end added mass coefficient
+        '''
         if not np.isscalar(mi['Ca']) and len(mi['Ca'])==2:  # special case for rectangular members with directional coefficients
             self.Ca_p1 = np.tile(float(mi['Ca'][0]), [n])
             self.Ca_p2 = np.tile(float(mi['Ca'][1]), [n])
         else:
             self.Ca_p1  = getFromDict(mi, 'Ca'   , shape=n, default=0.97)     # transverse1 added mass coefficient
             self.Ca_p2  = getFromDict(mi, 'Ca'   , shape=n, default=0.97)     # transverse2 added mass coefficient
-        self.Ca_End = getFromDict(mi, 'CaEnd', shape=n, default=0.6 )     # end added mass coefficient
+        '''
 
+        # ----- Strip theory discretization -----
 
         # discretize into strips with a node at the midpoint of each strip (flat surfaces have dl=0)
         dorsl  = list(self.d) if self.shape=='circular' else list(self.sl)   # get a variable that is either diameter or side length pair
-        dlsMax = getFromDict(mi, 'dlsMax', shape=-1, default=5.0)
+        dlsMax = getFromDict(mi, 'dlsMax', shape=1, default=5)
+
         
         # start things off with the strip for end A
         ls     = [0.0]                 # list of lengths along member axis where a node is located <<< should these be midpoints instead of ends???
@@ -180,17 +232,19 @@ class Member:
         self.mh  = np.array(m)
 
         self.r   = np.zeros([self.ns,3])                             # undisplaced node positions along member  [m]
-
         for i in range(self.ns):
-            self.r[i,:] = self.rA + (ls[i]/self.l)*rAB               # locations of hydrodynamics nodes
+            self.r[i,:] = self.rA0 + (ls[i]/self.l)*rAB              # locations of hydrodynamics nodes (will later be displaced) [m]
 
         #self.slh[i,0] = np.interp(lh[i], self.stations, self.sl1)
         #self.slh[i,1] = np.interp(lh[i], self.stations, self.sl2)
-
+        
+        # ----- initialize arrays used later for hydro calculations -----
+        self.a_i       = np.zeros([self.ns])            # signed axial area vector that dynamic pressure will act on [m2]
         # complex frequency-dependent amplitudes of quantities at each node along member (to be filled in later)
         self.dr        = np.zeros([self.ns,3,nw], dtype=complex)            # displacement
         self.v         = np.zeros([self.ns,3,nw], dtype=complex)            # velocity
         self.a         = np.zeros([self.ns,3,nw], dtype=complex)            # acceleration
+        # note: wave quantities below will be the summed values if there is more than one sea state heading
         self.u         = np.zeros([self.ns,3,nw], dtype=complex)            # wave velocity
         self.ud        = np.zeros([self.ns,3,nw], dtype=complex)            # wave acceleration
         self.pDyn      = np.zeros([self.ns,  nw], dtype=complex)            # dynamic pressure
@@ -198,14 +252,28 @@ class Member:
         self.F_exc_a   = np.zeros([self.ns,3,nw], dtype=complex)            #  component due to wave acceleration
         self.F_exc_p   = np.zeros([self.ns,3,nw], dtype=complex)            #  component due to dynamic pressure
         self.F_exc_drag= np.zeros([self.ns,3,nw], dtype=complex)            # wave excitation from linearized drag
+        
+        
+        # new hydro matrices that are now used?
+        self.Amat = np.zeros([self.ns,3,3])
+        self.Bmat = np.zeros([self.ns,3,3])
+        self.Imat = np.zeros([self.ns,3,3])
 
 
+    def setPosition(self, r6=np.zeros(6)):
+        '''Calculates member pose -- node positions and vectors q, p1, and p2 
+        as well as member orientation matrix R based on the end positions and 
+        twist angle gamma along with any mean displacements and rotations.
+        
+        Parameters
+        ----------
+        r6 : array, optional
+            Absolute position/orientation of FOWT to which member is attached.
+            
+        '''
+        # formerly calcOrientation
 
-    def calcOrientation(self):
-        '''Calculates member direction vectors q, p1, and p2 as well as member orientation matrix R
-        based on the end positions and twist angle gamma.'''
-
-        rAB = self.rB-self.rA                                       # displacement vector from end A to end B [m]
+        rAB = self.rB0-self.rA0                                     # vector from end A to end B, undisplaced [m]
         q = rAB/np.linalg.norm(rAB)                                 # member axial unit vector
 
         beta = np.arctan2(q[1],q[0])                                # member incline heading from x axis
@@ -223,10 +291,31 @@ class Member:
                       [ c1*s3+c2*c3*s1,  c1*c3-c2*s1*s3,  s1*s2],
                       [   -c3*s2      ,      s2*s3     ,    c2 ]])  #Z1Y2Z3 from https://en.wikipedia.org/wiki/Euler_angles#Rotation_matrix
 
-
         p1 = np.matmul( R, [1,0,0] )               # unit vector that is in the 'beta' plane if gamma is zero
         p2 = np.cross( q, p1 )                     # unit vector orthogonal to both p1 and q
+        
+        # apply any platform offset and rotation to the values already obtained
+        #if r6:
+        R_platform = rotationMatrix(*r6[3:])  # rotation matrix for the platform roll, pitch, yaw
+    
+        R  = np.matmul(R_platform, R)
+        q  = np.matmul(R_platform, q)
+        p1 = np.matmul(R_platform, p1)
+        p2 = np.matmul(R_platform, p2)
+        
+        self.rA = transformPosition(self.rA0, r6)
+        self.rB = transformPosition(self.rB0, r6)
+    
+        #else:  # no offset case
+        #    self.rA = self.rA0
+        #    self.rB = self.rB0
+            
+        # update node positions
+        rAB = self.rB - self.rA
+        for i in range(self.ns):
+            self.r[i,:] = self.rA + (self.ls[i]/self.l)*rAB              # locations of hydrodynamics nodes (will later be displaced) [m]
 
+        # save direction vectors and matrices
         self.R  = R
         self.q  = q
         self.p1 = p1
@@ -238,15 +327,21 @@ class Member:
         self.p2Mat = VecVecTrans(self.p2)
 
 
-        return q, p1, p2  # also return the unit vectors for convenience
 
-
-
-    def getInertia(self):
+    def getInertia(self, rPRP=np.zeros(3)):
         '''Calculates member inertia properties: mass, center of mass, moments of inertia.
-        Assumes that the members are continuous and symmetrical (i.e. no weird shapes)'''
+        Properties are calculated relative to the platform reference point (PRP) in the
+        global orientation directions.
+        
+        Parameters
+        ----------
+        rPRP : float array
+            Coordinates of the platform reference point (the first three entries of fowt.Xi0),
+            which the moment of inertia matrix will be calculated relative to. [m]
+        '''
 
-        # Moment of Inertia Helper Functions -----------------------
+        # Moment of Inertia Helper Functions (to move to helper file) <<<
+        
         def FrustumMOI(dA, dB, H, p):
             '''returns the radial and axial moments of inertia of a potentially tapered circular member about the end node.
             Previously used equations found in a HydroDyn paper, now it uses newly derived ones. Ask Stein for reference if needed'''
@@ -345,7 +440,6 @@ class Member:
         for i in range(1,len(self.stations)):                            # start at 1 rather than 0 because we're looking at the sections (from station i-1 to i)
 
             # initialize common variables
-            rA = self.rA + self.q*self.stations[i-1]    # lower node position of the submember [m]
             l = self.stations[i]-self.stations[i-1]     # length of the submember [m]
             if l==0.0:
                 mass = 0
@@ -391,7 +485,6 @@ class Member:
                     mass = m_shell + m_fill                 # total mass of the submember [kg]
                     hc = ((hc_fill*m_fill) + (hc_shell*m_shell))/mass       # total center of mass of the submember from the submember's rA location [m]
                     
-                    center = rA + (self.q*hc)               # total center of mass of the member from the PRP [m]
                     
                     # MOMENT OF INERTIA
                     I_rad_end_outer, I_ax_outer = FrustumMOI(dA, dB, l, rho_shell)          # radial and axial MoI about the end of the solid outer frustum [kg-m^2]
@@ -432,7 +525,6 @@ class Member:
                     mass = m_shell + m_fill                     # total mass of the submember [kg]
                     hc = ((hc_fill*m_fill) + (hc_shell*m_shell))/mass       # total center of mass of the submember from the submember's rA location [m]
                     
-                    center = rA + (self.q*hc)                   # total center of mass of the member from the PRP [m]
                     
                     # MOMENT OF INERTIA
                     # MoI about each axis at the bottom end node of the solid outer truncated pyramid [kg-m^2]
@@ -456,7 +548,8 @@ class Member:
                     Izz_end = Izz_end_shell + Izz_end_fill
                     Izz = Izz_end       # the total MoI of the member about the z-axis is the same at any point along the z-axis
 
-
+                # center of mass of the submember from the PRP in global orientation (note: some of above could streamlined out of the if/else)
+                center = self.rA + self.q*(self.stations[i-1] + hc) - rPRP      # center of mass of the submember relative to the PRP [m]
 
             # add/append terms
             mass_center += mass*center                  # total sum of mass the center of mass of the member [kg-m]
@@ -464,7 +557,7 @@ class Member:
             self.vfill.append(v_fill)                        # list of ballast volumes in each submember [m^3]
             mfill.append(m_fill)                        # list of ballast masses in each submember [kg]
             pfill.append(rho_fill)                     # list of ballast densities in each submember [kg]
-
+            
             # create a local submember mass matrix
             Mmat = np.diag([mass, mass, mass, 0, 0, 0]) # submember's mass matrix without MoI tensor
             # create the local submember MoI tensor in the correct directions
@@ -534,15 +627,7 @@ class Member:
                 v_cap = V_outer-V_inner
                 m_cap = v_cap*rho_cap    # assume it's made out of the same material as the shell for now (can add in cap density input later if needed)
                 hc_cap = ((hco*V_outer)-(hci*V_inner))/(V_outer-V_inner)
-
-                pos_cap = self.rA + self.q*L                    # position of the referenced cap station from the PRP
-                if L==self.stations[0]:         # if it's a bottom end cap, the position is at the bottom of the end cap
-                    center_cap = pos_cap + self.q*hc_cap            # and the CG of the cap is at hc from the bottom, so this is the simple case
-                elif L==self.stations[-1]:      # if it's a top end cap, the position is at the top of the end cap
-                    center_cap = pos_cap - self.q*(h - hc_cap)      # and the CG of the cap goes from the top, to h below the top, to hc above h below the top (wording...sorry)
-                else:                           # if it's a middle bulkhead, the position is at the middle of the bulkhead
-                    center_cap = pos_cap - self.q*((h/2) - hc_cap)  # so the CG goes from the middle of the bulkhead, down h/2, then up hc
-
+                
                 I_rad_end_outer, I_ax_outer = FrustumMOI(dA, dB, h, rho_cap)
                 I_rad_end_inner, I_ax_inner = FrustumMOI(dAi, dBi, h, rho_cap)
                 I_rad_end = I_rad_end_outer-I_rad_end_inner
@@ -600,14 +685,6 @@ class Member:
                 m_cap = v_cap*rho_cap    # assume it's made out of the same material as the shell for now (can add in cap density input later if needed)
                 hc_cap = ((hco*V_outer)-(hci*V_inner))/(V_outer-V_inner)
 
-                pos_cap = self.rA + self.q*L                    # position of the referenced cap station from the PRP
-                if L==self.stations[0]:         # if it's a bottom end cap, the position is at the bottom of the end cap
-                    center_cap = pos_cap + self.q*hc_cap            # and the CG of the cap is at hc from the bottom, so this is the simple case
-                elif L==self.stations[-1]:      # if it's a top end cap, the position is at the top of the end cap
-                    center_cap = pos_cap - self.q*(h - hc_cap)      # and the CG of the cap goes from the top, to h below the top, to hc above h below the top (wording...sorry)
-                else:                           # if it's a middle bulkhead, the position is at the middle of the bulkhead
-                    center_cap = pos_cap - self.q*((h/2) - hc_cap)  # so the CG goes from the middle of the bulkhead, down h/2, then up hc
-
                 Ixx_end_outer, Iyy_end_outer, Izz_end_outer = RectangularFrustumMOI(slA, slB, h, rho_cap)
                 Ixx_end_inner, Iyy_end_inner, Izz_end_inner = RectangularFrustumMOI(slAi, slBi, h, rho_cap)
                 Ixx_end = Ixx_end_outer-Ixx_end_inner
@@ -618,7 +695,18 @@ class Member:
                 Izz = Izz_end
 
 
+            # get centerpoint of cap relative to PRP
+            pos_cap = self.rA + self.q*L - rPRP                 # position of the referenced cap station from the PRP
+            if L==self.stations[0]:         # if it's a bottom end cap, the position is at the bottom of the end cap
+                center_cap = pos_cap + self.q*hc_cap            # and the CG of the cap is at hc from the bottom, so this is the simple case
+            elif L==self.stations[-1]:      # if it's a top end cap, the position is at the top of the end cap
+                center_cap = pos_cap - self.q*(h - hc_cap)      # and the CG of the cap goes from the top, to h below the top, to hc above h below the top (wording...sorry)
+            else:                           # if it's a middle bulkhead, the position is at the middle of the bulkhead
+                center_cap = pos_cap - self.q*((h/2) - hc_cap)  # so the CG goes from the middle of the bulkhead, down h/2, then up hc
+
+            
             # ----- add properties to relevant variables -----
+            
             mass_center += m_cap*center_cap
             mshell += m_cap                # include end caps and bulkheads in the mass of the shell
             self.m_cap_list.append(m_cap)
@@ -645,9 +733,18 @@ class Member:
 
 
 
-    def getHydrostatics(self, rho, g):
-        '''Calculates member hydrostatic properties, namely buoyancy and stiffness matrix'''
-
+    def getHydrostatics(self, rPRP=np.zeros(3), rho=1025, g=9.81):
+        '''Calculates member hydrostatic properties, namely buoyancy and stiffness matrix.
+        Properties are calculated relative to the platform reference point (PRP) in the
+        global orientation directions.
+        
+        Parameters
+        ----------
+        rPRP : float array
+            Coordinates of the platform reference point (the first three entries of fowt.Xi0),
+            which the moment of inertia matrix will be calculated relative to. [m]
+        '''
+    
         pi = np.pi
 
         # initialize some values that will be returned
@@ -667,9 +764,11 @@ class Member:
 
         for i in range(1,n):     # starting at 1 rather than 0 because we're looking at the sections (from station i-1 to i)
 
-            # calculate end locations for this segment only
-            rA = self.rA + self.q*self.stations[i-1]
-            rB = self.rA + self.q*self.stations[i  ]
+            # calculate end locations for this segment relative to the point on 
+            # the waterplane directly above the PRP in unrotated directions (rHS_ref)
+            rHS_ref = np.array([rPRP[0], rPRP[1], 0])
+            rA = self.rA + self.q*self.stations[i-1] - rHS_ref
+            rB = self.rA + self.q*self.stations[i  ] - rHS_ref
 
             # partially submerged case
             if rA[2]*rB[2] <= 0:    # if member crosses (or touches) water plane
@@ -685,9 +784,6 @@ class Member:
                 cosBeta=np.cos(beta)
                 sinBeta=np.sin(beta)
                 tanBeta=sinBeta/cosBeta
-
-                def intrp(x, xA, xB, yA, yB):  # little basic interpolation function for 2 values rather than a vector
-                    return yA + (x-xA)*(yB-yA)/(xB-xA)
 
                 # -------------------- buoyancy and waterplane area properties ------------------------
 
@@ -710,7 +806,7 @@ class Member:
                     IxWP = I_rot[0,0]
                     IyWP = I_rot[1,1]
 
-                LWP = abs(rA[2])/cosPhi                   # get length of segment along member axis that is underwater [m]
+                LWP = abs(rA[2]/cosPhi)                   # get length of segment along member axis that is underwater [m]
 
                 # Assumption: the areas and MoI of the waterplane are as if the member were completely vertical, i.e. it doesn't account for phi
                 # This can be fixed later on if needed. We're using this assumption since the fix wouldn't significantly affect the outputs
@@ -774,7 +870,7 @@ class Member:
                 elif self.shape=='rectangular':
                     V_UWi, hc = FrustumVCV(self.sl[i-1], self.sl[i], self.stations[i]-self.stations[i-1])
 
-                r_center = rA + self.q*hc             # absolute coordinates of center of volume of this segment[m]
+                r_center = rA + self.q*hc             # center of volume of this segment relative to PRP [m]
 
                 # buoyancy force (and moment) vector
                 Fvec += translateForce3to6DOF(np.array([0, 0, rho*g*V_UWi]), r_center)
@@ -798,8 +894,130 @@ class Member:
         return Fvec, Cmat, V_UW, r_center, AWP, IWP, xWP, yWP
 
 
-    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[], color='k', nodes=0, station_plot=[]):
-        '''Draws the member on the passed axes, and optional platform offset and rotation matrix'''
+    def calcHydroConstants(self, r_ref=np.zeros(3), sum_inertia=False, rho=1025, g=9.81):
+        '''Compute the Member's linear strip-theory-hydrodynamics terms, 
+        related to drag and added mass, which are also a precursor to 
+        excitation. All computed quantities are in global orientations.
+        
+        Parameters
+        ----------
+        r_ref : size-3 vector
+            Reference point coordinates to compute matrices about [m].
+        sum_inertia : boolean, optional
+            Flag to calculate and return an overall inertial excitation matrix
+            (default False).
+        
+        Returns
+        -------
+        A_hydro, I_hydro : 3x3 matrices
+            Hydrodynamic added mass and inertial excitation matrices.
+        '''
+        
+        # hydrodynamic added mass matrix from strip theory [kg, kg-m, kg-m^2]
+        A_hydro = np.zeros([6,6])
+        I_hydro = np.zeros([6,6])
+
+        circ = self.shape=='circular'  # boolean for circular vs. rectangular
+        
+
+        # loop through each node of the member
+        for il in range(self.ns):
+
+            # only process hydrodynamics if this node is submerged
+            if self.r[il,2] < 0:
+                
+                # only compute inertial loads and added mass for members that aren't modeled with potential flow
+                if self.potMod==False:
+
+                    # interpolate coefficients for the current strip
+                    Ca_q   = np.interp( self.ls[il], self.stations, self.Ca_q  )
+                    Ca_p1  = np.interp( self.ls[il], self.stations, self.Ca_p1 )
+                    Ca_p2  = np.interp( self.ls[il], self.stations, self.Ca_p2 )
+                    Ca_End = np.interp( self.ls[il], self.stations, self.Ca_End)
+
+
+                    # ----- compute side effects (transverse only) -----
+
+                    # volume assigned to this node
+                    if circ:
+                        v_i = 0.25*np.pi*self.ds[il]**2*self.dls[il]
+                    else:
+                        v_i = self.ds[il,0]*self.ds[il,1]*self.dls[il]  
+                        
+                    if self.r[il,2] + 0.5*self.dls[il] > 0:    # if member extends out of water 
+                        v_i = v_i * (0.5*self.dls[il] - self.r[il,2]) / self.dls[il]  # scale volume by the portion that is under water
+                    
+                    # Local added mass matrix (axial term explicitly excluded here - we aren't dealing with chains)
+                    Amat_sides = rho*v_i *( Ca_p1*self.p1Mat + Ca_p2*self.p2Mat )
+                    
+                    # Local inertial excitation matrix - Froude-Krylov  
+                    # (axial term explicitly excluded here - we aren't dealing with chains)
+                    # Note, the 1 is the Cp, dynamic pressure, term.
+                    Imat_sides = rho*v_i *(  (1.+Ca_p1)*self.p1Mat + (1.+Ca_p2)*self.p2Mat ) 
+                    
+
+                    # ----- add axial/end effects for added mass, and excitation including dynamic pressure ------
+                    # Note : v_a and a_i work out to zero for non-tapered sections or non-end sections
+
+                    # compute volume assigned to this end surface, and
+                    # signed end area (positive facing down) = mean diameter of strip * radius change of strip
+                    if circ:
+                        v_i = np.pi/12.0 * abs(  (self.ds[il]+self.drs[il])**3 
+                                               - (self.ds[il]-self.drs[il])**3 )  
+                        a_i = np.pi*self.ds[il] * self.drs[il]   
+                    else:
+                        v_i = np.pi/12.0 * (  (np.mean(self.ds[il]+self.drs[il]))**3 
+                                            - (np.mean(self.ds[il]-self.drs[il]))**3 )    # so far just using sphere eqn and taking mean of side lengths as d
+                        a_i = (  (self.ds[il,0]+self.drs[il,0])*(self.ds[il,1]+self.drs[il,1]) 
+                               - (self.ds[il,0]-self.drs[il,0])*(self.ds[il,1]-self.drs[il,1]))
+                        # >>> should support different coefficients or reference volumes for rectangular cross sections <<<
+
+                    # Local added mass matrix
+                    Amat_end = rho*v_i * Ca_End*self.qMat
+                    
+                    # Local inertial excitation matrix 
+                    # Note, there is no 1 added to Ca_End because dynamic pressure is handled separately
+                    Imat_end = rho*v_i * Ca_End*self.qMat  
+                    
+
+                    # ----- sum up side and end added mass and inertial excitation coefficient matrices ------
+                    self.Amat[il,:,:] = Amat_sides + Amat_end
+                    self.Imat[il,:,:] = Imat_sides + Imat_end
+                    self.a_i[il] = a_i
+                    
+                    
+                    # add to global added mass and inertial excitation matrices
+                    # which consider the mean offsets and are relative to the ref in global orientation
+                    A_hydro += translateMatrix3to6DOF(self.Amat[il,:,:], self.r[il,:] - r_ref[:3])    
+                    if sum_inertia:
+                        I_hydro += translateMatrix3to6DOF(self.Imat[il,:,:], self.r[il,:] - r_ref[:3])   
+
+        if sum_inertia:
+            return A_hydro, I_hydro
+        else:
+            return A_hydro
+
+
+    def getSectionProperties(self, station):
+        '''Get member cross sectional area and moments of inertia at a user-
+        specified location along the member.'''
+        
+        
+        
+        return A, I
+
+    def plot(self, ax, r_ptfm=[0,0,0], R_ptfm=[], color='k', nodes=0, 
+             station_plot=[], plot2d=False, Xuvec=[1,0,0], Yuvec=[0,0,1], zorder=2):
+        '''Draws the member on the passed axes, and optional platform offset and rotation matrix
+        
+        Parameters
+        ----------
+        
+        plot2d: bool
+            If true, produces a 2d plot on the axes defined by Xuvec and Yuvec. 
+            Otherwise produces a 3d plot (default).
+        
+        '''
 
         # --- get coordinates of member edges in member reference frame -------------------
 
@@ -841,6 +1059,9 @@ class Member:
 
 
         # ----- move to global frame ------------------------------
+        
+        # Note: the below transformations can probably be replaced by using the new member.setPosition function before calling this.
+        
         newcoords = np.matmul(self.R, coords)          # relative orientation in platform
 
         newcoords = newcoords + self.rA[:,None]        # shift to end A location, still relative to platform
@@ -855,21 +1076,31 @@ class Member:
         
         # plot on the provided axes
         linebit = []  # make empty list to hold plotted lines, however many there are
-        for i in range(n):  #range(int(len(Xs)/2-1)):
-            #linebit.append(ax.plot(Xs[2*i:2*i+2],Ys[2*i:2*i+2],Zs[2*i:2*i+2]            , color='k'))  # side edges
-            #linebit.append(ax.plot(Xs[[2*i,2*i+2]],Ys[[2*i,2*i+2]],Zs[[2*i,2*i+2]]      , color='k'))  # end A edges
-            #linebit.append(ax.plot(Xs[[2*i+1,2*i+3]],Ys[[2*i+1,2*i+3]],Zs[[2*i+1,2*i+3]], color='k'))  # end B edges
-
-            linebit.append(ax.plot(Xs[nm*i:nm*i+nm],Ys[nm*i:nm*i+nm],Zs[nm*i:nm*i+nm]            , color=color, lw=0.5, zorder=2))  # side edges
-
-        for j in range(nm):
-            linebit.append(ax.plot(Xs[j::nm], Ys[j::nm], Zs[j::nm]            , color=color, lw=0.5, zorder=2))  # station rings
-
-
-        # plot nodes if asked
-        if nodes > 0:
-            ax.scatter(self.r[:,0], self.r[:,1], self.r[:,2])
-
+        
+        if plot2d:  # new 2d plotting option
+                
+            # apply any 3D to 2D transformation here to provide desired viewing angle
+            Xs2d = Xs*Xuvec[0] + Ys*Xuvec[1] + Zs*Xuvec[2] 
+            Ys2d = Xs*Yuvec[0] + Ys*Yuvec[1] + Zs*Yuvec[2] 
+            
+            for i in range(n): 
+                linebit.append(ax.plot(Xs2d[nm*i:nm*i+nm],Ys2d[nm*i:nm*i+nm], color=color, lw=0.5, zorder=zorder))  # side edges
+            
+            for j in range(nm):
+                linebit.append(ax.plot(Xs2d[j::nm], Ys2d[j::nm], color=color, lw=0.5, zorder=zorder))  # station rings
+        
+        else:  # normal 3d case
+            
+            for i in range(n): 
+                linebit.append(ax.plot(Xs[nm*i:nm*i+nm],Ys[nm*i:nm*i+nm],Zs[nm*i:nm*i+nm], color=color, lw=0.5, zorder=zorder))  # side edges
+            
+            for j in range(nm):
+                linebit.append(ax.plot(Xs[j::nm], Ys[j::nm], Zs[j::nm], color=color, lw=0.5, zorder=zorder))  # station rings
+            
+            # plot nodes if asked
+            if nodes > 0:
+                ax.scatter(self.r[:,0], self.r[:,1], self.r[:,2])
+        
         return linebit
 
 

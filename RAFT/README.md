@@ -7,10 +7,9 @@ RAFT v1.0.0 includes the capabilities described above, and further development i
 
 ## Getting Started
 
-New users of RAFT as a standalone model are recommended to begin by looking at the input file and script provided in the examples folder, and seeking further information from the [RAFT documentation](https://openraft.readthedocs.io/en/latest/). For use as part of the WEIS toolset, information will be provided once this capability is completed in the [WEIS documentation](https://weis.readthedocs.io/en/latest/).
+New users of RAFT as a standalone model are recommended to begin by looking at the input file and script provided in the examples folder, and seeking further information from the [RAFT documentation](https://openraft.readthedocs.io/en/latest/). For use as part of the WEIS toolset, information will be provided once this capability is completed in the [WEIS documentation](https://weis.readthedocs.io/en/latest/). For now, the following will help get started with running RAFT as a standalone model.
 
-
-### Prerequisites
+RAFT uses a number of prerequisites, or other python package dependencies, to run its calculations. The most notable ones are listed below:
 
 - Python 3
 - NumPy
@@ -19,13 +18,55 @@ New users of RAFT as a standalone model are recommended to begin by looking at t
 - YAML
 - MoorPy (available at https://github.com/NREL/MoorPy)
 - pyHams (available at https://github.com/WISDEM/pyHAMS)
-- CCBlade and WISDEM* (available at https://github.com/WISDEM/WISDEM)
+- CCBlade or WISDEM* (https://github.com/WISDEM/CCBlade or https://github.com/WISDEM/WISDEM)
 
-\* RAFT uses CCBlade and currently requires additional related functions from the larger WISDEM code. We recommend installing WISDEM for the time being.
+\* CCBlade is a module of WISDEM, but can be used separately. RAFT only requires CCBlade (and some additional related functions) out of the larger WISDEM code. New users can install either CCBlade or WISDEM, but for highest efficiency, we recommend installing CCBlade, without the entire WISDEM installation.
 
-### Installation
+To install all required python packages to run RAFT, follow the steps below.
 
-Download/clone and install this RAFT repository as well as that of [MoorPy](https://github.com/NREL/MoorPy), [pyHAMS](https://github.com/WISDEM/pyHAMS), and [WISDEM](https://github.com/WISDEM/WISDEM). To install RAFT in development mode, go to its directory and run ```python setup.py develop``` or ```pip install -e .``` from the command line.
+1. Install most of the required python packages to run RAFT from the "requirements" yaml.
+
+        (base) PS ANY_PATH> conda env create -f raft-env.yaml
+
+    This will create a new python virtual environment on a new user's local machine called "raft-env"
+
+2. Activate the new virtual environment
+
+        (base) PS ANY_PATH> conda activate raft-env
+
+    This will activate the newly created virtual environment, where we will install the remaining dependencies
+
+3. Install the RAFT package
+    - Navigate to a directory of your choosing on your local machine and clone this RAFT repository to that new directory
+
+            (raft-env) PS YOUR_PATH> git clone https://github.com/WISDEM/RAFT.git
+    
+    - Staying in the same directory, install the RAFT package in it's "editable" mode
+
+            (raft-env) PS YOUR_PATH/RAFT> pip install -e .
+
+4. Repeat Step 3 two more times, one for CCBlade, and one for MoorPy
+
+        (raft-env) PS YOUR_PATH> git clone https://github.com/WISDEM/CCBlade.git
+        (raft-env) PS YOUR_PATH/CCBlade> pip install -e .
+        (raft-env) PS YOUR_PATH/CCBlade> cd ..
+        (raft-env) PS YOUR_PATH> git clone https://github.com/NREL/MoorPy.git
+        (raft-env) PS YOUR_PATH/MoorPy> pip install -e .
+
+    ** If you are running into errors with installing CCBlade, make sure there is not a file called "_bem.cp39-win_amd64.pyd" inside of CCBlade/ccblade. Deleting this file will allow the above commands to run.
+
+
+This new raft-env should now be compatible to run RAFT standalone. Dependencies like CCBlade and MoorPy are still under development, which is why for now, it will be easier to install them in their editable forms.
+
+The other main dependency, PyHAMS, is included within the raft-env.yaml file and is installed in Step 1.
+
+Another point to note is that ```python setup.py develop``` has become outdated, and ```pip install -e .``` is preferred.
+
+If you need to remove any virtual environment for any reason, you can run 
+
+    conda env remove -n "name-of-the-virtual-environment"
+
+
 
 ## Documentation and Issues
 

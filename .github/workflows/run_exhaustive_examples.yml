@@ -20,23 +20,47 @@ jobs:
         python-version: ["3.9","3.10", "3.11"]
         
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      # Even miniconda gets bogged down- try mamba
-      - name: Install Conda environment with Micromamba
-        uses: mamba-org/provision-with-micromamba@main
+      - name: Install conda/mamba
+        uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
         with:
+          # To use mamba, uncomment here, comment out the miniforge line
+          #mamba-version: "*"
+          miniforge-version: "latest"
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
           environment-file: environment.yml
-          environment-name: test
-          channels: conda-forge
-          extra-specs: |
-            python=${{ matrix.python-version }}
-            mpi4py
-            petsc4py
-            openmpi
-            sel(osx): compilers
-            sel(win): m2w64-toolchain
-            sel(win): libpython`
+          activate-environment: test
+          auto-activate-base: false
+
+          #miniforge-variant: Mambaforge
+          #channels: conda-forge
+          #extra-specs: |
+          #  python=${{ matrix.python-version }}
+          #  mpi4py
+          #  petsc4py
+          #  openmpi
+          #  sel(osx): compilers
+          #  sel(win): m2w64-toolchain
+          #  sel(win): libpython`
+
+      # # Even miniconda gets bogged down- try mamba
+      # - name: Install Conda environment with Micromamba
+      #   uses: mamba-org/provision-with-micromamba@main
+      #   with:
+      #     environment-file: environment.yml
+      #     environment-name: test
+      #     channels: conda-forge
+      #     extra-specs: |
+      #       python=${{ matrix.python-version }}
+      #       mpi4py
+      #       petsc4py
+      #       openmpi
+      #       sel(osx): compilers
+      #       sel(win): m2w64-toolchain
+      #       sel(win): libpython`
 
       # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
       #- uses: conda-incubator/setup-miniconda@v2
@@ -80,13 +104,13 @@ jobs:
       #    conda install -y m2w64-toolchain libpython
       
       # Install dependencies of WEIS specific to ubuntu
-      #- name: Add dependencies ubuntu specific
-      #  if: false == contains( matrix.os, 'windows')
-      #  # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
-      #  # Mpi only seems to work with the shell command though, so instead rely on system compilers
-      #  run: |
-      #    conda install -y petsc4py mpi4py openmpi
-      #    python -c "import platform; print(platform.node())"
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+       # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
+       # Mpi only seems to work with the shell command though, so instead rely on system compilers
+        run: |
+          conda install -y petsc4py mpi4py openmpi
+       # python -c "import platform; print(platform.node())"
 
       - name: Show custom environment
         run: |
@@ -105,7 +129,7 @@ jobs:
       - name: Test postprocessing notebooks
         run: |
           cd examples/16_postprocessing
-          gdown --no-check-certificate 1_FJaN-W1DoPNmO6YLSjnftvq6-7bn4VI
+          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
           unzip outputs
           treon plot_FAST.ipynb
           treon rev_DLCs_WEIS.ipynb
@@ -122,7 +146,7 @@ jobs:
       - name: Run parallel examples rotor optimization
         run: |
           cd examples/05_IEA-3.4-130-RWT
-          mpirun -np 2 python weis_driver.py
+          mpiexec -np 2 python weis_driver.py
 
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
@@ -134,5 +158,5 @@ jobs:
       - name: Run examples design of experiments
         run: |
           cd examples/09_design_of_experiments
-          mpirun -n 2 --bind-to core python DOE_openfast.py
+          mpiexec -n 2 --bind-to core python DOE_openfast.py
           python postprocess_results.py

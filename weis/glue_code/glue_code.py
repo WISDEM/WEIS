@@ -24,6 +24,8 @@ from weis.frequency.raft_wrapper import RAFT_WEIS
 from weis.control.tmd import TMD_group
 from ROSCO_toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
+from wisdem.commonse.cylinder_member import get_nfull
+
 
 weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
@@ -55,20 +57,16 @@ class WindPark(om.Group):
 
         # ROSCO tuning parameters
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
-            # Make path absolute if not
-            if not os.path.isabs(modeling_options['ROSCO']['tuning_yaml']):
-                modeling_options['ROSCO']['tuning_yaml'] = os.path.join(weis_dir,modeling_options['ROSCO']['tuning_yaml'])
+        if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
             inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
-            rosco_init_options         = inps['controller_params']
-            rosco_init_options['linmodel_tuning'] = inps['linmodel_tuning']
+            modeling_options['ROSCO'].update(inps['controller_params'])
 
             # Apply changes in modeling options, should have already been validated
             modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
+            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
             for option, value in modopts_no_defaults['ROSCO'].items():
-                rosco_init_options[option] = value
-
-            modeling_options['ROSCO'] = rosco_init_options
+                if option not in skip_options:
+                    modeling_options['ROSCO'][option] = value
 
 
         tune_rosco_ivc = om.IndepVarComp()
@@ -175,7 +173,7 @@ class WindPark(om.Group):
 
                 self.connect('nacelle.gear_ratio',              'sse_tune.tune_rosco.gear_ratio')
                 self.connect("blade.high_level_blade_props.rotor_radius", "sse_tune.tune_rosco.R")
-                self.connect('rotorse.re.precomp.I_all_blades',    'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
+                self.connect('rotorse.I_all_blades',            'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
                 self.connect('rotorse.rs.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
                 self.connect('rotorse.rs.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
                 self.connect('rotorse.rp.powercurve.rated_efficiency', 'sse_tune.tune_rosco.generator_efficiency')
@@ -268,7 +266,7 @@ class WindPark(om.Group):
             self.connect('sse_tune.tune_rosco.Fl_Kp',           'raft.Fl_Kp')
             self.connect('sse_tune.tune_rosco.VS_Kp',           'raft.rotor_TC_VS_Kp')
             self.connect('sse_tune.tune_rosco.VS_Ki',           'raft.rotor_TC_VS_Ki')
-            self.connect('rotorse.re.precomp.I_all_blades',     'raft.rotor_inertia', src_indices=[0])
+            self.connect('rotorse.I_all_blades',     'raft.rotor_inertia', src_indices=[0])
             self.connect('rotorse.rp.powercurve.rated_V',       'raft.Vrated')
             self.connect('control.V_in',                    'raft.V_cutin')
             self.connect('control.V_out',                   'raft.V_cutout')
@@ -373,10 +371,18 @@ class WindPark(om.Group):
 
             # TODO: FIX NDLC HERE
             if modeling_options["flags"]["tower"]:
-                self.add_subsystem('towerse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["TowerSE"], n_dlc=1))
+                # This is needed for some reason because TowerSE isn't already called?  Should probably re-use that
+                n_height = modeling_options['WISDEM']['TowerSE']["n_height"]
+                n_refine = modeling_options['WISDEM']['TowerSE']["n_refine"]
+                n_full = get_nfull(n_height, nref=n_refine)
+                self.add_subsystem('towerse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["TowerSE"], n_dlc=1, n_full = n_full))
                 
             if modeling_options["flags"]["monopile"]:
-                self.add_subsystem('fixedse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["FixedBottomSE"], n_dlc=1))
+                n_height = modeling_options['WISDEM']['FixedBottomSE']["n_height"]
+                n_refine = modeling_options['WISDEM']['FixedBottomSE']["n_refine"]
+                n_full = get_nfull(n_height, nref=n_refine)
+                
+                self.add_subsystem('fixedse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["FixedBottomSE"], n_dlc=1, n_full = n_full))
                 
             if not modeling_options['Level3']['from_openfast']:
                 self.add_subsystem('tcons_post',     TurbineConstraints(modeling_options = modeling_options))
@@ -654,10 +660,10 @@ class WindPark(om.Group):
                     self.connect('aeroelastic.hub_Fxyz',       'drivese_post.F_hub')
                     self.connect('aeroelastic.hub_Mxyz',       'drivese_post.M_hub')
                     self.connect('aeroelastic.max_RootMyb',     'drivese_post.pitch_system.BRFM')
-                    self.connect('blade.pa.chord_param',         'drivese_post.blade_root_diameter', src_indices=[0])
-                    self.connect('rotorse.re.precomp.blade_mass',        'drivese_post.blade_mass')
-                    self.connect('rotorse.re.precomp.mass_all_blades',   'drivese_post.blades_mass')
-                    self.connect('rotorse.re.precomp.I_all_blades',      'drivese_post.blades_I')
+                    self.connect('blade.pa.chord_param',        'drivese_post.blade_root_diameter', src_indices=[0])
+                    self.connect('rotorse.blade_mass',          'drivese_post.blade_mass')
+                    self.connect('rotorse.mass_all_blades',     'drivese_post.blades_mass')
+                    self.connect('rotorse.I_all_blades',        'drivese_post.blades_I')
 
                     self.connect('nacelle.distance_hub2mb',           'drivese_post.L_h1')
                     self.connect('nacelle.distance_mb2mb',            'drivese_post.L_12')
@@ -895,7 +901,7 @@ class WindPark(om.Group):
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
 
-                self.connect('rotorse.re.precomp.blade_mass',  'outputs_2_screen_weis.blade_mass')
+                self.connect('rotorse.blade_mass',  'outputs_2_screen_weis.blade_mass')
                 self.connect('aeroelastic.max_TipDxc', 'outputs_2_screen_weis.tip_deflection')
 
             if modeling_options['General']['openfast_configuration']['model_only'] == False:

@@ -40,7 +40,7 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
 
     # Get coefficients to 2-6th order polynomial
     p6 = np.polynomial.polynomial.polyfit(xn, y, deg)
-    
+
     # Normalize for Elastodyn
     # The normalization shouldn't be less than 1e-5 otherwise OpenFAST has trouble in single prec
     if y.ndim > 1:
@@ -55,7 +55,6 @@ def get_modal_coefficients(x, y, deg=[2, 3, 4, 5, 6], idx0=None, base_slope0=Tru
         normval = np.maximum(np.abs(tempsum), 1e-5)
         normval *= np.sign(tempsum)
         p6 /= normval
-        
 
     return p6
 
@@ -204,6 +203,7 @@ def get_xyz_mode_shapes(
             mshapes_z[i, :] = zpolys[freqs > 1e-1, :][z_polyidx, :]
             freq_z[i] = freqs_dyn[z_polyidx]
             used_freq_idx = record_used_freqs(z_polyidx, i, used_freq_idx)
+
     return freq_x, freq_y, freq_z, mshapes_x, mshapes_y, mshapes_z
 
 

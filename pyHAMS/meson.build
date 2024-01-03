@@ -32,13 +32,14 @@ if fc.get_id() == 'gcc'
   _fflags += fc.get_supported_arguments('-fno-align-commons')
 endif
 if fc.get_id() == 'intel'
-  _fflags = fc.get_supported_arguments('-mkl')
+  _fflags = fc.get_supported_arguments('-qmkl')
 elif fc.get_id() == 'intel-cl'
   # Intel Fortran on Windows does things differently, so deal with that
   # (also specify dynamic linking and the right name mangling)
-  _fflags = fc.get_supported_arguments('/mkl')
+  _fflags = fc.get_supported_arguments('/qmkl')
 endif
 add_project_arguments(_fflags, language: 'fortran')
+
 omp = dependency('openmp', required: false)
 if not omp.found()
   if fc.get_id() == 'intel'
@@ -52,16 +53,8 @@ if not omp.found()
   endif
 endif
 
-if fc.get_id() == 'gcc'
-  lapack = declare_dependency(
-    link_args: '-llapack',
-  )
-endif
-if fc.get_id() == 'intel'
-  lapack = declare_dependency(
-    link_args: '-lmkl_rt',
-  )
-endif
+# Need lapack via OpenBlas preferably
+lapack = dependency('openblas', 'mkl_rt', 'blas', 'lapack', required: true)
 
 # https://mesonbuild.com/Python-module.html
 # Here we differentiate from the python used by meson, py3_command, and that python target, py3_target. This is useful
@@ -77,6 +70,4 @@ py3_dep = py3.dependency()
 message(py3.path())
 message(py3.get_install_dir())
 
-if not is_windows
-  subdir('pyhams')
-endif
+subdir('pyhams')

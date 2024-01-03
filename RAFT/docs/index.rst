@@ -7,6 +7,7 @@
    starting
    structure
    usage
+   ctopt
    theory
 
 
@@ -33,6 +34,12 @@ toolset for control co-design of floating wind turbines. WEIS is a framework tha
 combines multiple NREL-developed tools to enable design optimization of floating 
 offshore wind turbines. See the `WEIS documentation <https://weis.readthedocs.io>`_ 
 and `GitHub repository <https://github.com/WISDEM/WEIS>`_ for more information.
+
+As part of the CT-Opt project, RAFT is being expanded to also support underwater
+marine hydrokinetic (MHK) turbines. Just as with floating wind turbines, RAFT
+supports frequency-domain modeling of the global response and linearized controlled
+rotor dynamics of a moored, floating, MHK turbine system. More information about
+this capability is in the :ref:`MHK Turbine Applications page<MHK Turbine Applications>`.
 
 Following a modular philosophy, RAFT can be used independently for various
 frequency-domain modeling needs. Or, it can be used as an integrated part of
