@@ -1203,6 +1203,9 @@ class Model():
             self.results['properties']['roll inertia at subCG']  = fowt.props['Ixx_sub']
             self.results['properties']['pitch inertia at subCG'] = fowt.props['Iyy_sub']
             self.results['properties']['yaw inertia at subCG']   = fowt.props['Izz_sub']
+            self.results['properties']['roll inertia at sysCG']  = fowt.props['Ixx']
+            self.results['properties']['pitch inertia at sysCG'] = fowt.props['Iyy']
+            self.results['properties']['yaw inertia at sysCG']   = fowt.props['Izz']
             
             self.results['properties']['buoyancy (pgV)'] = fowt.rho_water*fowt.g*fowt.V
             self.results['properties']['center of buoyancy'] = fowt.rCB
