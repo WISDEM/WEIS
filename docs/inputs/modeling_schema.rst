@@ -360,8 +360,8 @@ properties:
                         units: s
                         description: Amount of time between creating checkpoint files for potential restart (s)
                     DT_Out:
-                        type: string
-                        default: default
+                        type: number
+                        default: 0
                         description: Time step for tabular output (s) (or 'default')
                     OutFileFmt:
                         type: integer
@@ -494,6 +494,10 @@ properties:
                         maximum: 90.0
                         unit: deg
                         description:  Upflow angle (degrees) (not used for native Bladed format WindType=7)
+                    VelInterpCubic:
+                        type: boolean
+                        default: False
+                        description:  Use cubic interpolation for velocity in time (false=linear, true=cubic) [Used with WindType=2,3,4,5,7]
                     NWindVel:
                         type: integer
                         default: 1
@@ -699,6 +703,62 @@ properties:
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
+                    SensorType:
+                        type: integer
+                        enum: [0,1,2,3]
+                        default: 0
+                        description: Switch for lidar configuration (0 = None, 1 = Single Point Beam(s), 2 = Continuous, 3 = Pulsed)
+                    NumPulseGate:
+                        type: integer
+                        default: 0
+                        description: Number of lidar measurement gates (used when SensorType = 3)
+                    PulseSpacing:
+                        type: number
+                        default: 0
+                        description: Distance between range gates (m) (used when SensorType = 3)
+                    NumBeam:
+                        type: integer
+                        enum: [0,1,2,3,4,5]
+                        default: 0
+                        description: Number of lidar measurement beams (0-5)(used when SensorType = 1)
+                    FocalDistanceX:
+                        type: number
+                        default: 0
+                        description: Focal distance coordinates of the lidar beam in the x direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
+                    FocalDistanceY:
+                        type: number
+                        default: 0.
+                        description: Focal distance coordinates of the lidar beam in the y direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
+                    FocalDistanceZ:
+                        type: number
+                        default: 0.
+                        description: Focal distance coordinates of the lidar beam in the z direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
+                    RotorApexOffsetPos:
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Offset of the lidar from hub height (m)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                    URefLid:
+                        type: number
+                        default: 0.
+                        minimum: 0.
+                        description: Reference average wind speed for the lidar [m/s]
+                    MeasurementInterval:
+                        type: number
+                        default: 0.
+                        minimum: 0.
+                        description: Time between each measurement [s]
+                    LidRadialVel:
+                        type: boolean
+                        default: False
+                        description: TRUE => return radial component, FALSE => return 'x' direction estimate
+                    ConsiderHubMotion:
+                        type: integer
+                        default: 1
+                        description: Flag whether to consider the hub motion's impact on Lidar measurements    
             AeroDyn: &ofaerodyn
                 type: object
                 default: {}
@@ -717,7 +777,7 @@ properties:
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
                         type: integer
-                        enum: [0, 1, 3]
+                        enum: [0, 1, 2, 3]
                         default: 1
                         description: Type of wake/induction model (switch) {0=none, 1=BEMT, 3=OLAF}
                     AFAeroMod:
@@ -747,6 +807,10 @@ properties:
                         type: boolean
                         default: False
                         description: Perform cavitation check? (flag) TRUE will turn off unsteady aerodynamics
+                    Buoyancy:
+                        type: boolean
+                        default: False
+                        description: Include buoyancy effects? (flag)
                     CompAA:
                         type: boolean
                         default: False
@@ -796,7 +860,7 @@ properties:
                         type: integer
                         enum: [1, 2, 3]
                         default: 2
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=unsteady, 3=time-dependent tau1} (-) [used only when WakeMod=2]
+                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when WakeMod=2]
                     tau1_const:
                         type: number
                         unit: s
@@ -816,27 +880,27 @@ properties:
                                 type: integer
                                 enumerate: [5]
                                 default: 5
-                                description: Integration method {5 Forward Euler 1st order, default 5} (switch)
+                                description: Integration method 1 RK4, 5 Forward Euler 1st order, default 5 switch
                             DTfvw:
                                 type: number
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description: Time interval for wake propagation. {default dtaero} (s). Set it to 0. for default (same as main fst)
+                                description: Time interval for wake propagation. {default dtaero} (s)
                             FreeWakeStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description:  Time when wake is free. (-) value = always free. {default 0.0} (s). Set it to 0. for default (same as main fst)
+                                description: Time when wake is free. (-) value = always free. {default 0.0} (s)
                             FullCircStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description: Time at which full circulation is reached. {default 0.0} (s). Set it to 0. for default (same as main fst)
-                            CircSolvingMethod:
+                                description: Time at which full circulation is reached. {default 0.0} (s)
+                            CircSolvMethod:
                                 type: integer
                                 enumerate: [1, 2, 3]
                                 default: 1
@@ -844,11 +908,11 @@ properties:
                             CircSolvConvCrit:
                                 type: number
                                 default: 0.001
-                                description: Convergence criteria {default 0.001} [only if CircSolvingMethod=1] (-)
+                                description: Convergence criteria {default 0.001} [only if CircSolvMethod=1] (-)
                             CircSolvRelaxation:
                                 type: number
                                 default: 0.1
-                                description: Relaxation factor {default 0.1} [only if CircSolvingMethod=1] (-)
+                                description: Relaxation factor {default 0.1} [only if CircSolvMethod=1] (-)
                             CircSolvMaxIter:
                                 type: integer
                                 default: 30
@@ -856,22 +920,27 @@ properties:
                             PrescribedCircFile:
                                 type: string
                                 default: 'NA'
-                                description: File containing prescribed circulation [only if CircSolvingMethod=3] (quoted string)
-                            nNWPanel:
+                                description: File containing prescribed circulation [only if CircSolvMethod=3] (quoted string)
+                            nNWPanels:
                                 type: integer
                                 minimum: 0
                                 default: 120
                                 description: Number of near-wake panels [integer] (-)
-                            WakeLength:
+                            nNWPanelsFree:
                                 type: integer
                                 minimum: 0
-                                default: 900
-                                description: Total wake distance [integer] (number of time steps)
-                            FreeWakeLength:
+                                default: 120
+                                description: Number of free near-wake panels (-) {default nNWPanels}
+                            nFWPanels:
                                 type: integer
+                                minimum: 0
                                 default: 0
+                                description: Number of far-wake panels (-) {default 0}
+                            nFWPanelsFree:
+                                type: integer
                                 minimum: 0
-                                description: Wake length that is free [integer] (number of time steps) {default WakeLength}
+                                default: 0
+                                description: Number of free far-wake panels (-) {default nFWPanels}
                             FWShedVorticity:
                                 type: boolean
                                 default: False
@@ -893,7 +962,7 @@ properties:
                                 description: Viscous diffusion function {0 None, 1 Rankine, 2 LambOseen, 3 Vatistas, 4 Denominator, 'default' 3} (switch)
                             WakeRegMethod:
                                 type: integer
-                                enumerate: [0, 1, 2, 3, 4]
+                                enumerate: [0, 1, 2, 3]
                                 default: 1
                                 description: Wake regularization method {1 Constant, 2 Stretching, 3 Age, default 1} (switch)
                             WakeRegFactor:
@@ -964,14 +1033,6 @@ properties:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
-                    UAStartRad:
-                        type: number
-                        default: 0
-                        description: Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
-                    UAEndRad:
-                        type: number
-                        default: 1
-                        description: Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
                     AFTabMod:
                         type: integer
                         enum: [1,2,3]
@@ -1001,6 +1062,40 @@ properties:
                         type: boolean
                         default: True
                         description: Include aerodynamic pitching moment in calculations?  (flag)
+                    VolHub:
+                        type: number
+                        default: 0
+                        description: Hub volume (m^3)
+                        minimum: 0.
+                    HubCenBx:
+                        type: number
+                        default: 0
+                        description: Hub center of buoyancy x direction offset (m)
+                        minimum: -100.
+                        maximum: 100.
+                    VolNac:
+                        type: number
+                        default: 0
+                        description:  Nacelle volume (m^3)
+                        minimum: 0.
+                    NacCenB:                       
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Position of nacelle center of buoyancy from yaw bearing in nacelle coordinates (m)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                            minimum: -100.
+                            maximum: 100.
+                    TFinAero:
+                        type: boolean
+                        default: False
+                        description: Calculate tail fin aerodynamics model (flag)
+                    TFinFile:
+                        type: string
+                        default: "unused"
+                        description: Input file for tail fin aerodynamics [used only when TFinAero=True]
                     Patm:
                         type: number
                         minimum: 0.
@@ -1022,6 +1117,12 @@ properties:
                         minimum: 0.
                         maximum: 10.
                         description: Turbulence intensity used in the Eames tower shadow model. Values of TwrTI between 0.05 and 0.4 are recommended.
+                    TwrCb:
+                        type: number
+                        default: 0.0
+                        # minimum: 0.
+                        # maximum: 10.
+                        description: Turbulence buoyancy coefficient
                     SumPrint:
                         type: boolean
                         default: False
@@ -2705,7 +2806,7 @@ properties:
             openfast_dir: 
                 type: string
                 default: unused
-                description: OpenFAST input directory, containing .fst file
+                description: OpenFAST input directory, containing .fst file.  Absolute path or relative to modeling input
             xfoil:
                 type: object
                 default: {}
@@ -2763,7 +2864,7 @@ properties:
                             type: number
                             uniqueItems: True
                             minimum: 0.0
-                            maximum: 50.0
+                            maximum: 200.0
                     rated_offset:
                         type: number
                         default: 1
@@ -2906,7 +3007,7 @@ properties:
                         DLC:
                             type: string
                             default: '1.1'
-                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', 'Custom']
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '12.1', 'Custom']
                             description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
@@ -2917,7 +3018,7 @@ properties:
                                 unit: m/s
                                 minItems: 1
                                 minimum: 0.0
-                                maximum: 50.0
+                                maximum: 200.0
                                 uniqueItems: true
                         ws_bin_size:
                             type: number
@@ -2931,7 +3032,13 @@ properties:
                             default: 1
                             minimum: 1
                             maximum: 100
-                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.
+                            description: Number of turbulent wind seeds drawn from the numpy random integer generator. This entry is neglected if the entry wind_seed is defined.  If DLC 1.4, number of waves seeds.
+                        n_azimuth:
+                            type: integer
+                            default: 1
+                            minimum: 1
+                            maximum: 100
+                            description: Number of azimuth initial conditions to use (primarily during DLC 5.1)
                         wind_seed:
                             type: array
                             default: []
@@ -2941,7 +3048,7 @@ properties:
                                 unit: none
                                 minItems: 1
                                 uniqueItems: true
-                        wave_seed:
+                        wave_seeds:
                             type: array
                             default: []
                             description: Wave random number generator seeds for HydroDyn
@@ -2962,8 +3069,7 @@ properties:
                                 maximum: 180.0
                         yaw_misalign:
                             type: array
-                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: [0.]
+                            description: Alignment of the nacelle with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed. Default depends on DLC, specified in dlc_generator.
                             items:
                                 type: number
                                 unit: deg
@@ -3050,6 +3156,16 @@ properties:
                             maximum: 1.e+4
                             default: 120.
                             description: This is the length of the simulation where outputs will be discarded. Its default is 120 seconds (2 minutes) for all simulations. The total simulation time is the sum of analysis_time and transient_time
+                        shutdown_time:
+                            type: number
+                            unit: s
+                            minimum: 0.0
+                            maximum: 1.e+5
+                            default: 9999
+                            description: Time when shutdown occurs in DLC 5.1
+                        wind_file:
+                            type: string
+                            description: File path of custom wind file
                         turbulent_wind:
                             type: object
                             default: {}
@@ -3136,22 +3252,22 @@ properties:
                                     description: Usable length of output time series [seconds] (program will add GridWidth/MeanHHWS seconds unless UsableTime is 'ALL')
                                 HubHt:
                                     type: number
-                                    default: 1.e+2
-                                    minimum: 1.e+1
+                                    default: 0
+                                    minimum: 0
                                     maximum: 5.e+2
                                     unit: m
                                     description: Hub height [m] (should be > 0.5*GridHeight)
                                 GridHeight:
                                     type: number
-                                    default: 1.e+2
-                                    minimum: 1.e+1
+                                    default: 0
+                                    minimum: 0
                                     maximum: 5.e+2
                                     unit: m
                                     description: Grid height [m]
                                 GridWidth:
                                     type: number
-                                    default: 1.e+2
-                                    minimum: 1.e+1
+                                    default: 0
+                                    minimum: 0
                                     maximum: 5.e+2
                                     unit: m
                                     description: Grid width [m] (should be >= 2*(RotorRadius+ShaftLength))
@@ -3198,7 +3314,7 @@ properties:
                                     description: Name of the file that contains input profiles for WindProfileType='USR' and/or TurbModel='USRVKM' [-]
                                 RefHt:
                                     type: number
-                                    default: 1.e+2
+                                    default: 0
                                     minimum: 0
                                     maximum: 1.e+5
                                     unit: m
@@ -3206,16 +3322,21 @@ properties:
                                 URef:
                                     type: number
                                     unit: m/s
-                                    default: 1
+                                    default: -1
                                     description: Mean (total) velocity at the reference height [m/s] (or 'default' for JET velocity profile) [must be 1-hr mean for API model; otherwise is the mean over AnalysisTime seconds]
+                                IECturbc:
+                                    type: number
+                                    unit: '(-)'
+                                    default: -1
+                                    description: Turbulence intensity (fraction) for custom DLCs, if default (-1), the class letter will be used
                                 ZJetMax:
                                     type: string
                                     default: default
                                     description: Jet height [m] (used only for JET velocity profile, valid 70-490 m)
                                 PLExp:
                                     type: number
-                                    default: 0.2
-                                    description: Power law exponent [-] (or 'default')
+                                    default: -1
+                                    description: Power law exponent [-] (or 'default'), if default (-1), the environment option shear_exp will be used for all DLCs
                                 Z0:
                                     type: string
                                     default: default
@@ -3440,7 +3561,7 @@ properties:
         properties: 
             tuning_yaml:
                 type: string
-                description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model
+                description: yaml file to tune the ROSCO controller, only used for control-only optimizations using an OpenFAST model.  Absolute path or relative to modeling input.
                 default: none
 
     OL2CL:

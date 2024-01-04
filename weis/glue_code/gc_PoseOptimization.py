@@ -89,6 +89,8 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_objective('aeroelastic.DEL_TwrBsMyt', ref=1.e4)
             
         elif self.opt['merit_figure'] == 'rotor_overspeed':
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor overspeed constraints.')
             wt_opt.model.add_objective(f'{self.floating_solve_component}.rotor_overspeed')
         
         elif self.opt['merit_figure'] == 'Std_PtfmPitch':
@@ -128,7 +130,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                                                             upper=control_opt['servo']['torque_control']['omega']['max'])
         if control_opt['servo']['torque_control']['zeta']['flag']:                                                    
             wt_opt.model.add_design_var('tune_rosco_ivc.zeta_vs', lower=control_opt['servo']['torque_control']['zeta']['min'], 
-                                                           upper=control_opt['servo']['torque_control']['zeta_max'])
+                                                           upper=control_opt['servo']['torque_control']['zeta']['max'])
         if control_opt['servo']['ipc_control']['Kp']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.IPC_Kp1p', lower=control_opt['servo']['ipc_control']['Kp']['min'],
                                                             upper=control_opt['servo']['ipc_control']['Kp']['max'],
