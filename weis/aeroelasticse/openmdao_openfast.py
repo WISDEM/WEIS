@@ -24,7 +24,7 @@ from weis.aeroelasticse import FileTools
 from weis.aeroelasticse.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.turbsim_util import generate_wind_files
 from weis.aeroelasticse.utils import OLAFParams
-from ROSCO_toolbox import control_interface as ROSCO_ci
+from rosco.toolbox import control_interface as ROSCO_ci
 from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper

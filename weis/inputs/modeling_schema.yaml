@@ -3557,7 +3557,7 @@ properties:
     ROSCO:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/ROSCO_toolbox/inputs/toolbox_shema.yaml
+        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/rosco/toolbox/inputs/toolbox_shema.yaml
         properties: 
             tuning_yaml:
                 type: string

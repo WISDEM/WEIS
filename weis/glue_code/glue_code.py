@@ -22,7 +22,7 @@ from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 from weis.frequency.raft_wrapper import RAFT_WEIS
 from weis.control.tmd import TMD_group
-from ROSCO_toolbox.inputs.validation import load_rosco_yaml
+from rosco.toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
 from wisdem.commonse.cylinder_member import get_nfull
 
