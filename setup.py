@@ -109,7 +109,7 @@ class CMakeBuildExt(build_ext):
 
 # All of the extensions
 fastExt    = CMakeExtension('openfast','OpenFAST')
-roscoExt   = CMakeExtension('rosco','ROSCO/ROSCO')
+roscoExt   = CMakeExtension('rosco','ROSCO/rosco/controller')
 extList = [roscoExt] if platform.system() == "Windows" else  [roscoExt, fastExt]
 
 # Setup content
