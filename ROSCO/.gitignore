@@ -1,0 +1,93 @@
+# Gitignore
+~$README.docx
+ControllerSchematic.pptx
+
+# Compiled code, unnecessary for git
+Source/Obj_win32
+Source/Obj_lin64
+*.mod
+Source/x64/
+Source/Release/
+*build*
+Makefile
+*/install/*
+*test_out*
+*CMakeFiles*
+
+# Archive
+Scripts/CompileDISCONHereCopyRun\.cmd
+\.vs/
+
+# Temp Files
+*~
+.DS_Store
+*.u2d
+*.i90
+*.swp
+
+
+# python compiled files
+__pycache__/
+.cache
+*.pyc
+*.egg-info
+dist
+build
+_build
+*.ipynb_checkpoints*
+*.html
+
+# macOS files
+.DS_Store
+
+# MATLAB files
+*.m~
+*slprj*
+
+# ide settings and files
+.idea
+.vscode
+
+# OpenFAST generated files
+*.sum
+*.ech
+*.dbg
+*.dbg2
+*.out
+*.outb
+*.dbg
+*.vtp
+
+# ROSCO files
+*.85
+*.i90
+*local*
+*build*
+
+# Binaries
+*.dylib
+*.so
+*.dll
+*.bts
+
+# Other
+.pytest_cache
+examples/cp_ct_cq_lut.p
+
+# Files Generated in Examples
+Examples/DISCON.IN
+Examples/DISCON_zmq.IN
+Examples/*.p
+
+# Exclude testing results
+ROSCO_testing/results/
+ROSCO_testing/testing
+
+# Simulink/Matlab temp files
+*.slxc
+*.autosave
+*.mat
+
+# OpenFAST outputs
+outputs/
+

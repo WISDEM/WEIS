@@ -1,0 +1,82 @@
+name: CI_rosco-compile
+
+# We run CI on push commits on all branches
+on: [push, pull_request]
+
+# Specify FORTRAN compiler, used to be "gfortran-10"
+env:
+  FORTRAN_COMPILER: gfortran
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest", "windows-latest" , "macOS-latest"]
+        python-version: ["3.9"]    
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install conda/mamba
+        uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          # To use mamba, uncomment here, comment out the miniforge line
+          mamba-version: "*"
+          # miniforge-version: "latest"
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
+          miniforge-variant: Mambaforge
+
+      # Install ROSCO toolbox
+      - name: Install ROSCO toolbox
+        shell: bash -l {0}
+        run: |
+          python setup.py install      
+          
+      # Re-generate registry
+      - name: Generate Registry
+        shell: bash -l {0}
+        run: python rosco/controller/rosco_registry/write_registry.py 
+          
+      - name: Add dependencies windows 
+        if: true == contains( matrix.os, 'windows')
+        run: |
+          conda install -y m2w64-toolchain
+
+      - name: Add dependencies windows 
+        if: true == contains( matrix.os, 'mac')
+        shell: bash -l {0}
+        run: |
+          conda install -y gfortran
+
+      - name: Setup Workspace
+        run: |
+            cmake -E make_directory ${{runner.workspace}}/ROSCO/rosco/controller/build
+
+      - name: Configure and Build - unix
+        if: false == contains( matrix.os, 'windows')
+        shell: bash -l {0}
+        working-directory: "${{runner.workspace}}/ROSCO/rosco/controller/build"
+        run: |
+          cmake \
+            -DCMAKE_INSTALL_PREFIX:PATH=${{runner.workspace}}/ROSCO/rosco/controller/install \
+            -DCMAKE_Fortran_COMPILER:STRING=${{env.FORTRAN_COMPILER}} \
+            ..
+          cmake --build . --target install
+
+      - name: Configure and Build - windows
+        if: true == contains( matrix.os, 'windows')
+        #shell: bash #-l {0}
+        working-directory: "${{runner.workspace}}/ROSCO/rosco/controller/build"
+        run: |
+          cmake -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="${{runner.workspace}}/ROSCO/rosco/controller/build" ..
+          cmake --build . --target install
