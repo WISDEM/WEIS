@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/test2
+    folder_output: outputs/test
     fname_output: iea15mw
 
 # design_variables:

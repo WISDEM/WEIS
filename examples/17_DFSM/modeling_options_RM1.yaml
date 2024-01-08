@@ -69,7 +69,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
-        PtfmPDOF : False
+        PtfmPDOF : True
         PtfmYDOF : False
         # TwrNodes: 20
         # RotSpeed: 4

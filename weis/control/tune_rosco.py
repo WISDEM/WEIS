@@ -237,6 +237,7 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rated_torque = float(inputs['rated_torque']) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency'])
         WISDEM_turbine.max_torque   = WISDEM_turbine.rated_torque * 1.1  # TODO: make this an input if studying constant power
         WISDEM_turbine.v_rated      = float(inputs['rated_rotor_speed'])*float(inputs['R']) / float(inputs['tsr_operational'])
+        print('');print(WISDEM_turbine.v_rated);print('')
         WISDEM_turbine.v_min        = float(inputs['v_min'])
         WISDEM_turbine.v_max        = float(inputs['v_max'])
         WISDEM_turbine.max_pitch_rate   = float(inputs['max_pitch_rate'])

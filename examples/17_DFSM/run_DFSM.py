@@ -15,21 +15,21 @@ if __name__ == '__main__':
     mydir = os.path.dirname(os.path.realpath(__file__))
     
     # datapath
-    region = 'TR'
-    datapath = mydir + os.sep + 'outputs' + os.sep + 'MHK_'+region+'_10' #+ os.sep + 'openfast_runs/rank_0'
+    region = 'R'
+    datapath = mydir + os.sep + 'outputs' + os.sep + 'simple_sim_BR' #'MHK_'+region+'_10' #+ os.sep + 'openfast_runs/rank_0'
     
     # get the entire path
     outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
     outfiles = sorted(outfiles)
     
     # required states
-    reqd_states = ['PtfmPitch','GenSpeed','YawBrTAxp']
+    reqd_states = ['GenSpeed']
     
     state_props = {'units' : ['[deg]','[rpm]','[m/s2]'],
     'key_freq_name' : [['ptfm'],['ptfm','2P'],['ptfm','2P']],
     'key_freq_val' : [[0.095],[0.095,0.39],[0.095,0.39]]}
     
-    reqd_controls = ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev']
+    reqd_controls = ['RtVAvgxh','GenTq','BldPitch1']
     control_units = ['[m/s]','[kNm]','[deg]','[m]']
     
     
@@ -40,8 +40,8 @@ if __name__ == '__main__':
     'key_freq_val' : [[0.095,0.39],[0.095,0.39],[0.095,0.39]]}
     
     # scaling parameters
-    scale_args = {'state_scaling_factor': np.array([1,100,1]),
-                  'control_scaling_factor': np.array([1,1,1,1]),
+    scale_args = {'state_scaling_factor': np.array([1]),
+                  'control_scaling_factor': np.array([1,1,1]),
                   'output_scaling_factor': np.array([1,1])
                   }
     
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                    'outputs_filter_flag': []
                    }
     
-    file_name = mydir + os.sep + 'linear-models.mat'
+    file_name = None #mydir + os.sep + 'linear-models.mat'
     
     # instantiate class
     sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
@@ -70,13 +70,21 @@ if __name__ == '__main__':
     plot_inputs(sim_detail,4,'separate',save_flag = True)
     
     # split of training-testing data
-    n_samples = [20,50,100,200]
+    n_samples = [200]
+    inputs_sampled = []
+    dx_sampled = []
     
     for isample in n_samples:
         
         # instantiate DFSM model and construct surrogate
         dfsm_model = DFSM(sim_detail,n_samples = isample,L_type = 'LTI',N_type = 'GPR', train_split = 0.4)
         dfsm_model.construct_surrogate()
+        
+        inputs_sampled.append(dfsm_model.inputs_sampled)
+        dx_sampled.append(dfsm_model.dx_sampled)
+        
+
+        
                         
         # extract test data
         test_data = dfsm_model.test_data
@@ -92,15 +100,17 @@ if __name__ == '__main__':
         # test dfsm
         dfsm,U_list,X_list,dx_list,Y_list = test_dfsm(dfsm_model,test_data,test_ind,simulation_flag,plot_flag)
         
-        # Add state properties to list
+        #Add state properties to list
         X_list_ = [dicti.update(state_props) for dicti in X_list]
         Y_list_ = [dicti.update(output_props) for dicti in Y_list]
         
         # plot dfsm
         plot_dfsm_results(U_list,X_list,dx_list,Y_list,simulation_flag,outputs_flag,save_flag = True)
         
-        # calculate the time
+        #calculate the time
         dfsm_time = calculate_time(dfsm_model)
+
+        plt.show()
             
             
                 

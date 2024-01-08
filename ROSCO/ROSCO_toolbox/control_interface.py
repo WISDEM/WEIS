@@ -78,9 +78,9 @@ class ControllerInterface():
         self.avrSWAP[26] = 10 # HARD CODE initial wind speed = 10 m/s
         
         # Blade pitch initial conditions
-        self.avrSWAP[3]     = 0 * np.deg2rad(1)
-        self.avrSWAP[32]    = 0 * np.deg2rad(1)
-        self.avrSWAP[33]    = 0 * np.deg2rad(1)
+        self.avrSWAP[3]     = 15 * np.deg2rad(1)
+        self.avrSWAP[32]    = 15 * np.deg2rad(1)
+        self.avrSWAP[33]    = 15 * np.deg2rad(1)
 
         self.avrSWAP[27] = 1  # IPC
         

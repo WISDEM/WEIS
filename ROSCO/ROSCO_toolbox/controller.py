@@ -206,13 +206,13 @@ class Controller():
 
         # -------------Define Operation Points ------------- #
         TSR_rated = rated_rotor_speed*R/turbine.v_rated  # TSR at rated
-
+        
         # separate wind speeds by operation regions
         # add one to above rated because we don't use rated in the pitch control gain scheduling
         v_below_rated = np.linspace(turbine.v_min,turbine.v_rated, num=self.WS_GS_n-self.PC_GS_n)[:-1]             # below rated
         v_above_rated = np.linspace(turbine.v_rated,turbine.v_max, num=self.PC_GS_n+1)             # above rated
         v = np.concatenate((v_below_rated, v_above_rated))
-
+  
         # separate TSRs by operations regions
         TSR_below_rated = [min(turbine.TSR_operational, rated_rotor_speed*R/v) for v in v_below_rated] # below rated     
         TSR_above_rated = rated_rotor_speed*R/v_above_rated                     # above rated
