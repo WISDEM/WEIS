@@ -77,21 +77,7 @@ Level1:
 
 ROSCO:
     flag: True
-    SD_Mode: 0
-    PS_Mode: 1
-    ps_percent: 0.85
-    F_LPFType: 2
-    F_NotchType: 2
-    Fl_Mode: 2 
-    tuning_yaml: ROSCO/Tune_Cases/IEA15MW.yaml
-    zeta_pc: [1]
-    omega_pc: [0.2]
-    U_pc: [12]
-    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
-    omega_vs: 0.12  
-    twr_freq: 3.2
-    ptfm_freq: 0.2
-    Kp_float: -10
+    tuning_yaml: ../../ROSCO/Tune_Cases/IEA15MW.yaml
     
 DLC_driver:
     metocean_conditions:
