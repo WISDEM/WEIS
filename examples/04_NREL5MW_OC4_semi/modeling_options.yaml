@@ -2,8 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
-        OF_run_fst: NREL5MW_OC4_semi
-        OF_run_dir: temp/NREL5MW_OC4_semi
 
 WISDEM:
     RotorSE:
