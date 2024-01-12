@@ -2,8 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
-        OF_run_fst: IEA15
-        OF_run_dir: temp/IEA15
 
 WISDEM:
     RotorSE:
