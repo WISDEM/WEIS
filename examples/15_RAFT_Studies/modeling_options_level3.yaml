@@ -1,10 +1,6 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/15_level3_comp_1
-        save_iterations: True
-        save_timeseries: True
         use_exe: True
         allow_fails: True
         fail_value: 9999
