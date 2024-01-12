@@ -18,7 +18,7 @@ all_scripts = [
     "10_override_example/weis_driver",
     #"12_linearization/doe_driver", # Soul crushingly long
     "12_linearization/weis_driver",
-    "15_RAFT_Studies/weis_driver_umaine_semi"
+    "15_RAFT_Studies/weis_driver_raft_opt"
 ]
 
 class TestExamples(unittest.TestCase):
