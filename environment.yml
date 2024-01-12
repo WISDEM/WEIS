@@ -6,6 +6,7 @@ dependencies:
   - alabaster
   - babel
   - cmake
+  - cmake-build-extension
   - control
   - coveralls
   - cython
