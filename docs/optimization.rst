@@ -128,6 +128,22 @@ optimizers.
    -  application of constraints by linear approximation
    -  NLOpt implementation
 
+Comparison of Optimizers
+------------------------------
+
+===========   ===========  ======   ===========   ==========   ===========
+
+Solver        Toolset      Scope    Derivatives   Convergent   Constraints
+
+===========   ===========  ======   ===========   ==========   ===========
+SLSQP         scipy        local    True          ???          =, < (NL)
+Nelder-Mead   scipy        local    False         False        None
+COBYLA        scipy        local    False         ???          =, < (NL)
+SNOPT         pyoptsparse  local    True          ???          =, < (NL)
+CONMIN        pyoptsparse  local    True          ???          =, < (NL)
+NSGA2         pyoptsparse  global   ???           ???          =, < (NL)
+===========   ===========  ======   ===========   ==========   ===========
+
 Explanation of outputs
 ----------------------
 
