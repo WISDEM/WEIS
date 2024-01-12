@@ -1,8 +1,6 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: lin
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_3
         use_exe: True
 
 WISDEM:
