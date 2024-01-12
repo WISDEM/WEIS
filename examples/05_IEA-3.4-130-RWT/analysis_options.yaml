@@ -1,3 +1,3 @@
 general:
-    folder_output: outputs
+    folder_output: outputs/05_IEA34_single_run
     fname_output: refturb_output
