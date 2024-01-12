@@ -42,7 +42,7 @@ properties:
                         description: Flag to only generate an OpenFAST model and stop
                     save_timeseries:
                         type: boolean
-                        default: False
+                        default: True
                         description: Save openfast output timeseries
                     keep_time:
                         type: boolean
@@ -50,7 +50,7 @@ properties:
                         description: Keep timeseries in openmdao_openfast for post-processing
                     save_iterations:
                         type: boolean
-                        default: False
+                        default: True
                         description: Save summary stats and other info for each openfast iteration.  Could bump this up to a more global post-processing input.
                     FAST_exe:
                         type: string
