@@ -29,10 +29,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
     def set_weis_data(self):
 
+        # Directory of modeling option input, if we want to use it for relative paths
+        mod_opt_dir = os.path.split(self.modeling_options['fname_input_modeling'])[0]
+
         # BEM dir, all levels
-        base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
-        if base_run_dir == 'none':
-           base_run_dir = self.analysis_options['general']['folder_output']
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
             bemDir = os.path.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
@@ -41,8 +42,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
         self.modeling_options["Level1"]['BEM_dir'] = bemDir
 
-        # Directory of modeling option input, if we want to use it for relative paths
-        mod_opt_dir = os.path.split(self.modeling_options['fname_input_modeling'])[0]
+        
 
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
@@ -103,7 +103,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
                         self.modeling_options['Level1']['flag'] = True
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, bemDir,'Output','Wamit_format','Buoy')
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(bemDir,'Output','Wamit_format','Buoy')
                         
 
                     else:
