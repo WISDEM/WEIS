@@ -18,6 +18,7 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
+        rank_and_file: True
     # BOS:
     #     flag: True
 
