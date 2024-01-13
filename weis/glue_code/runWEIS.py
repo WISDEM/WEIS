@@ -100,6 +100,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         color_i = 0
         rank = 0
 
+    # make the folder_output relative to the input, if it's a relative path
+    analysis_input_dir = os.path.dirname(opt_options['fname_input_analysis'])
+    opt_options['general']['folder_output'] = os.path.join(analysis_input_dir,opt_options['general']['folder_output'])
+
     folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
         os.makedirs(folder_output)

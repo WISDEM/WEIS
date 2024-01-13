@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs
+    folder_output: outputs/02_control_opt_sm
     fname_output: iea15mw
 design_variables:
   control:

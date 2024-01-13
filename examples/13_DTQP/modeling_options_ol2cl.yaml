@@ -1,17 +1,11 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: ol2cl
-        OF_run_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_OL2CL_0
         use_exe: True
-        save_timeseries: True
-        save_iterations: True
 
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 25
-        n_tsr_perf_surfaces: 25
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -131,7 +125,7 @@ Level2:
 
 OL2CL:
     flag: True
-    trajectory_dir: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_1
+    trajectory_dir: outputs/13_DTQP_1
 
 # These should match modeling_options.yaml used to generate DTQP results
 DLC_driver:

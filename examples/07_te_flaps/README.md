@@ -1,0 +1,1 @@
+This example is untested and requires installing external programs, like xfoil.  Please use with caution.  The WEIS team may not be able to support this example.

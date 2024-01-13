@@ -395,6 +395,19 @@ def read_wamit3(pathWamit3, TFlag=0):
     
     return mod, phase, real, imag, w, headings
 
+def read_hst(path_hst):
+    wamit_hst = np.loadtxt(path_hst)
+
+    hst = np.zeros((6,6))
+    for entry in wamit_hst:
+        ind1 = int(entry[0]-1)
+        ind2 = int(entry[1]-1)
+        st = entry[2]
+        hst[ind1,ind2] = st
+
+    return hst
+
+
 def run_hams(projectDir):
     # change directory to where the HAMS input files are
     workingDir = os.getcwd()
@@ -403,3 +416,7 @@ def run_hams(projectDir):
     hams.hams_full.exec()
     # change back to working directory
     os.chdir(workingDir)
+
+if __name__=="__main__":
+    hst = read_hst('/Users/dzalkind/Projects/IEA-22MW/IEA-22-280-RWT/OpenFAST/IEA-22-280-RWT-Semi/HydroData/semi.hst')
+    print('here')
