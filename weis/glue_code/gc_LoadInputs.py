@@ -19,6 +19,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
+        self.analysis_options['fname_input_analysis'] = fname_input_analysis
 
         self.set_run_flags()
         self.set_openmdao_vectors()
