@@ -1,3 +1,0 @@
-wind_speed	wind_heading	turbulence	turbine_status	yaw_misalign	wave_spectrum	wave_period	wave_height	wave_heading	current_speed
-6.0	0.0	IB_NTM	operating	0.0	JONSWAP	16	9.9	0.0	6.0
-6.0	0.0	IB_NTM	operating	0.0	JONSWAP	16	9.9	0.0	6.0
