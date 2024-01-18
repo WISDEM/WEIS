@@ -1,5 +1,5 @@
 general:
-    folder_output: /scratch/dzalkind/WEIS-4/outputs/50_ptfm_hull_mass_sim
+    folder_output: outputs/17_MHK_Simultaneous_Opt
     fname_output: rm1
 
 design_variables:

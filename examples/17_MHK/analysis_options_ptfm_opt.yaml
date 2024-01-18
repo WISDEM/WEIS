@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/39_per_opt_st1
+    folder_output: outputs/17_MHK_Platform_Opt
     fname_output: rm1
 
 design_variables:
