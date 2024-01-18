@@ -3,17 +3,13 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: RM1
-        # OF_run_dir: outputs/CT_Opt/07_Ptfm_Setup
         save_timeseries: True
         save_iterations: True
         use_exe: True
-        FAST_exe: /home/dzalkind/.conda-envs/rosco-env/bin/openfast
 
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 20
-        n_tsr_perf_surfaces: 20
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS

@@ -4,8 +4,8 @@ from wisdem.commonse.mpi_tools  import MPI
 import os, time, sys
 
 '''
-This example uses WEIS to generate the platform model and run OpenFAST simulations
-The OpenFAST simulations have not finished being verified against the original model
+This example uses WEIS to generate the platform model and run RAFT simulations, 
+optimizing the platform
 '''
 
 ## File management
