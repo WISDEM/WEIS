@@ -1,13 +1,15 @@
-import os, copy, operator
+import os
+import copy
+import operator
 import numpy as np
 import yaml
 from functools import reduce
 try:
     import ruamel_yaml as ry
-except:
+except Exception:
     try:
         import ruamel.yaml as ry
-    except:
+    except Exception:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 """
@@ -267,4 +269,3 @@ def get_dlc_label(cases, include_seed=True):
 def load_file_list(fname_flist):
     # load list of filenames from file
     return np.genfromtxt(fname_flist, dtype='str')
->>>>>>> develop
