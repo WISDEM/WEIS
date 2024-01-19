@@ -5,8 +5,8 @@ test file for DTQPy_crearte YZ
 
 """
 import numpy as np
-from DTQPy_CLASS_SETUP import *
-from DTQPy_create_YZ import DTQPy_create_YZ
+from weis.dtqpy.classes.DTQPy_CLASS_SETUP import *
+from weis.dtqpy.add_constraints.DTQPy_create_YZ import DTQPy_create_YZ
 from numpy.matlib import repmat
 
 class dummy:
