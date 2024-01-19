@@ -78,7 +78,7 @@ Level1:
 
 ROSCO:
     flag: True
-    tuning_yaml: ../../ROSCO/Tune_Cases/IEA15MW.yaml
+    tuning_yaml: ../../ROSCO/Examples/Tune_Cases/IEA15MW.yaml
     
 DLC_driver:
     metocean_conditions:

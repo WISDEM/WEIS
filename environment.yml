@@ -6,6 +6,7 @@ dependencies:
   - alabaster
   - babel
   - cmake
+  - cmake-build-extension
   - control
   - coveralls
   - cython
@@ -35,7 +36,7 @@ dependencies:
   - patsy
   - pip
   - pygments
-  - pyhams
+  - pyhams=1.2.1
   - pyoptsparse
   - pytest
   - pytest-cov

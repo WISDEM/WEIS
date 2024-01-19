@@ -40,7 +40,7 @@ In addition, three external libraries are added:
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
- * _control_ contains the routines calling the [ROSCO_Toolbox](https://github.com/NREL/ROSCO_toolbox) and the routines supporting distributed aerodynamic control devices, such trailing edge flaps
+ * _control_ contains the routines calling [ROSCO](https://github.com/NREL/ROSCO) and the routines supporting distributed aerodynamic control devices, such trailing edge flaps
  * _gluecode_ contains the scripts glueing together all models and libraries
  * _multifidelity_ contains the codes to run multifidelity design optimizations
  * _optimization_drivers_ contains various optimization drivers
@@ -48,7 +48,7 @@ The core WEIS modules are:
 
 ## Installation
 
-On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). WEIS is currently supported on Linux, MAC (intel only) and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not supported.  To install WEIS with conda on a M1/M2 Mac, you must start with conda for x86 on the Mac.
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with the [Miniforge3 distribution](https://github.com/conda-forge/miniforge?tab=readme-ov-file#miniforge3), which is much more lightweight and more easily solves for the package dependencies.  Sometimes, using `mamba` in place of `conda` with this distribution speeds up the installation process. WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not yet supported, but planned in 2024.
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable. For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 

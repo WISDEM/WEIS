@@ -29,7 +29,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
 ROSCO:
     flag: True
-    tuning_yaml: ../../ROSCO/Tune_Cases/IEA15MW.yaml
+    tuning_yaml: ../../ROSCO/Examples/Tune_Cases/IEA15MW.yaml
     Kp_float: -10
 
 

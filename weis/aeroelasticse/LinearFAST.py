@@ -13,7 +13,7 @@ import os
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from ROSCO_toolbox import utilities as ROSCO_utilities
+from rosco.toolbox import utilities as ROSCO_utilities
 
 import weis
 weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
