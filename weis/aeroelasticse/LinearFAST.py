@@ -14,7 +14,7 @@ import shutil
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from ROSCO_toolbox import utilities as ROSCO_utilities
+from rosco.toolbox import utilities as ROSCO_utilities
 
 
 

@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import re
 from itertools import chain
 from scipy.io import loadmat
-from ROSCO_toolbox.control_interface import ControllerInterface as ROSCO_ControllerInterface
+from rosco.toolbox.control_interface import ControllerInterface as ROSCO_ControllerInterface
 
 import os
 
@@ -503,7 +503,7 @@ class LinearTurbineModel(object):
         OutList     = [out_name.split()[1][:-1] for out_name in P_op.OutputName]
         OutData_arr = y.T
 
-        # Turn OutData into dict like in ROSCO_toolbox
+        # Turn OutData into dict like in rosco.toolbox
         OutData = {}
         for i, out_chan in enumerate(OutList):
             OutData[out_chan] = OutData_arr[:,i]
