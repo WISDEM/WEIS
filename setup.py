@@ -1,11 +1,17 @@
 import os
 import sys
-from distutils.core import run_setup
+import subprocess
 import setuptools
 
 # Install the python sub-packages
 os.chdir('dtqpy')
-run_setup('setup.py', script_args=sys.argv[1:], stop_after='run')
+
+edit_str = ''
+for k in sys.argv:
+    if k in ['-e','--editable','develop']:
+        edit_str = '-e'
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', edit_str , '.'])
+
 os.chdir('..')
 
 setuptools.setup()

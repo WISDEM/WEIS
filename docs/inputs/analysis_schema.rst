@@ -36,27 +36,27 @@ properties:
                                         type: boolean
                                         default: False
                                         description: Activates as a design variable or constraint
-                                    minimum:
+                                    min:
                                         type: number
                                         maximum: 1.0
                                         minimum: 0.1
-                                        default: 1.0
-                                    maximum:
+                                        default: 0.5
+                                    max:
                                         type: number
                                         maximum: 1.0
                                         minimum: 0.1
-                                        default: 1.0
+                                        default: 0.98
                             te_flap_ext:
                                 type: object
                                 default: {}
                                 properties:
                                     flag: *flag
-                                    minimum:
+                                    min:
                                         type: number
                                         maximum: 1.0
                                         minimum: 0.0
                                         default: 0.01
-                                    maximum:
+                                    max:
                                         type: number
                                         maximum: 1.0
                                         minimum: 0.0
@@ -188,36 +188,84 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    flag: *flag
-                                    omega_min: &omega_min
-                                        type: number
-                                        default: 0.1
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                                    omega_max: &omega_max
-                                        type: number
-                                        default: 0.7
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                                    zeta_min: &zeta_min
-                                        type: number
-                                        default: 0.4
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
-                                    zeta_max: &zeta_max
-                                        type: number
-                                        default: 1.5
-                                        minimum: 0.0
-                                        maximum: 10.0
-                                        unit: none
+                                    flp_kp_norm: 
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.01
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: none
+                                            max: 
+                                                type: number
+                                                default: 5.0
+                                                minimum: 0.0
+                                                maximum: 10.0
+                                                unit: none
+                                    flp_tau: 
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 5
+                                                minimum: 0.0
+                                                maximum: 100.0
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 30
+                                                minimum: 0.0
+                                                maximum: 100.0
+                                                unit: none
                             ipc_control:
                                 type: object
                                 default: {}
                                 properties:
-                                    flag: *flag
+                                    Kp: 
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.0
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: s
+                                            max:
+                                                type: number
+                                                default: 0.0
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: s
+                                            ref: &ipc_ref
+                                                type: number 
+                                                default: 1.e-8
+                                                minimum: 1.e-10
+                                                maximum: 1.e-5
+                                    Ki: 
+                                        type: object
+                                        default: {}
+                                        properties:
+                                            flag: *flag
+                                            min:
+                                                type: number
+                                                default: 0.0
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: none
+                                            max:
+                                                type: number
+                                                default: 1.e-7
+                                                minimum: 0.0
+                                                maximum: 1.e+3
+                                                unit: none
+                                            ref: *ipc_ref
             TMDs:
                 type: object
                 description: Design variables associated with TMDs
@@ -289,7 +337,6 @@ properties:
                                         lower_bound: *bound
                                         upper_bound: *bound
                                         initial: *initial
-
     constraints:
         # GB: These all need gammas or safety factors
         type: object
@@ -313,7 +360,7 @@ properties:
                             max: *flapminmax
                     rotor_overspeed:
                         type: object
-                        description: (Maximum rotor speed / rated rotor speed) - 1
+                        description: (Maximum rotor speed / rated rotor speed) - 1.  Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -325,7 +372,7 @@ properties:
                             max: *rotor_overspeed
                     Max_PtfmPitch:
                         type: object
-                        description: Maximum platform pitch displacement
+                        description: Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -337,7 +384,7 @@ properties:
                                 unit: deg
                     Std_PtfmPitch:
                         type: object
-                        description: Maximum platform pitch standard deviation
+                        description: Maximum platform pitch standard deviation over all cases. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -347,9 +394,33 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
+                    Max_TwrBsMyt:
+                        type: object
+                        description: Maximum platform pitch displacement
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max: 
+                                type: number
+                                default: 1.e+5
+                                minimum: 0.0
+                                maximum: 1.e+8
+                                unit: kN*m
+                    DEL_TwrBsMyt:
+                        type: object
+                        description: Maximum platform pitch displacement
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max: 
+                                type: number
+                                default: 1.e+5
+                                minimum: 0.0
+                                maximum: 1.e+8
+                                unit: kN*m
                     nacelle_acceleration:
                         type: object
-                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2)
+                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -383,6 +454,22 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg/s
+            floating:
+                type: object
+                default: {}
+                properties:
+                    Max_Offset:
+                        type: object
+                        default: {}
+                        description: Maximum combined surge/sway offset. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 20
+                                minimum: 0.0
+                                maximum: 20000.0
+                                unit: m
             damage:
                 type: object
                 default: {}
@@ -411,21 +498,6 @@ properties:
                         type: boolean
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
-
-            Max_Offset:
-                type: object
-                default: {}
-                properties:
-                    flag:
-                        type: boolean
-                        description: Constrain maximum offset of platform from equilibrium point
-                        default: False
-                    max:
-                        type: number
-                        default: 20
-                        minimum: 0.0
-                        maximum: 20000.0
-                        unit: m
 
     
 

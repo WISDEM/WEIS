@@ -360,8 +360,8 @@ properties:
                         units: s
                         description: Amount of time between creating checkpoint files for potential restart (s)
                     DT_Out:
-                        type: string
-                        default: default
+                        type: number
+                        default: 0
                         description: Time step for tabular output (s) (or 'default')
                     OutFileFmt:
                         type: integer
@@ -3048,7 +3048,7 @@ properties:
                                 unit: none
                                 minItems: 1
                                 uniqueItems: true
-                        wave_seed:
+                        wave_seeds:
                             type: array
                             default: []
                             description: Wave random number generator seeds for HydroDyn

@@ -45,7 +45,7 @@ class RAFT_WEIS(om.Group):
         members_opt = {}
         members_opt['nmembers'] = len(weis_opt["floating"]["members"]["name"])
         members_opt['npts'] = weis_opt["floating"]["members"]["n_height"]
-        members_opt['npts_lfill'] = members_opt['npts_rho_fill'] = [m-1 for m in members_opt['npts']]
+        members_opt['npts_lfill'] = members_opt['npts_rho_fill'] = [int(m-1) for m in members_opt['npts']]
         members_opt['ncaps'] = weis_opt["floating"]["members"]["n_bulkheads"]
         members_opt['nreps'] = [0]*members_opt['nmembers']
         members_opt['shape'] = ['circ']*members_opt['nmembers']
@@ -323,15 +323,15 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{wind_type}'
             opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
             waveStr = 'JONSWAP' #icase.wave_spectrum
-            raft_cases[i] = [icase.URef,
-                             icase.wind_heading,
-                             turbStr,
-                             opStr,
-                             icase.yaw_misalign,
-                             waveStr,
-                             max(1.0, icase.wave_period),
-                             max(1.0, icase.wave_height),
-                             icase.wave_heading]
+            raft_cases[i] = [float(icase.URef),
+                             float(icase.wind_heading),
+                             str(turbStr),
+                             str(opStr),
+                             float(icase.yaw_misalign),
+                             str(waveStr),
+                             float(max(1.0, icase.wave_period)),
+                             float(max(1.0, icase.wave_height)),
+                             float(icase.wave_heading)]
         discrete_outputs['raft_dlcs'] = raft_cases
         discrete_outputs['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
                                               'turbine_status', 'yaw_misalign', 'wave_spectrum',
