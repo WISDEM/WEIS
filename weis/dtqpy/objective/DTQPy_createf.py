@@ -11,8 +11,8 @@ import numpy as np
 from scipy.sparse import csc_matrix
 
 # import DTQPy specific functions
-from dtqpy.objective.DTQPy_L import DTQPy_L
-from dtqpy.objective.DTQPy_M import DTQPy_M
+from weis.dtqpy.objective.DTQPy_L import DTQPy_L
+from weis.dtqpy.objective.DTQPy_M import DTQPy_M
 
 def DTQPy_createf(Llinear,Mlinear,internal,opts):
     

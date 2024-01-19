@@ -54,6 +54,7 @@ dependencies = [
   "jsonschema",
   "markupsafe",
   "marmot-agents>=0.2.5",
+  "mat4py",
   "matplotlib",
   "moorpy",
   "nlopt",

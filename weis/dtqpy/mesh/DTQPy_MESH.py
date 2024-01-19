@@ -6,7 +6,7 @@ Solve the problem using different mesh refiniment schemes
 Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
-from dtqpy.DTQPy_multiphase import DTQPy_multiphase
+from weis.dtqpy.DTQPy_multiphase import DTQPy_multiphase
 
 def DTQPy_MESH(setup,opts):
     if opts.dt.meshr.method == 'None':

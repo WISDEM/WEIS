@@ -6,9 +6,9 @@ Obtain the solution to the DO problem using the selected solver
 Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
-from dtqpy.solver.DTQPy_SOLVER_osqp import DTQPy_SOLVER_osqp
-from dtqpy.solver.DTQPy_SOLVER_ipopt import DTQPy_SOLVER_ipopt
-from dtqpy.solver.DTQPy_SOLVER_slsqp import DTQPy_SOLVER_slsqp
+from weis.dtqpy.solver.DTQPy_SOLVER_osqp import DTQPy_SOLVER_osqp
+from weis.dtqpy.solver.DTQPy_SOLVER_ipopt import DTQPy_SOLVER_ipopt
+from weis.dtqpy.solver.DTQPy_SOLVER_slsqp import DTQPy_SOLVER_slsqp
 
 def DTQPy_SOLVER(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     

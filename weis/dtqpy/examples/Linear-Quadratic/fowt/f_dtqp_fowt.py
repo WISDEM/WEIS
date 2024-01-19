@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.src.DTQPy_solve import DTQPy_solve
+from weis.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+from weis.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from weis.dtqpy.src.DTQPy_solve import DTQPy_solve
 
 
 def f1_dtqp_fowt(LinearModels,disturbance):

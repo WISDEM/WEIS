@@ -17,9 +17,9 @@ sys.path.insert(1,'/dt-qp-py-project/src')
 
 os.chdir('../../../')
 import numpy as np
-from dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.src.DTQPy_solve import DTQPy_solve
+from weis.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+from weis.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from weis.dtqpy.src.DTQPy_solve import DTQPy_solve
 
 #from DTQPy_create_bnds import DTQPy_create_bnds
 import matplotlib.pyplot as plt

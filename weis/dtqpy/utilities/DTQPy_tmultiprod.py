@@ -7,7 +7,7 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
-from dtqpy.utilities.DTQPy_tmatrix import DTQPy_tmatrix
+from weis.dtqpy.utilities.DTQPy_tmatrix import DTQPy_tmatrix
 #from DTQPy_tmatrix import DTQPy_tmatrix
 import types
 

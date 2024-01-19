@@ -23,6 +23,7 @@ dependencies:
   - make
   - markupsafe
   - matplotlib-base
+  - mat4py
   - meson
   - moorpy
   - ninja

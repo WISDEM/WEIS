@@ -7,7 +7,7 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
-from dtqpy.mesh.DTQPy_MESH import DTQPy_MESH
+from weis.dtqpy.mesh.DTQPy_MESH import DTQPy_MESH
 
 def DTQPy_solve(setup,opts):
     # Check matrix structure

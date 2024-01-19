@@ -8,13 +8,13 @@ Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
 from scipy import sparse
-from dtqpy.classes.DTQPy_CLASS_INTERNAL import *
-from dtqpy.objective.DTQPy_createH import DTQPy_createH
-from dtqpy.objective.DTQPy_createf import DTQPy_createf
-from dtqpy.objective.DTQPy_createc import DTQPy_createc
-from dtqpy.defects.DTQPy_DEFECTS import DTQPy_DEFECTS
-from dtqpy.add_constraints.DTQPy_create_YZ import DTQPy_create_YZ
-from dtqpy.add_constraints.DTQPy_create_bnds import DTQPy_create_bnds
+from weis.dtqpy.classes.DTQPy_CLASS_INTERNAL import *
+from weis.dtqpy.objective.DTQPy_createH import DTQPy_createH
+from weis.dtqpy.objective.DTQPy_createf import DTQPy_createf
+from weis.dtqpy.objective.DTQPy_createc import DTQPy_createc
+from weis.dtqpy.defects.DTQPy_DEFECTS import DTQPy_DEFECTS
+from weis.dtqpy.add_constraints.DTQPy_create_YZ import DTQPy_create_YZ
+from weis.dtqpy.add_constraints.DTQPy_create_bnds import DTQPy_create_bnds
 
 def DTQPy_create(setup,opts):
     # initialize some stuff

@@ -10,7 +10,7 @@ import numpy as np
 from numpy.matlib import repmat
 from scipy.sparse import csc_matrix
 from matplotlib.pyplot import spy
-from dtqpy.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
+from weis.dtqpy.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
 
 def Index_Columns(a,b,c):
             J = np.arange(a*c+1,a*(b+c)+1)

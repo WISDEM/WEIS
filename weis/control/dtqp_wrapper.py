@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from dtqpy.src.DTQPy_oloc import DTQPy_oloc
-from dtqpy.src.DTQPy_static import DTQPy_static
+from weis.dtqpy.DTQPy_oloc import DTQPy_oloc
+from weis.dtqpy.DTQPy_static import DTQPy_static
 import multiprocessing as mp
 
 radps2rpm = 30 / np.pi

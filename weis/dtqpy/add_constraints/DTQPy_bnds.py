@@ -7,7 +7,7 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
-from dtqpy.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
+from weis.dtqpy.utilities.DTQPy_tmultiprod import DTQPy_tmultiprod
 
 def DTQPy_getQPIndex(x,xtype,Flag,nt,I_stored):
     if (xtype ==1) or (xtype==2):

@@ -13,9 +13,9 @@ import sys
 
 os.chdir('../')
 import numpy as np
-from dtqpy.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.DTQPy_solve import DTQPy_solve
+from weis.dtqpy.classes.DTQPy_CLASS_OPTS import *
+from weis.dtqpy.classes.DTQPy_CLASS_SETUP import *
+from weis.dtqpy.DTQPy_solve import DTQPy_solve
 import matplotlib.pyplot as plt
 
 

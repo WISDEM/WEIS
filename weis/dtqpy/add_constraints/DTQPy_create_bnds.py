@@ -7,7 +7,7 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 import numpy as np
-from dtqpy.add_constraints.DTQPy_bnds import DTQPy_bnds
+from weis.dtqpy.add_constraints.DTQPy_bnds import DTQPy_bnds
 
 def DTQPy_create_bnds(LB,UB,internal):
     nx = internal.nx

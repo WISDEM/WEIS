@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 
 #os.chdir('../../../')
 
-from dtqpy.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
-from dtqpy.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
-from dtqpy.dtqpy.src.DTQPy_solve import DTQPy_solve
+from weis.dtqpy.dtqpy.src.classes.DTQPy_CLASS_SETUP import *
+from weis.dtqpy.dtqpy.src.classes.DTQPy_CLASS_OPTS import *
+from weis.dtqpy.dtqpy.src.DTQPy_solve import DTQPy_solve
 
 opts = options()
 opts.dt.nt = 1000
