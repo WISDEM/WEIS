@@ -4,6 +4,7 @@ from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper
 from weis.aeroelasticse.LinearFAST import LinearFAST
+from rosco import discon_lib_path
 import os.path as osp
 import shutil
 import platform
@@ -66,7 +67,7 @@ class TestOFutils(unittest.TestCase):
         fst_vt = {}
         fst_vt['Fst', 'TMax'] = 20.
         fst_vt['AeroDyn15', 'TwrAero'] = False
-        fst_vt['ServoDyn', 'DLL_FileName'] = osp.join(weis_dir, 'local', 'lib', f'libdiscon{libext}')
+        fst_vt['ServoDyn', 'DLL_FileName'] = discon_lib_path
         fst_vt['Fst','CompMooring'] = 0
         fast_writer.update(fst_update=fst_vt)
         with self.subTest('Writing', i=1):

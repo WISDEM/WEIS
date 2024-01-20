@@ -5,15 +5,16 @@ Example script to compute the steady-state performance in OpenFAST
 """
 
 import os
-import platform
 import unittest
 import shutil
+#import pickle
 
 import numpy as np
 
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
+from rosco import discon_lib_path as path2dll
 
 this_file_dir = os.path.dirname(os.path.realpath(__file__))
 weis_dir = os.path.dirname(os.path.dirname(this_file_dir))
@@ -132,17 +133,6 @@ class TestGeneral(unittest.TestCase):
         ]:
             channels[var] = True
         fastBatch.channels = channels
-        
-        # Find the controller
-        if platform.system() == 'Windows':
-            sfx = 'dll'
-        elif platform.system() == 'Darwin':
-            sfx = 'dylib'
-        else:
-            sfx = 'so'
-        bin_dir = os.path.dirname( shutil.which('wheel') ) # should find the conda bin directory
-        lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
-        path2dll = os.path.join(lib_dir, 'libdiscon'+sfx)
 
         case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 
@@ -154,7 +144,7 @@ class TestGeneral(unittest.TestCase):
 
         # Run OpenFAST, either serially or sequentially
         _,_,_,_,out = fastBatch.run_serial()
-        import pickle
+
         # Update pkl file
         # with open('/Users/pbortolo/work/1_wisdem/WEIS/weis/test/general_regression_values.pkl', 'wb') as file:
         #     pickle.dump(out, file)
