@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macOS-latest"] #, "windows-latest"]
+        os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
         python-version: ["3.9","3.10","3.11"]
         
     steps:
@@ -67,7 +67,7 @@ jobs:
       # Install WEIS
       - name: Install WEIS
         run: |
-          python setup.py develop
+          pip install -e .
 
       # Debugging session
       #- name: Setup tmate session
