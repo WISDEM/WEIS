@@ -39,24 +39,25 @@ jobs:
           activate-environment: test
           auto-activate-base: false
 
-      # Install dependencies of WISDEM specific to mac # libgcc openblas libopenblas
       - name: Add dependencies mac specific
         if: contains( matrix.os, 'mac')
         run: |
             conda install -y petsc4py mpi4py openmpi compilers
             
-      # Install dependencies of WISDEM specific to windows
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
           conda install -y m2w64-toolchain libpython intel-openmp mkl
       
-      # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: contains( matrix.os, 'ubuntu')
         run: |
           conda install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"
+      
+      - name: Add test packages
+        run: |
+          conda install -y pytest pytest-cov coveralls
             
       - name: Show custom environment
         run: |

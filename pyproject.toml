@@ -41,21 +41,8 @@ classifiers = [  # Optional
 ]
 
 dependencies = [
-  "alabaster",
-  "babel",
-  "control",
-  "dill",
-  "et-xmlfile",
-  "fatpack",
-  "future",
-  "gdown",
-  "imagesize",
-  "jsonmerge",
-  "jsonschema",
-  "markupsafe",
   "marmot-agents>=0.2.5",
   "mat4py",
-  "matplotlib",
   "moorpy",
   "nlopt",
   "numpy",
@@ -63,20 +50,11 @@ dependencies = [
   "openpyxl",
   "openraft",
   "osqp",
-  "pandas",
-  "patsy",
   "pcrunch",
   "pyhams",
-  "pyyaml",
-  "pyzmq",
-  "qdldl",
   "rosco",
-  "ruamel.yaml",
   "scipy",
-  "slycot",
   "smt",
-  "statsmodels",
-  "treon",
   "wisdem",
 ]
 
@@ -89,7 +67,6 @@ dependencies = [
 # Similar to `dependencies` above, these must be valid existing
 # projects.
 [project.optional-dependencies] # Optional
-dev = ["meson", "ninja", "swig"]
 test = ["coveralls", "pytest", "pytest-cov"]
 opt = ["pyoptsparse"]
 docs = ["sphinx",
