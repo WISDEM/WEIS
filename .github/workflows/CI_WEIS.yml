@@ -48,7 +48,6 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           conda install -y petsc4py mpi4py openmpi
-          python -c "import platform; print(platform.node())"
       
       - name: Add test packages
         run: |
@@ -57,7 +56,6 @@ jobs:
       - name: Show custom environment
         run: |
             conda list
-            which -a gfortran
             printenv | sort
           
       # Install WEIS
