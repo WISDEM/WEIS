@@ -17,7 +17,6 @@ dependencies:
   - decorator
   - dill
   - executing
-  - fastjsonschema
   - fqdn
   - git
   - ipython
