@@ -38,19 +38,14 @@ jobs:
           environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
-
-      - name: Add dependencies mac specific
-        if: contains( matrix.os, 'mac')
-        run: |
-            conda install -y petsc4py mpi4py openmpi compilers
             
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          conda install -y m2w64-toolchain libpython intel-openmp mkl
+          conda install -y -c intel intel-openmp mkl intel-fortran-rt
       
       - name: Add dependencies ubuntu specific
-        if: contains( matrix.os, 'ubuntu')
+        if: not contains( matrix.os, 'windows')
         run: |
           conda install -y petsc4py mpi4py openmpi
           python -c "import platform; print(platform.node())"

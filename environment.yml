@@ -3,27 +3,68 @@ channels:
   - defaults
 
 dependencies:
-  - dill
-  - git
-  - jsonmerge
-  - mat4py
-  - moorpy
-  - nlopt
-  - openfast=3.5.1
-  - openraft
-  - openpyxl
   #- osqp # Works with the pip version, but not the conda version
+  - anyio
+  - argon2-cffi
+  - arrow
+  - async-lru
+  - babel
+  - beautifulsoup4
+  - bleach
+  - cffi
+  - comm
+  - debugpy
+  - decorator
+  - dill
+  - executing
+  - fastjsonschema
+  - fqdn
+  - git
+  - ipython
+  - isoduration
+  - jedi
+  - jinja2
+  - json5
+  - jsonmerge
+  - jupyter
+  - jupyterlab
+  - markupsafe
+  - mat4py
+  - matplotlib
+  - meson
+  - mistune
+  - moorpy
+  - ninja
+  - nlopt
+  - nlopt
+  - notebook
+  - openfast
+  - openpyxl
+  - openraft
+  - overrides
   - pandas
+  - parso
   - patsy
   - pcrunch
+  - pexpect
   - pip
+  - platformdirs
+  - psutil
+  - ptyprocess
+  - pygments
   - pyhams
   - pyoptsparse
+  - python-json-logger
+  - pyzmq
   - qdldl-python
+  - qtpy
   - rosco
   - setuptools
+  - tornado
+  - traitlets
+  - treon
+  - webencodings
   - wisdem
-#  - versioneer
   - pip:
     - dearpygui
     - marmot-agents
