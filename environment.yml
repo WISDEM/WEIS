@@ -3,7 +3,9 @@ channels:
   - defaults
 
 dependencies:
+  - dill
   - git
+  - jsonmerge
   - mat4py
   - moorpy
   - nlopt
