@@ -1,20 +1,14 @@
 import os
 import os.path as osp
 import shutil
-import platform
-import multiprocessing as mp
+
+from rosco import discon_lib_path
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from wisdem.commonse.mpi_tools              import MPI
 
-if platform.system() == 'Windows':
-    sfx = ".dll"
-elif platform.system() == 'Darwin':
-    sfx = ".dylib"
-else:
-    sfx = ".so"
                     
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
@@ -72,10 +66,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             # User-defined control dylib (path2dll)
             path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
             if path2dll == 'none':   #Default option, use above
-                # Find the path to the WEIS controller if not specified
-                bin_dir = osp.dirname( shutil.which('wheel') ) # should find the conda bin directory
-                lib_dir  = osp.abspath( osp.join(osp.dirname(bin_dir), 'lib') )
-                self.modeling_options['General']['openfast_configuration']['path2dll'] = osp.join(lib_dir, 'libdiscon'+sfx)
+                self.modeling_options['General']['openfast_configuration']['path2dll'] = discon_lib_path
             else:
                 if not osp.isabs(path2dll):  # make relative path absolute
                     self.modeling_options['General']['openfast_configuration']['path2dll'] = \
