@@ -40,6 +40,7 @@ dependencies:
   - openfast
   - openpyxl
   - openraft
+  - osqp
   - overrides
   - pandas
   - parso
@@ -61,6 +62,7 @@ dependencies:
   - rosco
   - scikit-learn
   - setuptools
+  - smt
   - tornado
   - traitlets
   - treon
@@ -69,8 +71,6 @@ dependencies:
   - pip:
     - dearpygui
     - marmot-agents
-    - osqp
-    - smt
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]
