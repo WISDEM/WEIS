@@ -53,7 +53,7 @@ dependencies:
   - ptyprocess
   - pyDOE3
   - pygments
-  - pyhams=1.2.1
+  - pyhams
   - pyoptsparse
   - python-json-logger
   - pyzmq
