@@ -56,12 +56,11 @@ jobs:
           pip install -e .
 
       # Test walkthrough notebook
-      # gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
       - name: Test postprocessing notebooks
         run: |
           cd examples/16_postprocessing
           pip install gdown
-          wget https://docs.google.com/uc?export=download&confirm=t&id=1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
+          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
           unzip outputs
           treon plot_FAST.ipynb
           treon rev_DLCs_WEIS.ipynb
