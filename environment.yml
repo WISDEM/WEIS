@@ -50,6 +50,7 @@ dependencies:
   - platformdirs
   - psutil
   - ptyprocess
+  - pyDOE3
   - pygments
   - pyhams
   - pyoptsparse
@@ -58,6 +59,7 @@ dependencies:
   - qdldl-python
   - qtpy
   - rosco
+  - scikit-learn
   - setuptools
   - tornado
   - traitlets

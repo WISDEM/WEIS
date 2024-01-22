@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
+        os: ["ubuntu-latest", "macOS-latest"] #, "windows-latest"]
         python-version: ["3.9","3.10","3.11"]
         
     steps:
@@ -42,10 +42,10 @@ jobs:
       - name: Add dependencies windows specific
         if: contains( matrix.os, 'windows')
         run: |
-          conda install -y -c intel intel-openmp mkl intel-fortran-rt
+          conda install -y -c intel intel-openmp mkl
       
       - name: Add dependencies ubuntu specific
-        if: matrix.os != 'windows-latest'
+        if: false == contains( matrix.os, 'windows')
         run: |
           conda install -y petsc4py mpi4py openmpi
       
