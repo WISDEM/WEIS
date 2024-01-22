@@ -40,7 +40,7 @@ In addition, three external libraries are added:
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
- * _control_ contains the routines calling the [ROSCO_Toolbox](https://github.com/NREL/ROSCO_toolbox) and the routines supporting distributed aerodynamic control devices, such trailing edge flaps
+ * _control_ contains the routines calling [ROSCO](https://github.com/NREL/ROSCO) and the routines supporting distributed aerodynamic control devices, such trailing edge flaps
  * _gluecode_ contains the scripts glueing together all models and libraries
  * _multifidelity_ contains the codes to run multifidelity design optimizations
  * _optimization_drivers_ contains various optimization drivers
