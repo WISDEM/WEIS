@@ -22,8 +22,6 @@ import numpy as np
 of_path = shutil.which('openfast')
 bin_dir  = os.path.dirname(of_path)
 lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
-#openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
-#sys.path.append(openfast_pydir)
 
 mactype = platform.system().lower()
 if mactype in ["linux", "linux2"]:
@@ -187,7 +185,7 @@ class runFAST_pywrapper(object):
         # Make sure pCrunch is ready
         self.init_crunch()
             
-        if True: #not self.use_exe: # Use library
+        if not self.use_exe: # Use library
 
             FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
             
