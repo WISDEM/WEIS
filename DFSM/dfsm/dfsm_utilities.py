@@ -10,6 +10,10 @@ import fnmatch
 def valid_extension(fp):
     return any([fnmatch.fnmatch(fp,ext) for ext in ['*.outb']])
 
+def valid_extension_DISCON(fp):
+    return any([fnmatch.fnmatch(fp,ext) for ext in ['*.IN']])
+
+
 def calculate_MSE(x1,x2):
     
     '''
@@ -52,4 +56,54 @@ def calculate_SNE(x1,x2):
     SNE = np.sum(SNE)
     
     return SNE
+
+def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names,control_names,output_names, tmin = 0):
+
+    # initialize
+    OutData = {}
+
+    # add time
+    OutData['Time'] = time
+    
+    time_ind = (time > tmin)
+
+    nt = np.sum(time_ind)
+
+
+    # add states
+    for i,name_ in enumerate(state_names):
+
+        if name_[0] == 'd':
+            pass 
+        else:
+            OutData[name_] = states_dfsm[time_ind,i]
+
+    if not('PtfmPitch' in state_names):
+        OutData['PtfmPitch'] = np.zeros((nt,))
+
+    if not('PtfmSurge' in state_names):
+        OutData['PtfmSurge'] = np.zeros((nt,))
+
+    if not('PtfmSway' in state_names):
+        OutData['PtfmSway'] = np.zeros((nt,))
+
+    # add controls
+    for i,name_ in enumerate(control_names):
+
+        OutData[name_] = controls_dfsm[time_ind,i]
+
+    # add controls
+    if len(output_names) > 1:
+        for i,name_ in enumerate(output_names):
+
+            OutData[name_] = outputs_dfsm[time_ind,i]
+
+    for i_blade in range(2):
+        OutData[f'dBldPitch{i_blade+1}'] = np.zeros((nt,))
+
+    return OutData
+
+    
+
+
 

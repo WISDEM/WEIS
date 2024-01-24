@@ -152,7 +152,7 @@ def run_dtqp(dtqp_input):
     nl = len(dtqp_input['LinearTurbine'].u_h)
     
     # if nl ==1, run DTQPy_static else run DTQPy_oloc
-    if nl>1:
+    if nl > 1:
         T,U,X,Y = DTQPy_oloc(
             dtqp_input['LinearTurbine'],
             dtqp_input['dist'],
@@ -160,7 +160,7 @@ def run_dtqp(dtqp_input):
             dtqp_input['dtqp_options'],
             plot=dtqp_input['plot']
             )
-    elif nl ==1:
+    elif nl == 1:
         T,U,X,Y = DTQPy_static(
             dtqp_input['LinearTurbine'],
             dtqp_input['dist'],

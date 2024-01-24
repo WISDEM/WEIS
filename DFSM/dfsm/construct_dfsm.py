@@ -53,10 +53,10 @@ class DFSM:
         
     def construct_nonlinear(self,inputs,outputs,N_type,error_ind,n_inputs,n_outputs,ftype = 'deriv',scaling = True):
         
+        sm = []
+        
         if N_type == 'GPR':
             
-           
-            sm = []
             
             if scaling:
                 # scale inputs
@@ -165,7 +165,7 @@ class DFSM:
                     
                     if all(Aeig_real < 0):
                         print('')
-                        print('The least squares estimate is stable, using that as the linear model')
+                        print('The least squares estimate is stable, using this as the linear model')
                         print('')
                     else:
                         print('')

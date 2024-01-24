@@ -27,6 +27,7 @@ from ROSCO_toolbox import control_interface as ROSCO_ci
 from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
+from dfsm.dfsm_wrapper import dfsm_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml
@@ -598,149 +599,173 @@ class FASTLoadCases(ExplicitComponent):
         #  Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
         modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
         fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
-                
+
         if self.model_only == True:
             # Write input OF files, but do not run OF
             self.write_FAST(fst_vt, discrete_outputs)
         else:
-            # Write OF model and run
-            summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
-            # Set up linear turbine model
-            if modopt['Level2']['flag']:
-                try: 
-                    LinearTurbine = LinearTurbineModel(
-                    self.FAST_runDirectory,
-                    self.lin_case_name,
-                    nlin=modopt['Level2']['linearization']['NLinTimes'],
-                    reduceControls=True
-                    )
-                except FileNotFoundError as e:
-                    logger.warning('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
-                    return
-
-                # Save linearizations
-                logger.warning('Saving ABCD matrices!')
-                ABCD = {
-                    'sim_idx' : self.sim_idx,
-                    'A' : LinearTurbine.A_ops,
-                    'B' : LinearTurbine.B_ops,
-                    'C' : LinearTurbine.C_ops,
-                    'D' : LinearTurbine.D_ops,
-                    'x_ops':LinearTurbine.x_ops,
-                    'u_ops':LinearTurbine.u_ops,
-                    'y_ops':LinearTurbine.y_ops,
-                    'u_h':LinearTurbine.u_h,
-                    'omega_rpm' : LinearTurbine.omega_rpm,
-                    'DescCntrlInpt' : LinearTurbine.DescCntrlInpt,
-                    'DescStates' : LinearTurbine.DescStates,
-                    'DescOutput' : LinearTurbine.DescOutput,
-                    'StateDerivOrder' : LinearTurbine.StateDerivOrder,
-                    'ind_fast_inps' : LinearTurbine.ind_fast_inps,
-                    'ind_fast_outs' : LinearTurbine.ind_fast_outs,
-                    }
-                with open(self.lin_pkl_file_name, 'rb') as handle:
-                    ABCD_list = pickle.load(handle)
-
-                ABCD_list[self.sim_idx] = ABCD
-
-                with open(self.lin_pkl_file_name, 'wb') as handle:
-                    pickle.dump(ABCD_list, handle)
-                    
-                lin_files = glob.glob(os.path.join(self.FAST_runDirectory, '*.lin'))
+            if (modopt['DFSM']['flag']) and (modopt['DFSM']['general_options']['model_data_availability'] == 'offline'):
                 
-                dest = os.path.join(self.FAST_runDirectory, f'copied_lin_files_{self.lin_idx}')
-                Path(dest).mkdir(parents=True, exist_ok=True)
-                for file in lin_files:
-                    shutil.copy2(file, dest)
-                self.lin_idx += 1
+                # If the modeling data is available, then run DFSM without running OpenFAST
+                
+                summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator, TMax, TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, self.FAST_runDirectory, self.FAST_namingOut)
+                self.fst_vt = fst_vt
+                self.TMax = TMax 
+                self.TStart = TStart
 
-                # Shorten output names from linearization output to one like level3 openfast output
-                # This depends on how openfast sets up the linearization output names and may break if that is changed
-                OutList     = [out_name.split()[1][:-1] for out_name in LinearTurbine.DescOutput]
-                OutOps      = {}
-                for i_out, out in enumerate(OutList):
-                    OutOps[out] = LinearTurbine.y_ops[i_out,:]
+            elif modopt['Level3']['flag'] or modopt['Level2']['flag']: 
+                # Write OF model and run
+                summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
-                # save to yaml, might want in analysis outputs
-                FileTools.save_yaml(
-                    self.FAST_runDirectory,
-                    'OutOps.yaml',OutOps)
+                # Set up linear turbine model
+                if modopt['Level2']['flag']:
+                    try: 
+                        LinearTurbine = LinearTurbineModel(
+                        self.FAST_runDirectory,
+                        self.lin_case_name,
+                        nlin=modopt['Level2']['linearization']['NLinTimes'],
+                        reduceControls=True
+                        )
+                    except FileNotFoundError as e:
+                        logger.warning('FileNotFoundError: {} {}'.format(e.strerror, e.filename))
+                        return
 
-                # Set up Level 2 disturbance (simulation or DTQP)
-                if modopt['Level2']['simulation']['flag'] or modopt['Level2']['DTQP']['flag']:
-                    # Extract disturbance(s)
-                    level2_disturbance = []
-                    for case in case_list:
-                        ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
-                        ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
-                        u_h         = ts_file['rot_avg'][0,:]
-                        tt          = ts_file['t']
-                        level2_disturbance.append({'Time':tt, 'Wind': u_h})
+                    # Save linearizations
+                    logger.warning('Saving ABCD matrices!')
+                    ABCD = {
+                        'sim_idx' : self.sim_idx,
+                        'A' : LinearTurbine.A_ops,
+                        'B' : LinearTurbine.B_ops,
+                        'C' : LinearTurbine.C_ops,
+                        'D' : LinearTurbine.D_ops,
+                        'x_ops':LinearTurbine.x_ops,
+                        'u_ops':LinearTurbine.u_ops,
+                        'y_ops':LinearTurbine.y_ops,
+                        'u_h':LinearTurbine.u_h,
+                        'omega_rpm' : LinearTurbine.omega_rpm,
+                        'DescCntrlInpt' : LinearTurbine.DescCntrlInpt,
+                        'DescStates' : LinearTurbine.DescStates,
+                        'DescOutput' : LinearTurbine.DescOutput,
+                        'StateDerivOrder' : LinearTurbine.StateDerivOrder,
+                        'ind_fast_inps' : LinearTurbine.ind_fast_inps,
+                        'ind_fast_outs' : LinearTurbine.ind_fast_outs,
+                        }
+                    with open(self.lin_pkl_file_name, 'rb') as handle:
+                        ABCD_list = pickle.load(handle)
 
-                # Run linear simulation:
+                    ABCD_list[self.sim_idx] = ABCD
 
-                # Get case list, wind inputs should have already been generated
-                if modopt['Level2']['simulation']['flag']:
-            
-                    if modopt['Level2']['DTQP']['flag']:
-                        raise Exception('Only DTQP or simulation flag can be set to true in Level2 modeling options')
-
-                    # This is going to use the last discon_in file of the linearization set as the simulation file
-                    # Currently fine because openfast is executed (or not executed if overwrite=False) after the file writing
-                    if 'DLL_InFile' in self.fst_vt['ServoDyn']:     # if using file inputs
-                        discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
-                    else:       # if using fst_vt inputs from openfast_openmdao
-                        discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
-
-                    lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
-
-                    ss = {}
-                    et = {}
-                    dl = {}
-                    dam = {}
-                    ct = []
-                    for i_dist, dist in enumerate(level2_disturbance):
-                        sim_name = 'l2_sim_{}'.format(i_dist)
-                        controller_int = ROSCO_ci.ControllerInterface(
-                            lib_name,
-                            param_filename=discon_in_file,
-                            DT=1/80,        # modelling input?
-                            sim_name = os.path.join(self.FAST_runDirectory,sim_name)
-                            )
-
-                        l2_out, _, P_op = LinearTurbine.solve(dist,Plot=False,controller=controller_int)
-
-                        output = OpenFASTOutput.from_dict(l2_out, sim_name, magnitude_channels=self.magnitude_channels)
-
-                        _name, _ss, _et, _dl, _dam = self.la._process_output(output)
-                        ss[_name] = _ss
-                        et[_name] = _et
-                        dl[_name] = _dl
-                        dam[_name] = _dam
-                        ct.append(l2_out)
-
-                        output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
-
-                        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
+                    with open(self.lin_pkl_file_name, 'wb') as handle:
+                        pickle.dump(ABCD_list, handle)
                         
-                        # Overwrite timeseries with simulated data instead of saved linearization timeseries
-                        chan_time = ct
+                    lin_files = glob.glob(os.path.join(self.FAST_runDirectory, '*.lin'))
+                    
+                    dest = os.path.join(self.FAST_runDirectory, f'copied_lin_files_{self.lin_idx}')
+                    Path(dest).mkdir(parents=True, exist_ok=True)
+                    for file in lin_files:
+                        shutil.copy2(file, dest)
+                    self.lin_idx += 1
 
-                elif modopt['Level2']['DTQP']['flag']:
+                    # Shorten output names from linearization output to one like level3 openfast output
+                    # This depends on how openfast sets up the linearization output names and may break if that is changed
+                    OutList     = [out_name.split()[1][:-1] for out_name in LinearTurbine.DescOutput]
+                    OutOps      = {}
+                    for i_out, out in enumerate(OutList):
+                        OutOps[out] = LinearTurbine.y_ops[i_out,:]
 
-                    summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
-                        LinearTurbine, 
-                        level2_disturbance, 
-                        self.options['opt_options'], 
-                        self.options['modeling_options'], 
-                        self.fst_vt, 
-                        self.la, 
-                        self.magnitude_channels, 
-                        self.FAST_runDirectory
-                    )
+                    # save to yaml, might want in analysis outputs
+                    FileTools.save_yaml(
+                        self.FAST_runDirectory,
+                        'OutOps.yaml',OutOps)
 
-                    # TODO: pull chan_time out of here
+                    # Set up Level 2 disturbance (simulation or DTQP)
+                    if modopt['Level2']['simulation']['flag'] or modopt['Level2']['DTQP']['flag']:
+                        # Extract disturbance(s)
+                        level2_disturbance = []
+                        for case in case_list:
+                            ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
+                            ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
+                            u_h         = ts_file['rot_avg'][0,:]
+                            tt          = ts_file['t']
+                            level2_disturbance.append({'Time':tt, 'Wind': u_h})
+
+                    # Run linear simulation:
+
+                    # Get case list, wind inputs should have already been generated
+                    if modopt['Level2']['simulation']['flag']:
+                
+                        if modopt['Level2']['DTQP']['flag']:
+                            raise Exception('Only DTQP or simulation flag can be set to true in Level2 modeling options')
+
+                        # This is going to use the last discon_in file of the linearization set as the simulation file
+                        # Currently fine because openfast is executed (or not executed if overwrite=False) after the file writing
+                        if 'DLL_InFile' in self.fst_vt['ServoDyn']:     # if using file inputs
+                            discon_in_file = os.path.join(self.FAST_runDirectory, self.fst_vt['ServoDyn']['DLL_InFile'])
+                        else:       # if using fst_vt inputs from openfast_openmdao
+                            discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
+
+                        lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
+
+                        ss = {}
+                        et = {}
+                        dl = {}
+                        dam = {}
+                        ct = []
+                        for i_dist, dist in enumerate(level2_disturbance):
+                            sim_name = 'l2_sim_{}'.format(i_dist)
+                            controller_int = ROSCO_ci.ControllerInterface(
+                                lib_name,
+                                param_filename=discon_in_file,
+                                DT=1/80,        # modelling input?
+                                sim_name = os.path.join(self.FAST_runDirectory,sim_name)
+                                )
+
+                            l2_out, _, P_op = LinearTurbine.solve(dist,Plot=False,controller=controller_int)
+
+                            output = OpenFASTOutput.from_dict(l2_out, sim_name, magnitude_channels=self.magnitude_channels)
+
+                            _name, _ss, _et, _dl, _dam = self.la._process_output(output)
+                            ss[_name] = _ss
+                            et[_name] = _et
+                            dl[_name] = _dl
+                            dam[_name] = _dam
+                            ct.append(l2_out)
+
+                            output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
+
+                            summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
+                            
+                            # Overwrite timeseries with simulated data instead of saved linearization timeseries
+                            chan_time = ct
+
+                    elif modopt['Level2']['DTQP']['flag']:
+
+                        summary_stats, extreme_table, DELs, Damage, chan_time = dtqp_wrapper(
+                            LinearTurbine, 
+                            level2_disturbance, 
+                            self.options['opt_options'], 
+                            self.options['modeling_options'], 
+                            self.fst_vt, 
+                            self.la, 
+                            self.magnitude_channels, 
+                            self.FAST_runDirectory
+                        )
+
+                        # TODO: pull chan_time out of here
+
+                elif (modopt['DFSM']['flag']) and (modopt['DFSM']['model_data_availability'] == 'online'):
+
+                    # If DFSM, then extract options and call DFSM wrapper
+                    usecase_options = modopt['DFSM']['usecase_options']
+                    model_options = modopt['DFSM']['model_options']
+                    construction_options = modopt['DFSM']['construction_options']
+
+                    model_options['run_dir'] = modopt['General']['openfast_configuration']['OF_run_dir']
+
+
+                    summary_stats, extreme_table, DELs, Damage, chan_time = dfsm_wrapper(fst_vt, usecase_options, model_options, construction_options)
+
 
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
@@ -763,7 +788,7 @@ class FASTLoadCases(ExplicitComponent):
                 logger.warning('Failed to delete directory: %s'%self.FAST_runDirectory)
 
     def init_FAST_model(self):
-
+ 
         modopt = self.options['modeling_options']
         fst_vt = modopt['General']['openfast_configuration']['fst_vt']
 
@@ -2620,7 +2645,7 @@ class FASTLoadCases(ExplicitComponent):
         # Also work around NaNs
         DELs = DELs.fillna(0.0).multiply(ws_prob, axis=0).sum()
         damage = damage.fillna(0.0).multiply(ws_prob, axis=0).sum()
-        
+
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
@@ -2683,7 +2708,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # nacelle accelleration
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
-
+        
         # pitch travel and duty cycle
         if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
             tot_time = 0

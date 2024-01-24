@@ -9,21 +9,6 @@ def lotkavolterra(t, z, a, b, c, d,param):
     dx = [a*x - b*x*y, -c*y + d*x*y]
     return dx
 
-def vanderpol(t,x,u_fun,a):
-    
-    # control function
-    u = u_fun(t)
-    
-    # extract states
-    x0 = x[0];x1 = x[1]
-    
-    # ecaluate surrogate model
-    #dx = np.array([x1+np.sin(x1)*np.cos(x0),((1-(x0)**2))*x0*x1+u])
-    
-    dx = np.array([-x0+x1**2,x0-x1-x0**2+u])
-    
-
-    return dx
 
 if __name__ == '__main__':
     

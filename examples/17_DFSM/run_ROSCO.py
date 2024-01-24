@@ -24,83 +24,8 @@ from dfsm.construct_dfsm import DFSM
 from dfsm.evaluate_dfsm import evaluate_dfsm
 from scipy.integrate import solve_ivp
 
+from dfsm.dfsm_rosco_simulation import run_sim_ROSCO
 
-def run_sim_ROSCO(t,x,DFSM,param):
-    
-
-    
-    turbine_state = {}
-    dt = t - param['time'][-1]
-    param['dt'].append(dt)
-    param['t'].append(t)
-    
-    if dt == 0:
-        dt = 1e-4
-
-    # extract data from param dict
-    w = param['w_fun'](t)
-    rpm2RadSec = 2.0*(np.pi)/60.0
-    gen_speed_scaling = param['gen_speed_scaling']
-    
-    
-
-    # populate turbine state dictionary
-    if t == tf:
-        turbine_state['iStatus'] = -1
-    else:
-        turbine_state['iStatus'] = 1
-        
-    # first step
-    if  t == param['t0']:
-        turbine_state['bld_pitch'] = np.deg2rad(param['bp_init'])
-        turbine_state['gen_torque'] = param['gen_torque'][-1]*1000
-        
-    else:
-        turbine_state['bld_pitch'] = np.deg2rad(param['blade_pitch'][-1])
-        turbine_state['gen_torque'] = param['gen_torque'][-1]*1000
-    
-        
-    turbine_state['t'] = t
-    turbine_state['dt'] = np.abs(dt)
-    turbine_state['ws'] = w
-    turbine_state['num_blades'] = int(2)
-    turbine_state['gen_speed'] = x[DFSM.gen_speed_ind]*rpm2RadSec*gen_speed_scaling
-    turbine_state['gen_eff'] = param['VS_GenEff']/100
-    turbine_state['rot_speed'] = x[DFSM.gen_speed_ind]*rpm2RadSec*gen_speed_scaling/param['WE_GearboxRatio']
-    turbine_state['Yaw_fromNorth'] = 0
-    turbine_state['Y_MeasErr'] = 0
-    
-    if not(DFSM.FA_Acc_ind == None):
-        turbine_state['FA_Acc'] = x[DFSM.FA_Acc_ind]
-        
-    if not(DFSM.NacIMU_FA_Acc_ind == None):
-        turbine_state['NacIMU_FA_Acc'] = x[DFSM.NacIMU_FA_Acc_ind]
-    
-    # call ROSCO to get control values
-    gen_torque, bld_pitch, nac_yawrate = param['controller_interface'].call_controller(turbine_state)
-    
-    # convert to right units
-    gen_torque = gen_torque/1000
-    bld_pitch = np.rad2deg(bld_pitch)
-    
-    if 'wave_fun' in param:
-        wv = param['wave_fun'](t)
-        u = np.array([w,gen_torque,bld_pitch,wv])
-    else:
-        u = np.array([w,gen_torque,bld_pitch])
-    
-    # update param list
-    param['gen_torque'].append(gen_torque)
-    param['blade_pitch'].append(bld_pitch)
-    param['time'].append(t)
-    
-    # combine
-    inputs = np.hstack([u,x])
-    
-    # evaluate dfsm
-    dx = evaluate_dfsm(DFSM,inputs,'deriv')
-    
-    return dx
     
 
 if __name__ == '__main__':
@@ -211,7 +136,7 @@ if __name__ == '__main__':
     
     # split of training-testing data
     n_samples = 20
-    test_inds = [0]
+    test_inds = [5]
     
     # construct surrogate model
     dfsm_model = DFSM(sim_detail,n_samples = n_samples,L_type = 'LTI',N_type = None, train_split = 0.4)
@@ -221,11 +146,9 @@ if __name__ == '__main__':
     for idx,ind in enumerate(test_inds):
             
         test_data = dfsm_model.test_data[ind]
-        
-        bp_init = test_data['controls'][0,2]
         bp_of = test_data['controls'][:,2]
         gt_of = test_data['controls'][:,1]
-        bp_mean = np.mean(test_data['controls'][:,2])
+        
         
         nt = 1000
         wind_speed = test_data['controls'][:,0] # np.ones((nt,))*2.5 #test_data['controls'][:,0] #
@@ -237,7 +160,7 @@ if __name__ == '__main__':
         w_pp = CubicSpline(time_of, wind_speed)
         w_fun = lambda t: w_pp(t)
         w0 = w_fun(0)
-        bp0 = bp_mean
+        bp0 = 15
         gt0 = 8.3033588
         
         # wave_elev = test_data['controls'][:,3]
@@ -265,16 +188,14 @@ if __name__ == '__main__':
                      'gen_torque':[gt0],
                      't0':t1,
                      'tf':tf,
-                     'bp_init':bp_mean,
                      'w_fun':w_fun,
-                     't':[],
                      'gen_speed_scaling':1,
                      'controller_interface':ROSCO_ci.ControllerInterface(lib_name,param_filename=param_filename),
-                     #'wave_fun':wave_fun
+                     'wave_fun':None
                      }
             
             # solver method and options
-            solve_options = {'method':'RK45','rtol':1e-7,'atol':1e-7}
+            solve_options = {'method':'RK45','rtol':1e-4,'atol':1e-4}
             
             # start timer and solve for the states and controls
             t1 = timer.time()
@@ -334,7 +255,7 @@ if __name__ == '__main__':
                           'key_freq_name':[['2P'],['2P']],'key_freq_val':[[0.39],[0.39]]}]
                 
             #----------------------------------------------------------------------
-            save_flag = True;plot_path = 'plots_ROSCO_TR_final2'
+            save_flag = False;plot_path = 'plots_ROSCO_TR_final2'
 
             # plot properties
             markersize = 10

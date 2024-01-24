@@ -18,7 +18,7 @@ def odefun(t,x,u_fun,DFSM):
     
 
 
-def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True):
+def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True, solver_options = None):
     
     n_cases = len(test_ind)
     
@@ -58,13 +58,14 @@ def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True):
         u_fun = lambda t: u_pp(t)
         
         # solver method and options
-        solve_options = {'method':'RK45','rtol':1e-9,'atol':1e-9}
+        if solver_options == None:
+            solver_options = {'method':'RK45','rtol':1e-9,'atol':1e-9}
         
         
         if simulation_flag:
             
             t1 = timer.time()
-            sol =  solve_ivp(odefun,tspan,x0,method=solve_options['method'],args = (u_fun,DFSM),rtol = solve_options['rtol'],atol = solve_options['atol'])
+            sol =  solve_ivp(odefun,tspan,x0,method=solver_options['method'],args = (u_fun,DFSM),rtol = solver_options['rtol'],atol = solver_options['atol'])
             t2 = timer.time()
             
             # extract solution

@@ -44,7 +44,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         mod_opt_dir = os.path.split(self.modeling_options['fname_input_modeling'])[0]
 
         # Openfast
-        if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
+        if self.modeling_options['Level2']['flag'] or self.modeling_options['DFSM']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']

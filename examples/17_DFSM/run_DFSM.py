@@ -11,13 +11,13 @@ from mat4py import loadmat
 
 if __name__ == '__main__':
     
-     # get path to current directory
+    # get path to current directory
     mydir = os.path.dirname(os.path.realpath(__file__))
     
     # datapath
     region = 'R'
     datapath = mydir + os.sep + 'outputs' + os.sep + 'simple_sim_BR' #'MHK_'+region+'_10' #+ os.sep + 'openfast_runs/rank_0'
-    
+ 
     # get the entire path
     outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
     outfiles = sorted(outfiles)
@@ -77,15 +77,12 @@ if __name__ == '__main__':
     for isample in n_samples:
         
         # instantiate DFSM model and construct surrogate
-        dfsm_model = DFSM(sim_detail,n_samples = isample,L_type = 'LTI',N_type = 'GPR', train_split = 0.4)
+        dfsm_model = DFSM(sim_detail,n_samples = isample,L_type = 'LTI',N_type = None, train_split = 0.4)
         dfsm_model.construct_surrogate()
         
         inputs_sampled.append(dfsm_model.inputs_sampled)
         dx_sampled.append(dfsm_model.dx_sampled)
-        
-
-        
-                        
+                    
         # extract test data
         test_data = dfsm_model.test_data
         
@@ -109,6 +106,8 @@ if __name__ == '__main__':
         
         #calculate the time
         dfsm_time = calculate_time(dfsm_model)
+
+        print(X_list[0].keys())
 
         plt.show()
             

@@ -32,7 +32,7 @@ WISDEM:
         flag: False
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
-    flag: True
+    flag: False
     from_openfast: True
     openfast_file: MHK_RM1_Floating.fst
     openfast_dir: OpenFAST    #../01_aeroelasticse/OpenFAST_models/MHK_RM1/MHK_RM1_Floating
@@ -69,7 +69,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmSwDOF: False
         PtfmHvDOF: False
         PtfmRDOF : False
-        PtfmPDOF : True
+        PtfmPDOF : False
         PtfmYDOF : False
         # TwrNodes: 20
         # RotSpeed: 4
@@ -100,6 +100,34 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 
     # InflowWind:
     #     RefHt: 150.0
+
+DFSM:
+    flag: True
+    general_options:
+        model_data_availability: offline 
+        storage_type: outb
+        modeling_data_path: /home/athulsun/WEIS-AKS/examples/17_DFSM/outputs/simple_sim_TR/openfast_runs/rank_0
+        testing_data_availability: online
+        save_results: True
+    usecase_options:
+        usecase: simulation 
+        plot_flag: False
+        solver_options:
+            atol: 1e-4
+            rto: 1e-4
+    model_options: 
+        reqd_states: [GenSpeed]
+        state_props:
+            units: [rpm]
+            key_freq_name: [[2P]]
+            key_freq_val: [[0.39]]
+        reqd_controls: [RtVAvgxh,GenTq,BldPitch1]
+        reqd_outputs: [GenPwr,TwrBsMyt,'RtFldCp','RotSpeed']
+    construction_options: 
+        L_type: LTI
+        N_type: None
+        train_split: 0.4
+        
     
 ROSCO:
     flag: True
@@ -121,10 +149,13 @@ DLC_driver:
         wave_height50: 9.7
         wave_period50: 13.6
         current_50: 4.5
+        user_probability: 
+            speed: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6]
+            probability: [0.176358711313469, 0.225347242233877, 0.233415941444297, 0.231686934470636, 0.210362515128811, 0.213820529076134, 0.240331969338943, 0.228228920523313, 0.245518990259927, 0.245518990259927, 0.253011353812460, 0.275488444470059, 0.293354849864562, 0.327934989337790, 0.352717422626938, 0.374041841968762, 0.391908247363264, 0.447812806178319, 0.501412022361823, 0.577488329202929, 0.566537951703071, 0.586709699729122, 0.515244078151115, 0.510633392888018, 0.442625785257335, 0.383839548152844, 0.301423549074981, 0.262809059996542, 0.169442683418823, 0.0829923347357504, 0.0547518874992795, 0.0443778456573108, 0.0190190767102761, 0.00806869921042014, 0.00403434960521009, 0.00172900697366146]
     DLCs:
         - DLC: "1.1"
-          n_seeds: 1
-          current_speed: [2.5] #[0.5 , 0.75, 1.  , 1.25, 1.5 , 1.75, 2.  , 2.25, 2.5 , 2.75, 3.]
+          n_seeds: 2
+          current_speed: [2.0] #[0.5 , 0.75, 1.  , 1.25, 1.5 , 1.75, 2.  , 2.25, 2.5 , 2.75, 3.]
         #   current_std: [ 0.079,0.075,0.071,0.068,0.064] #[0.100,0.096,0.093,0.089,0.086,0.082,0.079,0.075,0.071,0.068,0.064,0.061,0.057,0.054,0.050]
         #   wave_height_NSS: [ 1.58,1.82,2.08,2.34,2.66] #[0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
         #   wave_period_NSS: [ 2.75,2.75,2.75,2.75,2.75] #[6.1,6.2,6.2,6.7,7.1] #[8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
@@ -133,7 +164,7 @@ DLC_driver:
         #   wave_height_SSS: [9.7,9.7,9.7,9.7,9.7] #[9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
         #   wave_period_SSS: [13.6,13.6,13.6,13.6,13.6] #[13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
           transient_time: 0.
-          analysis_time: 5. 
+          analysis_time: 700. 
           ws_bin_size: 0.25
           turbulent_wind:
             PLExp: 0

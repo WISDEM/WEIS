@@ -4,7 +4,6 @@ clear;
 
 dbg = ROSCOout2Matlab('/Users/dzalkind/Tools/ROSCO1/Examples/examples_out/26_MHK/5_low_ws_debug/RM1_MHK/power_curve/base/RM1_MHK_0.RO.dbg2');
 
-
 %% 
 
 
