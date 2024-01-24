@@ -29,9 +29,6 @@ class FAST_wrapper(object):
                 self.FAST_exe = self.FAST_exe[:-4]
         except Exception:
             pass
-        print(self.FAST_exe)
-        print(self.FAST_InputFile)
-        print(self.FAST_directory)
         exec_str = []
         exec_str.append(self.FAST_exe)
         exec_str.append(self.FAST_InputFile)
