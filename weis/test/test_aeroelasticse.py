@@ -5,23 +5,26 @@ Example script to compute the steady-state performance in OpenFAST
 """
 
 import os
-import platform
 import unittest
+import shutil
+#import pickle
 
 import numpy as np
 
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
+from rosco import discon_lib_path as path2dll
 
 this_file_dir = os.path.dirname(os.path.realpath(__file__))
 weis_dir = os.path.dirname(os.path.dirname(this_file_dir))
+of_dir = shutil.which('openfast')
 
 class TestGeneral(unittest.TestCase):
     def test_run(self):
         # Paths calling the standard modules of WEIS
         fastBatch = runFAST_pywrapper_batch()
-        fastBatch.FAST_exe          = os.path.join(weis_dir, 'local','bin','openfast')   # Path to executable
+        fastBatch.FAST_exe          = of_dir   # Path to executable
         fastBatch.FAST_directory    = os.path.join(weis_dir,'examples','01_aeroelasticse', 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
         fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
@@ -130,15 +133,6 @@ class TestGeneral(unittest.TestCase):
         ]:
             channels[var] = True
         fastBatch.channels = channels
-        
-        # Find the controller
-        if platform.system() == 'Windows':
-            sfx = 'dll'
-        elif platform.system() == 'Darwin':
-            sfx = 'dylib'
-        else:
-            sfx = 'so'
-        path2dll = os.path.join(weis_dir, 'local','lib','libdiscon.'+sfx)
 
         case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 
@@ -150,7 +144,7 @@ class TestGeneral(unittest.TestCase):
 
         # Run OpenFAST, either serially or sequentially
         _,_,_,_,out = fastBatch.run_serial()
-        import pickle
+
         # Update pkl file
         # with open('/Users/pbortolo/work/1_wisdem/WEIS/weis/test/general_regression_values.pkl', 'wb') as file:
         #     pickle.dump(out, file)

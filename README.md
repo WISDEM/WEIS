@@ -9,10 +9,6 @@ WEIS, Wind Energy with Integrated Servo-control, performs multifidelity co-desig
 
 Author: [NREL WISDEM & OpenFAST & Control Teams](mailto:systems.engineering@nrel.gov)
 
-## Version
-
-This software is a version 0.0.1.
-
 ## Documentation
 
 See local documentation in the `docs`-directory or access the online version at <https://weis.readthedocs.io/en/latest/>
@@ -25,18 +21,9 @@ WEIS integrates in a unique workflow four models:
 * [TurbSim](https://www.nrel.gov/docs/fy09osti/46198.pdf) is a stochastic, full-field, turbulent-wind simulator.
 * [ROSCO](https://github.com/NREL/ROSCO) provides an open, modular and fully adaptable baseline wind turbine controller to the scientific community.
 
-Software Model Versions:
-Software        |       Version
----             |       ---
-OpenFAST        |       3.5.0
-ROSCO           |       develop ([05d7b3b](https://github.com/NREL/ROSCO/commit/05d7b3b948c12ad40892941b6f92f3b08f5c6894))
-WISDEM          |       develop ([6f15fc9](https://github.com/WISDEM/WISDEM/commit/6f15fc9ed7f7fd1282d32af5518d2ae37dbc9466))
-
 In addition, three external libraries are added:
 * [pCrunch](https://github.com/NREL/pCrunch) is a collection of tools to ease the process of parsing large amounts of OpenFAST output data and conduct loads analysis.
 * [pyOptSparse](https://github.com/mdolab/pyoptsparse) is a framework for formulating and efficiently solving nonlinear constrained optimization problems.
-
-
 
 The core WEIS modules are:
  * _aeroelasticse_ is a wrapper to call [OpenFAST](https://github.com/OpenFAST/openfast)
@@ -62,26 +49,21 @@ The installation instructions below use the environment name, "weis-env," but an
         conda config --add channels conda-forge
         conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
-        sudo apt update                                  # (WSL only, assuming Ubuntu)
+        conda install -y petsc4py mpi4py                 # (Mac / Linux only)   
 
-2.  Use conda to add platform specific dependencies.
 
-        conda install -y petsc4py mpi4py                                     # (Mac / Linux only)   
-        conda install -y compilers                                           # (Mac only)   
-        sudo apt install gcc g++ gfortran libblas-dev liblapack-dev  -y      # (WSL only, assuming Ubuntu)
-
-3. Clone the repository and install the software
+2. Clone the repository and install the software
 
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
         git checkout branch_name                         # (Only if you want to switch branches, say "develop")
-        python setup.py develop                          # (The common "pip install -e ." will not work here)
+        pip install -e .
 
-4. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:
+3. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:
 
         module load comp-intel intel-mpi mkl
         module unload gcc
-        python setup.py develop
+        pip install -e .
 
 **NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
 

@@ -88,7 +88,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 2 
-    tuning_yaml: ../../ROSCO/Examples/Tune_Cases/IEA15MW.yaml
+    tuning_yaml: ../02_control_opt/IEA15MW-tuning.yaml
     zeta_pc: [1]
     omega_pc: [0.2]
     U_pc: [12]
