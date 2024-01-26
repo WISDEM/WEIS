@@ -136,12 +136,19 @@ if __name__ == '__main__':
     myobj = Schema2RST(combined_modeling_yaml)
     myobj.write_rst()
 
+    # copy file to docs
+    doc_file = os.path.join(docs_dir,os.path.split(combined_modeling_yaml)[-1].split('.')[0] + '.rst')
+    shutil.copyfile(myobj.fout,doc_file)
+
     # geometry
     geometry_schema = sch.get_geometry_schema()
     combined_geometry_yaml = os.path.join(this_dir,'weis_geometry_schema.yaml')
     write_yaml(geometry_schema,combined_geometry_yaml)
     myobj = Schema2RST(combined_geometry_yaml)
     myobj.write_rst()
+
+    doc_file = os.path.join(docs_dir,os.path.split(combined_geometry_yaml)[-1].split('.')[0] + '.rst')
+    shutil.copyfile(myobj.fout,doc_file)
 
     # analysis
     analysis_schema = sch.get_analysis_schema()
@@ -150,15 +157,8 @@ if __name__ == '__main__':
     myobj = Schema2RST(combined_analysis_yaml)
     myobj.write_rst()
 
-    # copy file to docs
-    doc_file = os.path.join(docs_dir,os.path.split(combined_modeling_yaml)[-1].split('.')[0] + '.rst')
-    shutil.copyfile(combined_modeling_yaml,doc_file)
-
-    doc_file = os.path.join(docs_dir,os.path.split(combined_geometry_yaml)[-1].split('.')[0] + '.rst')
-    shutil.copyfile(combined_geometry_yaml,doc_file)
-
     doc_file = os.path.join(docs_dir,os.path.split(combined_analysis_yaml)[-1].split('.')[0] + '.rst')
-    shutil.copyfile(combined_analysis_yaml,doc_file)
+    shutil.copyfile(myobj.fout,doc_file)
 
 
 
