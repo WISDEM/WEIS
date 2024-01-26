@@ -1,13 +1,15 @@
-import os, copy, operator
+import os
+import copy
+import operator
 import numpy as np
 import yaml
 from functools import reduce
 try:
     import ruamel_yaml as ry
-except:
+except Exception:
     try:
         import ruamel.yaml as ry
-    except:
+    except Exception:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
 
 """
@@ -31,7 +33,7 @@ def remove_numpy(fst_vt):
                 loop_dict(vartree[var], branch_i)
             else:
                 data_type = type(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
-                
+
                 if data_type in [np.int_, np.intc, np.intp, np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32, np.uint64]:
                     get_dict(fst_vt, branch_i[:-1])[branch_i[-1]] = int(get_dict(fst_vt, branch_i[:-1])[branch_i[-1]])
                 elif data_type in [np.single, np.double, np.longdouble, np.csingle, np.cdouble, np.float_, np.float16, np.float32, np.float64, np.complex64, np.complex128]:
@@ -177,7 +179,7 @@ def get_dlc_label(cases, include_seed=True):
                     label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s, Seed=%d"%(etm_U, etm_Seed)
                 else:
                     label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s"%(etm_U)
-            
+
             if DLC == 1.4:
                 ecd      = wind_fname.split('ECD')[-1].split('_')
                 ecd_dir  = ecd[1]
@@ -206,7 +208,7 @@ def get_dlc_label(cases, include_seed=True):
                 label_i = "DLC 6.3"
 
             labels.append(label_i)
-    
+
     # From yaml
     except KeyError:
         for idx in range(len(cases[('IEC','DLC')])):
@@ -231,7 +233,7 @@ def get_dlc_label(cases, include_seed=True):
                     label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s, Seed=%d"%(etm_U, etm_Seed)
                 else:
                     label_i = "DLC 1.3, Extreme Turbulence, U=%0.1f m/s"%(etm_U)
-            
+
             if DLC == 1.4:
                 ecd      = wind_fname.split('ECD')[-1].split('_')
                 ecd_dir  = ecd[1]
@@ -262,7 +264,7 @@ def get_dlc_label(cases, include_seed=True):
             labels.append(label_i)
 
 
-    return labels  
+    return labels
 
 def load_file_list(fname_flist):
     # load list of filenames from file

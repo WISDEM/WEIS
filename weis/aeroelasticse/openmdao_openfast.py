@@ -1,6 +1,12 @@
 import numpy as np
 import pandas as pd
-import os, shutil, sys, platform, copy, glob, logging
+import os
+import shutil
+import sys
+import copy
+import glob
+import logging
+import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
@@ -32,21 +38,12 @@ from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml
 
-logger = logging.getLogger("wisdem/weis")
-
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
-import pickle
-
 if MPI:
     from mpi4py   import MPI
 
-if platform.system() == 'Windows':
-    lib_ext = '.dll'
-elif platform.system() == 'Darwin':
-    lib_ext = '.dylib'
-else:
-    lib_ext = '.so'
+logger = logging.getLogger("wisdem/weis")
+
+weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -400,21 +397,21 @@ class FASTLoadCases(ExplicitComponent):
         # User-defined FAST library/executable
         if OFmgmt['FAST_exe'] != 'none':
             if os.path.isabs(OFmgmt['FAST_exe']):
-                self.FAST_exe = OFmgmt['FAST_exe']
+                self.FAST_exe_user = OFmgmt['FAST_exe']
             else:
-                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                self.FAST_exe_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
                                              OFmgmt['FAST_exe'])
         else:
-            self.FAST_exe = 'none'
+            self.FAST_exe_user = None
 
         if OFmgmt['FAST_lib'] != 'none':
             if os.path.isabs(OFmgmt['FAST_lib']):
-                self.FAST_lib = OFmgmt['FAST_lib']
+                self.FAST_lib_user = OFmgmt['FAST_lib']
             else:
-                self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                self.FAST_lib_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
                                              OFmgmt['FAST_lib'])
         else:
-            self.FAST_lib = 'none'
+            self.FAST_lib_user = None
 
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
@@ -694,7 +691,7 @@ class FASTLoadCases(ExplicitComponent):
                     else:       # if using fst_vt inputs from openfast_openmdao
                         discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
 
-                    lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
+                    lib_name = modopt['General']['openfast_configuration']['path2dll']
 
                     ss = {}
                     et = {}
@@ -1956,7 +1953,7 @@ class FASTLoadCases(ExplicitComponent):
             # Use openfast binary until library works
             fastBatch                           = LinearFAST(**linearization_options)
             fastBatch.FAST_runDirectory         = self.FAST_runDirectory
-            fastBatch.FAST_lib                  = None      # linearization not working with library
+            fastBatch.use_exe                   = True      # linearization not working with library
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
 
@@ -1971,19 +1968,19 @@ class FASTLoadCases(ExplicitComponent):
             fastBatch.FAST_runDirectory         = self.FAST_runDirectory
             fastBatch.case_list                 = case_list
             fastBatch.case_name_list            = case_name     
+            fastBatch.use_exe                   = modopt['General']['openfast_configuration']['use_exe']
         
         fastBatch.channels          = channels
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
         fastBatch.keep_time         = modopt['General']['openfast_configuration']['keep_time']
         fastBatch.post              = FAST_IO_timeseries
-        fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
         fastBatch.fail_value        = modopt['General']['openfast_configuration']['fail_value']
-        if self.FAST_exe != 'none':
-            fastBatch.FAST_exe          = self.FAST_exe
-        if self.FAST_lib != 'none':
-            fastBatch.FAST_lib          = self.FAST_lib
+        if self.FAST_exe_user is not None:
+            fastBatch.FAST_exe      = self.FAST_exe_user
+        if self.FAST_lib_user is not None:
+            fastBatch.FAST_lib      = self.FAST_lib_user
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 

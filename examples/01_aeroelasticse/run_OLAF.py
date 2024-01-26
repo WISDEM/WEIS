@@ -8,8 +8,9 @@ Example script to compute the steady-state performance in OpenFAST
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.utils import OLAFParams
+from rosco import discon_lib_path as path2dll
 import numpy as np
-import os, platform
+import os
 
 # Paths calling the standard modules of WEIS
 fastBatch = runFAST_pywrapper_batch()
@@ -79,13 +80,6 @@ case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
 case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1} 
 
 # Find the controller
-if platform.system() == 'Windows':
-    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.dll')
-elif platform.system() == 'Darwin':
-    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.dylib')
-else:
-    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.so')
-
 case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
 
 # Generate the matrix of cases
