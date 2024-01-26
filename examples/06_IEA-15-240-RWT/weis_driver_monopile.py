@@ -7,8 +7,7 @@ from wisdem.commonse.mpi_tools  import MPI
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-wisdem_examples        = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "WISDEM", "examples")
-fname_wt_input         = os.path.realpath(os.path.join(wisdem_examples,"09_floating/IEA-15-240-RWT_VolturnUS-S.yaml"))
+fname_wt_input         = run_dir + "IEA-15-240-RWT_Monopile.yaml" 
 fname_modeling_options = run_dir + "modeling_options.yaml"
 fname_analysis_options = run_dir + "analysis_options.yaml"
 

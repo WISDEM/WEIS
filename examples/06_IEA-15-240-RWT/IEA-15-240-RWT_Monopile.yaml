@@ -567,7 +567,7 @@ components:
                     values: [15.0, 28.0, 41.0, 54.0, 67.0, 80.0, 93.0, 106.0, 119.0, 132.0, 144.386]
             outer_diameter:
                 grid: [0.0, 0.10047454902385111, 0.20094909804770222, 0.30142364707155334, 0.40189819609540445, 0.5023727451192556, 0.6028472941431067, 0.7033218431669578, 0.8037963921908089, 0.90427094121466, 1.0]
-                values: [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 6.5]
+                values: [10.0, 10.0, 9.926, 9.443, 8.833, 8.151, 7.39, 6.909, 6.748, 6.572, 6.5]
             drag_coefficient:
                 grid: [0.0, 1.0]
                 values: [0.5, 0.5]
@@ -579,290 +579,37 @@ components:
                   material: steel
                   thickness:
                       grid: [0.0, 0.10047454902385111, 0.20094909804770222, 0.30142364707155334, 0.40189819609540445, 0.5023727451192556, 0.6028472941431067, 0.7033218431669578, 0.8037963921908089, 0.90427094121466, 1.0]
-                      values: [0.09, 0.0870568244887821, 0.06969791129654272, 0.06659467020278927, 0.048969783194233195, 0.04562355995431616, 0.028128174258004363, 0.025616868141627953, 0.009881156462835017, 0.009941082963793929, 0.005931142626464429]
-    floating_platform:
-        transition_piece_mass: 100e3
-        transition_piece_cost: 100e3
-        joints:
-            - name: main_keel
-              location: [0.0, 0.0, -20.0]
-
-            - name: main_freeboard
-              location: [0.0, 0.0, 15.0]
-              transition: True
-
-            - name: col1_keel
-              location: [51.75, 3.14159265, -20.0] #3.14159265 = 180deg
-              cylindrical: True
-
-            - name: col1_freeboard
-              location: [51.75, 3.14159265, 15.0] # 3.14159265 = 180deg
-              cylindrical: True
-
-            - name: col2_keel
-              location: [51.75, 1.0471976, -20.0] #1.0471975 = 60 deg
-              cylindrical: True
-
-            - name: col2_freeboard
-              location: [51.75, 1.0471975, 15.0]
-              cylindrical: True
-
-            - name: col3_keel
-              location: [51.75, -1.0471976, -20.0] #-1.0471975 = -60 deg
-              cylindrical: True
-
-            - name: col3_freeboard
-              location: [51.75, -1.0471976, 15.0] #-1.0471975 = -60 deg
-              cylindrical: True
-
-            - name: anchor1
-              location: [837.8, 3.14159265, -200.0]
-              cylindrical: True
-
-            - name: anchor2
-              location: [837.8, 1.0471976, -200.0]  # 1.0471975 = 60 deg
-              cylindrical: True
-
-            - name: anchor3
-              location: [837.8, -1.0471976, -200.0]  #-1.0471975 = -60 deg
-              cylindrical: True
-
-        members:
-            - name: main_column
-              joint1: main_keel
-              joint2: main_freeboard
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape:
-                shape: circular
-                outer_diameter:
-                    grid: [0.0, 1.0]
-                    values: [10.0, 10.0]
-              internal_structure:
-                layers:
-                    - name: main_twall
-                      material: steel
-                      thickness:
-                        grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
-                bulkhead:
-                    material: steel
-                    thickness:
-                        grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
-              axial_joints:
-                - name: main_upper_pontoon
-                  grid: 0.987
-
-                - name: main_lower_pontoon
-                  grid: 0.1
-
-            - name: column1
-              joint1: col1_keel
-              joint2: col1_freeboard
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: &col_out
-                shape: circular
-                outer_diameter:
-                    grid: [0.0, 1.0]
-                    values: [12.5, 12.5]
-              internal_structure: &col_int
-                layers:
-                    - name: col_twall
-                      material: steel
-                      thickness:
-                        grid: [0.0, 1.0]
-                        values: [0.05, 0.05]
-                bulkhead:
-                    material: steel
-                    thickness:
-                        grid: [0.0, 0.05, 0.2, 1.0]
-                        values: [0.05, 0.05, 0.05, 0.05]
-                ballasts:
-                    - variable_flag: False
-                      material: slurry
-                      volume: 169.333333
-                      grid: [0.0, 0.05]
-                    - variable_flag: True
-                      grid: [0.05, 0.2]
-              axial_joints:
-                - name: col1_upper_pontoon
-                  grid: 0.987
-
-                - name: col1_lower_pontoon
-                  grid: 0.1
-
-                - name: col1_fairlead
-                  grid: 0.1714
-
-            - name: column2
-              joint1: col2_keel
-              joint2: col2_freeboard
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: *col_out
-              internal_structure: *col_int
-              axial_joints:
-                - name: col2_upper_pontoon
-                  grid: 0.987
-
-                - name: col2_lower_pontoon
-                  grid: 0.1
-
-                - name: col2_fairlead
-                  grid: 0.1714
-
-            - name: column3
-              joint1: col3_keel
-              joint2: col3_freeboard
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: *col_out
-              internal_structure: *col_int
-              axial_joints:
-                - name: col3_upper_pontoon
-                  grid: 0.987
-
-                - name: col3_lower_pontoon
-                  grid: 0.1
-
-                - name: col3_fairlead
-                  grid: 0.1714
-
-
-            - name: Y_pontoon_upper1
-              joint1: main_upper_pontoon
-              joint2: col1_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: &pontup_out
-                shape: circular
-                outer_diameter:
-                    grid: [0.0, 1.0]
-                    values: [0.91, 0.91]
-              internal_structure: &pontup_int
-                layers:
-                    - name: pontoon_upper_twall
-                      material: steel
-                      thickness:
-                        grid: [0.0, 1.0]
-                        values: [0.02, 0.02]
-
-            - name: Y_pontoon_upper2
-              joint1: main_upper_pontoon
-              joint2: col2_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: *pontup_out
-              internal_structure: *pontup_int
-
-            - name: Y_pontoon_upper3
-              joint1: main_upper_pontoon
-              joint2: col3_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: *pontup_out
-              internal_structure: *pontup_int
-
-            - name: Y_pontoon_lower1
-              joint1: main_lower_pontoon
-              joint2: col1_lower_pontoon
-              Ca: 1.0
-              Cd: 0.8
-              outer_shape: &pontlow_out
-                shape: circular
-                outer_diameter:
-                    grid: [0.0, 1.0]
-                    values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
-                #shape: polygonal
-                #side_lengths: [12.5, 7.0, 12.5, 7.0] # rectangle dimensions
-                #angles: [1.5707963267948966, 1.5707963267948966, 1.5707963267948966, 1.5707963267948966] # rectangle angles
-                #rotation: 0.0
-              internal_structure: &pontlow_int
-                  # Probably needs longitudinal stiffeners
-                layers:
-                    - name: pontoon_lower_twall
-                      material: steel
-                      thickness:
-                        grid: [0.0, 1.0]
-                        values: [0.04, 0.04]
-                ballasts:
-                    - variable_flag: True
-                      grid: [0.0, 1.0]
-
-            - name: Y_pontoon_lower2
-              joint1: main_lower_pontoon
-              joint2: col2_lower_pontoon
-              outer_shape: *pontlow_out
-              internal_structure: *pontlow_int
-              Ca: 1.0
-              Cd: 0.8
-
-            - name: Y_pontoon_lower3
-              joint1: main_lower_pontoon
-              joint2: col3_lower_pontoon
-              outer_shape: *pontlow_out
-              internal_structure: *pontlow_int
-              Ca: 1.0
-              Cd: 0.8
-    mooring:
-        nodes:
-            - name: line1_anchor
-              node_type: fixed
-              joint: anchor1
-              anchor_type: drag_embedment
-            - name: line2_anchor
-              node_type: fixed
-              joint: anchor2
-              anchor_type: drag_embedment
-            - name: line3_anchor
-              node_type: fixed
-              joint: anchor3
-              anchor_type: drag_embedment
-
-            - name: line1_vessel
-              node_type: vessel
-              joint: col1_fairlead
-              fairlead_type: rigid
-            - name: line2_vessel
-              node_type: vessel
-              joint: col2_fairlead
-              fairlead_type: rigid
-            - name: line3_vessel
-              joint: col3_fairlead
-              node_type: vessel
-              fairlead_type: rigid
-
-        lines:
-            - name: line1
-              node1: line1_anchor
-              node2: line1_vessel
-              line_type: main
-              unstretched_length: 850.0
-            - name: line2
-              node1: line2_anchor
-              node2: line2_vessel
-              line_type: main
-              unstretched_length: 850.0
-            - name: line3
-              node1: line3_anchor
-              node2: line3_vessel
-              line_type: main
-              unstretched_length: 850.0
-
-        line_types:
-            - name: main
-              diameter: 0.185
-              type: chain
-              transverse_added_mass: 1.0
-              tangential_added_mass: 0.0
-              transverse_drag: 1.6
-              tangential_drag: 0.1
-
-        anchor_types:
-            - name: drag_embedment
-              type: drag_embedment
+                      values: [0.039496, 0.039496, 0.033416, 0.034142, 0.030242, 0.031174, 0.027028, 0.027398, 0.02062, 0.021032, 0.026964]
+    monopile:
+        transition_piece_mass: 100000.0
+        outer_shape_bem:
+            reference_axis: &id004
+                x:
+                    grid: [0.0, 0.5, 0.6111111111111112, 0.7222222222222222, 0.8333333333333334, 0.9444444444444444, 1.0]
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                y:
+                    grid: [0.0, 0.5, 0.6111111111111112, 0.7222222222222222, 0.8333333333333334, 0.9444444444444444, 1.0]
+                    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                z:
+                    grid: [0.0, 0.5, 0.6111111111111112, 0.7222222222222222, 0.8333333333333334, 0.9444444444444444, 1.0]
+                    values: [-75.0, -30.0, -20.0, -10.0, 0.0, 10.0, 15.0]
+            outer_diameter:
+                grid: [0.0, 0.5, 0.6111111111111112, 0.7222222222222222, 0.8333333333333334, 0.9444444444444444, 1.0]
+                values: [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+            drag_coefficient:
+                grid: [0.0, 1.0]
+                values: [0.5, 0.5]
+        internal_structure_2d_fem:
+            outfitting_factor: 1.07
+            reference_axis: *id004
+            layers:
+               -  name: monopile_wall
+                  material: steel
+                  thickness:
+                      grid: [0.0, 0.5, 0.6111111111111112, 0.7222222222222222, 0.8333333333333334, 0.9444444444444444, 1.0]
+                      values: [0.055341, 0.055341, 0.055341, 0.047677, 0.047357, 0.039697, 0.042419]
+        transition_piece_cost: 0.0
+        gravity_foundation_mass: 0.0
 airfoils:
    -  name: circular
       coordinates:
@@ -1224,18 +971,6 @@ materials:
       S: 0.31e+006
       G: 1520000.0
       unit_cost: 9.0
-   -  name: slurry
-      description: fixed/permanent ballast
-      E: 1.0 # compliant
-      nu: 0.3  #Place holder, currently not used
-      G: 1.0  # compliant
-      Xt: 0  #Place holder, currently not used
-      Xc: 0  #Place holder, currently not used
-      S: 0  #Place holder, currently not used
-      rho: 5000.
-      alpha: 0.0
-      unit_cost: 1.0
-      orth: 0.0
 
 control:
     supervisory:
@@ -1273,7 +1008,7 @@ environment:
     water_dyn_viscosity: 1.3351e-3
     soil_shear_modulus: 140e6
     soil_poisson: 0.4
-    water_depth: 200.0
+    water_depth: 30.0
     significant_wave_height: 4.52
     significant_wave_period: 9.45
 bos:
