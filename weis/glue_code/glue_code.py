@@ -547,6 +547,7 @@ class WindPark(om.Group):
                 self.connect('rotorse.rp.powercurve.pitch',            'aeroelastic.pitch')
                 self.connect('rotorse.rp.powercurve.V_R25',            'aeroelastic.V_R25')
                 self.connect('rotorse.rp.powercurve.rated_V',          'aeroelastic.Vrated')
+                self.connect('rotorse.rp.powercurve.Ct_aero', 'aeroelastic.Ct_aero')
                 self.connect('rotorse.rp.gust.V_gust',                 'aeroelastic.Vgust')
                 self.connect('rotorse.wt_class.V_extreme1',             'aeroelastic.V_extreme1')
                 self.connect('rotorse.wt_class.V_extreme50',            'aeroelastic.V_extreme50')
