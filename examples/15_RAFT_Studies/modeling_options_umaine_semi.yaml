@@ -82,7 +82,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 2 
-    tuning_yaml: ../../ROSCO/Examples/Tune_Cases/IEA15MW.yaml
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
     zeta_pc: [1]
     omega_pc: [0.2]
     U_pc: [12]

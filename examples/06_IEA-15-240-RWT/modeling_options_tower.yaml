@@ -82,7 +82,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
         # WaveMod: 0
-        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 Level1:
     flag: False
@@ -96,7 +96,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 2 
-    tuning_yaml: ../02_control_opt/IEA15MW-tuning.yaml
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile/IEA15MW-Monopile.yaml
     zeta_pc: [1,1]
     omega_pc: [0.2,0.2]
     U_pc: [12,18]
