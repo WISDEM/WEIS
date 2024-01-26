@@ -777,7 +777,7 @@ properties:
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
                         type: integer
-                        enum: [0, 1, 2, 3]
+                        enum: [0, 1, 2, 3, 11, 12, 13]
                         default: 1
                         description: Type of wake/induction model (switch) {0=none, 1=BEMT, 3=OLAF}
                     AFAeroMod:
@@ -2799,6 +2799,10 @@ properties:
                 type: boolean
                 default: False
                 description: Whether we derive OpenFAST model from an existing model and ignore WISDEM
+            regulation_trajectory: 
+                type: string
+                default: unused
+                description: Only used if from_openfast is set to True. Path to yaml file containing output data of the turbine tabulated against wind speed (rotor speed, blade pitch angle, aero thrust coefficient) needed to initialize the OpenFAST model through
             openfast_file: 
                 type: string
                 default: unused

@@ -28,6 +28,7 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
+    regulation_trajectory: IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     AeroDyn:

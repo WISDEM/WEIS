@@ -246,9 +246,10 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
             # Initial conditions
-            self.add_input('U',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
-            self.add_input('Omega',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
-            self.add_input('pitch',    val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
+            self.add_input('U', val=np.zeros(n_pc), units='m/s', desc='wind speeds')
+            self.add_input('Omega', val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
+            self.add_input('pitch', val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
+            self.add_input("Ct_aero", val=np.zeros(n_pc), desc="rotor aerodynamic thrust coefficient")
 
             # Cp-Ct-Cq surfaces
             self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
@@ -982,7 +983,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
         fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
         fst_vt['AeroDyn15']['TwrCb']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrCb']
-        fst_vt['AeroDyn15']['tau1_const'] = 0.24 * float(inputs['Rtip']) # estimated using a=0.3 and U0=7.5
 
         z_tow = twr_elev
         z_sec, _ = util.nodal2sectional(z_tow)
@@ -1765,6 +1765,7 @@ class FASTLoadCases(ExplicitComponent):
         DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
         aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
+        tau1_const = np.zeros(dlc_generator.n_cases)
         dt_fvw = np.zeros(dlc_generator.n_cases)
         tMin = np.zeros(dlc_generator.n_cases)
         nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
@@ -1842,21 +1843,36 @@ class FASTLoadCases(ExplicitComponent):
         for i_case in range(dlc_generator.n_cases):
             if 'operating' in dlc_generator.cases[i_case].turbine_status:
                 # We have initial conditions from WISDEM
-                if ('U' in inputs) and ('Omega' in inputs) and ('pitch' in inputs):
-                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
-                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
+                if not self.options['modeling_options']['Level3']['from_openfast']:
+                    U = inputs['U']
+                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U, inputs['Omega'])
+                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U, inputs['pitch'])
+                    Ct_aero = inputs['Ct_aero']
                 else:
-                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi / fst_vt['ElastoDyn']['GBRatio']
-                    pitch_initial[i_case]       = 15
-
+                    try:
+                        reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
+                        data = load_yaml(reg_traj)
+                        cases = data['cases']
+                        n_ws = len(cases)
+                        U = [case["configuration"]["wind_speed"] for case in cases]
+                        pitch_initial = [case["configuration"]["pitch"] for case in cases]
+                        rot_speed_initial = [case["configuration"]["rotor_speed"] for case in cases]
+                        Ct_aero = [case["outputs"]["integrated"]["ct"] for case in cases]
+                    except:
+                        raise Exception("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
+                        " This file either does not exist or is not formatted correctly. Check WEIS example 02 for a template file")
+                tau1_const_interp = np.zeros_like(Ct_aero)
+                for i in range(len(Ct_aero)):
+                    a = 1. / 2. * (1. - np.sqrt(1. - Ct_aero[i]))
+                    tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U[i]
                 if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
                     shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
             else:
-                rot_speed_initial[i_case]   = 0.
-                pitch_initial[i_case]       = 90.
-                shutdown_time[i_case]      = 0
-                aero_mod[i_case]            = 1
-                wake_mod[i_case]            = 0
+                rot_speed_initial[i_case] = 0.
+                pitch_initial[i_case] = 90.
+                shutdown_time[i_case] = 0
+                aero_mod[i_case] = 1
+                wake_mod[i_case] = 0
 
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
@@ -1874,6 +1890,7 @@ class FASTLoadCases(ExplicitComponent):
             mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
             yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
             azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
+            tau1_const[i_case] = np.interp(mean_wind_speed[i_case], U, tau1_const_interp)
 
             # OLAF data
             if wake_mod[i_case] == 3:
@@ -1920,6 +1937,7 @@ class FASTLoadCases(ExplicitComponent):
         # Inputs to AeroDyn (parking)
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+        case_inputs[("AeroDyn15","tau1_const")] = {'vals':tau1_const, 'group':1}
 
         # Inputs to OLAF
         case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
