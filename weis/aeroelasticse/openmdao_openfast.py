@@ -1840,31 +1840,42 @@ class FASTLoadCases(ExplicitComponent):
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
+        if self.options['modeling_options']['Level3']['from_openfast']:
+            try:
+                reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
+                data = load_yaml(reg_traj)
+                cases = data['cases']
+                n_ws = len(cases)
+                U_interp = [case["configuration"]["wind_speed"] for case in cases]
+                pitch_interp = [case["configuration"]["pitch"] for case in cases]
+                rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
+                Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
+            except:
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
+                        " This file either does not exist or is not formatted correctly. Check WEIS example 02 for a template file")
+                U_interp = np.arange(cut_in, cut_out)
+                pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
+                rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
+                Ct_aero_interp = np.ones_like(U_interp) * 0.7 # fixed initial ct at 0.7
+        else:
+            U_interp = inputs['U']
+            pitch_interp = inputs['pitch']
+            rot_speed_interp = inputs['Omega']
+            Ct_aero_interp = inputs['Ct_aero']
+        
+        tau1_const_interp = np.zeros_like(Ct_aero_interp)
+        for i in range(len(Ct_aero_interp)):
+            a = 1. / 2. * (1. - np.sqrt(1. - Ct_aero_interp[i]))
+            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
+
+
         for i_case in range(dlc_generator.n_cases):
             if 'operating' in dlc_generator.cases[i_case].turbine_status:
                 # We have initial conditions from WISDEM
-                if not self.options['modeling_options']['Level3']['from_openfast']:
-                    U = inputs['U']
-                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U, inputs['Omega'])
-                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U, inputs['pitch'])
-                    Ct_aero = inputs['Ct_aero']
-                else:
-                    try:
-                        reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
-                        data = load_yaml(reg_traj)
-                        cases = data['cases']
-                        n_ws = len(cases)
-                        U = [case["configuration"]["wind_speed"] for case in cases]
-                        pitch_initial = [case["configuration"]["pitch"] for case in cases]
-                        rot_speed_initial = [case["configuration"]["rotor_speed"] for case in cases]
-                        Ct_aero = [case["outputs"]["integrated"]["ct"] for case in cases]
-                    except:
-                        raise Exception("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
-                        " This file either does not exist or is not formatted correctly. Check WEIS example 02 for a template file")
-                tau1_const_interp = np.zeros_like(Ct_aero)
-                for i in range(len(Ct_aero)):
-                    a = 1. / 2. * (1. - np.sqrt(1. - Ct_aero[i]))
-                    tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U[i]
+                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, rot_speed_interp)
+                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, pitch_interp)
+                tau1_const[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, tau1_const_interp)
+                
                 if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
                     shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
             else:
@@ -1873,6 +1884,7 @@ class FASTLoadCases(ExplicitComponent):
                 shutdown_time[i_case] = 0
                 aero_mod[i_case] = 1
                 wake_mod[i_case] = 0
+                tau1_const[i_case] = 0.
 
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
@@ -1890,7 +1902,6 @@ class FASTLoadCases(ExplicitComponent):
             mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
             yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
             azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
-            tau1_const[i_case] = np.interp(mean_wind_speed[i_case], U, tau1_const_interp)
 
             # OLAF data
             if wake_mod[i_case] == 3:
