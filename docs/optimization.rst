@@ -2,26 +2,26 @@ Optimization in WEIS
 ====================
 
 WEIS is platform for multidisciplinary analysis and optimization (MDAO),
-based on the ``OpenMDAO`` toolset. WEIS leverages the `optimization
+based on the OpenMDAO toolset. WEIS leverages the `optimization
 capabilities of
-``OpenMDAO`` <https://openmdao.org/newdocs/versions/latest/features/building_blocks/drivers/index.html>`__
+OpenMDAO <https://openmdao.org/newdocs/versions/latest/features/building_blocks/drivers/index.html>`_
 and `extensions in
-``WISDEM`` <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driver>`__
+WISDEM <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driver>`_
 to perform multidisciplinary and multifidelity wind turbine analyses
 including controls.
 
 Available Optimization Solvers
 ------------------------------
 
-from ``ScipyOptimizeDriver`` via ``OpenMDAO``
+from ScipyOptimizeDriver via OpenMDAO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``OpenMDAO`` includes access to a handful of methods from the python
-``scipy`` minimization toolbox:
+OpenMDAO includes access to a handful of methods from the python
+scipy minimization toolbox:
 
 -  “SLSQP”
 
-   -  *Sequential Least Squares Quadratic Programming*
+   -  Sequential Least Squares Quadratic Programming
    -  sequential estimation of objective function by quadratic functions
    -  application of constraints by linear approximation
    -  ``scipy.optimize.minimize`` implementation
@@ -33,41 +33,45 @@ from ``ScipyOptimizeDriver`` via ``OpenMDAO``
 
 -  “COBYLA”
 
-   -  *Constrained Optimization BY Linear Approximation*
+   -  Constrained Optimization BY Linear Approximation
    -  sequential estimation of objective function by linear functions
    -  application of constraints by linear approximation
    -  derivative free estimation
    -  ``scipy.optimize.minimize`` implementation
 
-from ``PyOptSparseDriver`` via ``OpenMDAO``
+from PyOptSparseDriver via OpenMDAO
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``OpenMDAO`` includes access to a handful of methods from the python
-``scipy`` minimization toolbox:
+OpenMDAO includes access to a handful of methods from the python
+scipy minimization toolbox:
 
--  “SNOPT” *(requires inclusion of proprietary SNOPT software in
-   pyoptsparse install)*
+-  “SNOPT”
 
-   -  …
+   -  `Sparse Nonlinear OPTimizer <https://web.stanford.edu/group/SOL/software/snoptHelp/About_SNOPT.htm>`__
+   -  local quadratic subproblems
+   -  constraints by linear approximation
+   -  implements system sparsity for efficiency on high-dimensional problems
+   -  linesearch on subproblem for performance
+   -  *(requires inclusion of proprietary SNOPT software in pyoptsparse install)*
 
 -  “CONMIN”
 
-   -  *CONstrained function MINimization*
+   -  CONstrained function MINimization
    -  method of feasible directions: chooses direction & step to
       minimize function while satisfying constraints
 
 -  “NSGA2”
 
-   -  *Non-dominating Sorting Genetic Algorithm 2*
+   -  Non-dominating Sorting Genetic Algorithm 2
    -  genetic global optimization algorithm
 
-from ``NLOpt`` via ``WISDEM``
+from NLOpt via WISDEM
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``WISDEM`` has wrapped the ``NLOpt`` package for use in the OpenMDAO
-toolset. ``NLOpt`` prefixes all solvers with a two-letter code; the
-first letter indicates either a *Global* or *Local* method, and the
-second letter indicates “No-derivative” or “Derivative-based”
+WISDEM has wrapped the NLOpt package for use in the OpenMDAO
+toolset. NLOpt prefixes all solvers with a two-letter code; the
+first letter indicates either a "G"lobal or "L"ocal method, and the
+second letter indicates “N"o-derivative or “D"erivative-based
 optimizers.
 
 -  “GN_DIRECT”
@@ -100,7 +104,7 @@ optimizers.
    -  sequential estimation of objective function by linear functions
    -  application of constraints by linear approximation
    -  derivative free estimation
-   -  ``NLOpt`` implementation
+   -  NLOpt implementation
 
 -  “LD_MMA”
 
@@ -122,7 +126,23 @@ optimizers.
       Programming <https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/#slsqp>`__
    -  sequential estimation of objective function by quadratic functions
    -  application of constraints by linear approximation
-   -  ``NLOpt`` implementation
+   -  NLOpt implementation
+
+Comparison of Optimizers
+------------------------------
+
+===========   ===========  ======   ===========   ==========   ===========
+
+Solver        Toolset      Scope    Derivatives   Convergent   Constraints
+
+===========   ===========  ======   ===========   ==========   ===========
+SLSQP         scipy        local    True          ???          =, < (NL)
+Nelder-Mead   scipy        local    False         False        None
+COBYLA        scipy        local    False         ???          =, < (NL)
+SNOPT         pyoptsparse  local    True          ???          =, < (NL)
+CONMIN        pyoptsparse  local    True          ???          =, < (NL)
+NSGA2         pyoptsparse  global   ???           ???          =, < (NL)
+===========   ===========  ======   ===========   ==========   ===========
 
 Explanation of outputs
 ----------------------
