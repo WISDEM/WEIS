@@ -7,16 +7,14 @@ Reorganize matrices and solve the problem using IPOPT from pyoptsparse
 Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
-    
+# import pyoptsparse
+from pyoptsparse import IPOPT, Optimization
 from scipy import sparse
-import argparse
-import numpy as np
 
-PYOPT = True
-try:
-    from pyoptsparse import IPOPT, Optimization
-except Exception:
-    PYOPT = False
+
+import argparse
+
+import numpy as np
 
 
 def DTQPy_SOLVER_ipopt(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
