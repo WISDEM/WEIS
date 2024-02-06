@@ -35,7 +35,7 @@ The core WEIS modules are:
 
 ## Installation
 
-On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with the [Miniforge3 distribution](https://github.com/conda-forge/miniforge?tab=readme-ov-file#miniforge3), which is much more lightweight and more easily solves for the package dependencies.  Sometimes, using `mamba` in place of `conda` with this distribution speeds up the installation process. WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not yet supported, but planned in 2024.
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with the [Miniforge3 distribution](https://github.com/conda-forge/miniforge?tab=readme-ov-file#miniforge3), which is much more lightweight and more easily solves for the package dependencies.  WEIS is currently supported on Linux, Mac, and Windows (natively or with the Linux sub-system (WSL)).
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable. For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 
@@ -44,12 +44,12 @@ The installation instructions below use the environment name, "weis-env," but an
         module purge
         module load conda        
 
-1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
+1.  Setup and activate the Anaconda environment from a command prompt:
 
         conda config --add channels conda-forge
         conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
-        conda install -y petsc4py mpi4py                 # (Mac / Linux only)   
+        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only)   
 
 
 2. Clone the repository and install the software
@@ -69,7 +69,7 @@ The installation instructions below use the environment name, "weis-env," but an
 
 ## Developer guide
 
-If you plan to contribute code to WEIS, please first consult the [developer guide](https://weis.readthedocs.io/en/latest/how_to_contribute_code.html).
+If you plan to contribute code to WEIS, please first consult the [developer guide](https://weis.readthedocs.io/en/latest/how_to_contribute_code.html).  You are also likely to want to install some of the compiled WEIS dependencies (OpenFAST or WISDEM or pyHAMS or ROSCO) from a local copy instead of relying on the conda packages.
 
 ## Feedback
 

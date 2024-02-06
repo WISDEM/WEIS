@@ -54,7 +54,6 @@ dependencies:
   - pyDOE3
   - pygments
   - pyhams
-  - pyoptsparse
   - python-json-logger
   - pyzmq
   - qdldl-python
