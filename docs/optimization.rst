@@ -153,3 +153,59 @@ Some tips and best practices
 ----------------------------
 
 *TO DO!!!*
+
+Optimization case study: IEA22
+==============================
+
+In ``WEIS/examples/17_IEA22_Optimization``, we have an optimization
+example which can be used to design the semisubmersible platform for the
+IEA 22 280m reference wind turbine. We will concentrate on the files
+``analysis_options_raft_ptfm_opt.yaml`` and
+``modeling_options_raft.yaml``, which specify the platform design study.
+
+The study sets design variables: - ``floating.joints`` -
+``z_coordinate[main_keel, col1_keel, col2_keel, col3_keel]`` -
+``r_coordinate[main_keel, col1_keel, col2_keel, col3_keel]`` - not sure
+exactly what these do, but presumably they set cylindrical coordinates
+of the truss system members (less an angle?) - ``floating.members`` -
+``groups["column1, column2, column3]:diameter`` - presumably this is
+setting the diameters of the truss system members? and constraints: -
+``floating.survival_heel``: upper bound - maximum pitching heel
+allowable in parked conditions - ``floating.metacentric_height``: lower
+bound - “Ensures hydrostatic stability with a positive metacentric
+height” - distance between center of gravity of a marine vessel and its
+metacenter (point between vessel-fixed vertical line through C.o.G. and
+inertial-frame-fixed line through center of buoyancy) - dictates static
+stability in the small-heel angle limit (i.e. characterizes stability) -
+``floating.pitch_period``: upper & lower bound - period of the pitching
+motion (bow (stern) up vs. down rotation about center of mass) -
+``floating.heave_period``: upper & lower bound - period of the heave
+(linear vertical motion of a marine vessel) -
+``floating.fixed_ballast_capacity``: on - “Ensures that there is
+sufficient volume to hold the specified fixed (permanent) ballast” -
+``floating.variable_ballast_capacity``: on - “Ensures that there is
+sufficient volume to hold the needed water (variable) ballast to achieve
+neutral buoyancy” - ``floating.freeboard_margin``: on - “Ensures that
+the freeboard (top points of structure) of floating platform stays above
+the waterline at the survival heel offset” - the deck surface should not
+be submerged in the worst-case conditions - ``floating.draft_margin``:
+on - “keep draft from raising above water line during survival_heel,
+largest wave” - the bottom of the hull should not rise above the water
+surface in the worst-case conditions - ``floating.fairlead_depth``: on -
+“keep the fairlead above bottom trough of largest wave” - don’t dunk the
+fairlead in worst-case conditions - ``control.Max_PtfmPitch``: max -
+“Maximum platform pitch displacement over all cases. Can be computed in
+both RAFT and OpenFAST. The higher fidelity option will be used when
+active.” - ``control.Std_PtfmPitch``: max - “Maximum platform pitch
+standard deviation over all cases. Can be computed in both RAFT and
+OpenFAST. The higher fidelity option will be used when active.” -
+``control.nacelle_acceleration``: max - “Maximum Nacelle IMU
+accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 +
+NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST. The higher
+fidelity option will be used when active.” with a merit figure of the
+structural mass ``structural_mass``
+(``floatingse.system_structural_mass``).
+
+.. raw:: html
+
+   <!-- -->

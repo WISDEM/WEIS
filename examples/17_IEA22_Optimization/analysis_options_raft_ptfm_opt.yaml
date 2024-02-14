@@ -107,22 +107,23 @@ constraints:
     control:
         Max_PtfmPitch:
             flag: True
-            max: 5.5
+            max: 6.0
         Std_PtfmPitch:
-            flag: True
-            max: 0.39  # Same as IEA-15MW with same DLCs
+            flag: False
+            max: 1.25  # Same as IEA-15MW with same DLCs
         nacelle_acceleration:
-            flag: True
-            max: 0.25
+            flag: False
+            max: 0.4
 
 merit_figure: structural_mass
-            
+
 driver:
     optimization:
         flag: True         # Flag to enable optimization
-        tol: 1.e-3         # Optimality tolerance
+        tol: 1.e-6         # Optimality tolerance
         max_iter: 1000         # Maximum number of iterations (SLSQP)
-        solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        # solver: LN_COBYLA  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        solver: LD_SLSQP   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder
