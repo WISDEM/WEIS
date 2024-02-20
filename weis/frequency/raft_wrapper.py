@@ -262,12 +262,25 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             # add ballast from last section to next
             remaining_fill = 0
             for i_sec, l in enumerate(l_fill):
+
+                # if there's left over fill, use previous density
+                # will use lower ballast if the chamber is too small
+                # hopefully solver will bias platform design away from this case eventually
+                if remaining_fill:
+                    rho_fill[i_sec] = rho_fill[i_sec-1]
+                
+                # length of current section
                 sec_length = s_grid[i_sec+1] - s_grid[i_sec]
-                l += remaining_fill     # add fill from previous section
-                if l > sec_length:
+
+                if l and remaining_fill:
+                    print('WEIS Warning: there is left over ballast from a previous section and a new ballast being added.  Platform masses may be inconsistent between RAFT and FloatingSE')
+
+                # add fill from previous section
+                l += remaining_fill     
+                if l > sec_length:  # only fill up to section length
                     l_fill[i_sec] = sec_length
                     remaining_fill = l - sec_length
-                else:
+                else:   # fill with remaining
                     l_fill[i_sec] = l
                     remaining_fill = 0
 

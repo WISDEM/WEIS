@@ -14,12 +14,13 @@ import pandas as pd
 
 import numpy as np
 
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+this_dir = os.path.dirname(os.path.realpath(__file__))
+weis_dir = os.path.dirname(os.path.dirname(this_dir))
 
 if __name__ == '__main__':
 
     # read WEIS options:
-    mydir                       = os.path.dirname(os.path.realpath(__file__))  # get path to this file
+    mydir                       = this_dir  # get path to this file
     fname_modeling_options      = mydir + os.sep + "modeling_options.yaml"
     modeling_options            = sch.load_modeling_yaml(fname_modeling_options)
 
@@ -53,7 +54,7 @@ if __name__ == '__main__':
 
     # generate wind files
     FAST_namingOut = 'oloc'
-    wind_directory = '/Users/dzalkind/Tools/WEIS-1/examples/13_DTQP/outputs/oloc/wind'
+    wind_directory = os.path.join(this_dir,'oloc/wind')
     if not os.path.exists(wind_directory):
         os.makedirs(wind_directory)
     rotorD = wt_init['assembly']['rotor_diameter']
