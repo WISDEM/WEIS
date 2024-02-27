@@ -2291,6 +2291,18 @@ class InputReader_OpenFAST(object):
         f.readline()
         # OUTPUT
         self.fst_vt['SubDyn']['SumPrint'] = bool_read(f.readline().split()[0])
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutCBModes' in line:
+            self.fst_vt['SubDyn']['OutCBModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutFEMModes' in line:
+            self.fst_vt['SubDyn']['OutFEMModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
         self.fst_vt['SubDyn']['OutCOSM']  = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutAll']   = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutSwtch'] = int_read(f.readline().split()[0])
