@@ -1979,7 +1979,7 @@ class InputReader_OpenFAST(object):
             self.fst_vt['HydroDyn']['FillNumM'][i]  = int(ln[0])
             self.fst_vt['HydroDyn']['FillMList'][i] = [int(j) for j in ln[1:-2]]
             self.fst_vt['HydroDyn']['FillFSLoc'][i] = float(ln[-2])
-            self.fst_vt['HydroDyn']['FillDens'][i]  = float(ln[-1])
+            self.fst_vt['HydroDyn']['FillDens'][i]  = float_read(ln[-1])
 
         #MARINE GROWTH
         f.readline()
