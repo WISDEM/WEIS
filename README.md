@@ -57,13 +57,13 @@ The installation instructions below use the environment name, "weis-env," but an
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
         git checkout branch_name                         # (Only if you want to switch branches, say "develop")
-        pip install -e .
+        pip install -e --no-deps . -v
 
 3. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:
 
         module load comp-intel intel-mpi mkl
         module unload gcc
-        pip install -e .
+        pip install -e --no-deps . -v
 
 **NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
 
