@@ -251,8 +251,9 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
         # Floating Feedback Filters
-        rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
-        rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
+        if self.controller_params['Fl_Mode']:
+            rosco_init_options['twr_freq'] = float(inputs['twr_freq']) * 2 * np.pi
+            rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'])
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
@@ -599,7 +600,8 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
         outputs['TowerHt'                ] = self.turbine.TowerHt
         outputs['hub_height'             ] = self.turbine.hubHt
-        outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
+        if self.control_params['Fl_Mode']:
+            outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table
