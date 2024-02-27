@@ -1841,18 +1841,17 @@ class FASTLoadCases(ExplicitComponent):
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
         if self.options['modeling_options']['Level3']['from_openfast']:
-            try:
-                reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
+            reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
+            if os.path.isfile(reg_traj):
                 data = load_yaml(reg_traj)
                 cases = data['cases']
-                n_ws = len(cases)
                 U_interp = [case["configuration"]["wind_speed"] for case in cases]
                 pitch_interp = [case["configuration"]["pitch"] for case in cases]
                 rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
                 Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
-            except:
+            else:
                 logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
-                        " This file either does not exist or is not formatted correctly. Check WEIS example 02 for a template file")
+                        " This file does not exist. Check WEIS example 02 for a template file")
                 U_interp = np.arange(cut_in, cut_out)
                 pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
                 rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
