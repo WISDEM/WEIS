@@ -1,4 +1,3 @@
-# This modeling options will set up an OpenFAST model from WISDEM
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
@@ -7,17 +6,14 @@ General:
         save_timeseries: True
         save_iterations: True
         use_exe: True
-        allow_fails: True
-        fail_value: 9999
-        FAST_exe: /home/dzalkind/.conda-envs/rosco-env/bin/openfast
+        # FAST_exe: /home/dzalkind/.conda-envs/rosco-env/bin/openfast
         # FAST_exe: /Users/dzalkind/opt/anaconda3/envs/rosco-env/bin/openfast
-
+        FAST_exe: /Users/dzalkind/opt/anaconda3/envs/weis-env4/bin/openfast
+        
 
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 20
-        n_tsr_perf_surfaces: 20
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -41,7 +37,12 @@ WISDEM:
     # BOS:
     #     flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OWENS:
+    flags: True
+    path_to_owens_dir: path
+    
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
@@ -54,7 +55,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         # CompMooring: 3
         # CompIce: 0
         OutFileFmt: 3
-        NumCrctn: 2
+        NumCrctn: 5
         DT_UJac: 1
         MHK: 2
         WtrDpth: 50
@@ -78,7 +79,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
-        PtfmSurge: 12
         TwrNodes: 20
         DTTorSpr: 600000
         DTTorDmp: 100000
@@ -93,7 +93,6 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         NacCMyn: 0
         NacCMzn: -1.2
         TowerBsHt: -9
-        RotSpeed: 2
     AeroDyn:
         WakeMod: 2
         AFAeroMod: 1
@@ -143,22 +142,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
 ROSCO:
     flag: True
-    tuning_yaml: ../OpenFAST/RM1_MHK.yaml
-    DISCON:
-        VS_KP: -50
-        VS_KI: -50
+    tuning_yaml: RM1_MHK.rosco.yaml
     # zeta_pc: 1.23
     # omega_pc: 0.198
     # U_pc: [12]
-
-Level1:
-    flag: True
-    # potential_model_override: 0
-    # trim_ballast: 0
-    # heave_tol: 1
-    save_designs: True
-    analyze_cases: False
-    use_props_in_openfast: False
 
 # Level1:
 #     # potential_model_override: 1
