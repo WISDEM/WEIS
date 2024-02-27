@@ -334,7 +334,7 @@ components:
             generator_radius_user: 0.25
             generator_mass_user: 8928.0
             generator_rpm_efficiency_user:
-                grid: [0.0,100]
+                grid: [0.0,1.00]
                 values: [1.0,1.0]
             gear_ratio: 53.0
             gearbox_length_user: 0.0
