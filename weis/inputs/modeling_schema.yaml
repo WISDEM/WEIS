@@ -55,7 +55,7 @@ properties:
                     FAST_exe:
                         type: string
                         default: none
-                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast)
+                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast).  Note that if you use this, ROSCO must use the same compilation configuration.  You can specify the ROSCO dll with path2dll.
                     FAST_lib:
                         type: string
                         default: none
