@@ -14,6 +14,7 @@ def main():
         "09_floating/IEA-15-240-RWT_VolturnUS-S.yaml":  "06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml",
         "02_reference_turbines/IEA-15-240-RWT.yaml":    "06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml",
         "02_reference_turbines/IEA-3p4-130-RWT.yaml":   "05_IEA-3.4-130-RWT/IEA-3p4-130-RWT.yaml",
+        "03_blade/BAR_USC.yaml":   "08_OLAF/BAR_USC.yaml",
     }
 
     example_dir = os.path.join(os.path.dirname(__file__),"..")
