@@ -4,8 +4,8 @@ from functools import reduce
 import operator
 from weis.aeroelasticse.FAST_vars_out import FstOutput
 
-from ROSCO_toolbox.utilities import read_DISCON, load_from_txt
-from ROSCO_toolbox import turbine as ROSCO_turbine
+from rosco.toolbox.utilities import read_DISCON, load_from_txt
+from rosco.toolbox import turbine as ROSCO_turbine
 ROSCO = True
 
 
@@ -663,12 +663,12 @@ class InputReader_OpenFAST(object):
 
         f.close()
 
-        self.read_BeamDynBlade()
+        beamdyn_blade_file = os.path.join(os.path.dirname(bd_file), self.fst_vt['BeamDyn']['BldFile'])
+        self.read_BeamDynBlade(beamdyn_blade_file)
 
-    def read_BeamDynBlade(self):
+    def read_BeamDynBlade(self, beamdyn_blade_file):
         # BeamDyn Blade
 
-        beamdyn_blade_file = os.path.join(self.FAST_directory, self.fst_vt['BeamDyn']['BldFile'])
         f = open(beamdyn_blade_file)
         
         f.readline()
@@ -848,8 +848,8 @@ class InputReader_OpenFAST(object):
 
         # Blade-Element/Momentum Theory Options
         f.readline()
-        self.fst_vt['AeroDyn15']['SkewMod']               = int(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['SkewModFactor']     = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewMod']               = int_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewModFactor']         = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TipLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['HubLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TanInd']                = bool_read(f.readline().split()[0])
@@ -872,8 +872,21 @@ class InputReader_OpenFAST(object):
         f.readline()
         self.fst_vt['AeroDyn15']['UAMod']                  = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['FLookup']                = bool_read(f.readline().split()[0])
-        # self.fst_vt['AeroDyn15']['UAStartRad']             = float_read(f.readline().split()[0])
-        # self.fst_vt['AeroDyn15']['UAEndRad']               = float_read(f.readline().split()[0])
+        
+        file_pos = f.tell()
+        line = f.readline()
+        if 'UAStartRad' in line:
+            self.fst_vt['AeroDyn15']['UAStartRad']             = float_read(line.split()[0])
+        else:
+            f.seek(file_pos)
+        
+        file_pos = f.tell()
+        line = f.readline()
+        if 'UAEndRad' in line:
+            self.fst_vt['AeroDyn15']['UAEndRad']             = float_read(line.split()[0])
+        else:
+            f.seek(file_pos)
+
 
         # Airfoil Information
         f.readline()
@@ -1554,12 +1567,12 @@ class InputReader_OpenFAST(object):
             StC_vt['StC_Y_DOF'] = bool_read(f.readline().split()[0])  # false         StC_Y_DOF    - DOF on or off for StC Y (flag) [Used only when StC_DOF_MODE=1]
             StC_vt['StC_Z_DOF'] = bool_read(f.readline().split()[0])  # false         StC_Z_DOF    - DOF on or off for StC Z (flag) [Used only when StC_DOF_MODE=1]
             f.readline()    # StC LOCATION 
-            StC_vt['StC_P_Y'] = float_read(f.readline().split()[0])   #        0   StC_P_Y      - At rest Y position of StC (m)
             StC_vt['StC_P_X'] = float_read(f.readline().split()[0])   #    -51.75   StC_P_X      - At rest X position of StC (m)
+            StC_vt['StC_P_Y'] = float_read(f.readline().split()[0])   #        0   StC_P_Y      - At rest Y position of StC (m)
             StC_vt['StC_P_Z'] = float_read(f.readline().split()[0])   #        -10   StC_P_Z      - At rest Z position of StC (m)
             f.readline()    # StC INITIAL CONDITIONS 
-            StC_vt['StC_Y_DSP'] = float_read(f.readline().split()[0])   #        0   StC_Y_DSP    - StC Y initial displacement (m) [relative to at rest position]
             StC_vt['StC_X_DSP'] = float_read(f.readline().split()[0])   #        0   StC_X_DSP    - StC X initial displacement (m) [relative to at rest position]
+            StC_vt['StC_Y_DSP'] = float_read(f.readline().split()[0])   #        0   StC_Y_DSP    - StC Y initial displacement (m) [relative to at rest position]
             StC_vt['StC_Z_DSP'] = float_read(f.readline().split()[0])   #        0   StC_Z_DSP    - StC Z initial displacement (m) [relative to at rest position; used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]
             StC_vt['StC_Z_PreLd'] = f.readline().split()[0] # "none"        StC_Z_PreLd  - StC Z prefloat_read(f.readline().split()[0])  #-load (N) {"gravity" to offset for gravity load; "none" or 0 to turn off} [used only when StC_DOF_MODE=1 and StC_Z_DOF=TRUE]
             f.readline()    # StC CONFIGURATION 
@@ -1652,7 +1665,7 @@ class InputReader_OpenFAST(object):
         return StC_vt
     
     def read_DISCON_in(self):
-        # Read the Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+        # Read the Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/rosco.toolbox
 
         discon_in_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['ServoDyn']['DLL_InFile']))
 
@@ -1988,10 +2001,7 @@ class InputReader_OpenFAST(object):
             self.fst_vt['HydroDyn']['FillNumM'][i]  = int(ln[0])
             self.fst_vt['HydroDyn']['FillMList'][i] = [int(j) for j in ln[1:-2]]
             self.fst_vt['HydroDyn']['FillFSLoc'][i] = float(ln[-2])
-            if ln[-1] == 'DEFAULT':
-                self.fst_vt['HydroDyn']['FillDens'][i]  = 'DEFAULT'
-            else:
-                self.fst_vt['HydroDyn']['FillDens'][i]  = float(ln[-1])
+            self.fst_vt['HydroDyn']['FillDens'][i]  = float_read(ln[-1])
 
         #MARINE GROWTH
         f.readline()
@@ -2075,7 +2085,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['Nmodes']    = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['JDampings'] = float_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['GuyanDampMod'] = int_read(f.readline().split()[0])
-        self.fst_vt['SubDyn']['RayleighDamp'] = [float(m.replace(',','')) for m in f.readline().split()[:2]]
+        self.fst_vt['SubDyn']['RayleighDamp'] = read_array(f,2,array_type=float)
         self.fst_vt['SubDyn']['GuyanDampSize'] = int_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['GuyanDamp'] = np.array([[float(idx) for idx in f.readline().strip().split()[:6]] for i in range(self.fst_vt['SubDyn']['GuyanDampSize'])])
         f.readline()
@@ -2125,7 +2135,10 @@ class InputReader_OpenFAST(object):
             self.fst_vt['SubDyn']['RctRDXss'][i] = int(ln[4])
             self.fst_vt['SubDyn']['RctRDYss'][i] = int(ln[5])
             self.fst_vt['SubDyn']['RctRDZss'][i] = int(ln[6])
-            self.fst_vt['SubDyn']['Rct_SoilFile'][i] = ln[7]
+            if len(ln) == 8:
+                self.fst_vt['SubDyn']['Rct_SoilFile'][i] = ln[7]
+            else:
+                self.fst_vt['SubDyn']['Rct_SoilFile'][i] = 'None'
         f.readline()
         # INTERFACE JOINTS
         self.fst_vt['SubDyn']['NInterf']   = int_read(f.readline().split()[0])
@@ -2300,6 +2313,18 @@ class InputReader_OpenFAST(object):
         f.readline()
         # OUTPUT
         self.fst_vt['SubDyn']['SumPrint'] = bool_read(f.readline().split()[0])
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutCBModes' in line:
+            self.fst_vt['SubDyn']['OutCBModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutFEMModes' in line:
+            self.fst_vt['SubDyn']['OutFEMModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
         self.fst_vt['SubDyn']['OutCOSM']  = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutAll']   = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutSwtch'] = int_read(f.readline().split()[0])
@@ -2522,7 +2547,15 @@ class InputReader_OpenFAST(object):
             
         if self.fst_vt['Fst']['CompServo'] == 1:
             self.read_ServoDyn()
-            # Would read StCs here
+            # Read StC Files
+            for StC_file in self.fst_vt['ServoDyn']['BStCfiles']:
+                self.fst_vt['BStC'].append(self.read_StC(StC_file))
+            for StC_file in self.fst_vt['ServoDyn']['NStCfiles']:
+                self.fst_vt['NStC'].append(self.read_StC(StC_file))
+            for StC_file in self.fst_vt['ServoDyn']['TStCfiles']:
+                self.fst_vt['TStC'].append(self.read_StC(StC_file))
+            for StC_file in self.fst_vt['ServoDyn']['SStCfiles']:
+                self.fst_vt['SStC'].append(self.read_StC(StC_file))
             if ROSCO:
                 self.read_DISCON_in()
         hd_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['Fst']['HydroFile']))

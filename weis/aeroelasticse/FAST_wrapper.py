@@ -1,5 +1,4 @@
 import os
-from re import sub
 import subprocess
 import platform
 import time
@@ -16,7 +15,7 @@ class FAST_wrapper(object):
         for k, w in kwargs.items():
             try:
                 setattr(self, k, w)
-            except:
+            except Exception:
                 pass
 
         super(FAST_wrapper, self).__init__()
@@ -28,9 +27,8 @@ class FAST_wrapper(object):
         try:
             if platform.system()!='Windows' and self.FAST_exe[-4:]=='.exe':
                 self.FAST_exe = self.FAST_exe[:-4]
-        except:
+        except Exception:
             pass
-
         exec_str = []
         exec_str.append(self.FAST_exe)
         exec_str.append(self.FAST_InputFile)
@@ -54,7 +52,7 @@ class FAST_wrapper(object):
                     print('OpenFAST Failed: {}'.format(e))
                     failed = True
                     run_idx = 2
-            except:
+            except Exception as e:
                 print('OpenFAST Failed: {}'.format(e))
                 failed = True
                 run_idx = 2

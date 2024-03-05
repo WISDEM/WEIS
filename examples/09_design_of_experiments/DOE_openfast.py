@@ -17,7 +17,7 @@ import os, time, sys
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
 examples        = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "examples")
-fname_wt_input         = os.path.join(examples, "06_IEA-15-240-RWT", "IEA-15-240-RWT.yaml")
+fname_wt_input         = os.path.join(run_dir, "..", "06_IEA-15-240-RWT", "IEA-15-240-RWT_Monopile.yaml")
 fname_modeling_options = run_dir + "modeling_options_OF.yaml"
 fname_analysis_options = run_dir + "analysis_options.yaml"
 

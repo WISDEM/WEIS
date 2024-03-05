@@ -1,5 +1,8 @@
 import textwrap
 import validation
+import os, shutil
+import weis.inputs.validation as sch
+from wisdem.inputs import write_yaml
 
 mywidth  = 70
 myindent = ' '*4
@@ -120,8 +123,45 @@ class Schema2RST(object):
                 continue
             
 if __name__ == '__main__':
-    for ifile in ['geometry_schema.yaml','modeling_schema.yaml','analysis_schema.yaml']:
-        myobj = Schema2RST(ifile)
-        myobj.write_rst()
+
+    this_dir = os.path.dirname(__file__)
+    docs_dir = os.path.realpath(os.path.join(this_dir,'../../docs/inputs'))
+
+    # Merge schemas, write combined schema yamls here
+
+    # modeling
+    modeling_schema = sch.get_modeling_schema()
+    combined_modeling_yaml = os.path.join(this_dir,'weis_modeling_schema.yaml')
+    write_yaml(modeling_schema,combined_modeling_yaml)
+    myobj = Schema2RST(combined_modeling_yaml)
+    myobj.write_rst()
+
+    # copy file to docs
+    doc_file = os.path.join(docs_dir,os.path.split(combined_modeling_yaml)[-1].split('.')[0] + '.rst')
+    shutil.copyfile(myobj.fout,doc_file)
+
+    # geometry
+    geometry_schema = sch.get_geometry_schema()
+    combined_geometry_yaml = os.path.join(this_dir,'weis_geometry_schema.yaml')
+    write_yaml(geometry_schema,combined_geometry_yaml)
+    myobj = Schema2RST(combined_geometry_yaml)
+    myobj.write_rst()
+
+    doc_file = os.path.join(docs_dir,os.path.split(combined_geometry_yaml)[-1].split('.')[0] + '.rst')
+    shutil.copyfile(myobj.fout,doc_file)
+
+    # analysis
+    analysis_schema = sch.get_analysis_schema()
+    combined_analysis_yaml = os.path.join(this_dir,'weis_analysis_schema.yaml')
+    write_yaml(analysis_schema,combined_analysis_yaml)
+    myobj = Schema2RST(combined_analysis_yaml)
+    myobj.write_rst()
+
+    doc_file = os.path.join(docs_dir,os.path.split(combined_analysis_yaml)[-1].split('.')[0] + '.rst')
+    shutil.copyfile(myobj.fout,doc_file)
+
+
+
+
         
     

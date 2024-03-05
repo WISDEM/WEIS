@@ -4,24 +4,40 @@ from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper
 from weis.aeroelasticse.LinearFAST import LinearFAST
+from rosco import discon_lib_path
 import os.path as osp
+import shutil
 import platform
 
 examples_dir    = osp.join( osp.dirname( osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) ) ), 'examples')
 weis_dir        = osp.dirname( osp.dirname( osp.dirname( osp.dirname(osp.realpath(__file__) ) ) ) ) # get path to this file
+of_path = shutil.which('openfast')
+bin_dir  = osp.dirname(of_path)
+lib_dir  = osp.abspath( osp.join(osp.dirname(bin_dir), 'lib') )
 
 
 mactype = platform.system().lower()
-if mactype == "linux" or mactype == "linux2":
+if mactype in ["linux", "linux2"]:
     libext = ".so"
+    staticext = ".a"
+elif mactype in ["win32", "windows", "cygwin"]: #NOTE: platform.system()='Windows', sys.platform='win32'
+    libext = '.dll'
+    staticext = ".lib"
 elif mactype == "darwin":
     libext = '.dylib'
-elif mactype == "win32" or mactype == "windows": #NOTE: platform.system()='Windows', sys.platform='win32'
-    libext = '.dll'
-elif mactype == "cygwin":
-    libext = ".dll"
+    staticext = ".a"
 else:
     raise ValueError('Unknown platform type: '+mactype)
+
+found = False
+for libname in ['libopenfastlib', 'openfastlib']:
+    for d in [lib_dir, bin_dir]:
+        lib_path = osp.join(d, libname+libext)
+        if osp.exists(lib_path):
+            found = True
+            break
+    if found:
+        break
 
 class TestOFutils(unittest.TestCase):
 
@@ -51,7 +67,7 @@ class TestOFutils(unittest.TestCase):
         fst_vt = {}
         fst_vt['Fst', 'TMax'] = 20.
         fst_vt['AeroDyn15', 'TwrAero'] = False
-        fst_vt['ServoDyn', 'DLL_FileName'] = osp.join(weis_dir, 'local', 'lib', f'libdiscon{libext}')
+        fst_vt['ServoDyn', 'DLL_FileName'] = discon_lib_path
         fst_vt['Fst','CompMooring'] = 0
         fast_writer.update(fst_update=fst_vt)
         with self.subTest('Writing', i=1):
@@ -62,7 +78,7 @@ class TestOFutils(unittest.TestCase):
                 self.assertEqual('Writing','Success')
 
         # Execute the written file
-        fast_wrap.FAST_exe = osp.join(weis_dir,'local/bin/openfast')   # Path to executable
+        fast_wrap.FAST_exe = of_path   # Path to executable
         fast_wrap.FAST_InputFile = osp.join(fast_writer.FAST_namingOut+'.fst')
         with self.subTest('Running', i=2):
             try:
@@ -73,7 +89,7 @@ class TestOFutils(unittest.TestCase):
 
         # Test the whole sequence in one go
         fast_obj.FAST_exe = None
-        fast_obj.FAST_lib = osp.join(weis_dir, 'local', 'lib', 'libopenfastlib'+libext)
+        fast_obj.FAST_lib = lib_path
         fast_obj.case     = fst_vt
         with self.subTest('Batching', i=3):
             try:
@@ -85,7 +101,7 @@ class TestOFutils(unittest.TestCase):
     def testLinearFAST(self):
 
         lin_fast = LinearFAST(debug_level=2)
-        lin_fast.FAST_exe = osp.join(weis_dir,'local/bin/openfast')   # Path to executable
+        lin_fast.FAST_exe = of_path
         lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
         lin_fast.FAST_directory           = osp.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
         lin_fast.FAST_runDirectory        = osp.join(weis_dir,'outputs','iea_mono_lin')

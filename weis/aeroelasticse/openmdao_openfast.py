@@ -1,6 +1,12 @@
 import numpy as np
 import pandas as pd
-import os, shutil, sys, platform, copy, glob, logging
+import os
+import shutil
+import sys
+import copy
+import glob
+import logging
+import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
@@ -23,7 +29,7 @@ from weis.aeroelasticse import FileTools
 from weis.aeroelasticse.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.turbsim_util import generate_wind_files
 from weis.aeroelasticse.utils import OLAFParams
-from ROSCO_toolbox import control_interface as ROSCO_ci
+from rosco.toolbox import control_interface as ROSCO_ci
 from pCrunch.io import OpenFASTOutput
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
@@ -31,21 +37,12 @@ from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml
 
-logger = logging.getLogger("wisdem/weis")
-
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
-import pickle
-
 if MPI:
     from mpi4py   import MPI
 
-if platform.system() == 'Windows':
-    lib_ext = '.dll'
-elif platform.system() == 'Darwin':
-    lib_ext = '.dylib'
-else:
-    lib_ext = '.so'
+logger = logging.getLogger("wisdem/weis")
+
+weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -251,9 +248,10 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('overhang',         val=0.0, units='m',     desc='Horizontal distance from tower top to hub center.')
 
             # Initial conditions
-            self.add_input('U',        val=np.zeros(n_pc), units='m/s', desc='wind speeds')
-            self.add_input('Omega',    val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
-            self.add_input('pitch',    val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
+            self.add_input('U', val=np.zeros(n_pc), units='m/s', desc='wind speeds')
+            self.add_input('Omega', val=np.zeros(n_pc), units='rpm', desc='rotation speeds to run')
+            self.add_input('pitch', val=np.zeros(n_pc), units='deg', desc='pitch angles to run')
+            self.add_input("Ct_aero", val=np.zeros(n_pc), desc="rotor aerodynamic thrust coefficient")
 
             # Cp-Ct-Cq surfaces
             self.add_input('Cp_aero_table', val=np.zeros((n_tsr, n_pitch, n_U)), desc='Table of aero power coefficient')
@@ -399,26 +397,27 @@ class FASTLoadCases(ExplicitComponent):
         # User-defined FAST library/executable
         if OFmgmt['FAST_exe'] != 'none':
             if os.path.isabs(OFmgmt['FAST_exe']):
-                self.FAST_exe = OFmgmt['FAST_exe']
+                self.FAST_exe_user = OFmgmt['FAST_exe']
             else:
-                self.FAST_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                self.FAST_exe_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
                                              OFmgmt['FAST_exe'])
         else:
-            self.FAST_exe = 'none'
+            self.FAST_exe_user = None
 
         if OFmgmt['FAST_lib'] != 'none':
             if os.path.isabs(OFmgmt['FAST_lib']):
-                self.FAST_lib = OFmgmt['FAST_lib']
+                self.FAST_lib_user = OFmgmt['FAST_lib']
             else:
-                self.FAST_lib = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                self.FAST_lib_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
                                              OFmgmt['FAST_lib'])
         else:
-            self.FAST_lib = 'none'
+            self.FAST_lib_user = None
 
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
         self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
         self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
+        self.add_output('Ct_out', val=np.zeros(n_ws_dlc11), desc='rotor aero thrust coefficient')
         self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
         self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
@@ -580,6 +579,9 @@ class FASTLoadCases(ExplicitComponent):
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
+            # Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
+            modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+            fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
 
             # Fix TwrTI: WEIS modeling options have it as a single value...
             if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
@@ -693,7 +695,7 @@ class FASTLoadCases(ExplicitComponent):
                     else:       # if using fst_vt inputs from openfast_openmdao
                         discon_in_file = os.path.join(self.FAST_runDirectory, self.lin_case_name[0] + '_DISCON.IN')
 
-                    lib_name = os.path.join(os.path.dirname(os.path.realpath(__file__)),'../../local/lib/libdiscon'+lib_ext)
+                    lib_name = modopt['General']['openfast_configuration']['path2dll']
 
                     ss = {}
                     et = {}
@@ -855,6 +857,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn15']['OLAF'] = {}
         if fst_vt['ElastoDyn']['DT'] == 0.:
             fst_vt['ElastoDyn']['DT'] = 'Default'
+        if fst_vt['Fst']['DT_Out'] == 0.:
+            fst_vt['Fst']['DT_Out'] = 'Default'
 
         return fst_vt
 
@@ -1582,9 +1586,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Name'] = fst_vt['MAP']['LineType'] = line_names
             fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
             fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
-            fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"] 
-            fst_vt['MoorDyn']['EI'] = np.ones(n_lines) * 0.8 # also hack for now    # MoorPy does not have EI, yet
-            fst_vt['MoorDyn']['BA_zeta'] = -0.8*np.ones(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['EI'] = np.zeros(n_lines)     # MoorPy does not have EI, yet
+            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['Ca'] = inputs["line_transverse_added_mass"]
             fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
@@ -1881,6 +1885,7 @@ class FASTLoadCases(ExplicitComponent):
         DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
         aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
+        tau1_const = np.zeros(dlc_generator.n_cases)
         dt_fvw = np.zeros(dlc_generator.n_cases)
         tMin = np.zeros(dlc_generator.n_cases)
         nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
@@ -1916,15 +1921,23 @@ class FASTLoadCases(ExplicitComponent):
                 if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
                     dlc_generator.cases[i_case].RefHt = ref_height
                 # Center of wind grid (TurbSim confusingly calls it HubHt)
-                dlc_generator.cases[i_case].HubHt = np.abs(hub_height)
+                if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].HubHt = np.abs(hub_height)
+
+                if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].GridHeight =  2. * np.abs(hub_height) - 1.e-3
+
+                if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
+                    dlc_generator.cases[i_case].GridWidth =  2. * np.abs(hub_height) - 1.e-3
                 # Height of wind grid, it stops 1 mm above the ground
-                dlc_generator.cases[i_case].GridHeight = 2. * np.abs(hub_height) - 1.e-3
+                # dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
                 # If OLAF is called, make wind grid 3x higher, taller, and wider
                 if fst_vt['AeroDyn15']['WakeMod'] == 3:
                     dlc_generator.cases[i_case].HubHt *= 3.
                     dlc_generator.cases[i_case].GridHeight *= 3.
-                # Width of wind grid, same of height
-                dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
+                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
                     dlc_generator.cases[i_case].PLExp = PLExp
@@ -1962,24 +1975,50 @@ class FASTLoadCases(ExplicitComponent):
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
+        if self.options['modeling_options']['Level3']['from_openfast']:
+            reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
+            if os.path.isfile(reg_traj):
+                data = load_yaml(reg_traj)
+                cases = data['cases']
+                U_interp = [case["configuration"]["wind_speed"] for case in cases]
+                pitch_interp = [case["configuration"]["pitch"] for case in cases]
+                rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
+                Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
+            else:
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
+                        " This file does not exist. Check WEIS example 02 for a template file")
+                U_interp = np.arange(cut_in, cut_out)
+                pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
+                rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
+                Ct_aero_interp = np.ones_like(U_interp) * 0.7 # fixed initial ct at 0.7
+        else:
+            U_interp = inputs['U']
+            pitch_interp = inputs['pitch']
+            rot_speed_interp = inputs['Omega']
+            Ct_aero_interp = inputs['Ct_aero']
+        
+        tau1_const_interp = np.zeros_like(Ct_aero_interp)
+        for i in range(len(Ct_aero_interp)):
+            a = 1. / 2. * (1. - np.sqrt(1. - Ct_aero_interp[i]))
+            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
+
+
         for i_case in range(dlc_generator.n_cases):
             if 'operating' in dlc_generator.cases[i_case].turbine_status:
                 # We have initial conditions from WISDEM
-                if ('U' in inputs) and ('Omega' in inputs) and ('pitch' in inputs):
-                    rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
-                    pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
-                else:
-                    rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi / fst_vt['ElastoDyn']['GBRatio']
-                    pitch_initial[i_case]       = 15
-
+                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, rot_speed_interp)
+                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, pitch_interp)
+                tau1_const[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, tau1_const_interp)
+                
                 if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
                     shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
             else:
-                rot_speed_initial[i_case]   = 0.
-                pitch_initial[i_case]       = 90.
-                shutdown_time[i_case]      = 0
-                aero_mod[i_case]            = 1
-                wake_mod[i_case]            = 0
+                rot_speed_initial[i_case] = 0.
+                pitch_initial[i_case] = 90.
+                shutdown_time[i_case] = 0
+                aero_mod[i_case] = 1
+                wake_mod[i_case] = 0
+                tau1_const[i_case] = 0.
 
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
@@ -2051,6 +2090,14 @@ class FASTLoadCases(ExplicitComponent):
         # Inputs to AeroDyn (parking)
         case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+        case_inputs[("AeroDyn15","tau1_const")] = {'vals':tau1_const, 'group':1}
+
+        # Inputs to OLAF
+        case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
+        case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
+        case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1}
 
         # Inputs to OLAF
         case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
@@ -2084,7 +2131,7 @@ class FASTLoadCases(ExplicitComponent):
             # Use openfast binary until library works
             fastBatch                           = LinearFAST(**linearization_options)
             fastBatch.FAST_runDirectory         = self.FAST_runDirectory
-            fastBatch.FAST_lib                  = None      # linearization not working with library
+            fastBatch.use_exe                   = True      # linearization not working with library
             fastBatch.fst_vt                    = fst_vt
             fastBatch.cores                     = self.cores
 
@@ -2099,19 +2146,19 @@ class FASTLoadCases(ExplicitComponent):
             fastBatch.FAST_runDirectory         = self.FAST_runDirectory
             fastBatch.case_list                 = case_list
             fastBatch.case_name_list            = case_name     
+            fastBatch.use_exe                   = modopt['General']['openfast_configuration']['use_exe']
         
         fastBatch.channels          = channels
         fastBatch.FAST_InputFile    = self.FAST_InputFile
         fastBatch.fst_vt            = fst_vt
         fastBatch.keep_time         = modopt['General']['openfast_configuration']['keep_time']
         fastBatch.post              = FAST_IO_timeseries
-        fastBatch.use_exe           = modopt['General']['openfast_configuration']['use_exe']
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
         fastBatch.fail_value        = modopt['General']['openfast_configuration']['fail_value']
-        if self.FAST_exe != 'none':
-            fastBatch.FAST_exe          = self.FAST_exe
-        if self.FAST_lib != 'none':
-            fastBatch.FAST_lib          = self.FAST_lib
+        if self.FAST_exe_user is not None:
+            fastBatch.FAST_exe      = self.FAST_exe_user
+        if self.FAST_lib_user is not None:
+            fastBatch.FAST_lib      = self.FAST_lib_user
 
         fastBatch.overwrite_outfiles = True  #<--- Debugging only, set to False to prevent OpenFAST from running if the .outb already exists
 
@@ -2557,6 +2604,7 @@ class FASTLoadCases(ExplicitComponent):
 
             outputs['P_out'] = perf_data['GenPwr']['mean'] * 1.e3
             outputs['Cp_out'] = perf_data['RtFldCp']['mean']
+            outputs['Ct_out'] = perf_data['RtFldCt']['mean']
             outputs['Omega_out'] = perf_data['RotSpeed']['mean']
             outputs['pitch_out'] = perf_data['BldPitch1']['mean']
             outputs['AEP'] = AEP
@@ -2564,6 +2612,7 @@ class FASTLoadCases(ExplicitComponent):
             # If DLC 1.1 was run
             if len(stats_pwrcrv['RtFldCp']['mean']): 
                 outputs['Cp_out'] = stats_pwrcrv['RtFldCp']['mean']
+                outputs['Ct_out'] = stats_pwrcrv['RtFldCt']['mean']
                 outputs['Omega_out'] = stats_pwrcrv['RotSpeed']['mean']
                 outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
@@ -2572,6 +2621,7 @@ class FASTLoadCases(ExplicitComponent):
                 logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
                 outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
+                outputs['Ct_out'] = sum_stats['RtFldCt']['mean'].mean()
                 outputs['Omega_out'] = sum_stats['RotSpeed']['mean'].mean()
                 outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:

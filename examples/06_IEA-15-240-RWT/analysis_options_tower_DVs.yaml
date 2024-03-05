@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs
+    folder_output: outputs/06_IEA15_tower_optimization
     fname_output: refturb_output
     
 design_variables:

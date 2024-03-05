@@ -45,7 +45,7 @@ class RAFT_WEIS(om.Group):
         members_opt = {}
         members_opt['nmembers'] = len(weis_opt["floating"]["members"]["name"])
         members_opt['npts'] = weis_opt["floating"]["members"]["n_height"]
-        members_opt['npts_lfill'] = members_opt['npts_rho_fill'] = [m-1 for m in members_opt['npts']]
+        members_opt['npts_lfill'] = members_opt['npts_rho_fill'] = [int(m-1) for m in members_opt['npts']]
         members_opt['ncaps'] = weis_opt["floating"]["members"]["n_bulkheads"]
         members_opt['nreps'] = [0]*members_opt['nmembers']
         members_opt['shape'] = ['circ']*members_opt['nmembers']
@@ -252,11 +252,40 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             for ii in range(s_ballast.shape[0]):
                 iball = np.where(s_ballast[ii,0] >= s_grid)[0][-1]
                 rho_fill[iball] = rho_ballast[ii]
-                # RAFT's l_fill is in absolute coordinates, WISDEM is relative to member
+                # Initial ballast fill values
                 if rho_ballast[ii] > 1100.0: # not variable/water
                     l_fill[iball] = h_ballast[ii]
                 else:
                     l_fill[iball] = var_height[k]
+
+            # fix ballast l_fill for RAFT: it does not want l_fill > section size
+            # add ballast from last section to next
+            remaining_fill = 0
+            for i_sec, l in enumerate(l_fill):
+
+                # if there's left over fill, use previous density
+                # will use lower ballast if the chamber is too small
+                # hopefully solver will bias platform design away from this case eventually
+                if remaining_fill:
+                    rho_fill[i_sec] = rho_fill[i_sec-1]
+                
+                # length of current section
+                sec_length = s_grid[i_sec+1] - s_grid[i_sec]
+
+                if l and remaining_fill:
+                    print('WEIS Warning: there is left over ballast from a previous section and a new ballast being added.  Platform masses may be inconsistent between RAFT and FloatingSE')
+
+                # add fill from previous section
+                l += remaining_fill     
+                if l > sec_length:  # only fill up to section length
+                    l_fill[i_sec] = sec_length
+                    remaining_fill = l - sec_length
+                else:   # fill with remaining
+                    l_fill[i_sec] = l
+                    remaining_fill = 0
+
+            if remaining_fill:  # there is ballast still to be filled
+                print('WEIS Warning: Not all ballast was assigned to a RAFT section.')
             outputs[f"platform_member{k+1}_l_fill"] = l_fill
             outputs[f"platform_member{k+1}_rho_fill"] = rho_fill
 
@@ -318,16 +347,15 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             turbStr = f'{dlc_generator.wind_speed_class}{turb_class}_{wind_type}'
             opStr = 'operating' if icase.turbine_status.lower() == 'operating' else 'parked'
             waveStr = 'JONSWAP' #icase.wave_spectrum
-            raft_cases[i] = [icase.URef,
-                             icase.wind_heading,
-                             turbStr,
-                             opStr,
-                             icase.yaw_misalign,
-                             waveStr,
-                             max(1.0, icase.wave_period),
-                             max(1.0, icase.wave_height),
-                             icase.wave_heading,
-                             icase.current]
+            raft_cases[i] = [float(icase.URef),
+                             float(icase.wind_heading),
+                             str(turbStr),
+                             str(opStr),
+                             float(icase.yaw_misalign),
+                             str(waveStr),
+                             float(max(1.0, icase.wave_period)),
+                             float(max(1.0, icase.wave_height)),
+                             float(icase.wave_heading)]
         discrete_outputs['raft_dlcs'] = raft_cases
         discrete_outputs['raft_dlcs_keys'] = [
             'wind_speed', 

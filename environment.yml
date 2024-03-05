@@ -3,41 +3,72 @@ channels:
   - defaults
 
 dependencies:
-  - cmake>=3.21.1
-  - control
-  - coveralls
-  - cython
+  #- osqp # Works with the pip version, but not the conda version
+  - anyio
+  - argon2-cffi
+  - arrow
+  - async-lru
+  - babel
+  - beautifulsoup4
+  - bleach
+  - cffi
+  - comm
+  - debugpy
+  - decorator
   - dill
+  - executing
+  - fqdn
   - git
-  - Jinja2
-  - jsonschema
-  - make
-  - pip
-  - matplotlib-base
+  - ipython
+  - isoduration
+  - jedi
+  - jinja2
+  - json5
+  - jsonmerge
+  - jupyter
+  - jupyterlab
+  - markupsafe
+  - mat4py
+  - matplotlib
+  - meson
+  - mistune
+  - moorpy
+  - ninja
   - nlopt
-  - numpy
-  - openmdao
+  - nlopt
+  - notebook
+  - openfast
   - openpyxl
+  - openraft
+  - osqp
+  - overrides
   - pandas
+  - parso
+  - patsy
+  - pcrunch
+  - pexpect
   - pip
-  - pyoptsparse
-  - pyside2
-  - pytest
-  - pytest-cov
-  - python-benedict
-  - pyyaml
-  - ruamel_yaml
-  - scipy
+  - platformdirs
+  - psutil
+  - ptyprocess
+  - pyDOE3
+  - pygments
+  - pyhams
+  - python-json-logger
+  - pyzmq
+  - qdldl-python
+  - qtpy
+  - rosco
+  - scikit-learn
   - setuptools
-  - simpy
-  - slycot
   - smt
-  - sortedcontainers
-  - swig
-#  - versioneer
+  - tornado
+  - traitlets
+  - treon
+  - webencodings
+  - wisdem
   - pip:
-    - fatpack
-    - jsonmerge
+    - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]

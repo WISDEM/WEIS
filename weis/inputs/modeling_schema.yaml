@@ -55,7 +55,7 @@ properties:
                     FAST_exe:
                         type: string
                         default: none
-                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast)
+                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast).  Note that if you use this, ROSCO must use the same compilation configuration.  You can specify the ROSCO dll with path2dll.
                     FAST_lib:
                         type: string
                         default: none
@@ -368,8 +368,8 @@ properties:
                         units: s
                         description: Amount of time between creating checkpoint files for potential restart (s)
                     DT_Out:
-                        type: string
-                        default: default
+                        type: number
+                        default: 0
                         description: Time step for tabular output (s) (or 'default')
                     OutFileFmt:
                         type: integer
@@ -785,7 +785,7 @@ properties:
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
                         type: integer
-                        enum: [0, 1, 2, 3]
+                        enum: [0, 1, 2, 3, 11, 12, 13]
                         default: 1
                         description: Type of wake/induction model (switch) {0=none, 1=BEMT, 3=OLAF}
                     AFAeroMod:
@@ -868,7 +868,7 @@ properties:
                         type: integer
                         enum: [1, 2, 3]
                         default: 2
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=unsteady, 3=time-dependent tau1} (-) [used only when WakeMod=2]
+                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when WakeMod=2]
                     tau1_const:
                         type: number
                         unit: s
@@ -888,27 +888,27 @@ properties:
                                 type: integer
                                 enumerate: [5]
                                 default: 5
-                                description: Integration method {5 Forward Euler 1st order, default 5} (switch)
+                                description: Integration method 1 RK4, 5 Forward Euler 1st order, default 5 switch
                             DTfvw:
                                 type: number
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description: Time interval for wake propagation. {default dtaero} (s). Set it to 0. for default (same as main fst)
+                                description: Time interval for wake propagation. {default dtaero} (s)
                             FreeWakeStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description:  Time when wake is free. (-) value = always free. {default 0.0} (s). Set it to 0. for default (same as main fst)
+                                description: Time when wake is free. (-) value = always free. {default 0.0} (s)
                             FullCircStart:
                                 default: 0.
                                 minimum: 0.
                                 maximum: 10.
                                 unit: s
-                                description: Time at which full circulation is reached. {default 0.0} (s). Set it to 0. for default (same as main fst)
-                            CircSolvingMethod:
+                                description: Time at which full circulation is reached. {default 0.0} (s)
+                            CircSolvMethod:
                                 type: integer
                                 enumerate: [1, 2, 3]
                                 default: 1
@@ -916,11 +916,11 @@ properties:
                             CircSolvConvCrit:
                                 type: number
                                 default: 0.001
-                                description: Convergence criteria {default 0.001} [only if CircSolvingMethod=1] (-)
+                                description: Convergence criteria {default 0.001} [only if CircSolvMethod=1] (-)
                             CircSolvRelaxation:
                                 type: number
                                 default: 0.1
-                                description: Relaxation factor {default 0.1} [only if CircSolvingMethod=1] (-)
+                                description: Relaxation factor {default 0.1} [only if CircSolvMethod=1] (-)
                             CircSolvMaxIter:
                                 type: integer
                                 default: 30
@@ -928,22 +928,27 @@ properties:
                             PrescribedCircFile:
                                 type: string
                                 default: 'NA'
-                                description: File containing prescribed circulation [only if CircSolvingMethod=3] (quoted string)
-                            nNWPanel:
+                                description: File containing prescribed circulation [only if CircSolvMethod=3] (quoted string)
+                            nNWPanels:
                                 type: integer
                                 minimum: 0
                                 default: 120
                                 description: Number of near-wake panels [integer] (-)
-                            WakeLength:
+                            nNWPanelsFree:
                                 type: integer
                                 minimum: 0
-                                default: 900
-                                description: Total wake distance [integer] (number of time steps)
-                            FreeWakeLength:
+                                default: 120
+                                description: Number of free near-wake panels (-) {default nNWPanels}
+                            nFWPanels:
                                 type: integer
+                                minimum: 0
                                 default: 0
+                                description: Number of far-wake panels (-) {default 0}
+                            nFWPanelsFree:
+                                type: integer
                                 minimum: 0
-                                description: Wake length that is free [integer] (number of time steps) {default WakeLength}
+                                default: 0
+                                description: Number of free far-wake panels (-) {default nFWPanels}
                             FWShedVorticity:
                                 type: boolean
                                 default: False
@@ -965,7 +970,7 @@ properties:
                                 description: Viscous diffusion function {0 None, 1 Rankine, 2 LambOseen, 3 Vatistas, 4 Denominator, 'default' 3} (switch)
                             WakeRegMethod:
                                 type: integer
-                                enumerate: [0, 1, 2, 3, 4]
+                                enumerate: [0, 1, 2, 3]
                                 default: 1
                                 description: Wake regularization method {1 Constant, 2 Stretching, 3 Age, default 1} (switch)
                             WakeRegFactor:
@@ -1038,12 +1043,16 @@ properties:
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
                     UAStartRad:
                         type: number
-                        default: 0
+                        default: 0.
                         description: Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
+                        minimum: 0.
+                        maximum: 1.
                     UAEndRad:
                         type: number
-                        default: 1
+                        default: 1.
                         description: Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
+                        minimum: 0.
+                        maximum: 1.
                     AFTabMod:
                         type: integer
                         enum: [1,2,3]
@@ -1073,6 +1082,40 @@ properties:
                         type: boolean
                         default: True
                         description: Include aerodynamic pitching moment in calculations?  (flag)
+                    VolHub:
+                        type: number
+                        default: 0
+                        description: Hub volume (m^3)
+                        minimum: 0.
+                    HubCenBx:
+                        type: number
+                        default: 0
+                        description: Hub center of buoyancy x direction offset (m)
+                        minimum: -100.
+                        maximum: 100.
+                    VolNac:
+                        type: number
+                        default: 0
+                        description:  Nacelle volume (m^3)
+                        minimum: 0.
+                    NacCenB:                       
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Position of nacelle center of buoyancy from yaw bearing in nacelle coordinates (m)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                            minimum: -100.
+                            maximum: 100.
+                    TFinAero:
+                        type: boolean
+                        default: False
+                        description: Calculate tail fin aerodynamics model (flag)
+                    TFinFile:
+                        type: string
+                        default: "unused"
+                        description: Input file for tail fin aerodynamics [used only when TFinAero=True]
                     Patm:
                         type: number
                         minimum: 0.
@@ -1094,6 +1137,12 @@ properties:
                         minimum: 0.
                         maximum: 10.
                         description: Turbulence intensity used in the Eames tower shadow model. Values of TwrTI between 0.05 and 0.4 are recommended.
+                    TwrCb:
+                        type: number
+                        default: 0.0
+                        # minimum: 0.
+                        # maximum: 10.
+                        description: Turbulence buoyancy coefficient
                     SumPrint:
                         type: boolean
                         default: False
@@ -2250,6 +2299,16 @@ properties:
                         type: boolean
                         default: False
                         description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
+                    OutCBModes:
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
+                        description: Output Guyan and Craig-Bampton modes {0 No output, 1 JSON output}, (flag)
+                    OutFEMModes:
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
+                        description: Output first 30 FEM modes {0 No output, 1 JSON output} (flag)
                     OutCOSM:
                         type: boolean
                         default: False
@@ -2800,6 +2859,10 @@ properties:
                 type: boolean
                 default: False
                 description: Whether we derive OpenFAST model from an existing model and ignore WISDEM
+            regulation_trajectory: 
+                type: string
+                default: unused
+                description: Only used if from_openfast is set to True. Path to yaml file containing output data of the turbine tabulated against wind speed (rotor speed, blade pitch angle, aero thrust coefficient) needed to initialize the OpenFAST model through
             openfast_file: 
                 type: string
                 default: unused
@@ -2865,7 +2928,7 @@ properties:
                             type: number
                             uniqueItems: True
                             minimum: 0.0
-                            maximum: 50.0
+                            maximum: 200.0
                     rated_offset:
                         type: number
                         default: 1
@@ -3019,7 +3082,7 @@ properties:
                                 unit: m/s
                                 minItems: 1
                                 minimum: 0.0
-                                maximum: 50.0
+                                maximum: 200.0
                                 uniqueItems: true
                         ws_bin_size:
                             type: number
@@ -3049,7 +3112,7 @@ properties:
                                 unit: none
                                 minItems: 1
                                 uniqueItems: true
-                        wave_seed:
+                        wave_seeds:
                             type: array
                             default: []
                             description: Wave random number generator seeds for HydroDyn
@@ -3277,22 +3340,22 @@ properties:
                                     description: Usable length of output time series [seconds] (program will add GridWidth/MeanHHWS seconds unless UsableTime is 'ALL')
                                 HubHt:
                                     type: number
-                                    default: 1.e+2
-                                    minimum: 1.e+1
+                                    default: 0
+                                    minimum: 0
                                     maximum: 5.e+2
                                     unit: m
                                     description: Hub height [m] (should be > 0.5*GridHeight)
                                 GridHeight:
                                     type: number
-                                    default: 1.e+1
-                                    minimum: 1.e+1
+                                    default: 0
+                                    minimum: 0
                                     maximum: 5.e+2
                                     unit: m
                                     description: Grid height [m]
                                 GridWidth:
                                     type: number
-                                    default: 1.e+1
-                                    minimum: 1.e+1
+                                    default: 0
+                                    minimum: 0
                                     maximum: 5.e+2
                                     unit: m
                                     description: Grid width [m] (should be >= 2*(RotorRadius+ShaftLength))
@@ -3665,7 +3728,7 @@ properties:
     ROSCO:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/ROSCO_toolbox/inputs/toolbox_shema.yaml
+        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/rosco/toolbox/inputs/toolbox_shema.yaml
         properties: 
             tuning_yaml:
                 type: string

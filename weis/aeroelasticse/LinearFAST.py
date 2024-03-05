@@ -10,13 +10,12 @@ examples/control_opt/run_lin_turbine.py will run outputs from gen_linear_model()
 '''
 import numpy as np
 import os
+import shutil
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from ROSCO_toolbox import utilities as ROSCO_utilities
+from rosco.toolbox import utilities as ROSCO_utilities
 
-import weis
-weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
 
 
 class LinearFAST(runFAST_pywrapper_batch):
@@ -31,7 +30,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
     def __init__(self, **kwargs):
 
-        self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable, linearization doesn't work with library
+        self.FAST_exe           = shutil.which('openfast')  # Path to executable, linearization doesn't work with library
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None
