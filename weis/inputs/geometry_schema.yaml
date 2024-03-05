@@ -66,7 +66,7 @@ properties:
                 default: 2.
             speed_sound:
                 type: number
-                description: Speed of sound in air.
+                description: Speed of sound in working fluid.
                 unit: m/s
                 minimum: 330.
                 maximum: 1600.
