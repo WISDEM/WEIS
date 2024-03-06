@@ -1147,36 +1147,6 @@ properties:
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
-                    VolHub:
-                        type: number
-                        default: 0.0
-                        description: Hub volume (m^3)
-                    HubCenBx:
-                        type: number
-                        default: 0.0
-                        description: Hub center of buoyancy x direction offset (m)
-                    VolNac:
-                        type: number
-                        default: 0.0
-                        description: Nacelle volume (m^3)
-                    NacCenB:
-                        type: array
-                        items:
-                            type: number
-                        default: [0.0, 0.0, 0.0]
-                        description: Position of nacelle center of buoyancy from yaw bearing in nacelle coordinates (m)
-                    TFinAero:
-                        type: boolean
-                        default: False
-                        description: Calculate tail fin aerodynamics model (flag)
-                    TFinFile:
-                        type: string
-                        default: unused
-                        description: Input file for tail fin aerodynamics [used only when TFinAero=True]
-                    TwrCb:
-                        type: number
-                        default: 0.0
-                        description: Tower coefficient of buoyancy
             ElastoDyn: &ofelastodyn
                 type: object
                 default: {}

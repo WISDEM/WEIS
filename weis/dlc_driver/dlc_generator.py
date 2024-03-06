@@ -141,6 +141,8 @@ class DLCGenerator(object):
             raise Exception('The vector of metocean conditions wave_height_SSS in the modeling options must have the same length of the tabulated wind speeds')
         if len(self.mo_ws)!=len(self.mo_Tp_SSS):
             raise Exception('The vector of metocean conditions wave_period_SSS in the modeling options must have the same length of the tabulated wind speeds')
+        if len(self.mo_ws)!=len(self.mo_Cu_F):
+            raise Exception('The vector of metocean conditions current_fatigue in the modeling options must have the same length of the tabulated wind speeds')
 
         # Load extreme wave heights and periods
         self.wave_Hs50 = np.array([metocean['wave_height50']])
