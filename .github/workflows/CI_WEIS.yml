@@ -62,6 +62,11 @@ jobs:
       #- name: Setup tmate session
       #  if: contains( matrix.os, 'windows')
       #  uses: mxschmitt/action-tmate@v3
+
+      - name: Check Windows libraries
+        if: contains( matrix.os, 'windows')
+        run: |
+          where libiomp5md.dll
           
       # List the collected tests for debugging purposes
       - name: List tests
