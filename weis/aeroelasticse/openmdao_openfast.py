@@ -1004,9 +1004,8 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn15']['TwrElev']   = twr_elev[twr_ids]
         fst_vt['AeroDyn15']['TwrDiam']   = twr_d[twr_ids]
         fst_vt['AeroDyn15']['TwrCd']     = inputs['tower_cd'][cd_index:]
-        fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_ids])) * fst_vt['AeroDyn15']['TwrTI']
-        fst_vt['AeroDyn15']['TwrCb']     = np.ones(len(twr_elev[twr_ids])) * int(modopt['flags']['marine_hydro'])       # 1 if MHK, otherwise 0
-        fst_vt['AeroDyn15']['tau1_const'] = 0.24 * float(inputs['Rtip']) # estimated using a=0.3 and U0=7.5
+        fst_vt['AeroDyn15']['TwrTI']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrTI']
+        fst_vt['AeroDyn15']['TwrCb']     = np.ones(len(twr_elev[twr_index:])) * fst_vt['AeroDyn15']['TwrCb']
 
         z_tow = twr_elev
         z_sec, _ = util.nodal2sectional(z_tow)

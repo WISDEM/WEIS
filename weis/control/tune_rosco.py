@@ -258,9 +258,10 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.bld_edgewise_freq = 5 * WISDEM_turbine.rated_rotor_speed
         
         # Floating Feedback Filters
-        if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated
-            rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
-        rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
+        if self.controller_params['Fl_Mode']:
+            rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'])
+            if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated
+                rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
