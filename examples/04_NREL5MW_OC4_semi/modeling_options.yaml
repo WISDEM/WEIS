@@ -2,14 +2,10 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
-        OF_run_fst: NREL5MW_OC4_semi
-        OF_run_dir: temp/NREL5MW_OC4_semi
 
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS

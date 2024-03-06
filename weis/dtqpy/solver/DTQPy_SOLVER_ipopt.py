@@ -100,13 +100,17 @@ def DTQPy_SOLVER_ipopt(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     
     # LB and UB for the optimization variables
     x0 = np.zeros(nx)
+    lb = np.array(lb).squeeze()
+    ub = np.array(ub).squeeze()
     optProb.addVarGroup("xvars", nx, lower=lb, upper=ub, value=x0)
     
     # construct the upper and lower bounds for linear equality and inequality constraints
     # beq < Aeq < beq
     # -inf < A < b
     lower = np.vstack([-np.inf*np.ones((n,1)),beq.todense()])
+    lower = np.array(lower).squeeze()
     upper = np.vstack([b.todense(),beq.todense()])
+    upper = np.array(upper).squeeze()
     
     # add linear constraints
     optProb.addConGroup(

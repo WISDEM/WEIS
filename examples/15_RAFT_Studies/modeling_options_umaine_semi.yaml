@@ -1,10 +1,6 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/IEA_w_TMD_33
-        save_iterations: True
-        save_timeseries: True
         use_exe: True
         allow_fails: True
         fail_value: 9999
@@ -12,8 +8,6 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -88,7 +82,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 2 
-    tuning_yaml: ../02_control_opt/IEA15MW-tuning.yaml
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
     zeta_pc: [1]
     omega_pc: [0.2]
     U_pc: [12]

@@ -1,5 +1,5 @@
 general:
-    folder_output: /Users/dzalkind/Tools/WEIS-4/outputs/13_DTQP_1
+    folder_output: outputs/13_DTQP_OL2CL
     fname_output: iea15mw
     
 design_variables:

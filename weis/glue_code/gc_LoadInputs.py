@@ -22,6 +22,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
+        self.analysis_options['fname_input_analysis'] = fname_input_analysis
 
         self.set_run_flags()
         self.set_openmdao_vectors()
@@ -31,8 +32,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
     def set_weis_data(self):
 
+        # Directory of modeling option input, if we want to use it for relative paths
+        mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
+
         # BEM dir, all levels
-        base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
             bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
@@ -44,8 +48,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             # If running MPI, RAFT won't be able to save designs in parallel
             self.modeling_options["Level1"]['save_designs'] = False
 
-        # Directory of modeling option input, if we want to use it for relative paths
-        mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
@@ -101,7 +103,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
                         self.modeling_options['Level1']['flag'] = True
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, bemDir,'Output','Wamit_format','Buoy')
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(bemDir,'Output','Wamit_format','Buoy')
                         
 
                     else:

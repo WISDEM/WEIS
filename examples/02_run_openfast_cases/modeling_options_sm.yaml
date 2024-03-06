@@ -27,6 +27,7 @@ WISDEM:
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
+    regulation_trajectory: IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     simulation:
@@ -86,7 +87,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 1 
-    tuning_yaml: IEA15MW-tuning.yaml
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
     zeta_pc: 1.2
     omega_pc: 0.2
     U_pc: [12]
