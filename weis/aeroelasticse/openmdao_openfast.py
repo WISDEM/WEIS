@@ -1834,6 +1834,7 @@ class FASTLoadCases(ExplicitComponent):
     def run_FAST(self, inputs, discrete_inputs, fst_vt):
 
         modopt = self.options['modeling_options']
+        modopt_dir = os.path.dirname(modopt['fname_input_modeling'])
         DLCs = modopt['DLC_driver']['DLCs']
         # Initialize the DLC generator
         cut_in = float(inputs['V_cutin'])
@@ -1974,8 +1975,8 @@ class FASTLoadCases(ExplicitComponent):
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
-        if self.options['modeling_options']['Level3']['from_openfast']:
-            reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
+        if modopt['Level3']['from_openfast']:
+            reg_traj = os.path.join(modopt_dir,modopt['Level3']['regulation_trajectory'])
             if os.path.isfile(reg_traj):
                 data = load_yaml(reg_traj)
                 cases = data['cases']
