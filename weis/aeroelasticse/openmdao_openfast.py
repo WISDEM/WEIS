@@ -2656,12 +2656,16 @@ class FASTLoadCases(ExplicitComponent):
         
         # Get wind distribution probabilities, make sure they are normalized
         # This should also take care of averaging across seeds
+        if 'user_probability' in self.options['modeling_options']['DLC_driver']['metocean_conditions']:
+            user_dist = self.options['modeling_options']['DLC_driver']['metocean_conditions']['user_probability']
+        else:
+            user_dist = None
         pp = PowerProduction(**{
                 'turbine_class': discrete_inputs['turbine_class'],
                 'cut_in': float(inputs['V_cutin']), 
                 'cut_out':float(inputs['V_cutout']), 
                 'MHK': self.options['modeling_options']['flags']['marine_hydro'],
-                'user_dist': self.options['modeling_options']['DLC_driver']['metocean_conditions']['user_probability']
+                'user_dist': user_dist
             })
         ws_prob = pp.prob_WindDist(U, disttype='pdf')
         ws_prob /= ws_prob.sum()
