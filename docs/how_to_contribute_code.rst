@@ -21,54 +21,30 @@ There is currently very little documentation for WEIS, so you have a lot of flex
 Do not stress too much about the outline of the information you create, simply that it exists within the repo.
 We will reorganize the documentation content at a later date.
 
-Using Git subtrees
-------------------
+Developing Python Modules Used in WEIS
+--------------------------------------
+WEIS is comprised of several modules, like WISDEM, ROSCO, and RAFT. 
+Previously, we used subtrees of each module used in WEIS.
+Now, each of these modules are installed via conda.
+You can determine which version is installed in your conda environment using::
 
-The WEIS repo contains copies of other codes created by using the :code:`git subtree` commands.
-Below are some details about how to add external codes and update them.
+  conda list | grep wisdem
 
-Adding a subtree for the first time
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+where :code:`wisdem` can be replaced with any of the modules in the :code:`environment.yml`
 
-To add an external code for the first time, using OpenFAST as an example, type:
+To make changes in WISDEM, first conda uninstall it::
 
-.. code-block:: bash
+  conda uninstall --force wisdem    # omitting the --force flag will uninstall others, like rosco.  Also, mamba is less reliable here.
 
-  $ git remote add OpenFAST https://github.com/OpenFAST/openfast
-  $ git fetch OpenFAST
-  $ git subtree add -P OpenFAST OpenFAST/dev --squash
+Clone the WISDEM repository::
 
+  git clone https://github.com/WISDEM/WISDEM.git
 
-The :code:`--squash` is important so WEIS doesn't get filled up with commits from the subtree repos.
+and follow the installation instructions of that repository, **while staying within the conda environment used to install weis.**
+Since most dependencies will already be installed for each module, you can likely simply navigate to the desired repository and::
 
-Updating a subtree
-~~~~~~~~~~~~~~~~~~
+  pip install -e .
 
-Once a subtree code exists in this repo, we can update it like this.
-This first two lines are needed only if you don't have the remote for the particular subtree yet.
-If you already have the remote, only the last line is needed.
-
-.. code-block:: bash
-
-  $ git remote add OpenFAST https://github.com/OpenFAST/openfast
-  $ git fetch OpenFAST
-  $ git subtree pull --prefix OpenFAST https://github.com/OpenFAST/openfast dev --squash --message="Updating to latest OpenFAST develop"
-
-Changes to these subtree codes **should only be made to their original repos**, *not* to this WEIS repo.
-Once those individual repos have been updated, use the previous :code:`git subtree pull` command to pull in those updates to the WEIS repo.
-Once the upstream repos have your code changes, those changes have been pulled into your branch, you can then submit a PR for WEIS.
-
-Troubleshooting subtree updates
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you run into trouble using :code:`git subtree`, specifically if you see :code:`git: 'subtree' is not a git command.`, try using your system git instead of any conda-installed git.
-Specifically, try using :code:`/usr/bin/git subtree` for any subtree commands.
-If that doesn't work for you, please open an issue on this repo so we can track it.
-
-Sometimes when updating a subtree, you might get an error that contains :code:`could not rev-parse split hash`, which suggests that the subtree and the more recent branch have diverged in some way.
-To fix this, manually remove the entire folder created by the subtree command (e.g. :code:`rm -rf ROSCO`.)
-Then, follow the steps to add a repo subtree for the first time.
-By deleting then re-adding the subtree repo, you ensure that all the changes are correctly added to the WEIS repo.
 
 Testing
 -------

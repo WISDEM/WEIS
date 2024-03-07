@@ -78,7 +78,7 @@ Level1:
 
 ROSCO:
     flag: True
-    tuning_yaml: ../../ROSCO/Tune_Cases/IEA15MW.yaml
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
     
 DLC_driver:
     metocean_conditions:
