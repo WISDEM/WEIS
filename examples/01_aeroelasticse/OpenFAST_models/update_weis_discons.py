@@ -3,7 +3,7 @@ Update the DISCON.IN examples in the WEIS repository using the Tune_Case/ .yaml 
 
 '''
 import os
-from ROSCO_toolbox.ofTools.fast_io.update_discons import update_discons
+from rosco.toolbox.ofTools.fast_io.update_discons import update_discons
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 iea15_dir = os.path.join(weis_dir,'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/')

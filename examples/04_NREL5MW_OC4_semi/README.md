@@ -1,4 +1,4 @@
-**These examples are currently under construction: FloatingSE does not technically support multiple variable ballasts, so the resulting models  may be unpredictable.**
+**These examples are currently under construction: FloatingSE does not technically support multiple variable ballasts, so the resulting models may be unpredictable.**
 
 
 To run these examples, please make sure you are in your WEIS conda environment and run
