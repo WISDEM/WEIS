@@ -1845,7 +1845,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             for i_case in range(dlc_generator.n_cases):
                 WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
-                    dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, i_case, self.turbsim_exe)
+                    dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
 
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
