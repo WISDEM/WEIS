@@ -60,6 +60,10 @@ properties:
                         type: string
                         default: none
                         description: Path to FAST dynamic library to override default WEIS value (e.g. /home/user/OpenFAST/lib/libopenfast.so)
+                    turbsim_exe:
+                        type: string
+                        default: none
+                        description: Path to turbsim executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/turbsim)
                     path2dll:
                         type: string
                         default: none
