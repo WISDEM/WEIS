@@ -384,7 +384,7 @@ class FASTLoadCases(ExplicitComponent):
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory, exist_ok=True)
         if not os.path.exists(self.wind_directory):
-            os.mkdir(self.wind_directory)
+            os.makedirs(self.wind_directory, exist_ok=True)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
         self.cores = OFmgmt['cores']
         self.case = {}
