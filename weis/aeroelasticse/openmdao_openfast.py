@@ -1864,7 +1864,7 @@ class FASTLoadCases(ExplicitComponent):
         
         tau1_const_interp = np.zeros_like(Ct_aero_interp)
         for i in range(len(Ct_aero_interp)):
-            a = 1. / 2. * (1. - np.sqrt(1. - Ct_aero_interp[i]))
+            a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
             tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
 
 
