@@ -2369,6 +2369,17 @@ properties:
                         minimum: 0.0
                         maximum: 1.0
                         description: Threshold for IC convergence (-)
+                    NumSegs:
+                        type: [number, array]
+                        unit: none
+                        items:
+                            type: number
+                            minimum: 10
+                            maximum: 100
+                        default: 20
+                        minimum: 10
+                        maximum: 100
+                        description: Number of segments to use in mooring line modeling.  Single number or array with the same length as the number of lines.
             ServoDyn: &ofservodyn
                 type: object
                 default: {}
