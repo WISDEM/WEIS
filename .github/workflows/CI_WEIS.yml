@@ -67,9 +67,6 @@ jobs:
         if: contains( matrix.os, 'windows')
         run: |
           where libiomp5md.dll
-          $condaEnvDir = $env:CONDA_PREFIX
-          $badLib = Join-Path -Path $condaEnvDir -ChildPath "Library\bin\libiomp5md.dll"
-          Remove-Item $badLib
           
       # List the collected tests for debugging purposes
       - name: List tests
