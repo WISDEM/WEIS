@@ -37,7 +37,7 @@ dependencies:
   - nlopt
   - nlopt
   - notebook
-  - openfast=3.5.3
+  - openfast=3.5.2
   - openpyxl
   - openraft
   - osqp
