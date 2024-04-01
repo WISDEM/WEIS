@@ -1,18 +1,17 @@
 general:
-    # folder_output: /scratch/dzalkind/WEIS-2/outputs/17_IEA22_OptStudies/0_setup     # kestrel
-    folder_output: outputs/17_IEA22_OptStudies/1_change_opt
+    folder_output: /scratch/dzalkind/WEIS-2/outputs/17_IEA22_OptStudies/0_setup
     fname_output: IEA-22-280-RWT
 
 design_variables:
-    tower:
-        outer_diameter:
-            flag: False
-            lower_bound: 4.0
-            upper_bound: 10.0
-        layer_thickness:
-            flag: False
-            lower_bound: 4.e-3
-            upper_bound: 2.e-1
+    # tower:
+    #     outer_diameter:
+    #         flag: False
+    #         lower_bound: 4.0
+    #         upper_bound: 10.0
+    #     layer_thickness:
+    #         flag: False
+    #         lower_bound: 4.e-3
+    #         upper_bound: 2.e-1
     floating:
         joints:
             flag: True
@@ -26,7 +25,7 @@ design_variables:
             r_coordinate:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
                   lower_bound: 35.0
-                  upper_bound: 70.0
+                  upper_bound: 75.0
         members:
             flag: True
             groups:
@@ -75,7 +74,7 @@ constraints:
         survival_heel:
             upper_bound: 0.17453292519943295 # 10 deg
         metacentric_height:
-            flag: True
+            flag: False
             lower_bound: 15.0
         pitch_period:
             flag: True
@@ -108,13 +107,13 @@ constraints:
     control:
         Max_PtfmPitch:
             flag: True
-            max: 5.5
+            max: 6.0
         Std_PtfmPitch:
             flag: True
-            max: 0.39  # Same as IEA-15MW with same DLCs
+            max: 1.25  # Same as IEA-15MW with same DLCs
         nacelle_acceleration:
             flag: True
-            max: 0.25
+            max: 2.0
 
 merit_figure: structural_mass
             
