@@ -8,6 +8,8 @@ General:
         use_exe: True
         allow_fails: True
         fail_value: 9999
+        # FAST_exe: /home/dzalkind/Tools/openfast/build/glue-codes/openfast/openfast        # faster on kestrel
+        # turbsim_exe: /home/dzalkind/Tools/openfast/build/modules/turbsim/turbsim      # faster on kestrel
 WISDEM:
     RotorSE:
         flag: True
