@@ -355,8 +355,10 @@ class WindPark(om.Group):
                 self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options))
 
                 # Connections from blade struct parametrization to rotor load anlysis
-                self.connect('blade.opt_var.s_opt_spar_cap_ss',   'rlds_post.constr.s_opt_spar_cap_ss')
-                self.connect('blade.opt_var.s_opt_spar_cap_ps',   'rlds_post.constr.s_opt_spar_cap_ps')
+                spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
+                self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
+                self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
+
 
                 # Connections to the stall check 
                 self.connect('blade.outer_shape_bem.s',        'stall_check_of.s')
@@ -694,15 +696,19 @@ class WindPark(om.Group):
                         self.connect('nacelle.nose_wall_thickness',       'drivese_post.nose_wall_thickness') # only used in direct
                         self.connect('nacelle.bedplate_wall_thickness',   'drivese_post.bedplate_wall_thickness') # only used in direct
                     else:
-                        self.connect('nacelle.hss_length',                'drivese_post.L_hss') # only used in geared
-                        self.connect('nacelle.hss_diameter',              'drivese_post.hss_diameter') # only used in geared
-                        self.connect('nacelle.hss_wall_thickness',        'drivese_post.hss_wall_thickness') # only used in geared
-                        self.connect('nacelle.hss_material',              'drivese_post.hss_material')
-                        self.connect('nacelle.planet_numbers',            'drivese_post.planet_numbers') # only used in geared
-                        self.connect('nacelle.gear_configuration',        'drivese_post.gear_configuration') # only used in geared
-                        self.connect('nacelle.bedplate_flange_width',     'drivese_post.bedplate_flange_width') # only used in geared
+                        self.connect('nacelle.hss_length', 'drivese_post.L_hss') # only used in geared
+                        self.connect('nacelle.hss_diameter', 'drivese_post.hss_diameter') # only used in geared
+                        self.connect('nacelle.hss_wall_thickness', 'drivese_post.hss_wall_thickness') # only used in geared
+                        self.connect('nacelle.hss_material', 'drivese_post.hss_material')
+                        self.connect('nacelle.planet_numbers', 'drivese_post.planet_numbers') # only used in geared
+                        self.connect('nacelle.gear_configuration', 'drivese_post.gear_configuration') # only used in geared
+                        self.connect('nacelle.bedplate_flange_width', 'drivese_post.bedplate_flange_width') # only used in geared
                         self.connect('nacelle.bedplate_flange_thickness', 'drivese_post.bedplate_flange_thickness') # only used in geared
-                        self.connect('nacelle.bedplate_web_thickness',    'drivese_post.bedplate_web_thickness') # only used in geared
+                        self.connect('nacelle.bedplate_web_thickness', 'drivese_post.bedplate_web_thickness') # only used in geared
+                        self.connect("nacelle.gearbox_mass_user", "drivese_post.gearbox_mass_user")
+                        self.connect("nacelle.gearbox_torque_density", "drivese_post.gearbox_torque_density")
+                        self.connect("nacelle.gearbox_radius_user", "drivese_post.gearbox_radius_user")
+                        self.connect("nacelle.gearbox_length_user", "drivese_post.gearbox_length_user")
                             
                     self.connect('hub.hub_material',                  'drivese_post.hub_material')
                     self.connect('hub.spinner_material',              'drivese_post.spinner_material')
