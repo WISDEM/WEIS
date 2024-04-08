@@ -224,7 +224,7 @@ class TuneROSCO(ExplicitComponent):
         # If Kp_float is a design variable, do not automatically tune it
         if self.opt_options['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
             rosco_init_options['Kp_float'] = float(inputs['Kp_float'])
-            rosco_init_options['tune_Fl'] = False
+            rosco_init_options['tune_Fl'] = 0
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
