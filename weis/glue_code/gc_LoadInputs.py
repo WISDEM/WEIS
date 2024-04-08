@@ -35,18 +35,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Directory of modeling option input, if we want to use it for relative paths
         mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
-        # BEM dir, all levels
-        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
-        if MPI:
-            rank    = MPI.COMM_WORLD.Get_rank()
-            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
-        else:
-            bemDir = osp.join(base_run_dir,'BEM')
 
-        self.modeling_options["Level1"]['BEM_dir'] = bemDir
-        if MPI:
-            # If running MPI, RAFT won't be able to save designs in parallel
-            self.modeling_options["Level1"]['save_designs'] = False
 
 
         # Openfast
@@ -61,6 +50,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 
             if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
                 self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
+                    osp.dirname(self.analysis_options['fname_input_analysis']),
                     self.analysis_options['general']['folder_output'], 
                     'openfast_runs'
                     )
@@ -127,6 +117,19 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 # Make relative to modeling options input
                 self.modeling_options['Level3']['openfast_dir'] = osp.realpath(osp.join(
                     mod_opt_dir, self.modeling_options['Level3']['openfast_dir'] ))
+        
+        # BEM dir, all levels
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = osp.join(base_run_dir,'BEM')
+
+        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        if MPI:
+            # If running MPI, RAFT won't be able to save designs in parallel
+            self.modeling_options["Level1"]['save_designs'] = False
         
         # RAFT
         if self.modeling_options["flags"]["floating"]:
