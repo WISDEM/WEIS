@@ -35,7 +35,6 @@ dependencies:
   - moorpy
   - ninja
   - nlopt
-  - nlopt
   - notebook
   - openfast=3.5.2
   - openpyxl
