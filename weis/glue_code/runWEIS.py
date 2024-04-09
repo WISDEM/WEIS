@@ -112,7 +112,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
     folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
-        os.makedirs(folder_output)
+        os.makedirs(folder_output,exist_ok=True)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
