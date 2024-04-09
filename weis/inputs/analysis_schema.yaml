@@ -90,6 +90,20 @@ properties:
                                 type: number
                                 default: 1.0
                                 unit: none
+                    rosco_tuning:
+                        type: array
+                        default: []
+                        items:
+                            type: object
+                            default: {}
+                            properties:
+                                name:
+                                    type: string
+                                    description: Name of rosco tuning yaml parameter.
+                                min: 
+                                    type: number
+                                max:
+                                    type: number
                     servo:
                         type: object
                         default: {}

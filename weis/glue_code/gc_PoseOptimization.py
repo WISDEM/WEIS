@@ -118,7 +118,27 @@ class PoseOptimizationWEIS(PoseOptimization):
         super(PoseOptimizationWEIS, self).set_design_variables(wt_opt, wt_init)
 
         # -- Control --
+        rosco_tuning_dvs = self.opt['design_variables']['control']['rosco_tuning']
+        
+        # Generic rosco tuning param
+        for dv in rosco_tuning_dvs:
+            # TODO: Check that name is in rosco schema
+            # TODO: Check that min/max adhere to schema
+            # pass
+
+            # # Add design var
+            if 'min' in dv and 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', lower=dv["min"], upper=dv["max"])
+            elif 'min' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', lower=dv["min"])
+            elif 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', upper=dv["max"])
+            else:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}')
+
+        # Other, hardcoded control opts
         control_opt = self.opt['design_variables']['control']
+        
         if control_opt['servo']['pitch_control']['omega']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.omega_pc', lower=control_opt['servo']['pitch_control']['omega']['min'], 
                                                             upper=control_opt['servo']['pitch_control']['omega']['max'])

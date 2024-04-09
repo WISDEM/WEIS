@@ -74,6 +74,16 @@ class WindPark(om.Group):
             n_PC = 1
         else:
             n_PC = len(modeling_options['ROSCO']['U_pc'])
+        
+        # Generic DVs
+        rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
+        for dv in rosco_tuning_dvs:
+            # TODO: grab name from rosco schema
+            # TODO: support arrays
+            # TODO: grab units?
+            tune_rosco_ivc.add_output(dv['name'], val=0.0)
+
+        # Specific DVs
         tune_rosco_ivc.add_output('omega_pc',         val=np.zeros(n_PC), units='rad/s',     desc='Pitch controller natural frequency')
         tune_rosco_ivc.add_output('zeta_pc',          val=np.zeros(n_PC),                    desc='Pitch controller damping ratio')
         tune_rosco_ivc.add_output('omega_vs',         val=0.0, units='rad/s',     desc='Generator torque controller natural frequency')
@@ -238,6 +248,10 @@ class WindPark(om.Group):
             if modeling_options['ROSCO']['Flp_Mode'] > 0:
                 self.connect('tune_rosco_ivc.flp_kp_norm',    'sse_tune.tune_rosco.flp_kp_norm')
                 self.connect('tune_rosco_ivc.flp_tau',     'sse_tune.tune_rosco.flp_tau')
+
+            # Connect generic ivc/dvs
+            for dv in rosco_tuning_dvs:
+                self.connect(f'tune_rosco_ivc.{dv["name"]}',     f'sse_tune.tune_rosco.{dv["name"]}')
 
         if modeling_options['Level1']['flag']:
             self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))

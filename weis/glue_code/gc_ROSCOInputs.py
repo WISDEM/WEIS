@@ -48,6 +48,17 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
         except:
             raise Exception('If Fl_Mode > 0, you must set twr_freq and ptfm_freq in modeling options')
         
+    
+    # Generic input variables
+    rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
+    for dv in rosco_tuning_dvs:
+        # Grab from modeling options (rosco_init_options)
+        if dv['name'] in rosco_init_options:
+            wt_opt[f"tune_rosco_ivc.{dv['name']}"] = rosco_init_options[dv['name']]
+        else:
+            raise Exception(f"The rosco tuning design variable {dv['name']} is not defined in the tuning yaml or modeling options")
+                     
+    
     # Check for proper Flp_Mode, print warning
     if modeling_options['WISDEM']['RotorSE']['n_tab'] > 1 and rosco_init_options['Flp_Mode'] == 0:
             raise Exception('A distributed aerodynamic control device is specified in the geometry yaml, but Flp_Mode is zero in the modeling options.')
