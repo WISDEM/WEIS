@@ -9,7 +9,7 @@ from functools import reduce
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 
 try:
-    from ROSCO_toolbox import utilities as ROSCO_utilities
+    from rosco.toolbox import utilities as ROSCO_utilities
     ROSCO = True
 except:
     ROSCO = False
@@ -271,6 +271,8 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['Fst']['VTK_fields'], 'VTK_fields', '- Write mesh fields to VTK data files? (flag) {true/false} [unused if WrVTK=0]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['VTK_fps'], 'VTK_fps', '- Frame rate for VTK output (frames per second){will use closest integer multiple of DT} [used only if WrVTK=2]\n'))
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDyn(self):
@@ -430,6 +432,8 @@ class InputWriter_OpenFAST(object):
             f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         
         f.write('---------------------------------------------------------------------------------------\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDynBlade(self):
@@ -481,6 +485,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][3], 'BldEdgSh(5)', '-            , coeff of x^5\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][4], 'BldEdgSh(6)', '-            , coeff of x^6\n'))      
          
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDynTower(self):
@@ -537,6 +543,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwSSM2Sh'][3], 'TwSSM2Sh(5)', '-       , coefficient of x^5 term\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwSSM2Sh'][4], 'TwSSM2Sh(6)', '-       , coefficient of x^6 term\n'))
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_BeamDyn(self):
@@ -620,6 +628,8 @@ class InputWriter_OpenFAST(object):
             f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         
         f.write('---------------------------------------------------------------------------------------')
+        f.flush()
+        os.fsync(f)
         f.close()
 
         # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn'][''], '', '\n'))
@@ -739,6 +749,8 @@ class InputWriter_OpenFAST(object):
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
   
     def write_AeroDyn15(self):
@@ -804,6 +816,9 @@ class InputWriter_OpenFAST(object):
         f.write('======  Beddoes-Leishman Unsteady Airfoil Aerodynamics Options  ===================================== [used only when AFAeroMod=2]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAMod'], 'UAMod', "- Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minnema/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]\n"))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FLookup'], 'FLookup', "- Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]\n"))
+        if 'UAStartRad' in self.fst_vt['AeroDyn15'] and 'UAEndRad' in self.fst_vt['AeroDyn15']:
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAStartRad'], 'UAStartRad', '- Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n'))
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAEndRad'], 'UAEndRad', '- Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n'))
         f.write('======  Airfoil Information =========================================================================\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AFTabMod'], 'AFTabMod', '- Interpolation method for multiple airfoil tables {1=1D interpolation on AoA (first table only); 2=2D interpolation on AoA and Re; 3=2D interpolation on AoA and UserProp} (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['InCol_Alfa'], 'InCol_Alfa', '- The column in the airfoil tables that contains the angle of attack (-)\n'))
@@ -868,6 +883,8 @@ class InputWriter_OpenFAST(object):
             f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         
         f.write('---------------------------------------------------------------------------------------\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_AeroDyn15Blade(self):
@@ -894,6 +911,8 @@ class InputWriter_OpenFAST(object):
         for Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, AFID in zip(BlSpn, BlCrvAC, BlSwpAC, BlCrvAng, BlTwist, BlChord, BlAFID):
             f.write('{: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 8d}\n'.format(Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, int(AFID)))
         
+        f.flush()
+        os.fsync(f)
         f.close()
         
     def write_AeroDyn15Polar(self):
@@ -1038,6 +1057,8 @@ class InputWriter_OpenFAST(object):
                 for row in polar:
                     f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             
+            f.flush()
+            os.fsync(f)
             f.close()
             
     def write_AeroDyn15Coord(self):
@@ -1064,6 +1085,9 @@ class InputWriter_OpenFAST(object):
             f.write('!  x/c        y/c\n')
             for row in coord:
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
+            
+            f.flush()
+            os.fsync(f)
             f.close()
 
     def write_AeroDyn14(self):
@@ -1139,6 +1163,8 @@ class InputWriter_OpenFAST(object):
         for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
             f.write('{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
 
+        f.flush()
+        os.fsync(f)
         f.close()        
 
     def write_AeroDyn14Tower(self):
@@ -1162,6 +1188,8 @@ class InputWriter_OpenFAST(object):
         for Re, CD in zip(self.fst_vt['AeroDynTower']['TwrRe'], self.fst_vt['AeroDynTower']['TwrCD']):
             f.write('% 2.15e' %Re + '   '.join(['% 2.15e'%cdi for cdi in CD]) + '\n')
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_AeroDyn14Polar(self, filename, a_i):
@@ -1192,6 +1220,8 @@ class InputWriter_OpenFAST(object):
                 for a, cl, cd in zip(param['alpha'], param['cl'], param['cd']):
                     f.write('{: 6e}  {: 6e}  {: 6e}\n'.format(a, cl, cd))
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_OLAF(self):
@@ -1248,6 +1278,8 @@ class InputWriter_OpenFAST(object):
         f.write('--------------------------- ADVANCED OPTIONS --------------------------------------------------\n')
         f.write('===============================================================================================\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
     
     def write_ServoDyn(self):
@@ -1376,10 +1408,12 @@ class InputWriter_OpenFAST(object):
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_DISCON_in(self):
-        # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+        # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/rosco.toolbox
 
         # Fill controller and turbine objects for ROSCO 
         # - controller
@@ -1716,6 +1750,9 @@ class InputWriter_OpenFAST(object):
             
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
         
+
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_SubDyn(self):
@@ -1901,6 +1938,10 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('---------------------------- OUTPUT: SUMMARY & OUTFILE ------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['SumPrint'], 'SumPrint', '- Output a Summary File (flag).It contains: matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.\n'))
+        if 'OutCBModes' in self.fst_vt['SubDyn']:
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutCBModes'], 'OutCBModes', '- Output Guyan and Craig-Bampton modes {0 No output, 1 JSON output}, (flag)\n'))
+        if 'OutFEMModes' in self.fst_vt['SubDyn']:
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutFEMModes'], 'OutFEMModes', '-  Output first 30 FEM modes {0 No output, 1 JSON output} (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutCOSM'], 'OutCOSM', '- Output cosine matrices with the selected output member forces (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutAll'], 'OutAll', "- [T/F] Output all members' end forces\n"))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutSwtch'], 'OutSwtch', '- [1/2/3] Output requested channels to: 1=<rootname>.SD.out;  2=<rootname>.out (generated by FAST);  3=both files.\n'))
@@ -1924,6 +1965,8 @@ class InputWriter_OpenFAST(object):
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_MAP(self):
@@ -1985,6 +2028,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<11s}'.format('(-)')+'\n')
         f.write("\n".join(self.fst_vt['MAP']['Option']).strip() + '\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_MoorDyn(self):
@@ -2067,6 +2112,8 @@ class InputWriter_OpenFAST(object):
         f.write('END\n')
         f.write('------------------------- need this line --------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
         
         
@@ -2169,6 +2216,8 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(StC_vt['PrescribedForcesFile'], 'PrescribedForcesFile', '- Time series force and moment (7 columns of time, FX, FY, FZ, MX, MY, MZ)\n'))
         f.write('-------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
 if __name__=="__main__":

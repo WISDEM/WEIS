@@ -3,70 +3,73 @@ channels:
   - defaults
 
 dependencies:
-  - alabaster
+  #- osqp # Works with the pip version, but not the conda version
+  - anyio
+  - argon2-cffi
+  - arrow
+  - async-lru
   - babel
-  - cmake
-  - control
-  - coveralls
-  - cython
+  - beautifulsoup4
+  - bleach
+  - cffi
+  - comm
+  - debugpy
+  - decorator
   - dill
-  - docutils
-  - et-xmlfile
-  - fatpack
-  - future
+  - executing
+  - fqdn
   - git
-  - gdown
-  - imagesize
+  - ipython
+  - isoduration
+  - jedi
   - jinja2
+  - json5
   - jsonmerge
-  - jsonschema
-  - make
+  - jupyter
+  - jupyterlab
   - markupsafe
-  - matplotlib-base
+  - mat4py
+  - matplotlib
   - meson
+  - mistune
+  - moorpy
   - ninja
   - nlopt
-  - numpy
-  - numpydoc
-  - openmdao
+  - nlopt
+  - notebook
+  - openfast=3.5.2
   - openpyxl
-  #- osqp # Works with the pip version, but not the conda version
+  - openraft
+  - osqp
+  - overrides
   - pandas
+  - parso
   - patsy
+  - pcrunch
+  - pexpect
   - pip
+  - platformdirs
+  - psutil
+  - ptyprocess
+  - pyDOE3
   - pygments
   - pyhams
-  - pyoptsparse
-  - pytest
-  - pytest-cov
-  - python-benedict
-  - pyyaml
+  - python-json-logger
   - pyzmq
   - qdldl-python
-  - ruamel.yaml
-  - scipy
-  - seaborn
+  - qtpy
+  - rosco
+  - scikit-learn
   - setuptools
-  - simpy
-  - slycot
-  - sortedcontainers
-  - sphinx
-  - sphinxcontrib-applehelp
-  - sphinxcontrib-devhelp
-  - sphinxcontrib-htmlhelp
-  - sphinxcontrib-jsmath
-  - sphinxcontrib-qthelp
-  - sphinxcontrib-serializinghtml
-  - statsmodels
-  - swig
+  - smt
+  - tornado
+  - traitlets
   - treon
-  - pyzmq
-#  - versioneer
+  - webencodings
+  - wisdem=3.14.0
   - pip:
     - dearpygui
     - marmot-agents
-    - osqp
-    - smt
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

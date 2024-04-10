@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/15_RAFT_Studies
+    folder_output: outputs/15_RAFT_optimization
     fname_output: refturb_output
 
 

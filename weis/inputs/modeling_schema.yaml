@@ -42,7 +42,7 @@ properties:
                         description: Flag to only generate an OpenFAST model and stop
                     save_timeseries:
                         type: boolean
-                        default: False
+                        default: True
                         description: Save openfast output timeseries
                     keep_time:
                         type: boolean
@@ -50,12 +50,12 @@ properties:
                         description: Keep timeseries in openmdao_openfast for post-processing
                     save_iterations:
                         type: boolean
-                        default: False
+                        default: True
                         description: Save summary stats and other info for each openfast iteration.  Could bump this up to a more global post-processing input.
                     FAST_exe:
                         type: string
                         default: none
-                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast)
+                        description: Path to FAST executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/openfast).  Note that if you use this, ROSCO must use the same compilation configuration.  You can specify the ROSCO dll with path2dll.
                     FAST_lib:
                         type: string
                         default: none
@@ -360,8 +360,8 @@ properties:
                         units: s
                         description: Amount of time between creating checkpoint files for potential restart (s)
                     DT_Out:
-                        type: string
-                        default: default
+                        type: number
+                        default: 0
                         description: Time step for tabular output (s) (or 'default')
                     OutFileFmt:
                         type: integer
@@ -777,7 +777,7 @@ properties:
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
                     WakeMod:
                         type: integer
-                        enum: [0, 1, 2, 3]
+                        enum: [0, 1, 2, 3, 11, 12, 13]
                         default: 1
                         description: Type of wake/induction model (switch) {0=none, 1=BEMT, 3=OLAF}
                     AFAeroMod:
@@ -1026,13 +1026,25 @@ properties:
                                 description: (GB DEBUG 7/8) Number of grid points for VTK output
                     UAMod:
                         type: integer
-                        enum: [1,2,3]
+                        enum: [1,2,3,4,5,6,7]
                         default: 3
                         description: Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minemma/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]
                     FLookup:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
+                    UAStartRad:
+                        type: number
+                        default: 0.
+                        description: Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
+                        minimum: 0.
+                        maximum: 1.
+                    UAEndRad:
+                        type: number
+                        default: 1.
+                        description: Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]
+                        minimum: 0.
+                        maximum: 1.
                     AFTabMod:
                         type: integer
                         enum: [1,2,3]
@@ -2249,6 +2261,16 @@ properties:
                         type: boolean
                         default: False
                         description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
+                    OutCBModes:
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
+                        description: Output Guyan and Craig-Bampton modes {0 No output, 1 JSON output}, (flag)
+                    OutFEMModes:
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
+                        description: Output first 30 FEM modes {0 No output, 1 JSON output} (flag)
                     OutCOSM:
                         type: boolean
                         default: False
@@ -2799,6 +2821,10 @@ properties:
                 type: boolean
                 default: False
                 description: Whether we derive OpenFAST model from an existing model and ignore WISDEM
+            regulation_trajectory: 
+                type: string
+                default: unused
+                description: Only used if from_openfast is set to True. Path to yaml file containing output data of the turbine tabulated against wind speed (rotor speed, blade pitch angle, aero thrust coefficient) needed to initialize the OpenFAST model through
             openfast_file: 
                 type: string
                 default: unused
@@ -3048,7 +3074,7 @@ properties:
                                 unit: none
                                 minItems: 1
                                 uniqueItems: true
-                        wave_seed:
+                        wave_seeds:
                             type: array
                             default: []
                             description: Wave random number generator seeds for HydroDyn
@@ -3557,7 +3583,7 @@ properties:
     ROSCO:
         type: object
         default: {}
-        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/ROSCO_toolbox/inputs/toolbox_shema.yaml
+        description: Options for WEIS fidelity level 3 = nonlinear time domain. Inherited from ROSCO/rosco/toolbox/inputs/toolbox_shema.yaml
         properties: 
             tuning_yaml:
                 type: string

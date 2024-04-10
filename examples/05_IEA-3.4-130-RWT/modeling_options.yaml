@@ -1,8 +1,5 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    openfast_configuration:
-      OF_run_fst: IEA34 # Name of the OpenFAST output files
-      OF_run_dir: temp/iea34 # Path to folder with the OpenFAST output files
 
 WISDEM:
     RotorSE:
@@ -11,8 +8,6 @@ WISDEM:
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
-        n_tsr_perf_surfaces: 5
-        n_pitch_perf_surfaces: 5
     TowerSE:
         flag: True
     DriveSE:

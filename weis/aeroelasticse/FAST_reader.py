@@ -4,8 +4,8 @@ from functools import reduce
 import operator
 from weis.aeroelasticse.FAST_vars_out import FstOutput
 
-from ROSCO_toolbox.utilities import read_DISCON, load_from_txt
-from ROSCO_toolbox import turbine as ROSCO_turbine
+from rosco.toolbox.utilities import read_DISCON, load_from_txt
+from rosco.toolbox import turbine as ROSCO_turbine
 ROSCO = True
 
 
@@ -1643,7 +1643,7 @@ class InputReader_OpenFAST(object):
         return StC_vt
     
     def read_DISCON_in(self):
-        # Read the Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+        # Read the Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/rosco.toolbox
 
         discon_in_file = os.path.normpath(os.path.join(self.FAST_directory, self.fst_vt['ServoDyn']['DLL_InFile']))
 
@@ -1979,7 +1979,7 @@ class InputReader_OpenFAST(object):
             self.fst_vt['HydroDyn']['FillNumM'][i]  = int(ln[0])
             self.fst_vt['HydroDyn']['FillMList'][i] = [int(j) for j in ln[1:-2]]
             self.fst_vt['HydroDyn']['FillFSLoc'][i] = float(ln[-2])
-            self.fst_vt['HydroDyn']['FillDens'][i]  = float(ln[-1])
+            self.fst_vt['HydroDyn']['FillDens'][i]  = float_read(ln[-1])
 
         #MARINE GROWTH
         f.readline()
@@ -2291,6 +2291,18 @@ class InputReader_OpenFAST(object):
         f.readline()
         # OUTPUT
         self.fst_vt['SubDyn']['SumPrint'] = bool_read(f.readline().split()[0])
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutCBModes' in line:
+            self.fst_vt['SubDyn']['OutCBModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutFEMModes' in line:
+            self.fst_vt['SubDyn']['OutFEMModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
         self.fst_vt['SubDyn']['OutCOSM']  = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutAll']   = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutSwtch'] = int_read(f.readline().split()[0])
