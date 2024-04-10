@@ -1777,6 +1777,7 @@ class FASTLoadCases(ExplicitComponent):
             if dlc_generator.cases[i_case].turbulent_wind:
                 # Assign values common to all DLCs
                 # Wind turbulence class
+                # TODO AG: dlc driver (dlc_generator) does not seem to have IECturbc parameter, Check the logic below
                 if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case
                     dlc_generator.cases[i_case].IECturbc = str(dlc_generator.cases[i_case].IECturbc)
                     dlc_generator.cases[i_case].IEC_WindType = 'NTM'
