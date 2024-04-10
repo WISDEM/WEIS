@@ -332,6 +332,12 @@ class WindPark(om.Group):
                     self.connect(f"floatingse.member{k}.ballast_height", f"raft.member{k}:ballast_height")
                     self.connect(f"floatingse.member{k}.ballast_density", f"raft.member{k}:ballast_density")
 
+                    if modeling_options['floating']['members']['outer_shape'][k] == "circular":
+                        self.connect(f"floatingse.member{k}.outer_diameter", f"raft.member{k}:outer_diameter")
+                    elif modeling_options['floating']['members']['outer_shape'][k] == "rectangular":
+                        self.connect(f"floatingse.member{k}.side_length_a", f"raft.member{k}:side_length_a")
+                        self.connect(f"floatingse.member{k}.side_length_b", f"raft.member{k}:side_length_b")
+
                 self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
                 self.connect("mooring.unstretched_length", 'raft.unstretched_length')
                 for var in ['diameter','mass_density','stiffness','breaking_load','cost_rate',

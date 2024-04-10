@@ -50,7 +50,7 @@ class RAFT_WEIS(om.Group):
         members_opt['nreps'] = [0]*members_opt['nmembers']
         member_shape = weis_opt["floating"]["members"]["outer_shape"]
         # TODO: need to re-visit how to handle square. Can we just get away square with rect?
-        member_shape = list(map(lambda x:x.replace("circular", "circ"), member_shape))
+        member_shape = list(map(lambda x:x.replace("circular", "circ"), member_shape))  # replace all circular with circ
         member_shape = list(map(lambda x:x.replace("rectangular", "rect"), member_shape))
         members_opt['shape'] = member_shape
         members_opt['scalar_thicknesses'] = members_opt['scalar_diameters'] = [False]*members_opt['nmembers']
@@ -144,7 +144,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             n_ball   = opt["floating"]["members"]["n_ballasts"][k]
             n_bulk   = opt["floating"]["members"]["n_bulkheads"][k]
             if opt["floating"]["members"]["outer_shape"][k] == "circular":
-                self.add_input(f"member{k}:diameter", val=np.zeros(n_height), units="m")
+                self.add_input(f"member{k}:outer_diameter", val=np.zeros(n_height), units="m")
                 self.add_output(f"platform_member{k+1}_d", val=np.zeros(n_height), units="m")
             elif opt["floating"]["members"]["outer_shape"][k] == "rectangular":
                 self.add_input(f"member{k}:side_length_a", val=np.zeros(n_height), units="m")
@@ -253,7 +253,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
             # Convert diameter and side lengths to RAFT
             if opt["floating"]["members"]["outer_shape"][k] == "circular":
-                outputs[f"platform_member{k+1}_d"] = inputs[f"member{k}:diameter"]
+                outputs[f"platform_member{k+1}_d"] = inputs[f"member{k}:outer_diameter"]
             elif opt["floating"]["members"]["outer_shape"][k] == "rectangular":
                 outputs[f"platform_member{k+1}_d"][:, 0] = inputs[f"member{k}:side_length_a"]
                 outputs[f"platform_member{k+1}_d"][:, 1] = inputs[f"member{k}:side_length_b"]
