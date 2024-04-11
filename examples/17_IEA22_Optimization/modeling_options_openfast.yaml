@@ -8,6 +8,8 @@ General:
         use_exe: True
         allow_fails: True
         fail_value: 9999
+        # FAST_exe: /home/dzalkind/Tools/openfast/build/glue-codes/openfast/openfast        # faster on kestrel
+        # turbsim_exe: /home/dzalkind/Tools/openfast/build/modules/turbsim/turbsim      # faster on kestrel
 WISDEM:
     RotorSE:
         flag: True
@@ -101,17 +103,17 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 ROSCO:
     flag: True
     # SD_Mode: 0
-    PS_Mode: 3
-    ps_percent: 0.9
+    # PS_Mode: 3
+    # ps_percent: 0.9
     # F_LPFType: 2
     # F_NotchType: 2
     # Fl_Mode: 2 
     tuning_yaml: IEA-22-280-RWT-Semi_ROSCO.yaml
-    zeta_pc: [1]
-    omega_pc: [0.1]
-    U_pc: [12]
-    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
-    omega_vs: 0.12  
+    # zeta_pc: [1]
+    # omega_pc: [0.1]
+    # U_pc: [12]
+    # zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
+    # omega_vs: 0.12  
     # twr_freq: 3.2
     # ptfm_freq: 0.2
     # Kp_float: -10
@@ -127,16 +129,17 @@ DLC_driver:
         wave_height_50: 10.68
         wave_period_50: 14.2
     DLCs:
-        - DLC: "1.1"
-          n_seeds: 6
-        # - DLC: "1.6"
+        # - DLC: "1.1"
         #   n_seeds: 6
-        # #   wind_speed: [6,10,14]
-        # #   analysis_time: 1.
-        # #   transient_time: 0.
-        # #   turbulent_wind:
-        # #       HubHt: 160
-        # #       GridHeight: 300
-        # #       GridWidth: 300
+        # - DLC: "1.6"    # kestrel
+        #   n_seeds: 6
+        - DLC: "1.6"    # local, lite
+          n_seeds: 1
+          wind_speed: [12]
+          transient_time: 0.
+          analysis_time: 10.
         # - DLC: "6.1"
         #   n_seeds: 6
+        #   turbulent_wind:
+        #     # GridHeight: 400
+        #     GridWidth: 400

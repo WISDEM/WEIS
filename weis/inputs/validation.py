@@ -1,7 +1,7 @@
 import os
 import jsonmerge
 import wisdem.inputs
-from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types
+from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types, DefaultValidatingDraft7Validator
 import rosco.toolbox.inputs
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
@@ -86,3 +86,13 @@ def write_analysis_yaml(instance, foutput):
         foutput = foutput[-4:]
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput+sfx_str)
+
+def re_validate_modeling(modeling_dict):
+    fschema = get_modeling_schema()
+    yaml_schema = load_yaml(fschema) if type(fschema) == type("") else fschema
+    DefaultValidatingDraft7Validator(yaml_schema).validate(modeling_dict)
+
+def re_validate_analysis(analysis_dict):
+    fschema = get_analysis_schema()
+    yaml_schema = load_yaml(fschema) if type(fschema) == type("") else fschema
+    DefaultValidatingDraft7Validator(yaml_schema).validate(analysis_dict)
