@@ -2,7 +2,55 @@ import numpy as np
 import os
 import weis.inputs as sch
 from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
+from weis.aeroelasticse.CaseGen_General import CaseGen_General
+from weis.aeroelasticse.FileTools import remove_numpy
 
+# TODO: not sure where this should live, so it's a global for now
+openfast_input_map = {
+    ("Fst","TMax"):'total_time',
+    ("Fst","TStart"):'transient_time',
+    
+    ("InflowWind","WindType"):'WindFile_type',
+    ("InflowWind","HWindSpeed"):'URef',
+    ("InflowWind","FileName_BTS"):'WindFile_name',
+    ("InflowWind","Filename_Uni"):'WindFile_name',
+    ("InflowWind","RefLength"):'rotorD',
+    ("InflowWind","PropagationDir"):'WindHd',
+    ("InflowWind","RefHt_Uni"):'hub_height',
+    
+    ("ElastoDyn","RotSpeed"):'rot_speed_initial',
+    ("ElastoDyn","BlPitch1"):'pitch_initial',
+    ("ElastoDyn","BlPitch2"):'pitch_initial',
+    ("ElastoDyn","BlPitch3"):'pitch_initial',
+    ("ElastoDyn","Azimuth"):'azimuth_init',
+    ("ElastoDyn","NacYaw"):'yaw_misalignment',
+    
+    ("HydroDyn","WaveHs"):'WaveHs',
+    ("HydroDyn","WaveTp"):'WaveTp',
+    ("HydroDyn","WaveDir"):'WaveHd',
+    ("HydroDyn","WavePkShp"):'WaveGamma',
+    ("HydroDyn","WaveSeed1"):'WaveSeed1',
+    
+    ("ServoDyn","TPitManS1"):'shutdown_time',
+    ("ServoDyn","TPitManS2"):'shutdown_time',
+    ("ServoDyn","TPitManS3"):'shutdown_time',
+    
+    ("AeroDyn15","AFAeroMod"):'aero_mod',
+    ("AeroDyn15","WakeMod"):'wake_mod',
+    ("AeroDyn15","tau1_const"):'tau1_const',
+    ("AeroDyn15","OLAF","DTfvw"):'DTfvw',
+    ("AeroDyn15","OLAF","nNWPanels"):'nNWPanels',
+    ("AeroDyn15","OLAF","nNWPanelsFree"):'nNWPanelsFree',
+    ("AeroDyn15","OLAF","nFWPanels"):'nFWPanels',
+    ("AeroDyn15","OLAF","nFWPanelsFree"):'nFWPanelsFree',
+
+    ("DLC","Label"):'dlc_label',
+    ("DLC","WindSeed"):'wind_seed',
+    ("DLC","MeanWS"):'mean_wind_speed',
+
+    # TODO: where should turbsim live?
+    # ("TurbSim", "RandSeed1") ?
+}
 
 class DLCInstance(object):
 
@@ -146,8 +194,8 @@ class DLCGenerator(object):
         if len(options['wind_seed']) > 0:
             wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
         else:
-            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms * options['n_azimuth'], dtype=int)
-            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms * options['n_azimuth'])
+            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms, dtype=int)
+            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms)
 
         return wind_speeds, wind_seeds
 
@@ -230,8 +278,22 @@ class DLCGenerator(object):
             raise Exception("The vector of probabilities must have either length=1 or the same length of wind speeds")
         if abs(sum(probabilities) - 1.) > 1.e-3:
             raise Exception("The vector of probabilities must sum to 1")
+        
+        metocean_case_info = {}
+        metocean_case_info['wind_speeds'] = wind_speeds
+        metocean_case_info['rand_seeds'] = wind_seeds
+        metocean_case_info['wave_seeds'] = wave_seeds
+        metocean_case_info['wind_heading'] = wind_heading
+        metocean_case_info['wave_Hs'] = wave_Hs
+        metocean_case_info['wave_Tp'] = wave_Tp
+        # metocean_case_info['current_speeds'] = current_speeds
+        metocean_case_info['wave_gamma'] = wave_gamma
+        metocean_case_info['wave_heading'] = wave_heading
+        metocean_case_info['probabilities'] = probabilities       
+        # metocean_case_info['current_std'] = self.mo_current_std       
+        
+        return metocean_case_info
 
-        return wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities
 
     def generate(self, label, options):
         known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4, 6.5, 12.1]
@@ -619,81 +681,118 @@ class DLCGenerator(object):
 
     def generate_5p1(self, options):
         # Power production normal turbulence model - severe sea state
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        met_options = self.get_metocean(options)
+        
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        # Set azimuth start positions, tile so length is same as wind_seeds
-        azimuth_inits = np.tile(
-            np.linspace(0.,120.,options['n_azimuth'],endpoint=False),
-            int(len(wind_seeds)/options['n_azimuth'])
-            )
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        for ws in wind_speeds:
+        # TODO: decide if we want to functionize this since it happens for most cases
+        if len(met_options['wave_Hs'])==0:
+            met_options['wave_Hs'] = np.interp(met_options['wind_speeds'], self.mo_ws, self.mo_Hs_NSS)
+        if len(met_options['wave_Tp'])==0:
+            met_options['wave_Tp'] = np.interp(met_options['wind_speeds'], self.mo_ws, self.mo_Tp_NSS)
+
+       
+        
+        options['azimuth_inits'] = np.linspace(0.,120.,options['n_azimuth'],endpoint=False)
+
+        # TODO: make time option handling into a function because it's reused
+        if options['analysis_time'] > 0:
+            options['analysis_time'] = options['analysis_time']
+        if options['transient_time'] >= 0:
+            options['transient_time'] = options['transient_time']
+        options['total_time'] = options['analysis_time'] + options['transient_time']
+
+        if options['shutdown_time'] > options['analysis_time']:
+            raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({options['shutdown_time']}) option is greater than the analysis_time ({options['analysis_time']})")
+        else:
+            options['shutdown_time'] = options['shutdown_time']
+
+        
+        # TODO: figure out how to handle input options vs. options that are looped over, which need to be in a particular form
+        # Input options follow the modeling schema
+
+        # TODO: functionize this since it will happen for each case:
+        # combine options, make scalar options into lists, remove numpy, make non-lists into lists
+        comb_options = {}
+        comb_options.update(options)
+        comb_options.update(met_options)
+        
+        # Make all the met_options inputs the same length as wind_speeds
+        comb_options = remove_numpy(comb_options)
+        make_equal_length(met_options,'wind_speeds')
+
+        for opt in comb_options:
+            if not isinstance(comb_options[opt], list):  # if not a list
+                comb_options[opt] = [comb_options[opt]]
+
+
+        # This will be where the magic happens, everything else will ideally be automated
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','shutdown_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['azimuth_inits']) # group 2
+
+      
+        
+        # Setup generic cross product of inputs: TODO: make name of gen_case_inputs better
+        gen_case_inputs = {}
+        for i_group, group in enumerate(generic_case_inputs):
+            first_array_len = len(comb_options[group[0]])
+            for input in group:
+                # Check that input is a valid option
+                if not input in comb_options:
+                    raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
+                
+                # Check that all inputs are of equal length
+                if len(comb_options[input]) != first_array_len:
+                    raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
+
+                gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
+            
+        # Generate generic case list
+        case_list, _ = CaseGen_General(gen_case_inputs)
+
+        # Make idlc for other parts of WEIS
+        for i_case, case in enumerate(case_list):
             idlc = DLCInstance(options=options)
-            idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.azimuth_init = azimuth_inits[i_WiSe]
+
+            # TODO: Figure out if there's a way to make the things below into generic_case_inputs
             idlc.turbulent_wind = True
-            idlc.label = '5.1'
-            idlc.turbine_status = 'operating-shutdown'
-            if options['analysis_time'] > 0:
-                idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] >= 0:
-                idlc.transient_time = options['transient_time']
-            if options['shutdown_time'] > options['analysis_time']:
-                raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({options['shutdown_time']}) option is greater than the analysis_time ({options['analysis_time']})")
-            else:
-                idlc.shutdown_time = options['shutdown_time']
-            idlc.OF_dlccaseinputs = {("Fst","TMax"):idlc.analysis_time + idlc.transient_time,
-                                      ("Fst","TStart"):idlc.transient_time,
-                                      ("InflowWind","HWindSpeed"):idlc.URef,
-                                      ("InflowWind","PropagationDir"):idlc.wind_heading,
-                                      ("ElastoDyn","Azimuth"):idlc.azimuth_init,
-                                      ("ElastoDyn","NacYaw"):idlc.yaw_misalign,
-                                      ("HydroDyn","WaveHs"):idlc.wave_height,
-                                      ("HydroDyn","WaveTp"):idlc.wave_period,
-                                      ("HydroDyn","WaveDir"):idlc.wave_heading,
-                                      ("HydroDyn","WavePkShp"):idlc.wave_gamma,
-                                      ("HydroDyn","WaveSeed1"):idlc.wave_seed1,
-                                      ("ServoDyn","TPitManS1"):idlc.shutdown_time,
-                                      ("ServoDyn","TPitManS2"):idlc.shutdown_time,
-                                      ("ServoDyn","TPitManS3"):idlc.shutdown_time,
-                                      ("DLC","Label"):idlc.label,
-                                      ("DLC","WindSeed"):idlc.RandSeed1,
-                                      ("DLC","MeanWS"):idlc.URef,
-                                      }
-            self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
+            idlc.URef = case['wind_speeds']
+            idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
+
+
+        # TODO: use Abhineet's openfast case mapping to automate the mapping of generic inputs to OpenFAST inputs
+        
+        case_inputs = {}
+        # Main fst
+        case_inputs[("Fst","TMax")] = {'vals':comb_options['total_time'] , 'group':0}
+        case_inputs[("Fst","TStart")] = {'vals':comb_options['transient_time'], 'group':0}
+
+        # Wind inputs
+        case_inputs[("InflowWind","HWindSpeed")] = {'vals':comb_options['wind_speeds'], 'group':1}
+
+        case_inputs[("HydroDyn","WaveHs")] = {'vals': comb_options['wave_Hs'], 'group': 1}
+        case_inputs[("HydroDyn","WaveTp")] = {'vals': comb_options['wave_Tp'], 'group': 1}
+        case_inputs[("HydroDyn","WaveDir")] = {'vals': comb_options['wave_heading'], 'group': 1}   # This one is single dimension
+        case_inputs[("HydroDyn","WavePkShp")] = {'vals': comb_options['wave_gamma'], 'group': 1}
+        case_inputs[("HydroDyn","WaveSeed1")] = {'vals': comb_options['wave_seeds'], 'group': 1}
+        
+        # Azimuth
+        case_inputs[("ElastoDyn","Azimuth")] = {'vals':comb_options['azimuth_inits'], 'group':2}
+
+        # Shutdown time
+        case_inputs[("ServoDyn","TPitManS1")] = {'vals':comb_options['shutdown_time'], 'group':0}
+        case_inputs[("ServoDyn","TPitManS2")] = {'vals':comb_options['shutdown_time'], 'group':0}
+        case_inputs[("ServoDyn","TPitManS3")] = {'vals':comb_options['shutdown_time'], 'group':0}
+
+        self.openfast_case_inputs.append(case_inputs)
+
+
+
+        # TODO: the majority of this method can be automated across DLCs.  What needs to be in each dlc generator function?
+        # A few special options, like shutdown_time here
+        # Maybe we need everything before the group setup to be an function, then everything after to start
+        # We likely won't know until setting up more DLCs
 
 
     def generate_6p1(self, options):
@@ -950,7 +1049,25 @@ class DLCGenerator(object):
 
             self.cases.append(idlc)
 
-    
+    # TODO: set up these methods with input information from openmdao_openfast
+    def assign_initial_conditions(self):
+        pass
+
+    def assign_olaf_parameters(self):
+        pass
+
+    def generate_wind_inputs(self):
+        pass
+
+
+def make_equal_length(option_dict,target_name):
+    '''
+    This function will set the length of all the option_dicts to that of option_dict[target_name] if it's a scalar
+    '''
+    target_len = len(option_dict[target_name])
+    for key in option_dict:
+        if len(option_dict[key]) == 1:
+            option_dict[key] = option_dict[key] * target_len
 
 
 if __name__ == "__main__":
@@ -981,5 +1098,15 @@ if __name__ == "__main__":
         DLCopt = DLCs[i_DLC]
         dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-    print(dlc_generator.cases[5].URef)
-    print(dlc_generator.n_cases)
+    # print(dlc_generator.cases[1].URef)
+    # print(dlc_generator.n_cases)
+
+    FAST_runDirectory = '/Users/dzalkind/Tools/WEIS-DLC/examples/05_IEA-3.4-130-RWT/outputs/05_DLC15_new_setup/openfast_runs'
+    FAST_InputFile = 'weis_job'
+
+    case_list_all = []
+    for case_inputs in dlc_generator.openfast_case_inputs:
+        case_list, case_name = CaseGen_General(case_inputs, FAST_runDirectory, FAST_InputFile)
+        print('here')
+
+
