@@ -13,6 +13,7 @@ dependencies:
   - bleach
   - cffi
   - comm
+  - dash
   - debugpy
   - decorator
   - dill
@@ -68,6 +69,8 @@ dependencies:
   - webencodings
   - wisdem=3.14.0
   - pip:
+    - dash-bootstrap-components
+    - dash-mantine-components
     - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:
