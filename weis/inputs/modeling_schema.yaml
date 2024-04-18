@@ -60,6 +60,10 @@ properties:
                         type: string
                         default: none
                         description: Path to FAST dynamic library to override default WEIS value (e.g. /home/user/OpenFAST/lib/libopenfast.so)
+                    turbsim_exe:
+                        type: string
+                        default: none
+                        description: Path to turbsim executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/turbsim)
                     path2dll:
                         type: string
                         default: none
@@ -1034,7 +1038,7 @@ properties:
                                 description: (GB DEBUG 7/8) Number of grid points for VTK output
                     UAMod:
                         type: integer
-                        enum: [1,2,3]
+                        enum: [1,2,3,4,5,6,7]
                         default: 3
                         description: Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minemma/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]
                     FLookup:

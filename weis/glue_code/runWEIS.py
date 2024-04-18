@@ -15,9 +15,15 @@ fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
+def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)
-    wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
+    wt_initial = WindTurbineOntologyPythonWEIS(
+        fname_wt_input, 
+        fname_modeling_options, 
+        fname_opt_options, 
+        modeling_override=modeling_override, 
+        analysis_override=analysis_override
+        )
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
@@ -106,7 +112,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
-        os.makedirs(folder_output)
+        os.makedirs(folder_output,exist_ok=True)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
@@ -164,7 +170,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
         
-        # If the user provides values in this dict, they overwrite
+        # If the user provides values in geometry_override, they overwrite
         # whatever values have been set by the yaml files.
         # This is useful for performing black-box wrapped optimization without
         # needing to modify the yaml files.
@@ -173,12 +179,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # of the array.
         # This is useful when optimizing twist, where the first few indices
         # do not need to be optimized as they correspond to a circular cross-section.
-        if overridden_values is not None:
-            for key in overridden_values:
-                num_values = np.array(overridden_values[key]).size
-                # key_size = wt_opt[key].size
-                # idx_start = key_size - num_values
-                wt_opt[key] = overridden_values[key]
+        if geometry_override is not None:
+            for key in geometry_override:
+                num_values = np.array(geometry_override[key]).size
+                key_size = wt_opt[key].size
+                idx_start = key_size - num_values
+                wt_opt[key][idx_start:] = geometry_override[key]
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
