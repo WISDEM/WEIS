@@ -136,6 +136,9 @@ class DLCGenerator(object):
         self.n_cases = 0
         self.n_ws_dlc11 = 0
 
+        # Init openfast case list
+        self.openfast_case_inputs = []
+
         # Metocean conditions
         self.mo_ws = metocean['wind_speed']
         self.mo_Hs_NSS = metocean['wave_height_NSS']
@@ -758,7 +761,9 @@ class DLCGenerator(object):
             # TODO: Figure out if there's a way to make the things below into generic_case_inputs
             idlc.turbulent_wind = True
             idlc.URef = case['wind_speeds']
+            idlc.label = '5.1'
             idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
+            self.cases.append(idlc)
 
 
         # TODO: use Abhineet's openfast case mapping to automate the mapping of generic inputs to OpenFAST inputs

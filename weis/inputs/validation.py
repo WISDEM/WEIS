@@ -3,6 +3,7 @@ import jsonmerge
 import wisdem.inputs
 from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types
 import rosco.toolbox.inputs
+from weis.aeroelasticse.FileTools import remove_numpy
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
 fschema_geom_wisdem    = os.path.join(froot_wisdem, 'geometry_schema.yaml')
@@ -64,6 +65,7 @@ def write_modeling_yaml(instance, foutput):
         foutput = foutput[-4:]
     sfx_str = "-modeling.yaml"
     instance2 = simple_types(instance)
+    instance2 = remove_numpy(instance2)
     write_yaml(instance2, foutput+sfx_str)
 
 def get_analysis_schema():
