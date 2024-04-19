@@ -114,6 +114,7 @@ def compare_om_data(
 def get_feasible_iterations(
     dataOM,
     vars_dict,
+    feas_tol=1e-5,
 ):
     """
     get iteration-wise total and per-constraint feasibility from an experiment
@@ -140,9 +141,9 @@ def get_feasible_iterations(
         feasibility = np.ones_like(dataOM[objective_name], dtype=bool)
         values = np.array(dataOM[v["name"]]).reshape(feasibility.shape[0], -1)
         if v.get("upper") is not None:
-            feasibility = np.logical_and(feasibility, np.all(values <= v["upper"], axis=1).reshape(-1, 1))
+            feasibility = np.logical_and(feasibility, np.all(values <= (1+feas_tol)*v["upper"], axis=1).reshape(-1, 1))
         if v.get("lower") is not None:
-            feasibility = np.logical_and(feasibility, np.all(values >= v["lower"], axis=1).reshape(-1, 1))
+            feasibility = np.logical_and(feasibility, np.all(values >= (1-feas_tol)*v["lower"], axis=1).reshape(-1, 1))
         feasibility_constraintwise[v["name"]] = feasibility
         total_feasibility = np.logical_and(total_feasibility, feasibility)
     return total_feasibility, feasibility_constraintwise
@@ -152,6 +153,7 @@ def plot_conv(
     keyset_in,
     map_dataOM_vars,
     use_casewise_feasibility=False,
+    feas_tol=1e-5,
 ):
     """
     plot a set of keys
@@ -208,7 +210,7 @@ def plot_conv(
         )
         dataOM = map_dataOM_vars[method][0]
         vars = map_dataOM_vars[method][1]
-        tfeas, varfeas = get_feasible_iterations(dataOM, vars)
+        tfeas, varfeas = get_feasible_iterations(dataOM, vars, feas_tol=feas_tol)
 
         for idx_ax, key in enumerate(keyset):
             if use_casewise_feasibility and key in varfeas.keys():
