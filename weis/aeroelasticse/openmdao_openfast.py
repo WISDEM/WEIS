@@ -1936,11 +1936,10 @@ class FASTLoadCases(ExplicitComponent):
             
         channels= self.output_channels(fst_vt)
 
-        # TODO: probably don't need this anymore?
-        # Now delete the DLC-based case_inputs because they don't play nicely with aeroelasticse
+        # Delete the extra case_inputs because they don't play nicely with aeroelasticse
         for case in case_list:
             for key in list(case):
-                if key[0] == 'DLC':
+                if key[0] in ['DLC','TurbSim']:
                     del case[key]
         
         

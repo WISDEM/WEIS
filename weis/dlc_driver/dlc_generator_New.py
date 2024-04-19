@@ -6,50 +6,50 @@ from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.FileTools import remove_numpy
 
 # TODO: not sure where this should live, so it's a global for now
+# Could it be an input yaml?
 openfast_input_map = {
-    ("Fst","TMax"):'total_time',
-    ("Fst","TStart"):'transient_time',
+    # Generic name: OpenFAST input (list if necessary)
+    'total_time': ("Fst","TMax"),
+    'transient_time': ("Fst","TStart"),
     
-    ("InflowWind","WindType"):'WindFile_type',
-    ("InflowWind","HWindSpeed"):'URef',
-    ("InflowWind","FileName_BTS"):'WindFile_name',
-    ("InflowWind","Filename_Uni"):'WindFile_name',
-    ("InflowWind","RefLength"):'rotorD',
-    ("InflowWind","PropagationDir"):'WindHd',
-    ("InflowWind","RefHt_Uni"):'hub_height',
+    'WindFile_type': ("InflowWind","WindType"),
+    'wind_speeds': ("InflowWind","HWindSpeed"),
+    'WindFile_name': ("InflowWind","FileName_BTS"),
+    'WindFile_name': ("InflowWind","Filename_Uni"),
+    'rotorD': ("InflowWind","RefLength"),
+    'WindHd': ("InflowWind","PropagationDir"),
+    'hub_height': ("InflowWind","RefHt_Uni"),
     
-    ("ElastoDyn","RotSpeed"):'rot_speed_initial',
-    ("ElastoDyn","BlPitch1"):'pitch_initial',
-    ("ElastoDyn","BlPitch2"):'pitch_initial',
-    ("ElastoDyn","BlPitch3"):'pitch_initial',
-    ("ElastoDyn","Azimuth"):'azimuth_init',
-    ("ElastoDyn","NacYaw"):'yaw_misalignment',
+    'rot_speed_initial': ("ElastoDyn","RotSpeed"),
+    'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
+    'azimuth_init': ("ElastoDyn","Azimuth"),
+    'yaw_misalignment': ("ElastoDyn","NacYaw"),
     
-    ("HydroDyn","WaveHs"):'WaveHs',
-    ("HydroDyn","WaveTp"):'WaveTp',
-    ("HydroDyn","WaveDir"):'WaveHd',
-    ("HydroDyn","WavePkShp"):'WaveGamma',
-    ("HydroDyn","WaveSeed1"):'WaveSeed1',
+    'wave_Hs': ("HydroDyn","WaveHs"),
+    'wave_Tp': ("HydroDyn","WaveTp"),
+    'WaveHd': ("HydroDyn","WaveDir"),
+    'WaveGamma': ("HydroDyn","WavePkShp"),
+    'WaveSeed1': ("HydroDyn","WaveSeed1"),
     
-    ("ServoDyn","TPitManS1"):'shutdown_time',
-    ("ServoDyn","TPitManS2"):'shutdown_time',
-    ("ServoDyn","TPitManS3"):'shutdown_time',
+    'shutdown_time': [("ServoDyn","TPitManS1"),("ServoDyn","TPitManS2"),("ServoDyn","TPitManS3")],
     
-    ("AeroDyn15","AFAeroMod"):'aero_mod',
-    ("AeroDyn15","WakeMod"):'wake_mod',
-    ("AeroDyn15","tau1_const"):'tau1_const',
-    ("AeroDyn15","OLAF","DTfvw"):'DTfvw',
-    ("AeroDyn15","OLAF","nNWPanels"):'nNWPanels',
-    ("AeroDyn15","OLAF","nNWPanelsFree"):'nNWPanelsFree',
-    ("AeroDyn15","OLAF","nFWPanels"):'nFWPanels',
-    ("AeroDyn15","OLAF","nFWPanelsFree"):'nFWPanelsFree',
+    'aero_mod': ("AeroDyn15","AFAeroMod"),
+    'wake_mod': ("AeroDyn15","WakeMod"),
+    'tau1_const': ("AeroDyn15","tau1_const"),
+    'DTfvw': ("AeroDyn15","OLAF","DTfvw"),
+    'nNWPanels': ("AeroDyn15","OLAF","nNWPanels"),
+    'nNWPanelsFree': ("AeroDyn15","OLAF","nNWPanelsFree"),
+    'nFWPanels': ("AeroDyn15","OLAF","nFWPanels"),
+    'nFWPanelsFree': ("AeroDyn15","OLAF","nFWPanelsFree"),
 
-    ("DLC","Label"):'dlc_label',
-    ("DLC","WindSeed"):'wind_seed',
-    ("DLC","MeanWS"):'mean_wind_speed',
+    # 'dlc_label': ("DLC","Label"),
+    # 'wind_seed': ("DLC","WindSeed"),
+    # 'wind_speeds': ("DLC","MeanWS"),
 
     # TODO: where should turbsim live?
-    # ("TurbSim", "RandSeed1") ?
+    # These aren't actually used to generate turbsim, the generic inputs are used
+    # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
+    'rand_seeds': ("TurbSim", "RandSeed1"),
 }
 
 class DLCInstance(object):
@@ -682,28 +682,44 @@ class DLCGenerator(object):
             if len(wave_heading)>1:
                 i_WaH+=1
 
-    def generate_5p1(self, options):
-        # Power production normal turbulence model - severe sea state
-        met_options = self.get_metocean(options)
-        
+    def apply_wave_conditions(self,met_options):
+        '''
+        Apply waves based on the expected values provided in the metocean inputs
+        Will use met_options as an input and modify that dict
+        '''
+
+        # TODO: separate normal and severe?
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        # TODO: decide if we want to functionize this since it happens for most cases
         if len(met_options['wave_Hs'])==0:
             met_options['wave_Hs'] = np.interp(met_options['wind_speeds'], self.mo_ws, self.mo_Hs_NSS)
         if len(met_options['wave_Tp'])==0:
             met_options['wave_Tp'] = np.interp(met_options['wind_speeds'], self.mo_ws, self.mo_Tp_NSS)
 
-       
-        
-        options['azimuth_inits'] = np.linspace(0.,120.,options['n_azimuth'],endpoint=False)
-
-        # TODO: make time option handling into a function because it's reused
+    def set_time_options(self, options):
+        '''
+        Handle time options and add total_time to dict
+        Default for analysis and transient_time is 0
+        '''
         if options['analysis_time'] > 0:
             options['analysis_time'] = options['analysis_time']
         if options['transient_time'] >= 0:
             options['transient_time'] = options['transient_time']
         options['total_time'] = options['analysis_time'] + options['transient_time']
 
+
+    def generate_5p1(self, options):
+        # Power production normal turbulence model - severe sea state
+        met_options = self.get_metocean(options)
+        
+        # Apply normal wave conditions
+        self.apply_wave_conditions(met_options)
+        
+        # Specific azimuth starting positions
+        options['azimuth_init'] = np.linspace(0.,120.,options['n_azimuth'],endpoint=False)
+
+        self.set_time_options(options)
+
+        # Specify shutdown time for this case
         if options['shutdown_time'] > options['analysis_time']:
             raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({options['shutdown_time']}) option is greater than the analysis_time ({options['analysis_time']})")
         else:
@@ -711,50 +727,24 @@ class DLCGenerator(object):
 
         
         # TODO: figure out how to handle input options vs. options that are looped over, which need to be in a particular form
-        # Input options follow the modeling schema
+        # For now, input options are updated in place
 
         # TODO: functionize this since it will happen for each case:
-        # combine options, make scalar options into lists, remove numpy, make non-lists into lists
-        comb_options = {}
-        comb_options.update(options)
-        comb_options.update(met_options)
-        
-        # Make all the met_options inputs the same length as wind_speeds
-        comb_options = remove_numpy(comb_options)
         make_equal_length(met_options,'wind_speeds')
-
-        for opt in comb_options:
-            if not isinstance(comb_options[opt], list):  # if not a list
-                comb_options[opt] = [comb_options[opt]]
+        comb_options = combine_options(options,met_options)
 
 
         # This will be where the magic happens, everything else will ideally be automated
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','shutdown_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        generic_case_inputs.append(['azimuth_inits']) # group 2
-
+        generic_case_inputs.append(['azimuth_init']) # group 2
       
-        
-        # Setup generic cross product of inputs: TODO: make name of gen_case_inputs better
-        gen_case_inputs = {}
-        for i_group, group in enumerate(generic_case_inputs):
-            first_array_len = len(comb_options[group[0]])
-            for input in group:
-                # Check that input is a valid option
-                if not input in comb_options:
-                    raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
-                
-                # Check that all inputs are of equal length
-                if len(comb_options[input]) != first_array_len:
-                    raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
-
-                gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
-            
-        # Generate generic case list
-        case_list, _ = CaseGen_General(gen_case_inputs)
+        # Generate case list
+        case_list = gen_case_list(generic_case_inputs,comb_options)
 
         # Make idlc for other parts of WEIS
+        # TODO: figure out how to automate
         for i_case, case in enumerate(case_list):
             idlc = DLCInstance(options=options)
 
@@ -768,29 +758,25 @@ class DLCGenerator(object):
 
         # TODO: use Abhineet's openfast case mapping to automate the mapping of generic inputs to OpenFAST inputs
         
-        case_inputs = {}
-        # Main fst
-        case_inputs[("Fst","TMax")] = {'vals':comb_options['total_time'] , 'group':0}
-        case_inputs[("Fst","TStart")] = {'vals':comb_options['transient_time'], 'group':0}
+        case_inputs_openfast = {}
+        for i_group, generic_case_group in enumerate(generic_case_inputs):
+            for generic_input in generic_case_group:
+                
+                if generic_input not in openfast_input_map.keys():
+                    raise Exception(f'The input {generic_input} does not map to an OpenFAST input key in openfast_input_map')
 
-        # Wind inputs
-        case_inputs[("InflowWind","HWindSpeed")] = {'vals':comb_options['wind_speeds'], 'group':1}
+                openfast_input = openfast_input_map[generic_input]
 
-        case_inputs[("HydroDyn","WaveHs")] = {'vals': comb_options['wave_Hs'], 'group': 1}
-        case_inputs[("HydroDyn","WaveTp")] = {'vals': comb_options['wave_Tp'], 'group': 1}
-        case_inputs[("HydroDyn","WaveDir")] = {'vals': comb_options['wave_heading'], 'group': 1}   # This one is single dimension
-        case_inputs[("HydroDyn","WavePkShp")] = {'vals': comb_options['wave_gamma'], 'group': 1}
-        case_inputs[("HydroDyn","WaveSeed1")] = {'vals': comb_options['wave_seeds'], 'group': 1}
-        
-        # Azimuth
-        case_inputs[("ElastoDyn","Azimuth")] = {'vals':comb_options['azimuth_inits'], 'group':2}
+                if type(openfast_input) == list:
+                    # Apply to all list of openfast_inputs
+                    for of_input in openfast_input:
+                        case_inputs_openfast[of_input] = {'vals': comb_options[generic_input], 'group': i_group}
 
-        # Shutdown time
-        case_inputs[("ServoDyn","TPitManS1")] = {'vals':comb_options['shutdown_time'], 'group':0}
-        case_inputs[("ServoDyn","TPitManS2")] = {'vals':comb_options['shutdown_time'], 'group':0}
-        case_inputs[("ServoDyn","TPitManS3")] = {'vals':comb_options['shutdown_time'], 'group':0}
+                else:
+                    case_inputs_openfast[openfast_input] = {'vals': comb_options[generic_input], 'group': i_group}
 
-        self.openfast_case_inputs.append(case_inputs)
+
+        self.openfast_case_inputs.append(case_inputs_openfast)
 
 
 
@@ -1073,6 +1059,60 @@ def make_equal_length(option_dict,target_name):
     for key in option_dict:
         if len(option_dict[key]) == 1:
             option_dict[key] = option_dict[key] * target_len
+
+def combine_options(*dicts):
+    """
+    Combine option dictionarys and do standard processing, 
+    like removing numpy and turning everything into lists for case_inputs
+    
+    Args:
+        *dicts: Variable number of dictionaries.
+        
+    Returns:
+        dict: Combined dictionary.
+    """
+    comb_options = {}
+    for d in dicts:
+        comb_options.update(d)
+
+    comb_options = remove_numpy(comb_options)
+    
+    # Make all options a list
+    for opt in comb_options:
+        if not isinstance(comb_options[opt], list):  # if not a list
+            comb_options[opt] = [comb_options[opt]]
+
+    return comb_options
+
+def gen_case_list(generic_case_inputs,comb_options):
+    """
+    Create generic case list from list of generic_case_inputs and comb_options
+    Will apply elements of comb_options to generic_case_inputs, then create list of cases
+    
+    Args:
+        *dicts: Variable number of dictionaries.
+        
+    Returns:
+        dict: Combined dictionary.
+    """
+    # Setup generic cross product of inputs: TODO: make name of gen_case_inputs better
+    gen_case_inputs = {}
+    for i_group, group in enumerate(generic_case_inputs):
+        first_array_len = len(comb_options[group[0]])
+        for input in group:
+            # Check that input is a valid option
+            if not input in comb_options:
+                raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
+            
+            # Check that all inputs are of equal length
+            if len(comb_options[input]) != first_array_len:
+                raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
+
+            gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
+        
+    # Generate generic case list
+    case_list, _ = CaseGen_General(gen_case_inputs)
+    return case_list
 
 
 if __name__ == "__main__":
