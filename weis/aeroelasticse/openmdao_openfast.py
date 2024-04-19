@@ -1809,7 +1809,7 @@ class FASTLoadCases(ExplicitComponent):
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
                     dlc_generator.cases[i_case].PLExp = PLExp
                 # Length of wind grids
-                dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+                dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].total_time
 
         # Generate wind files
         if MPI and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
@@ -1896,7 +1896,7 @@ class FASTLoadCases(ExplicitComponent):
             WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
 
             # Other case info
-            self.TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            self.TMax[i_case] = dlc_generator.cases[i_case].total_time
             self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
             dlc_label[i_case] = dlc_generator.cases[i_case].label
             wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
@@ -1921,17 +1921,75 @@ class FASTLoadCases(ExplicitComponent):
         case_list = []
         for i_case, case_inputs in enumerate(dlc_generator.openfast_case_inputs):
             # Generate case list for DLC i
-            case_list_i, case_name_i = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
+            dlc_label = DLCs[i_case]['DLC']
+            case_list_i, case_name_i = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile, filename_ext=f'_DLC{dlc_label}_{i_case}')
             # Add DLC to case names
-            dlc_label = dlc_generator.cases[i_case].label
-            case_name_i = [f'DLC{dlc_label}_{cni}' for cni in case_name_i]   # TODO: discuss case labeling with stakeholders
+            case_name_i = [f'DLC{dlc_label}_{i_case}_{cni}' for cni in case_name_i]   # TODO: discuss case labeling with stakeholders
             
             # Extend lists of cases
             case_list.extend(case_list_i)
             case_name.extend(case_name_i)
 
+        # Old case_inputs for reference
+        #         case_inputs = {}
+        # # Main fst
+        # case_inputs[("Fst","DT")] = {'vals':DT, 'group':1}
+        # case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
+        # case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
+        # # Inflow wind
+        # case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
+        # case_inputs[("InflowWind","HWindSpeed")] = {'vals':mean_wind_speed, 'group':1}
+        # case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
+        # case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
+        # case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
+        # case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
+        # case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[hub_height], 'group':0}
+        # # Initial conditions for rotor speed, pitch, and azimuth
+        # case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
+        # case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
+        # case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
+        # case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
+        # case_inputs[("ElastoDyn","Azimuth")] = {'vals':azimuth_init, 'group':1}
+        # # Yaw offset
+        # case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
+        # # Inputs to HydroDyn
+        # case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
+        # case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
+        # case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
+        # case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
+        # case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
+        # # Inputs to ServoDyn (parking), PitManRat and BlPitchF are ServoDyn modeling_options
+        # case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
+        # case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
+        # case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
+
+        # # Inputs to AeroDyn (parking)
+        # case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
+        # case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
+        # case_inputs[("AeroDyn15","tau1_const")] = {'vals':tau1_const, 'group':1}
+
+        # # Inputs to OLAF
+        # case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
+        # case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
+        # case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
+        # case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
+        # case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1}
+
+        # # DLC Label add these for the case matrix and delete from the case_list
+        # case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
+        # case_inputs[("DLC","WindSeed")] = {'vals':wind_seed, 'group':1}
+        # case_inputs[("DLC","MeanWS")] = {'vals':mean_wind_speed, 'group':1}
+        # fst_vt['DLC'] = []
+
+
         # TODO: merge cases into single case matrix? pandas?
-        print('here')
+        case_df = pd.DataFrame(case_list)
+        case_df.index = case_name
+        text_table = case_df.to_string(index=False)
+
+        # Write the text table to a text file
+        with open(os.path.join(self.FAST_runDirectory,'case_matrix_combined.txt'), 'w') as file:
+            file.write(text_table)
             
             
         channels= self.output_channels(fst_vt)
