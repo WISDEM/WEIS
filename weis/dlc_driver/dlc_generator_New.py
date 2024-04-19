@@ -708,16 +708,18 @@ class DLCGenerator(object):
 
 
     def generate_5p1(self, options):
-        # Power production normal turbulence model - severe sea state
-        met_options = self.get_metocean(options)
+        # Power production normal turbulence model - shutdown with varous azimuth initial conditions
         
-        # Apply normal wave conditions
+        # These should always happen
+        met_options = self.get_metocean(options)
+        self.set_time_options(options)
+
+        # Apply normal wave conditions based on wind speeds
         self.apply_wave_conditions(met_options)
         
-        # Specific azimuth starting positions
+        # Handle DLC Specific options:
+        # azimuth starting positions
         options['azimuth_init'] = np.linspace(0.,120.,options['n_azimuth'],endpoint=False)
-
-        self.set_time_options(options)
 
         # Specify shutdown time for this case
         if options['shutdown_time'] > options['analysis_time']:
@@ -725,26 +727,25 @@ class DLCGenerator(object):
         else:
             options['shutdown_time'] = options['shutdown_time']
 
-        
+        # All DLCs: Option processing 
         # TODO: figure out how to handle input options vs. options that are looped over, which need to be in a particular form
-        # For now, input options are updated in place
-
-        # TODO: functionize this since it will happen for each case:
         make_equal_length(met_options,'wind_speeds')
         comb_options = combine_options(options,met_options)
 
 
-        # This will be where the magic happens, everything else will ideally be automated
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','shutdown_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
       
-        # Generate case list
+        # All DLCs: Generate case list, both generic and OpenFAST specific
         case_list = gen_case_list(generic_case_inputs,comb_options)
+        case_inputs_openfast = map_generic_to_openfast(generic_case_inputs, comb_options)
+        self.openfast_case_inputs.append(case_inputs_openfast)
 
-        # Make idlc for other parts of WEIS
-        # TODO: figure out how to automate
+        # DLC specific: Make idlc for other parts of WEIS
         for i_case, case in enumerate(case_list):
             idlc = DLCInstance(options=options)
 
@@ -754,30 +755,6 @@ class DLCGenerator(object):
             idlc.label = '5.1'
             idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
             self.cases.append(idlc)
-
-
-        # TODO: use Abhineet's openfast case mapping to automate the mapping of generic inputs to OpenFAST inputs
-        
-        case_inputs_openfast = {}
-        for i_group, generic_case_group in enumerate(generic_case_inputs):
-            for generic_input in generic_case_group:
-                
-                if generic_input not in openfast_input_map.keys():
-                    raise Exception(f'The input {generic_input} does not map to an OpenFAST input key in openfast_input_map')
-
-                openfast_input = openfast_input_map[generic_input]
-
-                if type(openfast_input) == list:
-                    # Apply to all list of openfast_inputs
-                    for of_input in openfast_input:
-                        case_inputs_openfast[of_input] = {'vals': comb_options[generic_input], 'group': i_group}
-
-                else:
-                    case_inputs_openfast[openfast_input] = {'vals': comb_options[generic_input], 'group': i_group}
-
-
-        self.openfast_case_inputs.append(case_inputs_openfast)
-
 
 
         # TODO: the majority of this method can be automated across DLCs.  What needs to be in each dlc generator function?
@@ -1113,6 +1090,26 @@ def gen_case_list(generic_case_inputs,comb_options):
     # Generate generic case list
     case_list, _ = CaseGen_General(gen_case_inputs)
     return case_list
+
+def map_generic_to_openfast(generic_case_inputs, comb_options):
+    case_inputs_openfast = {}
+    for i_group, generic_case_group in enumerate(generic_case_inputs):
+        for generic_input in generic_case_group:
+            
+            if generic_input not in openfast_input_map.keys():
+                raise Exception(f'The input {generic_input} does not map to an OpenFAST input key in openfast_input_map')
+
+            openfast_input = openfast_input_map[generic_input]
+
+            if type(openfast_input) == list:
+                # Apply to all list of openfast_inputs
+                for of_input in openfast_input:
+                    case_inputs_openfast[of_input] = {'vals': comb_options[generic_input], 'group': i_group}
+
+            else:
+                case_inputs_openfast[openfast_input] = {'vals': comb_options[generic_input], 'group': i_group}
+
+    return case_inputs_openfast
 
 
 if __name__ == "__main__":
