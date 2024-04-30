@@ -11,6 +11,7 @@ from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
+crawling_methods = ['DE', 'NSGA2']
 
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
@@ -75,6 +76,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             n_FD = min([max_cores, n_DV])
             n_OF_runs_parallel = 1
+            # if we're doing a GA or such, "FD" means "entities in epoch"
+            if opt_options['driver']['optimization']['solver'] in crawling_methods:
+                n_FD = max_cores
 
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
         if opt_options['driver']['design_of_experiments']['flag']:
