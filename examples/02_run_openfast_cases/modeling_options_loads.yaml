@@ -55,6 +55,11 @@ DLC_driver:
         wave_height50: 9.7
         wave_period50: 13.6
     DLCs:
+        - DLC: "1.6"
+          wind_speed: [15]
+          n_seeds: 2
+          analysis_time: 10.
+          transient_time: 0.0
         - DLC: "5.1"
           wind_speed: [12]
           n_seeds: 1
