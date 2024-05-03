@@ -119,7 +119,8 @@ class DLCGenerator(object):
     
 
     def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I',
-                wind_turbulence_class = 'B', fix_wind_seeds=True, fix_wave_seeds=True, metocean={}):
+                wind_turbulence_class = 'B', fix_wind_seeds=True, fix_wave_seeds=True, metocean={},
+                initial_condition_table = {}):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
         self.wind_speed_class = wind_speed_class
@@ -166,6 +167,8 @@ class DLCGenerator(object):
         self.wave_Tp50 = np.array([metocean['wave_period50']])
         self.wave_Hs1 = np.array([metocean['wave_height1']])
         self.wave_Tp1 = np.array([metocean['wave_period1']])
+
+        self.initial_condition_table = initial_condition_table
 
     def IECwind(self):
         self.IECturb = IEC_TurbulenceModels()
@@ -630,10 +633,9 @@ class DLCGenerator(object):
     def generate_1p6(self, dlc_options):
         # Power production normal turbulence model - severe sea state
         
-        # All DLCs: get dlc-specific met_options
-        met_options = self.gen_met_options(dlc_options, sea_state='severe')
-        
         # Handle DLC Specific options:
+        label = '1.6'
+        sea_state = 'severe'
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
@@ -648,6 +650,8 @@ class DLCGenerator(object):
         generic_case_inputs.append(['yaw_misalign']) # group 2
       
         # All DLCs: Generate case list, both generic and OpenFAST specific
+        met_options = self.gen_met_options(dlc_options, sea_state=sea_state)
+        generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
@@ -657,7 +661,7 @@ class DLCGenerator(object):
             # TODO: Figure out if there's a way to make the things below into generic_case_inputs
             idlc.turbulent_wind = True
             idlc.URef = case['wind_speeds']
-            idlc.label = '1.6'
+            idlc.label = label
             idlc.RandSeed1 = case['rand_seeds']  
             idlc.total_time = case['total_time']
             self.cases.append(idlc)
@@ -700,6 +704,7 @@ class DLCGenerator(object):
         options['total_time'] = options['analysis_time'] + options['transient_time']
 
     def gen_case_list(self,dlc_options, met_options, generic_case_inputs):
+        # TODO: rename this function and/or combine with other gen_case_list
         comb_options = combine_options(dlc_options,met_options)
         generic_case_list = gen_case_list(generic_case_inputs,comb_options)
         case_inputs_openfast = map_generic_to_openfast(generic_case_inputs, comb_options)
@@ -751,13 +756,37 @@ class DLCGenerator(object):
             idlc.total_time = case['total_time']
             self.cases.append(idlc)
 
-    def generate_5p1(self, dlc_options):
-        # Power production normal turbulence model - shutdown with varous azimuth initial conditions
+    def apply_initial_conditions(self,generic_case_inputs, dlc_options, met_options):
+        '''
+        Add available case inputs to generic_case_inputs and interpolate options based on initial_condition_table
+
+        '''
         
-        # All DLCs: get dlc-specific met_options
-        met_options = self.gen_met_options(dlc_options)
+        # These allowed_ics should map to input in openfast_input_map
+        allowed_ics = ['pitch_initial','rot_speed_initial','tau1_const']
+
+        
+        if self.initial_condition_table: # there is an IC table that's not empty
+            dlc_wind_speeds = met_options['wind_speeds']  # need to use met_options wind speeds because it accounts for seeds
+            # find group with wind_speed
+            wind_group = ['wind_speeds' in gci for gci in generic_case_inputs].index(True)
+            group = generic_case_inputs[wind_group]
+
+            for initial_condition in allowed_ics:
+                if initial_condition in self.initial_condition_table:
+                    group.append(initial_condition)
+                    dlc_options[initial_condition] = np.interp(dlc_wind_speeds,self.initial_condition_table['U'],self.initial_condition_table[initial_condition])
+                
+            # Apply new group
+            generic_case_inputs[wind_group] = group
+            
+        return generic_case_inputs
+    
+    def generate_5p1(self, dlc_options):
+        # Power production normal turbulence model - shutdown with varous azimuth initial conditions      
         
         # DLC Specific options:
+        label = '5.1'
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
 
@@ -775,7 +804,10 @@ class DLCGenerator(object):
         generic_case_inputs.append(['azimuth_init']) # group 2
         # TODO: I think we need to shut off the generator here, too
       
+        
         # All DLCs: Generate case list, both generic and OpenFAST specific
+        met_options = self.gen_met_options(dlc_options)
+        generic_case_inputs = self.apply_initial_conditions(generic_case_inputs,dlc_options,met_options)
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
         # DLC specific: Make idlc for other parts of WEIS
@@ -784,7 +816,7 @@ class DLCGenerator(object):
 
             idlc.turbulent_wind = True
             idlc.URef = case['wind_speeds']
-            idlc.label = '5.1'
+            idlc.label = label
             idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
             idlc.total_time = case['total_time']
             self.cases.append(idlc)

@@ -46,8 +46,6 @@ logger = logging.getLogger("wisdem/weis")
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-
 def make_coarse_grid(s_grid, diam):
 
     s_coarse = [s_grid[0]]
@@ -1738,7 +1736,47 @@ class FASTLoadCases(ExplicitComponent):
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
         metocean = modopt['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        
+        # Set initial rotor speed and pitch if the WT operates in this DLC and available,
+        # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
+        # set rotor speed to rated and pitch to 15 deg if operating
+        if self.options['modeling_options']['Level3']['from_openfast']:
+            modopt_dir = os.path.dirname(self.options['modeling_options']['fname_input_modeling'])
+            reg_traj = os.path.join(modopt_dir,self.options['modeling_options']['Level3']['regulation_trajectory'])
+            if os.path.isfile(reg_traj):
+                data = load_yaml(reg_traj)
+                cases = data['cases']
+                U_interp = [case["configuration"]["wind_speed"] for case in cases]
+                pitch_interp = [case["configuration"]["pitch"] for case in cases]
+                rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
+                Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
+            else:
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
+                        " This file does not exist. Check WEIS example 02 for a template file")
+                U_interp = np.arange(cut_in, cut_out)
+                pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
+                rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
+                Ct_aero_interp = np.ones_like(U_interp) * 0.7 # fixed initial ct at 0.7
+        else:
+            U_interp = inputs['U']
+            pitch_interp = inputs['pitch']
+            rot_speed_interp = inputs['Omega']
+            Ct_aero_interp = inputs['Ct_aero']
+        
+        tau1_const_interp = np.zeros_like(Ct_aero_interp)
+        for i in range(len(Ct_aero_interp)):
+            a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
+            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
+
+        initial_condition_table = {}
+        initial_condition_table['U'] = U_interp
+        initial_condition_table['pitch_initial'] = pitch_interp
+        initial_condition_table['rot_speed_initial'] = rot_speed_interp
+        initial_condition_table['Ct_aero'] = Ct_aero_interp
+        initial_condition_table['tau1_const'] = tau1_const_interp
+        
+        
+        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean, initial_condition_table)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
@@ -1839,53 +1877,25 @@ class FASTLoadCases(ExplicitComponent):
                 WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
                     dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, i_case)
 
-        # Set initial rotor speed and pitch if the WT operates in this DLC and available,
-        # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
-        # set rotor speed to rated and pitch to 15 deg if operating
-        if self.options['modeling_options']['Level3']['from_openfast']:
-            reg_traj = self.options['modeling_options']['Level3']['regulation_trajectory']
-            if os.path.isfile(reg_traj):
-                data = load_yaml(reg_traj)
-                cases = data['cases']
-                U_interp = [case["configuration"]["wind_speed"] for case in cases]
-                pitch_interp = [case["configuration"]["pitch"] for case in cases]
-                rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
-                Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
-            else:
-                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
-                        " This file does not exist. Check WEIS example 02 for a template file")
-                U_interp = np.arange(cut_in, cut_out)
-                pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
-                rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
-                Ct_aero_interp = np.ones_like(U_interp) * 0.7 # fixed initial ct at 0.7
-        else:
-            U_interp = inputs['U']
-            pitch_interp = inputs['pitch']
-            rot_speed_interp = inputs['Omega']
-            Ct_aero_interp = inputs['Ct_aero']
         
-        tau1_const_interp = np.zeros_like(Ct_aero_interp)
-        for i in range(len(Ct_aero_interp)):
-            a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
-            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
 
 
-        for i_case in range(dlc_generator.n_cases):
-            if 'operating' in dlc_generator.cases[i_case].turbine_status:
-                # We have initial conditions from WISDEM
-                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, rot_speed_interp)
-                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, pitch_interp)
-                tau1_const[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, tau1_const_interp)
+        # for i_case in range(dlc_generator.n_cases):
+        #     if 'operating' in dlc_generator.cases[i_case].turbine_status:
+        #         # We have initial conditions from WISDEM
+        #         rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, rot_speed_interp)
+        #         pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, pitch_interp)
+        #         tau1_const[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, tau1_const_interp)
                 
-                if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
-                    shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
-            else:
-                rot_speed_initial[i_case] = 0.
-                pitch_initial[i_case] = 90.
-                shutdown_time[i_case] = 0
-                aero_mod[i_case] = 1
-                wake_mod[i_case] = 0
-                tau1_const[i_case] = 0.
+        #         if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
+        #             shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
+        #     else:
+        #         rot_speed_initial[i_case] = 0.
+        #         pitch_initial[i_case] = 90.
+        #         shutdown_time[i_case] = 0
+        #         aero_mod[i_case] = 1
+        #         wake_mod[i_case] = 0
+        #         tau1_const[i_case] = 0.
 
             # Wave inputs to HydroDyn
             WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
