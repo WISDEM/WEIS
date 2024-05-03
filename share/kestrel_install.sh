@@ -104,7 +104,7 @@ main() {
 # Function to display help message
 help_message() {
     echo ""
-    echo "Usage: $0 <environment_name> <optional_flags>"
+    echo "Usage: $0 -n <environment_name> <optional_flags>"
     echo ""
     echo "  This script creates a conda environment for WEIS on Kestrel."
     echo "  Additionally, OpenFAST and ROSCO are compiled using native compiler options."
@@ -113,7 +113,7 @@ help_message() {
     echo " Options include overiding the default repository and branch for WEIS, OpenFAST, ROSCO, WISDEM, and RAFT."
     echo ""
     echo "  Arguments:"
-    echo "    environment_name  The desired name for the conda environment."
+    echo "    -n <name>, --name <name>   The desired name for the conda environment."
     echo ""
     echo "  Optional Flags:"
     echo "    -h, --help                                    Display this help message."
@@ -125,13 +125,13 @@ help_message() {
     echo "    -cray, --cray                                    Use Cray specific flags for OpenFAST build."
     echo ""
     echo "  Example 1:"
-    echo "    ./kestrelInstall.sh my_weis_env"
+    echo "    ./kestrelInstall.sh -n my_weis_env"
     echo ""
     echo "  Example 2:"
-    echo "    ./kestrelInstall.sh my_weis_env -p /path/to/env"
+    echo "    ./kestrelInstall.sh -n my_weis_env -p /path/to/env"
     echo ""
     echo "  Example 3:"
-    echo "    ./kestrelInstall.sh my_weis_env -p /path/to/env -raft -wisdem -cray"
+    echo "    ./kestrelInstall.sh -n my_weis_env -p /path/to/env -raft -wisdem -cray"
     echo ""
     exit 1
 }
