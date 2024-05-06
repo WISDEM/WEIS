@@ -549,7 +549,6 @@ class WindPark(om.Group):
                 self.connect('rotorse.rhoA',                    'aeroelastic.beam:rhoA')
                 self.connect('rotorse.EIxx',                    'aeroelastic.beam:EIxx')
                 self.connect('rotorse.EIyy',                    'aeroelastic.beam:EIyy')
-                self.connect('rotorse.re.Tw_iner',                 'aeroelastic.beam:Tw_iner')
                 self.connect('rotorse.rs.frame.flap_mode_shapes',       'aeroelastic.flap_mode_shapes')
                 self.connect('rotorse.rs.frame.edge_mode_shapes',       'aeroelastic.edge_mode_shapes')
                 self.connect('rotorse.rp.powercurve.V',                'aeroelastic.U')
@@ -676,8 +675,8 @@ class WindPark(om.Group):
                     self.connect('rotorse.mass_all_blades',     'drivese_post.blades_mass')
                     self.connect('rotorse.I_all_blades',        'drivese_post.blades_I')
 
-                    self.connect('nacelle.distance_hub2mb',           'drivese_post.L_h1')
-                    self.connect('nacelle.distance_mb2mb',            'drivese_post.L_12')
+                    self.connect('nacelle.distance_hub_mb',           'drivese_post.L_h1')
+                    self.connect('nacelle.distance_mb_mb',            'drivese_post.L_12')
                     self.connect('nacelle.L_generator',               'drivese_post.L_generator')
                     self.connect('nacelle.overhang',                  'drivese_post.overhang')
                     self.connect('nacelle.distance_tt_hub',           'drivese_post.drive_height')
