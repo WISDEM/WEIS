@@ -71,7 +71,7 @@ main() {
         if [[ -n "$roscoRepoOverride" ]]; then
             uninstall_reinstall_lib_source "rosco" "$roscoRepoOverride" "$roscoBranch" "$roscoDirName"
         else
-            echo "Cloning ROSCO repository from default location...."
+            echo "Cloning ROSCO repository to default location...."
             uninstall_reinstall_lib_source "rosco" "$default_rosco_repo" "$roscoBranch" "$roscoDirName"
         fi
     fi
@@ -81,7 +81,7 @@ main() {
         if [[ -n "$wisdemRepoOverride" ]]; then
             uninstall_reinstall_lib_source "wisdem" "$wisdemRepoOverride" "$wisdemBranch" "$wisdemDirName"
         else
-            echo "Cloning WISDEM repository from default location...."
+            echo "Cloning WISDEM repository to default location...."
             uninstall_reinstall_lib_source "wisdem" "$default_wisdem_repo" "$wisdemBranch" "$wisdemDirName"
         fi
     fi
@@ -91,7 +91,7 @@ main() {
         if [[ -n "$raftRepoOverride" ]]; then
             uninstall_reinstall_lib_source "openraft" "$raftRepoOverride" "$raftBranch" "$raftDirName"
         else
-            echo "Cloning RAFT repository from default location...."
+            echo "Cloning RAFT repository to default location...."
             uninstall_reinstall_lib_source "openraft" "$default_raft_repo" "$raftBranch" "$raftDirName"
         fi
     fi
@@ -128,10 +128,10 @@ help_message() {
     echo "    ./kestrelInstall.sh -n my_weis_env"
     echo ""
     echo "  Example 2:"
-    echo "    ./kestrelInstall.sh -n my_weis_env -p /path/to/env"
+    echo "    ./kestrelInstall.sh -p /path/to/env"
     echo ""
     echo "  Example 3:"
-    echo "    ./kestrelInstall.sh -n my_weis_env -p /path/to/env -raft -wisdem -cray"
+    echo "    ./kestrelInstall.sh -p /path/to/env -raft -wisdem"
     echo ""
     exit 1
 }
@@ -213,6 +213,8 @@ load_modules() {
 
     if [[ "$Cray" == true ]]; then
         module purge
+        module load conda
+        module load mamba
         module load craype-x86-spr
         module load libfabric/1.15.2.0
         module load craype-network-ofi
@@ -238,7 +240,7 @@ load_modules() {
 
         module purge
 
-        for mod in mamba git cmake craype-x86-spr intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl fftw/3.3.10-intel-oneapi-mpi-intel hdf5/1.14.1-2-intel-oneapi-mpi-intel netcdf-c/4.9.2-intel-oneapi-mpi-intel petsc/3.19.3-intel-oneapi-mpi-intel
+        for mod in conda mamba git cmake craype-x86-spr intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl fftw/3.3.10-intel-oneapi-mpi-intel hdf5/1.14.1-2-intel-oneapi-mpi-intel netcdf-c/4.9.2-intel-oneapi-mpi-intel petsc/3.19.3-intel-oneapi-mpi-intel
         do
                 echo "Loading $mod....."
                 module load $mod
@@ -258,15 +260,25 @@ load_modules() {
 
 git_clone_switch_branch() {
     # Clone a git repository and checkout a specific branch
-    local repo_url="$1"; shift
-    local branch_name="$1"; shift
+    local repo_url="$1"; 
+    local branch_name="$2"; 
 
     # If the user provides a name for the cloned directory
     if [[ -n "$1" ]]; then
-        local cloned_repo_name="$1"; shift
+        local cloned_repo_name="$3";
     else
-        local cloned_repo_name="$(basename "$repo_url" .git)"
+        local cloned_repo_name
+        cloned_repo_name="$(basename "$repo_url" .git)"
     fi
+
+    # Check if the repository is already cloned with the same folder name
+    check_git_repo_branch "$repo_url" "$branch_name" "$cloned_repo_name"
+    if [ $? -ne 0 ]; then # if return is 0, then proceed with the git clone
+        echo " "
+        user_prompt "Copy of the repository already exists. Proceeding without git clone...."
+        return 0
+    fi
+
 
     # Check if required arguments are provided
     if [[ -z "$repo_url" || -z "$branch_name" ]]; then
@@ -308,13 +320,62 @@ git_clone_switch_branch() {
 }
 
 
+check_git_repo_branch(){
+    # Check if a branch exists in a git repository
+    local repo_url="$1"; 
+    local branch_name="$2"; 
+    local cloned_repo_name="$3";
+
+
+    # Check if the repository is already cloned with the same folder name, If not return 0 to proceed with the git clone
+    if [[ -n "$cloned_repo_name" ]]; then
+        echo " "
+        echo "Warning 09: Directory '$cloned_repo_name' already exists."
+
+        # check if the folder is the correct git repository
+        if [[ "$(git -C "$cloned_repo_name" config --get remote.origin.url)" != "$repo_url" ]]; then
+            echo "Warning: Directory '$cloned_repo_name' is not from the correct repository."
+            if user_selection "Do you want to proceed with the git clone and overwrite the existing directory?"; then
+                echo "Proceeding with the deletion & git clone...."
+                rm -rf "$cloned_repo_name"
+                return 0 # return 0 to proceed with the git clone
+                
+            else
+                echo "Exiting...."
+                exit 1
+            fi
+
+        fi
+
+        # check if the folder is in the correct branch
+        if [[ "$(git -C "$cloned_repo_name" rev-parse --abbrev-ref HEAD)" != "$branch_name" ]]; then
+            echo "Warning: Directory '$cloned_repo_name' is not in the correct branch."
+            if user_selection "Do you want to proceed with the git clone and overwrite the existing directory?"; then
+                echo "Proceeding with the deletion & git clone...."
+                rm -rf "$cloned_repo_name"
+                return 0 # return 0 to proceed with the git clone
+            else
+                echo "Exiting...."
+                exit 1
+            fi
+        fi
+
+        # If the folder is in the correct branch, return 1 to exit the function
+        return 1
+
+    else # exit current function and return to calling function with proceed signal
+        return 0
+    fi
+
+}
+
 install_weis() {
 
     # Check if WEIS repo overide is provided else use default
     if [[ -n "$weisRepoOverride" ]]; then
         git_clone_switch_branch "$weisRepoOverride" "$weisBranch" "$weisDirName"
     else
-        echo "Cloning WEIS repository from default location...."
+        echo "Cloning WEIS repository to default location...."
         git_clone_switch_branch "$default_weis_repo" "$weisBranch" "$weisDirName"
     fi
 
@@ -399,7 +460,7 @@ install_openfast() {
     if [[ -n "$openfastRepoOverride" ]]; then
         git_clone_switch_branch "$openfastRepoOverride" "$openfastBranch" "$openfastDirName"
     else
-        echo "Cloning OpenFAST repository from default location...."
+        echo "Cloning OpenFAST repository to default location...."
         git_clone_switch_branch "$default_openfast_repo" "$openfastBranch" "$openfastDirName"
     fi
 
@@ -520,6 +581,27 @@ user_prompt(){
     read -n 1 -s keypress
     echo "Continuing..."
     echo " "
+}
+
+user_selection(){
+
+    # ask user to decide between yes or no, loop if invalid input
+
+    echo " "
+    echo ">>>>>>>>>>>>>>>> $1"
+    echo "Press 'y' for Yes or 'n' for No...."
+    read -n 1 -s keypress
+
+    while [[ "$keypress" != "y" && "$keypress" != "n" ]]; do
+        echo "Invalid input. Press 'y' for Yes or 'n' for No...."
+        read -n 1 -s keypress
+    done
+
+    if [[ "$keypress" == "y" ]]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 summary() {
