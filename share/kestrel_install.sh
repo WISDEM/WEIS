@@ -196,6 +196,14 @@ parse_arguments() {
                 # Set a flag for Cray specific flags
                 Cray=true
                 ;;
+            -quiet-mode|--quiet-mode)
+                # Set a flag for installing everything and without user prompts. Goes Brrrrrr......
+                quiet_mode=true
+                install_openfast_flag=true
+                install_rosco_flag=true
+                install_raft_flag=true
+                install_wisdem_flag=true
+                ;;
             *)
                 echo "Error: Unknown argument '$1'."
                 echo "Run '$0 -h' for help."
@@ -240,7 +248,7 @@ load_modules() {
 
         module purge
 
-        for mod in conda mamba git cmake craype-x86-spr intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl fftw/3.3.10-intel-oneapi-mpi-intel hdf5/1.14.1-2-intel-oneapi-mpi-intel netcdf-c/4.9.2-intel-oneapi-mpi-intel petsc/3.19.3-intel-oneapi-mpi-intel
+        for mod in conda mamba git cmake craype-x86-spr intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl fftw/3.3.10-intel-oneapi-mpi-intel hdf5/1.14.1-2-intel-oneapi-mpi-intel netcdf-c/4.9.2-intel-oneapi-mpi-intel petsc/3.20.4-intel-oneapi-mpi-intel
         do
                 echo "Loading $mod....."
                 module load $mod
@@ -328,7 +336,7 @@ check_git_repo_branch(){
 
 
     # Check if the repository is already cloned with the same folder name, If not return 0 to proceed with the git clone
-    if [[ -n "$cloned_repo_name" ]]; then
+    if [[ -d "$cloned_repo_name" ]]; then
         echo " "
         echo "Warning 09: Directory '$cloned_repo_name' already exists."
 
@@ -578,6 +586,13 @@ user_prompt(){
     echo " "
     echo ">>>>>>>>>>>>>>>> $1"
     echo "Press any key to continue... Crtl+C to exit...."
+    
+    if [[ "$quiet_mode" == true ]]; then
+        echo " "
+        echo "quiet mode activated. Proceeding without user prompt...., Going Brrrrr...."
+        return 0
+    fi
+
     read -n 1 -s keypress
     echo "Continuing..."
     echo " "
@@ -590,6 +605,13 @@ user_selection(){
     echo " "
     echo ">>>>>>>>>>>>>>>> $1"
     echo "Press 'y' for Yes or 'n' for No...."
+
+    if [[ "$quiet_mode" == true ]]; then
+        echo " "
+        echo "quiet mode activated. Proceeding without user prompt...., Going Brrrrr...."
+        return 0
+    fi
+
     read -n 1 -s keypress
 
     while [[ "$keypress" != "y" && "$keypress" != "n" ]]; do
