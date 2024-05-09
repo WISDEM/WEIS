@@ -210,25 +210,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             if not modeling_options['Level3']['from_openfast']:
                 wt_initial.write_ontology(wt_opt, froot_out)
             wt_initial.write_options(froot_out)
- 
-            # output the problem variables as a dictionary
-            fname_pv_json = os.path.join(folder_output, "problem_vars.json")
-            problem_var_dict = wt_opt.list_problem_vars(
-                desvar_opts=["lower", "upper",],
-                cons_opts=["lower", "upper", "equals",],
-                out_stream=None,
-            )
-            for k in problem_var_dict.keys():
-                if not problem_var_dict.get(k): continue
-                for idx in range(len(problem_var_dict[k])):
-                    for kk in problem_var_dict[k][idx][1].keys():
-                        if isinstance(problem_var_dict[k][idx][1][kk], np.ndarray):
-                            problem_var_dict[k][idx][1][kk] = problem_var_dict[k][idx][1][kk].tolist()
-                        if isinstance(problem_var_dict[k][idx][1][kk], np.int32):
-                            problem_var_dict[k][idx][1][kk] = int(problem_var_dict[k][idx][1][kk])
-            with open(fname_pv_json, 'w') as pvfile:
-                json.dump(problem_var_dict, pvfile, indent=4)
-
+            
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
 
