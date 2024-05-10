@@ -398,6 +398,13 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ElastoDyn']['TeetSSSp'] = float_read(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['TeetHSSp'] = float_read(f.readline().split()[0])
 
+        # Yaw friction
+        f.readline()
+        self.fst_vt['ElastoDyn']['YawFrctMod']  = int(f.readline().split()[0])
+        self.fst_vt['ElastoDyn']['M_CSmax']     = float_read(f.readline().split()[0])
+        self.fst_vt['ElastoDyn']['M_CD']        = float_read(f.readline().split()[0])
+        self.fst_vt['ElastoDyn']['sig_v']       = float_read(f.readline().split()[0])
+
         # Drivetrain (drivetrain)
         f.readline()
         self.fst_vt['ElastoDyn']['GBoxEff']  = float_read(f.readline().split()[0])
