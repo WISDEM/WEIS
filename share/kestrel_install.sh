@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script to install WEIS on Kestrel for a developer with best practices
 # To use the script; go to the desired location and run:
-# wget https://raw.githubusercontent.com/mayankchetan/WEIS/kestrelInstall/share/kestrel_install.sh -O kestrel_install.sh
+# wget https://raw.githubusercontent.com/WISDEM/WEIS/develop/share/kestrel_install.sh -O kestrel_install.sh
 # chmod +xrw kestrel_install.sh
 # ./kestrel_install.sh -h
 
