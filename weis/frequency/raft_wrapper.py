@@ -174,8 +174,12 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f"platform_member{k+1}_ring_spacing", val=0.0)
             self.add_output(f"platform_member{k+1}_ring_t", val=0.0, units="m")
             self.add_output(f"platform_member{k+1}_ring_h", val=0.0, units="m")
-            self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height))
-            self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
+            if opt["floating"]["members"]["outer_shape"][k] == "circular":
+                self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height))
+                self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
+            elif opt["floating"]["members"]["outer_shape"][k] == "rectangular":
+                self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height, 2))
+                self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height, 2))                
             self.add_output(f"platform_member{k+1}_CdEnd", val=0.6*np.ones(n_height))
             self.add_output(f"platform_member{k+1}_CaEnd", val=0.6*np.ones(n_height))
 
