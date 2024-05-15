@@ -1,5 +1,11 @@
-import json
+import glob
+import os
 
+import glob
+import json
+import multiprocessing as mp
+
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -22,9 +28,101 @@ def load_vars_file(fn_vars):
     return vars
 
 
+def load_OMsql_multi(
+    log_fmt,
+    verbose=False,
+    meta=None,
+):
+    """
+    load the multi-processor openmdao sql files produced by WEIS into a dict
+
+    args:
+        TO DO!
+
+    returns:
+        TO DO!
+    """
+
+    # multiprocssing?
+    post_multi = True
+
+    opt_logs = sorted(
+        glob.glob(log_fmt),
+        key = lambda v : int(v.split("_")[-1])
+            if (v.split("_")[-1] != "meta")
+            else 1e8,
+    )
+    if len(opt_logs) < 1:
+        raise FileExistsError("No output logs to postprocess!")
+
+    # remove the "meta" log
+    for idx, log in enumerate(opt_logs):
+        if "meta" in log:
+            opt_logs.pop(idx)
+
+    # sql ranks
+    sql_ranks = [ol.split("_")[-1] for ol in opt_logs]
+
+    # run multiprocessing
+    if post_multi:
+        cores = mp.cpu_count()
+        pool = mp.Pool(min(len(opt_logs), cores))
+
+        # load sql file
+        outdata = pool.starmap(load_OMsql, [(ol, verbose, meta) for ol in opt_logs])
+        pool.close()
+        pool.join()
+    else: # no multiprocessing
+        outdata = [load_OMsql(log, verbose=verbose, meta=meta) for log in opt_logs]
+
+    # create a dictionary and turn it into a dataframe
+    collected_data = {}
+    ndarray_keys = []
+    for sql_rank, data in zip(sql_ranks, outdata):
+        for key in data.keys():
+            if key not in collected_data.keys():
+                collected_data[key] = []
+            if key == "rank": # adjust the rank based on sql file rank
+                data[key] = [int(sql_rank) for _ in data[key]]
+            for idx_key, _ in enumerate(data[key]):
+                if isinstance(data[key][idx_key], int):
+                    collected_data[key].append(np.array(data[key][idx_key]))
+                elif isinstance(data[key][idx_key], float):
+                    collected_data[key].append(np.array(data[key][idx_key]))
+                elif len(data[key][idx_key]) == 1:
+                    collected_data[key].append(float(np.array(data[key][idx_key])))
+                    # try:
+                    #     collected_data[key].append(np.array(data[key][idx_key][0]))
+                    # except:
+                    #     collected_data[key].append(np.array(data[key][idx_key]))
+                else:
+                    collected_data[key].append(np.array(data[key][idx_key]).tolist())
+                    ndarray_keys.append(key)
+    df = pd.DataFrame(collected_data)
+
+    # return the dataframe
+    return df.to_dict(orient="list")
+
+    # # gather logs matching the format
+    # log_list = sorted(glob.glob(log_fmt), key=lambda v: int(v.split("_")[-1]) if not (".sql_meta" in v) else 1e8)
+    # sql_codes = [(v.split("_")[-1]) for v in log_list]
+    #
+    # # run the OM sql load on each log data
+    # case_data = []
+    # for log in log_list:
+    #     if "sql_meta" in log: continue # skip the meta file
+    #     rankNo = int(log.split("_")[-1])
+    #     case_data.append(load_OMsql(log, verbose=verbose, meta=meta))
+    #     case_data[-1]["rank"] = [rankNo for _ in case_data[-1]["rank"]]
+    #
+    # # return the total dictionary
+    # return case_data
+
+
 def load_OMsql(
     log,
     verbose=False,
+    meta=None,
 ):
     """
     load the openmdao sql file produced by a WEIS run into a dictionary
@@ -44,14 +142,29 @@ def load_OMsql(
     if verbose:
         print(f"loading {log}")
 
-    cr = om.CaseReader(log)  # openmdao reader for recorded output data
+    cr = om.CaseReader(log, metadata_filename=meta)  # openmdao reader for recorded output data
 
     rec_data = {}  # create a dict for output data that's been recorded
     for case in cr.get_cases("driver"):  # loop over the cases
+        rankNo = case.name.split(":")[0]
+        assert rankNo.startswith("rank")
+        rankNo = int(rankNo[4:])
+        iterNo = int(case.name.split("|")[-1])
+
         for key in case.outputs.keys():  # for each key in the outputs
             if key not in rec_data:  # if this key isn't present, create a new list
                 rec_data[key] = []
-            rec_data[key].append(case[key])  # add the data to the list
+            if len(case[key]) == 1:
+                rec_data[key].append(float(case[key]))  # add the data to the list
+            else:
+                rec_data[key].append(np.array(case[key]))  # add the data to the list
+
+        # add rank/iter metadata
+        for key in ["rank", "iter"]:  # for each key in the outputs
+            if key not in rec_data:  # if this key isn't present, create a new list
+                rec_data[key] = []
+        rec_data["rank"].append(rankNo)
+        rec_data["iter"].append(iterNo)
 
     return rec_data  # return the output
 
@@ -132,18 +245,20 @@ def get_feasible_iterations(
             dictionary to map from constraint names to iteration-wise feasibility indications for that constraint
     """
 
-    assert len(vars_dict["objectives"].values()) == 1, "can't handle multi-objective... yet. -cfrontin"
+    # assert len(vars_dict["objectives"].values()) == 1, "can't handle multi-objective... yet. -cfrontin"
     objective_name = list(vars_dict["objectives"].values())[0]["name"]
 
     feasibility_constraintwise = dict()
-    total_feasibility = np.ones_like(dataOM[objective_name], dtype=bool)
+    total_feasibility = np.ones_like(np.array(dataOM[objective_name]).reshape(-1,1), dtype=bool)
     for k, v in vars_dict["constraints"].items():
-        feasibility = np.ones_like(dataOM[objective_name], dtype=bool)
-        values = np.array(dataOM[v["name"]]).reshape(feasibility.shape[0], -1)
+        feasibility = np.ones_like(dataOM[objective_name], dtype=bool).reshape(-1, 1)
+        values = np.array(dataOM[v["name"]])
+        if len(values.shape) == 1:
+            values = values.reshape(-1,1)
         if v.get("upper") is not None:
-            feasibility = np.logical_and(feasibility, np.all(values <= (1+feas_tol)*v["upper"], axis=1).reshape(-1, 1))
+            feasibility = np.logical_and(feasibility, np.all(np.less_equal(values, (1+feas_tol)*v["upper"]), axis=1).reshape(-1, 1))
         if v.get("lower") is not None:
-            feasibility = np.logical_and(feasibility, np.all(values >= (1-feas_tol)*v["lower"], axis=1).reshape(-1, 1))
+            feasibility = np.logical_and(feasibility, np.all(np.greater_equal(values, (1-feas_tol)*v["lower"]), axis=1).reshape(-1, 1))
         feasibility_constraintwise[v["name"]] = feasibility
         total_feasibility = np.logical_and(total_feasibility, feasibility)
     return total_feasibility, feasibility_constraintwise
@@ -198,21 +313,27 @@ def plot_conv(
     for imethod, method in enumerate(map_dataOM_vars.keys()):
         if imethod == 0:
             markerstyle = "o"
-        if imethod == 1:
+        elif imethod == 1:
             markerstyle = "p"
+        elif imethod == 2:
+            markerstyle = "s"
+        else:
+            markerstyle = "P"
 
         axes[0, 0].plot(
             [],
             [],
-            "w" + markerstyle + linestyle,
+            markerstyle + linestyle,
             label=method,
             markersize=markersize,
+            color=(0.5,0.5,0.5),
         )
         dataOM = map_dataOM_vars[method][0]
         vars = map_dataOM_vars[method][1]
         tfeas, varfeas = get_feasible_iterations(dataOM, vars, feas_tol=feas_tol)
 
         for idx_ax, key in enumerate(keyset):
+            if key in ["rank", "iter",]: continue
             if use_casewise_feasibility and key in varfeas.keys():
                 feas_val = varfeas[key]
             else:
@@ -224,9 +345,21 @@ def plot_conv(
                 label="".join(["_", method, "_"]),
                 markersize=markersize,
             )
-            # print(np.array(dataOM[key]).shape, (feas_val*np.ones((1, np.array(dataOM[key]).shape[1]))).shape)
             axes[idx_ax, 0].plot(
-                np.ma.array(dataOM[key], mask=~(feas_val * np.ones((1, np.array(dataOM[key]).shape[1]), dtype=bool))),
+                np.ma.array(
+                    dataOM[key],
+                    mask=~(
+                        feas_val * np.ones(
+                            (
+                                1,
+                                np.array(dataOM[key]).shape[1]
+                                if len(np.array(dataOM[key]).shape) > 1
+                                else 1
+                            ),
+                            dtype=bool,
+                        )
+                    )
+                ),
                 markerstyle,
                 label="".join(["_", method, "_"]),
                 color=pt0[-1].get_color(),
@@ -234,7 +367,20 @@ def plot_conv(
                 markersize=markersize,
             )
             axes[idx_ax, 0].plot(
-                np.ma.array(dataOM[key], mask=(feas_val * np.ones((1, np.array(dataOM[key]).shape[1]), dtype=bool))),
+                np.ma.array(
+                    dataOM[key],
+                    mask=(
+                        feas_val * np.ones(
+                            (
+                                1,
+                                np.array(dataOM[key]).shape[1]
+                                if len(np.array(dataOM[key]).shape) > 1
+                                else 1
+                            ),
+                            dtype=bool,
+                        )
+                    )
+                ),
                 markerstyle,
                 label="".join(["_", method, "_"]),
                 color=pt0[-1].get_color(),
@@ -323,3 +469,4 @@ def prettyprint_variables(
         for key in keys_all
     ]
     print()
+
