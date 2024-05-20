@@ -59,6 +59,8 @@ class WindPark(om.Group):
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
         if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
             inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
+            if 'tuning_yaml' in inps['controller_params']:
+                inps['controller_params'].pop('tuning_yaml')  # don't update path of tuning yaml
             modeling_options['ROSCO'].update(inps['controller_params'])
 
             # Apply changes in modeling options, should have already been validated
