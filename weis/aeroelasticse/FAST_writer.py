@@ -1926,7 +1926,7 @@ class InputWriter_OpenFAST(object):
             ln.append('{:^11d}'.format(self.fst_vt['SubDyn']['MPropSetID2'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['SubDyn']['MType'][i]))
             if self.fst_vt['SubDyn']['NCOSMs'] > 0:
-                ln.append('{:^11d}'.format(self.fst_vt['SubDyn']['COSMID'][i]))
+                ln.append('{:^11d}'.format(self.fst_vt['SubDyn']['M_COSMID'][i]))
             f.write(" ".join(ln) + '\n')
         f.write('------------------ MEMBER X-SECTION PROPERTY data 1/2 [isotropic material for now: use this table for circular-tubular elements] ------------------------\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['NPropSets'], 'NPropSets', '- Number of structurally unique x-sections (i.e. how many groups of X-sectional properties are utilized throughout all of the members)\n'))

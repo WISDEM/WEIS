@@ -2286,7 +2286,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['SubDyn']['MPropSetID1'] = [None]*self.fst_vt['SubDyn']['NMembers']
         self.fst_vt['SubDyn']['MPropSetID2'] = [None]*self.fst_vt['SubDyn']['NMembers']
         self.fst_vt['SubDyn']['MType']       = [None]*self.fst_vt['SubDyn']['NMembers']
-        self.fst_vt['SubDyn']['COSMID']      = [None]*self.fst_vt['SubDyn']['NMembers']
+        self.fst_vt['SubDyn']['M_COSMID']      = [None]*self.fst_vt['SubDyn']['NMembers']
         ln = f.readline().split()
         ln = f.readline().split()
         for i in range(self.fst_vt['SubDyn']['NMembers']):
@@ -2298,7 +2298,7 @@ class InputReader_OpenFAST(object):
             self.fst_vt['SubDyn']['MPropSetID2'][i] = int(ln[4])
             self.fst_vt['SubDyn']['MType'][i]       = int(ln[5])
             if len(ln) > 6:
-                self.fst_vt['SubDyn']['COSMID'][i]  = int(ln[6])
+                self.fst_vt['SubDyn']['M_COSMID'][i]  = int(ln[6])
         f.readline()
         # MEMBER X-SECTION PROPERTY data 1/2
         self.fst_vt['SubDyn']['NPropSets'] = int_read(f.readline().split()[0])
@@ -2387,7 +2387,7 @@ class InputReader_OpenFAST(object):
         f.readline()
         for i in range(self.fst_vt['SubDyn']['NSpringPropSets']):
             ln = f.readline().split()
-            self.fst_vt['SubDyn']['PropSetID'] = int(ln[0])
+            self.fst_vt['SubDyn']['SpringPropSetID'][i] = int(ln[0])
             for j, sl in enumerate(spring_list):
                 self.fst_vt['SubDyn'][sl][i] = ln[j+1]
         
