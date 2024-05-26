@@ -3,7 +3,6 @@ channels:
   - defaults
 
 dependencies:
-  #- osqp # Works with the pip version, but not the conda version
   - anyio
   - argon2-cffi
   - arrow
@@ -37,7 +36,7 @@ dependencies:
   - nlopt
   - nlopt
   - notebook
-  - openfast=3.5.2
+  - openfast
   - openpyxl
   - openraft
   - osqp
@@ -66,7 +65,7 @@ dependencies:
   - traitlets
   - treon
   - webencodings
-  - wisdem=3.14.0
+  - wisdem
   - pip:
     - dearpygui
     - marmot-agents
