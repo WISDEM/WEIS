@@ -6,7 +6,6 @@ dependencies:
   - dill
   - jsonmerge
   - mat4py
-  - niceplots
   - nlopt
   - openfast
   - openraft
