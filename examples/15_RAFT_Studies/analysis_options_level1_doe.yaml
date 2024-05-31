@@ -187,8 +187,8 @@ driver:
      flag: True            # Flag to enable design of experiments
      run_parallel: True    # Flag to run using parallel processing
      seed: 2
-     generator: LatinHypercube  #LatinHypercube #FullFact    # Type of input generator. (Uniform)
-     num_samples: 600  #8 #21 #41 #41        # number of samples for (Uniform only)
+     generator: Uniform  #LatinHypercube #FullFact    # Type of input generator. (Uniform)
+     num_samples: 1200  #8 #21 #41 #41        # number of samples for (Uniform only)
      levels: 1
 
 recorder:
