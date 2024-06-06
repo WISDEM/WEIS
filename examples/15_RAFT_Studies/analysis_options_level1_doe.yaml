@@ -182,14 +182,20 @@ driver:
     flag: False           # Flag to enable optimization
     solver: COBYLA #LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     tol: 1.e-3            # Optimality tolerance
-    max_iter: 300          # Maximum number of iterations (SLSQP)
+    max_iter: 300         # Maximum number of iterations (SLSQP)
   design_of_experiments:
-     flag: True            # Flag to enable design of experiments
-     run_parallel: True    # Flag to run using parallel processing
-     seed: 2
-     generator: LatinHypercube #Uniform #LatinHypercube #FullFact    # Type of input generator. (Uniform)
-     num_samples: 1200  #8 #21 #41 #41        # number of samples for (Uniform only)
-     levels: 1
+    flag: True            # Flag to enable design of experiments
+    run_parallel: True    # Flag to run using parallel processing
+    seed: 2
+    generator: LatinHypercube #Uniform #LatinHypercube #FullFact    # Type of input generator. (Uniform)
+    num_samples: 768      # number of samples for (Uniform only)
+    levels: 1
+    skip_if_results_exist: True
+  surrogate_based_optimization:
+    flag: True            # Will work only if design_of_experiments results exist
+    max_iter: 300
+    max_function_calls: 300000
+    solver: COBYLA        # SLSQP, COBYLA
 
 recorder:
   flag: True              # Flag to activate OpenMDAO recorder
