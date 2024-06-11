@@ -79,7 +79,13 @@ class PoseOptimizationWEIS(PoseOptimization):
 
     
     def set_objective(self, wt_opt):
-        if self.opt['merit_figure'] == 'blade_tip_deflection':
+        # Set merit figure. Each objective has its own scaling.  Check first for user override
+        if self.opt["merit_figure_user"]["name"] != "":
+            coeff = -1.0 if self.opt["merit_figure_user"]["max_flag"] else 1.0
+            wt_opt.model.add_objective(self.opt["merit_figure_user"]["name"],
+                                       ref=coeff*np.abs(self.opt["merit_figure_user"]["ref"]))
+            
+        elif self.opt['merit_figure'] == 'blade_tip_deflection':
             wt_opt.model.add_objective('tcons_post.tip_deflection_ratio')
             
         elif self.opt['merit_figure'] == 'DEL_RootMyb':   # for DAC optimization on root-flap-bending moments
@@ -102,7 +108,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         elif self.opt['merit_figure'] == 'Cp':
             wt_opt.model.add_objective('aeroelastic.Cp_out', ref=-1.)
         
-        elif self.opt['merit_figure'] == 'weis_lcoe':
+        elif self.opt['merit_figure'] == 'weis_lcoe' or self.opt['merit_figure'].lower() == 'lcoe':
             wt_opt.model.add_objective('financese_post.lcoe')
         
         elif self.opt['merit_figure'] == 'OL2CL_pitch':

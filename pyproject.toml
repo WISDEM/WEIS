@@ -46,7 +46,6 @@ dependencies = [
   "moorpy",
   "nlopt",
   "numpy",
-  "openmdao<3.28",
   "openpyxl",
   "openraft",
   "osqp",
