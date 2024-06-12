@@ -43,8 +43,8 @@ controller_params:
   # Controller parameters 
   U_pc:               [2.3,2.5]
   interp_type:        sigma
-  zeta_pc:            [0.67,0.92]                   # Pitch controller desired damping ratio [-]
-  omega_pc:           [0.94,1.55]                   # Pitch controller desired natural frequency [rad/s]
+  zeta_pc:            [0.7,0.7]                   # Pitch controller desired damping ratio [-]
+  omega_pc:           [0.9,0.9]                   # Pitch controller desired natural frequency [rad/s]
   zeta_vs:            0.7                   # Torque controller desired damping ratio [-]
   omega_vs:           0.7                   # Torque controller desired natural frequency [rad/s]
   twr_freq:           3.3404                # Tower natural frequency [rad/s]  # 0.4499 (old value) 3.3404(new value)

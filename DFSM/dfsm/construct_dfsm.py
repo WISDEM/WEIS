@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import CubicSpline,interp1d
 import matplotlib.pyplot as plt
 
 from scipy.integrate import solve_ivp
@@ -39,8 +39,10 @@ class DFSM:
         self.n_deriv = SimulationDetails.n_deriv
         self.n_outputs = SimulationDetails.n_outputs
         self.gen_speed_ind = SimulationDetails.gen_speed_ind
-        self.FA_Acc_ind = SimulationDetails.FA_Acc_ind
-        self.NacIMU_FA_Acc_ind = SimulationDetails.NacIMU_FA_Acc_ind
+        self.FA_Acc_ind_s = SimulationDetails.FA_Acc_ind_s
+        self.NacIMU_FA_Acc_ind_s = SimulationDetails.NacIMU_FA_Acc_ind_s
+        self.FA_Acc_ind_o = SimulationDetails.FA_Acc_ind_o
+        self.NacIMU_FA_Acc_ind_o = SimulationDetails.NacIMU_FA_Acc_ind_o
         self.linear_model_file = SimulationDetails.linear_model_file
         self.region = SimulationDetails.region
         
@@ -285,6 +287,7 @@ class DFSM:
                     print('Loading linear model from mat file')
                     print('')
                     
+                    
                     AB_dict = loadmat(self.linear_model_file)
                     
                     if self.region == 'BR':
@@ -300,7 +303,7 @@ class DFSM:
                 
                 self.AB = AB
 
-                if self.n_outputs > 0:
+                if (self.n_outputs > 0):
                     CD = lstsq(model_inputs,outputs,rcond = -1)
                     
                     self.CD = CD[0]
@@ -342,7 +345,39 @@ class DFSM:
                     # store indices
                     self.error_ind_outputs = (np.abs(np.mean(outputs_error,0)) > 1e-5)
                                                     
-            
+            elif self.L_type == 'LPV':
+
+                    AB_dict = loadmat(self.linear_model_file)
+
+                    A_list = AB_dict['A_cell']
+                    B_list = AB_dict['B_cell']
+                    C_list = AB_dict['C_cell']
+                    D_list = AB_dict['D_cell']
+
+                    A = np.squeeze(np.array(A_list))
+                    B = np.squeeze(np.array(B_list))
+                    C = np.squeeze(np.array(C_list))
+                    D = np.squeeze(np.array(D_list))
+
+                    W = np.squeeze(np.array(AB_dict['W']))
+                    
+                    A_fun = interp1d(W,A,kind = 'nearest',axis = 0,fill_value = 'extrapolate')
+                    B_fun = interp1d(W,B,kind = 'nearest',axis = 0,fill_value = 'extrapolate')
+                    C_fun = interp1d(W,C,kind = 'nearest',axis = 0,fill_value = 'extrapolate')
+                    D_fun = interp1d(W,D,kind = 'nearest',axis = 0,fill_value = 'extrapolate')
+
+                    self.A_fun = A_fun 
+                    self.B_fun = B_fun 
+                    self.C_fun = C_fun 
+                    self.D_fun = D_fun
+
+
+                    self.AB = []
+                    self.CD = []
+                    self.error_ind_deriv = []
+                    self.error_ind_outputs = []
+                    #breakpoint()
+
             if self.N_type == None:
                 
                 # if no nonlinear corrective function is specified, do nothing

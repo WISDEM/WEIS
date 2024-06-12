@@ -18,7 +18,7 @@ import time as timer
 # DFSM modules
 from dfsm.simulation_details import SimulationDetails
 from dfsm.dfsm_plotting_scripts import plot_inputs,plot_dfsm_results
-from dfsm.dfsm_utilities import valid_extension,calculate_time
+from dfsm.dfsm_utilities import valid_extension,calculate_time, calculate_MSE
 from dfsm.test_dfsm import test_dfsm
 from dfsm.construct_dfsm import DFSM
 from dfsm.evaluate_dfsm import evaluate_dfsm
@@ -76,8 +76,8 @@ if __name__ == '__main__':
     #
 
      # datapath
-    region = 'R'
-    datapath = this_dir + os.sep + 'outputs' + os.sep + 'simple_sim_TR' #'MHK_'+region+'_10' #+ os.sep + 'openfast_runs/rank_0'
+    region = 'TR'
+    datapath = this_dir + os.sep + 'outputs' + os.sep + 'simple_sim_R' + os.sep + 'openfast_runs/rank_0'
     
     # get the path to all .outb files in the directory
     outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     # required states
     reqd_states = ['GenSpeed']
     
-    state_props = {'units' : ['[rpm]','[m/s2]'],
+    state_props = {'units' : ['[deg]','[rpm]','[m/s2]'],
     'key_freq_name' : [['ptfm'],['ptfm','2P'],['ptfm','2P']],
     'key_freq_val' : [[0.095],[0.095,0.39],[0.095,0.39]]}
     
@@ -94,16 +94,16 @@ if __name__ == '__main__':
     control_units = ['[m/s]','[kNm]','[deg]','[m]']
     
     
-    reqd_outputs = ['TwrBsMyt', 'GenPwr'] #['YawBrTAxp', 'NcIMURAys', 'GenPwr'] #,'TwrBsMyt'
+    reqd_outputs = ['TwrBsMyt','GenPwr','TwrBsMxt'] #['YawBrTAxp', 'NcIMURAys', 'GenPwr'] #,'TwrBsMyt'
     
     output_props = {'units' : ['[kN]','[kNm]','[kW]'],
     'key_freq_name' : [['ptfm','2P'],['ptfm','2P'],['ptfm','2P']],
     'key_freq_val' : [[0.095,0.39],[0.095,0.39],[0.095,0.39]]}
     
     # scaling parameters
-    scale_args = {'state_scaling_factor': np.array([1]),
+    scale_args = {'state_scaling_factor': np.array([100]),
                   'control_scaling_factor': np.array([1,1,1]),
-                  'output_scaling_factor': np.array([1,1])
+                  'output_scaling_factor': np.array([1,1,1])
                   }
     
     # filter parameters
@@ -116,7 +116,7 @@ if __name__ == '__main__':
                    }
     
     # name of mat file that has the linearized models
-    mat_file_name = None #this_dir + os.sep + 'linear-models.mat'
+    mat_file_name = None #this_dir + os.sep + 'DFSM_MHK_TR_nowave.mat'
     
     # instantiate class
     sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
@@ -136,12 +136,17 @@ if __name__ == '__main__':
     
     # split of training-testing data
     n_samples = 20
-    test_inds = [5]
+    test_inds = [0]
     
     # construct surrogate model
     dfsm_model = DFSM(sim_detail,n_samples = n_samples,L_type = 'LTI',N_type = None, train_split = 0.4)
     dfsm_model.construct_surrogate()
     dfsm_model.simulation_time = []
+
+    GT_OF_all = []
+    BP_OF_all = []
+    BP_DFSM_all = []
+    GT_DFSM_all = []
         
     for idx,ind in enumerate(test_inds):
             
@@ -149,9 +154,9 @@ if __name__ == '__main__':
         bp_of = test_data['controls'][:,2]
         gt_of = test_data['controls'][:,1]
         
-        
+
         nt = 1000
-        wind_speed = test_data['controls'][:,0] # np.ones((nt,))*2.5 #test_data['controls'][:,0] #
+        wind_speed = test_data['controls'][:,0] #
         nt = len(wind_speed)
         t0 = 0;tf = 700
         dt = 0.0; t1 = t0 + dt
@@ -163,9 +168,9 @@ if __name__ == '__main__':
         bp0 = 15
         gt0 = 8.3033588
         
-        # wave_elev = test_data['controls'][:,3]
-        # wave_pp = CubicSpline(time_of,wave_elev)
-        # wave_fun = lambda t:wave_pp(t)
+        wave_elev = np.ones((nt,))*0 #test_data['controls'][:,3]
+        wave_pp = CubicSpline(time_of,wave_elev)
+        wave_fun = lambda t:wave_pp(t)
         
         tspan = [t1,tf]
         
@@ -173,7 +178,7 @@ if __name__ == '__main__':
         x0_m = np.mean(test_data['states'],0)
         states_ = test_data['states']
         
-        
+        #x0[2] = 0
         # Load controller library
         #controller_interface = ROSCO_ci.ControllerInterface(lib_name,param_filename=param_filename,sim_name='sim_test')
         
@@ -189,23 +194,24 @@ if __name__ == '__main__':
                      't0':t1,
                      'tf':tf,
                      'w_fun':w_fun,
-                     'gen_speed_scaling':1,
+                     'gen_speed_scaling':100,
                      'controller_interface':ROSCO_ci.ControllerInterface(lib_name,param_filename=param_filename),
                      'wave_fun':None
                      }
             
             # solver method and options
-            solve_options = {'method':'RK45','rtol':1e-4,'atol':1e-4}
+            solve_options = {'method':'RK45','rtol':1e-6,'atol':1e-6}
             
             # start timer and solve for the states and controls
             t1 = timer.time()
-            sol =  solve_ivp(run_sim_ROSCO,tspan,x0_m,method=solve_options['method'],args = (dfsm_model,param),rtol = solve_options['rtol'],atol = solve_options['atol'],t_eval = time_of)
+            sol =  solve_ivp(run_sim_ROSCO,tspan,x0,method=solve_options['method'],args = (dfsm_model,param),rtol = solve_options['rtol'],
+                             atol = solve_options['atol'], t_eval = time_of)
             t2 = timer.time()
             dfsm_model.simulation_time.append(t2-t1)
             
             # extract solution
             time = sol.t
-            
+
             states = sol.y
             states = states.T
             
@@ -255,7 +261,9 @@ if __name__ == '__main__':
                           'key_freq_name':[['2P'],['2P']],'key_freq_val':[[0.39],[0.39]]}]
                 
             #----------------------------------------------------------------------
-            save_flag = False;plot_path = 'plots_ROSCO_TR_final2'
+            save_flag = False;plot_path = 'plots_ROSCO_TR_nw'
+            BP_OF_all.append(bp_of)
+            BP_DFSM_all.append(blade_pitch)
 
             # plot properties
             markersize = 10
@@ -263,6 +271,10 @@ if __name__ == '__main__':
             fontsize_legend = 16
             fontsize_axlabel = 18
             fontsize_tick = 12
+
+            #------------------------------------------------
+            # Plot Blade Pitch
+            #-----------------------------------------------
             
             fig,ax = plt.subplots(1)
             ax.plot(time,blade_pitch,label = 'DFSM')
@@ -281,29 +293,12 @@ if __name__ == '__main__':
                 fig.savefig(plot_path +os.sep+ 'blade_pitch' +str(idx) +'_comp.pdf')
 
             #------------------------------------------------------
-            # fig,ax = plt.subplots(1)
-            # xf,FFT_dfsm,_ = spectral.fft_wrap(time,blade_pitch,averaging = 'Welch',averaging_window= 'hamming')
-            # xf,FFT_act,_ = spectral.fft_wrap(time_of,bp_of,averaging = 'Welch',averaging_window= 'hamming')
-             
-            # col_list = ['k','tab:red']
-            # key_freq_val = [2.42/6.28]
-            # key_freq_name = ['2P'] 
-
-            # for i,val in enumerate(key_freq_val):
-            #     ax.axvline(val,color = col_list[i],linestyle = ':')
-                
-                     
-            # ax.loglog(xf,np.sqrt(FFT_dfsm),label = 'DFSM')
-            # ax.loglog(xf,np.sqrt(FFT_act),label = 'OpenFAST')
-            # ax.set_xlabel('Freq [Hz]')
-            # #ax.set_xlim([0.1,1])
-            # ax.legend(ncol = 2)
-
+            # Plot GenSpeed
             #------------------------------------------------------
             
             fig,ax = plt.subplots(1)
-            ax.plot(time,states[:,0],label = 'DFSM')
-            ax.plot(time_of,states_[:,0],label = 'OpenFAST')
+            ax.plot(time,states[:,1],label = 'DFSM')
+            ax.plot(time_of,states_[:,1],label = 'OpenFAST')
             ax.set_title('GenSpeed [rpm]',fontsize = fontsize_axlabel)
             ax.set_xlim(tspan)
             #ax.set_ylim([580,630])
@@ -315,9 +310,52 @@ if __name__ == '__main__':
                 if not os.path.exists(plot_path):
                         os.makedirs(plot_path)
                     
-                fig.savefig(plot_path +os.sep+ 'gen_speed' +str(idx) + 'TR__comp.pdf')
+                fig.savefig(plot_path +os.sep+ 'gen_speed' +str(idx) + '_comp.pdf')
+
+            #------------------------------------------------------
+            # Plot PtfmPitch
+            #------------------------------------------------------
+            if reqd_states[0] == 'PtfmPitch':
+                fig,ax = plt.subplots(1)
+                ax.plot(time,states[:,0],label = 'DFSM')
+                ax.plot(time_of,states_[:,0],label = 'OpenFAST')
+                ax.set_title('PtfmPitch [deg]',fontsize = fontsize_axlabel)
+                ax.set_xlim(tspan)
+                #ax.set_ylim([580,630])
+                ax.tick_params(labelsize=fontsize_tick)
+                ax.legend(ncol = 2,fontsize = fontsize_legend)
+                ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
                 
-           
+                if save_flag:
+                    if not os.path.exists(plot_path):
+                            os.makedirs(plot_path)
+                        
+                    fig.savefig(plot_path +os.sep+ 'ptfm_pitch' +str(idx) + '_comp.pdf')
+
+            #------------------------------------------------------
+            # Plot YawBrTAxp
+            #------------------------------------------------------
+            if reqd_states[-1] == 'YawBrTAxp':
+
+                fig,ax = plt.subplots(1)
+                ax.plot(time,states[:,2],label = 'DFSM')
+                ax.plot(time_of,states_[:,2],label = 'OpenFAST')
+                ax.set_title('YawBrTAxp [m/s2]',fontsize = fontsize_axlabel)
+                ax.set_xlim(tspan)
+                #ax.set_ylim([580,630])
+                ax.tick_params(labelsize=fontsize_tick)
+                ax.legend(ncol = 2,fontsize = fontsize_legend)
+                ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
+                
+                if save_flag:
+                    if not os.path.exists(plot_path):
+                            os.makedirs(plot_path)
+                        
+                    fig.savefig(plot_path +os.sep+ 'yawbrtaxp' +str(idx) + '_comp.pdf')
+                
+            #------------------------------------------
+            # Plot YawBrTAxp
+            #--------------------------------
             
             if dfsm_model.n_outputs > 0:
                 fig,ax = plt.subplots(1)
@@ -355,7 +393,8 @@ if __name__ == '__main__':
                         
                     fig.savefig(plot_path +os.sep+ 'twr_bs_myt' +str(idx) + '_comp.pdf')
                 
-                
+            GT_OF_all.append(gt_of)
+            GT_DFSM_all.append(gen_torque)    
                 
             fig,ax = plt.subplots(1)
             ax.plot(time,gen_torque,label = 'DFSM')
@@ -399,7 +438,19 @@ if __name__ == '__main__':
     print('')
     print(dfsm_model.simulation_time)
     print('')
+
+    # BP_OF_all = np.array(BP_OF_all); BP_OF_all = np.squeeze(BP_OF_all.reshape([-1,1]))
+    # BP_DFSM_all = np.array(BP_DFSM_all); BP_DFSM_all = np.squeeze(BP_DFSM_all.reshape([-1,1]))
+    # BP_all = (np.array([BP_DFSM_all,BP_OF_all])).T
+    # GT_OF_all = np.array(GT_OF_all); GT_OF_all = np.squeeze(GT_OF_all.reshape([-1,1]))
+    # GT_DFSM_all = np.array(GT_DFSM_all); GT_DFSM_all = np.squeeze(GT_DFSM_all.reshape([-1,1]))
+    # GT_all = (np.array([GT_DFSM_all,GT_OF_all])).T
+
+    # GT_MSE = calculate_MSE(GT_OF_all,GT_DFSM_all)
+    # BP_MSE = calculate_MSE(BP_OF_all, BP_DFSM_all)
+
     
+    #breakpoint()
     plt.show()
         
         

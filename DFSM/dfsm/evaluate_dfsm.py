@@ -30,15 +30,87 @@ def evaluate_dfsm(DFSM,inputs,fun_type = 'deriv'):
         error_ind = DFSM.error_ind_outputs
         
     if DFSM.L_type == None:
-        
+
         dx_lin = np.zeros((nt,no))
         
     else:
         
         # if LTI model
         if DFSM.L_type == 'LTI':
+            
             dx_lin = np.dot(inputs,lin)
-    
+
+        elif DFSM.L_type == 'LPV':
+
+            A_fun = DFSM.A_fun
+            B_fun = DFSM.B_fun
+            C_fun = DFSM.C_fun
+            D_fun = DFSM.D_fun
+
+            nu = DFSM.n_model_inputs - DFSM.n_deriv
+
+            if nt == 1:
+
+                inputs = np.squeeze(inputs)
+
+                # extract inputs and outputs
+                u = inputs[:nu]
+                x = inputs[nu:]
+
+                # extract wind speed
+                w = u[0]
+                
+                # evaluate the LPV function to get the system matrices
+                if fun_type == 'deriv':
+
+                    # A and B matrices for the derivative function
+                    A_ = A_fun(w)
+                    B_ = B_fun(w)
+                    
+
+                    dx_lin = np.dot(A_,x) + np.dot(B_,u)
+
+                elif fun_type == 'outputs':
+
+                    # C and D matrices for outputs
+                    C_ = C_fun(w)
+                    D_ = D_fun(w)
+                    
+                    dx_lin = np.dot(C_,x) + np.dot(D_,u)
+                
+            elif nt > 1:
+
+                # initialize
+                dx_lin = np.zeros((nt,no))
+
+                # extract inputs and outputs
+                u = inputs[:,:nu]
+                x = inputs[:,nu:]
+
+                for i in range(nt):
+
+                    w = u[i,0]
+                    x_ = x[i,:]
+                    u_ = u[i,:]
+
+                    # evaluate the LPV function to get the system matrices
+                    if fun_type == 'deriv':
+
+                        # A and B matrices for the derivative function
+                        A_ = A_fun(w)
+                        B_ = B_fun(w)
+                        
+
+                        dx_lin[i,:] = np.dot(A_,x_) + np.dot(B_,u_)
+
+                    elif fun_type == 'outputs':
+
+                        # C and D matrices for outputs
+                        C_ = C_fun(w)
+                        D_ = D_fun(w)
+
+                        dx_lin[i,:] = np.dot(C_,x_) + np.dot(D_,u_)
+ 
     # initialize nonlinear part
     dx_nonlin = np.zeros((nt,no))
     

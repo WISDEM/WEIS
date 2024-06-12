@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/test_DFSM_online
+    folder_output: outputs/test_constant
     fname_output: iea15mw
 
 # design_variables:

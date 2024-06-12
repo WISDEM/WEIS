@@ -76,7 +76,7 @@ def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names
         if name_[0] == 'd':
             pass 
         else:
-            OutData[name_] = states_dfsm[time_ind,i]
+            OutData[name_] = states_dfsm[:,i]
 
     if not('PtfmPitch' in state_names):
         OutData['PtfmPitch'] = np.zeros((nt,))
@@ -90,13 +90,13 @@ def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names
     # add controls
     for i,name_ in enumerate(control_names):
 
-        OutData[name_] = controls_dfsm[time_ind,i]
+        OutData[name_] = controls_dfsm[:,i]
 
     # add controls
     if len(output_names) > 1:
         for i,name_ in enumerate(output_names):
 
-            OutData[name_] = outputs_dfsm[time_ind,i]
+            OutData[name_] = outputs_dfsm[:,i]
 
     for i_blade in range(2):
         OutData[f'dBldPitch{i_blade+1}'] = np.zeros((nt,))

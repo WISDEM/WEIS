@@ -24,16 +24,12 @@ def run_sim_ROSCO(t,x,DFSM,param):
     else:
         turbine_state['iStatus'] = 1
         
-    # first step
-    # if  t == param['t0']:
-    #     turbine_state['bld_pitch'] = np.deg2rad(param['bp_init'])
-    #     turbine_state['gen_torque'] = param['gen_torque'][-1]*1000
         
     # else:
     turbine_state['bld_pitch'] = np.deg2rad(param['blade_pitch'][-1])
     turbine_state['gen_torque'] = param['gen_torque'][-1]*1000
     
-        
+    
     turbine_state['t'] = t
     turbine_state['dt'] = np.abs(dt)
     turbine_state['ws'] = w
@@ -56,7 +52,7 @@ def run_sim_ROSCO(t,x,DFSM,param):
     # convert to right units
     gen_torque = gen_torque/1000
     bld_pitch = np.rad2deg(bld_pitch)
-    
+
     if param['wave_fun']  == None:
         u = np.array([w,gen_torque,bld_pitch])
         

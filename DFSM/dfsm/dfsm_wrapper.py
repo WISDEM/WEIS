@@ -658,7 +658,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAS
                 # compile results from DFSM
                 OutData = compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,model_options['reqd_states'],
                                                model_options['reqd_controls'],model_options['reqd_outputs'],TStart[idx])
-                breakpoint()
+                #breakpoint()
                 ct.append(OutData)
                 # get output
 

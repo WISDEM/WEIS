@@ -4,15 +4,17 @@ from pCrunch.io import load_FAST_out
 from scipy.interpolate import CubicSpline
 from scipy.signal import filtfilt
 import time as timer
+import pickle
 
 
 class SimulationDetails:
     
     def __init__(self,OF_output_files,reqd_states,reqd_controls,reqd_outputs,scale_args = {}
-                 ,filter_args = {},add_dx2 = True,tmin = 0,tmax = None,linear_model_file = None,region = None):
+                 ,filter_args = {},add_dx2 = True,tmin = 0,tmax = None,linear_model_file = None,region = None,OF_file_type = 'outb'):
         
         # initialize
         self.OF_output_files = OF_output_files
+        self.OF_file_type = OF_file_type
         self.reqd_states = reqd_states
         self.reqd_controls = reqd_controls
         self.reqd_outputs = reqd_outputs
@@ -150,9 +152,14 @@ class SimulationDetails:
         
         # loop through and extract openfast file
         for sim_idx,file_name in enumerate(self.OF_output_files):
-
+           
             # load output file
-            FAST_out = load_FAST_out(file_name)[0]
+            if self.OF_file_type == 'outb':
+                FAST_out = load_FAST_out(file_name)[0]
+
+            elif self.OF_file_type == 'pkl':
+                with open(file_name,'rb') as handle:
+                    FAST_out = pickle.load(handle)
             
             # extract time
             time = FAST_out['Time']
@@ -243,17 +250,31 @@ class SimulationDetails:
                 
             # find index of FA_Acc
             try:
-                self.FA_Acc_ind = self.reqd_states.index('YawBrTAxp')
+                self.FA_Acc_ind_s = self.reqd_states.index('YawBrTAxp')
                 
             except ValueError:
-                self.FA_Acc_ind = None
+                self.FA_Acc_ind_s = None
                 
             # find index of genspeed
             try:
-                self.NacIMU_FA_Acc_ind = self.reqd_states.index('NcIMURAys')
+                self.NacIMU_FA_Acc_ind_s = self.reqd_states.index('NcIMURAys')
                 
             except ValueError:
-                self.NacIMU_FA_Acc_ind = None
+                self.NacIMU_FA_Acc_ind_s = None
+
+                # find index of FA_Acc
+            try:
+                self.FA_Acc_ind_o = self.reqd_outputs.index('YawBrTAxp')
+                
+            except ValueError:
+                self.FA_Acc_ind_o = None
+                
+            # find index of genspeed
+            try:
+                self.NacIMU_FA_Acc_ind_o = self.reqd_outputs.index('NcIMURAys')
+                
+            except ValueError:
+                self.NacIMU_FA_Acc_ind_o = None
                 
                 
             # initialize storage dict

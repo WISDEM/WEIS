@@ -2,6 +2,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os, platform
 import sys
+import pickle
+import openmdao.api as om
+import fatpack
 
 # ROSCO toolbox modules 
 from ROSCO_toolbox import controller as ROSCO_controller
@@ -267,43 +270,15 @@ if __name__ == '__main__':
     # path to DISCON library
     lib_name = os.path.join('/home/athulsun/anaconda3/envs/weis-env/lib','libdiscon.so')
     
-    # Load turbine data from openfast model
-    # turbine = ROSCO_turbine.Turbine(turbine_params)
-    # #turbine.v_rated = 1.6789904628983487
-    
-    # # cp ct cq file
-    # cp_filename = os.path.join(this_dir,'IEA_15_MW','IEA_w_TMD_Cp_Ct_Cq.txt') #os.path.join(this_dir,path_params['FAST_directory'],path_params['rotor_performance_filename'])
-    
-    # # load turbine    
-    # turbine.load_from_fast(
-    #     path_params['FAST_InputFile'],
-    #     os.path.join(this_dir,path_params['FAST_directory']),
-    #     rot_source='txt',txt_filename=cp_filename
-    #     )
-    
-    # # Tune controller 
-    # controller      = ROSCO_controller.Controller(controller_params)
-    # controller.tune_controller(turbine)
-    
-    # Write parameter input file
-    param_filename = os.path.join(this_dir,'IEA_15_MW','IEA_w_TMD_DISCON.IN')
-    # write_DISCON(
-    #   turbine,controller,
-    #   param_file=param_filename, 
-    #   txt_filename=cp_filename
-    #   )
-    #breakpoint()
     # datapath
     region = 'LPV'
     datapath =  '/home/athulsun/DFSM/data' + os.sep + 'FOWT_1p6' #this_dir + os.sep + 'outputs' + os.sep + 'FOWT_1p6' #+ os.sep + 'openfast_runs/rank_0'
-    testpath = '/home/athulsun/DFSM/data' + os.sep + '1p6_test' # this_dir + os.sep + 'outputs' + os.sep + '1p6_test'
+   
+    
     # get the path to all .outb files in the directory
     outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
     outfiles = sorted(outfiles)
 
-    outfiles_test = [os.path.join(testpath,f) for f in os.listdir(testpath) if valid_extension(f)]
-    outfiles_test = sorted(outfiles_test)
-    
     # required states
     reqd_states = ['PtfmPitch','TTDspFA','GenSpeed']
     
@@ -315,7 +290,7 @@ if __name__ == '__main__':
     control_units = ['[m/s]','[kNm]','[deg]','[m]']
     
     
-    reqd_outputs = ['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr'] #,'TwrBsMyt'
+    reqd_outputs = ['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr']
     
     output_props = {'units' : ['[kN]','[kNm]','[kW]'],
     'key_freq_name' : [['ptfm','2P'],['ptfm','2P'],['ptfm','2P']],
@@ -341,42 +316,88 @@ if __name__ == '__main__':
     
     # instantiate class
     sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
-                                   ,add_dx2 = True,linear_model_file = mat_file_name,region = region)
-    
-    sim_detail_test = SimulationDetails(outfiles_test, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
-                                   ,add_dx2 = True,linear_model_file = mat_file_name,region = region)
+                                   ,add_dx2 = True,linear_model_file = mat_file_name,region = region,OF_file_type = 'outb')
     
     save_path = 'plots_ROSCO'
     # load and process data
     sim_detail.load_openfast_sim()
-    sim_detail_test.load_openfast_sim()
-    
-    # extract data
-    FAST_sim = sim_detail_test.FAST_sim
-    
-    # plot data
-    #plot_inputs(sim_detail,4,'separate')
     
     # split of training-testing data
     n_samples = 1
-    test_inds = [16]
     
     # construct surrogate model
     dfsm_model = DFSM(sim_detail,n_samples = n_samples,L_type = 'LPV',N_type = None, train_split = 0.5)
     dfsm_model.construct_surrogate()
     dfsm_model.simulation_time = []
 
-    W_mean = np.zeros((len(test_inds),))
+    # 
+    num_iter = []
+    sql_dir = '/home/athulsun/asha_runs/1p6_DOE_test2'
+    sql_file = sql_dir  +os.sep + 'log_opt.sql'
 
-    BP_mse = np.zeros((len(test_inds),))
-    GT_mse = np.zeros((len(test_inds),))
+
+    cr = om.CaseReader(sql_file)
+    driver_cases = cr.get_cases('driver')
+
+    DVs = []
+
+    for idx, case in enumerate(driver_cases):
+        dvs = case.get_design_vars(scaled=False)
+        num_iter.append(idx)
+        for key in dvs.keys():
+            DVs.append(dvs[key])
+    
+    # set length 
+    n_dv = len(dvs.keys())
+    dv_name = [k_ for k_ in dvs.keys()]
+
+    if dv_name[0] == 'tune_rosco_ivc.omega_pc':
+        y_ = 0.2
+    elif dv_name[0] == 'tune_rosco_ivc.zeta_pc':
+        y_ = 1
+    elif dv_name[0] == 'tune_rosco_ivc.Kp_float':
+         y_ = -9.5427
+
+    # reshape into array
+    DV = np.reshape(DVs,(idx+1,),order = 'C')
+
+    #breakpoint()
+
+    pkl_dir = [sql_dir + '/iteration_' + str(iter_) for iter_ in num_iter] # this_dir + os.sep + 'outputs' + os.sep + '1p6_test'
+    pkl_files = [pk_dir + '/timeseries/IEA_w_TMD_0.p' for pk_dir in pkl_dir ]
+    DISCON_files = [pk_dir + '/timeseries/IEA_w_TMD_0_DISCON.IN' for pk_dir in pkl_dir ]
+    
+    sim_detail_test = SimulationDetails(pkl_files, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
+                                   ,add_dx2 = True,linear_model_file = mat_file_name,region = region,OF_file_type = 'pkl')
+    
+    sim_detail_test.load_openfast_sim()
+    
+    # extract data
+    FAST_sim = sim_detail_test.FAST_sim
+    
+    W_mean = np.zeros((len(num_iter),))
+
+    BP_mse = np.zeros((len(num_iter),))
+    GT_mse = np.zeros((len(num_iter),))
 
     GT_OF_all = []
     BP_OF_all = []
     BP_DFSM_all = []
     GT_DFSM_all = []
-        
-    for idx,ind in enumerate(test_inds):
+
+    genspeed_mean = np.zeros((len(num_iter),2))
+    genspeed_max = np.zeros((len(num_iter),2))
+
+    ptfmpitch_mean = np.zeros((len(num_iter),2))
+    ptfmpitch_max = np.zeros((len(num_iter),2))
+
+    genpwr_mean = np.zeros((len(num_iter),2))
+
+    DEL_twrbsmyt = np.zeros((len(num_iter),2))
+
+
+    for idx,ind in enumerate(num_iter):
+        discon_file = DISCON_files[idx]
             
         test_data = FAST_sim[ind]
         bp_of = test_data['controls'][:,2]
@@ -421,7 +442,7 @@ if __name__ == '__main__':
 
 
         # Load controller library
-        controller_interface = ROSCO_ci.ControllerInterface(lib_name,param_filename=param_filename,sim_name='sim_test',**args)
+        controller_interface = ROSCO_ci.ControllerInterface(lib_name,param_filename=discon_file,sim_name='sim_test',**args)
         
         if True: 
             # hardcoded for now
@@ -440,9 +461,6 @@ if __name__ == '__main__':
                      'wave_fun':wave_fun,
                      'ny': len(reqd_outputs)
                      }
-            
-            # solver method and options
-            solve_options = {'method':'RK45','rtol':1e-6,'atol':1e-6}
             
             # start timer and solve for the states and controls
             t1 = timer.time()
@@ -493,7 +511,7 @@ if __name__ == '__main__':
             
                 
             #----------------------------------------------------------------------
-            save_flag = True;plot_path = 'plots_ROSCO_LPV_1p6_test'
+            save_flag = True;plot_path = 'plots_ROSCO_LPV_1p6_DOE2'
             BP_OF_all.append(bp_of)
             BP_DFSM_all.append(blade_pitch)
 
@@ -530,8 +548,17 @@ if __name__ == '__main__':
             #------------------------------------------------------
             
             fig,ax = plt.subplots(1)
-            ax.plot(time_of,states_[:,1],label = 'OpenFAST')
-            ax.plot(time,states[:,1],label = 'DFSM')
+            genspeed_of = states_[:,2]*scale_args['state_scaling_factor'][-1]
+            genspeed_dfsm = states[:,2]*scale_args['state_scaling_factor'][-1]
+
+            genspeed_mean[idx,0] = np.mean(genspeed_of)
+            genspeed_mean[idx,1] = np.mean(genspeed_dfsm)
+
+            genspeed_max[idx,0] = np.max(genspeed_of)
+            genspeed_max[idx,1] = np.max(genspeed_dfsm)
+
+            ax.plot(time_of,states_[:,2]*scale_args['state_scaling_factor'][-1],label = 'OpenFAST')
+            ax.plot(time,states[:,2]*scale_args['state_scaling_factor'][-1],label = 'DFSM')
             
             ax.set_title('GenSpeed [rpm]',fontsize = fontsize_axlabel)
             ax.set_xlim(tspan)
@@ -550,6 +577,16 @@ if __name__ == '__main__':
             # Plot PtfmPitch
             #------------------------------------------------------
             if reqd_states[0] == 'PtfmPitch':
+
+                ptfmpitch_of = states_[:,0]
+                ptfmpitch_dfsm = states[:,0]
+
+                ptfmpitch_mean[idx,0] = np.mean(ptfmpitch_of)
+                ptfmpitch_mean[idx,1] = np.mean(ptfmpitch_dfsm)
+
+                ptfmpitch_max[idx,0] = np.max(ptfmpitch_of)
+                ptfmpitch_max[idx,1] = np.max(ptfmpitch_dfsm)
+
                 fig,ax = plt.subplots(1)
                 ax.plot(time_of,states_[:,0],label = 'OpenFAST')
                 ax.plot(time,states[:,0],label = 'DFSM')
@@ -612,6 +649,37 @@ if __name__ == '__main__':
             
             if dfsm_model.n_outputs > 0:
 
+                genpwr_ind = reqd_outputs.index('GenPwr')
+                twrbsmyt_ind = reqd_outputs.index('TwrBsMyt')
+
+                GenPwr_of = outputs_of[:,genpwr_ind]
+                GenPwr_dfsm = Y_dfsm[:,genpwr_ind]
+
+                genpwr_mean[idx,0] = np.mean(GenPwr_of)
+                genpwr_mean[idx,1] = np.mean(GenPwr_dfsm)
+
+                TwrBsMyt_of = outputs_of[:,twrbsmyt_ind]
+                TwrBsMyt_dfsm = Y_dfsm[:,twrbsmyt_ind]
+
+                # parameters
+                bins = 10
+                load2stress = 1
+                slope = 4
+                ult_stress = 4
+                s_intercept = 1
+                elapsed = time[-1]
+
+                F_of, Fmean_of = fatpack.find_rainflow_ranges(TwrBsMyt_of, return_means=True)
+                Nrf_of, Frf_of = fatpack.find_range_count(F_of, bins)
+                DELs_ = Frf_of ** slope * Nrf_of / elapsed
+                DEL_twrbsmyt[idx,0] = DELs_.sum() ** (1.0 / slope)
+
+                F_dfsm, Fmean_dfsm = fatpack.find_rainflow_ranges(TwrBsMyt_dfsm, return_means=True)
+                Nrf_dfsm, Frf_dfsm = fatpack.find_range_count(F_dfsm, bins)
+                DELs_ = Frf_dfsm ** slope * Nrf_dfsm / elapsed
+                DEL_twrbsmyt[idx,1] = DELs_.sum() ** (1.0 / slope)
+
+
                 for iy in range(dfsm_model.n_outputs):
 
                     fig,ax = plt.subplots(1)
@@ -621,7 +689,7 @@ if __name__ == '__main__':
                     
                     ax.set_title(reqd_outputs[iy],fontsize = fontsize_axlabel)
                     ax.set_xlim(tspan)
-                    #ax.set_ylim([480,530])
+                    
                     ax.tick_params(labelsize=fontsize_tick)
                     ax.legend(ncol = 2,fontsize = fontsize_legend)
                     ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
@@ -674,7 +742,93 @@ if __name__ == '__main__':
             BP_mse[idx] = calculate_MSE(blade_pitch_of,blade_pitch)
             GT_mse[idx] = calculate_MSE(gen_torque_of,gen_torque)
 
-            
+    # plot ptfmpitch max
+
+    fig,ax = plt.subplots(1)
+
+    ax.plot(DV,ptfmpitch_max[:,0],'.-',linewidth = linewidth,markersize = markersize,label = 'OpenFAST')
+    ax.plot(DV,ptfmpitch_max[:,1],'.-',linewidth = linewidth,markersize = markersize,label = 'DFSM')
+    ax.axvline(x=y_,color='k')
+
+    ax.set_xlabel(dv_name[0])
+    ax.set_ylabel('PtfmPitch Max')
+    ax.legend(ncol = 2,fontsize = fontsize_legend)
+
+    if save_flag:
+            if not os.path.exists(plot_path):
+                    os.makedirs(plot_path)
+                
+            fig.savefig(plot_path +os.sep+ 'ptfmpitch_max_comp.pdf')
+
+    # plot genspeed max
+    fig,ax = plt.subplots(1)
+
+    ax.plot(DV,genspeed_max[:,0],'.-',linewidth = linewidth,markersize = markersize,label = 'OpenFAST')
+    ax.plot(DV,genspeed_max[:,1],'.-',linewidth = linewidth,markersize = markersize,label = 'DFSM')
+    ax.axvline(x=y_,color='k')
+
+    ax.set_xlabel(dv_name[0])
+    ax.set_ylabel('GenSpeed Max')
+    ax.legend(ncol = 2,fontsize = fontsize_legend)
+
+    if save_flag:
+            if not os.path.exists(plot_path):
+                    os.makedirs(plot_path)
+                
+            fig.savefig(plot_path +os.sep+ 'genspeed_max_comp.pdf')
+
+    # plot genspeed mean
+    fig,ax = plt.subplots(1)
+
+    ax.plot(DV,genspeed_mean[:,0],'.-',linewidth = linewidth,markersize = markersize,label = 'OpenFAST')
+    ax.plot(DV,genspeed_mean[:,1],'.-',linewidth = linewidth,markersize = markersize,label = 'DFSM')
+    ax.axvline(x=y_,color='k')
+
+    ax.set_xlabel(dv_name[0])
+    ax.set_ylabel('GenSpeed Mean')
+    ax.legend(ncol = 2,fontsize = fontsize_legend)
+
+    if save_flag:
+            if not os.path.exists(plot_path):
+                    os.makedirs(plot_path)
+                
+            fig.savefig(plot_path +os.sep+ 'genspeed_mean_comp.pdf')
+
+    # plot genpwr mean
+    fig,ax = plt.subplots(1)
+
+    ax.plot(DV,genpwr_mean[:,0],'.-',linewidth = linewidth,markersize = markersize,label = 'OpenFAST')
+    ax.plot(DV,genpwr_mean[:,1],'.-',linewidth = linewidth,markersize = markersize,label = 'DFSM')
+    ax.axvline(x=y_,color='k')
+
+    ax.set_xlabel(dv_name[0])
+    ax.set_ylabel('GenPower Mean')
+    ax.legend(ncol = 2,fontsize = fontsize_legend)
+
+    if save_flag:
+            if not os.path.exists(plot_path):
+                    os.makedirs(plot_path)
+                
+            fig.savefig(plot_path +os.sep+ 'genpwr_mean_comp.pdf')
+
+    # plot DEL
+
+    fig,ax = plt.subplots(1)
+
+    ax.plot(DV,DEL_twrbsmyt[:,0],'.-',linewidth = linewidth,markersize = markersize,label = 'OpenFAST')
+    ax.plot(DV,DEL_twrbsmyt[:,1],'.-',linewidth = linewidth,markersize = markersize,label = 'DFSM')
+    ax.axvline(x=y_,color='k')
+
+    ax.set_xlabel(dv_name[0])
+    ax.set_ylabel('DEL_twrbsmyt')
+    ax.legend(ncol = 2,fontsize = fontsize_legend)
+
+    if save_flag:
+            if not os.path.exists(plot_path):
+                    os.makedirs(plot_path)
+                
+            fig.savefig(plot_path +os.sep+ 'DEL_comp.pdf')
+
             # fig,ax = plt.subplots(1)
 
             # ax.plot(time,w_fun(time_of),label = 'ROSCO')
@@ -745,21 +899,21 @@ if __name__ == '__main__':
             # breakpoint()
 
 
-    W_mean = np.reshape(W_mean,(2,10),order = 'F')
-    BP_mse = np.reshape(BP_mse,(2,10),order = 'F')
-    GT_mse = np.reshape(GT_mse,(2,10),order = 'F')
+    # W_mean = np.reshape(W_mean,(2,10),order = 'F')
+    # BP_mse = np.reshape(BP_mse,(2,10),order = 'F')
+    # GT_mse = np.reshape(GT_mse,(2,10),order = 'F')
 
 
-    BP_mse = np.mean(BP_mse,axis = 0)
-    GT_mse = np.mean(GT_mse,axis = 0)
+    # BP_mse = np.mean(BP_mse,axis = 0)
+    # GT_mse = np.mean(GT_mse,axis = 0)
 
-    print('')
-    print(dfsm_model.simulation_time)
-    print('')
-    print(BP_mse)
-    print('')
-    print(GT_mse)
-    print('')
+    # print('')
+    # print(dfsm_model.simulation_time)
+    # print('')
+    # print(BP_mse)
+    # print('')
+    # print(GT_mse)
+    # print('')
     #breakpoint()
 
     
