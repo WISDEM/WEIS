@@ -648,7 +648,7 @@ class DLCGenerator(object):
         # Handle DLC Specific options:
         label = '1.6'
         sea_state = 'severe'
-        dlc_options['wake_mod'] = self.default_wake_mod
+
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
@@ -661,17 +661,29 @@ class DLCGenerator(object):
         generic_case_inputs.append(['total_time','transient_time','wake_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options,sea_state,label)
       
-        # All DLCs: Generate case list, both generic and OpenFAST specific
+    def generate_cases(self,generic_case_inputs,dlc_options,sea_state,label):
+        '''
+        This method will generate the simulation inputs for each design load case
+
+        generic_case_inputs is a list of lists of strings with the options used to create a case matrix
+        dlc_options is a dictionary, some of its keys will be in generic_case_inputs and used to generate the cases
+        sea_state is a string: either severe or normal
+        label is the string label used in when the wind inputs are created
+        '''
+        
+        # Generate case list, both generic and OpenFAST specific
+        self.set_time_options(dlc_options)
         met_options = self.gen_met_options(dlc_options, sea_state=sea_state)
         generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
-        for i_case, case in enumerate(generic_case_list):
+        for _, case in enumerate(generic_case_list):
             idlc = DLCInstance(options=dlc_options)
 
-            # TODO: Figure out if there's a way to make the things below into generic_case_inputs
             idlc.turbulent_wind = True
             idlc.URef = case['wind_speeds']
             idlc.label = label
@@ -717,17 +729,49 @@ class DLCGenerator(object):
         options['total_time'] = options['analysis_time'] + options['transient_time']
 
     def gen_case_list(self,dlc_options, met_options, generic_case_inputs):
-        # TODO: rename this function and/or combine with other gen_case_list
+        '''
+        Generate case list from generic_case_inputs
+        TODO: this whole thing could be moved into generate_cases, thoughts?
+        '''
+
+        # Option handling for all DLCs
+        dlc_options['wake_mod'] = self.default_wake_mod
+        
+        # Combine
         comb_options = combine_options(dlc_options,met_options)
-        generic_case_list = gen_case_list(generic_case_inputs,comb_options)
+
+        # Setup generic cross product of inputs: 
+        gen_case_inputs = {}
+        for i_group, group in enumerate(generic_case_inputs):
+            first_array_len = len(comb_options[group[0]])
+            for input in group:
+                # Check that input is a valid option
+                if not input in comb_options:
+                    raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
+                
+                # Check that all inputs are of equal length
+                if len(comb_options[input]) != first_array_len:
+                    raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
+
+                gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
+            
+        # Generate generic case list
+        generic_case_list, _ = CaseGen_General(gen_case_inputs,save_matrix=False)
+
         case_inputs_openfast = map_generic_to_openfast(generic_case_inputs, comb_options)
         self.openfast_case_inputs.append(case_inputs_openfast)
         return generic_case_list
 
     def gen_met_options(self, dlc_options, sea_state='normal'):
-        met_options = self.get_metocean(dlc_options)
-        self.set_time_options(dlc_options)
+        '''
+        Determine metocean options based on dlcs and sea state requested
+        met_options includes wind, waves, seeds, etc.
 
+        TODO: what input conditions are required of self?
+        TODO: what is required in dlc_options?
+        '''
+        met_options = self.get_metocean(dlc_options)
+        
         # Apply normal wave conditions based on wind speeds
         self.apply_sea_state(met_options,sea_state=sea_state)
         make_equal_length(met_options,'wind_speeds')
@@ -772,7 +816,7 @@ class DLCGenerator(object):
     def apply_initial_conditions(self,generic_case_inputs, dlc_options, met_options):
         '''
         Add available initial conditions to generic_case_inputs and interpolate options based on initial_condition_table
-        This is performed within each dlc generator function, but could be moved out, like OLAF params
+        This is performed within each dlc generator function
 
         '''
         
@@ -795,9 +839,6 @@ class DLCGenerator(object):
             generic_case_inputs[wind_group] = group
             
         return generic_case_inputs
-    
-    
-
 
     
     def generate_5p1(self, dlc_options):
@@ -805,7 +846,7 @@ class DLCGenerator(object):
         
         # DLC Specific options:
         label = '5.1'
-        dlc_options['wake_mod'] = self.default_wake_mod
+        sea_state = 'normal'
         
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -824,22 +865,7 @@ class DLCGenerator(object):
         generic_case_inputs.append(['azimuth_init']) # group 2
         # TODO: I think we need to shut off the generator here, too
       
-        
-        # All DLCs: Generate case list, both generic and OpenFAST specific
-        met_options = self.gen_met_options(dlc_options)
-        generic_case_inputs = self.apply_initial_conditions(generic_case_inputs,dlc_options,met_options)
-        generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
-
-        # DLC specific: Make idlc for other parts of WEIS
-        for i_case, case in enumerate(generic_case_list):
-            idlc = DLCInstance(options=dlc_options)
-
-            idlc.turbulent_wind = True
-            idlc.URef = case['wind_speeds']
-            idlc.label = label
-            idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
-            idlc.total_time = case['total_time']
-            self.cases.append(idlc)
+        self.generate_cases(generic_case_inputs,dlc_options,sea_state,label)
 
 
     def generate_6p1(self, options):
@@ -1139,36 +1165,6 @@ def combine_options(*dicts):
             comb_options[opt] = [comb_options[opt]]
 
     return comb_options
-
-def gen_case_list(generic_case_inputs,comb_options):
-    """
-    Create generic case list from list of generic_case_inputs and comb_options
-    Will apply elements of comb_options to generic_case_inputs, then create list of cases
-    
-    Args:
-        *dicts: Variable number of dictionaries.
-        
-    Returns:
-        dict: Combined dictionary.
-    """
-    # Setup generic cross product of inputs: TODO: make name of gen_case_inputs better
-    gen_case_inputs = {}
-    for i_group, group in enumerate(generic_case_inputs):
-        first_array_len = len(comb_options[group[0]])
-        for input in group:
-            # Check that input is a valid option
-            if not input in comb_options:
-                raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
-            
-            # Check that all inputs are of equal length
-            if len(comb_options[input]) != first_array_len:
-                raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
-
-            gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
-        
-    # Generate generic case list
-    case_list, _ = CaseGen_General(gen_case_inputs,save_matrix=False)
-    return case_list
 
 def map_generic_to_openfast(generic_case_inputs, comb_options):
     case_inputs_openfast = {}
