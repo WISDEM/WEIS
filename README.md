@@ -47,16 +47,17 @@ The installation instructions below use the environment name, "weis-env," but an
 1.  Setup and activate the Anaconda environment from a command prompt:
 
         conda config --add channels conda-forge
-        conda env create --name weis-env -f https://raw.githubusercontent.com/WISDEM/WEIS/develop/environment.yml
-        conda activate weis-env                          # (if this does not work, try source activate weis-env)
-        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only)   
-
-
-2. Clone the repository and install the software
-
+        conda install git
         git clone https://github.com/WISDEM/WEIS.git
         cd WEIS
         git checkout branch_name                         # (Only if you want to switch branches, say "develop")
+        conda env create --name weis-env -f environment.yml
+        conda activate weis-env                          # (if this does not work, try source activate weis-env)
+
+
+2. Add in final packages and install the software
+
+        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only)
         pip install -e .
 
 3. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:
@@ -66,6 +67,8 @@ The installation instructions below use the environment name, "weis-env," but an
         pip install -e .
 
 **NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
+
+For Windows users, we recommend installing `git` and the `m264` packages in separate environments as some of the libraries appear to conflict such that WISDEM cannot be successfully built from source.  The `git` package is best installed in the `base` environment.
 
 ## Developer guide
 
