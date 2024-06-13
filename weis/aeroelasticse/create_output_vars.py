@@ -81,7 +81,8 @@ if __name__=="__main__":
         weis_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
         outlist_fast_lib = os.path.join(weis_dir, 'OpenFAST', 'docs', 'OtherSupporting' , 'OutListParameters.xlsx')
         # Sheets to grab
-        sheet_list = ['ElastoDyn', 'BeamDyn', 'ServoDyn', 'AeroDyn', 'InflowWind', 'WAMIT', 'HydroDyn', 'Morison'] # 'SubDyn'
+        sheet_list = ['ElastoDyn', 'BeamDyn', 'ServoDyn', 'AeroDyn', 'InflowWind', 'WAMIT', 'HydroDyn', 'Morison', # 'SubDyn'
+                        'ElastoDyn_Nodes','BeamDyn_Nodes','AeroDyn_Nodes'] 
         xl_files = [outlist_fast_lib]*len(sheet_list)
         # Output naming
         fname_vars_out = 'FAST_vars_out.py'

@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
 
@@ -253,8 +254,8 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             # Run TurbSim in sequence
             wrapper = Turbsim_wrapper()
             wrapper.run_dir = wind_directory
-            run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-            wrapper.turbsim_exe = os.path.join(run_dir, 'local/bin/turbsim')
+            #run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
+            wrapper.turbsim_exe = shutil.which('turbsim')
             wrapper.turbsim_input = turbsim_input_file_name
             wrapper.execute()
 
@@ -262,14 +263,18 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         wind_file_type = 3
 
     else:
-        gusts = IEC_CoherentGusts()
-        gusts.D = rotorD
-        gusts.HH = hub_height
-        gusts.dt = dlc_generator.cases[i_case].TimeStep
-        gusts.TStart = dlc_generator.cases[i_case].transient_time + 10.  # start gust 10 seconds after OpenFAST starts recording
-        gusts.TF = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
-        gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
-        wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
-        wind_file_type = 2
+        if dlc_generator.cases[i_case].label != '12.1':
+            gusts = IEC_CoherentGusts()
+            gusts.D = rotorD
+            gusts.HH = hub_height
+            gusts.dt = dlc_generator.cases[i_case].TimeStep
+            gusts.TStart = dlc_generator.cases[i_case].transient_time + 10.  # start gust 10 seconds after OpenFAST starts recording
+            gusts.TF = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
+            wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
+            wind_file_type = 2
+        else:
+            wind_file_type = 1
+            wind_file_name = 'unused'
 
     return wind_file_type, wind_file_name

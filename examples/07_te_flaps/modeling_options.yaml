@@ -7,8 +7,6 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 20
-        n_tsr_perf_surfaces: 20
         spar_cap_ss: Spar_cap_ss
         spar_cap_ps: Spar_cap_ps
         te_ss: TE_reinf_ss
@@ -60,6 +58,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
     ServoDyn:
         Ptch_Cntrl: 1
+        AfCmode: 5
     
     xfoil:
         path: /Users/nabbas/Documents/WindEnergyToolbox/Xfoil/bin/xfoil
@@ -84,6 +83,8 @@ ROSCO:
     IPC_Kp1p: 1.4788252060327009e-08
     IPC_Ki1p: 1.7335658014571253e-09
     Bld_FlpDamp: 0.59696
+    flp_kp_norm: 0.8372297349345306
+    flp_tau: 12.258174215008605
 
 DLC_driver:
     DLCs:

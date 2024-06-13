@@ -125,7 +125,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds
 
     def get_wave_seeds(self, options, wind_speeds):
-        if len(options['wave_seed']) > 0:
+        if len(options['wave_seeds']) > 0:
             wave_seeds = np.array( [int(m) for m in options['wave_seeds']] )
         else:
             wave_seeds = self.rng_wave.integers(2147483648, size=len(wind_speeds), dtype=int)
@@ -874,6 +874,7 @@ class DLCGenerator(object):
     def generate_12p1(self, options):
         # Pass through uniform wind input
         wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+<<<<<<< HEAD
         idlc = DLCInstance(options=options)
         idlc.label = '12.1'
         idlc.IEC_WindType = 'Custom'
@@ -888,6 +889,21 @@ class DLCGenerator(object):
         idlc.wave_heading = wave_heading # dummy option
         
         self.cases.append(idlc)
+=======
+        for ws in wind_speeds:
+            idlc = DLCInstance(options=options)
+            idlc.label = '12.1'
+            idlc.IEC_WindType = 'Custom'
+            idlc.URef = wind_speeds
+            idlc.turbulent_wind = False
+            # idlc.wind_file = options['wind_file']
+            if options['analysis_time'] >= 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
+
+            self.cases.append(idlc)
+>>>>>>> e43a159c213a6842aac4cb4fc9cc8a80b5b5042c
 
 
 if __name__ == "__main__":

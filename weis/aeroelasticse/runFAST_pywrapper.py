@@ -5,7 +5,7 @@ programmatically with minimal additional dependencies.
 """
 
 import os
-import sys
+import shutil
 import platform
 import multiprocessing as mp
 
@@ -14,27 +14,39 @@ from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis, FatigueParams
+from weis.aeroelasticse.openfast_library import FastLibAPI
 
 import numpy as np
 
 
-weis_dir = os.path.dirname( os.path.dirname( os.path.dirname(os.path.realpath(__file__) ) ) )
-lib_dir  = os.path.abspath( os.path.join(weis_dir, 'local/lib/') )
-openfast_pydir = os.path.join(weis_dir,'OpenFAST','glue-codes','python')
-sys.path.append(openfast_pydir)
-from openfast_library import FastLibAPI
+of_path = shutil.which('openfast')
+bin_dir  = os.path.dirname(of_path)
+lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
 
 mactype = platform.system().lower()
 if mactype in ["linux", "linux2"]:
     libext = ".so"
+    staticext = ".a"
 elif mactype in ["win32", "windows", "cygwin"]: #NOTE: platform.system()='Windows', sys.platform='win32'
     libext = '.dll'
+    staticext = ".lib"
 elif mactype == "darwin":
     libext = '.dylib'
+    staticext = ".a"
 else:
     raise ValueError('Unknown platform type: '+mactype)
 
+found = False
+for libname in ['libopenfastlib', 'openfastlib']:
+    for d in [lib_dir, bin_dir]:
+        lib_path = os.path.join(d, libname+libext)
+        if os.path.exists(lib_path):
+            found = True
+            break
+    if found:
+        break
 
+    
 magnitude_channels_default = {
     'LSShftF': ["RotThrust", "LSShftFys", "LSShftFzs"], 
     'LSShftM': ["RotTorq", "LSSTipMys", "LSSTipMzs"],
@@ -229,7 +241,7 @@ class runFAST_pywrapper(object):
                 if os.path.exists(FAST_Output):
                     output_init = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
                 elif os.path.exists(FAST_Output_txt):
-                    output_init = OpenFASTAscii(FAST_Output, magnitude_channels=self.magnitude_channels)
+                    output_init = OpenFASTAscii(FAST_Output_txt, magnitude_channels=self.magnitude_channels)
                     
                 output_init.read()
 
@@ -272,9 +284,8 @@ class runFAST_pywrapper(object):
 class runFAST_pywrapper_batch(object):
 
     def __init__(self):
-
-        self.FAST_exe           = os.path.join(weis_dir, 'local/bin/openfast')   # Path to executable
-        self.FAST_lib           = os.path.join(lib_dir, 'libopenfastlib'+libext) 
+        self.FAST_exe           = of_path   # Path to executable
+        self.FAST_lib           = lib_path
         self.FAST_InputFile     = None
         self.FAST_directory     = None
         self.FAST_runDirectory  = None

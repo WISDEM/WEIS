@@ -2,96 +2,77 @@ name: CI_WEIS
 
 # We run CI on push commits on all branches
 on: [push, pull_request]
-
+    
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build (${{ matrix.os }} Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
+
+    defaults:
+        run:
+            shell: bash -el {0}
+
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
-        os: ["ubuntu-latest"] #, "macOS-latest"]
-        python-version: ["3.8"]
+        os: ["ubuntu-latest", "macOS-13", "macOS-latest", "windows-latest"] # mac13 is intel, mac-14 arm
+        python-version: ["3.9","3.10","3.11","3.12"]
         
     steps:
-      - uses: actions/checkout@v2
-
-      # This is the more official way to do miniconda, but it messes with the GitHub worker environment and shell quite a bit
-      #- uses: conda-incubator/setup-miniconda@v2
-      #  # https://github.com/marketplace/actions/setup-miniconda
-      #  with:
-      #    #miniconda-version: "latest"
-      #    channels: conda-forge
-      #    auto-update-conda: true
-      #    python-version: 3.8
-      #    environment-file: environment.yml
-        
-      # This is a less official, but more lightweight way to do miniconda
-      - uses: s-weigand/setup-conda@v1
-        # https://github.com/marketplace/actions/setup-conda
+      - uses: actions/checkout@v4
+    
+      - name: Install conda/mamba
+        uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
         with:
-          update-conda: true
-          python-version: 3.8
-          conda-channels: conda-forge
-          activate-conda: true
-      - run: conda env update --file environment.yml
-
-      #- name: Show custom environment
-      #  shell: bash
-      #  run: |
-      #      cat $GITHUB_ENV
-      #      printenv
+          # To use mamba, uncomment here, comment out the miniforge line
+          # mamba-version: "*"
+          miniforge-version: "latest"
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
       
-      # Install dependencies of WEIS specific to ubuntu
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
-        shell: bash 
-        # (if you use the shell here, cannot use 'compiler' package otherwise get link problems to system libraries
-        # Mpi only seems to work with the shell command though, so instead rely on system compilers
         run: |
-          conda install -y petsc4py mpi4py openmpi
-          python -c "import platform; print(platform.node())"
-
-      # Install dependencies of WISDEM specific to windows
-      - name: Add dependencies windows specific
-        if: contains( matrix.os, 'windows')
+          conda install -y petsc4py mpi4py openmpi pyoptsparse
+      
+      - name: Add test packages
         run: |
-          conda install -y m2w64-toolchain libpython
-
+          conda install -y pytest pytest-cov coveralls
+            
       - name: Show custom environment
-        shell: bash
         run: |
             conda list
-
-      # Debugging session
-      #- name: Setup tmate session
-      #  uses: mxschmitt/action-tmate@v3
+            printenv | sort
           
       # Install WEIS
       - name: Install WEIS
-        shell: bash
         run: |
-          python setup.py develop
+          python -m pip install --no-deps -e . -v
+
+      # Debugging session
+      #- name: Setup tmate session
+      #  if: contains( matrix.os, 'windows')
+      #  uses: mxschmitt/action-tmate@v3
           
       # List the collected tests for debugging purposes
-      - name: List tests
-        shell: bash
-        run: |
-          pytest weis --collect-only
+      #- name: List tests
+      #  run: |
+      #    pytest --collect-only weis 
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
-        shell: bash
         run: |
-          pytest weis --cov-config=.coverageac --cov=weis
+          pytest --cov-config=.coverageac --cov=weis -p no:warnings --disable-warnings weis 
       
       # Run coveralls
       - name: Run coveralls
-        if: contains( matrix.os, 'ubuntu')
-        # This also works, https://github.com/AndreMiras/coveralls-python-action
-        #uses: AndreMiras/coveralls-python-action@develop
-        shell: bash
+        if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
+        #uses: coverallsapp/github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

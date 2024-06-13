@@ -360,7 +360,7 @@ properties:
                             max: *flapminmax
                     rotor_overspeed:
                         type: object
-                        description: (Maximum rotor speed / rated rotor speed) - 1
+                        description: (Maximum rotor speed / rated rotor speed) - 1.  Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -372,7 +372,7 @@ properties:
                             max: *rotor_overspeed
                     Max_PtfmPitch:
                         type: object
-                        description: Maximum platform pitch displacement
+                        description: Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -384,7 +384,7 @@ properties:
                                 unit: deg
                     Std_PtfmPitch:
                         type: object
-                        description: Maximum platform pitch standard deviation
+                        description: Maximum platform pitch standard deviation over all cases. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -420,7 +420,7 @@ properties:
                                 unit: kN*m
                     nacelle_acceleration:
                         type: object
-                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2)
+                        description: Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
                         default: {}
                         properties:
                             flag: *flag
@@ -454,6 +454,22 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg/s
+            floating:
+                type: object
+                default: {}
+                properties:
+                    Max_Offset:
+                        type: object
+                        default: {}
+                        description: Maximum combined surge/sway offset. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
+                        properties:
+                            flag: *flag
+                            max:
+                                type: number
+                                default: 20
+                                minimum: 0.0
+                                maximum: 20000.0
+                                unit: m
             damage:
                 type: object
                 default: {}
@@ -482,21 +498,6 @@ properties:
                         type: boolean
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
-
-            Max_Offset:
-                type: object
-                default: {}
-                properties:
-                    flag:
-                        type: boolean
-                        description: Constrain maximum offset of platform from equilibrium point
-                        default: False
-                    max:
-                        type: number
-                        default: 20
-                        minimum: 0.0
-                        maximum: 20000.0
-                        unit: m
 
     
 

@@ -1,5 +1,5 @@
 def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
-    # ROSCO tuning parameters
+
     rosco_init_options = modeling_options['ROSCO']
 
     # Pitch regulation

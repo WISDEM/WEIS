@@ -9,7 +9,7 @@ from functools import reduce
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 
 try:
-    from ROSCO_toolbox import utilities as ROSCO_utilities
+    from rosco.toolbox import utilities as ROSCO_utilities
     ROSCO = True
 except:
     ROSCO = False
@@ -162,13 +162,17 @@ class InputWriter_OpenFAST(object):
             self.write_AeroDyn15()
         
         if self.fst_vt['Fst']['CompServo'] == 1:
-            if 'DISCON_in' in self.fst_vt and ROSCO:
-                self.write_DISCON_in()
-            self.write_ServoDyn()
-            for i_TStC, TStC in enumerate(self.fst_vt['TStC']):
-                self.write_StC(TStC,self.fst_vt['ServoDyn']['TStCfiles'][i_TStC])
-            for i_SStC, SStC in enumerate(self.fst_vt['SStC']):
-                self.write_StC(SStC,self.fst_vt['ServoDyn']['SStCfiles'][i_SStC])
+	        if 'DISCON_in' in self.fst_vt and ROSCO:
+	            self.write_DISCON_in()
+	        self.write_ServoDyn()
+	        for i_NStC, NStC in enumerate(self.fst_vt['NStC']):
+	            self.write_StC(NStC,self.fst_vt['ServoDyn']['NStCfiles'][i_NStC])
+	        for i_BStC, BStC in enumerate(self.fst_vt['BStC']):
+	            self.write_StC(BStC,self.fst_vt['ServoDyn']['BStCfiles'][i_BStC])
+	        for i_TStC, TStC in enumerate(self.fst_vt['TStC']):
+	            self.write_StC(TStC,self.fst_vt['ServoDyn']['TStCfiles'][i_TStC])
+	        for i_SStC, SStC in enumerate(self.fst_vt['SStC']):
+	            self.write_StC(SStC,self.fst_vt['ServoDyn']['SStCfiles'][i_SStC])
         
         if self.fst_vt['Fst']['CompHydro'] == 1:
             self.write_HydroDyn()
@@ -267,6 +271,8 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['Fst']['VTK_fields'], 'VTK_fields', '- Write mesh fields to VTK data files? (flag) {true/false} [unused if WrVTK=0]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['Fst']['VTK_fps'], 'VTK_fps', '- Frame rate for VTK output (frames per second){will use closest integer multiple of DT} [used only if WrVTK=2]\n'))
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDyn(self):
@@ -411,7 +417,23 @@ class InputWriter_OpenFAST(object):
                 f.write('"' + channel_list[i] + '"\n')
         
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+                
+        # Optional nodal output section
+        if 'BldNd_BladesOut' in self.fst_vt['ElastoDyn']:
+            f.write('====== Outputs for all blade stations (same ending as above for B1N1.... =========================== [optional section]\n')
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['BldNd_BladesOut'], 'BldNd_BladesOut', '- Number of blades to output all node information at.  Up to number of blades on turbine. (-)\n'))
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['ElastoDyn']['BldNd_BlOutNd'], 'BldNd_BlOutNd', '- Future feature will allow selecting a portion of the nodes to output.  Not implemented yet. (-)\n'))
+            f.write('                   OutList     - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx, ElastoDyn_Nodes tab for a listing of available output channels, (-)\n')
+            
+            opt_outlist = self.get_outlist(self.fst_vt['outlist'], ['ElastoDyn_Nodes'])      
+            for opt_channel_list in opt_outlist:
+                for i in range(len(opt_channel_list)):
+                    f.write('"' + opt_channel_list[i] + '"\n')
+            f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
         f.write('---------------------------------------------------------------------------------------\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDynBlade(self):
@@ -463,6 +485,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][3], 'BldEdgSh(5)', '-            , coeff of x^5\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynBlade']['BldEdgSh'][4], 'BldEdgSh(6)', '-            , coeff of x^6\n'))      
          
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_ElastoDynTower(self):
@@ -519,6 +543,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwSSM2Sh'][3], 'TwSSM2Sh(5)', '-       , coefficient of x^5 term\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['ElastoDynTower']['TwSSM2Sh'][4], 'TwSSM2Sh(6)', '-       , coefficient of x^6 term\n'))
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_BeamDyn(self):
@@ -586,8 +612,24 @@ class InputWriter_OpenFAST(object):
         for channel_list in outlist:
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
-        f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)')
+        f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+                
+        # Optional nodal output section
+        if 'BldNd_BlOutNd' in self.fst_vt['BeamDyn']:
+            f.write('====== Outputs for all blade stations (same ending as above for B1N1.... =========================== [optional section]\n')
+            # f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['BeamDyn']['BldNd_BladesOut'], 'BldNd_BladesOut', '- Number of blades to output all node information at.  Up to number of blades on turbine. (-)\n'))
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn']['BldNd_BlOutNd'], 'BldNd_BlOutNd', '- Future feature will allow selecting a portion of the nodes to output.  Not implemented yet. (-)\n'))
+            f.write('                   OutList     - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx, BeamDyn_Nodes tab for a listing of available output channels, (-)\n')
+            
+            opt_outlist = self.get_outlist(self.fst_vt['outlist'], ['BeamDyn_Nodes'])      
+            for opt_channel_list in opt_outlist:
+                for i in range(len(opt_channel_list)):
+                    f.write('"' + opt_channel_list[i] + '"\n')
+            f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
         f.write('---------------------------------------------------------------------------------------')
+        f.flush()
+        os.fsync(f)
         f.close()
 
         # f.write('{:<22} {:<11} {:}'.format(self.fst_vt['BeamDyn'][''], '', '\n'))
@@ -639,6 +681,7 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['WindType'], 'WindType', '- switch for wind file type (1=steady; 2=uniform; 3=binary TurbSim FF; 4=binary Bladed-style FF; 5=HAWC format; 6=User defined; 7=native Bladed FF)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['PropagationDir'], 'PropagationDir', '- Direction of wind propagation (meteoroligical rotation from aligned with X (positive rotates towards -Y) -- degrees)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['VFlowAng'], 'VFlowAng', '- Upflow angle (degrees) (not used for native Bladed format WindType=7)\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['VelInterpCubic'], 'VelInterpCubic', '- Use cubic interpolation for velocity in time (false=linear, true=cubic) [Used with WindType=2,3,4,5,7]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['NWindVel'], 'NWindVel', '- Number of points to output the wind velocity    (0 to 9)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['WindVxiList'], 'WindVxiList', '- List of coordinates in the inertial X direction (m)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['WindVyiList'], 'WindVyiList', '- List of coordinates in the inertial Y direction (m)\n'))
@@ -681,6 +724,19 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['PLExp_Hawc'], 'PLExp_Hawc', '- Power law exponent (-) (used for PL wind profile type only)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['Z0'], 'Z0', '- Surface roughness length (m) (used for LG wind profile type only)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['XOffset'], 'XOffset', '- Initial offset in +x direction (shift of wind box) (-)\n'))
+        f.write('-------------   LIDAR Parameters   --------------------------------------------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['SensorType'], 'SensorType', '- Switch for lidar configuration (0 = None, 1 = Single Point Beam(s), 2 = Continuous, 3 = Pulsed)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['NumPulseGate'], 'NumPulseGate', '- Number of lidar measurement gates (used when SensorType = 3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['PulseSpacing'], 'PulseSpacing', '- Distance between range gates (m) (used when SensorType = 3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['NumBeam'], 'NumBeam', '- Number of lidar measurement beams (0-5)(used when SensorType = 1)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['FocalDistanceX'], 'FocalDistanceX', '- Focal distance co-ordinates of the lidar beam in the x direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['FocalDistanceY'], 'FocalDistanceY', '- Focal distance co-ordinates of the lidar beam in the y direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['FocalDistanceZ'], 'FocalDistanceZ', '- Focal distance co-ordinates of the lidar beam in the z direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(', '.join(np.array(self.fst_vt['InflowWind']['RotorApexOffsetPos'], dtype=str)), 'RotorApexOffsetPos', '- Offset of the lidar from hub height (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['URefLid'], 'URefLid', '- Reference average wind speed for the lidar[m/s]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['MeasurementInterval'], 'MeasurementInterval', '- Time between each measurement [s]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['LidRadialVel'], 'LidRadialVel', '- TRUE => return radial component, FALSE => return x direction estimate\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['ConsiderHubMotion'], 'ConsiderHubMotion', '- Flag whether to consider the hub motions impact on Lidar measurements\n'))
         f.write('====================== OUTPUT ==================================================\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['InflowWind']['SumPrint'], 'SumPrint', '- Print summary data to <RootName>.IfW.sum (flag)\n'))
         f.write('OutList      - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx for a listing of available output channels, (-)\n')
@@ -693,6 +749,8 @@ class InputWriter_OpenFAST(object):
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
   
     def write_AeroDyn15(self):
@@ -730,6 +788,7 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['TwrAero'], 'TwrAero', '- Calculate tower aerodynamic loads? (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FrozenWake'], 'FrozenWake', '- Assume frozen wake during linearization? (flag) [used only when WakeMod=1 and when linearizing]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['CavitCheck'], 'CavitCheck', '- Perform cavitation check? (flag) [AFAeroMod must be 1 when CavitCheck=true]\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['Buoyancy'], 'Buoyancy', '- Include buoyancy effects? (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['CompAA'], 'CompAA', '- Flag to compute AeroAcoustics calculation [only used when WakeMod=1 or 2]\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AA_InputFile'], 'AA_InputFile', '- AeroAcoustics input file [used only when CompAA=true]\n'))
         f.write('======  Environmental Conditions  ===================================================================\n')
@@ -749,7 +808,7 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['IndToler'], 'IndToler', '- Convergence tolerance for BEMT nonlinear solve residual equation {or "default"} (-) [unused when WakeMod=0 or 3]\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['MaxIter'], 'MaxIter', '- Maximum number of iteration steps (-) [unused when WakeMod=0]\n'))
         f.write('======  Dynamic Blade-Element/Momentum Theory Options  ====================================================== [used only when WakeMod=2]\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['DBEMT_Mod'], 'DBEMT_Mod', '- Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1} (-) [used only when WakeMod=2]\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['DBEMT_Mod'], 'DBEMT_Mod', '- Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when WakeMod=2]\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['tau1_const'], 'tau1_const', '- Time constant for DBEMT (s) [used only when WakeMod=2 and DBEMT_Mod=1]\n'))
         f.write('======  OLAF -- cOnvecting LAgrangian Filaments (Free Vortex Wake) Theory Options  ================== [used only when WakeMod=3]\n')
         olaf_file = self.FAST_namingOut + '_OLAF.dat'
@@ -757,8 +816,9 @@ class InputWriter_OpenFAST(object):
         f.write('======  Beddoes-Leishman Unsteady Airfoil Aerodynamics Options  ===================================== [used only when AFAeroMod=2]\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAMod'], 'UAMod', "- Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minnema/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]\n"))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['FLookup'], 'FLookup', "- Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]\n"))
-        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAStartRad'], 'UAStartRad', "- Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n"))
-        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAEndRad'], 'UAEndRad', "- Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n"))
+        if 'UAStartRad' in self.fst_vt['AeroDyn15'] and 'UAEndRad' in self.fst_vt['AeroDyn15']:
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAStartRad'], 'UAStartRad', '- Starting radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n'))
+            f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['UAEndRad'], 'UAEndRad', '- Ending radius for dynamic stall (fraction of rotor radius) [used only when AFAeroMod=2]\n'))
         f.write('======  Airfoil Information =========================================================================\n')
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['AFTabMod'], 'AFTabMod', '- Interpolation method for multiple airfoil tables {1=1D interpolation on AoA (first table only); 2=2D interpolation on AoA and Re; 3=2D interpolation on AoA and UserProp} (-)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['InCol_Alfa'], 'InCol_Alfa', '- The column in the airfoil tables that contains the angle of attack (-)\n'))
@@ -777,12 +837,21 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['AeroDyn15']['ADBlFile1']+'"', 'ADBlFile(1)', '- Name of file containing distributed aerodynamic properties for Blade #1 (-)\n'))
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['AeroDyn15']['ADBlFile2']+'"', 'ADBlFile(2)', '- Name of file containing distributed aerodynamic properties for Blade #2 (-) [unused if NumBl < 2]\n'))
         f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['AeroDyn15']['ADBlFile3']+'"', 'ADBlFile(3)', '- Name of file containing distributed aerodynamic properties for Blade #3 (-) [unused if NumBl < 3]\n'))
-        f.write('======  Tower Influence and Aerodynamics ============================================================= [used only when TwrPotent/=0, TwrShadow/=0, or TwrAero=True]\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['NumTwrNds'], 'NumTwrNds', '- Number of tower nodes used in the analysis  (-) [used only when TwrPotent/=0, TwrShadow/=0, or TwrAero=True]\n'))
-        f.write('TwrElev        TwrDiam        TwrCd         TwrTI (used only with TwrShadow=2)\n')
-        f.write('(m)              (m)           (-)            (-)\n')
-        for TwrElev, TwrDiam, TwrCd, TwrTI in zip(self.fst_vt['AeroDyn15']['TwrElev'], self.fst_vt['AeroDyn15']['TwrDiam'], self.fst_vt['AeroDyn15']['TwrCd'], self.fst_vt['AeroDyn15']['TwrTI']):
-            f.write('{: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} \n'.format(TwrElev, TwrDiam, TwrCd, TwrTI))
+        f.write('======  Hub Properties ============================================================================== [used only when Buoyancy=True]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['VolHub'], 'VolHub', '- Hub volume (m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['HubCenBx'], 'HubCenBx', '- Hub center of buoyancy x direction offset (m)\n'))
+        f.write('======  Nacelle Properties ========================================================================== [used only when Buoyancy=True]\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['VolNac'], 'VolNac', '- Nacelle volume (m^3)\n'))
+        f.write('{:<22} {:<11} {:}'.format(', '.join(np.array(self.fst_vt['AeroDyn15']['NacCenB'], dtype=str)), 'NacCenB', '- Position of nacelle center of buoyancy from yaw bearing in nacelle coordinates (m)\n'))
+        f.write('======  Tail Fin Aerodynamics ========================================================================\n')
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['TFinAero'], 'TFinAero', '- Calculate tail fin aerodynamics model (flag)\n'))
+        f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['AeroDyn15']['TFinFile']+'"', 'TFinFile', '- Input file for tail fin aerodynamics [used only when TFinAero=True]\n'))
+        f.write('======  Tower Influence and Aerodynamics ============================================================ [used only when TwrPotent/=0, TwrShadow/=0, TwrAero=True, or Buoyancy=True]\n')
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['NumTwrNds'], 'NumTwrNds', '- Number of tower nodes used in the analysis  (-) [used only when TwrPotent/=0, TwrShadow/=0, TwrAero=True, or Buoyancy=True]\n'))
+        f.write('TwrElev        TwrDiam        TwrCd          TwrTI          TwrCb !TwrTI used only with TwrShadow=2, TwrCb used only with Buoyancy=True\n')
+        f.write('(m)              (m)           (-)            (-)            (-)\n')
+        for TwrElev, TwrDiam, TwrCd, TwrTI, TwrCb in zip(self.fst_vt['AeroDyn15']['TwrElev'], self.fst_vt['AeroDyn15']['TwrDiam'], self.fst_vt['AeroDyn15']['TwrCd'], self.fst_vt['AeroDyn15']['TwrTI'], self.fst_vt['AeroDyn15']['TwrCb']):
+            f.write('{: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} \n'.format(TwrElev, TwrDiam, TwrCd, TwrTI, TwrCb))
         f.write('======  Outputs  ====================================================================================\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['SumPrint'], 'SumPrint', '- Generate a summary file listing input options and interpolated properties to "<rootname>.AD.sum"?  (flag)\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['NBlOuts'], 'NBlOuts', '- Number of blade node outputs [0 - 9] (-)\n'))
@@ -799,7 +868,23 @@ class InputWriter_OpenFAST(object):
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
+        # Optional nodal output section
+        if 'BldNd_BladesOut' in self.fst_vt['AeroDyn15']:
+            f.write('====== Outputs for all blade stations (same ending as above for B1N1.... =========================== [optional section]\n')
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['BldNd_BladesOut'], 'BldNd_BladesOut', '- Number of blades to output all node information at.  Up to number of blades on turbine. (-)\n'))
+            f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['BldNd_BlOutNd'], 'BldNd_BlOutNd', '- Future feature will allow selecting a portion of the nodes to output.  Not implemented yet. (-)\n'))
+            f.write('                   OutList     - The next line(s) contains a list of output parameters.  See OutListParameters.xlsx, AeroDyn_Nodes tab for a listing of available output channels, (-)\n')
+            
+            opt_outlist = self.get_outlist(self.fst_vt['outlist'], ['AeroDyn_Nodes'])      
+            for opt_channel_list in opt_outlist:
+                for i in range(len(opt_channel_list)):
+                    f.write('"' + opt_channel_list[i] + '"\n')
+            f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
+        
         f.write('---------------------------------------------------------------------------------------\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_AeroDyn15Blade(self):
@@ -826,6 +911,8 @@ class InputWriter_OpenFAST(object):
         for Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, AFID in zip(BlSpn, BlCrvAC, BlSwpAC, BlCrvAng, BlTwist, BlChord, BlAFID):
             f.write('{: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 2.15e} {: 8d}\n'.format(Spn, CrvAC, SwpAC, CrvAng, Twist, Chord, int(AFID)))
         
+        f.flush()
+        os.fsync(f)
         f.close()
         
     def write_AeroDyn15Polar(self):
@@ -859,7 +946,7 @@ class InputWriter_OpenFAST(object):
             f.write('! ------------------------------------------------------------------------------\n')
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['InterpOrd'], 'InterpOrd', '! Interpolation order to use for quasi-steady table lookup {1=linear; 3=cubic spline; "default"} [default=3]\n'))
             f.write('{:<22}   {:<11} {:}'.format(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NonDimArea'], 'NonDimArea', '! The non-dimensional area of the airfoil (area/chord^2) (set to 1.0 if unsure or unneeded)\n'))
-            if self.fst_vt['AeroDyn15']['af_data'][1][0]['NumCoords'] != '0':
+            if self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumCoords'] != '0':
                 f.write('@"{:}_AF{:02d}_Coords.txt"       {:<11} {:}'.format(self.FAST_namingOut, afi, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
             else:
                 f.write('{:<22d}       {:<11} {:}'.format(0, 'NumCoords', '! The number of coordinates in the airfoil shape file. Set to zero if coordinates not included.\n'))
@@ -873,7 +960,8 @@ class InputWriter_OpenFAST(object):
                 num_tab = len(self.fst_vt['AeroDyn15']['af_data'][afi])
             elif self.fst_vt['AeroDyn15']['AFTabMod'] == 3:
                 # for tab_orig in range(self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs'] - 1):
-                if self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
+                if len( self.fst_vt['AeroDyn15']['af_data'][afi]) == 1 or \
+                    self.fst_vt['AeroDyn15']['af_data'][afi][0]['Ctrl'] == self.fst_vt['AeroDyn15']['af_data'][afi][1]['Ctrl']:
                     num_tab = 1  # assume that all Ctrl angles of the flaps are identical if the first two are -> no flaps!
                 else:
                     num_tab = self.fst_vt['AeroDyn15']['af_data'][afi][0]['NumTabs']
@@ -969,6 +1057,8 @@ class InputWriter_OpenFAST(object):
                 for row in polar:
                     f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
             
+            f.flush()
+            os.fsync(f)
             f.close()
             
     def write_AeroDyn15Coord(self):
@@ -995,6 +1085,9 @@ class InputWriter_OpenFAST(object):
             f.write('!  x/c        y/c\n')
             for row in coord:
                 f.write(' '.join(['{: 2.14e}'.format(val) for val in row])+'\n')
+            
+            f.flush()
+            os.fsync(f)
             f.close()
 
     def write_AeroDyn14(self):
@@ -1070,6 +1163,8 @@ class InputWriter_OpenFAST(object):
         for r, t, dr, c, a, p in zip(rnodes, twist, drnodes, chord, nfoil, prnelm):
             f.write('{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{: 2.15e}\t{:5}\t{:}\n'.format(r, t, dr, c, a, p))
 
+        f.flush()
+        os.fsync(f)
         f.close()        
 
     def write_AeroDyn14Tower(self):
@@ -1093,6 +1188,8 @@ class InputWriter_OpenFAST(object):
         for Re, CD in zip(self.fst_vt['AeroDynTower']['TwrRe'], self.fst_vt['AeroDynTower']['TwrCD']):
             f.write('% 2.15e' %Re + '   '.join(['% 2.15e'%cdi for cdi in CD]) + '\n')
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_AeroDyn14Polar(self, filename, a_i):
@@ -1123,6 +1220,8 @@ class InputWriter_OpenFAST(object):
                 for a, cl, cd in zip(param['alpha'], param['cl'], param['cd']):
                     f.write('{: 6e}  {: 6e}  {: 6e}\n'.format(a, cl, cd))
         
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_OLAF(self):
@@ -1131,52 +1230,56 @@ class InputWriter_OpenFAST(object):
         f = open(olaf_file, 'w')
         
         f.write('--------------------------- OLAF (cOnvecting LAgrangian Filaments) INPUT FILE -----------------\n')
-        f.write('Free wake input file for the Helix test case\n')
+        f.write('Generated by WEIS\n')
         f.write('--------------------------- GENERAL OPTIONS ---------------------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['IntMethod'], 'IntMethod', 'Integration method {5: Forward Euler 1st order, default: 5} (switch)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DTfvw'], 'DTfvw', 'Time interval for wake propagation. {default: dtaero} (s)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FreeWakeStart'], 'FreeWakeStart', 'Time when wake is free. (-) value = always free. {default: 0.0} (s)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FullCircStart'], 'FullCircStart', 'Time at which full circulation is reached. {default: 0.0} (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['IntMethod'], 'IntMethod', '- Integration method {1: RK4, 5: Forward Euler 1st order, default: 5} (switch)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DTfvw'], 'DTfvw', '- Time interval for wake propagation. {default: dtaero} (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FreeWakeStart'], 'FreeWakeStart', '- Time when wake is free. (-) value = always free. {default: 0.0} (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FullCircStart'], 'FullCircStart', '- Time at which full circulation is reached. {default: 0.0} (s)\n'))
         f.write('--------------------------- CIRCULATION SPECIFICATIONS ----------------------------------------\n')
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvingMethod'], 'CircSolvingMethod', 'Circulation solving method {1: Cl-Based, 2: No-Flow Through, 3: Prescribed, default: 1 }(switch)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvConvCrit'], 'CircSolvConvCrit', 'Convergence criteria {default: 0.001} [only if CircSolvingMethod=1] (-)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvRelaxation'], 'CircSolvRelaxation', 'Relaxation factor {default: 0.1} [only if CircSolvingMethod=1] (-)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvMaxIter'], 'CircSolvMaxIter', 'Maximum number of iterations for circulation solving {default: 30} (-)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['PrescribedCircFile'], 'PrescribedCircFile','File containing prescribed circulation [only if CircSolvingMethod=3] (quoted string)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvMethod'], 'CircSolvingMethod', '- Circulation solving method {1: Cl-Based, 2: No-Flow Through, 3: Prescribed, default: 1 }(switch)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvConvCrit'], 'CircSolvConvCrit', ' - Convergence criteria {default: 0.001} [only if CircSolvMethod=1] (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvRelaxation'], 'CircSolvRelaxation', '- Relaxation factor {default: 0.1} [only if CircSolvMethod=1] (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CircSolvMaxIter'], 'CircSolvMaxIter', ' - Maximum number of iterations for circulation solving {default: 30} (-)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['PrescribedCircFile'], 'PrescribedCircFile','- File containing prescribed circulation [only if CircSolvMethod=3] (quoted string)\n'))
         f.write('===============================================================================================\n')
         f.write('--------------------------- WAKE OPTIONS ------------------------------------------------------\n')
         f.write('------------------- WAKE EXTENT AND DISCRETIZATION --------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nNWPanel'], 'nNWPanel','Number of near-wake panels [integer] (-)\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeLength'], 'WakeLength','Total wake distance [integer] (number of time steps)\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FreeWakeLength'], 'FreeWakeLength','Wake length that is free [integer] (number of time steps) {default: WakeLength}\n'))
-        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FWShedVorticity'], 'FWShedVorticity','Include shed vorticity in the far wake {default: false}\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nNWPanels'], 'nNWPanels','- Number of near-wake panels (-)\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nNWPanelsFree'], 'nNWPanelsFree','- Number of free near-wake panels (-) {default: nNWPanels}\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nFWPanels'], 'nFWPanels','- Number of far-wake panels (-) {default: 0}\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nFWPanelsFree'], 'nFWPanelsFree','- Number of free far-wake panels (-) {default: nFWPanels}\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['FWShedVorticity'], 'FWShedVorticity','- Include shed vorticity in the far wake {default: False}\n'))
         f.write('------------------- WAKE REGULARIZATIONS AND DIFFUSION -----------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DiffusionMethod'], 'DiffusionMethod','Diffusion method to account for viscous effects {0: None, 1: Core Spreading, "default": 0}\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','Method to determine the regularization parameters {0: Constant, 1: Optimized, 2: Chord-scaled, 3: dr-scaled, default: 0 }\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegFunction'], 'RegFunction','Viscous diffusion function {0: None, 1: Rankine, 2: LambOseen, 3: Vatistas, 4: Denominator, "default": 3} (switch)\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegMethod'], 'WakeRegMethod','Wake regularization method {1: Constant, 2: Stretching, 3: Age, default: 1} (switch)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegFactor'], 'WakeRegFactor','Wake regularization factor (m)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WingRegFactor'], 'WingRegFactor','Wing regularization factor (m)\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CoreSpreadEddyVisc'], 'CoreSpreadEddyVisc','Eddy viscosity in core spreading methods, typical values 1-1000\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['DiffusionMethod'], 'DiffusionMethod','- Diffusion method to account for viscous effects {0: None, 1: Core Spreading, "default": 0}\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegDeterMethod'], 'RegDeterMethod','- Method to determine the regularization parameters {0:  Manual, 1: Optimized, 2: Chord, 3: Span, default: 0 }\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['RegFunction'], 'RegFunction','- Viscous diffusion function {0: None, 1: Rankine, 2: LambOseen, 3: Vatistas, 4: Denominator, "default": 3} (switch)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegMethod'], 'WakeRegMethod','- Wake regularization method {1: Constant, 2: Stretching, 3: Age, default: 3} (switch)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WakeRegFactor'], 'WakeRegFactor','- Wake regularization factor (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WingRegFactor'], 'WingRegFactor','- Wing regularization factor (m)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['CoreSpreadEddyVisc'], 'CoreSpreadEddyVisc','- Eddy viscosity in core spreading methods, typical values 1-1000\n'))
         f.write('------------------- WAKE TREATMENT OPTIONS ---------------------------------------------------\n')
-        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['TwrShadowOnWake'], 'TwrShadowOnWake','Include tower flow disturbance effects on wake convection {default:false} [only if TwrPotent or TwrShadow]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['ShearModel'], 'ShearModel','Shear Model {0: No treatment, 1: Mirrored vorticity, default: 0}\n'))
+        f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['TwrShadowOnWake'], 'TwrShadowOnWake','- Include tower flow disturbance effects on wake convection {default:false} [only if TwrPotent or TwrShadow]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['ShearModel'], 'ShearModel','- Shear Model {0: No treatment, 1: Mirrored vorticity, default: 0}\n'))
         f.write('------------------- SPEEDUP OPTIONS -----------------------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VelocityMethod'], 'VelocityMethod','Method to determine the velocity {1:Biot-Savart Segment, 2:Particle tree, default: 1}\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['TreeBranchFactor'], 'TreeBranchFactor','Branch radius fraction above which a multipole calculation is used {default: 2.0} [only if VelocityMethod=2]\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['PartPerSegment'], 'PartPerSegment','Number of particles per segment [only if VelocityMethod=2]\n'))
+        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VelocityMethod'], 'VelocityMethod','- Method to determine the velocity {1:Segment N^2, 2:Particle tree, 3:Particle N^2, 4:Segment tree, default: 2}\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['TreeBranchFactor'], 'TreeBranchFactor','- Branch radius fraction above which a multipole calculation is used {default: 1.5} [only if VelocityMethod=2,4]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['PartPerSegment'], 'PartPerSegment','- Number of particles per segment {default: 1} [only if VelocityMethod=2,3]\n'))
         f.write('===============================================================================================\n')
         f.write('--------------------------- OUTPUT OPTIONS  ---------------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WrVTk'], 'WrVTk','Outputs Visualization Toolkit (VTK) (independent of .fst option) {0: NoVTK, 1: Write VTK at each time step} (flag)\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nVTKBlades'], 'nVTKBlades','Number of blades for which VTK files are exported {0: No VTK per blade, n: VTK for blade 1 to n} (-)\n'))
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VTKCoord'], 'VTKCoord','Coordinate system used for VTK export. {1: Global, 2: Hub, "default": 1}\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VTK_fps'], 'VTK_fps','Frame rate for VTK output (frames per second) {"all" for all glue code timesteps, "default" for all OLAF timesteps} [used only if WrVTK=1]\n'))
-        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nGridOut'], 'nGridOut','GB DEBUG 7/8: Number of grid points for VTK output\n'))
-        f.write('--GridOutHeaders--\n')
-        f.write('--GridOutUnits--\n')
-        f.write('1.0 1.0 1.0\n')
-        f.write('------------------------------------------------------------------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['WrVTk'], 'WrVTk','- Outputs Visualization Toolkit (VTK) (independent of .fst option) {0: NoVTK, 1: Write VTK at VTK_fps, 2: Write VTK at init and final, default: 0} (flag)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nVTKBlades'], 'nVTKBlades','- Number of blades for which VTK files are exported {0: No VTK per blade, n: VTK for blade 1 to n, default: 0} (-) \n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VTKCoord'], 'VTKCoord','- Coordinate system used for VTK export. {1: Global, 2: Hub, 3: Both, default: 1} \n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['VTK_fps'], 'VTK_fps','- Frame rate for VTK output (frames per second) {"all" for all glue code timesteps, "default" for all OLAF timesteps} [only if WrVTK=1]\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['AeroDyn15']['OLAF']['nGridOut'], 'nGridOut','- Number of grid outputs\n'))
+        f.write('GridName  GridType  TStart   TEnd    DTGrid   XStart  XEnd   nX   YStart   YEnd   nY   ZStart   ZEnd   nZ\n')
+        f.write('(-)         (-)      (s)     (s)      (s)       (m)    (m)   (-)   (m)     (m)    (-)   (m)     (m)    (-)\n')
+        f.write('===============================================================================================\n')
+        f.write('--------------------------- ADVANCED OPTIONS --------------------------------------------------\n')
+        f.write('===============================================================================================\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
     
     def write_ServoDyn(self):
@@ -1305,10 +1408,12 @@ class InputWriter_OpenFAST(object):
         f.write('END of input file (the word "END" must appear in the first 3 columns of this last OutList line)\n')
         f.write('---------------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_DISCON_in(self):
-        # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/ROSCO_toolbox
+        # Generate Bladed style Interface controller input file, intended for ROSCO https://github.com/NREL/rosco.toolbox
 
         # Fill controller and turbine objects for ROSCO 
         # - controller
@@ -1437,7 +1542,13 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['HydroDyn']['SumQTF'], 'SumQTF', "- Full summation -frequency 2nd-order forces computed with full QTF          {0: None; [10, 11, or 12]: WAMIT file to use}\n"))
         f.write('---------------------- PLATFORM ADDITIONAL STIFFNESS AND DAMPING  --------------\n')
         for j in range(6):
-            ln = '{:14}   '.format(self.fst_vt['HydroDyn']['AddF0'][j][0])
+            if type(self.fst_vt['HydroDyn']['AddF0'][j]) == float:
+                ln = '{:14}   '.format(self.fst_vt['HydroDyn']['AddF0'][j])  
+            elif type(self.fst_vt['HydroDyn']['AddF0'][j]) in [list, np.ndarray]:
+                ln = '{:14}   '.format(' '.join([f'{val}' for val in self.fst_vt['HydroDyn']['AddF0'][j]]))
+            else:
+                raise Exception("Check type of self.fst_vt['HydroDyn']['AddF0']")
+            
             if j == 0:
                 ln = ln + 'AddF0    - Additional preload (N, N-m) [If NBodyMod=1, one size 6*NBody x 1 vector; if NBodyMod>1, NBody size 6 x 1 vectors]\n'
             else:
@@ -1639,6 +1750,9 @@ class InputWriter_OpenFAST(object):
             
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
         
+
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_SubDyn(self):
@@ -1667,7 +1781,7 @@ class InputWriter_OpenFAST(object):
         else: # list of floats
             f.write('{:<22} {:<11} {:}'.format(", ".join([f'{d:f}' for d in self.fst_vt['SubDyn']['JDampings']]), 'JDampings', '- Damping Ratios for each retained mode (% of critical) If Nmodes>0, list Nmodes structural damping ratios for each retained mode (% of critical), or a single damping ratio to be applied to all retained modes. (last entered value will be used for all remaining modes).\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['GuyanDampMod'], 'GuyanDampMod', '- Guyan damping {0=none, 1=Rayleigh Damping, 2=user specified 6x6 matrix}.\n'))
-        f.write('{:<10}, {:<10} {:<11} {:}'.format(self.fst_vt['SubDyn']['RayleighDamp'][0], self.fst_vt['SubDyn']['RayleighDamp'][1], 'RayleighDamp', '- Mass and stiffness proportional damping  coefficients (Rayleigh Damping) [only if GuyanDampMod=1].\n'))
+        f.write('{:<10} {:<10} {:<11} {:}'.format(self.fst_vt['SubDyn']['RayleighDamp'][0], self.fst_vt['SubDyn']['RayleighDamp'][1], 'RayleighDamp', '- Mass and stiffness proportional damping  coefficients (Rayleigh Damping) [only if GuyanDampMod=1].\n'))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['GuyanDampSize'], 'GuyanDampSize', '- Guyan damping matrix (6x6) [only if GuyanDampMod=2].\n'))
         for j in range(self.fst_vt['SubDyn']['GuyanDampSize']):
             try:
@@ -1824,6 +1938,10 @@ class InputWriter_OpenFAST(object):
             f.write(" ".join(ln) + '\n')
         f.write('---------------------------- OUTPUT: SUMMARY & OUTFILE ------------------------------\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['SumPrint'], 'SumPrint', '- Output a Summary File (flag).It contains: matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.\n'))
+        if 'OutCBModes' in self.fst_vt['SubDyn']:
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutCBModes'], 'OutCBModes', '- Output Guyan and Craig-Bampton modes {0 No output, 1 JSON output}, (flag)\n'))
+        if 'OutFEMModes' in self.fst_vt['SubDyn']:
+            f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutFEMModes'], 'OutFEMModes', '-  Output first 30 FEM modes {0 No output, 1 JSON output} (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutCOSM'], 'OutCOSM', '- Output cosine matrices with the selected output member forces (flag)\n'))
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutAll'], 'OutAll', "- [T/F] Output all members' end forces\n"))
         f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['SubDyn']['OutSwtch'], 'OutSwtch', '- [1/2/3] Output requested channels to: 1=<rootname>.SD.out;  2=<rootname>.out (generated by FAST);  3=both files.\n'))
@@ -1847,6 +1965,8 @@ class InputWriter_OpenFAST(object):
             for i in range(len(channel_list)):
                 f.write('"' + channel_list[i] + '"\n')
         f.write('END of output channels and end of file. (the word "END" must appear in the first 3 columns of this line)\n')
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_MAP(self):
@@ -1908,6 +2028,8 @@ class InputWriter_OpenFAST(object):
         f.write('{:<11s}'.format('(-)')+'\n')
         f.write("\n".join(self.fst_vt['MAP']['Option']).strip() + '\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
     def write_MoorDyn(self):
@@ -1920,55 +2042,60 @@ class InputWriter_OpenFAST(object):
         f.write('Generated with AeroElasticSE FAST driver\n')
         f.write('{!s:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['Echo'], 'Echo', '- echo the input file data (flag)\n'))
         f.write('----------------------- LINE TYPES ------------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NTypes'], 'NTypes', '- number of LineTypes\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['Name', 'Diam', 'MassDen', 'EA', 'BA/-zeta', 'Can', 'Cat', 'Cdn', 'Cdt']])+'\n')
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(N-s/-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
-        for i in range(self.fst_vt['MoorDyn']['NTypes']):
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Name', 'Diam', 'MassDen', 'EA', 'BA/-zeta', 'EI', 'Cd', 'Ca', 'CdAx', 'CaAx']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(m)', '(kg/m)', '(N)', '(N-s/-)', '(-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
+        for i in range(len(self.fst_vt['MoorDyn']['Name'])):
             ln = []
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Name'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['EA'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Can'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cat'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdn'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Cdt'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Diam'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['MassDen'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['EA'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['BA_zeta'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['EI'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Cd'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Ca'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CdAx'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CaAx'][i]))
             f.write(" ".join(ln) + '\n')
-        f.write('---------------------- CONNECTION PROPERTIES --------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NConnects'], 'NConnects', '- number of connections including anchors and fairleads\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['Node', 'Type', 'X', 'Y', 'Z', 'M', 'V', 'FX', 'FY', 'FZ', 'CdA', 'CA']])+'\n')
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(kN)', '(kN)', '(kN)', '(m^2)', '(-)']])+'\n')
-        for i in range(self.fst_vt['MoorDyn']['NConnects']):
+        f.write('---------------------- POINTS --------------------------------\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['ID', 'Attachment', 'X', 'Y', 'Z', 'M', 'V', 'CdA', 'CA']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(m)', '(m)', '(kg)', '(m^3)', '(m^2)', '(-)']])+'\n')
+        for i in range(len(self.fst_vt['MoorDyn']['Point_ID'])):
             ln = []
-            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Node'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Type'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['X'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Y'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Z'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['M'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['V'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FX'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FY'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['FZ'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CA'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Point_ID'][i]))
+            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Attachment'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['X'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Y'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['Z'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['M'][i]))
+            ln.append('{:^11.4e}'.format(self.fst_vt['MoorDyn']['V'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CA'][i]))
             f.write(" ".join(ln) + '\n')
-        f.write('---------------------- LINE PROPERTIES --------------------------------------\n')
-        f.write('{:<22d} {:<11} {:}'.format(self.fst_vt['MoorDyn']['NLines'], 'NLines', '- number of line objects\n'))
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'UnstrLen', 'NumSegs', 'NodeAnch', 'NodeFair', 'Outputs', 'CtrlChan']])+'\n')
-        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(m)', '(-)', '(-)', '(-)', '(-)', '(-)']])+'\n')
-        for i in range(self.fst_vt['MoorDyn']['NLines']):
+        f.write('---------------------- LINES --------------------------------------\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'AttachA', 'AttachB', 'UnstrLen', 'NumSegs',  'Outputs']])+'\n')
+        f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(-)', '(-)', '(m)', '(-)',  '(-)']])+'\n')
+        for i in range(len(self.fst_vt['MoorDyn']['Line_ID'])):
             ln = []
-            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Line'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['Line_ID'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['LineType'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['AttachA'][i]))
+            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['AttachB'][i]))
+            ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['UnstrLen'][i]))
             ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NumSegs'][i]))
-            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeAnch'][i]))
-            ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['NodeFair'][i]))
             ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['Outputs'][i]))
-            ln.append('{:^11}'.format(self.fst_vt['MoorDyn']['CtrlChan'][i]))
             f.write(" ".join(ln) + '\n')
+
+        if self.fst_vt['MoorDyn']['ChannelID']: # There are control inputs
+            f.write('---------------------- CONTROL ---------------------------------------\n')
+            f.write(" ".join(['{:^11s}'.format(i) for i in ['ChannelID', 'Line(s)']])+'\n')
+            f.write(" ".join(['{:^11s}'.format(i) for i in ['()', '(,)']])+'\n')
+            for i_line in range(len(self.fst_vt['MoorDyn']['ChannelID'])):
+                ln = []
+                ln.append('{:^11d}'.format(self.fst_vt['MoorDyn']['ChannelID'][i_line]))
+                ln.append(','.join(self.fst_vt['MoorDyn']['Lines_Control'][i_line]))
+                f.write(" ".join(ln) + '\n')
+
         f.write('---------------------- SOLVER OPTIONS ---------------------------------------\n')
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['dtM'], 'dtM', '- time step to use in mooring integration (s)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['kbot'], 'kbot', '- bottom stiffness (Pa/m)\n'))
@@ -1985,6 +2112,8 @@ class InputWriter_OpenFAST(object):
         f.write('END\n')
         f.write('------------------------- need this line --------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
         
         
@@ -2056,7 +2185,7 @@ class InputWriter_OpenFAST(object):
         
         f.write('---------------------- StructCtrl CONTROL -------------------------------------------- [used only when StC_DOF_MODE=1 or 2]\n')
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CMODE'],     'StC_CMODE',        '- Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}\n'))
-        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CChan'],     'StC_CChan',        '- Control mode (switch) {0:none; 1: Semi-Active Control Mode; 2: Active Control Mode}\n'))
+        f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_CChan'],     'StC_CChan',        '- Control channel group (1:10) for stiffness and damping (StC_[XYZ]_K, StC_[XYZ]_C, and StC_[XYZ]_Brake) (specify additional channels for blade instances of StC active control -- one channel per blade) [used only when StC_DOF_MODE=1 or 2, and StC_CMODE=4 or 5]\n'))
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_SA_MODE'],   'StC_SA_MODE',      '- Semi-Active control mode {1: velocity-based ground hook control; 2: Inverse velocity-based ground hook control; 3: displacement-based ground hook control 4: Phase difference Algorithm with Friction Force 5: Phase difference Algorithm with Damping Force} (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_HIGH'],  'StC_X_C_HIGH',     '- StC X high damping for ground hook control\n'))
         f.write('{:<22} {:<11} {:}'.format(StC_vt['StC_X_C_LOW'],   'StC_X_C_LOW',      '- StC X low damping for ground hook control\n'))
@@ -2087,6 +2216,8 @@ class InputWriter_OpenFAST(object):
         f.write('{!s:<22} {:<11} {:}'.format(StC_vt['PrescribedForcesFile'], 'PrescribedForcesFile', '- Time series force and moment (7 columns of time, FX, FY, FZ, MX, MY, MZ)\n'))
         f.write('-------------------------------------------------------------------------------\n')
 
+        f.flush()
+        os.fsync(f)
         f.close()
 
 if __name__=="__main__":

@@ -3,66 +3,22 @@ channels:
   - defaults
 
 dependencies:
-  - alabaster
-  - babel
-  - cmake>=3.21.1
-  - control
-  - coveralls
-  - cython
+  - dash
   - dill
-  - docutils
-  - et-xmlfile
-  - future
-  - git
-  - gdown
-  - imagesize
-  - jinja2
   - jsonmerge
-  - jsonschema
-  - make
-  - markupsafe
-  - matplotlib-base
+  - mat4py
   - nlopt
-  - numpy
-  - numpydoc
-  - openmdao
-  - openpyxl
-  - osqp
-  - pandas
-  - patsy
-  - pip
-  - pygments
-  - pyoptsparse
-  - pyside2
-  - pytest
-  - pytest-cov
-  - python-benedict
-  - pyyaml
-  - pyzmq
-  - qdldl-python
-  - ruamel_yaml
-  - scipy
-  - seaborn
-  - setuptools<60.0
-  - simpy
-  - slycot
+  - openfast
+  - openraft
+  - osqp  
+  - pcrunch
+  - rosco
   - smt
-  - snowballstemmer
-  - sortedcontainers
-  - sphinx
-  - sphinxcontrib-applehelp
-  - sphinxcontrib-devhelp
-  - sphinxcontrib-htmlhelp
-  - sphinxcontrib-jsmath
-  - sphinxcontrib-qthelp
-  - sphinxcontrib-serializinghtml
-  - statsmodels
-  - swig
-  - treon
-  - pyzmq
-#  - versioneer
+  - wisdem
   - pip:
-    - fatpack
+    - dash-bootstrap-components
+    - dash-mantine-components
+    - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]

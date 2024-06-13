@@ -5,11 +5,11 @@ Nikhar J. Abbas
 January 2020
 '''
 
-from ROSCO_toolbox import controller as ROSCO_controller
-from ROSCO_toolbox import turbine as ROSCO_turbine
-from ROSCO_toolbox.inputs.validation import load_rosco_yaml
-from ROSCO_toolbox.linear.robust_scheduling import rsched_driver
-from ROSCO_toolbox.utilities import list_check, DISCON_dict
+from rosco.toolbox import controller as ROSCO_controller
+from rosco.toolbox import turbine as ROSCO_turbine
+from rosco.toolbox.inputs.validation import load_rosco_yaml
+from rosco.toolbox.linear.robust_scheduling import rsched_driver
+from rosco.toolbox.utilities import list_check, DISCON_dict
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
@@ -229,7 +229,7 @@ class TuneROSCO(ExplicitComponent):
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
         WISDEM_turbine.v_min        = float(inputs['v_min'])
-        WISDEM_turbine.J            = float(inputs['rotor_inertia'])
+        WISDEM_turbine.J            = float(inputs['rotor_inertia'])        # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
         WISDEM_turbine.rho          = float(inputs['rho'])
         WISDEM_turbine.rotor_radius = float(inputs['R'])
         WISDEM_turbine.Ng           = float(inputs['gear_ratio'])
@@ -251,8 +251,9 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
         # Floating Feedback Filters
-        rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
-        rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
+        if self.controller_params['Fl_Mode']:
+            rosco_init_options['twr_freq'] = float(inputs['twr_freq']) * 2 * np.pi
+            rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'])
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
@@ -518,8 +519,8 @@ class ROSCO_Turbine(ExplicitComponent):
         # Load yaml file 
         
         parameter_filename = modeling_options['ROSCO']['tuning_yaml']
-        if not os.path.isabs(parameter_filename):
-            parameter_filename = os.path.join(weis_dir,parameter_filename)
+        if parameter_filename == 'none':
+            raise Exception('A ROSCO tuning_yaml must be specified in the modeling_options if from_OpenFAST is True')
 
         inps = load_rosco_yaml(parameter_filename)
         self.turbine_params         = inps['turbine_params']
@@ -527,15 +528,13 @@ class ROSCO_Turbine(ExplicitComponent):
 
         FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
         FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
-        if not os.path.isabs(FAST_directory):
-            FAST_directory = os.path.join(weis_dir,FAST_directory)
             
 
         # Instantiate turbine, controller, and file processing classes
         self.turbine         = ROSCO_turbine.Turbine(self.turbine_params)
 
         # Load turbine data from OpenFAST and compute Cp surface here
-        self.turbine.load_from_fast(FAST_InputFile, FAST_directory, dev_branch=True)
+        self.turbine.load_from_fast(FAST_InputFile, FAST_directory)
 
         self.add_output('rotor_inertia',     val=0.0,        units='kg*m**2',        desc='Rotor inertia')
         self.add_output('rho',               val=0.0,        units='kg/m**3',        desc='Air Density')
@@ -581,7 +580,7 @@ class ROSCO_Turbine(ExplicitComponent):
 
     def compute(self, inputs, outputs):
         
-        outputs['rotor_inertia'          ] = self.turbine.rotor_inertia
+        outputs['rotor_inertia'          ] = self.turbine.J
         outputs['rho'                    ] = self.turbine.rho
         outputs['R'                      ] = self.turbine.rotor_radius
         outputs['gear_ratio'             ] = self.turbine.Ng
@@ -601,7 +600,8 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
         outputs['TowerHt'                ] = self.turbine.TowerHt
         outputs['hub_height'             ] = self.turbine.hubHt
-        outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
+        if self.control_params['Fl_Mode']:
+            outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table

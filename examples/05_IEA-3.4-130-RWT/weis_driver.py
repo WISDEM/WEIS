@@ -5,7 +5,7 @@ import os, time, sys
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-fname_wt_input         = run_dir + "IEA-3p4-130-RWT.yaml"
+fname_wt_input         = run_dir + os.sep + "IEA-3p4-130-RWT.yaml"
 fname_modeling_options = run_dir + "modeling_options.yaml"
 fname_analysis_options = run_dir + "analysis_options.yaml"
 
