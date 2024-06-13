@@ -1,9 +1,14 @@
 import numpy as np
 import os
+import logging
 import weis.inputs as sch
 from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from weis.aeroelasticse.FileTools import remove_numpy
+from weis.aeroelasticse.utils import OLAFParams
+
+logger = logging.getLogger("wisdem/weis")
+
 
 # TODO: not sure where this should live, so it's a global for now
 # Could it be an input yaml?
@@ -37,11 +42,7 @@ openfast_input_map = {
     'aero_mod': ("AeroDyn15","AFAeroMod"),
     'wake_mod': ("AeroDyn15","WakeMod"),
     'tau1_const': ("AeroDyn15","tau1_const"),
-    'DTfvw': ("AeroDyn15","OLAF","DTfvw"),
-    'nNWPanels': ("AeroDyn15","OLAF","nNWPanels"),
-    'nNWPanelsFree': ("AeroDyn15","OLAF","nNWPanelsFree"),
-    'nFWPanels': ("AeroDyn15","OLAF","nFWPanels"),
-    'nFWPanelsFree': ("AeroDyn15","OLAF","nFWPanelsFree"),
+
 
     # 'dlc_label': ("DLC","Label"),
     # 'wind_seed': ("DLC","WindSeed"),
@@ -118,9 +119,19 @@ class DLCGenerator(object):
     }
     
 
-    def __init__(self, ws_cut_in=4.0, ws_cut_out=25.0, ws_rated=10.0, wind_speed_class = 'I',
-                wind_turbulence_class = 'B', fix_wind_seeds=True, fix_wave_seeds=True, metocean={},
-                initial_condition_table = {}):
+    def __init__(
+            self, 
+            ws_cut_in=4.0, 
+            ws_cut_out=25.0, 
+            ws_rated=10.0, 
+            wind_speed_class = 'I',
+            wind_turbulence_class = 'B', 
+            fix_wind_seeds=True, 
+            fix_wave_seeds=True, 
+            metocean={},
+            initial_condition_table = {},
+            default_wake_mod = 1
+            ):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
         self.wind_speed_class = wind_speed_class
@@ -137,6 +148,7 @@ class DLCGenerator(object):
             self.rng_wave = np.random.default_rng()
         self.n_cases = 0
         self.n_ws_dlc11 = 0
+        self.default_wake_mod = default_wake_mod
 
         # Init openfast case list
         self.openfast_case_inputs = []
@@ -636,6 +648,7 @@ class DLCGenerator(object):
         # Handle DLC Specific options:
         label = '1.6'
         sea_state = 'severe'
+        dlc_options['wake_mod'] = self.default_wake_mod
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
@@ -645,7 +658,7 @@ class DLCGenerator(object):
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['total_time','transient_time','wake_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
       
@@ -758,7 +771,8 @@ class DLCGenerator(object):
 
     def apply_initial_conditions(self,generic_case_inputs, dlc_options, met_options):
         '''
-        Add available case inputs to generic_case_inputs and interpolate options based on initial_condition_table
+        Add available initial conditions to generic_case_inputs and interpolate options based on initial_condition_table
+        This is performed within each dlc generator function, but could be moved out, like OLAF params
 
         '''
         
@@ -782,11 +796,17 @@ class DLCGenerator(object):
             
         return generic_case_inputs
     
+    
+
+
+    
     def generate_5p1(self, dlc_options):
         # Power production normal turbulence model - shutdown with varous azimuth initial conditions      
         
         # DLC Specific options:
         label = '5.1'
+        dlc_options['wake_mod'] = self.default_wake_mod
+        
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
 
@@ -799,7 +819,7 @@ class DLCGenerator(object):
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','shutdown_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['total_time','transient_time','shutdown_time','wake_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
         # TODO: I think we need to shut off the generator here, too

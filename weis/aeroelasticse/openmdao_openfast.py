@@ -1776,7 +1776,18 @@ class FASTLoadCases(ExplicitComponent):
         initial_condition_table['tau1_const'] = tau1_const_interp
         
         
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean, initial_condition_table)
+        dlc_generator = DLCGenerator(
+            cut_in, 
+            cut_out, 
+            rated, 
+            ws_class, 
+            wt_class, 
+            fix_wind_seeds, 
+            fix_wave_seeds, 
+            metocean, 
+            initial_condition_table,
+            fst_vt['AeroDyn15']['WakeMod'],
+            )
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
@@ -1897,34 +1908,27 @@ class FASTLoadCases(ExplicitComponent):
         #         wake_mod[i_case] = 0
         #         tau1_const[i_case] = 0.
 
-            # Wave inputs to HydroDyn
-            WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
-            WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
-            WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
-            WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
-            WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
-            WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
+            # # Wave inputs to HydroDyn
+            # WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
+            # WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
+            # WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
+            # WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
+            # WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
+            # WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
 
-            # Other case info
-            self.TMax[i_case] = dlc_generator.cases[i_case].total_time
-            self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
-            dlc_label[i_case] = dlc_generator.cases[i_case].label
-            wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
-            mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
-            yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
-            azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
+            # # Other case info
+            # self.TMax[i_case] = dlc_generator.cases[i_case].total_time
+            # self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
+            # dlc_label[i_case] = dlc_generator.cases[i_case].label
+            # wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
+            # mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
+            # yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
+            # azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
 
-            # OLAF data
-            if wake_mod[i_case] == 3:
-                dt_fvw[i_case], tMin[i_case], nNWPanels[i_case], nNWPanelsFree[i_case], nFWPanels[i_case], nFWPanelsFree[i_case] = OLAFParams(rot_speed_initial[i_case], mean_wind_speed[i_case], rotorD*0.5)
-                # nNWPanelsFree[i_case]=60.
-                if fst_vt['Fst']['CompElast'] == 1:
-                    DT[i_case] = dt_fvw[i_case]
-                if tMin[i_case] > self.TMax:
-                    logger.warning("OLAF runs are too short in time, the wake is not at convergence")
 
-        # TODO: apply initial conditions, make based on wind speed, find group with wind speed, add to group by interpolation
         # TODO: apply olaf settings, should be similar to above?
+        if dlc_generator.default_wake_mod == 3:  # OLAF is used 
+            apply_olaf_parameters(dlc_generator,fst_vt)
                     
         # Parameteric inputs
         case_name = []
@@ -2809,3 +2813,50 @@ class FASTLoadCases(ExplicitComponent):
             pickle.dump(self.fst_vt,f)
 
         discrete_outputs['ts_out_dir'] = save_dir
+
+def apply_olaf_parameters(dlc_generator,fst_vt):
+    '''
+    Apply OLAF parameters using wind speed, rotor speed, and rotor radius
+    Parameters are applied for each case, if WakeMod = 3
+
+    This method requires that the case inputs have been generated for each case in dlc_generator
+
+    OLAF parameters will be appended to proper openfast_case_input for each dlc
+    '''
+
+    # Loop over cases
+    for case_input in dlc_generator.openfast_case_inputs:
+
+        min_TMax = min(case_input[('Fst', 'TMax')]['vals'])
+
+        # find group with wind_speed
+        wind_group = case_input[('InflowWind', 'HWindSpeed')]['group']
+
+        wind_speeds = case_input[('InflowWind', 'HWindSpeed')]['vals']
+        rotor_speeds = case_input[('ElastoDyn', 'RotSpeed')]['vals']
+
+        dt_fvw = len(wind_speeds) * [None]
+        tMin = len(wind_speeds) * [None]
+        nNWPanels = len(wind_speeds) * [None]
+        nNWPanelsFree = len(wind_speeds) * [None]
+        nFWPanels = len(wind_speeds) * [None]
+        nFWPanelsFree = len(wind_speeds) * [None]
+
+        for i_case in range(len(wind_speeds)):
+            dt_fvw[i_case], tMin[i_case], nNWPanels[i_case], nNWPanelsFree[i_case], nFWPanels[i_case], nFWPanelsFree[i_case] = OLAFParams(rotor_speeds[i_case], wind_speeds[i_case], fst_vt['ElastoDyn']['TipRad'])
+
+            # Check that runs are long enough
+            if tMin[i_case] > min_TMax:
+                logger.warning("OLAF runs are too short in time, the wake is not at convergence")
+
+            # TODO: skipping timestep setting because they're big timesteps
+            # # Set timestep
+            # if fst_vt['Fst']['CompElast'] == 1:
+            #     DT[i_case] = dt_fvw[i_case]
+            
+            case_input[("AeroDyn15","OLAF","DTfvw")] = {'vals': dt_fvw, 'group': wind_group}
+            case_input[("AeroDyn15","OLAF","nNWPanels")] = {'vals': nNWPanels, 'group': wind_group}
+            case_input[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals': nNWPanelsFree, 'group': wind_group}
+            case_input[("AeroDyn15","OLAF","nFWPanels")] = {'vals': nFWPanels, 'group': wind_group}
+            case_input[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals': nFWPanelsFree, 'group': wind_group}
+
