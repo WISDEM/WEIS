@@ -871,7 +871,7 @@ class WindPark(om.Group):
                 self.connect('nacelle.uptilt',                  'tcons_post.tilt')
                 self.connect('nacelle.overhang',                'tcons_post.overhang')
                 self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
-                # self.connect('tower.outer_diameter_full',       'tcons_post.outer_diameter_full')     # TODO: temporary hack
+                self.connect('tower.diameter',       'tcons_post.outer_diameter_full')     # TODO: temporary hack
                 
             else:  # connections from outside WISDEM
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
