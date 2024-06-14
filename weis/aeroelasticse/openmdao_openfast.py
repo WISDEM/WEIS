@@ -1620,12 +1620,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Line_ID'] = np.arange(n_lines)+1
             fst_vt['MoorDyn']['LineType'] = line_names
             fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
-            if hasattr(modopt['Level3']['MoorDyn']['NumSegs'],'__len__'):  # array NumSegs provided
-                if len(modopt['Level3']['MoorDyn']['NumSegs']) != n_lines: 
-                    raise Exception('The NumSegs for MoorDyn provided in the modeling options does not match the number of mooring lines modeled.')
-                fst_vt['MoorDyn']['NumSegs'] = np.array(modopt['Level3']['MoorDyn']['NumSegs'])
-            else:  # single value
-                fst_vt['MoorDyn']['NumSegs'] = modopt['Level3']['MoorDyn']['NumSegs']*np.ones(n_lines, dtype=np.int64) 
+            fst_vt['MoorDyn']['NumSegs'] = modopt['Level3']['MoorDyn']['NumSegs']
             fst_vt['MoorDyn']['AttachA'] = np.zeros(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['AttachB'] = np.zeros(n_lines, dtype=np.int64)
             fst_vt['MoorDyn']['Outputs'] = ['-'] * n_lines

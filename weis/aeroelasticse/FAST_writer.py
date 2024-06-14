@@ -2072,6 +2072,16 @@ class InputWriter_OpenFAST(object):
             ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CdA'][i]))
             ln.append('{:^11.4f}'.format(self.fst_vt['MoorDyn']['CA'][i]))
             f.write(" ".join(ln) + '\n')
+        
+        # Preprocess NumSegs
+        n_lines = len(self.fst_vt['MoorDyn']['Line_ID'])
+        if hasattr(self.fst_vt['MoorDyn']['NumSegs'],'__len__'):  # array NumSegs provided
+            if len(self.fst_vt['MoorDyn']['NumSegs']) != n_lines: 
+                raise Exception('The NumSegs for MoorDyn provided  does not match the number of mooring lines modeled.')
+            self.fst_vt['MoorDyn']['NumSegs'] = np.array(self.fst_vt['MoorDyn']['NumSegs'])
+        else:  # single value
+            self.fst_vt['MoorDyn']['NumSegs'] = self.fst_vt['MoorDyn']['NumSegs']*np.ones(n_lines, dtype=np.int64) 
+        
         f.write('---------------------- LINES --------------------------------------\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['Line', 'LineType', 'AttachA', 'AttachB', 'UnstrLen', 'NumSegs',  'Outputs']])+'\n')
         f.write(" ".join(['{:^11s}'.format(i) for i in ['(-)', '(-)', '(-)', '(-)', '(m)', '(-)',  '(-)']])+'\n')
