@@ -1,6 +1,5 @@
 general:
-    # folder_output: /scratch/dzalkind/WEIS-2/outputs/17_IEA22_OptStudies/0_setup     # kestrel
-    folder_output: 32_DesignRound1
+    folder_output: 17_IEA22_Opt_Result
     fname_output: IEA-22-280-RWT
 
 design_variables:
@@ -125,8 +124,7 @@ driver:
         # max_iter: 1000         # Maximum number of iterations (SLSQP)
         maxiter: 1000         # Maximum number of iterations (NLopt)
         maxtime: 3420
-        # solver: LN_COBYLA  # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
-        solver: LD_SLSQP   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        solver: LN_COBYLA   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder

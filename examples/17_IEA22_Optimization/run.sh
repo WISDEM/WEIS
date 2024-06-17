@@ -5,5 +5,5 @@ timeout 90m python -u driver_weis_raft_opt.py > >(tee stdout.log) 2> >(tee stder
 
 mv stdout.log stdout_${CASE_NAME}.log
 mv stderr.log stderr_${CASE_NAME}.log
-rm -rf 32_DesignRound1_${CASE_NAME}
-mv 32_DesignRound1 32_DesignRound1_${CASE_NAME}
+rm -rf 17_IEA22_Opt_Result_${CASE_NAME}
+mv 17_IEA22_Opt_Result 17_IEA22_Opt_Result_${CASE_NAME}

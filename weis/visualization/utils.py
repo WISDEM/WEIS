@@ -233,7 +233,8 @@ def load_OMsql_multi(
 
     returns:
     --------
-        data_dict : dictionary of all the datapoints extracted from the WEIS/OM log files
+        data_dict : dict
+            dictionary of all the datapoints extracted from the WEIS/OM log files
     """
 
     # use glob to find the logs that match the format string
@@ -312,7 +313,22 @@ def consolidate_multi(
     feas_tol=1e-5,
 ):
     """
-    load the multi-processor openmdao sql files and squash them to
+    load the multi-processor openmdao sql files and squash them to the
+    per-iteration best-feasible result
+
+    parameters:
+    -----------
+        dataOMmulti : dict
+            dictionary of all the datapoints extracted from the multiprocess
+            WEIS/OM log files
+        vars_dict:
+            experiment design variables to be analyzed
+        feas_tol : float (optional)
+            tolerance for feasibility analysis
+    returns:
+    --------
+        dataOMbest_DE : dict
+            dictionary of the per-iteration best-feasible simulations
     """
 
     dfOMmulti = pd.DataFrame(dataOMmulti)
