@@ -664,19 +664,20 @@ class DLCGenerator(object):
 
         self.generate_cases(generic_case_inputs,dlc_options,sea_state,label)
       
-    def generate_cases(self,generic_case_inputs,dlc_options,sea_state,label):
+    def generate_cases(self,generic_case_inputs,dlc_options):
         '''
         This method will generate the simulation inputs for each design load case
 
         generic_case_inputs is a list of lists of strings with the options used to create a case matrix
         dlc_options is a dictionary, some of its keys will be in generic_case_inputs and used to generate the cases
-        sea_state is a string: either severe or normal
-        label is the string label used in when the wind inputs are created
+            Other keys include:
+            sea_state is a string: either severe or normal
+            label is the string label used in when the wind inputs are created
         '''
         
         # Generate case list, both generic and OpenFAST specific
         self.set_time_options(dlc_options)
-        met_options = self.gen_met_options(dlc_options, sea_state=sea_state)
+        met_options = self.gen_met_options(dlc_options, sea_state=dlc_options['sea_state'])
         generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
@@ -686,7 +687,7 @@ class DLCGenerator(object):
 
             idlc.turbulent_wind = True
             idlc.URef = case['wind_speeds']
-            idlc.label = label
+            idlc.label = dlc_options['label']
             idlc.RandSeed1 = case['rand_seeds']  
             idlc.total_time = case['total_time']
             self.cases.append(idlc)
@@ -845,8 +846,10 @@ class DLCGenerator(object):
         # Power production normal turbulence model - shutdown with varous azimuth initial conditions      
         
         # DLC Specific options:
-        label = '5.1'
-        sea_state = 'normal'
+        dlc_options['label'] = '5.1'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['PSF'] = 1.25
         
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -865,11 +868,12 @@ class DLCGenerator(object):
         generic_case_inputs.append(['azimuth_init']) # group 2
         # TODO: I think we need to shut off the generator here, too
       
-        self.generate_cases(generic_case_inputs,dlc_options,sea_state,label)
+        self.generate_cases(generic_case_inputs,dlc_options)
 
 
     def generate_6p1(self, options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
+        # 
         options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
         _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
         # Set yaw_misalign, else default
