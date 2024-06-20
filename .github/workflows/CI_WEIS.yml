@@ -34,11 +34,16 @@ jobs:
           environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
+            
+      - name: Add dependencies windows specific
+        if: contains( matrix.os, 'windows')
+        run: |
+          conda install -y -c intel intel-openmp mkl
       
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py openmpi pyoptsparse
+          conda install -y petsc4py mpi4py openmpi
       
       - name: Add test packages
         run: |
@@ -58,6 +63,18 @@ jobs:
       #- name: Setup tmate session
       #  if: contains( matrix.os, 'windows')
       #  uses: mxschmitt/action-tmate@v3
+        
+      #- name: Show openfast environment
+      #  run: |
+      #      which -a openfast
+      #      cd /c/Miniconda3/envs/test/Library/bin/
+      #      ls *fast*.exe
+      #      ls *fast*.dll
+      #      openfast -h
+      #      python -c "import ctypes; ctypes.cdll.LoadLibrary('openfastlib.dll')"
+      #      ls *fast*.dll
+      #      cd examples/03_NREL5MW_OC3_spar
+      #      python weis_driver.py
           
       # List the collected tests for debugging purposes
       #- name: List tests
