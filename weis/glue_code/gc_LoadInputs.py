@@ -6,7 +6,7 @@ from rosco import discon_lib_path
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
-from weis.dlc_driver.dlc_generator    import DLCGenerator
+from weis.dlc_driver.dlc_generator_New    import DLCGenerator
 from wisdem.commonse.mpi_tools              import MPI
 
                     
