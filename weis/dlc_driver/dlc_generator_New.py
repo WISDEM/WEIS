@@ -35,8 +35,23 @@ openfast_input_map = {
     'WaveHd': ("HydroDyn","WaveDir"),
     'WaveGamma': ("HydroDyn","WavePkShp"),
     'WaveSeed1': ("HydroDyn","WaveSeed1"),
+
+    'wave_model': ("HydroDyn","WaveMod"),
     
-    'shutdown_time': [("ServoDyn","TPitManS1"),("ServoDyn","TPitManS2"),("ServoDyn","TPitManS3")],
+    'shutdown_time': [
+        ("ServoDyn","TPitManS1"),
+        ("ServoDyn","TPitManS2"),
+        ("ServoDyn","TPitManS3"),
+        ("ServoDyn","TimGenOf"),
+        ],
+
+    'final_blade_pitch': [
+        ("ServoDyn","BlPitchF(1)"),
+        ("ServoDyn","BlPitchF(2)"),
+        ("ServoDyn","BlPitchF(3)"),
+        
+    ],
+
     'fault_time': [("ServoDyn","TPitManS1"),("ServoDyn","TPitManS2"),("ServoDyn","TPitManS3")],
     
     'aero_mod': ("AeroDyn15","AFAeroMod"),
@@ -130,7 +145,7 @@ class DLCGenerator(object):
             fix_wave_seeds=True, 
             metocean={},
             initial_condition_table = {},
-            default_wake_mod = 1
+            default_options = {},
             ):
         self.ws_cut_in = ws_cut_in
         self.ws_cut_out = ws_cut_out
@@ -148,7 +163,13 @@ class DLCGenerator(object):
             self.rng_wave = np.random.default_rng()
         self.n_cases = 0
         self.n_ws_dlc11 = 0
-        self.default_wake_mod = default_wake_mod
+
+        # Set and update default_options, applied to dlc_options and first group in case_inputs
+        self.default_options = {
+            'wake_mod': 1,
+            'wave_model': 2,
+        }
+        self.default_options.update(default_options)
 
         # Init openfast case list
         self.openfast_case_inputs = []
@@ -658,11 +679,11 @@ class DLCGenerator(object):
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','wake_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
-        self.generate_cases(generic_case_inputs,dlc_options,sea_state,label)
+        self.generate_cases(generic_case_inputs,dlc_options)
       
     def generate_cases(self,generic_case_inputs,dlc_options):
         '''
@@ -674,7 +695,15 @@ class DLCGenerator(object):
             sea_state is a string: either severe or normal
             label is the string label used in when the wind inputs are created
         '''
-        
+
+        # Handle default options
+        if 'sea_state' not in dlc_options:
+            dlc_options['sea_state'] = 'normal'
+
+        if 'PSF' not in dlc_options:
+            dlc_options['PSF'] = 1.35
+
+       
         # Generate case list, both generic and OpenFAST specific
         self.set_time_options(dlc_options)
         met_options = self.gen_met_options(dlc_options, sea_state=dlc_options['sea_state'])
@@ -690,6 +719,7 @@ class DLCGenerator(object):
             idlc.label = dlc_options['label']
             idlc.RandSeed1 = case['rand_seeds']  
             idlc.total_time = case['total_time']
+            idlc.IEC_WindType = dlc_options['IEC_WindType']
             self.cases.append(idlc)
 
     def apply_sea_state(self,met_options,sea_state='normal'):
@@ -706,11 +736,11 @@ class DLCGenerator(object):
         if sea_state == 'normal':
             wind_speed_table = self.mo_ws
             wave_height_table = self.mo_Hs_NSS
-            wave_period_table = self.mo_Hs_NSS
+            wave_period_table = self.mo_Tp_NSS
         elif sea_state == 'severe':
             wind_speed_table = self.mo_ws
             wave_height_table = self.mo_Hs_SSS
-            wave_period_table = self.mo_Hs_SSS
+            wave_period_table = self.mo_Tp_SSS
 
         # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
         if len(met_options['wave_Hs'])==0:
@@ -725,6 +755,8 @@ class DLCGenerator(object):
         '''
         if options['analysis_time'] > 0:
             options['analysis_time'] = options['analysis_time']
+        else:
+            options['analysis_time'] = 600.
         if options['transient_time'] >= 0:
             options['transient_time'] = options['transient_time']
         options['total_time'] = options['analysis_time'] + options['transient_time']
@@ -735,20 +767,21 @@ class DLCGenerator(object):
         TODO: this whole thing could be moved into generate_cases, thoughts?
         '''
 
-        # Option handling for all DLCs
-        dlc_options['wake_mod'] = self.default_wake_mod
         
         # Combine
         comb_options = combine_options(dlc_options,met_options)
+
+        # Check that all inputs are valid options
+        all_inputs = sum(generic_case_inputs, [])
+        for input in all_inputs:
+            if not input in comb_options:
+                raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
 
         # Setup generic cross product of inputs: 
         gen_case_inputs = {}
         for i_group, group in enumerate(generic_case_inputs):
             first_array_len = len(comb_options[group[0]])
             for input in group:
-                # Check that input is a valid option
-                if not input in comb_options:
-                    raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
                 
                 # Check that all inputs are of equal length
                 if len(comb_options[input]) != first_array_len:
@@ -825,7 +858,7 @@ class DLCGenerator(object):
         allowed_ics = ['pitch_initial','rot_speed_initial','tau1_const']
 
         
-        if self.initial_condition_table: # there is an IC table that's not empty
+        if self.initial_condition_table and dlc_options['turbine_status'] == 'operating': # there is an IC table that's not empty
             dlc_wind_speeds = met_options['wind_speeds']  # need to use met_options wind speeds because it accounts for seeds
             # find group with wind_speed
             wind_group = ['wind_speeds' in gci for gci in generic_case_inputs].index(True)
@@ -849,7 +882,6 @@ class DLCGenerator(object):
         dlc_options['label'] = '5.1'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
-        dlc_options['PSF'] = 1.25
         
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -871,66 +903,43 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
 
-    def generate_6p1(self, options):
+    def generate_6p1(self, dlc_options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
-        # 
-        options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
-        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        # Set yaw_misalign, else default
-        if 'yaw_misalign' in options:
-            yaw_misalign = options['yaw_misalign']
-        else: # default
-            yaw_misalign = [-8., 8.]
-        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
-        if len(wave_Hs)==0:
-            wave_Hs = self.wave_Hs50
-        if len(wave_Tp)==0:
-            wave_Tp = self.wave_Tp50
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        for yaw_ms in yaw_misalign_deg:
-            idlc = DLCInstance(options=options)
-            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
-                idlc.URef = self.V_e50
-            idlc.yaw_misalign = yaw_ms
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.IEC_WindType = self.wind_speed_class_num + 'EWM50'
-            idlc.turbulent_wind = True
-            if idlc.turbine_status == 'operating':
-                idlc.turbine_status = 'parked-still'
-            idlc.label = '6.1'
-            if options['analysis_time'] > 0:
-                idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] >= 0:
-                idlc.transient_time = options['transient_time']
-            self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
+        # extra dlc_options: 
+        # yaw_misalign: default = [-8,8]
+
+        dlc_options.update(self.default_options)
+
+        # DLC Specific options:
+        dlc_options['label'] = '6.1'
+        dlc_options['sea_state'] = 'severe'
+        dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+
+        # yaw_misalign
+        if 'yaw_misalign' not in dlc_options:
+            dlc_options['yaw_misalign'] = [-8,8]
+
+        dlc_options['wind_speed'] = [50]   # placeholder 
+
+        # parked options
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['wake_mod'] = 0
+        dlc_options['pitch_initial'] = 90.
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['shutdown_time'] = 0.
+        dlc_options['final_blade_pitch'] = 90.
+
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+      
+        self.generate_cases(generic_case_inputs,dlc_options)
+
 
     def generate_6p3(self, options):
         # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads
