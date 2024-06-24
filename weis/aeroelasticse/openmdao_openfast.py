@@ -37,7 +37,7 @@ from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
-from wisdem.inputs import load_yaml
+from wisdem.inputs import load_yaml, write_yaml
 
 if MPI:
     from mpi4py   import MPI
@@ -1786,7 +1786,6 @@ class FASTLoadCases(ExplicitComponent):
             fix_wave_seeds, 
             metocean, 
             initial_condition_table,
-            fst_vt['AeroDyn15']['WakeMod'],
             )
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
@@ -1927,7 +1926,7 @@ class FASTLoadCases(ExplicitComponent):
 
 
         # TODO: apply olaf settings, should be similar to above?
-        if dlc_generator.default_wake_mod == 3:  # OLAF is used 
+        if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
             apply_olaf_parameters(dlc_generator,fst_vt)
                     
         # Parameteric inputs
@@ -1943,6 +1942,12 @@ class FASTLoadCases(ExplicitComponent):
             # Extend lists of cases
             case_list.extend(case_list_i)
             case_name.extend(case_name_i)
+
+        # Apply wind files to case_list
+        for case, wt, wf in zip(case_list,WindFile_type,WindFile_name):
+            case[('InflowWind','WindType')] = wt
+            case[('InflowWind','Filename_Uni')] = wf
+            case[('InflowWind','FileName_BTS')] = wf
 
         # Old case_inputs for reference
         #         case_inputs = {}
@@ -2001,7 +2006,8 @@ class FASTLoadCases(ExplicitComponent):
         case_df.index = case_name
         text_table = case_df.to_string(index=False)
 
-        # Write the text table to a text file
+        # Write the text table to a yaml, text file
+        write_yaml(case_df.to_dict(),os.path.join(self.FAST_runDirectory,'case_matrix_combined.yaml'))
         with open(os.path.join(self.FAST_runDirectory,'case_matrix_combined.txt'), 'w') as file:
             file.write(text_table)
             
