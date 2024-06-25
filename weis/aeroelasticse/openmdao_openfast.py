@@ -1979,6 +1979,10 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("DLC","MeanWS")] = {'vals':mean_wind_speed, 'group':1}
         fst_vt['DLC'] = []
 
+        # Apply wave elevation inputs
+        if 'wave_inputs' in modopt['DLC_driver']['metocean_conditions']:
+            case_inputs[("WaterKin","WaveKinFile")] = {'vals': modopt['DLC_driver']['metocean_conditions']['wave_inputs'], 'group': 1}
+
         # Append current DLC to full list of cases
         case_list, case_name = CaseGen_General(case_inputs, self.FAST_runDirectory, self.FAST_InputFile)
         channels= self.output_channels(fst_vt)
