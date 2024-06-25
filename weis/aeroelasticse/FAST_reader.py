@@ -18,12 +18,23 @@ def readline_filterComments(f):
                         read = False
             return line
 
-def read_array(f,len,array_type=str):
+def read_array(f,len,split_val=None,array_type=str):
     strings = re.split(',| ',f.readline().strip())
     while '' in strings:    # remove empties
         strings.remove('')
 
-    arr = strings[:len]    # select len strings
+    if len is None and split_val is None:
+        raise Exception('Must have len or split_val to use read_array')
+    
+    if len is not None:
+        arr = strings[:len]    # select len strings
+    else:
+        arr =  []
+        for s in strings:
+            if s != split_val:
+                arr.append(s)
+            else:
+                break
 
     if array_type==str:
         arr = [ar.replace('"','') for ar in arr]  # remove quotes and commas
@@ -45,26 +56,6 @@ def fix_path(name):
     for i in range(1,len(name)):
         new = os.path.join(new, name[i])
     return new
-
-def read_array(f,len,array_type=str):
-    strings = re.split(',| ',f.readline().strip())
-    while '' in strings:    # remove empties
-        strings.remove('')
-
-    arr = strings[:len]    # select len strings
-
-    if array_type==str:
-        arr = [ar.replace('"','') for ar in arr]  # remove quotes and commas
-    elif array_type==float:
-        arr = [float_read(ar) for ar in arr]
-    elif array_type==int:
-        arr = [int_read(ar) for ar in arr]
-    elif array_type==bool:
-        arr = [bool_read(ar) for ar in arr]
-    else:
-        raise Exception(f"read_array with type {str(array_type)} not currently supported")
-
-    return arr
 
 def bool_read(text):
     # convert true/false strings to boolean
@@ -125,6 +116,7 @@ class InputReader_OpenFAST(object):
         self.fst_vt['MAP'] = {}
         self.fst_vt['BeamDyn'] = {}
         self.fst_vt['BeamDynBlade'] = {}
+        self.fst_vt['WaterKin'] = {}
 
     def set_outlist(self, vartree_head, channel_list):
         """ Loop through a list of output channel names, recursively set them to True in the nested outlist dict """
@@ -2788,7 +2780,7 @@ class InputReader_OpenFAST(object):
 
                     self.fst_vt['MoorDyn']['options'].append(option_name)
                     if option_name in string_options:
-                        self.fst_vt['MoorDyn'][option_name] = raw_value
+                        self.fst_vt['MoorDyn'][option_name] = raw_value.strip('"')
                     else:
                         self.fst_vt['MoorDyn'][option_name] = float(raw_value)
 
@@ -2801,6 +2793,33 @@ class InputReader_OpenFAST(object):
 
                 f.close()
                 break
+
+        if 'WaterKin' in self.fst_vt['MoorDyn']['options']:
+            WaterKin_file = os.path.normpath(os.path.join(os.path.dirname(moordyn_file), self.fst_vt['MoorDyn']['WaterKin']))
+            self.read_WaterKin(WaterKin_file)
+
+    def read_WaterKin(self,WaterKin_file):
+        print('here')
+
+        f = open(WaterKin_file)
+        f.readline()
+        f.readline()
+        f.readline()
+
+        self.fst_vt['WaterKin']['WaveKinMod']  = int_read(f.readline().split()[0])
+        self.fst_vt['WaterKin']['WaveKinFile']  = f.readline().split()[0]  # Will want to update this somehow with wave elevation
+        self.fst_vt['WaterKin']['dtWave']  = float_read(f.readline().split()[0])
+        self.fst_vt['WaterKin']['WaveDir']  = float_read(f.readline().split()[0])
+        self.fst_vt['WaterKin']['X_Type']  = int_read(f.readline().split()[0])
+        self.fst_vt['WaterKin']['X_Grid']  = read_array(f,None,split_val='-',array_type=float)
+        # re.split(',| ',f.readline().strip())
+        self.fst_vt['WaterKin']['Y_Type']  = int_read(f.readline().split()[0])
+        self.fst_vt['WaterKin']['Y_Grid']  = read_array(f,None,split_val='-',array_type=float)
+        self.fst_vt['WaterKin']['Z_Type']  = int_read(f.readline().split()[0])
+        self.fst_vt['WaterKin']['Z_Grid']  = read_array(f,None,split_val='-',array_type=float)
+        f.readline()
+        self.fst_vt['WaterKin']['CurrentMod']  = int_read(f.readline().split()[0])
+        f.close()
 
     def execute(self):
           

@@ -180,6 +180,8 @@ class InputWriter_OpenFAST(object):
             self.write_MAP()
         elif self.fst_vt['Fst']['CompMooring'] == 3:
             self.write_MoorDyn()
+            if 'WaterKin' in self.fst_vt['MoorDyn']['options']:
+                self.write_WaterKin(os.path.join(self.FAST_runDirectory,self.fst_vt['MoorDyn']['WaterKin_file']))
 
         if self.fst_vt['Fst']['CompElast'] == 2:
             self.write_BeamDyn()
@@ -2255,6 +2257,14 @@ class InputWriter_OpenFAST(object):
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['TmaxIC'], 'TmaxIC', '- max time for ic gen (s)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['CdScaleIC'], 'CdScaleIC', '- factor by which to scale drag coefficients during dynamic relaxation (-)\n'))
         f.write('{:<22} {:<11} {:}'.format(self.fst_vt['MoorDyn']['threshIC'], 'threshIC', '- threshold for IC convergence (-)\n'))
+        if 'inertialF' in self.fst_vt['MoorDyn']['options']:
+            f.write('{:<22d} {:<11} {:}'.format(int(self.fst_vt['MoorDyn']['inertialF']), 'inertialF', '- Compute the inertial forces (0: no, 1: yes). Switch to 0 if you get: Warning: extreme pitch moment from body-attached Rod.\n'))
+
+        if 'WaterKin' in self.fst_vt['MoorDyn']['options']:
+            self.fst_vt['MoorDyn']['WaterKin_file'] = self.FAST_namingOut + '_WaterKin.dat'
+            f.write('{:<22} {:<11} {:}'.format('"'+self.fst_vt['MoorDyn']['WaterKin_file']+'"', 'WaterKin', '- WaterKin input file\n'))
+
+        
         # f.write('{:^11s} {:<11} {:}'.format(self.fst_vt['MoorDyn']['WaterKin'], 'WaterKin', 'Handling of water motion (0=off, 1=on)\n'))
         f.write('------------------------ OUTPUTS --------------------------------------------\n')
         outlist = self.get_outlist(self.fst_vt['outlist'], ['MoorDyn'])
@@ -2267,6 +2277,34 @@ class InputWriter_OpenFAST(object):
         f.flush()
         os.fsync(f)
         f.close()
+
+    def write_WaterKin(self,WaterKin_file):
+        f = open(WaterKin_file, 'w')
+
+        f.write('MoorDyn v2 (Feb 2022) Waves and Currents input file set up for USFLOWT\n')
+        f.write('Wave kinematics that will have an impact over the cans and the mooring lines.\n')
+        f.write('--------------------------- WAVES -------------------------------------\n')
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['WaterKin']['WaveKinMod'], 'WaveKinMod', '- type of wave input {0 no waves; 3 set up grid of wave data based on time series}\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['WaterKin']['WaveKinFile'], 'WaveKinFile', '- file containing wave elevation time series at 0,0,0\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['WaterKin']['dtWave'], 'dtWave', '- time step to use in setting up wave kinematics grid (s)\n'))
+        f.write('{:<22} {:<11} {:}'.format(self.fst_vt['WaterKin']['WaveDir'], 'WaveDir', '- wave heading (deg)\n'))
+        f.write('{:<22} {:}'.format(self.fst_vt['WaterKin']['X_Type'], '- X wave input type (0: not used; 1: list values in ascending order; 2: uniform specified by -xlim, xlim, num)\n'))
+        f.write('{:<22} {:}'.format(', '.join(['{:.3f}'.format(i) for i in self.fst_vt['WaterKin']['X_Grid']]), '- X wave grid point data separated by commas\n'))
+        f.write('{:<22} {:}'.format(self.fst_vt['WaterKin']['Y_Type'], '- Y wave input type (0: not used; 1: list values in ascending order; 2: uniform specified by -Ylim, Ylim, num)\n'))
+        f.write('{:<22} {:}'.format(', '.join(['{:.3f}'.format(i) for i in self.fst_vt['WaterKin']['Y_Grid']]), '- Y wave grid point data separated by commas\n'))
+        f.write('{:<22} {:}'.format(self.fst_vt['WaterKin']['Z_Type'], '- Z wave input type (0: not used; 1: list values in ascending order; 2: uniform specified by -Zlim, Zlim, num)\n'))
+        f.write('{:<22} {:}'.format(', '.join(['{:.3f}'.format(i) for i in self.fst_vt['WaterKin']['Z_Grid']]), '- Z wave grid point data separated by commas\n'))
+        f.write('--------------------------- CURRENT -------------------------------------\n')
+        f.write('0                    CurrentMod  - type of current input {0 no current; 1 steady current profile described below} \n')
+        f.write('z-depth     x-current      y-current\n')
+        f.write('(m)           (m/s)         (m/s)\n')
+        f.write('--------------------- need this line ------------------\n')
+
+        f.flush()
+        os.fsync(f)
+        f.close()
+
+
         
         
     def write_StC(self,StC_vt,StC_filename):
