@@ -26,7 +26,10 @@ We recommend running terminal command such as:
 mv 17_IEA22_Opt_Result 17_IEA22_Opt_Result_CASENAME
 ```
 where `CASENAME` is replaced by `COBYLA`, `SLSQP`, and/or `DE` depending on the case you are running.
+Alternately, standard move operations for a user's operating system of choice can be used.
 
 ## Analysis
 
-... TO DO!
+Once `17_IEA22_Opt_Result_COBYLA`, `17_IEA22_Opt_Result_SLSQP`, and `17_IEA22_Opt_Result_DE` are populated, `analysis.ipynb` can be used to evaluate the results.
+The notebook has detailed descriptions of its analysis.
+
