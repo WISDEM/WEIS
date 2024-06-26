@@ -1,5 +1,5 @@
 general:
-    folder_output: 17_IEA22_Opt_Result
+    folder_output: 17_IEA22_OptStudies/raft
     fname_output: IEA-22-280-RWT
 
 design_variables:
