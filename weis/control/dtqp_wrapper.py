@@ -152,7 +152,7 @@ def run_dtqp(dtqp_input):
     nl = len(dtqp_input['LinearTurbine'].u_h)
     
     # if nl ==1, run DTQPy_static else run DTQPy_oloc
-    if nl > 1:
+    if nl>1:
         T,U,X,Y = DTQPy_oloc(
             dtqp_input['LinearTurbine'],
             dtqp_input['dist'],
@@ -160,7 +160,7 @@ def run_dtqp(dtqp_input):
             dtqp_input['dtqp_options'],
             plot=dtqp_input['plot']
             )
-    elif nl == 1:
+    elif nl ==1:
         T,U,X,Y = DTQPy_static(
             dtqp_input['LinearTurbine'],
             dtqp_input['dist'],
@@ -179,7 +179,7 @@ def run_dtqp(dtqp_input):
 
     # Add time to OutData
     OutData['Time'] = T.flatten()
-
+    breakpoint()
     output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
     output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
 

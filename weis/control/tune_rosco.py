@@ -87,7 +87,6 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('v_max',             val=0.0,        units='m/s',            desc='Maximum wind speed (cut-out)')
         self.add_input('max_pitch_rate',    val=0.0,        units='rad/s',          desc='Maximum allowed blade pitch rate')
         self.add_input('max_torque_rate',   val=0.0,        units='N*m/s',          desc='Maximum allowed generator torque rate')
-        self.add_input('generator_inertia', val=0.0,        units='kg*m**2',        desc='Generator inertia')
         self.add_input('tsr_operational',   val=0.0,                                desc='Operational tip-speed ratio')
         self.add_input('omega_min',         val=0.0,        units='rad/s',          desc='Minimum rotor speed')
         self.add_input('flap_freq',         val=0.0,        units='Hz',             desc='Blade flapwise first natural frequency') 
@@ -230,7 +229,7 @@ class TuneROSCO(ExplicitComponent):
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()
         WISDEM_turbine.v_min        = float(inputs['v_min'])
-        WISDEM_turbine.J            = float(inputs['rotor_inertia']) + float(inputs['gear_ratio'])**2 * float(inputs['generator_inertia'])       # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
+        WISDEM_turbine.J            = float(inputs['rotor_inertia'])        # TODO: ROSCO is actually looking for drivetrain inertia here!  It's been fixed from ROSCO_Turbine below, but maybe not WISDEM
         WISDEM_turbine.rho          = float(inputs['rho'])
         WISDEM_turbine.rotor_radius = float(inputs['R'])
         WISDEM_turbine.Ng           = float(inputs['gear_ratio'])
@@ -242,7 +241,6 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.rated_torque = float(inputs['rated_torque']) / WISDEM_turbine.Ng * float(inputs['gearbox_efficiency'])
         WISDEM_turbine.max_torque   = WISDEM_turbine.rated_torque * 1.1  # TODO: make this an input if studying constant power
         WISDEM_turbine.v_rated      = float(inputs['rated_rotor_speed'])*float(inputs['R']) / float(inputs['tsr_operational'])
-        print('');print(WISDEM_turbine.v_rated);print('')
         WISDEM_turbine.v_min        = float(inputs['v_min'])
         WISDEM_turbine.v_max        = float(inputs['v_max'])
         WISDEM_turbine.max_pitch_rate   = float(inputs['max_pitch_rate'])
@@ -250,19 +248,12 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.TSR_operational  = float(inputs['tsr_operational'])
         WISDEM_turbine.max_torque_rate  = float(inputs['max_torque_rate'])
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
-        
-        if float(inputs['edge_freq']):
-            WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
-        else:
-            # If edgewise freq not calculated, 5\omega_rated is a good placeholder
-            # This becomes the LPF frequency, and should be adjustable as a control input in the future
-            WISDEM_turbine.bld_edgewise_freq = 5 * WISDEM_turbine.rated_rotor_speed
+        WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
         # Floating Feedback Filters
         if self.controller_params['Fl_Mode']:
+            rosco_init_options['twr_freq'] = float(inputs['twr_freq']) * 2 * np.pi
             rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'])
-            if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated
-                rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])

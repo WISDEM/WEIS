@@ -9,43 +9,20 @@ from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from wisdem.commonse.mpi_tools              import MPI
 
-def update_options(options,override):
-    for key, value in override.items():
-        if isinstance(value, dict) and key in options:
-            update_options(options[key], value)
-        elif key in options:
-            options[key] = value
-        else:
-            raise Exception(f'Error updating option overrides. {key} is not part of {options.keys()}')
+                    
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
     # and adding the WEIS options, namely the paths to the WEIS submodules
     # (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
 
-    def __init__(
-            self, 
-            fname_input_wt, 
-            fname_input_modeling, 
-            fname_input_analysis,
-            modeling_override = None,
-            analysis_override = None,
-            ):
+    def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         self.analysis_options['fname_input_analysis'] = fname_input_analysis
-
-        if modeling_override:
-            update_options(self.modeling_options, modeling_override)
-            sch.re_validate_modeling(self.modeling_options)
-                
-        
-        if analysis_override:
-            update_options(self.analysis_options, analysis_override)
-            sch.re_validate_analysis(self.analysis_options)
 
         self.set_run_flags()
         self.set_openmdao_vectors()
@@ -184,13 +161,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         cut_in = self.wt_init['control']['supervisory']['Vin']
         cut_out = self.wt_init['control']['supervisory']['Vout']
         metocean = self.modeling_options['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(
-            metocean,
-            **{
-                'ws_cut_in': cut_in, 
-                'ws_cut_out':cut_out, 
-                'MHK': self.wt_init['assembly']['marine_hydro'],
-            })
+        dlc_generator = DLCGenerator(cut_in, cut_out, metocean=metocean)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]

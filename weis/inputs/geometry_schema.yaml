@@ -9,6 +9,7 @@ properties:
         required:
             - air_density
             - air_dyn_viscosity
+            - air_speed_sound
             - shear_exp
         optional:
             - gravity
@@ -63,6 +64,13 @@ properties:
                 minimum: 1
                 maximum: 3
                 default: 2.
+            air_speed_sound:
+                type: number
+                description: Speed of sound in air.
+                unit: m/s
+                minimum: 330.
+                maximum: 350.
+                default: 340.
             shear_exp:
                 type: number
                 description: Shear exponent of the atmospheric boundary layer.
