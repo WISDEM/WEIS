@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import re
 from itertools import chain
 from scipy.io import loadmat
-from ROSCO_toolbox.control_interface import ControllerInterface as ROSCO_ControllerInterface
+from rosco.toolbox.control_interface import ControllerInterface as ROSCO_ControllerInterface
 
 import os
 
@@ -419,8 +419,26 @@ class LinearTurbineModel(object):
                 if k == 0:
                     continue # Skip the first run
                 
+                # populate turbine state dictionary
+                turbine_state = {}
+                if k < len(t_array):
+                    turbine_state['iStatus']    = 1
+                else:
+                    turbine_state['iStatus']    = -1
+                turbine_state['t']              = t
+                turbine_state['dt']             = dt
+                turbine_state['ws']             = u_h[k-1]
+                turbine_state['bld_pitch']      = bld_pitch[k-1]
+                turbine_state['gen_torque']     = gen_torque[k-1]
+                turbine_state['gen_speed']      = gen_speed[k-1]
+                turbine_state['gen_eff']        = 0.95  # hard code, for now
+                turbine_state['rot_speed']      = rot_speed[k-1]
+                turbine_state['Yaw_fromNorth']  = 0
+                turbine_state['Y_MeasErr']      = 0 
+                turbine_state['NacIMU_FA_Acc']  = nac_accel[k-1]
+
                 # Call the controller
-                gen_torque[k], bld_pitch[k] = controller.call_controller(t,dt,bld_pitch[k-1],gen_torque[k-1],gen_speed[k-1],0.95,rot_speed[k-1],u_h[k-1],nac_accel[k-1])
+                gen_torque[k], bld_pitch[k], _ = controller.call_controller(turbine_state)
 
                 # Set inputs:
                 # Wind
@@ -485,7 +503,7 @@ class LinearTurbineModel(object):
         OutList     = [out_name.split()[1][:-1] for out_name in P_op.OutputName]
         OutData_arr = y.T
 
-        # Turn OutData into dict like in ROSCO_toolbox
+        # Turn OutData into dict like in rosco.toolbox
         OutData = {}
         for i, out_chan in enumerate(OutList):
             OutData[out_chan] = OutData_arr[:,i]

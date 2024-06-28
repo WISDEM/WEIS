@@ -15,9 +15,15 @@ fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
-def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridden_values=None):
+def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)
-    wt_initial = WindTurbineOntologyPythonWEIS(fname_wt_input, fname_modeling_options, fname_opt_options)
+    wt_initial = WindTurbineOntologyPythonWEIS(
+        fname_wt_input, 
+        fname_modeling_options, 
+        fname_opt_options, 
+        modeling_override=modeling_override, 
+        analysis_override=analysis_override
+        )
     wt_init, modeling_options, opt_options = wt_initial.get_input_data()
 
     # Initialize openmdao problem. If running with multiple processors in MPI, use parallel finite differencing equal to the number of cores used.
@@ -81,7 +87,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             color_i = 0
         else:
             n_FD = max([n_FD, 1])
-            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
+            if modeling_options['Level3']['flag'] == True and modeling_options['Level3']['AeroDyn']['WakeMod'] == 3:
+                olaf = True
+            else:
+                olaf = False
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel, openmp=olaf)
             rank    = MPI.COMM_WORLD.Get_rank()
             if rank < len(color_map):
                 try:
@@ -96,9 +106,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         color_i = 0
         rank = 0
 
+    # make the folder_output relative to the input, if it's a relative path
+    analysis_input_dir = os.path.dirname(opt_options['fname_input_analysis'])
+    opt_options['general']['folder_output'] = os.path.join(analysis_input_dir,opt_options['general']['folder_output'])
+
     folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
-        os.makedirs(folder_output)
+        os.makedirs(folder_output,exist_ok=True)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
@@ -114,15 +128,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             
             # Parallel settings for OpenMDAO
             if opt_options['driver']['design_of_experiments']['flag']:  
-                wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+                wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
             else:
-                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i)
+                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i, reports=False)
                 wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
             modeling_options['General']['openfast_configuration']['mpi_run'] = False
             modeling_options['General']['openfast_configuration']['cores']   = 1
-            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options))
+            wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
 
         # If at least one of the design variables is active, setup an optimization
         if opt_options['opt_flag']:
@@ -156,7 +170,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
         
-        # If the user provides values in this dict, they overwrite
+        # If the user provides values in geometry_override, they overwrite
         # whatever values have been set by the yaml files.
         # This is useful for performing black-box wrapped optimization without
         # needing to modify the yaml files.
@@ -165,12 +179,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         # of the array.
         # This is useful when optimizing twist, where the first few indices
         # do not need to be optimized as they correspond to a circular cross-section.
-        if overridden_values is not None:
-            for key in overridden_values:
-                num_values = np.array(overridden_values[key]).size
-                # key_size = wt_opt[key].size
-                # idx_start = key_size - num_values
-                wt_opt[key] = overridden_values[key]
+        if geometry_override is not None:
+            for key in geometry_override:
+                num_values = np.array(geometry_override[key]).size
+                key_size = wt_opt[key].size
+                idx_start = key_size - num_values
+                wt_opt[key][idx_start:] = geometry_override[key]
 
         # Place the last design variables from a previous run into the problem.
         # This needs to occur after the above setup() and yaml2openmdao() calls
@@ -209,8 +223,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
     if MPI and \
             (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
             (not opt_options['driver']['design_of_experiments']['flag']) and \
-            color_i in color_map:
-        # subprocessor ranks spin, waiting for FAST simulations to run
+            color_i < 1000000:
+        # subprocessor ranks spin, waiting for FAST simulations to run. 
+        # Only true for cores actually in use, not the ones supporting openfast openmp (marked as color_i = 1000000)
         sys.stdout.flush()
         if rank in comm_map_up.keys():
             subprocessor_loop(comm_map_up)
@@ -220,7 +235,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
         subprocessor_stop(comm_map_down)
         sys.stdout.flush()
 
-    if MPI:
+    # Send each core in use to a barrier synchronization
+    if MPI and color_i < 1000000:
         MPI.COMM_WORLD.Barrier()
 
     if rank == 0:

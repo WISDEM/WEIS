@@ -2,14 +2,10 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
-        OF_run_fst: IEA15
-        OF_run_dir: temp/IEA15
 
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -60,7 +56,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
-        YawDOF: False  
+        YawDOF: True  
         TwFADOF1 : True
         TwFADOF2 : True
         TwSSDOF1 : True
@@ -101,7 +97,3 @@ DLC_driver:
           n_seeds: 1
           analysis_time: 40.
           transient_time: 5.
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 220
-              GridWidth: 220

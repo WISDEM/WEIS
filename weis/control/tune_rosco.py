@@ -5,11 +5,11 @@ Nikhar J. Abbas
 January 2020
 '''
 
-from ROSCO_toolbox import controller as ROSCO_controller
-from ROSCO_toolbox import turbine as ROSCO_turbine
-from ROSCO_toolbox.inputs.validation import load_rosco_yaml
-from ROSCO_toolbox.linear.robust_scheduling import rsched_driver
-from ROSCO_toolbox.utilities import list_check, DISCON_dict
+from rosco.toolbox import controller as ROSCO_controller
+from rosco.toolbox import turbine as ROSCO_turbine
+from rosco.toolbox.inputs.validation import load_rosco_yaml
+from rosco.toolbox.linear.robust_scheduling import rsched_driver
+from rosco.toolbox.utilities import list_check, DISCON_dict
 import numpy as np
 from openmdao.api import ExplicitComponent, Group
 from wisdem.ccblade.ccblade import CCAirfoil, CCBlade
@@ -173,16 +173,17 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('zeta_vs',           val=0.0,                                            desc='Generator torque controller damping ratio')
         self.add_input('omega_vs',          val=0.0,        units='rad/s',                      desc='Generator torque controller natural frequency')
         if rosco_init_options['Flp_Mode'] > 0:
-            self.add_input('Flp_omega',        val=0.0, units='rad/s',                         desc='Flap controller natural frequency')
-            self.add_input('Flp_zeta',         val=0.0,                                        desc='Flap controller damping ratio')
-        self.add_input('IPC_Ki1p',          val=0.0,            units='rad/(N*m)',  desc='Individual pitch controller 1p gain')
+            self.add_input('flp_kp_norm',   val=0.0,                                    desc='Flap controller normalized gain')
+            self.add_input('flp_tau',       val=0.0,            units='s',              desc='Flap controller integral gain time constant')
+        self.add_input('IPC_Kp1p',          val=0.0,            units='s',              desc='Individual pitch controller 1p proportional gain')
+        self.add_input('IPC_Ki1p',          val=0.0,                                    desc='Individual pitch controller 1p integral gain')
         # Outputs for constraints and optimizations
-        self.add_output('flptune_coeff1',   val=0.0,            units='rad/s',        desc='First coefficient in denominator of flap controller tuning model')
-        self.add_output('flptune_coeff2',   val=0.0,            units='(rad/s)**2',        desc='Second coefficient in denominator of flap controller tuning model')
-        self.add_output('PC_Kp',            val=0.0,            units='rad',        desc='Pitch control proportional gain at first pitch angle in schedule')
-        self.add_output('PC_Ki',            val=0.0,            units='rad',        desc='Pitch control integral gain at first pitch angle in schedule')
-        self.add_output('Flp_Kp',           val=0.0,            units='rad',        desc='Flap control proportional gain')
-        self.add_output('Flp_Ki',           val=0.0,            units='rad',        desc='Flap control integral gain')
+        self.add_output('flptune_coeff1',   val=0.0,            units='rad/s',          desc='First coefficient in denominator of flap controller tuning model')
+        self.add_output('flptune_coeff2',   val=0.0,            units='(rad/s)**2',     desc='Second coefficient in denominator of flap controller tuning model')
+        self.add_output('PC_Kp',            val=0.0,            units='rad',            desc='Pitch control proportional gain at first pitch angle in schedule')
+        self.add_output('PC_Ki',            val=0.0,            units='rad',            desc='Pitch control integral gain at first pitch angle in schedule')
+        self.add_output('Flp_Kp',           val=0.0,            units='rad',            desc='Flap control proportional gain')
+        self.add_output('Flp_Ki',           val=0.0,            units='rad',            desc='Flap control integral gain')
 
         self.add_output('PC_GS_angles',     val=np.zeros(rosco_init_options['PC_GS_n']), units='rad', desc='Gain-schedule table: pitch angles')
         self.add_output('PC_GS_Kp',         val=np.zeros(rosco_init_options['PC_GS_n']), units='s',   desc='Gain-schedule table: pitch controller kp gains')
@@ -202,18 +203,22 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
         rosco_init_options['zeta_vs']     = float(inputs['zeta_vs'])
         if rosco_init_options['Flp_Mode'] > 0:
-            rosco_init_options['omega_flp'] = inputs['Flp_omega']
-            rosco_init_options['zeta_flp']  = inputs['Flp_zeta']
+            rosco_init_options['flp_kp_norm'] = float(inputs['flp_kp_norm'])
+            rosco_init_options['flp_tau']  = float(inputs['flp_tau'])
         else:
             rosco_init_options['omega_flp'] = 0.0
             rosco_init_options['zeta_flp']  = 0.0
-        #
         rosco_init_options['max_pitch']   = float(inputs['max_pitch'])
         rosco_init_options['min_pitch']   = float(inputs['min_pitch'])
         rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'])
         rosco_init_options['ss_vsgain']   = float(inputs['ss_vsgain'])
         rosco_init_options['ss_pcgain']   = float(inputs['ss_pcgain'])
         rosco_init_options['ps_percent']  = float(inputs['ps_percent'])
+        rosco_init_options['IPC_Kp1p']    = max(0.0, float(inputs['IPC_Kp1p']))
+        rosco_init_options['IPC_Ki1p']    = max(0.0, float(inputs['IPC_Ki1p']))
+        rosco_init_options['IPC_Kp2p']    = 0.0 # 2P optimization is not currently supported
+        rosco_init_options['IPC_Kp2p']    = 0.0
+
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'])
 
@@ -254,9 +259,10 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.bld_edgewise_freq = 5 * WISDEM_turbine.rated_rotor_speed
         
         # Floating Feedback Filters
-        if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated
-            rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
-        rosco_init_options['ptfm_freq']     = float(inputs['ptfm_freq'])
+        if self.controller_params['Fl_Mode']:
+            rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'])
+            if float(inputs['twr_freq']):  # do not update if another twr_freq was not calculated
+                rosco_init_options['twr_freq']      = float(inputs['twr_freq']) * 2 * np.pi
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
@@ -313,7 +319,7 @@ class TuneROSCO(ExplicitComponent):
             WISDEM_turbine.span     = inputs['r'] 
             WISDEM_turbine.chord    = inputs['chord']
             WISDEM_turbine.twist    = inputs['theta']
-            WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi
+            WISDEM_turbine.bld_flapwise_freq = float(inputs['flap_freq']) * 2*np.pi 
             WISDEM_turbine.bld_flapwise_damp = self.modeling_options['ROSCO']['Bld_FlpDamp']
 
         else: 
@@ -603,7 +609,8 @@ class ROSCO_Turbine(ExplicitComponent):
         outputs['edge_freq'              ] = self.turbine.bld_edgewise_freq / 2 / np.pi   # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
         outputs['TowerHt'                ] = self.turbine.TowerHt
         outputs['hub_height'             ] = self.turbine.hubHt
-        outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
+        if self.control_params['Fl_Mode']:
+            outputs['twr_freq'               ] = self.control_params['twr_freq'] / 2 / np.pi  # tuning yaml  in rad/s, WISDEM values in Hz: convert to Hz
 
         # Rotor Performance
         outputs['Cp_table'               ] = self.turbine.Cp.performance_table

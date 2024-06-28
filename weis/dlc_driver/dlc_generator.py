@@ -141,6 +141,8 @@ class DLCGenerator(object):
             raise Exception('The vector of metocean conditions wave_height_SSS in the modeling options must have the same length of the tabulated wind speeds')
         if len(self.mo_ws)!=len(self.mo_Tp_SSS):
             raise Exception('The vector of metocean conditions wave_period_SSS in the modeling options must have the same length of the tabulated wind speeds')
+        if len(self.mo_ws)!=len(self.mo_Cu_F):
+            raise Exception('The vector of metocean conditions current_fatigue in the modeling options must have the same length of the tabulated wind speeds')
 
         # Load extreme wave heights and periods
         self.wave_Hs50 = np.array([metocean['wave_height50']])
@@ -188,7 +190,7 @@ class DLCGenerator(object):
         return wind_speeds, wind_seeds
 
     def get_wave_seeds(self, options, wind_speeds):
-        if len(options['wave_seed']) > 0:
+        if len(options['wave_seeds']) > 0:
             wave_seeds = np.array( [int(m) for m in options['wave_seeds']] )
         else:
             wave_seeds = self.rng_wave.integers(2147483648, size=len(wind_speeds), dtype=int)
@@ -992,17 +994,20 @@ class DLCGenerator(object):
     
     def generate_12p1(self, options):
         # Pass through uniform wind input
-        metocean = self.get_metocean(options)
-        idlc = DLCInstance(options=options)
-        idlc.label = '12.1'
-        idlc.IEC_WindType = 'Custom'
-        idlc.wind_file = options['wind_file']
-        if options['analysis_time'] >= 0:
-            idlc.analysis_time = options['analysis_time']
-        if options['transient_time'] >= 0:
-            idlc.transient_time = options['transient_time']
+        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
+        for ws in wind_speeds:
+            idlc = DLCInstance(options=options)
+            idlc.label = '12.1'
+            idlc.IEC_WindType = 'Custom'
+            idlc.URef = wind_speeds
+            idlc.turbulent_wind = False
+            # idlc.wind_file = options['wind_file']
+            if options['analysis_time'] >= 0:
+                idlc.analysis_time = options['analysis_time']
+            if options['transient_time'] >= 0:
+                idlc.transient_time = options['transient_time']
 
-        self.cases.append(idlc)
+            self.cases.append(idlc)
 
 
 if __name__ == "__main__":

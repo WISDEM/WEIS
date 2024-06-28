@@ -1,0 +1,109 @@
+general:
+    folder_output: outputs/17_MHK_Control_Opt
+    fname_output: rm1
+
+design_variables:
+  control:
+    servo:
+      pitch_control:
+          omega:
+            flag: True
+            min: 0.1
+            max: 1.5
+          zeta:
+            flag: True
+            min: 0.1
+            max: 3.0
+          Kp_float:
+            flag: True
+            min: -2
+            max: 0
+          ptfm_freq:
+            flag: True
+            max: 1.0
+
+merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
+
+constraints:
+  control:
+    Max_PtfmPitch:
+        flag: True
+        max: 5.5
+    Std_PtfmPitch:
+        flag: False
+        max: 0.39  # Same as IEA-15MW with same DLCs
+    nacelle_acceleration:
+        flag: True
+        max: 2.0
+    rotor_overspeed:
+        flag: True
+        min: 0.0
+        max: 0.3
+
+
+# constraints:
+#     floating:
+#         survival_heel:
+#             upper_bound: 0.17453292519943295 # 10 deg
+#         metacentric_height:
+#             flag: True
+#             lower_bound: 15.0
+#         pitch_period:
+#             flag: True
+#             lower_bound: 20. # +/- 10%
+#             upper_bound: 80.
+#         heave_period:
+#             flag: True
+#             lower_bound: 16. # +/- 10%
+#             upper_bound: 80.
+#         fixed_ballast_capacity:
+#             flag: True
+#         variable_ballast_capacity:
+#             flag: True
+#         buoyancy:
+#             flag: False
+#         stress:
+#             flag: False
+#         global_buckling:
+#             flag: False
+#         shell_buckling:
+#             flag: False
+#         mooring_heel:
+#             flag: False
+#         freeboard_margin:   # keep freeboard from being submerged below water during survival_heel, largest wave
+#             flag: True
+#         draft_margin:   # keep draft from raising above water line during survival_heel, largest wave
+#             flag: True
+#         fairlead_depth: # keep fairlead above bottom trough of largest wave
+#             flag: False
+#     control:
+#         Max_PtfmPitch:
+#             flag: True
+#             max: 5.5
+#         Std_PtfmPitch:
+#             flag: False
+#             max: 0.39  # Same as IEA-15MW with same DLCs
+#         nacelle_acceleration:
+#             flag: True
+#             max: 2.0
+
+driver:
+  optimization:
+    flag: True
+    tol: 1.e-2            # Optimality tolerance
+    max_major_iter: 100     # Maximum number of major design iterations (SNOPT)
+    max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
+    max_iter: 100          # Maximum number of iterations (SLSQP)
+    solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    step_size: 1.e-3      # Step size for finite differencing
+    form: forward         # Finite differencing mode, either forward or central
+  design_of_experiments:
+    flag: False            # Flag to enable design of experiments
+    run_parallel: False    # Flag to run using parallel processing
+    generator: Uniform    # Type of input generator. (Uniform)
+    num_samples: 12        # number of samples for (Uniform only)
+    criterion: center
+
+recorder:
+    flag: True             # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

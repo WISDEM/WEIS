@@ -3,41 +3,22 @@ channels:
   - defaults
 
 dependencies:
-  - cmake>=3.21.1
-  - control
-  - coveralls
-  - cython
+  - dash
   - dill
-  - git
-  - Jinja2
-  - jsonschema
-  - make
-  - pip
-  - matplotlib-base
+  - jsonmerge
+  - mat4py
   - nlopt
-  - numpy
-  - openmdao
-  - openpyxl
-  - pandas
-  - pip
-  - pyoptsparse
-  - pyside2
-  - pytest
-  - pytest-cov
-  - python-benedict
-  - pyyaml
-  - ruamel_yaml
-  - scipy
-  - setuptools
-  - simpy
-  - slycot
+  - openfast
+  - openraft
+  - osqp  
+  - pcrunch
+  - rosco
   - smt
-  - sortedcontainers
-  - swig
-#  - versioneer
+  - wisdem
   - pip:
-    - fatpack
-    - jsonmerge
+    - dash-bootstrap-components
+    - dash-mantine-components
+    - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]

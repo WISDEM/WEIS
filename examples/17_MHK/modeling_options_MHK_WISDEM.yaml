@@ -1,0 +1,235 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: RM1
+        # OF_run_dir: outputs/CT_Opt/07_Ptfm_Setup
+        save_timeseries: True
+        save_iterations: True
+        use_exe: True
+        # FAST_exe: /home/dzalkind/.conda-envs/rosco-env/bin/openfast
+        # FAST_exe: /Users/dzalkind/opt/anaconda3/envs/rosco-env/bin/openfast
+        FAST_exe: /Users/dzalkind/opt/anaconda3/envs/weis-env4/bin/openfast
+        
+
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+        frame3dd:
+            flag: False
+    TowerSE:
+        flag: True
+        frame3dd:
+            flag: False
+    DriveSE:
+        flag: True
+        frame3dd:
+            flag: False
+    FloatingSE:
+        flag: True
+        rank_and_file: True
+        symmetric_moorings: False
+        frame3dd:
+            flag: False
+    # BOS:
+    #     flag: True
+
+OWENS:
+    flags: True
+    path_to_owens_dir: path
+    
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.01
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        # CompHydro: 0
+        # CompSub: 0
+        # CompMooring: 3
+        # CompIce: 0
+        OutFileFmt: 3
+        NumCrctn: 5
+        DT_UJac: 1
+        MHK: 2
+        WtrDpth: 50
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : False
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+        TwrNodes: 20
+        DTTorSpr: 600000
+        DTTorDmp: 100000
+        HubMass: 140
+        HubIner: 79.6
+        GenIner: 139.5
+        NacMass: 40100
+        NacYIner: 244643
+        YawBrMass: 0
+        HubCM: 0.2222
+        NacCMxn: 0.43
+        NacCMyn: 0
+        NacCMzn: -1.2
+        TowerBsHt: -9
+    AeroDyn:
+        WakeMod: 2
+        AFAeroMod: 1
+        TwrShadow: 0
+        VolHub: 7.2  # Add buoyancy manually here
+        HubCenBx: 0.2222
+        VolNac: 38.6
+        NacCenB: [0.43, 0,0]
+    HydroDyn:
+        # PotFile: /Users/dzalkind/Projects/FloatingRM1_Controls/OpenFAST/MHK_RM1_Floating
+        SimplCd: 1.2
+        SimplCdMG: 0.0
+        SimplCa: 1.0
+        SimplCaMG: 0.0
+        SimplCp: 1.0
+        SimplCpMG: 1.0
+        SimplAxCd: 0.0
+        SimplAxCdMG: 0.0
+        SimplAxCa: 1.0
+        SimplAxCaMG: 0.0
+        SimplAxCp: 1.0
+        SimplAxCpMG: 1.0
+    MoorDyn:
+        dtM: 0.5e-4
+        TmaxIC: 10
+        NumSegs: 20
+    #     WaveSeed1: 123456789
+    #     WaveSeed2: 1011121314
+    #     AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+    #     WaveMod: 2
+    #     WaveTMax: 850
+    #     WvLowCOff: 0.111527
+    #     WvHiCOff: 0.783827
+    #     WvSumQTF: True
+    #     RdtnMod: 1
+    #     PotMod: 1
+    #     ExctnMod: 1
+    #     DiffQTF: 0
+    # ServoDyn:
+    #     PitManRat(1): 2.
+    #     PitManRat(2): 2.
+    #     PitManRat(3): 2.
+    # SubDyn:
+    #     SDdeltaT: 0.005
+
+    # InflowWind:
+    #     RefHt: 150.0
+    
+ROSCO:
+    flag: True
+    tuning_yaml: RM1_MHK.rosco.yaml
+    # zeta_pc: 1.23
+    # omega_pc: 0.198
+    # U_pc: [12]
+
+# Level1:
+#     # potential_model_override: 1
+#     potential_bem_members:
+#         - downstream_col
+#         - upstream_col
+#         - starboard_col
+#         - port_col
+#         - upper_pontoon_DP
+#         - upper_pontoon_DS
+#         - upper_pontoon_UP
+#         - upper_pontoon_US
+#         - upper_pontoon_PS
+#         - lower_pontoon_DP
+#         - lower_pontoon_DS
+#         - lower_pontoon_UP
+#         - lower_pontoon_US
+#         - lower_pontoon_PS
+#         - tower_brace_port
+#         - tower_brace_starboard
+
+
+DLC_driver:
+    metocean_conditions:
+        current_speed: [0.5 , 0.75, 1.  , 1.25, 1.5 , 1.75, 2.  , 2.25, 2.5 , 2.75, 3.  , 3.25, 3.5 , 3.75, 4.  ]
+        current_std: [0.05      , 0.04821429, 0.04642857, 0.04464286, 0.04285714, 0.04107143, 0.03928571, 0.0375    , 0.03571429, 0.03392857, 0.03214286, 0.03035714, 0.02857143, 0.02678571, 0.025     ]
+        wave_height_NSS: [0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5,0.5]
+        wave_period_NSS: [2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0,2.0]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,2.0,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        current_fatigue: [0.5 , 0.75, 1.  , 1.25, 1.5 , 1.75, 2.  , 2.25, 2.5 , 2.75, 3.  , 3.25, 3.5 , 3.75, 4.  ]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+        user_probability:
+            speed: [0,1,2,3,4]
+            probability: [0.2,0.2,0.3,0.15,0.15]
+    DLCs:
+        - DLC: "1.1"        # Eagle, full
+        #   n_seeds: 1
+          transient_time: 60.
+        #   current_speed: [1.5]
+          analysis_time: 300.
+          ws_bin_size: 0.25
+          turbsim_inputs:
+            PLExp: 0
+            TurbModel: TIDAL
+        # - DLC: "1.1"        # Local, test
+        # #   n_seeds: 1
+        #   transient_time: 0.
+        #   current_speed: [0.75]
+        #   analysis_time: 1.
+        #   ws_bin_size: 0.25
+        #   turbulent_wind:
+        #     PLExp: 0
+        #     TurbModel: TIDAL
+        # - DLC: "12.1"
+        #   wind_file: /Users/asundarr/FloatingRM1_Controls/WEIS/step_2.wnd
+        #   analysis_time: 800
+        #   transient_time: 0
+        #   wave_period: [6.75]
+        #   wave_height: [2.0]
+
+
+        # - DLC: "1.2"
+        # #   current_speed: [2.2]
+        # #   wave_heading: [0, 30., 60.]
+        #   transient_time: 0.
+        #   analysis_time: 720.
+        #   ws_bin_size: 0.25
+        # - DLC: "1.3"
+        # #   current_speed: [2.2]
+        #   transient_time: 0.
+        #   analysis_time: 720.
+        #   ws_bin_size: 0.25
+        # - DLC: "6.1"
+        #   transient_time: 0.
+        #   analysis_time: 720.
+
+
+          
+
+

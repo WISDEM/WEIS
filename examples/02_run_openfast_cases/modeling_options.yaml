@@ -1,0 +1,62 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
+
+WISDEM:
+    RotorSE:
+        flag: False
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+    BOS:
+        flag: False
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    from_openfast: True
+    regulation_trajectory: IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    AeroDyn:
+        WakeMod: 2
+    
+ROSCO:
+    flag: True
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
+    Kp_float: -10
+
+
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          wind_speed: [16]
+          n_seeds: 1
+          analysis_time: 10.
+          transient_time: 0.1
+          turbulent_wind:
+              HubHt: 142
+              RefHt: 142
+              GridHeight: 275
+              GridWidth: 275
+        - DLC: "6.1"
+          analysis_time: 10.
+          transient_time: 0.1
+          turbulent_wind:
+              HubHt: 142
+              RefHt: 142
+              GridHeight: 275
+              GridWidth: 275
+              URef: 46.789
+              PLExp: 0.14
+              IECturbc: 0.12
+              
+
+              

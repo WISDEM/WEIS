@@ -7,14 +7,16 @@ import weis
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 import numpy as np
-import os, platform
+import os
+import platform
+import shutil
 
 if __name__ == '__main__':
 
     # Paths calling the standard modules of WEIS
     fastBatch = runFAST_pywrapper_batch()
     run_dir1                    = os.path.dirname( os.path.dirname( os.path.realpath(weis.__file__) ) )
-    fastBatch.FAST_exe          = os.path.join(run_dir1, 'local','bin','openfast')   # Path to executable
+    fastBatch.FAST_exe          = shutil.which( 'openfast' )   # Path to executable
     run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
     fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
     fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
@@ -22,7 +24,7 @@ if __name__ == '__main__':
     fastBatch.debug_level       = 2
 
     # User settings
-    n_cores     = 3     # Number of available cores
+    n_cores     = 1     # Number of available cores
     TMax        = 200.  # Length of wind grids and OpenFAST simulations, suggested 720 s
     cut_in      = 3.    # Cut in wind speed
     cut_out     = 25.   # Cut out wind speed

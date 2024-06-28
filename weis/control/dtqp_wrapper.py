@@ -1,7 +1,7 @@
 import os
 import numpy as np
-from dtqpy.src.DTQPy_oloc import DTQPy_oloc
-from dtqpy.src.DTQPy_static import DTQPy_static
+from weis.dtqpy.DTQPy_oloc import DTQPy_oloc
+from weis.dtqpy.DTQPy_static import DTQPy_static
 import multiprocessing as mp
 
 radps2rpm = 30 / np.pi
@@ -172,7 +172,7 @@ def run_dtqp(dtqp_input):
     # This depends on how openfast sets up the linearization output names and may break if that is changed
     OutList     = [out_name.split()[1][:-1] for out_name in dtqp_input['LinearTurbine'].DescOutput]
 
-    # Turn OutData into dict like in ROSCO_toolbox
+    # Turn OutData into dict like in rosco.toolbox
     OutData = {}
     for i, out_chan in enumerate(OutList):
         OutData[out_chan] = Y[:,i]

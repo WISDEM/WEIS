@@ -8,8 +8,6 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 10
-        n_tsr_perf_surfaces: 10
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -82,7 +80,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         ExctnMod: 1
         RdtnMod: 1
         RdtnDT: 0.0125
-        PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar
+        # PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar
         # PtfmMass_Init: 7.462e6
 
 ROSCO:

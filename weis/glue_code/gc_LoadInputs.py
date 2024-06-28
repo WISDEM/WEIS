@@ -1,24 +1,51 @@
 import os
 import os.path as osp
-import platform
-import multiprocessing as mp
+import shutil
+
+from rosco import discon_lib_path
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from wisdem.commonse.mpi_tools              import MPI
 
+def update_options(options,override):
+    for key, value in override.items():
+        if isinstance(value, dict) and key in options:
+            update_options(options[key], value)
+        elif key in options:
+            options[key] = value
+        else:
+            raise Exception(f'Error updating option overrides. {key} is not part of {options.keys()}')
+
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
     # and adding the WEIS options, namely the paths to the WEIS submodules
     # (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
 
-    def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
+    def __init__(
+            self, 
+            fname_input_wt, 
+            fname_input_modeling, 
+            fname_input_analysis,
+            modeling_override = None,
+            analysis_override = None,
+            ):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
+        self.analysis_options['fname_input_analysis'] = fname_input_analysis
+
+        if modeling_override:
+            update_options(self.modeling_options, modeling_override)
+            sch.re_validate_modeling(self.modeling_options)
+                
+        
+        if analysis_override:
+            update_options(self.analysis_options, analysis_override)
+            sch.re_validate_analysis(self.analysis_options)
 
         self.set_run_flags()
         self.set_openmdao_vectors()
@@ -28,20 +55,22 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
     def set_weis_data(self):
 
+        # Directory of modeling option input, if we want to use it for relative paths
+        mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
+
         # BEM dir, all levels
-        base_run_dir = self.modeling_options['General']['openfast_configuration']['OF_run_dir']
-        if base_run_dir == 'none':
-           base_run_dir = self.analysis_options['general']['folder_output']
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
-            bemDir = os.path.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
         else:
-            bemDir = os.path.join(base_run_dir,'BEM')
+            bemDir = osp.join(base_run_dir,'BEM')
 
         self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        if MPI:
+            # If running MPI, RAFT won't be able to save designs in parallel
+            self.modeling_options["Level1"]['save_designs'] = False
 
-        # Directory of modeling option input, if we want to use it for relative paths
-        mod_opt_dir = os.path.split(self.modeling_options['fname_input_modeling'])[0]
 
         # Openfast
         if self.modeling_options['Level2']['flag'] or self.modeling_options['DFSM']['flag'] or self.modeling_options['Level3']['flag']:
@@ -59,22 +88,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     'openfast_runs'
                     )
                 
-            # Find the path to the WEIS controller
-            weis_dir = osp.dirname( osp.dirname( osp.dirname( osp.realpath(__file__) ) ) )
-            if platform.system() == 'Windows':
-                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.dll')
-            elif platform.system() == 'Darwin':
-                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.dylib')
-            else:
-                path2dll = osp.join(weis_dir, 'local','lib','libdiscon.so')
-
             # User-defined control dylib (path2dll)
-            if self.modeling_options['General']['openfast_configuration']['path2dll'] == 'none':   #Default option, use above
-                self.modeling_options['General']['openfast_configuration']['path2dll'] = path2dll
+            path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
+            if path2dll == 'none':   #Default option, use above
+                self.modeling_options['General']['openfast_configuration']['path2dll'] = discon_lib_path
             else:
-                if not os.path.isabs(self.modeling_options['General']['openfast_configuration']['path2dll']):  # make relative path absolute
+                if not osp.isabs(path2dll):  # make relative path absolute
                     self.modeling_options['General']['openfast_configuration']['path2dll'] = \
-                        os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']), FASTpref['file_management']['FAST_lib'])
+                        osp.join(osp.dirname(self.options['modeling_options']['fname_input_modeling']), path2dll)
+            path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
+            if not osp.exists( path2dll ):
+                raise NameError("Cannot find DISCON library: "+path2dll)
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["offshore"] or self.modeling_options["Level3"]["from_openfast"]:
@@ -102,7 +126,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
                         self.modeling_options['Level1']['flag'] = True
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(cwd, bemDir,'Output','Wamit_format','Buoy')
+                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(bemDir,'Output','Wamit_format','Buoy')
                         
 
                     else:
@@ -115,17 +139,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(cwd, potpath) )
                         elif osp.exists( osp.join(weis_dir, potpath+'.1') ):
                             self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(weis_dir, potpath) )
+                        elif osp.exists( osp.join(mod_opt_dir, potpath+'.1') ):
+                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(mod_opt_dir, potpath) )
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
         # OpenFAST dir
         if self.modeling_options["Level3"]["from_openfast"]:
-            if not os.path.isabs(self.modeling_options['Level3']['openfast_dir']):
+            if not osp.isabs(self.modeling_options['Level3']['openfast_dir']):
                 # Make relative to modeling options input
-                self.modeling_options['Level3']['openfast_dir'] = os.path.realpath(os.path.join(
-                    mod_opt_dir,
-                    self.modeling_options['Level3']['openfast_dir']
-                    ))
+                self.modeling_options['Level3']['openfast_dir'] = osp.realpath(osp.join(
+                    mod_opt_dir, self.modeling_options['Level3']['openfast_dir'] ))
         
         # RAFT
         if self.modeling_options["flags"]["floating"]:
@@ -146,11 +170,9 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         
         if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
             # Make path absolute if not, relative to modeling options input
-            if not os.path.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
-                self.modeling_options['ROSCO']['tuning_yaml'] = os.path.realpath(os.path.join(
-                    mod_opt_dir,
-                    self.modeling_options['ROSCO']['tuning_yaml']
-                    ))
+            if not osp.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
+                self.modeling_options['ROSCO']['tuning_yaml'] = osp.realpath(osp.join(
+                    mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
         
         # XFoil
         if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
@@ -250,11 +272,11 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.wt_init['control']['torque']['zeta_vs']  = float(wt_opt['tune_rosco_ivc.zeta_vs'])
             self.wt_init['control']['pitch']['Kp_float']  = float(wt_opt['tune_rosco_ivc.Kp_float'])
             self.wt_init['control']['pitch']['ptfm_freq']  = float(wt_opt['tune_rosco_ivc.ptfm_freq'])
+            self.wt_init['control']['IPC']['IPC_Ki_1P'] = float(wt_opt['tune_rosco_ivc.IPC_Kp1p'])
+            self.wt_init['control']['IPC']['IPC_Kp_1P'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])
             if self.modeling_options['ROSCO']['Flp_Mode'] > 0:
-                self.wt_init['control']['dac']['Flp_omega']= float(wt_opt['tune_rosco_ivc.Flp_omega'])
-                self.wt_init['control']['dac']['Flp_zeta'] = float(wt_opt['tune_rosco_ivc.Flp_zeta'])
-            if 'IPC' in self.wt_init['control'].keys():
-                self.wt_init['control']['IPC']['IPC_gain_1P'] = float(wt_opt['tune_rosco_ivc.IPC_Ki1p'])
+                self.wt_init['control']['dac']['flp_kp_norm']= float(wt_opt['tune_rosco_ivc.flp_kp_norm'])
+                self.wt_init['control']['dac']['flp_tau'] = float(wt_opt['tune_rosco_ivc.flp_tau'])
 
 
     def write_options(self, fname_output):

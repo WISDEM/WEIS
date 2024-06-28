@@ -1,8 +1,5 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
-    openfast_configuration:
-      OF_run_fst: IEA34 # Name of the OpenFAST output files
-      OF_run_dir: temp/iea34 # Path to folder with the OpenFAST output files
 
 WISDEM:
     RotorSE:
@@ -11,8 +8,6 @@ WISDEM:
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
-        n_tsr_perf_surfaces: 5
-        n_pitch_perf_surfaces: 5
     TowerSE:
         flag: True
     DriveSE:
@@ -73,10 +68,10 @@ DLC_driver:
           transient_time: 5.
           #wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
           #Seeds: [568, 728]
-          turbulent_wind:
-              HubHt: 110
-              GridHeight: 160
-              GridWidth: 160
+          # turbulent_wind:
+          #     HubHt: 110
+          #     GridHeight: 160
+          #     GridWidth: 160
         - DLC: "1.2"
           ws_bin_size: 10
           analysis_time: 5.
@@ -140,12 +135,12 @@ DLC_driver:
           transient_time: 0.0
           wave_gamma: [1.2]
           analysis_time: 10.
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 220
-              GridWidth: 220
-              URef: 54.8339
-              PLExp: 0.12
+          # turbulent_wind:
+          #     HubHt: 140
+          #     GridHeight: 220
+          #     GridWidth: 220
+          #     URef: 54.8339
+          #     PLExp: 0.12
 
         # - DLC: Custom
         #   wind_speed: [10., 12, 14]
