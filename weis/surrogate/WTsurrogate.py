@@ -1,6 +1,7 @@
 import numpy as np
 import csv
 import os
+import time
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 from smt.surrogate_models import KRG
@@ -423,7 +424,7 @@ class WindTurbineDOE2SM():
                 data_arr_dv[:,idx] = (vals - bounds[0])/(bounds[1] - bounds[0])
                 data_dv_keys[idx] = data_keys[jdx]
                 data_dv_bounds[idx] = bounds
-            data_dv_bounds = data_dv_bounds.T
+            data_dv_bounds = np.array(data_dv_bounds).T
             # Output variables
             for idx in range(len(i_out)):
                 jdx = i_out[idx]
@@ -434,8 +435,7 @@ class WindTurbineDOE2SM():
                     bounds[0] = 0.0
                 data_lst_out[idx] = (vals - bounds[0])/(bounds[1] - bounds[0])
                 data_out_keys[idx] = data_keys[jdx]
-                data_out_bounds[idx] = bounds
-            data_out_bounds = data_out_bounds.T
+                data_out_bounds[idx] = np.array(bounds)
 
             # Construct data structure for parallel distribution
             dataset_list = []
@@ -449,7 +449,7 @@ class WindTurbineDOE2SM():
                     'outputs': {
                         'keys': data_out_keys,
                         'vals': data_lst_out[idx],
-                        'bounds': data_out_bounds,
+                        'bounds': data_out_bounds[idx],
                     },
                     'surrogate': None
                 }
@@ -472,13 +472,15 @@ class WindTurbineDOE2SM():
 
         # Train SM
         for data_entry in dataset_list:
-            sm = KRG(eval_noise=True)
-            sm.set_training_values(data_entry['inputs']['vals'], data_entry['outputs']['vals'])
-            sm.train()
-            data_entry['surrogate'] = sm
-
-
-
+            t = time.time()
+            data_entry['surrogate'] = KRG_WT(eval_noise=True, print_global=False)
+            data_entry['surrogate'].set_training_values(
+                    data_entry['inputs']['vals'], data_entry['outputs']['vals'])
+            data_entry['surrogate'].train()
+            data_entry['surrogate'].set_bounds(
+                    data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
+            t = time.time() - t
+            print('rank {:}, Surrogate model training done. Time (sec): {:}'.format(rank, t))
 
 
 
@@ -492,5 +494,42 @@ class WindTurbineDOE2SM():
         for x_i in range(n_chunks):
             length = ceiling if x_i < stepdown else floor
             yield [next(fulllist) for _ in range(length)]
+
+
+class KRG_WT(KRG):
+
+    def _initialize(self):
+        super()._initialize()
+        self._bounds_set = False
+
+    def set_bounds(self, bounds_in, bounds_out):
+        self.bounds_in = bounds_in
+        self.bounds_out = bounds_out
+        self._bounds_set = True
+
+    def predict(self, x):
+        x_in = np.array(x)
+
+        if not self._bounds_set:
+            raise Exception('Normalizing bounds are needed before accessing surrogate model.')
+
+        if not len(x_in.shape) == 2:
+            raise Exception('Input array x needs to have shape = (:,n_dv).')
+
+        lb_in = np.tile(self.bounds_in[0,:], (x_in.shape[0], 1))
+        ub_in = np.tile(self.bounds_in[1,:], (x_in.shape[0], 1))
+
+        lb_out = np.tile(self.bounds_out[0], (x_in.shape[0], 1))
+        ub_out = np.tile(self.bounds_out[1], (x_in.shape[0], 1))
+
+        x_in_normalized = (x_in - lb_in)/(ub_in - lb_in)
+        y_out_normalized = self.predict_values(x_in_normalized)
+        sqrt_v_out_normalized = np.sqrt(self.predict_variances(x_in_normalized))
+
+        y_out = lb_out + (ub_out - lb_out)*y_out_normalized
+        sqrt_v_out = (ub_out - lb_out)*sqrt_v_out_normalized
+        v_out = sqrt_v_out**2
+
+        return y_out, v_out # values and variances
 
 
