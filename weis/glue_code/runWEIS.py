@@ -256,7 +256,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
             if MPI:
                 sql_file += '_{:}'.format(rank)
             WTSM = WindTurbineDOE2SM()
-            WTSM.read_doe(sql_file, modeling_options, opt_options)
+            WTSM.read_doe(sql_file, modeling_options, opt_options) # Parallel reading if MPI
+            WTSM.train_sm() # Parallel training if MPI
+            WTSM.write_sm(sm_filename) # Saving will be done in rank=0
 
     if rank == 0:
         return wt_opt, modeling_options, opt_options
