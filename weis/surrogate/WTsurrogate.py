@@ -8,7 +8,8 @@ from smt.surrogate_models import KRG
 class WindTurbineDOE2SM():
 
     def __init__(self):
-        pass
+        self._doe_loaded = False
+        self._sm_trained = False
 
     def read_doe(self, sql_file, modeling_options, opt_options):
 
@@ -218,6 +219,7 @@ class WindTurbineDOE2SM():
         self.data_vals = data_vals
         self.data_dv = data_dv
         self.data_keys = data_keys
+        self._doe_loaded = True
 
         if rank==0:
             with open(os.path.join(opt_options['general']['folder_output'],
@@ -227,6 +229,7 @@ class WindTurbineDOE2SM():
                 dwriter.writerow(data_dv)
                 for idx in range(data_vals.shape[0]):
                     dwriter.writerow(data_vals[idx,:])
+
 
 
     def _identify_dv(self, keys, opt_options, inputs, outputs):
@@ -359,7 +362,26 @@ class WindTurbineDOE2SM():
         return dvflag
 
 
-    def train_SM(self):
+    def write_sm(self, sm_filename):
+
+        if MPI:
+            rank = MPI.COMM_WORLD.Get_rank()
+            n_cores = MPI.COMM_WORLD.Get_size()
+        else:
+            rank = 0
+            n_cores = 1
+
+        # File writing only on rank=0
+        if rank == 0:
+            if not self._doe_loaded:
+                raise Exception('DOE data needs to be loaded first.')
+            if not self._sm_trained:
+                raise Exception('SM needs to be trained before saving to file.')
+
+
+
+
+    def train_sm(self):
 
         if MPI:
             rank = MPI.COMM_WORLD.Get_rank()
@@ -374,29 +396,88 @@ class WindTurbineDOE2SM():
             data_dv = self.data_dv
             data_keys = self.data_keys
 
+            # Number of design variables (n_dv), output variables (n_out), and overall (n_var)
+            n_dv = data_dv.count(True)
+            n_out = len(data_dv) - n_dv
+            n_var = n_dv + n_out
+            n_data = data_vals.shape[0]
+            # Lists of indexes for design variables (i_dv) and output variables (i_out)
+            i_dv = [i for i, e in enumerate(data_dv) if e == True]
+            i_out = [i for i, e in enumerate(data_dv) if not e == True]
+
+            # Data arrays and their list
+            data_arr_dv = np.zeros(shape=(n_data, n_dv), dtype=float)
+            data_lst_out = list(n_out*[None])
+            data_dv_keys = list(n_dv*[None])
+            data_out_keys = list(n_out*[None])
+            data_dv_bounds = list(n_dv*[None])
+            data_out_bounds = list(n_out*[None])
+            # DVs
+            for idx in range(len(i_dv)):
+                jdx = i_dv[idx]
+                vals = data_vals[:,jdx]
+                bounds = [min(vals), max(vals)]
+                if ((bounds[1] - bounds[0]) < 10.0*np.finfo(np.float64).eps):
+                    bounds[1] = 1.0
+                    bounds[0] = 0.0
+                data_arr_dv[:,idx] = (vals - bounds[0])/(bounds[1] - bounds[0])
+                data_dv_keys[idx] = data_keys[jdx]
+                data_dv_bounds[idx] = bounds
+            data_dv_bounds = data_dv_bounds.T
+            # Output variables
+            for idx in range(len(i_out)):
+                jdx = i_out[idx]
+                vals = np.array(data_vals[:,jdx]).reshape(n_data, 1)
+                bounds = [min(vals)[0], max(vals)[0]]
+                if ((bounds[1] - bounds[0]) < 10.0*np.finfo(np.float64).eps):
+                    bounds[1] = 1.0
+                    bounds[0] = 0.0
+                data_lst_out[idx] = (vals - bounds[0])/(bounds[1] - bounds[0])
+                data_out_keys[idx] = data_keys[jdx]
+                data_out_bounds[idx] = bounds
+            data_out_bounds = data_out_bounds.T
+
+            # Construct data structure for parallel distribution
             dataset_list = []
-            for idx in range(len(data_keys)):
+            for idx in range(len(data_out_keys)):
                 data_entry = {
-                    'key': data_keys[idx],
-                    'dv': data_dv[idx],
-                    'val': data_vals[:, idx],
+                    'inputs': {
+                        'keys': data_dv_keys,
+                        'vals': data_arr_dv,
+                        'bounds': data_dv_bounds,
+                    },
+                    'outputs': {
+                        'keys': data_out_keys,
+                        'vals': data_lst_out[idx],
+                        'bounds': data_out_bounds,
+                    },
+                    'surrogate': None
                 }
                 dataset_list.append(data_entry)
-
-            dataset_lists = list(self._split_list_chunks(dataset_list, n_cores))
-            if len(dataset_lists) < n_cores:
-                for _ in range(0, n_cores - len(dataset_lists)):
-                    dataset_lists.append([])
+            # Distribute
+            if MPI:
+                dataset_lists = list(self._split_list_chunks(dataset_list, n_cores))
+                if len(dataset_lists) < n_cores:
+                    for _ in range(0, n_cores - len(dataset_lists)):
+                        dataset_lists.append([])
+            else:
+                dataset_lists = [dataset_list]
         else:
             dataset_list = []
             dataset_lists = []
-
         # Scatter data to train
         if MPI:
             MPI.COMM_WORLD.barrier()
             dataset_list = MPI.COMM_WORLD.scatter(dataset_lists, root=0)
 
-        
+        # Train SM
+        for data_entry in dataset_list:
+            sm = KRG(eval_noise=True)
+            sm.set_training_values(data_entry['inputs']['vals'], data_entry['outputs']['vals'])
+            sm.train()
+            data_entry['surrogate'] = sm
+
+
 
 
 
