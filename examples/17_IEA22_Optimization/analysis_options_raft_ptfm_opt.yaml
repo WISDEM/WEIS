@@ -24,7 +24,7 @@ design_variables:
                 #   upper_bound: 20.0
             r_coordinate:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
-                  lower_bound: 35.0
+                  lower_bound: 50.0
                   upper_bound: 70.0
         members:
             flag: True
