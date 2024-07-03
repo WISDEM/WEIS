@@ -121,9 +121,10 @@ driver:
     optimization:
         flag: True         # Flag to enable optimization
         tol: 1.e-6         # Optimality tolerance
-        # max_iter: 1000         # Maximum number of iterations (SLSQP)
-        maxiter: 1000         # Maximum number of iterations (NLopt)
-        maxtime: 3420
+        max_iter: 100      # Maximum number of iterations (SLSQP)
+        maxiter: 100       # Maximum number of iterations (NLopt)
+        maxgen: 100        # Maximum number of generations (DE)
+        # maxtime: 3420
         solver: LN_COBYLA   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:
