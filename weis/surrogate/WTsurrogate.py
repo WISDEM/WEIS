@@ -2,6 +2,7 @@ import numpy as np
 import csv
 import os
 import time
+import re
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 from smt.surrogate_models import KRG
@@ -447,14 +448,15 @@ class WindTurbineDOE2SM():
                         'bounds': data_dv_bounds,
                     },
                     'outputs': {
-                        'keys': data_out_keys,
+                        'keys': data_out_keys[idx],
                         'vals': data_lst_out[idx],
                         'bounds': data_out_bounds[idx],
                     },
                     'surrogate': None
                 }
                 dataset_list.append(data_entry)
-            # Distribute
+            
+            # Distribute for parallel training
             if MPI:
                 dataset_lists = list(self._split_list_chunks(dataset_list, n_cores))
                 if len(dataset_lists) < n_cores:
@@ -479,8 +481,26 @@ class WindTurbineDOE2SM():
             data_entry['surrogate'].train()
             data_entry['surrogate'].set_bounds(
                     data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
+            data_entry['surrogate'].keys_in = data_entry['inputs']['keys']
+            for idx in range(len(data_entry['surrogate'].keys_in)):
+                s = data_entry['surrogate'].keys_in[idx]
+                i = re.search('[^+]*', s).span()
+                data_entry['surrogate'].keys_in[idx] = s[i[0]:i[1]]
+            data_entry['surrogate'].keys_out = data_entry['outputs']['keys']
             t = time.time() - t
             print('rank {:}, Surrogate model training done. Time (sec): {:}'.format(rank, t))
+
+
+        # Gather trained data
+        if MPI:
+            MPI.COMM_WORLD.barrier()
+            dataset_lists = MPI.COMM_WORLD.gather(dataset_list, root=0)
+            if rank == 0:
+                dataset_list = [item for items in dataset_lists for item in items]
+            else:
+                dataset_list = []
+
+        self.dataset_list = dataset_list
 
 
 
@@ -501,6 +521,8 @@ class KRG_WT(KRG):
     def _initialize(self):
         super()._initialize()
         self._bounds_set = False
+        self.keys_in = None
+        self.keys_out = None
 
     def set_bounds(self, bounds_in, bounds_out):
         self.bounds_in = bounds_in
