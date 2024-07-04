@@ -12,7 +12,10 @@ dependencies:
   - openraft
   - osqp  
   - pcrunch
+  - pip
+  - pyhams>=1.3
   - rosco
+  - scipy<1.14
   - smt
   - wisdem
   - pip:
