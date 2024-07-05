@@ -821,7 +821,7 @@ class WindPark(om.Group):
 
                 # Connections to TowerSE
                 if modeling_options["flags"]["tower"]:
-                    tow_params = ["z_full","d_full","t_full",
+                    tow_params = ["z_full","outer_diameter_full","t_full",
                                   "E_full","G_full","rho_full","sigma_y_full"]
                     for k in tow_params:
                         self.connect(f'towerse.{k}', f'towerse_post.{k}')
@@ -836,7 +836,7 @@ class WindPark(om.Group):
                     self.connect("aeroelastic.tower_maxMy_Mz", "towerse_post.cylinder_Mzz")
 
                 if modeling_options["flags"]["monopile"]:
-                    mono_params = ["z_full","d_full","t_full",
+                    mono_params = ["z_full","outer_diameter_full","t_full",
                                   "E_full","G_full","rho_full","sigma_y_full"]
                     for k in mono_params:
                         self.connect(f'fixedse.{k}', f'fixedse_post.{k}')
@@ -863,7 +863,7 @@ class WindPark(om.Group):
                 self.connect('nacelle.uptilt',                  'tcons_post.tilt')
                 self.connect('nacelle.overhang',                'tcons_post.overhang')
                 self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
-                self.connect('tower.diameter',                  'tcons_post.d_full')
+                self.connect('tower.diameter',                  'tcons_post.outer_diameter_full')
                 
             else:  # connections from outside WISDEM
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
