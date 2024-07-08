@@ -613,7 +613,7 @@ class DLCGenerator(object):
         Will use met_options as an input and modify that dict
         sea_state can be normal, severe
         '''
-        allowed_sea_states = ['normal','severe']
+        allowed_sea_states = ['normal','severe','50-year']
         if sea_state not in allowed_sea_states:
             raise Exception(f'Selected sea state of {sea_state} is not in allowed_sea_states: {allowed_sea_states}')
         
@@ -626,8 +626,13 @@ class DLCGenerator(object):
             wind_speed_table = self.mo_ws
             wave_height_table = self.mo_Hs_SSS
             wave_period_table = self.mo_Tp_SSS
+        elif sea_state == '50-year':
+            wind_speed_table = [50.]
+            wave_height_table = self.wave_Hs50
+            wave_period_table = self.wave_Tp50
 
-        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
+
+        # If the user has not defined Hs (wave_height in modopts) and Tp (wave_period in modopts), apply the metocean conditions defined by the table
         if len(met_options['wave_Hs'])==0:
             met_options['wave_Hs'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_height_table)
         if len(met_options['wave_Tp'])==0:
@@ -804,7 +809,7 @@ class DLCGenerator(object):
 
         # DLC Specific options:
         dlc_options['label'] = '6.1'
-        dlc_options['sea_state'] = 'severe'
+        dlc_options['sea_state'] = '50-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
 
         # yaw_misalign
