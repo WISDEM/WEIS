@@ -227,16 +227,12 @@ class DLCGenerator(object):
         return wind_speeds
 
     def get_wind_seeds(self, options, wind_speeds):
-        if 'yaw_misalign' in options:
-            n_yaw_ms = len(options['yaw_misalign'])
-        else:
-            n_yaw_ms = 1
         
         if len(options['wind_seed']) > 0:
             wind_seeds = np.array( [int(m) for m in options['wind_seed']] )
         else:
-            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds) * n_yaw_ms, dtype=int)
-            wind_speeds = np.repeat(wind_speeds, options['n_seeds'] * n_yaw_ms)
+            wind_seeds = self.rng_wind.integers(2147483648, size=options['n_seeds']*len(wind_speeds), dtype=int)
+            wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
 
         return wind_speeds, wind_seeds
 
