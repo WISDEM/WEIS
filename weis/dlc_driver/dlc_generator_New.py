@@ -463,7 +463,7 @@ class DLCGenerator(object):
         # Handle DLC Specific options:
         dlc_options['label'] = '1.4'
         dlc_options['sea_state'] = 'normal'
-        dlc_options['IEC_WindType'] = '1ETM'
+        dlc_options['IEC_WindType'] = 'ECD'
         dlc_options['direction'] = ['n', 'p']
 
         # Set yaw_misalign, else default
@@ -598,11 +598,14 @@ class DLCGenerator(object):
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
         for _, case in enumerate(generic_case_list):
             idlc = DLCInstance(options=dlc_options)
-
-            idlc.turbulent_wind = True
+            if dlc_options['IEC_WindType'] == 'ECD':
+                idlc.turbulent_wind = False
+                idlc.direction_pn = case['direction']
+            else:
+                idlc.turbulent_wind = True
+                idlc.RandSeed1 = case['rand_seeds']
             idlc.URef = case['wind_speeds']
             idlc.label = dlc_options['label']
-            idlc.RandSeed1 = case['rand_seeds']  
             idlc.total_time = case['total_time']
             idlc.IEC_WindType = dlc_options['IEC_WindType']
             self.cases.append(idlc)
