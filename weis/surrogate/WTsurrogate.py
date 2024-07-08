@@ -3,6 +3,7 @@ import csv
 import os
 import time
 import re
+import pickle as pkl
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
 from smt.surrogate_models import KRG
@@ -380,7 +381,12 @@ class WindTurbineDOE2SM():
             if not self._sm_trained:
                 raise Exception('SM needs to be trained before saving to file.')
 
-
+            try:
+                with open(sm_filename, 'wb') as fid:
+                    pkl.dump(self.dataset_list, fid, protocol=5)
+            except:
+                print('Unable to write surrogate model file: {:}.'.format(sm_filename))
+                raise Exception('Unable to write surrogate model file: {:}.'.format(sm_filename))
 
 
     def train_sm(self):
@@ -475,18 +481,22 @@ class WindTurbineDOE2SM():
         # Train SM
         for data_entry in dataset_list:
             t = time.time()
-            data_entry['surrogate'] = KRG_WT(eval_noise=True, print_global=False)
-            data_entry['surrogate'].set_training_values(
-                    data_entry['inputs']['vals'], data_entry['outputs']['vals'])
-            data_entry['surrogate'].train()
-            data_entry['surrogate'].set_bounds(
-                    data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
-            data_entry['surrogate'].keys_in = data_entry['inputs']['keys']
-            for idx in range(len(data_entry['surrogate'].keys_in)):
-                s = data_entry['surrogate'].keys_in[idx]
-                i = re.search('[^+]*', s).span()
-                data_entry['surrogate'].keys_in[idx] = s[i[0]:i[1]]
-            data_entry['surrogate'].keys_out = data_entry['outputs']['keys']
+            try:
+                data_entry['surrogate'] = KRG_WT(eval_noise=True, print_global=False)
+                data_entry['surrogate'].set_training_values(
+                        data_entry['inputs']['vals'], data_entry['outputs']['vals'])
+                data_entry['surrogate'].train()
+                data_entry['surrogate'].set_bounds(
+                        data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
+                data_entry['surrogate'].keys_in = data_entry['inputs']['keys']
+                for idx in range(len(data_entry['surrogate'].keys_in)):
+                    s = data_entry['surrogate'].keys_in[idx]
+                    i = re.search('[^+]*', s).span()
+                    data_entry['surrogate'].keys_in[idx] = s[i[0]:i[1]]
+                data_entry['surrogate'].keys_out = data_entry['outputs']['keys']
+            except:
+                print('rank {:}, Surrogate model training failed.'.format(rank))
+                raise Exception('rank {:}, Surrogate model training failed.'.format(rank))
             t = time.time() - t
             print('rank {:}, Surrogate model training done. Time (sec): {:}'.format(rank, t))
 
@@ -501,6 +511,7 @@ class WindTurbineDOE2SM():
                 dataset_list = []
 
         self.dataset_list = dataset_list
+        self._sm_trained = True
 
 
 

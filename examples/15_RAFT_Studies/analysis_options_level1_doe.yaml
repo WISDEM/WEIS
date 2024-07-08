@@ -146,7 +146,7 @@ driver:
     run_parallel: True    # Flag to run using parallel processing
     seed: 2
     generator: LatinHypercube #Uniform #LatinHypercube #FullFact    # Type of input generator. (Uniform)
-    num_samples: 1536      # number of samples for (Uniform only)
+    num_samples: 768      # number of samples for (Uniform only)
     levels: 1
     skip_if_results_exist: True
   surrogate_based_optimization:
