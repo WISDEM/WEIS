@@ -546,10 +546,14 @@ class DLCGenerator(object):
 
     def generate_1p6(self, dlc_options):
         # Power production normal turbulence model - severe sea state
+
+        # Get default options
+        dlc_options.update(self.default_options)   
         
-        # Handle DLC Specific options:
-        label = '1.6'
-        sea_state = 'severe'
+        # DLC Specific options:
+        dlc_options['label'] = '1.6'
+        dlc_options['sea_state'] = 'severe'
+        dlc_options['IEC_WindType'] = 'NTM'
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -656,7 +660,7 @@ class DLCGenerator(object):
         all_inputs = sum(generic_case_inputs, [])
         for input in all_inputs:
             if not input in comb_options:
-                raise Exception(f'The desired input {input} is not a valid option.  option includes {comb_options.keys()}')
+                raise Exception(f'The desired input {input} is not defined. Options include {comb_options.keys()}')
 
         # Setup generic cross product of inputs: 
         gen_case_inputs = {}
@@ -757,16 +761,21 @@ class DLCGenerator(object):
 
     
     def generate_5p1(self, dlc_options):
-        # Power production normal turbulence model - shutdown with varous azimuth initial conditions      
+        # Power production normal turbulence model - shutdown with varous azimuth initial conditions
+        # 
+        
+        # Get default options
+        dlc_options.update(self.default_options)      
         
         # DLC Specific options:
         dlc_options['label'] = '5.1'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['final_blade_pitch'] = 90.
+
         
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
-        dlc_options['wake_mod'] = 0
 
         # Specify shutdown time for this case
         if dlc_options['shutdown_time'] > dlc_options['analysis_time']:
@@ -777,7 +786,7 @@ class DLCGenerator(object):
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','shutdown_time','wake_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['total_time','transient_time','shutdown_time','wake_mod','wave_model','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
         # TODO: I think we need to shut off the generator here, too
@@ -790,6 +799,7 @@ class DLCGenerator(object):
         # extra dlc_options: 
         # yaw_misalign: default = [-8,8]
 
+        # Get default options
         dlc_options.update(self.default_options)
 
         # DLC Specific options:
@@ -801,7 +811,7 @@ class DLCGenerator(object):
         if 'yaw_misalign' not in dlc_options:
             dlc_options['yaw_misalign'] = [-8,8]
 
-        dlc_options['wind_speed'] = [50]   # placeholder 
+        dlc_options['wind_speed'] = [50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
