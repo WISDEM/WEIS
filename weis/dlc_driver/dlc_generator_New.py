@@ -357,8 +357,166 @@ class DLCGenerator(object):
 
         self.n_cases = len(self.cases)
 
-    def generate_custom(self, options):
-        pass
+    def generate_cases(self,generic_case_inputs,dlc_options):
+        '''
+        This method will generate the simulation inputs for each design load case
+
+        generic_case_inputs is a list of lists of strings with the options used to create a case matrix
+        dlc_options is a dictionary, some of its keys will be in generic_case_inputs and used to generate the cases
+            Other keys include:
+            sea_state is a string: either severe or normal
+            label is the string label used in when the wind inputs are created
+        '''
+
+        # Handle default options
+        if 'sea_state' not in dlc_options:
+            dlc_options['sea_state'] = 'normal'
+
+        if 'PSF' not in dlc_options:
+            dlc_options['PSF'] = 1.35
+
+       
+        # Generate case list, both generic and OpenFAST specific
+        self.set_time_options(dlc_options)
+        met_options = self.gen_met_options(dlc_options, sea_state=dlc_options['sea_state'])
+        generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
+        generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
+
+        # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
+        for _, case in enumerate(generic_case_list):
+            idlc = DLCInstance(options=dlc_options)
+            if dlc_options['IEC_WindType'] == 'ECD':
+                idlc.turbulent_wind = False
+                idlc.direction_pn = case['direction']
+            else:
+                idlc.turbulent_wind = True
+                idlc.RandSeed1 = case['rand_seeds']
+            idlc.URef = case['wind_speeds']
+            idlc.label = dlc_options['label']
+            idlc.total_time = case['total_time']
+            idlc.IEC_WindType = dlc_options['IEC_WindType']
+            self.cases.append(idlc)
+
+    def apply_sea_state(self,met_options,sea_state='normal'):
+        '''
+        Apply waves based on the expected values provided in the metocean inputs
+        Will use met_options as an input and modify that dict
+        sea_state can be normal, severe
+        '''
+        allowed_sea_states = ['normal','severe','50-year']
+        if sea_state not in allowed_sea_states:
+            raise Exception(f'Selected sea state of {sea_state} is not in allowed_sea_states: {allowed_sea_states}')
+        
+        # Select wind speed, sea state lookup
+        if sea_state == 'normal':
+            wind_speed_table = self.mo_ws
+            wave_height_table = self.mo_Hs_NSS
+            wave_period_table = self.mo_Tp_NSS
+        elif sea_state == 'severe':
+            wind_speed_table = self.mo_ws
+            wave_height_table = self.mo_Hs_SSS
+            wave_period_table = self.mo_Tp_SSS
+        elif sea_state == '50-year':
+            wind_speed_table = [50.]
+            wave_height_table = self.wave_Hs50
+            wave_period_table = self.wave_Tp50
+
+
+        # If the user has not defined Hs (wave_height in modopts) and Tp (wave_period in modopts), apply the metocean conditions defined by the table
+        if len(met_options['wave_Hs'])==0:
+            met_options['wave_Hs'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_height_table)
+        if len(met_options['wave_Tp'])==0:
+            met_options['wave_Tp'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_period_table)
+
+    def set_time_options(self, options):
+        '''
+        Handle time options and add total_time to dict
+        Default for analysis and transient_time is 0
+        '''
+        if options['analysis_time'] > 0:
+            options['analysis_time'] = options['analysis_time']
+        else:
+            options['analysis_time'] = 600.
+        if options['transient_time'] >= 0:
+            options['transient_time'] = options['transient_time']
+        options['total_time'] = options['analysis_time'] + options['transient_time']
+
+    def gen_case_list(self,dlc_options, met_options, generic_case_inputs):
+        '''
+        Generate case list from generic_case_inputs
+        TODO: this whole thing could be moved into generate_cases, thoughts?
+        '''
+
+        
+        # Combine
+        comb_options = combine_options(dlc_options,met_options)
+
+        # Check that all inputs are valid options
+        all_inputs = sum(generic_case_inputs, [])
+        for input in all_inputs:
+            if not input in comb_options:
+                raise Exception(f'The desired input {input} is not defined. Options include {comb_options.keys()}')
+
+        # Setup generic cross product of inputs: 
+        gen_case_inputs = {}
+        for i_group, group in enumerate(generic_case_inputs):
+            first_array_len = len(comb_options[group[0]])
+            for input in group:
+                
+                # Check that all inputs are of equal length
+                if len(comb_options[input]) != first_array_len:
+                    raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
+
+                gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
+            
+        # Generate generic case list
+        generic_case_list, _ = CaseGen_General(gen_case_inputs,save_matrix=False)
+
+        case_inputs_openfast = map_generic_to_openfast(generic_case_inputs, comb_options)
+        self.openfast_case_inputs.append(case_inputs_openfast)
+        return generic_case_list
+
+    def gen_met_options(self, dlc_options, sea_state='normal'):
+        '''
+        Determine metocean options based on dlcs and sea state requested
+        met_options includes wind, waves, seeds, etc.
+
+        TODO: what input conditions are required of self?
+        TODO: what is required in dlc_options?
+        '''
+        met_options = self.get_metocean(dlc_options)
+        
+        # Apply normal wave conditions based on wind speeds
+        self.apply_sea_state(met_options,sea_state=sea_state)
+        make_equal_length(met_options,'wind_speeds')
+        return met_options
+
+    def apply_initial_conditions(self,generic_case_inputs, dlc_options, met_options):
+        '''
+        Add available initial conditions to generic_case_inputs and interpolate options based on initial_condition_table
+        This is performed within each dlc generator function
+
+        '''
+        
+        # These allowed_ics should map to input in openfast_input_map
+        allowed_ics = ['pitch_initial','rot_speed_initial','tau1_const']
+
+        
+        if self.initial_condition_table and dlc_options['turbine_status'] == 'operating': # there is an IC table that's not empty
+            dlc_wind_speeds = met_options['wind_speeds']  # need to use met_options wind speeds because it accounts for seeds
+            # find group with wind_speed
+            wind_group = ['wind_speeds' in gci for gci in generic_case_inputs].index(True)
+            group = generic_case_inputs[wind_group]
+
+            for initial_condition in allowed_ics:
+                if initial_condition in self.initial_condition_table:
+                    group.append(initial_condition)
+                    dlc_options[initial_condition] = np.interp(dlc_wind_speeds,self.initial_condition_table['U'],self.initial_condition_table[initial_condition])
+                
+            # Apply new group
+            generic_case_inputs[wind_group] = group
+            
+        return generic_case_inputs
 
     def generate_1p1(self, dlc_options):
         # Power production normal turbulence model - normal sea state
@@ -569,203 +727,6 @@ class DLCGenerator(object):
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
-      
-    def generate_cases(self,generic_case_inputs,dlc_options):
-        '''
-        This method will generate the simulation inputs for each design load case
-
-        generic_case_inputs is a list of lists of strings with the options used to create a case matrix
-        dlc_options is a dictionary, some of its keys will be in generic_case_inputs and used to generate the cases
-            Other keys include:
-            sea_state is a string: either severe or normal
-            label is the string label used in when the wind inputs are created
-        '''
-
-        # Handle default options
-        if 'sea_state' not in dlc_options:
-            dlc_options['sea_state'] = 'normal'
-
-        if 'PSF' not in dlc_options:
-            dlc_options['PSF'] = 1.35
-
-       
-        # Generate case list, both generic and OpenFAST specific
-        self.set_time_options(dlc_options)
-        met_options = self.gen_met_options(dlc_options, sea_state=dlc_options['sea_state'])
-        generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
-        generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
-
-        # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
-        for _, case in enumerate(generic_case_list):
-            idlc = DLCInstance(options=dlc_options)
-            if dlc_options['IEC_WindType'] == 'ECD':
-                idlc.turbulent_wind = False
-                idlc.direction_pn = case['direction']
-            else:
-                idlc.turbulent_wind = True
-                idlc.RandSeed1 = case['rand_seeds']
-            idlc.URef = case['wind_speeds']
-            idlc.label = dlc_options['label']
-            idlc.total_time = case['total_time']
-            idlc.IEC_WindType = dlc_options['IEC_WindType']
-            self.cases.append(idlc)
-
-    def apply_sea_state(self,met_options,sea_state='normal'):
-        '''
-        Apply waves based on the expected values provided in the metocean inputs
-        Will use met_options as an input and modify that dict
-        sea_state can be normal, severe
-        '''
-        allowed_sea_states = ['normal','severe','50-year']
-        if sea_state not in allowed_sea_states:
-            raise Exception(f'Selected sea state of {sea_state} is not in allowed_sea_states: {allowed_sea_states}')
-        
-        # Select wind speed, sea state lookup
-        if sea_state == 'normal':
-            wind_speed_table = self.mo_ws
-            wave_height_table = self.mo_Hs_NSS
-            wave_period_table = self.mo_Tp_NSS
-        elif sea_state == 'severe':
-            wind_speed_table = self.mo_ws
-            wave_height_table = self.mo_Hs_SSS
-            wave_period_table = self.mo_Tp_SSS
-        elif sea_state == '50-year':
-            wind_speed_table = [50.]
-            wave_height_table = self.wave_Hs50
-            wave_period_table = self.wave_Tp50
-
-
-        # If the user has not defined Hs (wave_height in modopts) and Tp (wave_period in modopts), apply the metocean conditions defined by the table
-        if len(met_options['wave_Hs'])==0:
-            met_options['wave_Hs'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_height_table)
-        if len(met_options['wave_Tp'])==0:
-            met_options['wave_Tp'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_period_table)
-
-    def set_time_options(self, options):
-        '''
-        Handle time options and add total_time to dict
-        Default for analysis and transient_time is 0
-        '''
-        if options['analysis_time'] > 0:
-            options['analysis_time'] = options['analysis_time']
-        else:
-            options['analysis_time'] = 600.
-        if options['transient_time'] >= 0:
-            options['transient_time'] = options['transient_time']
-        options['total_time'] = options['analysis_time'] + options['transient_time']
-
-    def gen_case_list(self,dlc_options, met_options, generic_case_inputs):
-        '''
-        Generate case list from generic_case_inputs
-        TODO: this whole thing could be moved into generate_cases, thoughts?
-        '''
-
-        
-        # Combine
-        comb_options = combine_options(dlc_options,met_options)
-
-        # Check that all inputs are valid options
-        all_inputs = sum(generic_case_inputs, [])
-        for input in all_inputs:
-            if not input in comb_options:
-                raise Exception(f'The desired input {input} is not defined. Options include {comb_options.keys()}')
-
-        # Setup generic cross product of inputs: 
-        gen_case_inputs = {}
-        for i_group, group in enumerate(generic_case_inputs):
-            first_array_len = len(comb_options[group[0]])
-            for input in group:
-                
-                # Check that all inputs are of equal length
-                if len(comb_options[input]) != first_array_len:
-                    raise Exception(f'The input options in group {i_group} are not equal.  This group contains: {group}')
-
-                gen_case_inputs[input] = {'vals': comb_options[input], 'group': i_group}
-            
-        # Generate generic case list
-        generic_case_list, _ = CaseGen_General(gen_case_inputs,save_matrix=False)
-
-        case_inputs_openfast = map_generic_to_openfast(generic_case_inputs, comb_options)
-        self.openfast_case_inputs.append(case_inputs_openfast)
-        return generic_case_list
-
-    def gen_met_options(self, dlc_options, sea_state='normal'):
-        '''
-        Determine metocean options based on dlcs and sea state requested
-        met_options includes wind, waves, seeds, etc.
-
-        TODO: what input conditions are required of self?
-        TODO: what is required in dlc_options?
-        '''
-        met_options = self.get_metocean(dlc_options)
-        
-        # Apply normal wave conditions based on wind speeds
-        self.apply_sea_state(met_options,sea_state=sea_state)
-        make_equal_length(met_options,'wind_speeds')
-        return met_options
-
-    def generate_new_dlc(self,dlc_options):
-        
-        # All DLCs: get dlc-specific met_options
-        met_options = self.gen_met_options(dlc_options)
-        
-        # DLC Specific options: example below
-        # azimuth starting positions
-        # dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
-
-        # # Specify shutdown time for this case
-        # if dlc_options['shutdown_time'] > dlc_options['analysis_time']:
-        #     raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({dlc_options['shutdown_time']}) option is greater than the analysis_time ({dlc_options['analysis_time']})")
-        # else:
-        #     dlc_options['shutdown_time'] = dlc_options['shutdown_time']
-
-        # DLC-specific: define groups
-        # These options should be the same length and we will generate a matrix of all cases
-        generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','shutdown_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        generic_case_inputs.append(['azimuth_init']) # group 2
-      
-        # All DLCs: Generate case list, both generic and OpenFAST specific
-        generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
-
-        # DLC specific: Make idlc for other parts of WEIS
-        for i_case, case in enumerate(generic_case_list):
-            idlc = DLCInstance(options=dlc_options)
-
-            idlc.turbulent_wind = True
-            idlc.URef = case['wind_speeds']
-            idlc.label = '5.1'
-            idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
-            idlc.total_time = case['total_time']
-            self.cases.append(idlc)
-
-    def apply_initial_conditions(self,generic_case_inputs, dlc_options, met_options):
-        '''
-        Add available initial conditions to generic_case_inputs and interpolate options based on initial_condition_table
-        This is performed within each dlc generator function
-
-        '''
-        
-        # These allowed_ics should map to input in openfast_input_map
-        allowed_ics = ['pitch_initial','rot_speed_initial','tau1_const']
-
-        
-        if self.initial_condition_table and dlc_options['turbine_status'] == 'operating': # there is an IC table that's not empty
-            dlc_wind_speeds = met_options['wind_speeds']  # need to use met_options wind speeds because it accounts for seeds
-            # find group with wind_speed
-            wind_group = ['wind_speeds' in gci for gci in generic_case_inputs].index(True)
-            group = generic_case_inputs[wind_group]
-
-            for initial_condition in allowed_ics:
-                if initial_condition in self.initial_condition_table:
-                    group.append(initial_condition)
-                    dlc_options[initial_condition] = np.interp(dlc_wind_speeds,self.initial_condition_table['U'],self.initial_condition_table[initial_condition])
-                
-            # Apply new group
-            generic_case_inputs[wind_group] = group
-            
-        return generic_case_inputs
 
     
     def generate_5p1(self, dlc_options):
@@ -1035,15 +996,41 @@ class DLCGenerator(object):
 
             self.cases.append(idlc)
 
-    # TODO: set up these methods with input information from openmdao_openfast
-    def assign_initial_conditions(self):
-        pass
+    def generate_new_dlc(self,dlc_options):
+    
+        # All DLCs: get dlc-specific met_options
+        met_options = self.gen_met_options(dlc_options)
+        
+        # DLC Specific options: example below
+        # azimuth starting positions
+        # dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
 
-    def assign_olaf_parameters(self):
-        pass
+        # # Specify shutdown time for this case
+        # if dlc_options['shutdown_time'] > dlc_options['analysis_time']:
+        #     raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({dlc_options['shutdown_time']}) option is greater than the analysis_time ({dlc_options['analysis_time']})")
+        # else:
+        #     dlc_options['shutdown_time'] = dlc_options['shutdown_time']
 
-    def generate_wind_inputs(self):
-        pass
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','shutdown_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['azimuth_init']) # group 2
+    
+        # All DLCs: Generate case list, both generic and OpenFAST specific
+        generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
+
+        # DLC specific: Make idlc for other parts of WEIS
+        for i_case, case in enumerate(generic_case_list):
+            idlc = DLCInstance(options=dlc_options)
+
+            idlc.turbulent_wind = True
+            idlc.URef = case['wind_speeds']
+            idlc.label = '5.1'
+            idlc.RandSeed1 = case['rand_seeds']  # TODO: need this!!
+            idlc.total_time = case['total_time']
+            self.cases.append(idlc)
 
 
 def make_equal_length(option_dict,target_name):
