@@ -8,7 +8,7 @@ General:
         use_exe: True
         allow_fails: True
         fail_value: 9999
-        FAST_exe: /home/athulsun/anaconda3/envs/openfast_env/bin/openfast
+
 
 WISDEM:
     RotorSE:

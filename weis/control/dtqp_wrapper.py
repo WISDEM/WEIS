@@ -179,7 +179,7 @@ def run_dtqp(dtqp_input):
 
     # Add time to OutData
     OutData['Time'] = T.flatten()
-    breakpoint()
+
     output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
     output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
 

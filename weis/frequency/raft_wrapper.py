@@ -53,14 +53,30 @@ class RAFT_WEIS(om.Group):
         members_opt['scalar_coefficients'] = [False]*members_opt['nmembers']
         members_opt['n_ballast_type'] = len(weis_opt["floating"]["members"]["ballast_types"])
 
+        for k in range(members_opt['nmembers']):
+            members_opt[f"platform_member{k+1}_potMod"] = weis_opt["Level1"]["model_potential"][k]
+
         mooring_opt = {}
         mooring_opt['nlines'] = weis_opt['mooring']['n_lines']
         mooring_opt['nline_types'] = weis_opt['mooring']['n_line_types']
         mooring_opt['nconnections'] = weis_opt['mooring']['n_nodes']
 
+        # Mooring
+        for k in range(weis_opt['mooring']['n_nodes']):
+            mooring_opt[f'mooring_point{k+1}_name'] = weis_opt['mooring']['node_names'][k]
+            mooring_opt[f'mooring_point{k+1}_type'] = weis_opt['mooring']['node_type'][k]
+
+        for k in range(weis_opt['mooring']['n_lines']):
+            mooring_opt[f'mooring_line{k+1}_endA'] = weis_opt['mooring']["node1"][k]
+            mooring_opt[f'mooring_line{k+1}_endB'] = weis_opt['mooring']["node2"][k]
+            mooring_opt[f'mooring_line{k+1}_type'] = weis_opt['mooring']["line_type"][k]
+
+        for k in range(weis_opt['mooring']['n_line_types']):
+            mooring_opt[f'mooring_line_type{k+1}_name'] = weis_opt['mooring']["line_type_name"][k]
 
         self.add_subsystem('wind', PowerWind(nPoints = turbine_opt['npts']), promotes=['Uref','zref'])
-        self.add_subsystem('pre', RAFT_WEIS_Prep(modeling_options=weis_opt), promotes=['*'])
+        self.add_subsystem('pre', RAFT_WEIS_Prep(modeling_options=weis_opt,
+                                                raft_options = raft_opt), promotes=['*'])
         self.add_subsystem('raft', RAFT_OMDAO(modeling_options=raft_opt,
                                               turbine_options=turbine_opt,
                                               mooring_options=mooring_opt,
@@ -72,6 +88,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
     def initialize(self):
         self.options.declare('modeling_options')
+        self.options.declare('raft_options')
 
     def setup(self):
         opt = self.options['modeling_options']
@@ -146,19 +163,13 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
             self.add_output(f"platform_member{k+1}_CdEnd", val=0.6*np.ones(n_height))
             self.add_output(f"platform_member{k+1}_CaEnd", val=0.6*np.ones(n_height))
-            self.add_discrete_output(f"platform_member{k+1}_potMod", val=False)
 
         # Mooring inputs
         self.add_input('mooring_nodes', val=np.zeros((n_nodes, 3)), units='m', desc='Mooring node locations in global xyz')
         for k in range(n_nodes):
-            self.add_discrete_output(f'mooring_point{k+1}_name', val=f'line{k+1}', desc='Mooring point identifier')
-            self.add_discrete_output(f'mooring_point{k+1}_type', val='fixed', desc='Mooring connection type')
             self.add_output(f'mooring_point{k+1}_location', val=np.zeros(3), units='m', desc='Mooring node location')
 
         for k in range(n_lines):
-            self.add_discrete_output(f'mooring_line{k+1}_endA', val='default', desc='End A coordinates')
-            self.add_discrete_output(f'mooring_line{k+1}_endB', val='default', desc='End B coordinates')
-            self.add_discrete_output(f'mooring_line{k+1}_type', val='mooring_line_type1', desc='Mooring line type')
             self.add_output(f'mooring_line{k+1}_length', val=0.0, units='m', desc='Length of line')
 
         self.add_input("unstretched_length", val=np.zeros(n_lines), units="m")
@@ -173,7 +184,6 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         self.add_input("line_tangential_drag", val=np.zeros(n_lines))
 
         for k in range(n_line_types):
-            self.add_discrete_output(f'mooring_line_type{k+1}_name', val='default', desc='Name of line type')
             self.add_output(f'mooring_line_type{k+1}_diameter', val=0.0, units='m', desc='Diameter of mooring line type')
             self.add_output(f'mooring_line_type{k+1}_mass_density', val=0.0, units='kg/m**3', desc='Mass density of line type')
             self.add_output(f'mooring_line_type{k+1}_stiffness', val=0.0, desc='Stiffness of line type')
@@ -190,15 +200,11 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         self.add_input('Vrated',      val=0.0, units='m/s',      desc='rated wind speed')
         self.add_discrete_input('turbulence_class', val='A', desc='IEC turbulence class')
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbulence class')
-        self.add_discrete_output('raft_dlcs', val=[[]]*opt['DLC_driver']['n_cases'], desc='DLC case table for RAFT with each row a new case and headings described by the keys')
-        self.add_discrete_output('raft_dlcs_keys', val=['wind_speed', 'wind_heading', 'turbulence',
-                                                        'turbine_status', 'yaw_misalign', 'wave_spectrum',
-                                                        'wave_period', 'wave_height', 'wave_heading'],
-                                 desc='DLC case table column headings')
 
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         opt = self.options['modeling_options']
+        raft_opt = self.options['raft_options']
 
         # Tower layer sections
         outputs['turbine_tower_t'] = inputs['tower_layer_thickness'].sum(axis=0)
@@ -225,7 +231,6 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         n_member = len(opt["floating"]["members"]["name"])
         var_height = inputs['member_variable_height']
         for k in range(n_member):
-            discrete_outputs[f"platform_member{k+1}_potMod"] = opt["Level1"]["model_potential"][k]
 
             # Member thickness
             outputs[f"platform_member{k+1}_t"] = inputs[f"member{k}:layer_thickness"].sum(axis=0)
@@ -291,18 +296,12 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
         # Mooring
         for k in range(opt['mooring']['n_nodes']):
-            discrete_outputs[f'mooring_point{k+1}_name'] = opt['mooring']['node_names'][k]
-            discrete_outputs[f'mooring_point{k+1}_type'] = opt['mooring']['node_type'][k]
             outputs[f'mooring_point{k+1}_location'] = inputs['mooring_nodes'][k,:]
 
         for k in range(opt['mooring']['n_lines']):
-            discrete_outputs[f'mooring_line{k+1}_endA'] = opt['mooring']["node1"][k]
-            discrete_outputs[f'mooring_line{k+1}_endB'] = opt['mooring']["node2"][k]
-            discrete_outputs[f'mooring_line{k+1}_type'] = opt['mooring']["line_type"][k]
             outputs[f'mooring_line{k+1}_length'] = inputs['unstretched_length'][k]
 
         for k in range(opt['mooring']['n_line_types']):
-            discrete_outputs[f'mooring_line_type{k+1}_name'] = opt['mooring']["line_type_name"][k]
             outputs[f'mooring_line_type{k+1}_cost'] = inputs['line_cost_rate'][k]
 
             for var in ['diameter','mass_density','stiffness','breaking_load',
@@ -321,7 +320,18 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
         fix_wind_seeds = opt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = opt['DLC_driver']['fix_wave_seeds']
         metocean = opt['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, turb_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        dlc_generator = DLCGenerator(
+            metocean,
+            **{
+                'ws_cut_in': cut_in, 
+                'ws_cut_out':cut_out, 
+                'ws_rated':rated, 
+                'wind_speed_class':ws_class, 
+                'wind_turbulence_class':turb_class, 
+                'fix_wind_seeds':fix_wind_seeds, 
+                'fix_wave_seeds':fix_wave_seeds, 
+                'MHK': opt['flags']['marine_hydro'],
+            })
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
@@ -345,7 +355,7 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
                              float(max(1.0, icase.wave_period)),
                              float(max(1.0, icase.wave_height)),
                              float(icase.wave_heading)]
-        discrete_outputs['raft_dlcs'] = raft_cases
-        discrete_outputs['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
+        raft_opt['raft_dlcs'] = raft_cases
+        raft_opt['raft_dlcs_keys'] = ['wind_speed', 'wind_heading', 'turbulence',
                                               'turbine_status', 'yaw_misalign', 'wave_spectrum',
                                               'wave_period', 'wave_height', 'wave_heading']

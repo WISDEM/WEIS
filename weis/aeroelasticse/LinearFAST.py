@@ -64,7 +64,7 @@ class LinearFAST(runFAST_pywrapper_batch):
         self.Twr_Kdmp           = 0.0
         self.Bld_Kdmp           = 0.0
         self.LinTimes           = [30.0,60.0]
-        self.ss_opFile          = None
+
         #if true, there will be a lot of hydronamic states, equal to num. states in ss_exct and ss_radiation models
         self.HydroStates        = False         # should probably be false by default  
 
@@ -201,19 +201,12 @@ class LinearFAST(runFAST_pywrapper_batch):
             case_inputs[("ElastoDyn",dof)] = {'vals':['True'], 'group':0}
         
         # Initial Conditions, determined through steady state simulations (this was the old way)
-        
-        if self.ic_flag:
-            ss_ops = load_yaml(self.ss_opFile)
-            uu = np.ceil(ss_ops['Wind1VelX'])
-            
-            
-            for ic in ss_ops:
-                if ic != 'Wind1VelX':
-                    case_inputs[("ElastoDyn",ic)] = {'vals': np.interp(case_inputs[("InflowWind","HWindSpeed")]['vals'],uu,ss_ops[ic]).tolist(), 'group': 1}   
-    
-            case_inputs[('ElastoDyn','BlPitch1')] = case_inputs[('ElastoDyn','BldPitch1')]
-            case_inputs[('ElastoDyn','BlPitch2')] = case_inputs[('ElastoDyn','BlPitch1')]
-            case_inputs[('ElastoDyn','BlPitch3')] = case_inputs[('ElastoDyn','BlPitch1')]
+        # ss_ops = load_yaml(ss_opFile)
+        # uu = ss_ops['Wind1VelX']
+
+        # for ic in ss_ops:
+        #     if ic != 'Wind1VelX':
+        #         case_inputs[("ElastoDyn",ic)] = {'vals': np.interp(case_inputs[("InflowWind","HWindSpeed")]['vals'],uu,ss_ops[ic]).tolist(), 'group': 1}   
 
         channels = {}
         for var in ["BldPitch1","BldPitch2","BldPitch3","IPDefl1","IPDefl2","IPDefl3","OoPDefl1","OoPDefl2","OoPDefl3", \
@@ -227,7 +220,7 @@ class LinearFAST(runFAST_pywrapper_batch):
             channels[var] = True
 
         self.channels = channels
-        
+
         # Lin Times, KEEP THIS IN CASE WE USE THIS METHOD OF LINEARIZATION AT SOME POINT IN THE FUTURE
         # rotPer = 60. / np.array(case_inputs['ElastoDyn','RotSpeed']['vals'])
         # linTimes = np.linspace(self.TMax-100,self.TMax-100 + rotPer,num = self.NLinTimes, endpoint=False)
@@ -253,11 +246,13 @@ class LinearFAST(runFAST_pywrapper_batch):
             # speed operating points, which is okay for now.  In general, the more DOFs that 
             # are enabled the greater the rated offset should be
             self.v_rated = inputs['Vrated'] + self.rated_offset
-    
+
         TrimCase = 3 * np.ones(len(self.wind_speeds),dtype=int)
         TrimCase[np.array(self.wind_speeds) < self.v_rated] = 2
 
         case_inputs[("Fst","TrimCase")] = {'vals':TrimCase.tolist(), 'group':1}
+
+
         # Generate Cases
         case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=self.FAST_runDirectory, namebase='lin')
         self.case_list      = case_list

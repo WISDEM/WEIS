@@ -370,6 +370,18 @@ properties:
                                 minimum: 0.0
                                 maximum: 1.0
                             max: *rotor_overspeed
+                    Max_TwrBsMyt:
+                        type: object
+                        description: Maximum tower base moment
+                        default: {}
+                        properties:
+                            flag: *flag
+                            max: 
+                                type: number
+                                default: 6.0e5
+                                minimum: 0.0
+                                maximum: 30.0e8
+                                unit: kNM
                     Max_PtfmPitch:
                         type: object
                         description: Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST.  The higher fidelity option will be used when active. 
@@ -394,21 +406,9 @@ properties:
                                 minimum: 0.0
                                 maximum: 30.0
                                 unit: deg
-                    Max_TwrBsMyt:
-                        type: object
-                        description: Maximum platform pitch displacement
-                        default: {}
-                        properties:
-                            flag: *flag
-                            max: 
-                                type: number
-                                default: 1.e+5
-                                minimum: 0.0
-                                maximum: 1.e+8
-                                unit: kN*m
                     DEL_TwrBsMyt:
                         type: object
-                        description: Maximum platform pitch displacement
+                        description: Tower base damage equivalent load (fore-aft)
                         default: {}
                         properties:
                             flag: *flag

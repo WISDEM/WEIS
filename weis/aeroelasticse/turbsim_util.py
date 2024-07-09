@@ -220,9 +220,9 @@ class Turbsim_wrapper(object):
         subprocess.call(exec_string)
         os.chdir(olddir)
 
-def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, i_case):
-    
-    if dlc_generator.cases[i_case].turbulent_wind:
+def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, turbsim_exe, i_case):
+
+    if dlc_generator.cases[i_case].turbulent:
         # Write out turbsim input file
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef +
@@ -255,7 +255,7 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             wrapper = Turbsim_wrapper()
             wrapper.run_dir = wind_directory
             #run_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
-            wrapper.turbsim_exe = shutil.which('turbsim')
+            wrapper.turbsim_exe = turbsim_exe
             wrapper.turbsim_input = turbsim_input_file_name
             wrapper.execute()
 

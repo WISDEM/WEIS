@@ -29,6 +29,17 @@ from weis.dfsm.ode_algorithms import RK4
 from scipy.interpolate import CubicSpline, interp1d
 from scipy.integrate import solve_ivp
 
+def generate_wave_profiles(test_dataset,reqd_controls):
+
+    # check if wave elevation is part of reqd controls
+    if not 'Wave1Elev' in reqd_controls:
+        return test_dataset
+    else:
+
+        return test_dataset
+
+
+
 def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAST_namingOut, wind_directory):
 
     DLCs = modopt['DLC_driver']['DLCs']
@@ -455,7 +466,9 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 test_dataset.append({'time':tt, 'wind_speed': u_h})
 
             test_ind = np.arange(len(case_list))
-            
+
+            test_dataset = generate_wave_profiles(test_dataset,model_options['reqd_controls'])
+            breakpoint()
             # generate OpenFAST files
             # This step generates the DISCON.IN and cp-ct-cq.txt files which are need to run closed-loop simulations
             for case in case_name:
@@ -532,9 +545,8 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 param['blade_pitch'] = [15]
                 param['gen_torque'] = [0]
 
-                w_pp = CubicSpline(time, wind_speed)
-                w_fun = lambda t: w_pp(t)
-
+                w_fun = CubicSpline(time, wind_speed)
+                
                 param['w_fun'] = w_fun 
                 param['wave_fun'] = None
 

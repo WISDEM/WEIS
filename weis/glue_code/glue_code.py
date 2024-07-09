@@ -26,6 +26,7 @@ from rosco.toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
 from wisdem.commonse.cylinder_member import get_nfull
 
+weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
 weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
@@ -57,7 +58,7 @@ class WindPark(om.Group):
 
         # ROSCO tuning parameters
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
+        if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1].lower() != 'none':  # default is none
             inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
             modeling_options['ROSCO'].update(inps['controller_params'])
 
@@ -155,8 +156,6 @@ class WindPark(om.Group):
                 self.connect('xf.cd_interp_flaps',             'sse_tune.airfoils_cd')
                 self.connect('xf.cm_interp_flaps',             'sse_tune.airfoils_cm')
                 self.connect('configuration.n_blades',         'sse_tune.nBlades')
-                self.connect('env.rho_air',                    'sse_tune.rho')
-                self.connect('env.mu_air',                     'sse_tune.mu')
                 self.connect('blade.pa.chord_param',           'sse_tune.chord')
                 self.connect('blade.pa.twist_param',           'sse_tune.theta')
 
@@ -181,6 +180,15 @@ class WindPark(om.Group):
                 self.connect('nacelle.gearbox_efficiency',      'sse_tune.tune_rosco.gearbox_efficiency')
                 self.connect('control.max_pitch_rate' ,         'sse_tune.tune_rosco.max_pitch_rate')
                 self.connect('control.max_torque_rate' ,        'sse_tune.tune_rosco.max_torque_rate')
+                self.connect('drivese.generator_rotor_I',       'sse_tune.tune_rosco.generator_inertia', src_indices=[0])
+                if modeling_options['flags']['marine_hydro']:
+                    self.connect('env.rho_water',   'sse_tune.rho')
+                    self.connect('env.mu_water',    'sse_tune.mu')
+                else:
+                    self.connect('env.mu_air',                     'sse_tune.mu')
+                    self.connect('env.rho_air',                    'sse_tune.rho')
+
+
 
             else:       # reading openfast model using ROSCO toolbox via rosco_turbine
                 self.connect('rosco_turbine.v_rated'            ,   ['sse_tune.tune_rosco.v_rated'])
@@ -413,6 +421,7 @@ class WindPark(om.Group):
             # Connections to aeroelasticse
             self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
             self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
+            self.connect('env.water_depth',                 'aeroelastic.water_depth')
 
             if not modeling_options['Level3']['from_openfast']:
                 self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
@@ -425,7 +434,6 @@ class WindPark(om.Group):
                 self.connect('env.rho_air',                     'aeroelastic.rho')
                 self.connect('env.speed_sound_air',             'aeroelastic.speed_sound_air')
                 self.connect('env.mu_air',                      'aeroelastic.mu')
-                self.connect('env.water_depth',                 'aeroelastic.water_depth')
                 self.connect('env.rho_water',                   'aeroelastic.rho_water')
                 self.connect('env.mu_water',                    'aeroelastic.mu_water')
                 self.connect('env.Hsig_wave',                    'aeroelastic.Hsig_wave')     # TODO: these depend on wind speed
@@ -507,7 +515,7 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
                     self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    if modeling_options['Level1']['flag']:
+                    if modeling_options['Level1']['use_props_in_openfast']:
                         ptfm_data_source = 'raft'
                     else:
                         ptfm_data_source = 'floatingse'
@@ -821,7 +829,7 @@ class WindPark(om.Group):
 
                 # Connections to TowerSE
                 if modeling_options["flags"]["tower"]:
-                    tow_params = ["z_full","d_full","t_full",
+                    tow_params = ["z_full","outer_diameter_full","t_full",
                                   "E_full","G_full","rho_full","sigma_y_full"]
                     for k in tow_params:
                         self.connect(f'towerse.{k}', f'towerse_post.{k}')
@@ -836,7 +844,7 @@ class WindPark(om.Group):
                     self.connect("aeroelastic.tower_maxMy_Mz", "towerse_post.cylinder_Mzz")
 
                 if modeling_options["flags"]["monopile"]:
-                    mono_params = ["z_full","d_full","t_full",
+                    mono_params = ["z_full","outer_diameter_full","t_full",
                                   "E_full","G_full","rho_full","sigma_y_full"]
                     for k in mono_params:
                         self.connect(f'fixedse.{k}', f'fixedse_post.{k}')
@@ -863,7 +871,7 @@ class WindPark(om.Group):
                 self.connect('nacelle.uptilt',                  'tcons_post.tilt')
                 self.connect('nacelle.overhang',                'tcons_post.overhang')
                 self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
-                self.connect('tower.diameter',                  'tcons_post.d_full')
+                self.connect('tower.diameter',       'tcons_post.outer_diameter_full')     # TODO: temporary hack
                 
             else:  # connections from outside WISDEM
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')

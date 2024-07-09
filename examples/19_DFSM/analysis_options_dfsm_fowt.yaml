@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/FOWT_DFSM_test
+    folder_output: outputs/FOWT_DFSM_test2
     fname_output: refturb_output
 
 
