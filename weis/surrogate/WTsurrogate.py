@@ -225,13 +225,34 @@ class WindTurbineDOE2SM():
         self._doe_loaded = True
 
         if rank==0:
-            with open(os.path.join(opt_options['general']['folder_output'],
-                    opt_options['general']['fname_output']+'_doedata.csv'), 'wt', newline='') as fid:
+            fname = os.path.join(
+                opt_options['general']['folder_output'],
+                os.path.splitext(opt_options['recorder']['file_name'])[0]+'_doedata.pkl'
+            )
+            print('Saving DOE data into: {:}'.format(fname))
+            with open(fname, 'wb') as fid:
+                pkl.dump(
+                    {
+                        'data_vals': data_vals,
+                        'data_dv': data_dv,
+                        'data_keys': data_keys,
+                    },
+                    fid, protocol=5,
+                )
+            fname = os.path.join(
+                opt_options['general']['folder_output'],
+                os.path.splitext(opt_options['recorder']['file_name'])[0]+'_doedata.csv'
+            )
+            print('Saving DOE data into {:}'.format(fname))
+            with open(fname, 'wt', newline='') as fid:
                 dwriter = csv.writer(fid, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 dwriter.writerow(data_keys)
                 dwriter.writerow(data_dv)
                 for idx in range(data_vals.shape[0]):
-                    dwriter.writerow(data_vals[idx,:])
+                    if np.iscomplex(data_vals[idx,:]).any():
+                        raise Exception('Complex number detected from idx = {:}, key = {:}'.format(idx, data_keys[idx]))
+                    else:
+                        dwriter.writerow(data_vals[idx,:])
 
 
 
