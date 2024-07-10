@@ -2,7 +2,7 @@ import os
 import jsonmerge
 import wisdem.inputs
 from wisdem.inputs import load_yaml, write_yaml, simple_types, DefaultValidatingDraft7Validator
-from wisdem.inputs import _validate as validate
+from wisdem.inputs.validation import _validate as validate
 
 import rosco.toolbox.inputs
 
