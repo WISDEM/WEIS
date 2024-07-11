@@ -14,8 +14,9 @@ dependencies:
   - pcrunch
   - pip
   - pyhams>=1.3
+  #- pyoptsparse
   - rosco
-  - scipy<1.14
+  - scipy
   - smt
   - wisdem
   - pip:
