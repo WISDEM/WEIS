@@ -39,11 +39,11 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py openmpi pyoptsparse
+          conda install -y petsc4py mpi4py openmpi
       
       - name: Add test packages
         run: |
-          conda install -y pytest pytest-cov coveralls treon
+          conda install -y pytest pytest-cov coveralls treon pyoptsparse
 
       - name: Show custom environment
         run: |
