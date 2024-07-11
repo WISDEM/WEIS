@@ -1,7 +1,9 @@
 import os
 import jsonmerge
 import wisdem.inputs
-from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types
+from wisdem.inputs import load_yaml, write_yaml, simple_types, DefaultValidatingDraft7Validator
+from wisdem.inputs.validation import _validate as validate
+
 import rosco.toolbox.inputs
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
@@ -30,11 +32,11 @@ def get_geometry_schema():
 
 def load_geometry_yaml(finput):
     merged_schema = get_geometry_schema()
-    return validate_with_defaults(finput, merged_schema)
+    return validate(finput, merged_schema, defaults=True)
 
 def write_geometry_yaml(instance, foutput):
     merged_schema = get_geometry_schema()
-    validate_without_defaults(instance, merged_schema)
+    validate(instance, merged_schema, defaults=False)
     sfx_str = '.yaml'
     if foutput[-5:] == sfx_str:
         sfx_str = ''
@@ -52,11 +54,11 @@ def get_modeling_schema():
 
 def load_modeling_yaml(finput):
     weis_schema = get_modeling_schema()
-    return validate_with_defaults(finput, weis_schema)
+    return validate(finput, weis_schema, defaults=True)
 
 def write_modeling_yaml(instance, foutput):
     weis_schema = get_modeling_schema()
-    validate_without_defaults(instance, weis_schema)
+    validate(instance, weis_schema, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -74,11 +76,11 @@ def get_analysis_schema():
 
 def load_analysis_yaml(finput):
     merged_schema = get_analysis_schema()
-    return validate_with_defaults(finput, merged_schema)
+    return validate(finput, merged_schema, defaults=True)
 
 def write_analysis_yaml(instance, foutput):
     merged_schema = get_analysis_schema()
-    validate_without_defaults(instance, merged_schema)
+    validate(instance, merged_schema, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
