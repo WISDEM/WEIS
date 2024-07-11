@@ -313,7 +313,6 @@ class WindPark(om.Group):
 
                 for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                     idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                    self.connect(f"floating.memgrid{idx}.outer_diameter", f"raft.platform_member{k+1}_d")
                     self.connect(f"floating.memgrid{idx}.layer_thickness", f"raft.member{k}:layer_thickness")
                     self.connect(f"floatingse.member{k}.height", f"raft.member{k}:height")
                     self.connect(f"floatingse.member{k}.rho", f"raft.member{k}:rho")
@@ -332,6 +331,18 @@ class WindPark(om.Group):
                     self.connect(f"floating.memgrp{idx}.ballast_grid", f"raft.member{k}:ballast_grid")
                     self.connect(f"floatingse.member{k}.ballast_height", f"raft.member{k}:ballast_height")
                     self.connect(f"floatingse.member{k}.ballast_density", f"raft.member{k}:ballast_density")
+
+                    if modeling_options['floating']['members']['outer_shape'][k] == "circular":
+                        self.connect(f"floatingse.member{k}.outer_diameter", f"raft.member{k}:outer_diameter")
+                        self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"raft.member{k}:Ca")
+                        self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"raft.member{k}:Cd")
+                    elif modeling_options['floating']['members']['outer_shape'][k] == "rectangular":
+                        self.connect(f"floatingse.member{k}.side_length_a", f"raft.member{k}:side_length_a")
+                        self.connect(f"floatingse.member{k}.side_length_b", f"raft.member{k}:side_length_b")
+                        self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"raft.member{k}:Ca")
+                        self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"raft.member{k}:Cd")
+                        self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"raft.member{k}:Cay")
+                        self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"raft.member{k}:Cdy")
 
                 self.connect("mooring.mooring_nodes", 'raft.mooring_nodes')
                 self.connect("mooring.unstretched_length", 'raft.unstretched_length')
@@ -821,7 +832,7 @@ class WindPark(om.Group):
 
                 # Connections to TowerSE
                 if modeling_options["flags"]["tower"]:
-                    tow_params = ["z_full","d_full","t_full",
+                    tow_params = ["z_full","outer_diameter_full","t_full",
                                   "E_full","G_full","rho_full","sigma_y_full"]
                     for k in tow_params:
                         self.connect(f'towerse.{k}', f'towerse_post.{k}')
@@ -863,7 +874,7 @@ class WindPark(om.Group):
                 self.connect('nacelle.uptilt',                  'tcons_post.tilt')
                 self.connect('nacelle.overhang',                'tcons_post.overhang')
                 self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
-                self.connect('tower.diameter',                  'tcons_post.d_full')
+                self.connect('tower.diameter',                  'tcons_post.outer_diameter_full')
                 
             else:  # connections from outside WISDEM
                 self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')

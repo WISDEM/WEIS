@@ -12,6 +12,8 @@ dependencies:
   - openraft
   - osqp  
   - pcrunch
+  - pyoptsparse
+  - openmdao<3.33
   - rosco
   - smt
   - wisdem
