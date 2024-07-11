@@ -12,9 +12,11 @@ dependencies:
   - openraft
   - osqp  
   - pcrunch
-  - pyoptsparse
-  - openmdao<3.33
+  - pip
+  - pyhams>=1.3
+  #- pyoptsparse
   - rosco
+  - scipy
   - smt
   - wisdem
   - pip:

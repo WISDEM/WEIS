@@ -2468,7 +2468,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = stats_pwrcrv['GenPwr']['mean']
-                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
                 outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
@@ -2477,7 +2477,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
-                    outputs['P_out'] = sum_stats['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = sum_stats['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
         if len(U)>0:

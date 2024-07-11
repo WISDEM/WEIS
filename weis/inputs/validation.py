@@ -1,9 +1,7 @@
 import os
 import jsonmerge
 import wisdem.inputs
-from wisdem.inputs import load_yaml, write_yaml, simple_types, DefaultValidatingDraft7Validator
-from wisdem.inputs.validation import _validate as validate
-
+from wisdem.inputs.validation import load_yaml, write_yaml, _validate, simple_types, DefaultValidatingDraft7Validator
 import rosco.toolbox.inputs
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
@@ -32,11 +30,11 @@ def get_geometry_schema():
 
 def load_geometry_yaml(finput):
     merged_schema = get_geometry_schema()
-    return validate(finput, merged_schema, defaults=True)
+    return _validate(finput, merged_schema, defaults=True)
 
 def write_geometry_yaml(instance, foutput):
     merged_schema = get_geometry_schema()
-    validate(instance, merged_schema, defaults=False)
+    _validate(instance, merged_schema, defaults=False)
     sfx_str = '.yaml'
     if foutput[-5:] == sfx_str:
         sfx_str = ''
@@ -54,11 +52,11 @@ def get_modeling_schema():
 
 def load_modeling_yaml(finput):
     weis_schema = get_modeling_schema()
-    return validate(finput, weis_schema, defaults=True)
+    return _validate(finput, weis_schema, defaults=True)
 
 def write_modeling_yaml(instance, foutput):
     weis_schema = get_modeling_schema()
-    validate(instance, weis_schema, defaults=False)
+    _validate(instance, weis_schema, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -76,11 +74,11 @@ def get_analysis_schema():
 
 def load_analysis_yaml(finput):
     merged_schema = get_analysis_schema()
-    return validate(finput, merged_schema, defaults=True)
+    return _validate(finput, merged_schema, defaults=True)
 
 def write_analysis_yaml(instance, foutput):
     merged_schema = get_analysis_schema()
-    validate(instance, merged_schema, defaults=False)
+    _validate(instance, merged_schema, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -91,10 +89,10 @@ def write_analysis_yaml(instance, foutput):
 
 def re_validate_modeling(modeling_dict):
     fschema = get_modeling_schema()
-    yaml_schema = load_yaml(fschema) if type(fschema) == type("") else fschema
+    yaml_schema = load_yaml(fschema) if isinstance(fschema, type("")) else fschema
     DefaultValidatingDraft7Validator(yaml_schema).validate(modeling_dict)
 
 def re_validate_analysis(analysis_dict):
     fschema = get_analysis_schema()
-    yaml_schema = load_yaml(fschema) if type(fschema) == type("") else fschema
+    yaml_schema = load_yaml(fschema) if isinstance(fschema, type("")) else fschema
     DefaultValidatingDraft7Validator(yaml_schema).validate(analysis_dict)

@@ -798,7 +798,6 @@ components:
               internal_structure: *pontlow_int
               Ca: [1.0, 1.0]
               Cd: [0.8, 0.8]
-
             - name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
