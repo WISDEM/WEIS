@@ -6,7 +6,7 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     hub_height: 150.
-    rotor_diameter: 241.94
+    rotor_diameter: 242.23775645
     rated_power: 15.e+6
     lifetime: 25.0
 components:
@@ -771,10 +771,17 @@ components:
               Ca: [1.0, 1.0]
               Cd: [0.8, 0.8]
               outer_shape: &pontlow_out
-                shape: circular
-                outer_diameter:
+                # shape: circular
+                # outer_diameter:
+                #     grid: [0.0, 1.0]
+                #     values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
+                shape: rectangular
+                side_length_a:
                     grid: [0.0, 1.0]
-                    values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
+                    values: [12.5, 12.5]
+                side_length_b:
+                    grid: [0.0, 1.0]
+                    values: [7.0, 7.0]
                 #shape: polygonal
                 #side_lengths: [12.5, 7.0, 12.5, 7.0] # rectangle dimensions
                 #angles: [1.5707963267948966, 1.5707963267948966, 1.5707963267948966, 1.5707963267948966] # rectangle angles
@@ -790,6 +797,11 @@ components:
                 ballasts:
                     - variable_flag: True
                       grid: [0.0, 1.0]
+                bulkhead:
+                    material: steel
+                    thickness:
+                        grid: [0.0, 1.0]
+                        values: [0.05, 0.05]
 
             - name: Y_pontoon_lower2
               joint1: main_lower_pontoon
@@ -1307,6 +1319,7 @@ costs:
     spinner_mass_cost_coeff: 11.1
     lss_mass_cost_coeff: 11.9
     bearing_mass_cost_coeff: 4.5
+    gearbox_mass_cost_coeff: 12.9
     hss_mass_cost_coeff: 6.8
     generator_mass_cost_coeff: 12.4
     bedplate_mass_cost_coeff: 2.9
