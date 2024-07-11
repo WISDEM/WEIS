@@ -9,7 +9,7 @@ from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
-from weis.surrogate.WTsurrogate       import WindTurbineSM
+from weis.surrogate.WTsurrogate       import WindTurbineDOE2SM
 
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
@@ -251,15 +251,14 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, overridd
 
     # If design_of_experiment and recorder flag are True, collect sql files and create smt object
     if opt_options['opt_flag'] and (not SKIP_DRIVER):
-        print('opt_flag is True')
         if opt_options['driver']['design_of_experiments']['flag'] and opt_options['recorder']['flag']:
-            print('DOE is True and recorder is True')
             sql_file = os.path.join(folder_output, opt_options['recorder']['file_name'])
             if MPI:
                 sql_file += '_{:}'.format(rank)
-                sql_files = MPI.COMM_WORLD.gather(sql_file, root=0)
-            if rank == 0:
-                WindTurbineSM.read_doe(sql_files)
+            WTSM = WindTurbineDOE2SM()
+            WTSM.read_doe(sql_file, modeling_options, opt_options) # Parallel reading if MPI
+            WTSM.train_sm() # Parallel training if MPI
+            WTSM.write_sm(sm_filename) # Saving will be done in rank=0
 
     if rank == 0:
         return wt_opt, modeling_options, opt_options

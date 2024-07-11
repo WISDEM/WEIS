@@ -11,36 +11,30 @@ design_variables:
     servo:
       pitch_control:
         omega: #rad/s  #default: 0.2 
-          flag: False
+          flag: True
           min: 0.1
           max: 0.7
         zeta: #rad/s  #default:  1.0
-          flag: False
+          flag: True
           min: 0.7
           max: 1.5
         Kp_float: #s  #default:  -10.0
-          flag: False
+          flag: True
           min: -20.0 #-100.0
           max: 0.0
         ptfm_freq:  #rad/s default: 0.2
-          flag: False
+          flag: True
           min: 0.1 #0.00001
           max: 1.5
-        stability_margin: #makes error when I set this to True
-          flag: False
-          min: 0.01
-          max: 0.01
       torque_control:
         omega: #rad/s  #default: 0.12 
-          flag: False
+          flag: True
           min: 0.1
           max: 0.7
         zeta: #rad/s  #default: 0.85
-          flag: False
+          flag: True
           min: 0.7
           max: 1.5
-        
-
   floating:
     members:
       flag: True
@@ -78,55 +72,19 @@ design_variables:
         - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard] #Platform sizing: Spacing
           lower_bound: 41.57 #51.57 #48.57 #63.57 #42.57 # default: 51.57
           upper_bound: 61.57 #72.57 #63.57 #60.0
-  #rotor_diameter:
-  #  flag: True
-  #  minimum: 235.0 #242.23775645
-  #  maximum: 250.0
-  #tower:
-  #  outer_diameter:
-  #    flag: True
-  #    lower_bound: 6.0 # 6.5[m]
-  #    upper_bound: 7.0
-  #  section_height:
-  #    flag: True
-  #    lower_bound: 13.0 # 5.0[m] I think in default it has 10 sections: 10 *15=150==hub height
-  #    upper_bound: 18.0
-
-  # control:
-  #   servo:
-  #     pitch_control:
-  #       omega:
-  #         flag: True
-  #         min: 0.1
-  #         max: 0.5
-
-  #floating:
-  #  joints:
-  #    flag: True
-  #    z_coordinate:
-  #      - names: [main_keel, col1_keel, col2_keel, col3_keel]
-  #        lower_bound: -40.0
-  #        upper_bound: -15.0
-  #    r_coordinate:
-  #      - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
-  #        lower_bound: 38.8125
-  #        upper_bound: 64.6875
-  #  members:
-  #    flag: True
-  #    groups:
-  #      - names: [column1,column2,column3]
-  #        diameter:
-  #          lower_bound: 9.375
-  #          upper_bound: 15.625
-  #          constant: True
-  #        thickness:
-  #          lower_bound: 0.05
-  #          upper_bound: 0.25
-  #          constant: True
-          # - names: [Y_pontoon_lower1, Y_pontoon_lower2, Y_pontoon_lower3]
-          #   diameter:
-          #     lower_bound: 7.5
-          #     upper_bound: 12.5
+  rotor_diameter:
+    flag: True
+    minimum: 235.0 #242.23775645
+    maximum: 250.0
+  tower: # does not work for design coupling analysis
+    outer_diameter:
+      flag: False
+      lower_bound: 6.0 # 6.5[m]
+      upper_bound: 7.0
+    section_height:
+      flag: False
+      lower_bound: 13.0 # 5.0[m] I think in default it has 10 sections: 10 *15=150==hub height
+      upper_bound: 18.0
           
 constraints:
   control:
@@ -200,11 +158,6 @@ driver:
 recorder:
   flag: True              # Flag to activate OpenMDAO recorder
   file_name: log_opt.sql  # Name of OpenMDAO recorder
-  #just_dvs: True
-  #includes: ['*'] #['*raft*','*floating*','*platform*']
-  #includes: ['*raft*','*floating*','*platform*',  '*financese*','*rotorse*', '*tower_grid*', '*tune_rosco_ivc*', '*towerse*', '*configuration*', '*tower*', '*tcc*']
-  #includes : ['*floating.memgrp0.outer_diameter_in*', '*floating.memgrp1.outer_diameter_in*', '*towerse.tower_section_height*', '*tower_grid.height*', '*tune_rosco_ivc.ps_percent*', '*floating.joints_xyz*', '*floating.joints_xyz*', '*floating.joints_xyz*', '*floating.joints_xyz*', '*configuration.rotor_diameter_user*', '*tower.diameter*', '*raft.Max_PtfmPitch*', '*raft.Std_PtfmPitch*', '*towerse.height_constraint*', '*towerse.slope*', '*raft.response_nacelle acceleration*', '*raft.platform_mass*', '*rotorse.rp.AEP*', '*tcc.turbine_cost*', '*tcc.turbine_cost_kW*', '*tcc.turbine_mass_tcc*', '*financese.lcoe*', '*rotorse.rp.powercurve.Cp*', '*rotorse.blade_mass*', '*towerse.tower_mass*', '*tcc.tower_cost*', '*floatingse.system_structural_mass*', '*floatingse.member0.structural_cost*', '*floatingse.member1.structural_cost*', '*towerse.tower.top_deflection*', '*towerse.tower.tower_deflection*']
-  #includes : ['*floating*', '*floatingse*','*towerse.tower_section_height*', '*tower_grid.height*', '*tune_rosco_ivc.ps_percent*', '*configuration.rotor_diameter_user*', '*tower.diameter*', '*raft.Max_PtfmPitch*', '*raft.Std_PtfmPitch*', '*towerse.height_constraint*', '*towerse.slope*', '*raft.response_nacelle acceleration*', '*raft.platform_mass*', '*rotorse.rp.AEP*', '*tcc.turbine_cost*', '*tcc.turbine_cost_kW*', '*tcc.turbine_mass_tcc*', '*financese.lcoe*', '*rotorse.rp.powercurve.Cp*', '*rotorse.blade_mass*', '*towerse.tower_mass*', '*tcc.tower_cost*', '*towerse.tower.top_deflection*', '*towerse.tower.tower_deflection*', '*wisdem.wt.towerse.tower.structural_frequencies*']
-  includes : ['*raft.max_nac_accel*', '*floatingse.platform_mass*', '*rotorse.rp.AEP*', '*financese.lcoe*','*raft.surge_period*', '*raft.sway_period*', '*raft.heave_period*', '*raft.roll_period*','*raft.yaw_period*','*raft.pitch_period*','*towerse.tower.structural_frequencies*','*towerse.tower.fore_aft_freqs*','*towerse.tower.side_side_freqs*', '*floating*', '*floatingse*','*towerse.tower_section_height*', '*tower_grid.height*', '*tune_rosco_ivc.ps_percent*', '*configuration.rotor_diameter_user*', '*tower.diameter*', '*raft.Max_PtfmPitch*', '*raft.Std_PtfmPitch*', '*towerse.height_constraint*', '*towerse.slope*', '*raft.response_nacelle acceleration*', '*raft.platform_mass*', '*rotorse.rp.AEP*', '*tcc.turbine_cost*', '*tcc.turbine_cost_kW*', '*tcc.turbine_mass_tcc*', '*financese.lcoe*', '*rotorse.rp.powercurve.Cp*', '*rotorse.blade_mass*', '*towerse.tower_mass*', '*tcc.tower_cost*', '*towerse.tower.top_deflection*', '*towerse.tower.tower_deflection*', '*wisdem.wt.towerse.tower.structural_frequencies*']
+  includes: ['*'] #['*raft*','*floating*','*platform*']
 
 
