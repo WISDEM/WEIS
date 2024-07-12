@@ -43,7 +43,7 @@ jobs:
       
       - name: Add test packages
         run: |
-          conda install -y pytest pytest-cov coveralls treon
+          conda install -y pytest pytest-cov coveralls treon pyoptsparse
 
       - name: Show custom environment
         run: |
