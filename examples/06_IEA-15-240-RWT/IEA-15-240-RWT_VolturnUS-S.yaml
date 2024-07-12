@@ -9,6 +9,7 @@ assembly:
     rotor_diameter: 241.94
     rated_power: 15.e+6
     lifetime: 25.0
+    marine_hydro: False
 components:
     blade:
         outer_shape_bem:

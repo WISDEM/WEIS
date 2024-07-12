@@ -105,7 +105,7 @@ DFSM:
     flag: True
     general_options:
         model_data_availability: offline 
-        testing_data_availability: online
+        testing_data_availability: offline
         storage_type: outb
         modeling_data_path: /home/athulsun/DFSM/data/FOWT_1p6
         testing_data_path: /home/athulsun/DFSM/data/1p6_test/test
@@ -161,6 +161,12 @@ DLC_driver:
           #wind_speed: [3,5,7,9,11,13,15,17,19,21,23,25]
           analysis_time: 600.
           transient_time: 0.
+          turbulent_wind:
+            HubHt: 150.0
+            RefHt: 150.0
+            GridHeight: 299.999
+            GridWidth: 299.999
+            PLExp: 0.15
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"

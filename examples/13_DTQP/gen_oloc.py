@@ -11,6 +11,8 @@ import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
 
 import numpy as np
 
@@ -24,7 +26,7 @@ if __name__ == '__main__':
     fname_modeling_options      = mydir + os.sep + "modeling_options.yaml"
     modeling_options            = sch.load_modeling_yaml(fname_modeling_options)
 
-    fname_wt_input              = mydir + os.sep + "IEA-15-floating.yaml"
+    fname_wt_input              = os.path.join(this_dir,"..","06_IEA-15-240-RWT", "IEA-15-240-RWT_VolturnUS-S.yaml")
     wt_init                     = sch.load_geometry_yaml(fname_wt_input)
 
     fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
@@ -73,6 +75,7 @@ if __name__ == '__main__':
     WindFile_name = [''] * dlc_generator.n_cases
 
     level2_disturbance = []
+    fig,ax = plt.subplots(1)
 
     for i_case in range(dlc_generator.n_cases):
         dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
@@ -94,6 +97,13 @@ if __name__ == '__main__':
         
         tt          = ts_file['t']
         level2_disturbance.append({'Time':tt, 'Wind': u_h})
+
+        ax.plot(tt,u_h)
+        ax.set_xlim([tt[0],tt[-1]])
+        ax.set_xlabel('Time [s]')
+        ax.set_ylabel('Wind Speed [m/s]')
+
+    plt.show()
 
 
     # Linear Model
