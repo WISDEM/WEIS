@@ -192,6 +192,8 @@ class WindTurbineDOE2SM():
         # Gather data values
         if MPI:
             dataset = MPI.COMM_WORLD.gather(dataset, root=0)
+        else:
+            dataset = [dataset]
         if rank == 0:
             dataset = np.array([dp for proc in dataset for dp in proc])
             # Remove duplicated columns
