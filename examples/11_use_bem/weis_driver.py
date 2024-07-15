@@ -7,7 +7,7 @@ from wisdem.commonse.mpi_tools  import MPI
 
 ## File management
 run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input          = os.path.join(wisdem_examples, "09_floating", "nrel5mw-spar_oc3.yaml")
+fname_wt_input          = os.path.join(run_dir, "..", "03_NREL5MW_OC3_spar", "nrel5mw-spar_oc3.yaml")
 fname_modeling_options  = run_dir + os.sep + "modeling_options.yaml"
 fname_analysis_options  = run_dir + os.sep + "analysis_options.yaml"
 

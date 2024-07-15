@@ -8,8 +8,6 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -33,7 +31,11 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-        rank_and_file: True
+        frame3dd:
+            shear: False
+            geom: False
+            tol: 1e-9
+            shift: 100.0
     # BOS:
     #     flag: True
         

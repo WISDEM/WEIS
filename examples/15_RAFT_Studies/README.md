@@ -19,7 +19,7 @@ To optimize the UMaine semi using raft, run
   
  The type of DLCs that are run can be set in `modeling_options_level3.yaml`, along with the metocean conditions.
  Set the geometry used in WEIS by setting `fname_wt_input` in `weis_driver_level3.py`. 
- Two options are provided in this example: `IEA-15-floating.yaml` (original) and `opt_22.yaml` 
+ Two options are provided in this example: `../06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml` (original) and `raft_opt_out.yaml`, the optimized output.
 
  
  

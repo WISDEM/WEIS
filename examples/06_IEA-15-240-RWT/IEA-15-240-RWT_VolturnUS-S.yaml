@@ -6,7 +6,7 @@ assembly:
     rotor_orientation: Upwind
     number_of_blades: 3
     hub_height: 150.
-    rotor_diameter: 242.23775645
+    rotor_diameter: 241.94
     rated_power: 15.e+6
     lifetime: 25.0
 components:
@@ -464,8 +464,8 @@ components:
             distance_tt_hub: 5.614
             overhang: 12.0313
             drag_coefficient: 0.5
-            distance_hub2mb: 1.0
-            distance_mb2mb: 1.2
+            distance_hub_mb: 1.0
+            distance_mb_mb: 1.2
             lss_diameter: [3.0, 3.0]
             lss_wall_thickness: [0.1, 0.1]
             nose_diameter: [2.2, 2.2]
@@ -631,8 +631,8 @@ components:
             - name: main_column
               joint1: main_keel
               joint2: main_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape:
                 shape: circular
                 outer_diameter:
@@ -660,8 +660,8 @@ components:
             - name: column1
               joint1: col1_keel
               joint2: col1_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: &col_out
                 shape: circular
                 outer_diameter:
@@ -699,8 +699,8 @@ components:
             - name: column2
               joint1: col2_keel
               joint2: col2_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *col_out
               internal_structure: *col_int
               axial_joints:
@@ -716,8 +716,8 @@ components:
             - name: column3
               joint1: col3_keel
               joint2: col3_freeboard
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *col_out
               internal_structure: *col_int
               axial_joints:
@@ -734,8 +734,8 @@ components:
             - name: Y_pontoon_upper1
               joint1: main_upper_pontoon
               joint2: col1_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: &pontup_out
                 shape: circular
                 outer_diameter:
@@ -752,24 +752,24 @@ components:
             - name: Y_pontoon_upper2
               joint1: main_upper_pontoon
               joint2: col2_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *pontup_out
               internal_structure: *pontup_int
 
             - name: Y_pontoon_upper3
               joint1: main_upper_pontoon
               joint2: col3_upper_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: *pontup_out
               internal_structure: *pontup_int
 
             - name: Y_pontoon_lower1
               joint1: main_lower_pontoon
               joint2: col1_lower_pontoon
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
               outer_shape: &pontlow_out
                 shape: circular
                 outer_diameter:
@@ -796,16 +796,15 @@ components:
               joint2: col2_lower_pontoon
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
-              Ca: 1.0
-              Cd: 0.8
-
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
             - name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
               outer_shape: *pontlow_out
               internal_structure: *pontlow_int
-              Ca: 1.0
-              Cd: 0.8
+              Ca: [1.0, 1.0]
+              Cd: [0.8, 0.8]
     mooring:
         nodes:
             - name: line1_anchor
@@ -1307,7 +1306,6 @@ costs:
     spinner_mass_cost_coeff: 11.1
     lss_mass_cost_coeff: 11.9
     bearing_mass_cost_coeff: 4.5
-    gearbox_mass_cost_coeff: 12.9
     hss_mass_cost_coeff: 6.8
     generator_mass_cost_coeff: 12.4
     bedplate_mass_cost_coeff: 2.9

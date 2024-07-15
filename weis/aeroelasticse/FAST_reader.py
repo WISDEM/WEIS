@@ -1979,7 +1979,7 @@ class InputReader_OpenFAST(object):
             self.fst_vt['HydroDyn']['FillNumM'][i]  = int(ln[0])
             self.fst_vt['HydroDyn']['FillMList'][i] = [int(j) for j in ln[1:-2]]
             self.fst_vt['HydroDyn']['FillFSLoc'][i] = float(ln[-2])
-            self.fst_vt['HydroDyn']['FillDens'][i]  = float(ln[-1])
+            self.fst_vt['HydroDyn']['FillDens'][i]  = float_read(ln[-1])
 
         #MARINE GROWTH
         f.readline()
@@ -2291,6 +2291,18 @@ class InputReader_OpenFAST(object):
         f.readline()
         # OUTPUT
         self.fst_vt['SubDyn']['SumPrint'] = bool_read(f.readline().split()[0])
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutCBModes' in line:
+            self.fst_vt['SubDyn']['OutCBModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
+        file_pos = f.tell()
+        line = f.readline()
+        if 'OutFEMModes' in line:
+            self.fst_vt['SubDyn']['OutFEMModes'] = int_read(line.split()[0])
+        else:
+            f.seek(file_pos)
         self.fst_vt['SubDyn']['OutCOSM']  = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutAll']   = bool_read(f.readline().split()[0])
         self.fst_vt['SubDyn']['OutSwtch'] = int_read(f.readline().split()[0])

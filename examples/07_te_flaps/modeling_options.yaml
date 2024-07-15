@@ -7,8 +7,6 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 20
-        n_tsr_perf_surfaces: 20
         spar_cap_ss: Spar_cap_ss
         spar_cap_ps: Spar_cap_ps
         te_ss: TE_reinf_ss
