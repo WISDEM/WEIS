@@ -383,7 +383,7 @@ class FASTLoadCases(ExplicitComponent):
         if not os.path.exists(self.FAST_runDirectory):
             os.makedirs(self.FAST_runDirectory, exist_ok=True)
         if not os.path.exists(self.wind_directory):
-            os.mkdir(self.wind_directory)
+            os.makedirs(self.wind_directory, exist_ok=True)
         # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
         self.cores = OFmgmt['cores']
         self.case = {}
@@ -412,6 +412,16 @@ class FASTLoadCases(ExplicitComponent):
                                              OFmgmt['FAST_lib'])
         else:
             self.FAST_lib_user = None
+
+        if OFmgmt['turbsim_exe'] != 'none':
+            if os.path.isabs(OFmgmt['turbsim_exe']):
+                self.turbsim_exe = OFmgmt['turbsim_exe']
+            else:
+                self.turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             OFmgmt['turbsim_exe'])
+        else:
+            self.turbsim_exe = shutil.which('turbsim')
+        
 
         # Rotor power outputs
         self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
@@ -1824,7 +1834,7 @@ class FASTLoadCases(ExplicitComponent):
                 idx_e = min((i+1)*size, N_cases)
 
                 for idx, i_case in enumerate(np.arange(idx_s,idx_e)):
-                    data = [partial(generate_wind_files, dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height), i_case]
+                    data = [partial(generate_wind_files, dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe), i_case]
                     rank_j = sub_ranks[idx]
                     comm.send(data, dest=rank_j, tag=0)
 
@@ -1834,7 +1844,7 @@ class FASTLoadCases(ExplicitComponent):
         else:
             for i_case in range(dlc_generator.n_cases):
                 WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
-                    dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, i_case)
+                    dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
 
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
@@ -2458,7 +2468,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = stats_pwrcrv['GenPwr']['mean']
-                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
                 outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
@@ -2467,7 +2477,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
-                    outputs['P_out'] = sum_stats['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = sum_stats['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
         if len(U)>0:
