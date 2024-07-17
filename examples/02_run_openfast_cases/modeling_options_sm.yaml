@@ -1,9 +1,16 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: IEA15
+        OF_run_dir: outputs/control_opt/openfast_out
+        save_timeseries: True
+        save_iterations: True
 
 WISDEM:
     RotorSE:
         flag: False
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS

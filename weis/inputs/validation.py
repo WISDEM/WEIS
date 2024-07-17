@@ -1,7 +1,7 @@
 import os
 import jsonmerge
 import wisdem.inputs
-from wisdem.inputs.validation import load_yaml, write_yaml, _validate, simple_types, DefaultValidatingDraft7Validator
+from wisdem.inputs import load_yaml, write_yaml, validate_without_defaults, validate_with_defaults, simple_types
 import rosco.toolbox.inputs
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
@@ -30,11 +30,11 @@ def get_geometry_schema():
 
 def load_geometry_yaml(finput):
     merged_schema = get_geometry_schema()
-    return _validate(finput, merged_schema, defaults=True)
+    return validate_with_defaults(finput, merged_schema)
 
 def write_geometry_yaml(instance, foutput):
     merged_schema = get_geometry_schema()
-    _validate(instance, merged_schema, defaults=False)
+    validate_without_defaults(instance, merged_schema)
     sfx_str = '.yaml'
     if foutput[-5:] == sfx_str:
         sfx_str = ''
@@ -52,11 +52,11 @@ def get_modeling_schema():
 
 def load_modeling_yaml(finput):
     weis_schema = get_modeling_schema()
-    return _validate(finput, weis_schema, defaults=True)
+    return validate_with_defaults(finput, weis_schema)
 
 def write_modeling_yaml(instance, foutput):
     weis_schema = get_modeling_schema()
-    _validate(instance, weis_schema, defaults=False)
+    validate_without_defaults(instance, weis_schema)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -74,11 +74,11 @@ def get_analysis_schema():
 
 def load_analysis_yaml(finput):
     merged_schema = get_analysis_schema()
-    return _validate(finput, merged_schema, defaults=True)
+    return validate_with_defaults(finput, merged_schema)
 
 def write_analysis_yaml(instance, foutput):
     merged_schema = get_analysis_schema()
-    _validate(instance, merged_schema, defaults=False)
+    validate_without_defaults(instance, merged_schema)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -86,13 +86,3 @@ def write_analysis_yaml(instance, foutput):
         foutput = foutput[-4:]
     sfx_str = "-analysis.yaml"
     write_yaml(instance, foutput+sfx_str)
-
-def re_validate_modeling(modeling_dict):
-    fschema = get_modeling_schema()
-    yaml_schema = load_yaml(fschema) if isinstance(fschema, type("")) else fschema
-    DefaultValidatingDraft7Validator(yaml_schema).validate(modeling_dict)
-
-def re_validate_analysis(analysis_dict):
-    fschema = get_analysis_schema()
-    yaml_schema = load_yaml(fschema) if isinstance(fschema, type("")) else fschema
-    DefaultValidatingDraft7Validator(yaml_schema).validate(analysis_dict)
