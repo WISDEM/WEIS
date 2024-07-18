@@ -773,5 +773,5 @@ prob.setup()
 prob.run_model()
 
 # %%
-#get opt data
+#get and save opt data for DC analysis
 objective_st = prob.get_val(objective_key[0])  
