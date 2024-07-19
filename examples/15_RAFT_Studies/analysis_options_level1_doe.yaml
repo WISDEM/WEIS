@@ -5,7 +5,7 @@ general:
 design_variables:
   control:
     ps_percent: #Peak shaving #defalt: 0.85
-      flag: True
+      flag: False
       lower_bound: 0.75
       upper_bound: 1.0
     servo:
@@ -28,16 +28,16 @@ design_variables:
           max: 1.5
       torque_control:
         omega: #rad/s  #default: 0.12 
-          flag: True
+          flag: False
           min: 0.1
           max: 0.7
         zeta: #rad/s  #default: 0.85
-          flag: True
+          flag: False
           min: 0.7
           max: 1.5
   floating:
     members:
-      flag: True
+      flag: False
       groups:
         - names: [main_column] # Platform sizing: diameter (Center Column)
           diameter:
@@ -60,7 +60,7 @@ design_variables:
             upper_bound: 13.6148 #11.6148
             constant: True
     joints:
-      flag: True
+      flag: False
       z_coordinate:
         - names: [main_keel, col1_keel, col2_keel, col3_keel] #Platform sizing: form -20 (keel) to 15 (freeboard)
           lower_bound: -24.0 #default -20
@@ -109,31 +109,7 @@ constraints:
     slope:
       flag: False
 
-#constraints:
-#  control:
-#    rotor_overspeed:
-#      flag: True
-#      min: 0.0
-#      max: 0.25
-#    Max_PtfmPitch:
-#      flag: True
-#      max: 5.5
-#    Std_PtfmPitch:
-#      flag: False
-#      max: 2.
-#  Max_Offset:
-#    flag: True
-#    max: 30.
-#  floating:
-#    stress: 
-#      flag: True
-#    global_buckling: 
-#      flag: True
-#    shell_buckling: 
-#      flag: True
-
 merit_figure: platform_mass  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
-
 
 driver:
   optimization:
@@ -146,7 +122,7 @@ driver:
     run_parallel: True    # Flag to run using parallel processing
     seed: 2
     generator: LatinHypercube #Uniform #LatinHypercube #FullFact    # Type of input generator. (Uniform)
-    num_samples: 768      # number of samples for (Uniform only)
+    num_samples: 50     # number of samples for (Uniform only)
     levels: 1
     skip_if_results_exist: True
   surrogate_based_optimization:
