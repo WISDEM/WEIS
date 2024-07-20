@@ -125,6 +125,7 @@ driver:
     num_samples: 50     # number of samples for (Uniform only)
     levels: 1
     skip_if_results_exist: True
+    train_surrogate_model: True
   surrogate_based_optimization:
     flag: True            # Will work only if design_of_experiments results exist
     max_iter: 300
