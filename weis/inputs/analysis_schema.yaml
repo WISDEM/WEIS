@@ -512,6 +512,10 @@ properties:
                         type: boolean
                         default: True
                         description: Toggle skipping the design of experiments if results exist
+                    train_surrogate_model:
+                        type: boolean
+                        default: False
+                        description: Train surrogate model after running design of experiment
             surrogate_based_optimization:
                 type: object
                 description: Specification of the surrogate-based optimization driver parameters

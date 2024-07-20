@@ -270,16 +270,18 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
     if MPI and color_i < 1000000:
         MPI.COMM_WORLD.Barrier()
 
-    # If design_of_experiment and recorder flag are True, collect sql files and create smt object
+    # If design_of_experiment, recorder flag, train_surrogate_model are all True,
+    # collect sql files and create smt object
     if opt_options['opt_flag'] and (not SKIP_DRIVER):
         if opt_options['driver']['design_of_experiments']['flag'] and opt_options['recorder']['flag']:
-            sql_file = os.path.join(folder_output, opt_options['recorder']['file_name'])
-            if MPI:
-                sql_file += '_{:}'.format(rank)
-            WTSM = WindTurbineDOE2SM()
-            WTSM.read_doe(sql_file, modeling_options, opt_options) # Parallel reading if MPI
-            WTSM.train_sm() # Parallel training if MPI
-            WTSM.write_sm(sm_filename) # Saving will be done in rank=0
+            if opt_options['driver']['design_of_experiments']['train_surrogate_model']:
+                sql_file = os.path.join(folder_output, opt_options['recorder']['file_name'])
+                if MPI:
+                    sql_file += '_{:}'.format(rank)
+                WTSM = WindTurbineDOE2SM()
+                WTSM.read_doe(sql_file, modeling_options, opt_options) # Parallel reading if MPI
+                WTSM.train_sm() # Parallel training if MPI
+                WTSM.write_sm(sm_filename) # Saving will be done in rank=0
 
     if rank == 0:
         return wt_opt, modeling_options, opt_options
