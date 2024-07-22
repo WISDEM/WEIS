@@ -334,7 +334,7 @@ class DLCGenerator(object):
 
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, 6.4, 6.5, 12.1]
+        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.2, 6.3, 6.4, 6.5, 12.1]
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
 
         # Get extreme wind speeds
@@ -729,6 +729,46 @@ class DLCGenerator(object):
 
     def generate_6p1(self, dlc_options):
         # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
+        # extra dlc_options: 
+        # yaw_misalign: default = [-8,8]
+
+        # Get default options
+        dlc_options.update(self.default_options)
+
+        # DLC Specific options:
+        dlc_options['label'] = '6.1'
+        dlc_options['sea_state'] = '50-year'
+        dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+
+        # yaw_misalign
+        if 'yaw_misalign' not in dlc_options:
+            dlc_options['yaw_misalign'] = [-8,8]
+
+        dlc_options['wind_speed'] = [50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
+
+        # parked options
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['wake_mod'] = 0
+        dlc_options['pitch_initial'] = 90.
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['shutdown_time'] = 0.
+        dlc_options['final_blade_pitch'] = 90.
+
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+      
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_6p2(self, dlc_options):
+        # Parked (standing still or idling) - extreme wind model 50-year return period - ultimate loads
+        # This is the same as DLC 6.1 in the 61400-3-1 standards, except there's a loss of electrical network.
+        # In DLC 6.1, the generator is disabled already, so the only difference in 6.2 may be that users may want to simulate larger yaw misalignments
         # extra dlc_options: 
         # yaw_misalign: default = [-8,8]
 
