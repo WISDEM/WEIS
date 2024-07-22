@@ -266,7 +266,10 @@ def load_OMsql(
             if key not in rec_data:
                 # if this key isn't present, create a new list
                 rec_data[key] = []
-            if len(case[key]) == 1:
+            
+            if not hasattr(case[key], '__len__'):
+                rec_data[key].append(case[key])
+            elif len(case[key]) == 1:
                 # otherwise coerce to float if possible and add the data to the list
                 rec_data[key].append(float(case[key]))
             else:
