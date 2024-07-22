@@ -267,12 +267,15 @@ def load_OMsql(
                 # if this key isn't present, create a new list
                 rec_data[key] = []
             
-            if hasattr(case[key], '__len__') and len(case[key]) == 1:
-                # otherwise coerce to float if possible and add the data to the list
-                rec_data[key].append(float(case[key]))
+            if hasattr(case[key], '__len__'):
+                if len(case[key]) == 1:
+                    # otherwise coerce to float if possible and add the data to the list
+                    rec_data[key].append(float(case[key]))
+                else:
+                    # otherwise a numpy array if possible and add the data to the list
+                    rec_data[key].append(np.array(case[key]))
             else:
-                # otherwise a numpy array if possible and add the data to the list
-                rec_data[key].append(np.array(case[key]))
+                rec_data[key].append(case[key])
 
         if parse_multi:
             # add rank/iter metadata
