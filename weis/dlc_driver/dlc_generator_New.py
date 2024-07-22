@@ -67,7 +67,8 @@ openfast_input_map = {
     # These aren't actually used to generate turbsim, the generic inputs are used
     # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
     'rand_seeds': ("TurbSim", "RandSeed1"),
-    'direction': ("TurbSim", "direction_pn")
+    'direction': ("TurbSim", "direction_pn"),
+    'shear': ("TurbSim", "shear_hv")
 }
 
 class DLCInstance(object):
@@ -384,6 +385,11 @@ class DLCGenerator(object):
             if dlc_options['IEC_WindType'] == 'ECD':
                 idlc.turbulent_wind = False
                 idlc.direction_pn = case['direction']
+            elif dlc_options['IEC_WindType'] == 'EWS':
+                idlc.turbulent_wind = False
+                idlc.direction_pn = case['direction']
+                idlc.shear_hv = case['shear']
+                idlc.sigma1 = self.IECturb.NTM(case['wind_speeds'])
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['rand_seeds']
@@ -391,7 +397,10 @@ class DLCGenerator(object):
             idlc.label = dlc_options['label']
             idlc.total_time = case['total_time']
             idlc.IEC_WindType = dlc_options['IEC_WindType']
+            if dlc_options['label'] == '1.2':
+                idlc.probability = probabilities[i_WaH]
             self.cases.append(idlc)
+            
 
     def apply_sea_state(self,met_options,sea_state='normal'):
         '''
@@ -521,6 +530,9 @@ class DLCGenerator(object):
     def generate_1p1(self, dlc_options):
         # Power production normal turbulence model - normal sea state
         
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
         # Handle DLC Specific options:
         dlc_options['label'] = '1.1'
         dlc_options['sea_state'] = 'normal'
@@ -541,59 +553,37 @@ class DLCGenerator(object):
 
         self.generate_cases(generic_case_inputs,dlc_options)
 
-    def generate_1p2(self, options):
+    def generate_1p2(self, dlc_options):
         # Power production normal turbulence model - fatigue loads
-        wind_speeds, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, probabilities = self.get_metocean(options)
-        # If the user has not defined Hs and Tp, apply the metocean conditions for the fatigue analysis
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_F)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_F)
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        for ws in wind_speeds:
-            idlc = DLCInstance(options=options)
-            idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.probability = probabilities[i_WaH]
-            idlc.turbulent_wind = True
-            idlc.label = '1.2'
-            if options['analysis_time'] > 0:
-                idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] >= 0:
-                idlc.transient_time = options['transient_time']
-            idlc.PSF = 1.
-            self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = '1.2'
+        dlc_options['sea_state'] = 'normal'
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
 
     def generate_1p3(self, dlc_options):
         # Power production extreme turbulence model - ultimate loads
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
         
         # Handle DLC Specific options:
         dlc_options['label'] = '1.1'
@@ -617,6 +607,9 @@ class DLCGenerator(object):
 
     def generate_1p4(self, dlc_options):
         # Extreme coherent gust with direction change - ultimate loads
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
         
         # Handle DLC Specific options:
         dlc_options['label'] = '1.4'
@@ -642,65 +635,36 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
         
-    def generate_1p5(self, options):
+    def generate_1p5(self, dlc_options):
         # Extreme wind shear - ultimate loads
-        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = '1.5'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'EWS'
+        dlc_options['direction'] = ['n', 'p']
+        dlc_options['shear'] = ['h', 'v']
+        
+
         # Set yaw_misalign, else default
-        if 'yaw_misalign' in options:
-            yaw_misalign = options['yaw_misalign']
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
         else: # default
-            yaw_misalign = [0]
-        yaw_misalign_deg = np.array(yaw_misalign * int(len(wind_speeds) / len(yaw_misalign)))
-        directions = ['p', 'n']
-        shears=['h', 'v']
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        for ws in wind_speeds:
-            for direction in directions:
-                for shear in shears:
-                    idlc = DLCInstance(options=options)
-                    idlc.URef = ws
-                    idlc.wave_seed1 = wave_seeds[i_WaSe]
-                    idlc.wind_heading = wind_heading[i_WiH]
-                    idlc.wave_height = wave_Hs[i_Hs]
-                    idlc.wave_period = wave_Tp[i_Tp]
-                    idlc.wave_gamma = wave_gamma[i_WG]
-                    idlc.wave_heading = wave_heading[i_WaH]
-                    idlc.yaw_misalign = yaw_misalign_deg[i_WaSe]
-                    idlc.IEC_WindType = 'EWS'
-                    idlc.turbulent_wind = False
-                    idlc.label = '1.5'
-                    if options['analysis_time'] > 0:
-                        idlc.analysis_time = options['analysis_time']
-                    if options['transient_time'] >= 0:
-                        idlc.transient_time = options['transient_time']
-                    idlc.sigma1 = self.IECturb.NTM(ws)
-                    idlc.direction_pn = direction
-                    idlc.shear_hv = shear
-                    self.cases.append(idlc)
-                    if len(wind_heading)>1:
-                        i_WiH+=1
-                    if len(wave_gamma)>1:
-                        i_WG+=1
-                    if len(wave_heading)>1:
-                        i_WaH+=1
-            # Same wave height, period, and seed per direction, check whether this is allowed or change seed sampling
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
+            dlc_options['yaw_misalign'] = [0]
+        
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2: 
+        generic_case_inputs.append(['direction']) # group 3: 
+        generic_case_inputs.append(['shear']) # group 4: 
+
+        self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_1p6(self, dlc_options):
         # Power production normal turbulence model - severe sea state
