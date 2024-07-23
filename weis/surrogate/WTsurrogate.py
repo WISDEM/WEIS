@@ -543,6 +543,10 @@ class WindTurbineDOE2SM():
                         SST = np.sum((y_val_true - np.mean(y_val_true))**2)
                         R_squared = 1.0 - SSE/SST
                         print('rank {:}, R_squared: {:}'.format(rank, R_squared))
+                        if R_squared <= 0.25:
+                            outvalconst = True
+                            outvalavg = np.mean(outvalarr)
+                            R_squared = 0.0
                     else:
                         R_squared = None
                 # Train the full SM
