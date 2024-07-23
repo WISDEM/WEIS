@@ -6,7 +6,7 @@ import re
 import pickle as pkl
 import openmdao.api as om
 from wisdem.commonse.mpi_tools import MPI
-from smt.surrogate_models import KRG
+from smt.surrogate_models import SGP
 
 class WindTurbineDOE2SM():
 
@@ -505,7 +505,39 @@ class WindTurbineDOE2SM():
         for data_entry in dataset_list:
             t = time.time()
             try:
-                data_entry['surrogate'] = KRG_WT(eval_noise=True, print_global=False)
+                n_data = data_entry['inputs']['vals'].shape[0]
+                if n_data > 30:
+                    n_data_80 = int(0.8*float(n_data))
+                    # Train the validation SM
+                    smval = SGP_WT(eval_noise=True, print_global=False)
+                    smval.set_training_values(
+                        data_entry['inputs']['vals'][:n_data_80,:], data_entry['outputs']['vals'][:n_data_80,:])
+                    smval.train()
+                    smval.set_bounds(
+                        data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
+                    smval.keys_in = data_entry['inputs']['keys']
+                    for idx in range(len(smval.keys_in)):
+                        s = smval.keys_in[idx]
+                        i = re.search('[^+]*', s).span()
+                        smval.keys_in[idx] = s[i[0]:i[1]]
+                    # Validate SM
+                    x_val = data_entry['inputs']['vals'][n_data_80:,:]
+                    y_val_true = data_entry['outputs']['vals'][n_data_80:,:]
+                    lb_val_in = np.tile(smval.bounds_in[0,:], (x_val.shape[0], 1))
+                    ub_val_in = np.tile(smval.bounds_in[1,:], (x_val.shape[0], 1))
+                    lb_val_out = np.tile(smval.bounds_out[0], (x_val.shape[0], 1))
+                    ub_val_out = np.tile(smval.bounds_out[1], (x_val.shape[0], 1))
+                    x_val = lb_val_in + (ub_val_in - lb_val_in)*x_val
+                    y_val_true = lb_val_out + (ub_val_out - lb_val_out)*y_val_true
+                    y_val_pred, v_val_pred = smval.predict(x_val)
+                    SSE = np.sum((y_val_pred - y_val_true)**2)
+                    SST = np.sum((y_val_true - np.mean(y_val_true))**2)
+                    R_squared = 1.0 - SSE/SST
+                    print('rank {:}, R_squared: {:}'.format(rank, R_squared))
+                else:
+                    R_squared = None
+                # Train the full SM
+                data_entry['surrogate'] = SGP_WT(eval_noise=True, print_global=False)
                 data_entry['surrogate'].set_training_values(
                         data_entry['inputs']['vals'], data_entry['outputs']['vals'])
                 data_entry['surrogate'].train()
@@ -517,6 +549,7 @@ class WindTurbineDOE2SM():
                     i = re.search('[^+]*', s).span()
                     data_entry['surrogate'].keys_in[idx] = s[i[0]:i[1]]
                 data_entry['surrogate'].keys_out = data_entry['outputs']['keys']
+                data_entry['surrogate'].R_squared = R_squared
             except:
                 print('rank {:}, Surrogate model training failed.'.format(rank))
                 raise Exception('rank {:}, Surrogate model training failed.'.format(rank))
@@ -550,13 +583,14 @@ class WindTurbineDOE2SM():
             yield [next(fulllist) for _ in range(length)]
 
 
-class KRG_WT(KRG):
+class SGP_WT(SGP):
 
     def _initialize(self):
         super()._initialize()
         self._bounds_set = False
         self.keys_in = None
         self.keys_out = None
+        self.R_squared = None
 
     def set_bounds(self, bounds_in, bounds_out):
         self.bounds_in = bounds_in
