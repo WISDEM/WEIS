@@ -505,42 +505,55 @@ class WindTurbineDOE2SM():
         for data_entry in dataset_list:
             t = time.time()
             try:
-                n_data = data_entry['inputs']['vals'].shape[0]
-                if n_data > 30:
-                    n_data_80 = int(0.8*float(n_data))
-                    # Train the validation SM
-                    smval = SGP_WT(eval_noise=True, print_global=False)
-                    smval.set_training_values(
-                        data_entry['inputs']['vals'][:n_data_80,:], data_entry['outputs']['vals'][:n_data_80,:])
-                    smval.train()
-                    smval.set_bounds(
-                        data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
-                    smval.keys_in = data_entry['inputs']['keys']
-                    for idx in range(len(smval.keys_in)):
-                        s = smval.keys_in[idx]
-                        i = re.search('[^+]*', s).span()
-                        smval.keys_in[idx] = s[i[0]:i[1]]
-                    # Validate SM
-                    x_val = data_entry['inputs']['vals'][n_data_80:,:]
-                    y_val_true = data_entry['outputs']['vals'][n_data_80:,:]
-                    lb_val_in = np.tile(smval.bounds_in[0,:], (x_val.shape[0], 1))
-                    ub_val_in = np.tile(smval.bounds_in[1,:], (x_val.shape[0], 1))
-                    lb_val_out = np.tile(smval.bounds_out[0], (x_val.shape[0], 1))
-                    ub_val_out = np.tile(smval.bounds_out[1], (x_val.shape[0], 1))
-                    x_val = lb_val_in + (ub_val_in - lb_val_in)*x_val
-                    y_val_true = lb_val_out + (ub_val_out - lb_val_out)*y_val_true
-                    y_val_pred, v_val_pred = smval.predict(x_val)
-                    SSE = np.sum((y_val_pred - y_val_true)**2)
-                    SST = np.sum((y_val_true - np.mean(y_val_true))**2)
-                    R_squared = 1.0 - SSE/SST
-                    print('rank {:}, R_squared: {:}'.format(rank, R_squared))
+                outvalarr = data_entry['outputs']['vals']
+                outvalavg = np.mean(outvalarr)
+                # If response is constant
+                if np.all(np.isclose(outvalarr, outvalavg, atol=np.abs(outvalavg)*1.0e-3)):
+                    outvalconst = True
+                    R_squared = 1.0
                 else:
-                    R_squared = None
+                    outvalconst = False
+                    n_data = data_entry['inputs']['vals'].shape[0]
+                    # If number of sample data is enough
+                    if n_data > 30:
+                        n_data_80 = int(0.8*float(n_data))
+                        # Train the validation SM
+                        smval = SGP_WT(eval_noise=True, print_global=False)
+                        smval.set_training_values(
+                            data_entry['inputs']['vals'][:n_data_80,:], data_entry['outputs']['vals'][:n_data_80,:])
+                        smval.train()
+                        smval.set_bounds(
+                            data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
+                        smval.keys_in = data_entry['inputs']['keys']
+                        for idx in range(len(smval.keys_in)):
+                            s = smval.keys_in[idx]
+                            i = re.search('[^+]*', s).span()
+                            smval.keys_in[idx] = s[i[0]:i[1]]
+                        # Validate SM
+                        x_val = data_entry['inputs']['vals'][n_data_80:,:]
+                        y_val_true = data_entry['outputs']['vals'][n_data_80:,:]
+                        lb_val_in = np.tile(smval.bounds_in[0,:], (x_val.shape[0], 1))
+                        ub_val_in = np.tile(smval.bounds_in[1,:], (x_val.shape[0], 1))
+                        lb_val_out = np.tile(smval.bounds_out[0], (x_val.shape[0], 1))
+                        ub_val_out = np.tile(smval.bounds_out[1], (x_val.shape[0], 1))
+                        x_val = lb_val_in + (ub_val_in - lb_val_in)*x_val
+                        y_val_true = lb_val_out + (ub_val_out - lb_val_out)*y_val_true
+                        y_val_pred, v_val_pred = smval.predict(x_val)
+                        SSE = np.sum((y_val_pred - y_val_true)**2)
+                        SST = np.sum((y_val_true - np.mean(y_val_true))**2)
+                        R_squared = 1.0 - SSE/SST
+                        print('rank {:}, R_squared: {:}'.format(rank, R_squared))
+                    else:
+                        R_squared = None
                 # Train the full SM
                 data_entry['surrogate'] = SGP_WT(eval_noise=True, print_global=False)
                 data_entry['surrogate'].set_training_values(
                         data_entry['inputs']['vals'], data_entry['outputs']['vals'])
-                data_entry['surrogate'].train()
+                if outvalconst:
+                    data_entry['surrogate'].constant = True
+                    data_entry['surrogate'].constant_value = outvalavg
+                else:
+                    data_entry['surrogate'].train()
                 data_entry['surrogate'].set_bounds(
                         data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
                 data_entry['surrogate'].keys_in = data_entry['inputs']['keys']
@@ -591,6 +604,8 @@ class SGP_WT(SGP):
         self.keys_in = None
         self.keys_out = None
         self.R_squared = None
+        self.constant = False
+        self.constant_value = 0.0
 
     def set_bounds(self, bounds_in, bounds_out):
         self.bounds_in = bounds_in
@@ -613,8 +628,12 @@ class SGP_WT(SGP):
         ub_out = np.tile(self.bounds_out[1], (x_in.shape[0], 1))
 
         x_in_normalized = (x_in - lb_in)/(ub_in - lb_in)
-        y_out_normalized = self.predict_values(x_in_normalized)
-        sqrt_v_out_normalized = np.sqrt(self.predict_variances(x_in_normalized))
+        if self.constant:
+            y_out_normalized = self.constant_value*np.ones((x_in.shape[0], 1), dtype=float)
+            sqrt_v_out_normalized = 0.0
+        else:
+            y_out_normalized = self.predict_values(x_in_normalized)
+            sqrt_v_out_normalized = np.sqrt(self.predict_variances(x_in_normalized))
 
         y_out = lb_out + (ub_out - lb_out)*y_out_normalized
         sqrt_v_out = (ub_out - lb_out)*sqrt_v_out_normalized
