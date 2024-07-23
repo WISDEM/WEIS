@@ -566,6 +566,9 @@ class WindTurbineDOE2SM():
                     i = re.search('[^+]*', s).span()
                     data_entry['surrogate'].keys_in[idx] = s[i[0]:i[1]]
                 data_entry['surrogate'].keys_out = data_entry['outputs']['keys']
+                s = data_entry['surrogate'].keys_out
+                i = re.search('[^+]*', s).span()
+                data_entry['surrogate'].keys_out = s[i[0]:i[1]]
                 data_entry['surrogate'].R_squared = R_squared
             except:
                 print('rank {:}, Surrogate model training failed.'.format(rank))
