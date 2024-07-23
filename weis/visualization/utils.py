@@ -216,8 +216,24 @@ def compare_om_data(
 
     return keys_all, diff_keys_12, diff_keys_21
 
+def load_OMsql(log):
+    """
+    Function from :
+    https://github.com/WISDEM/WEIS/blob/main/examples/09_design_of_experiments/postprocess_results.py
+    """
+    # logging.info("loading ", log)
+    cr = om.CaseReader(log)
+    rec_data = {}
+    cases = cr.get_cases('driver')
+    for case in cases:
+        for key in case.outputs.keys():
+            if key not in rec_data:
+                rec_data[key] = []
+            rec_data[key].append(case[key])
+    
+    return rec_data
 
-def load_OMsql(
+def load_OMsql_temp(
     log,
     parse_multi=False,
     meta=None,
