@@ -21,7 +21,7 @@ print(f"Optimizer: {optimizer}")
 
 analysis_override = {}
 analysis_override['general'] = {}
-analysis_override['general']['folder_output'] = f"outputs/17_IEA22_OptStudies/of_{optimizer}"
+analysis_override['general']['folder_output'] = f"17_IEA22_OptStudies/of_{optimizer}"
 analysis_override['driver'] = {}
 analysis_override['driver']['optimization'] = {}
 analysis_override['driver']['optimization']['solver'] = optimizer
