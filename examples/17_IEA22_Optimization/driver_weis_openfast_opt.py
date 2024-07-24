@@ -21,17 +21,17 @@ print(f"Optimizer: {optimizer}")
 
 analysis_override = {}
 analysis_override['general'] = {}
-analysis_override['general']['folder_output'] = os.path.join('outputs/17_IEA22_OptStudies/1_change_opt/',optimizer)
+analysis_override['general']['folder_output'] = f"outputs/17_IEA22_OptStudies/of_{optimizer}"
 analysis_override['driver'] = {}
 analysis_override['driver']['optimization'] = {}
 analysis_override['driver']['optimization']['solver'] = optimizer
 
 wt_opt, modeling_options, analysis_options = run_weis(
-    fname_wt_input, 
-    fname_modeling_options, 
-    fname_analysis_options, 
+    fname_wt_input,
+    fname_modeling_options,
+    fname_analysis_options,
     analysis_override=analysis_override
-    )
+)
 
 
 if MPI:
