@@ -18,8 +18,8 @@ from weis.aeroelasticse.openfast_library import FastLibAPI
 
 import numpy as np
 
-# Realpath will resolve symlinks
-of_path = os.path.realpath( shutil.which('openfast') )
+
+of_path = shutil.which('openfast')
 bin_dir  = os.path.dirname(of_path)
 lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
 

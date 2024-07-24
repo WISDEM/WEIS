@@ -31,11 +31,7 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-        frame3dd:
-            shear: False
-            geom: False
-            tol: 1e-9
-            shift: 100.0
+        rank_and_file: True
     # BOS:
     #     flag: True
         

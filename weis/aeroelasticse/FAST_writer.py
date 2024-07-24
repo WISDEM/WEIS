@@ -11,7 +11,7 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 try:
     from rosco.toolbox import utilities as ROSCO_utilities
     ROSCO = True
-except ImportError:
+except:
     ROSCO = False
 
 
