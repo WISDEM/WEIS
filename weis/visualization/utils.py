@@ -72,16 +72,15 @@ def dict_to_html(data, out_html_list, level):
     
     for k1, v1 in data.items():
         if not k1 in ['dirs', 'files']:
-            # out_html_list.append(html.Pre(html.B(html.P(f'{'   '*level}{k1}'))))      # Big line gap
             if not isinstance(v1, list) and not isinstance(v1, dict):
-                out_html_list.append(html.H6(f'{'---'*level}{k1}: {v1}'))
+                out_html_list.append(html.H6(f'{"---"*level}{k1}: {v1}'))
                 continue
             
-            out_html_list.append(html.H6(f'{'---'*level}{k1}'))
+            out_html_list.append(html.H6(f'{"---"*level}{k1}'))
         
         if isinstance(v1, list):
             out_html_list.append(html.Div([
-                                    html.H6(f'{'---'*(level+1)}{i}') for i in v1]))
+                                    html.H6(f'{"---"*(level+1)}{i}') for i in v1]))
             
         elif isinstance(v1, dict):
             out_html_list = dict_to_html(v1, out_html_list, level+1)
