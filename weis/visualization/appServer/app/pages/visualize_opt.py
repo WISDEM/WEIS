@@ -276,7 +276,7 @@ def update_dlc_outputs(clickData, opt_options):
     
     global iteration, stats, iteration_path, cm
     iteration = clickData['points'][0]['x']
-    title_phrase = f'{opt_options['opt_type']} Optimization Iteration {iteration}'
+    title_phrase = f'{opt_options["opt_type"]} Optimization Iteration {iteration}'
 
 
     # 1) RAFT
@@ -353,10 +353,11 @@ def update_raft_outputs(title_phrase, opt_options):
     # fig = px.scatter(df, x="gdpPercap", y="lifeExp", animation_frame="year", animation_group="country",
     #         size="pop", color="continent", hover_name="country",
     #         log_x=True, size_max=55, range_x=[100,100000], range_y=[25,90])
-
+    
+    # Read from matplotlib image
     # Create figure
     fig = go.Figure()
-    png_per_iteration = Image.open(f"{opt_options['raft_design_dir']}/../raft_plots/ptfm_{iteration}.png")
+    png_per_iteration = Image.open(f'{opt_options["raft_design_dir"]}/../raft_plots/ptfm_{iteration}.png')
     img_width, img_height = png_per_iteration.size
 
     # Constants
@@ -424,9 +425,6 @@ def update_dlc_plot(x_chan_option, y_chan_option, x_channel, y_channel):
     Once required channels and stats options have been selected, draw figures that demonstrate DLC analysis.
     It will show default figure with default settings.
     '''
-    # if stats is None or x_channel is None or y_channel is None:
-    #     raise PreventUpdate
-
     fig = plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channel)
 
     return fig
@@ -449,8 +447,6 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     fig = make_subplots(
         rows = len(y_channels),
         cols = 1)
-        # shared_xaxes=True,
-        # vertical_spacing=0.05)
 
     # Add traces
     for row_idx, y_channel in enumerate(y_channels):

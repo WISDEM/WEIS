@@ -19,6 +19,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import pickle
 import raft
+from raft.helpers import *
 
 try:
     import ruamel_yaml as ry
@@ -659,41 +660,29 @@ def read_cost_variables(labels, refturb_variables):
 
 
 def generate_raft_img(raft_design_dir, plot_dir, log_data):
-
+    '''
+    Temporary function to visualize raft 3d plot using matplotlib.
+    TODO: to build interactive 3d plot using plotly
+    '''
     n_plots = len(os.listdir(raft_design_dir))
     print('n_plots: ', n_plots)
-
-    image_filenames = []
     os.makedirs(plot_dir,exist_ok=True)
 
     opt_outs = {}
     opt_outs['max_pitch'] = np.squeeze(np.array(log_data['raft.Max_PtfmPitch']))
-    opt_outs['draft'] = -np.squeeze(np.array(log_data['floating.jointdv_0']))
-    opt_outs['spacing'] = np.squeeze(np.array(log_data['floating.jointdv_1']))
-    opt_outs['diam'] = np.squeeze(np.array(log_data['floating.memgrp1.outer_diameter_in']))
-    opt_outs['mass'] = np.squeeze(np.array(log_data['floatingse.system_structural_mass']))
 
     for i_plot in range(n_plots):
         # Set up subplots
         fig = plt.figure()
         fig.patch.set_facecolor('white')
-        gs = GridSpec(5, 2, figure=fig, wspace= 0.3)
-
-        axs = {}
-        axs['ptfm'] = fig.add_subplot(gs[1:, 0],projection='3d')
-        axs['draft'] = fig.add_subplot(gs[0, 1])
-        axs['spacing'] = fig.add_subplot(gs[1, 1])
-        axs['diam'] = fig.add_subplot(gs[2, 1])
-        axs['max_pitch'] = fig.add_subplot(gs[3, 1])
-        axs['mass'] = fig.add_subplot(gs[4, 1])
-
+        ax = plt.axes(projection='3d')
         
         with open(os.path.join(raft_design_dir,f'raft_design_{i_plot}.pkl'),'rb') as f:
             design = pickle.load(f)
 
-
         # TODO: Found typo on gamma value at 1_raft_opt example
-        design['turbine']['tower']['gamma'] = 0.0       # Change it from array([0.])
+        if design['turbine']['tower']['gamma'] == np.array([0.]):
+            design['turbine']['tower']['gamma'] = 0.0       # Change it from array([0.])
         
         # set up the model
         model1 = raft.Model(design)
@@ -704,57 +693,13 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
 
         model1.fowtList[0].r6[4] = np.radians(opt_outs['max_pitch'][i_plot])
         
+        _, ax = model1.plot(ax=ax)
 
-        fix, axs['ptfm'] = model1.plot(ax=axs['ptfm'])
-
-        # if False:
-        #     print('Set breakpoint here and find nice camera angle')
-
-        #     azm=axs['ptfm'].azim
-        #     ele=axs['ptfm'].elev
-
-        #     xlm=axs['ptfm'].get_xlim3d() #These are two tupples
-        #     ylm=axs['ptfm'].get_ylim3d() #we use them in the next
-        #     zlm=axs['ptfm'].get_zlim3d() #graph to reproduce the magnification from mousing
-
-        #     print(f"axs['ptfm'].azim = {axs['ptfm'].azim}")
-        #     print(f"axs['ptfm'].elev = {axs['ptfm'].elev}")
-        #     print(f"axs['ptfm'].set_xlim3d({xlm})")
-        #     print(f"axs['ptfm'].set_ylim3d({ylm})")
-        #     print(f"axs['ptfm'].set_zlim3d({zlm})")
-
-        print('Setting ')
-        axs['ptfm'].azim = -88.63636363636361
-        axs['ptfm'].elev = 27.662337662337674
-        axs['ptfm'].set_xlim3d((-110.90447789470043, 102.92063063344857))
-        axs['ptfm'].set_ylim3d((64.47420067304586, 311.37818252335893))
-        axs['ptfm'].set_zlim3d((-88.43591080818854, -57.499893019459606))
-
-
-        # Plot convergences
-        for out in opt_outs:
-            axs[out].plot(np.arange(i_plot+1),opt_outs[out][:i_plot+1],'.')
-            axs[out].set_xlabel('')
-            axs[out].set_xlim(0,n_plots)
-            axs[out].set_ylabel(out)
-
-        r = 45
-        lp = 20
-        axs['draft'].set_ylabel('Draft (m)',rotation=r, labelpad=lp)
-        axs['spacing'].set_ylabel('Col. Spacing (m)',rotation=r, labelpad=lp)
-        axs['diam'].set_ylabel('Col. Diam. (m)',rotation=r, labelpad=lp)
-        axs['max_pitch'].set_ylabel('Max Pitch (deg.)',rotation=r, labelpad=lp)
-        axs['mass'].set_ylabel('Struct Mass (kg)',rotation=r, labelpad=lp)
-
-        axs['draft'].set_xticklabels('')
-        axs['spacing'].set_xticklabels('')
-        axs['diam'].set_xticklabels('')
-        axs['max_pitch'].set_xticklabels('')
-
-        axs['max_pitch'].axhline(6,color='k',linestyle='--')
-
-        fig.set_size_inches(11,6)
-        fig.align_ylabels()
+        ax.azim = -88.63636363636361
+        ax.elev = 27.662337662337674
+        ax.set_xlim3d((-110.90447789470043, 102.92063063344857))
+        ax.set_ylim3d((64.47420067304586, 311.37818252335893))
+        ax.set_zlim3d((-88.43591080818854, -57.499893019459606))
         
         image_filename = os.path.join(plot_dir,f'ptfm_{i_plot}.png')
         plt.savefig(image_filename, bbox_inches='tight')

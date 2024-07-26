@@ -30,8 +30,8 @@ def read_variables(input_dict):
     global refturb, refturb_variables
 
     wisdem_output_path = input_dict['userPreferences']['wisdem']['output_path']
-    npz_filepath = '/'.join([wisdem_output_path, f'{input_dict['userOptions']['output_fileName']}.npz'])
-    csv_filepath = '/'.join([wisdem_output_path, f'{input_dict['userOptions']['output_fileName']}.csv'])
+    npz_filepath = '/'.join([wisdem_output_path, f'{input_dict["userOptions"]["output_fileName"]}.npz'])
+    csv_filepath = '/'.join([wisdem_output_path, f'{input_dict["userOptions"]["output_fileName"]}.csv'])
     refturb = np.load(npz_filepath)
     refturb_variables = pd.read_csv(csv_filepath).set_index('variables').to_dict('index')
 
