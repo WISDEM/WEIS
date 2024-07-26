@@ -25,7 +25,7 @@ def read_variables(input_dict):
     
     # Read numpy file
     wisdem_output_path = input_dict['userPreferences']['wisdem']['output_path']
-    csv_filepath = '/'.join([wisdem_output_path, f'{input_dict['userOptions']['output_fileName']}.csv'])
+    csv_filepath = '/'.join([wisdem_output_path, f'{input_dict["userOptions"]["output_fileName"]}.csv'])
     refturb_variables = pd.read_csv(csv_filepath).set_index('variables').to_dict('index')
 
     cost_options = {}
