@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import argparse
 import yaml
+import warnings
 
 from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 
@@ -30,7 +31,23 @@ class WEISVizInputFileGenerator:
         # Add the user options to the vizInput file
         self.vizInput['userOptions'] = {}
         # Run type
-        self.vizInput['userOptions']['optimization'] = self.opt_options['driver']['optimization']['flag']
+        self.vizInput['userOptions']['optimization']['status'] = self.opt_options['driver']['optimization']['flag']
+        
+        if self.fname_modeling_options['driver']['Level1']['Flag']:
+            self.vizInput['userOptions']['optimization']['type'] = 1
+
+        elif self.fname_modeling_options['driver']['Level2']['Flag']:
+            self.vizInput['userOptions']['optimization']['type'] = 2 # not currently supported.
+            warnings.warn("Current WEIS run configuration is not supported by WEIS_Viz")
+
+        elif self.fname_modeling_options['driver']['Level3']['Flag']:
+            self.vizInput['userOptions']['optimization']['type'] = 3
+
+        else:
+            self.vizInput['userOptions']['optimization']['type'] = 0
+            warnings.warn("Current WEIS run configuration is not supported by WEIS_Viz")
+
+        
         self.vizInput['userOptions']['deisgn_of_experiments'] = self.opt_options['driver']['design_of_experiments']['flag']
         self.vizInput['userOptions']['inverse_design'] = False if self.opt_options['inverse_design'] == {} else True
 
@@ -43,56 +60,6 @@ class WEISVizInputFileGenerator:
         self.vizInput['userOptions']['output_fileName'] = self.opt_options['general']['fname_output']
 
     def setDefaultUserPreferencs(self):
-        '''
-        userPreferences:
-            openfast:
-                file_path:
-                file1: of-output/NREL5MW_OC3_spar_0.out
-                file2: of-output/IEA15_0.out
-                file3: of-output/IEA15_1.out
-                file4: of-output/IEA15_2.out
-                file5: None
-                graph:
-                xaxis: Time
-                yaxis:
-                - Wind1VelX
-                - Wind1VelY
-                - Wind1VelZ
-            optimization:
-                convergence:
-                channels:
-                - raft.pitch_period
-                - floatingse.constr_draft_heel_margin
-                - floating.jointdv_0
-                - floating.memgrp1.outer_diameter_in
-                dlc:
-                xaxis: Wind1VelX
-                xaxis_stat: mean
-                yaxis:
-                - Wind1VelY
-                - Wind1VelZ
-                yaxis_stat: max
-                timeseries:
-                channels:
-                - Wind1VelX
-                - Wind1VelY
-                - Wind1VelZ
-            wisdem:
-                blade:
-                shape_yaxis:
-                - rotorse.rc.chord_m
-                - rotorse.re.pitch_axis
-                - rotorse.theta_deg
-                struct_yaxis:
-                - rotorse.rhoA_kg/m
-                struct_yaxis_log:
-                - rotorse.EA_N
-                - rotorse.EIxx_N*m**2
-                - rotorse.EIyy_N*m**2
-                - rotorse.GJ_N*m**2
-                xaxis: rotorse.rc.s
-                output_path: /Users/sryu/Desktop/FY24/WEIS/WISDEM/examples/02_reference_turbines/outputs/
-        '''
 
         # Set the default user preferences based on the comment above
         self.vizInput['userPreferences'] = {}
