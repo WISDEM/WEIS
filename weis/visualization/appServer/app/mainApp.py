@@ -9,12 +9,6 @@ import argparse
 from weis.visualization.utils import checkPort, parse_yaml
 
 
-parser = argparse.ArgumentParser(description='WEIS Visualization App')
-parser.add_argument('--port', type=int, default=8050, help='Port number to run the app')
-parser.add_argument('--host', type=str, default="0.0.0.0", help='Host IP to run the app')
-parser.add_argument('--debug', type=bool, default=False, help='Debug mode')
-parser.add_argument('--yaml', type=str, default='test.yaml', help='Path to the input yaml file')
-args = parser.parse_args()
 
 # Initialize the app - Internally starts the Flask Server
 # Incorporate a Dash Mantine theme
@@ -70,8 +64,36 @@ app.layout = dcc.Loading(
 )
 
 
-# Run the app
-if __name__ == "__main__":
+def main():
+
+    parser = argparse.ArgumentParser(description='WEIS Visualization App')
+    parser.add_argument('--port', 
+                        type=int, 
+                        default=8050, 
+                        help='Port number to run the WEIS visualization app'
+                        )
+    
+    parser.add_argument('--host', 
+                        type=str, 
+                        default="192.168.0.1", 
+                        help='Host IP to run the WEIS visualization app'
+                        )
+    
+    parser.add_argument('--debug', 
+                        action='store_true',
+                        default=False, 
+                        help='Flag to activate debug mode'
+                        )
+    
+    parser.add_argument('--input', 
+                        type=str, 
+                        default='test.yaml', # lets point to an example where viz input could potentially exist.
+                        help='Path to the WEIS visualization input yaml file'
+                        )
+    
+    args = parser.parse_args()
+
+
 
     # test the port availability, flask calls the main function twice in debug mode
     if not checkPort(args.port, args.host) and not args.debug:
@@ -84,3 +106,9 @@ if __name__ == "__main__":
     app.run(debug=args.debug, host=args.host, port=args.port)
 
 
+
+
+
+# Run the app
+if __name__ == "__main__":
+    main()

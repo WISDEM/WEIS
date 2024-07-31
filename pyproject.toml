@@ -92,8 +92,9 @@ docs = ["sphinx",
 "Homepage" = "https://github.com/WISDEM/WEIS"
 "Documentation" = "https://weis.readthedocs.io"
 
-#[project.scripts]
+[project.scripts]
 #wisdem = "weis.main:weis_cmd"
+weis_viz = "weis.visualization.appServer.app.mainApp:main"
 
 # This is configuration specific to the `setuptools` build backend.
 # If you are using a different build backend, you will need to change this.
