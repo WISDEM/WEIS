@@ -126,14 +126,32 @@ def path_to_dict(path, d):
         d['files'].append(name)
     return d
 
-# the mian function
-if __name__ == "__main__":
+def main():
 
     parser = argparse.ArgumentParser(description='WEIS Visualization App')
-    parser.add_argument('--modeling_options', type=str, default='modeling_options.yaml', help='Modeling options file')
-    parser.add_argument('--analysis_options', type=str, default='analysis_options.yaml', help='Analysis options file')
-    parser.add_argument('--wt_input', type=str, default='wt_input.yaml', help='Wind turbine input file')
-    parser.add_argument('--output', type=str, default='vizInputFile.yaml', help='Output file name')
+    parser.add_argument('--modeling_options', 
+                        type=str, 
+                        default='modeling_options.yaml', 
+                        help='Modeling options file'
+                        )
+    
+    parser.add_argument('--analysis_options', 
+                        type=str, 
+                        default='analysis_options.yaml', 
+                        help='Analysis options file'
+                        )
+    
+    parser.add_argument('--wt_input', 
+                        type=str, 
+                        default='wt_input.yaml', 
+                        help='Wind turbine input file'
+                        )
+    
+    parser.add_argument('--output', 
+                        type=str, 
+                        default='vizInputFile.yaml', 
+                        help='Output file name'
+                        )
 
     args = parser.parse_args()
 
@@ -152,3 +170,7 @@ if __name__ == "__main__":
 
     # Write the viz input file
     viz.writeVizInputFile(args.output)
+
+
+if __name__ == "__main__":
+    main()
