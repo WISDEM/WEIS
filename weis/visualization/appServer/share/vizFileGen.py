@@ -31,16 +31,17 @@ class WEISVizInputFileGenerator:
         # Add the user options to the vizInput file
         self.vizInput['userOptions'] = {}
         # Run type
+        self.vizInput['userOptions']['optimization'] = {}
         self.vizInput['userOptions']['optimization']['status'] = self.opt_options['driver']['optimization']['flag']
         
-        if self.fname_modeling_options['driver']['Level1']['Flag']:
+        if self.modeling_options['Level1']['flag']:
             self.vizInput['userOptions']['optimization']['type'] = 1
 
-        elif self.fname_modeling_options['driver']['Level2']['Flag']:
+        elif self.modeling_options['Level2']['flag']:
             self.vizInput['userOptions']['optimization']['type'] = 2 # not currently supported.
             warnings.warn("Current WEIS run configuration is not supported by WEIS_Viz")
 
-        elif self.fname_modeling_options['driver']['Level3']['Flag']:
+        elif self.modeling_options['Level3']['flag']:
             self.vizInput['userOptions']['optimization']['type'] = 3
 
         else:
