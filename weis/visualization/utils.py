@@ -52,15 +52,15 @@ def parse_yaml(file_path):
     try:
         with io.open(file_path, 'r') as stream:
             dict = yaml.safe_load(stream)
-        
+
         dict['yamlPath'] = file_path
         # print('input file dict:\n', dict)
         return dict
-    
+
     except FileNotFoundError:
         print('Could not locate the input yaml file..')
         exit()
-    
+
     except Exception as e:
         print(e)
         exit()
@@ -70,22 +70,22 @@ def dict_to_html(data, out_html_list, level):
     '''
     Show the nested dictionary data to html
     '''
-    
+
     for k1, v1 in data.items():
         if not k1 in ['dirs', 'files']:
             if not isinstance(v1, list) and not isinstance(v1, dict):
                 out_html_list.append(html.H6(f'{"---"*level}{k1}: {v1}'))
                 continue
-            
+
             out_html_list.append(html.H6(f'{"---"*level}{k1}'))
-        
+
         if isinstance(v1, list):
             out_html_list.append(html.Div([
                                     html.H6(f'{"---"*(level+1)}{i}') for i in v1]))
-            
+
         elif isinstance(v1, dict):
             out_html_list = dict_to_html(v1, out_html_list, level+1)
-    
+
 
     return out_html_list
 
@@ -216,24 +216,7 @@ def compare_om_data(
 
     return keys_all, diff_keys_12, diff_keys_21
 
-def load_OMsql(log):
-    """
-    Function from :
-    https://github.com/WISDEM/WEIS/blob/main/examples/09_design_of_experiments/postprocess_results.py
-    """
-    # logging.info("loading ", log)
-    cr = om.CaseReader(log)
-    rec_data = {}
-    cases = cr.get_cases('driver')
-    for case in cases:
-        for key in case.outputs.keys():
-            if key not in rec_data:
-                rec_data[key] = []
-            rec_data[key].append(case[key])
-    
-    return rec_data
-
-def load_OMsql_temp(
+def load_OMsql(
     log,
     parse_multi=False,
     meta=None,
@@ -282,14 +265,10 @@ def load_OMsql_temp(
             if key not in rec_data:
                 # if this key isn't present, create a new list
                 rec_data[key] = []
-            
-            if hasattr(case[key], '__len__'):
-                if len(case[key]) == 1:
-                    # otherwise coerce to float if possible and add the data to the list
-                    rec_data[key].append(float(case[key]))
-                else:
-                    # otherwise a numpy array if possible and add the data to the list
-                    rec_data[key].append(np.array(case[key]))
+
+            if hasattr(case[key], '__len__') and len(case[key]) != 1:
+                # convert to a numpy array if possible and add the data to the list
+                rec_data[key].append(np.array(case[key]))
             else:
                 rec_data[key].append(case[key])
 
@@ -559,14 +538,14 @@ def read_per_iteration(iteration, stats_paths):
 
 
 def get_timeseries_data(run_num, stats, iteration_path):
-    
+
     stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
     filename = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
     if filename.split('_')[-1].startswith('0'):
         filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1][1:]+'.p').strip()
     else:
         filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
-    
+
     # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
     timeseries_path = '/'.join([iteration_path, 'timeseries', filename])
     timeseries_data = pd.read_pickle(timeseries_path)
@@ -600,7 +579,7 @@ def store_dataframes(var_files):
             continue
         df = pd.read_csv(file_path, skiprows=[0,1,2,3,4,5,7], sep='\s+')
         dfs.append({idx: df.to_dict('records')})
-    
+
     return dfs
 
 
@@ -655,7 +634,7 @@ def read_cost_variables(labels, refturb_variables):
 
     for l in labels:
         cost_matrix.append([l, eval(refturb_variables[f'tcc.{l}_cost']['values'])[0]])
-    
+
     return cost_matrix
 
 
@@ -676,23 +655,23 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
         fig = plt.figure()
         fig.patch.set_facecolor('white')
         ax = plt.axes(projection='3d')
-        
+
         with open(os.path.join(raft_design_dir,f'raft_design_{i_plot}.pkl'),'rb') as f:
             design = pickle.load(f)
 
         # TODO: Found typo on gamma value at 1_raft_opt example
         if design['turbine']['tower']['gamma'] == np.array([0.]):
             design['turbine']['tower']['gamma'] = 0.0       # Change it from array([0.])
-        
+
         # set up the model
         model1 = raft.Model(design)
         model1.analyzeUnloaded(
-            ballast= False, 
+            ballast= False,
             heave_tol = 1.0
             )
 
         model1.fowtList[0].r6[4] = np.radians(opt_outs['max_pitch'][i_plot])
-        
+
         _, ax = model1.plot(ax=ax)
 
         ax.azim = -88.63636363636361
@@ -700,7 +679,7 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
         ax.set_xlim3d((-110.90447789470043, 102.92063063344857))
         ax.set_ylim3d((64.47420067304586, 311.37818252335893))
         ax.set_zlim3d((-88.43591080818854, -57.499893019459606))
-        
+
         image_filename = os.path.join(plot_dir,f'ptfm_{i_plot}.png')
         plt.savefig(image_filename, bbox_inches='tight')
         print('saved ', image_filename)
