@@ -371,6 +371,9 @@ class InputReader_OpenFAST(object):
         self.fst_vt['ElastoDyn']['PtfmRIner']  = float_read(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['PtfmPIner']  = float_read(f.readline().split()[0])
         self.fst_vt['ElastoDyn']['PtfmYIner']  = float_read(f.readline().split()[0])
+        self.fst_vt['ElastoDyn']['PtfmXYIner']  = float_read(f.readline().split()[0])
+        self.fst_vt['ElastoDyn']['PtfmYZIner']  = float_read(f.readline().split()[0])
+        self.fst_vt['ElastoDyn']['PtfmXZIner']  = float_read(f.readline().split()[0])
 
         # ElastoDyn Blade (blade_struc)
         f.readline()
@@ -852,11 +855,9 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['Echo']          = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['DTAero']        = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['WakeMod']       = int(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['AFAeroMod']     = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TwrPotent']     = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TwrShadow']     = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TwrAero']       = bool_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['FrozenWake']    = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['CavitCheck']    = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['Buoyancy']      = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['CompAA']        = bool_read(f.readline().split()[0])
@@ -871,10 +872,16 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['Pvap']           = float_read(f.readline().split()[0])
         #self.fst_vt['AeroDyn15']['FluidDepth']           = float_read(f.readline().split()[0])
 
+        f.readline()
+        self.fst_vt['AeroDyn15']['BEM_Mod']           = int(f.readline().split()[0])
+
         # Blade-Element/Momentum Theory Options
         f.readline()
-        self.fst_vt['AeroDyn15']['SkewMod']               = int_read(f.readline().split()[0])
-        self.fst_vt['AeroDyn15']['SkewModFactor']         = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewMod']             = int_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewMomCorr']         = bool_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewRedistr_Mod']     = int_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SkewRedistrFactor']   = float_read(f.readline().split()[0])
+        f.readline()
         self.fst_vt['AeroDyn15']['TipLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['HubLoss']               = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['TanInd']                = bool_read(f.readline().split()[0])
@@ -882,6 +889,12 @@ class InputReader_OpenFAST(object):
         self.fst_vt['AeroDyn15']['TIDrag']                = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['IndToler']              = float_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['MaxIter']               = int(f.readline().split()[0])
+        f.readline()
+        self.fst_vt['AeroDyn15']['SectAvg']               = bool_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SectAvgWeighting']      = int_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SectAvgNPoints']        = int_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SectAvgPsiBwd']         = float_read(f.readline().split()[0])
+        self.fst_vt['AeroDyn15']['SectAvgPsiFwd']         = float_read(f.readline().split()[0])
 
 
         # Dynamic Blade-Element/Momentum Theory Options 
@@ -895,6 +908,7 @@ class InputReader_OpenFAST(object):
         
         # Beddoes-Leishman Unsteady Airfoil Aerodynamics Options
         f.readline()
+        self.fst_vt['AeroDyn15']['AoA34']                  = bool_read(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['UAMod']                  = int(f.readline().split()[0])
         self.fst_vt['AeroDyn15']['FLookup']                = bool_read(f.readline().split()[0])
         
