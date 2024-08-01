@@ -48,7 +48,11 @@ class RAFT_WEIS(om.Group):
         members_opt['npts_lfill'] = members_opt['npts_rho_fill'] = [int(m-1) for m in members_opt['npts']]
         members_opt['ncaps'] = weis_opt["floating"]["members"]["n_bulkheads"]
         members_opt['nreps'] = [0]*members_opt['nmembers']
-        members_opt['shape'] = ['circ']*members_opt['nmembers']
+        member_shape = weis_opt["floating"]["members"]["outer_shape"]
+        # TODO: need to re-visit how to handle square. Can we just get away square with rect?
+        member_shape = list(map(lambda x:x.replace("circular", "circ"), member_shape))  # replace all circular with circ
+        member_shape = list(map(lambda x:x.replace("rectangular", "rect"), member_shape))
+        members_opt['shape'] = member_shape
         members_opt['scalar_thicknesses'] = members_opt['scalar_diameters'] = [False]*members_opt['nmembers']
         members_opt['scalar_coefficients'] = [False]*members_opt['nmembers']
         members_opt['n_ballast_type'] = len(weis_opt["floating"]["members"]["ballast_types"])
@@ -130,12 +134,29 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
 
         n_member = len(opt["floating"]["members"]["name"])
         self.add_input("member_variable_height", val=np.zeros(n_member))
+        # Outer diameters and side lenghts are directly connected to the raft_omdao in glue_code
+        # not going through here.
+        # TODO: bring the outer_diameter connections here because we need some processing
+        # due to the difference in how we store the side lengths
         for k in range(n_member):
             n_height = opt["floating"]["members"]["n_height"][k]
             n_layers = opt["floating"]["members"]["n_layers"][k]
             n_ball   = opt["floating"]["members"]["n_ballasts"][k]
             n_bulk   = opt["floating"]["members"]["n_bulkheads"][k]
-
+            if opt["floating"]["members"]["outer_shape"][k] == "circular":
+                self.add_input(f"member{k}:outer_diameter", val=np.zeros(n_height), units="m")
+                self.add_input(f"member{k}:Ca", val=np.zeros(n_height))
+                self.add_input(f"member{k}:Cd", val=np.zeros(n_height))
+                self.add_output(f"platform_member{k+1}_d", val=np.zeros(n_height), units="m")
+            elif opt["floating"]["members"]["outer_shape"][k] == "rectangular":
+                self.add_input(f"member{k}:side_length_a", val=np.zeros(n_height), units="m")
+                self.add_input(f"member{k}:side_length_b", val=np.zeros(n_height), units="m")
+                self.add_input(f"member{k}:Ca", val=np.zeros(n_height))
+                self.add_input(f"member{k}:Cd", val=np.zeros(n_height))
+                self.add_input(f"member{k}:Cay", val=np.zeros(n_height))
+                self.add_input(f"member{k}:Cdy", val=np.zeros(n_height))
+                # RAFT collect a and b into d
+                self.add_output(f"platform_member{k+1}_d", val=np.zeros([n_height,2]), units="m")
             self.add_input(f"member{k}:height", val=0.0, units="m")
             self.add_input(f"member{k}:layer_thickness", val=np.zeros((n_layers, n_height)), units="m")
             self.add_input(f"member{k}:rho", val=np.zeros(n_height-1), units="kg/m**3")
@@ -159,8 +180,12 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             self.add_output(f"platform_member{k+1}_ring_spacing", val=0.0)
             self.add_output(f"platform_member{k+1}_ring_t", val=0.0, units="m")
             self.add_output(f"platform_member{k+1}_ring_h", val=0.0, units="m")
-            self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height))
-            self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
+            if opt["floating"]["members"]["outer_shape"][k] == "circular":
+                self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones(n_height))
+                self.add_output(f"platform_member{k+1}_Ca", val=np.ones(n_height))
+            elif opt["floating"]["members"]["outer_shape"][k] == "rectangular":
+                self.add_output(f"platform_member{k+1}_Cd", val=0.8*np.ones([n_height, 2]))
+                self.add_output(f"platform_member{k+1}_Ca", val=np.ones([n_height, 2]))                
             self.add_output(f"platform_member{k+1}_CdEnd", val=0.6*np.ones(n_height))
             self.add_output(f"platform_member{k+1}_CaEnd", val=0.6*np.ones(n_height))
 
@@ -235,6 +260,19 @@ class RAFT_WEIS_Prep(om.ExplicitComponent):
             # Member thickness
             outputs[f"platform_member{k+1}_t"] = inputs[f"member{k}:layer_thickness"].sum(axis=0)
             outputs[f"platform_member{k+1}_rho_shell"] = inputs[f"member{k}:rho"].mean()
+
+            # Convert diameter and side lengths to RAFT
+            if opt["floating"]["members"]["outer_shape"][k] == "circular":
+                outputs[f"platform_member{k+1}_d"] = inputs[f"member{k}:outer_diameter"]
+                outputs[f"platform_member{k+1}_Ca"] = inputs[f"member{k}:Ca"] if np.all(inputs[f"member{k}:Ca"]>0.0) else 1
+                outputs[f"platform_member{k+1}_Cd"] = inputs[f"member{k}:Cd"] if np.all(inputs[f"member{k}:Cd"]>0.0) else 1
+            elif opt["floating"]["members"]["outer_shape"][k] == "rectangular":
+                outputs[f"platform_member{k+1}_d"][:, 0] = inputs[f"member{k}:side_length_a"]
+                outputs[f"platform_member{k+1}_d"][:, 1] = inputs[f"member{k}:side_length_b"]
+                outputs[f"platform_member{k+1}_Ca"][:, 0] = inputs[f"member{k}:Ca"] if np.all(inputs[f"member{k}:Ca"]>0.0) else 1
+                outputs[f"platform_member{k+1}_Cd"][:, 0] = inputs[f"member{k}:Cd"] if np.all(inputs[f"member{k}:Cd"]>0.0) else 1
+                outputs[f"platform_member{k+1}_Ca"][:, 1] = inputs[f"member{k}:Cay"] if np.all(inputs[f"member{k}:Cay"]>0.0) else 1
+                outputs[f"platform_member{k+1}_Cd"][:, 0] = inputs[f"member{k}:Cdy"] if np.all(inputs[f"member{k}:Cdy"]>0.0) else 1
 
             # Ring stiffener discretization conversion
             if ( (float(inputs[f"member{k}:ring_stiffener_spacing"]) > 0.0) and

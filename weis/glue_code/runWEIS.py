@@ -223,12 +223,15 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
             # output the problem variables as a dictionary in the output dir
             fname_pv_json = os.path.join(folder_output, "problem_vars.json")
+            pvfile = open(fname_pv_json, 'w')
             # openMDAO doesn't save constraint values, so we get them from this construction
-            problem_var_dict = wt_opt.list_problem_vars(
+            problem_var_dict = wt_opt.list_driver_vars(
                 desvar_opts=["lower", "upper",],
                 cons_opts=["lower", "upper", "equals",],
-                out_stream=None,
+                out_stream=pvfile,
             )
+            pvfile.close()
+            
             # clean up the problem_var_dict that we extracted for output
             for k in problem_var_dict.keys():
                 if not problem_var_dict.get(k): continue
@@ -238,8 +241,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                             problem_var_dict[k][idx][1][kk] = problem_var_dict[k][idx][1][kk].tolist()
                         if isinstance(problem_var_dict[k][idx][1][kk], np.int32):
                             problem_var_dict[k][idx][1][kk] = int(problem_var_dict[k][idx][1][kk])
-            with open(fname_pv_json, 'w') as pvfile:
-                json.dump(problem_var_dict, pvfile, indent=4)
+            #with open(fname_pv_json, 'w') as pvfile:
+            #    json.dump(problem_var_dict, pvfile, indent=4)
 
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)

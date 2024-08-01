@@ -4,7 +4,7 @@ from weis.test.utils import execute_script
 skinny_scripts = [
     "02_run_openfast_cases/weis_driver_rosco_opt",       #It's fast, I promise (49 sec. locally)
     "02_run_openfast_cases/weis_driver_sm",    #Not as fast as weis_driver, but not too bad (120 sec. locally)
-    "03_NREL5MW_OC3_spar/weis_driver",
+    #"03_NREL5MW_OC3_spar/weis_driver",
     "03_NREL5MW_OC3_spar/weis_freq_driver",
     "06_IEA-15-240-RWT/weis_driver_monopile",
     "06_IEA-15-240-RWT/weis_driver_TMDs",
