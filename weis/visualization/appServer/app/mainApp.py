@@ -94,7 +94,6 @@ app.layout = dcc.Loading(
 
 def main():
     # test the port availability, flask calls the main function twice in debug mode
-    print(args.debug)
     if not checkPort(args.port, args.host) and not args.debug:
         print(f"Port {args.port} is already in use. Please change the port number and try again.")
         print(f"To change the port number, pass the port number with the '--port' flag. eg: python mainApp.py --port {args.port+1}")
