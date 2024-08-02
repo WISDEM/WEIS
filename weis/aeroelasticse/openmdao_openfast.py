@@ -1777,7 +1777,7 @@ class FASTLoadCases(ExplicitComponent):
         mean_wind_speed = np.zeros(dlc_generator.n_cases)
         yaw_misalignment = np.zeros(dlc_generator.n_cases)
         DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
-        aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
+        # aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
         wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
         tau1_const = np.zeros(dlc_generator.n_cases)
         dt_fvw = np.zeros(dlc_generator.n_cases)
@@ -1895,7 +1895,7 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_initial[i_case] = 0.
                 pitch_initial[i_case] = 90.
                 shutdown_time[i_case] = 0
-                aero_mod[i_case] = 1
+                # aero_mod[i_case] = 1
                 wake_mod[i_case] = 0
                 tau1_const[i_case] = 0.
 
@@ -1954,7 +1954,7 @@ class FASTLoadCases(ExplicitComponent):
         case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
 
         # Inputs to AeroDyn (parking)
-        case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
+        # case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
         case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
         case_inputs[("AeroDyn15","tau1_const")] = {'vals':tau1_const, 'group':1}
 
