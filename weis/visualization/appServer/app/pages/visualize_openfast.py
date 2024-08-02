@@ -104,7 +104,7 @@ def define_graph_cfg_layout(df1, of_options):
                 ], style = {'float':'left', 'width': '200px', 'padding-left': '1.0rem'}),
                 html.Div([
                     html.Label(['Plot options:'], style={'font-weight':'bold', 'text-align':'center'}),
-                    dcc.RadioItems(id='plotOption', options=['single plot', 'multiple plot'], value='single plot', inline=True),
+                    dcc.RadioItems(id='plotOption', options=['single plot', 'multiple plot'], value='multiple plot', inline=True),
                 ], style = {'float':'left', 'padding-left': '1.0rem', 'padding-right': '1.0rem'})
             ])
 
@@ -173,22 +173,22 @@ def draw_graph(signalx, signaly, plotOption, df):
                 col = 1)
         
 
-    # Put each traces in each separated horizontally aligned subplots
+    # Put each traces in each separated vertically aligned subplots
     elif plotOption == 'multiple plot':
-        fig = make_subplots(rows = 1, cols = len(signaly))
+        fig = make_subplots(rows = len(signaly), cols = 1, shared_xaxes=True, vertical_spacing=0.05)
 
-        for col_idx, label in enumerate(signaly):
+        for row_idx, label in enumerate(signaly):
             fig.append_trace(go.Scatter(
                 x = df[signalx],
                 y = df[label],
                 mode = 'lines',
                 name = label),
-                row = 1,
-                col = col_idx + 1)
-            fig.update_yaxes(title_text=label, row=1, col=col_idx+1)
+                row = row_idx + 1,
+                col = 1)
+            fig.update_yaxes(title_text=label, row=row_idx+1, col=1)
     
-    # Define the graph layout where it includes the rendered figure
-    fig.update_xaxes(title_text=signalx)
+        fig.update_layout(height=150 * len(signaly))
+        fig.update_xaxes(title_text=signalx, row=len(signaly), col=1)
 
     return fig
 
