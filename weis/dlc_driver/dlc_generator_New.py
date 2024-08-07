@@ -10,6 +10,7 @@ from weis.aeroelasticse.utils import OLAFParams
 logger = logging.getLogger("wisdem/weis")
 
 
+
 # TODO: not sure where this should live, so it's a global for now
 # Could it be an input yaml?
 openfast_input_map = {
@@ -44,6 +45,12 @@ openfast_input_map = {
         ("ServoDyn","TPitManS3"),
         ("ServoDyn","TimGenOf"),
         ],
+
+    'startup_time': [
+        ("ServoDyn","TimGenOn"),
+        ("ServoDyn","TPCOn"),
+    ],
+        
 
     'final_blade_pitch': [
         ("ServoDyn","BlPitchF(1)"),
@@ -693,6 +700,35 @@ class DLCGenerator(object):
 
         self.generate_cases(generic_case_inputs,dlc_options)
 
+    def generate_3p1(self, dlc_options):
+        # Start up - normal wind - fatigue
+        # 
+        
+        # Get default options
+        dlc_options.update(self.default_options)      
+        
+        # DLC Specific options:
+        dlc_options['label'] = '3.1'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['pitch_initial'] = 90.
+        dlc_options['turbine_status'] = 'parked-idling'     # initial turbine status is what matters here
+
+        # Specify startup time for this case
+        if dlc_options['startup_time'] > dlc_options['analysis_time']:
+            raise Exception(f"DLC 3.1 was selected, but the startup_time ({dlc_options['startup_time']}) option is greater than the analysis_time ({dlc_options['analysis_time']})")
+        else:
+            dlc_options['startup_time'] = dlc_options['startup_time']
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','startup_time','wake_mod','wave_model','pitch_initial'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        # generic_case_inputs.append(['azimuth_init']) # group 2
+      
+        self.generate_cases(generic_case_inputs,dlc_options)
+
     
     def generate_5p1(self, dlc_options):
         # Power production normal turbulence model - shutdown with varous azimuth initial conditions
@@ -723,7 +759,6 @@ class DLCGenerator(object):
         generic_case_inputs.append(['total_time','transient_time','shutdown_time','wake_mod','wave_model','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
-        # TODO: I think we need to shut off the generator here, too
       
         self.generate_cases(generic_case_inputs,dlc_options)
 
