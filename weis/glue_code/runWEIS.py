@@ -219,7 +219,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
         SKIP_SMT = False
         sm_filename = os.path.join(folder_output, os.path.splitext(opt_options['recorder']['file_name'])[0] + '.smt')
         sql_filename = os.path.join(folder_output, opt_options['recorder']['file_name'])
-        if MPI:
+        if MPI and max_cores>1:
             sql_filename += '_{:}'.format(rank)
         if opt_options['opt_flag'] and opt_options['driver']['design_of_experiments']['flag']: # if DOE enabled
             # Skip DOE Driver if SQL file exists
