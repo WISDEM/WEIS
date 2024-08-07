@@ -44,7 +44,8 @@ def plot_conv(
     markersize = 5
     linestyle = "-"
 
-    fig, axes = plt.subplots(
+
+    fig, axes = figax if figax else plt.subplots(
         len(keyset_in),
         1,
         sharex=True,
@@ -146,9 +147,9 @@ def plot_conv(
             )
             if has_ref_vals:
                 cval = key_val_map[key]
-                if cval[0] is not None:
+                if (cval[0] is not None) and (np.log10(np.abs(cval[0])) < 18):
                     axes[idx_ax, 0].plot([0, len(dataOM[key])], [cval[0], cval[0]], "b:", label="_lower bound_")
-                if cval[1] is not None:
+                if (cval[1] is not None) and (np.log10(np.abs(cval[1])) < 18):
                     axes[idx_ax, 0].plot([0, len(dataOM[key])], [cval[1], cval[1]], "r:", label="_upper bound_")
             axes[idx_ax, 0].set_title(key)
 
