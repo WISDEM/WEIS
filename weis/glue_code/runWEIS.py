@@ -11,7 +11,7 @@ from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
-crawling_methods = ['DE', 'NSGA2']
+evolutionary_methods = ['DE', 'NSGA2']
 
 if MPI:
     from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
@@ -41,8 +41,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
         if modeling_options['Level3']['flag']:
 
             # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
-            if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+            if not (opt_options['driver']['design_of_experiments']['flag']) and (opt_options['driver']['optimization']['solver'] in evolutionary_methods):
+                n_DV *= 5  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
+            elif not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
                 n_DV = 1
+
 
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs,
             # otherwise it is half of the number of DV (rounded to the lower integer).
@@ -77,7 +80,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             n_FD = min([max_cores, n_DV])
             n_OF_runs_parallel = 1
             # if we're doing a GA or such, "FD" means "entities in epoch"
-            if opt_options['driver']['optimization']['solver'] in crawling_methods:
+            if opt_options['driver']['optimization']['solver'] in evolutionary_methods:
                 n_FD = max_cores
 
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
@@ -231,7 +234,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 out_stream=pvfile,
             )
             pvfile.close()
-            
+
             # clean up the problem_var_dict that we extracted for output
             for k in problem_var_dict.keys():
                 if not problem_var_dict.get(k): continue
