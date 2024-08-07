@@ -16,14 +16,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macOS-latest", "windows-latest"]
-        python-version: ["3.9","3.10","3.11"]
+        os: ["ubuntu-latest", "macOS-13", "macOS-latest", "windows-latest"] # mac13 is intel, mac-14 arm
+        python-version: ["3.9","3.10","3.11","3.12"]
         
     steps:
-      #- name: Setup GNU Fortran
-      #  #  if: false == contains( matrix.os, 'windows')
-      #  uses: awvwgk/setup-fortran@main
-        
       - uses: actions/checkout@v4
     
       - name: Install conda/mamba
@@ -38,6 +34,11 @@ jobs:
           environment-file: environment.yml
           activate-environment: test
           auto-activate-base: false
+            
+      #- name: Add dependencies windows specific
+      #  if: contains( matrix.os, 'windows')
+      #  run: |
+      #    conda install -y -c intel intel-openmp mkl
       
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
@@ -46,7 +47,7 @@ jobs:
       
       - name: Add test packages
         run: |
-          conda install -y pytest pytest-cov coveralls
+          conda install -y pytest pytest-cov coveralls 
             
       - name: Show custom environment
         run: |
@@ -56,17 +57,29 @@ jobs:
       # Install WEIS
       - name: Install WEIS
         run: |
-          pip install -e . -v
+          python -m pip install --no-deps -e . -v
 
       # Debugging session
       #- name: Setup tmate session
       #  if: contains( matrix.os, 'windows')
       #  uses: mxschmitt/action-tmate@v3
+        
+      #- name: Show openfast environment
+      #  run: |
+      #      which -a openfast
+      #      cd /c/Miniconda3/envs/test/Library/bin/
+      #      ls *fast*.exe
+      #      ls *fast*.dll
+      #      openfast -h
+      #      python -c "import ctypes; ctypes.cdll.LoadLibrary('openfastlib.dll')"
+      #      ls *fast*.dll
+      #      cd examples/03_NREL5MW_OC3_spar
+      #      python weis_driver.py
           
       # List the collected tests for debugging purposes
-      - name: List tests
-        run: |
-          pytest --collect-only weis 
+      #- name: List tests
+      #  run: |
+      #    pytest --collect-only weis 
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
@@ -76,10 +89,8 @@ jobs:
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
-        uses: coverallsapp/github-action@v2
-        # This also works, https://github.com/AndreMiras/coveralls-python-action
-        #uses: AndreMiras/coveralls-python-action@develop
-        #env:
-        #  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        #run: |
-        #  coveralls --service=github
+        #uses: coverallsapp/github-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls --service=github

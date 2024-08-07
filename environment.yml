@@ -3,71 +3,24 @@ channels:
   - defaults
 
 dependencies:
-  #- osqp # Works with the pip version, but not the conda version
-  - anyio
-  - argon2-cffi
-  - arrow
-  - async-lru
-  - babel
-  - beautifulsoup4
-  - bleach
-  - cffi
-  - comm
-  - debugpy
-  - decorator
+  - dash
   - dill
-  - executing
-  - fqdn
-  - git
-  - ipython
-  - isoduration
-  - jedi
-  - jinja2
-  - json5
   - jsonmerge
-  - jupyter
-  - jupyterlab
-  - markupsafe
   - mat4py
-  - matplotlib
-  - meson
-  - mistune
-  - moorpy
-  - ninja
   - nlopt
-  - nlopt
-  - notebook
-  - openfast=3.5.2
-  - openpyxl
-  - openraft
-  - osqp
-  - overrides
-  - pandas
-  - parso
-  - patsy
+  - openfast>=3.5.3
+  - openraft>=1.2.4
+  - osqp  
   - pcrunch
-  - pexpect
   - pip
-  - platformdirs
-  - psutil
-  - ptyprocess
-  - pyDOE3
-  - pygments
-  - pyhams
-  - python-json-logger
-  - pyzmq
-  - qdldl-python
-  - qtpy
-  - rosco
-  - scikit-learn
-  - setuptools
+  - pyhams>=1.3
+  #- pyoptsparse
+  - rosco>=2.9.2
   - smt
-  - tornado
-  - traitlets
-  - treon
-  - webencodings
-  - wisdem=3.14.0
+  - wisdem>=3.16.4
   - pip:
+    - dash-bootstrap-components
+    - dash-mantine-components
     - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:

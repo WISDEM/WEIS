@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "weis"
-version = "1.2"
+version = "1.3"
 description = 'Wind Energy with Integrated Servo-control'
 readme = "README.md"
 requires-python = ">=3.9"
@@ -46,7 +46,6 @@ dependencies = [
   "moorpy",
   "nlopt",
   "numpy",
-  "openmdao<3.28",
   "openpyxl",
   "openraft",
   "osqp",
