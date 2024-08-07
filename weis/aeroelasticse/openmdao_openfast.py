@@ -20,8 +20,7 @@ from weis.aeroelasticse.FAST_reader         import InputReader_OpenFAST
 import weis.aeroelasticse.runFAST_pywrapper as fastwrap
 from weis.aeroelasticse.FAST_post         import FAST_IO_timeseries
 from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
-# from weis.dlc_driver.dlc_generator    import DLCGenerator
-from weis.dlc_driver.dlc_generator_New    import DLCGenerator
+from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
 from pCrunch import PowerProduction
