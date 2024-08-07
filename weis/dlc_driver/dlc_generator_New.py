@@ -920,23 +920,6 @@ class DLCGenerator(object):
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
 
-    
-    def generate_12p1(self, options):
-        # Pass through uniform wind input
-        wind_speeds, _, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        for ws in wind_speeds:
-            idlc = DLCInstance(options=options)
-            idlc.label = '12.1'
-            idlc.IEC_WindType = 'Custom'
-            idlc.URef = wind_speeds
-            idlc.turbulent_wind = False
-            # idlc.wind_file = options['wind_file']
-            if options['analysis_time'] >= 0:
-                idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] >= 0:
-                idlc.transient_time = options['transient_time']
-
-            self.cases.append(idlc)
 
     def generate_new_dlc(self,dlc_options):
         # Describe the new design load case
