@@ -9,12 +9,14 @@ from wisdem.commonse.mpi_tools import MPI
 from smt.surrogate_models import SGP
 
 class WindTurbineDOE2SM():
+    # Read DOE sql files, Process data, Create and train surrogate models, and Save them in smt file.
 
     def __init__(self):
         self._doe_loaded = False
         self._sm_trained = False
 
     def read_doe(self, sql_file, modeling_options, opt_options):
+        # Read DOE sql files. If MPI, read them in parallel.
 
         if MPI:
             rank = MPI.COMM_WORLD.Get_rank()
@@ -259,6 +261,8 @@ class WindTurbineDOE2SM():
 
 
     def _identify_dv(self, keys, opt_options, inputs, outputs):
+        # Identify design variables to set them as input parameters in the surrogate model
+        # if they are flagged as DV in the analysis_options.yaml file
 
         dvflag = len(keys)*[False]
 
@@ -389,6 +393,7 @@ class WindTurbineDOE2SM():
 
 
     def write_sm(self, sm_filename):
+        # Write trained surrogate models in the smt file in pickle format
 
         if MPI:
             rank = MPI.COMM_WORLD.Get_rank()
@@ -413,6 +418,7 @@ class WindTurbineDOE2SM():
 
 
     def train_sm(self):
+        # Surrogate model training
 
         if MPI:
             rank = MPI.COMM_WORLD.Get_rank()
@@ -592,6 +598,10 @@ class WindTurbineDOE2SM():
 
 
     def _split_list_chunks(self, fulllist, max_n_chunk=1, item_count=None):
+        # Split items in a list into nested multiple (max_n_chunk) lists in an outer list
+        # This method is useful to divide jobs for parallel surrogate model training as the number
+        # of surrogate models trained are generally not equal to the number of parallel cores used.
+
         item_count = item_count or len(fulllist)
         n_chunks = min(item_count, max_n_chunk)
         fulllist = iter(fulllist)
@@ -604,6 +614,8 @@ class WindTurbineDOE2SM():
 
 
 class SGP_WT(SGP):
+    # Sparse Gaussian Process surrogate model class, specifically tailored for WEIS use,
+    # inherited from SGP class included in the SMT Toolbox.
 
     def _initialize(self):
         super()._initialize()
@@ -620,6 +632,10 @@ class SGP_WT(SGP):
         self._bounds_set = True
 
     def predict(self, x):
+        # Predicts surrogate model response and variance
+        # Input (x) and outputs (y_out, v_out) are denormalized (raw scale) values
+        # while actual surrogate model computation is done in normalized scale.
+
         x_in = np.array(x)
 
         if not self._bounds_set:
