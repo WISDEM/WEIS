@@ -222,6 +222,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
         if MPI:
             sql_filename += '_{:}'.format(rank)
         if opt_options['opt_flag'] and opt_options['driver']['design_of_experiments']['flag']: # if DOE enabled
+            # Skip DOE Driver if SQL file exists
             if opt_options['driver']['design_of_experiments']['skip_doe_if_results_exist']: # if DOE skip flag set
                 if MPI:
                     doe_file_exist = MPI.COMM_WORLD.gather(os.path.isfile(sql_filename), root=0)
