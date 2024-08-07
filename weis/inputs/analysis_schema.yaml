@@ -508,37 +508,18 @@ properties:
                 description: Specification of the design of experiments driver parameters
                 default: {}
                 properties:
-                    skip_if_results_exist:
+                    skip_doe_if_results_exist:
                         type: boolean
                         default: True
-                        description: Toggle skipping the design of experiments if results exist
+                        description: Toggle skipping the design of experiments if recorded DOE results (.sql) exist
+                    skip_smt_if_results_exist:
+                        type: boolean
+                        default: True
+                        description: Toggle skipping the surrogate model training if surrogate model file (.smt) exist
                     train_surrogate_model:
                         type: boolean
                         default: False
                         description: Train surrogate model after running design of experiment
-            surrogate_based_optimization:
-                type: object
-                description: Specification of the surrogate-based optimization driver parameters
-                default: {}
-                properties:
-                    flag: *flag
-                    max_iter:
-                        type: integer
-                        description: Max number of optimization iterations
-                        default: 100
-                        minimum: 0
-                        maximum: 100000
-                    max_function_calls:
-                        type: integer
-                        description: Max number of calls to objective function evaluation
-                        default: 100000
-                        minimum: 0
-                        maximum: 100000000
-                    solver:
-                        type: string
-                        description: Optimization driver.
-                        default: SLSQP
-                        enum: [SLSQP, COBYLA]
 
 
     merit_figure:

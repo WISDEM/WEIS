@@ -115,6 +115,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
     else:
         color_i = 0
         rank = 0
+        max_cores = 1
 
     # make the folder_output relative to the input, if it's a relative path
     analysis_input_dir = os.path.dirname(opt_options['fname_input_analysis'])
@@ -213,17 +214,31 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
         sys.stdout.flush()
 
-        # Check if DOE & skip flag True & DOE results exist, skip DOE
+        # DOE and SMT skip logics
         SKIP_DRIVER = False
+        SKIP_SMT = False
         sm_filename = os.path.join(folder_output, os.path.splitext(opt_options['recorder']['file_name'])[0] + '.smt')
-        if opt_options['opt_flag']:
-            if opt_options['driver']['design_of_experiments']['flag']:
-                if 'skip_if_results_exist' in opt_options['driver']['design_of_experiments']:
-                    if opt_options['driver']['design_of_experiments']['skip_if_results_exist']:
-                        if os.path.isfile(sm_filename):
-                            SKIP_DRIVER = True
-                            if (not MPI) or (MPI and rank == 0):
-                                print('File {:} exists. Skipping the design of experiments.'.format(sm_filename))
+        sql_filename = os.path.join(folder_output, opt_options['recorder']['file_name'])
+        if MPI:
+            sql_filename += '_{:}'.format(rank)
+        if opt_options['opt_flag'] and opt_options['driver']['design_of_experiments']['flag']: # if DOE enabled
+            if opt_options['driver']['design_of_experiments']['skip_doe_if_results_exist']: # if DOE skip flag set
+                if MPI:
+                    doe_file_exist = MPI.COMM_WORLD.gather(os.path.isfile(sql_filename), root=0)
+                    doe_file_exist = MPI.COMM_WORLD.bcast(doe_file_exist, root=0)
+                else:
+                    doe_file_exist = [os.path.isfile(sql_filename)]
+                # If sql files exist for all MPI ranks, and no additional sql file exists outside of MPI size, set skip flag
+                if all(doe_file_exist) and not os.path.isfile(os.path.join(folder_output, opt_options['recorder']['file_name']) + '_{:}'.format(max_cores)):
+                    SKIP_DRIVER = True
+                    if (not MPI) or (MPI and rank == 0):
+                        print('File {:} exists. Skipping the design of experiments.'.format(sql_filename))
+            # Skip SM Training if SMT file exists
+            if opt_options['driver']['design_of_experiments']['skip_smt_if_results_exist']: # if SMT skip flag set
+                if os.path.isfile(sm_filename):
+                    SKIP_SMT = True
+                    if (not MPI) or (MPI and rank == 0):
+                        print('File {:} exists. Skipping the design of experiments.'.format(sm_filename))
 
         # Run openmdao problem
         if opt_options['opt_flag']:
@@ -272,14 +287,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
     # If design_of_experiment, recorder flag, train_surrogate_model are all True,
     # collect sql files and create smt object
-    if opt_options['opt_flag'] and (not SKIP_DRIVER):
+    if opt_options['opt_flag'] and (not SKIP_DRIVER) and (not SKIP_SMT):
         if opt_options['driver']['design_of_experiments']['flag'] and opt_options['recorder']['flag']:
             if opt_options['driver']['design_of_experiments']['train_surrogate_model']:
-                sql_file = os.path.join(folder_output, opt_options['recorder']['file_name'])
-                if MPI:
-                    sql_file += '_{:}'.format(rank)
                 WTSM = WindTurbineDOE2SM()
-                WTSM.read_doe(sql_file, modeling_options, opt_options) # Parallel reading if MPI
+                WTSM.read_doe(sql_filename, modeling_options, opt_options) # Parallel reading if MPI
                 WTSM.train_sm() # Parallel training if MPI
                 WTSM.write_sm(sm_filename) # Saving will be done in rank=0
 

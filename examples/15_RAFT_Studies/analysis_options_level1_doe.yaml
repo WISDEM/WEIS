@@ -124,13 +124,9 @@ driver:
     generator: LatinHypercube #Uniform #LatinHypercube #FullFact    # Type of input generator. (Uniform)
     num_samples: 50     # number of samples for (Uniform only)
     levels: 1
-    skip_if_results_exist: True
+    skip_doe_if_results_exist: True
+    skip_smt_if_results_exist: True
     train_surrogate_model: True
-  surrogate_based_optimization:
-    flag: True            # Will work only if design_of_experiments results exist
-    max_iter: 300
-    max_function_calls: 300000
-    solver: COBYLA        # SLSQP, COBYLA
 
 recorder:
   flag: True              # Flag to activate OpenMDAO recorder
