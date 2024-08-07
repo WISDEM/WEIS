@@ -125,6 +125,7 @@ driver:
         maxiter: 100         # Maximum number of iterations (NLopt)
         max_iter: 1000         # Maximum number of iterations (SLSQP)
         solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        run_parallel: True
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder
