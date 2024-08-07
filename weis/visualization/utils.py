@@ -156,9 +156,16 @@ def load_vars_file(fn_vars):
         a dictionary of dictionaries holding the problem_vars from WEIS
     """
 
-    with open(fn_vars, "r") as fjson:
-        # unpack in a useful form
-        vars = {k: dict(v) for k, v in json.load(fjson).items()}
+    rawvars = load_yaml(fn_vars)
+    vars = {}
+    for k, v in rawvars.items():
+        for (_, v2) in v:
+            for k3, v3 in v2.items():
+                if k3 in ["lower", "upper"]:
+                    v2[k3] = float(v3)
+                if k3 == "val":
+                    v2[k3] = np.array(v3)
+        vars[k] = dict(v)
     return vars
 
 

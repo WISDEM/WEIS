@@ -44,7 +44,8 @@ def plot_conv(
     markersize = 5
     linestyle = "-"
 
-    fig, axes = plt.subplots(
+
+    fig, axes = figax if figax else plt.subplots(
         len(keyset_in),
         1,
         sharex=True,
