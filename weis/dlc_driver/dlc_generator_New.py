@@ -874,130 +874,52 @@ class DLCGenerator(object):
         # Groups are dependent variables, the cases are a cross product of the independent groups
         # The options in each group should have the same length
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
 
 
-    def generate_6p4(self, options):
+    def generate_6p4(self, dlc_options):
         # Parked (standing still or idling) - normal turbulence model - fatigue loads
-        wind_speeds = np.arange(self.ws_cut_in, 0.7 * self.V_ref, options['ws_bin_size'])
-        if wind_speeds[-1] != self.V_ref:
-            wind_speeds = np.append(wind_speeds, self.V_ref)
-        wind_speeds, wind_seeds = self.get_wind_seeds(options, wind_speeds)
-        wind_speeds = np.repeat(wind_speeds, options['n_seeds'])
-        wave_seeds = self.get_wave_seeds(options, wind_speeds)
-        _, _, _, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        # If the user has not defined Hs and Tp, apply the metocean conditions for the normal sea state
-        if len(wave_Hs)==0:
-            wave_Hs = np.interp(wind_speeds, self.mo_ws, self.mo_Hs_NSS)
-        if len(wave_Tp)==0:
-            wave_Tp = np.interp(wind_speeds, self.mo_ws, self.mo_Tp_NSS)
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        for ws in wind_speeds:
-            idlc = DLCInstance(options=options)
-            idlc.URef = ws
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.turbulent_wind = True
-            if idlc.turbine_status == 'operating':
-                idlc.turbine_status = 'parked-still'
-            idlc.label = '6.4'
-            if options['analysis_time'] > 0:
-                idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] >= 0:
-                idlc.transient_time = options['transient_time']
-            self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
 
-    def generate_6p5(self, options):
-        # Parked (standing still or idling) - extreme wind model 500-year return period - ultimate loads
-        options['wind_speed'] = [50,50]  # set dummy, so wind seeds are correct
-        _, wind_seeds, wave_seeds, wind_heading, wave_Hs, wave_Tp, wave_gamma, wave_heading, _ = self.get_metocean(options)
-        # Set yaw_misalign, else default
-        if 'yaw_misalign' in options:
-            yaw_misalign = options['yaw_misalign']
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = '6.4'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+
+        # Set dlc-specific options, like yaw_misalign, initial azimuth
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
         else: # default
-            yaw_misalign = [-8., 8.]
-        yaw_misalign_deg = np.array(yaw_misalign * options['n_seeds'])
-        if len(wave_Hs)==0:
-            wave_Hs = self.wave_Hs1
-        if len(wave_Tp)==0:
-            wave_Tp = self.wave_Tp1
-        # Counter for wind seed
-        i_WiSe=0
-        # Counters for wave conditions
-        i_WaSe=0
-        i_Hs=0
-        i_Tp=0
-        i_WiH=0
-        i_WG=0
-        i_WaH=0
-        for yaw_ms in yaw_misalign_deg:
-            idlc = DLCInstance(options=options)
-            if idlc.URef < 0:   # default is -1, this allows us to set custom V_50
-                idlc.URef = self.V_e50 * 1.125
-            idlc.yaw_misalign = yaw_ms
-            idlc.RandSeed1 = wind_seeds[i_WiSe]
-            idlc.wave_seed1 = wave_seeds[i_WaSe]
-            idlc.wind_heading = wind_heading[i_WiH]
-            idlc.wave_height = wave_Hs[i_Hs]
-            idlc.wave_period = wave_Tp[i_Tp]
-            idlc.wave_gamma = wave_gamma[i_WG]
-            idlc.wave_heading = wave_heading[i_WaH]
-            idlc.IEC_WindType = self.wind_speed_class_num + 'EWM1'
-            idlc.turbulent_wind = True
-            if idlc.turbine_status == 'operating':
-                idlc.turbine_status = 'parked-still'
-            idlc.label = '6.5'
-            if options['analysis_time'] > 0:
-                idlc.analysis_time = options['analysis_time']
-            if options['transient_time'] >= 0:
-                idlc.transient_time = options['transient_time']
-            self.cases.append(idlc)
-            if len(wind_seeds)>1:
-                i_WiSe+=1
-            if len(wave_seeds)>1:
-                i_WaSe+=1
-            if len(wind_heading)>1:
-                i_WiH+=1
-            if len(wave_Hs)>1:
-                i_Hs+=1
-            if len(wave_Tp)>1:
-                i_Tp+=1
-            if len(wave_gamma)>1:
-                i_WG+=1
-            if len(wave_heading)>1:
-                i_WaH+=1
+            dlc_options['yaw_misalign'] = [-8.,8.]
+
+        # parked options
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['wake_mod'] = 0
+        dlc_options['pitch_initial'] = 90.
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['shutdown_time'] = 0.
+        dlc_options['final_blade_pitch'] = 90.
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+
     
     def generate_12p1(self, options):
         # Pass through uniform wind input
