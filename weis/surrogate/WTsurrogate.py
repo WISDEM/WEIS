@@ -43,7 +43,7 @@ class WindTurbineDOE2SM():
                 'floating.member_Y_pontoon_lower3:outer_diameter',
             ]))
             input_keys_ref.sort()
-            input_keys_dv = self._identify_dv(input_keys_ref, opt_options, inputs, outputs)
+            input_keys_dv = self._identify_dv(input_keys_ref, opt_options, inputs, outputs) # identify which parameter included in the input_keys_ref are flagged as DV
             output_keys_ref = list(set(outputs.keys()).intersection([
                 'tune_rosco_ivc.ps_percent',
                 'tune_rosco_ivc.omega_pc',
@@ -100,90 +100,91 @@ class WindTurbineDOE2SM():
                 'floatingse.structural_frequencies', 
             ]))
             output_keys_ref.sort()
-            output_keys_dv = self._identify_dv(output_keys_ref, opt_options, inputs, outputs)
+            output_keys_dv = self._identify_dv(output_keys_ref, opt_options, inputs, outputs) # identify which parameter included in the output_keys_ref are flagged as DV
         else:
             input_keys_ref = None
             input_keys_dv = None
             output_keys_ref = None
             output_keys_dv = None
         if MPI:
+            # broadcast lists of openmdao variable names to all MPI cores
             input_keys_ref = MPI.COMM_WORLD.bcast(input_keys_ref, root=0)
             input_keys_dv = MPI.COMM_WORLD.bcast(input_keys_dv, root=0)
             output_keys_ref = MPI.COMM_WORLD.bcast(output_keys_ref, root=0)
             output_keys_dv = MPI.COMM_WORLD.bcast(output_keys_dv, root=0)
 
-        # Retrieve values to construct dataset list
+        # Retrieve values of the parameters included in the key lists
+        # from each sql file associated with each MPI core.
         dataset = []
-
         for case in cases:
             inputs = cr.get_case(case).inputs
             outputs = cr.get_case(case).outputs
             var_keys = []
             var_dv = []
             var_values = []
-            for key in input_keys_ref:
-                if len(inputs[key]) == 1:
+            for key in input_keys_ref: # for each parameter key included in the openmdao inputs object
+                if len(inputs[key]) == 1: # if scalar
                     var_keys.append(key)
                     try:
                         dvidx = input_keys_dv[input_keys_ref.index(key)]
                         if ((type(dvidx) == bool) and (dvidx == False)) or \
-                                ((type(dvidx) == list) and (len(dvidx) == 0)):
+                                ((type(dvidx) == list) and (len(dvidx) == 0)): # If not DV (dvidx is either False or [])
                             var_dv.append(False)
-                        elif ((type(dvidx) == list) and (len(dvidx) == 1)):
+                        elif ((type(dvidx) == list) and (len(dvidx) == 1)): # If DV (dvidx is [0], meaning that inputs[key][0] is DV)
                             var_dv.append(True)
                         else:
                             raise Exception
                     except:
                         var_dv.append(False)
                     var_values.append(inputs[key][0])
-                else:
+                else: # if vector
                     for idx in range(len(np.squeeze(inputs[key]))):
                         var_keys.append(key + '_' + str(idx))
                         try:
                             dvidx = input_keys_dv[input_keys_ref.index(key)]
                             if ((type(dvidx) == bool) and (dvidx == False)) or \
-                                    ((type(dvidx) == list) and (len(dvidx) == 0)):
+                                    ((type(dvidx) == list) and (len(dvidx) == 0)): # If not DV (dvidx is either False or [])
                                 var_dv.append(False)
-                            elif ((type(dvidx) == list) and (len(dvidx) > 0)):
+                            elif ((type(dvidx) == list) and (len(dvidx) > 0)): # If DV (dvidx is [i1, i2, ...], meaning that inputs[key][i1], inputs[key][i2], ... are DVs)
                                 for jdx in range(len(dvidx)):
                                     var_dv_append = False
                                     if idx == dvidx[jdx]:
                                         var_dv_append = True
-                                var_dv.append(var_dv_append)
+                                var_dv.append(var_dv_append) # If any element in the vector is DV, then add into the list of DVs
                             else:
                                 raise Exception
                         except:
                             var_dv.append(False)
                         var_values.append(np.squeeze(inputs[key])[idx])
-            for key in output_keys_ref:
-                if len(outputs[key]) == 1:
+            for key in output_keys_ref: # for each parameter key included in the openmdao outputs object
+                if len(outputs[key]) == 1: # if scalar
                     var_keys.append(key)
                     try:
                         dvidx = output_keys_dv[output_keys_ref.index(key)]
                         if ((type(dvidx) == bool) and (dvidx == False)) or \
-                                ((type(dvidx) == list) and (len(dvidx) == 0)):
+                                ((type(dvidx) == list) and (len(dvidx) == 0)): # If not DV (dvidx is either False or [])
                             var_dv.append(False)
-                        elif ((type(dvidx) == list) and (len(dvidx) == 1)):
+                        elif ((type(dvidx) == list) and (len(dvidx) == 1)): # If DV (dvidx is [0], meaning that outputss[key][0] is DV)
                             var_dv.append(True)
                         else:
                             raise Exception
                     except:
                         var_dv.append(False)
                     var_values.append(outputs[key][0])
-                else:
+                else: # if vector
                     for idx in range(len(np.squeeze(outputs[key]))):
                         var_keys.append(key + '_' + str(idx))
                         try:
                             dvidx = output_keys_dv[output_keys_ref.index(key)]
                             if ((type(dvidx) == bool) and (dvidx == False)) or \
-                                    ((type(dvidx) == list) and (len(dvidx) == 0)):
+                                    ((type(dvidx) == list) and (len(dvidx) == 0)): # If not DV (dvidx is either False or [])
                                 var_dv.append(False)
-                            elif ((type(dvidx) == list) and (len(dvidx) > 0)):
+                            elif ((type(dvidx) == list) and (len(dvidx) > 0)): # If DV (dvidx is [i1, i2, ...], meaning that outputs[key][i1], outputss[key][i2], ... are DVs)
                                 for jdx in range(len(dvidx)):
                                     var_dv_append = False
                                     if idx == dvidx[jdx]:
                                         var_dv_append = True
-                                var_dv.append(var_dv_append)
+                                var_dv.append(var_dv_append) # If any element in the vector is DV, then add into the list of DVs
                             else:
                                 raise Exception
                         except:
@@ -191,7 +192,7 @@ class WindTurbineDOE2SM():
                         var_values.append(np.squeeze(outputs[key])[idx])
             dataset.append(var_values)
 
-        # Gather data values
+        # Gather data values from all MPI cores if running parallel
         if MPI:
             dataset = MPI.COMM_WORLD.gather(dataset, root=0)
         else:
