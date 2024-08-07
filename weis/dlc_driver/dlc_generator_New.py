@@ -334,7 +334,8 @@ class DLCGenerator(object):
 
 
     def generate(self, label, options):
-        known_dlcs = [1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.2, 6.3, 6.4, 6.5, 12.1]
+        # Use schema to determine known_dlcs (weis/inputs/modeling_schema.yaml)
+        known_dlcs = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']['DLC']['enum']
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
 
         # Get extreme wind speeds
