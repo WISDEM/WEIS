@@ -16,7 +16,8 @@ fname_modeling_options = mydir + os.sep + "modeling_options_openfast.yaml"
 fname_analysis_options = mydir + os.sep + "analysis_options_of_ptfm_opt.yaml"
 
 # Change optimizer and output folder
-optimizer = sys.argv[1]
+# optimizer = sys.argv[1]
+optimizer = 'SLSQP'
 print(f"Optimizer: {optimizer}")
 
 analysis_override = {}

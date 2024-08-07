@@ -218,7 +218,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
             self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
             self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-            self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
             self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
             self.add_input("platform_mass", 0.0, units="kg")
             self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -1426,7 +1425,7 @@ class FASTLoadCases(ExplicitComponent):
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                 for k in range(fst_vt['HydroDyn']['NMembers']):
-                    idx = discrete_inputs['platform_elem_memid'][k]
+                    idx = modopt['floating']['members']['platform_elem_memid']
                     PropPotBool[k] = modopt["Level1"]["model_potential"][idx]
                 fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
