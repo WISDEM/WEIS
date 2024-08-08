@@ -408,6 +408,10 @@ class DLCGenerator(object):
             #if dlc_options['label'] == '1.2':
             #    idlc.probability = probabilities[i_WaH]
             self.cases.append(idlc)
+
+        # Save number of DLC 1.1 cases (this info isn't passed back to generate_1p1)
+        if dlc_options['label'] == '1.1':
+            self.n_ws_dlc11 = len(generic_case_list)
             
 
     def apply_sea_state(self,met_options,sea_state='normal'):
