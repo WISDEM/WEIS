@@ -599,7 +599,7 @@ class DLCGenerator(object):
         dlc_options.update(self.default_options)   
         
         # Handle DLC Specific options:
-        dlc_options['label'] = '1.1'
+        dlc_options['label'] = '1.3'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = '1ETM'
 
