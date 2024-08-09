@@ -411,7 +411,7 @@ class DLCGenerator(object):
 
         # Save number of DLC 1.1 cases (this info isn't passed back to generate_1p1)
         if dlc_options['label'] == '1.1':
-            dlc11_ws = [c.URef for c in dlc_generator.cases if c.label == '1.1']
+            dlc11_ws = [c.URef for c in self.cases if c.label == '1.1']
             self.n_ws_dlc11 = len(np.unique(dlc11_ws))
             
 
@@ -901,12 +901,18 @@ class DLCGenerator(object):
         dlc_options['label'] = '6.4'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
+        # Set wind speeds to DLC spec if not defined by the user
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = np.arange(self.ws_cut_in, 0.7 * self.V_ref, dlc_options['ws_bin_size'])
+            # Include V_ref
+            if dlc_options['wind_speed'][-1] != self.V_ref:
+                dlc_options['wind_speed'] = np.append(dlc_options['wind_speed'], self.V_ref)
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
         else: # default
-            dlc_options['yaw_misalign'] = [-8.,8.]
+            dlc_options['yaw_misalign'] = [0.]
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
