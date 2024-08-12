@@ -902,11 +902,12 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         # Set wind speeds to DLC spec if not defined by the user
-        if not dlc_options['wind_speed']:
+        if len(dlc_options['wind_speed']) == 0:
             dlc_options['wind_speed'] = np.arange(self.ws_cut_in, 0.7 * self.V_ref, dlc_options['ws_bin_size'])
             # Include V_ref
             if dlc_options['wind_speed'][-1] != self.V_ref:
                 dlc_options['wind_speed'] = np.append(dlc_options['wind_speed'], self.V_ref)
+        dlc_options['wind_speed'] = list(dlc_options['wind_speed'])
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
         if 'yaw_misalign' in dlc_options:
