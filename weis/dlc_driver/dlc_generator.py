@@ -59,7 +59,13 @@ openfast_input_map = {
         
     ],
 
-    'fault_time': [("ServoDyn","TPitManS1"),("ServoDyn","TPitManS2"),("ServoDyn","TPitManS3")],
+    'pitchfault_time1': ("ServoDyn","TPitManS1"),
+    'pitchfault_time2': ("ServoDyn","TPitManS2"),
+    'pitchfault_time3': ("ServoDyn","TPitManS3"),
+    'pitchfault_blade1': ("ServoDyn","BlPitchF(1)"),
+    'pitchfault_blade2': ("ServoDyn","BlPitchF(2)"),
+    'pitchfault_blade3': ("ServoDyn","BlPitchF(3)"),
+    'genfault_time': ("ServoDyn","TimGenOf"),
     
     'aero_mod': ("AeroDyn15","AFAeroMod"),
     'wake_mod': ("AeroDyn15","WakeMod"),
@@ -393,6 +399,9 @@ class DLCGenerator(object):
             if dlc_options['IEC_WindType'] == 'ECD':
                 idlc.turbulent_wind = False
                 idlc.direction_pn = case['direction']
+            elif dlc_options['IEC_WindType'] == 'EOG':
+                idlc.turbulent_wind = False
+                idlc.sigma1,idlc.V_e1 = self.IECturb.EOG(case['wind_speeds'])
             elif dlc_options['IEC_WindType'] == 'EWS':
                 idlc.turbulent_wind = False
                 idlc.direction_pn = case['direction']
@@ -704,6 +713,70 @@ class DLCGenerator(object):
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_2p1(self, dlc_options):
+        # Power production plus occurrence of fault
+        # Normal control system fault
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = '2.1'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
+
+        # azimuth starting positions
+        dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
+
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        group0 = ['total_time','transient_time','wake_mod','wave_model']
+        
+        if 'pitchfault_time1' in dlc_options:
+            group0.extend(['pitchfault_time1','pitchfault_blade1'])
+        if 'pitchfault_time2' in dlc_options:
+            group0.extend(['pitchfault_time2','pitchfault_blade2'])
+        if 'pitchfault_time3' in dlc_options:
+            group0.extend(['pitchfault_time3','pitchfault_blade3'])
+        if 'genfault_time' in dlc_options:
+            group0.extend(['genfault_time'])
+        
+
+        generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['azimuth_init']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_2p3(self, dlc_options):
+        # Power production plus occurrence of fault
+        # Normal control system fault
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = '2.3'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'EOG'
+        dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
+
+        # azimuth starting positions
+        dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','genfault_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['azimuth_init']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
 

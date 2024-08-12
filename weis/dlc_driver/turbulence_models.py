@@ -65,3 +65,11 @@ class IEC_TurbulenceModels():
         sigma_1 = 0.11*V_hub
 
         return sigma_1, V_e50, V_e1, V_50, V_1
+    
+    def EOG(self,V_hub):
+        V_e50 = 1.4*self.V_ref
+        V_e1 = 0.8*V_e50
+        b = 5.6
+        sigma_1 = self.I_ref*(0.75*V_hub + b)
+        
+        return sigma_1, V_e1
