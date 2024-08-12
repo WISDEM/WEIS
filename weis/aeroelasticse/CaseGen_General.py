@@ -100,6 +100,8 @@ def convert_str(val):
         return True
     elif val=='False':
         return False
+    elif try_type(val,str):
+        return str(val)
     # elif type(val)!=str and try_list(val):
     #     return ", ".join(['{:}'.format(i) for i in val])
     else:
