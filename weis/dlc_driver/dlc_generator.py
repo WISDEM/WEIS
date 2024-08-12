@@ -907,7 +907,7 @@ class DLCGenerator(object):
             # Include V_ref
             if dlc_options['wind_speed'][-1] != self.V_ref:
                 dlc_options['wind_speed'] = np.append(dlc_options['wind_speed'], self.V_ref)
-        dlc_options['wind_speed'] = list(dlc_options['wind_speed'])
+            dlc_options['wind_speed'] = dlc_options['wind_speed'].tolist()
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
         if 'yaw_misalign' in dlc_options:
