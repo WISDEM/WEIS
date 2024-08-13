@@ -78,6 +78,8 @@ openfast_input_map = {
     'shear': ("TurbSim", "shear_hv")
 }
 
+dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']
+
 class DLCInstance(object):
 
     def __init__(self, options=None):
@@ -342,7 +344,7 @@ class DLCGenerator(object):
 
     def generate(self, label, options):
         # Use schema to determine known_dlcs (weis/inputs/modeling_schema.yaml)
-        known_dlcs = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']['DLC']['enum']
+        known_dlcs = dlc_schema['DLC']['enum']
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
 
         # Get extreme wind speeds
@@ -749,6 +751,13 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['final_blade_pitch'] = 90.
+
+        # Time options, set defaults if not provided
+        if dlc_options['analysis_time'] == dlc_schema['analysis_time']['default']: 
+            dlc_options['analysis_time'] = 600
+
+        if dlc_options['shutdown_time'] == dlc_schema['shutdown_time']['default']:
+            dlc_options['shutdown_time'] = 300
 
         
         # azimuth starting positions
