@@ -35,17 +35,17 @@ class WEISVizInputFileGenerator:
         self.vizInput['userOptions']['optimization']['status'] = self.opt_options['driver']['optimization']['flag']
         
         if self.modeling_options['Level1']['flag']:
-            self.vizInput['userOptions']['optimization']['type'] = 1
+            self.vizInput['userOptions']['optimization']['type'] = 1    # RAFT
 
         elif self.modeling_options['Level2']['flag']:
-            self.vizInput['userOptions']['optimization']['type'] = 2 # not currently supported.
+            self.vizInput['userOptions']['optimization']['type'] = 2    # not currently supported.
             warnings.warn("Current WEIS run configuration is not supported by WEIS_Viz")
 
         elif self.modeling_options['Level3']['flag']:
-            self.vizInput['userOptions']['optimization']['type'] = 3
+            self.vizInput['userOptions']['optimization']['type'] = 3    # OpenFAST, Control
 
         else:
-            self.vizInput['userOptions']['optimization']['type'] = 0
+            self.vizInput['userOptions']['optimization']['type'] = 0    # not currently supported.
             warnings.warn("Current WEIS run configuration is not supported by WEIS_Viz")
 
         
@@ -62,7 +62,7 @@ class WEISVizInputFileGenerator:
 
     def setDefaultUserPreferencs(self):
 
-        # Set the default user preferences based on the comment above
+        # Set the default user preferences
         self.vizInput['userPreferences'] = {}
         self.vizInput['userPreferences']['openfast'] = {}
         self.vizInput['userPreferences']['openfast']['file_path'] = {}
@@ -74,18 +74,21 @@ class WEISVizInputFileGenerator:
 
         self.vizInput['userPreferences']['openfast']['graph'] = {}
         self.vizInput['userPreferences']['openfast']['graph']['xaxis'] = 'Time'
-        self.vizInput['userPreferences']['openfast']['graph']['yaxis'] = ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
+        self.vizInput['userPreferences']['openfast']['graph']['yaxis'] = ['Wind1VelX', 'GenPwr', 'BldPitch1', 'GenSpeed', 'PtfmPitch']
 
         self.vizInput['userPreferences']['optimization'] = {}
         self.vizInput['userPreferences']['optimization']['convergence'] = {}
-        self.vizInput['userPreferences']['optimization']['convergence']['channels'] = ['raft.pitch_period', 'floatingse.constr_draft_heel_margin', 'floating.jointdv_0', 'floating.memgrp1.outer_diameter_in']
-        self.vizInput['userPreferences']['optimization']['dlc'] = {}
-        self.vizInput['userPreferences']['optimization']['dlc']['xaxis'] = 'Wind1VelX'
-        self.vizInput['userPreferences']['optimization']['dlc']['xaxis_stat'] = 'mean'
-        self.vizInput['userPreferences']['optimization']['dlc']['yaxis'] = ['Wind1VelY', 'Wind1VelZ']
-        self.vizInput['userPreferences']['optimization']['dlc']['yaxis_stat'] = 'max'
-        self.vizInput['userPreferences']['optimization']['timeseries'] = {}
-        self.vizInput['userPreferences']['optimization']['timeseries']['channels'] = ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ']
+        self.vizInput['userPreferences']['optimization']['convergence']['channels'] = ['floating.jointdv_0', 'floating.jointdv_1', 'floating.memgrp1.outer_diameter_in', 'raft.Max_PtfmPitch', 'floatingse.system_structural_mass']
+        
+        # Only for OpenFAST Optimization type
+        if self.vizInput['userOptions']['optimization']['type'] == 3:
+            self.vizInput['userPreferences']['optimization']['dlc'] = {}
+            self.vizInput['userPreferences']['optimization']['dlc']['xaxis'] = 'Wind1VelX'
+            self.vizInput['userPreferences']['optimization']['dlc']['xaxis_stat'] = 'mean'
+            self.vizInput['userPreferences']['optimization']['dlc']['yaxis'] = ['Wind1VelY', 'GenSpeed', 'PtfmPitch']
+            self.vizInput['userPreferences']['optimization']['dlc']['yaxis_stat'] = 'max'
+            self.vizInput['userPreferences']['optimization']['timeseries'] = {}
+            self.vizInput['userPreferences']['optimization']['timeseries']['channels'] = ['Wind1VelX', 'GenPwr', 'BldPitch1', 'GenSpeed', 'PtfmPitch']
 
         self.vizInput['userPreferences']['wisdem'] = {}
         self.vizInput['userPreferences']['wisdem']['blade'] = {}
