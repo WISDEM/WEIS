@@ -151,7 +151,7 @@ Optimization
 OpenFAST optimization
 *********************
 
-First, we need to check if the optimization type is correct. For OpenFAST Optimization, please check if status is true and type is 2 from the userOptions/optimization. Then, we read design constraints and variables from userPreferences/optimization.
+First, we need to check if the optimization type is correct. For OpenFAST Optimization, please check if status is true and type is 3 from the userOptions/optimization. Then, we read design constraints and variables from userPreferences/optimization.
 
 .. image:: ../images/viz/of_opt_yaml.png
 
