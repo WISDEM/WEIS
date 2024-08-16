@@ -81,7 +81,7 @@ class WEISVizInputFileGenerator:
         self.vizInput['userPreferences']['optimization']['convergence']['channels'] = ['floating.jointdv_0', 'floating.jointdv_1', 'floating.memgrp1.outer_diameter_in', 'raft.Max_PtfmPitch', 'floatingse.system_structural_mass']
         
         # Only for OpenFAST Optimization type
-        if self.vizInput['userOptions']['optimization']['type'] == 2:
+        if self.vizInput['userOptions']['optimization']['type'] == 3:
             self.vizInput['userPreferences']['optimization']['dlc'] = {}
             self.vizInput['userPreferences']['optimization']['dlc']['xaxis'] = 'Wind1VelX'
             self.vizInput['userPreferences']['optimization']['dlc']['xaxis_stat'] = 'mean'
