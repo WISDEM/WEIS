@@ -1,5 +1,4 @@
 general:
-    # folder_output: /scratch/dzalkind/WEIS-2/outputs/17_IEA22_OptStudies/0_setup     # kestrel
     folder_output: 17_IEA22_OptStudies/of_COBYLA/
     fname_output: IEA-22-280-RWT
 
@@ -128,5 +127,5 @@ driver:
         run_parallel: True
 
 recorder:
-    flag: True                            # Flag to activate OpenMDAO recorder
-    file_name: log_opt.sql    # Name of OpenMDAO recorder
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder
