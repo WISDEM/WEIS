@@ -6,7 +6,7 @@
 # ./kestrel_install.sh -h
 
 # Flags and variables; Set as required for install
-weisBranch="develop"
+weisBranch="main"
 weisRepoOverride=""
 weisDirName="weis"
 
@@ -14,15 +14,15 @@ openfastBranch="main"
 openfastRepoOverride=""
 openfastDirName="openfast"
 
-roscoBranch="develop"
+roscoBranch="main"
 roscoRepoOverride=""
 roscoDirName="rosco"
 
-wisdemBranch="develop"
+wisdemBranch="master"
 wisdemRepoOverride=""
 wisdemDirName="wisdem"
 
-raftBranch="dev"
+raftBranch="main"
 raftRepoOverride=""
 raftDirName="raft"
 
@@ -248,7 +248,7 @@ load_modules() {
 
         module purge
 
-        for mod in conda mamba git cmake craype-x86-spr intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl fftw/3.3.10-intel-oneapi-mpi-intel hdf5/1.14.1-2-intel-oneapi-mpi-intel netcdf-c/4.9.2-intel-oneapi-mpi-intel petsc/3.20.4-intel-oneapi-mpi-intel
+        for mod in conda mamba git cmake craype-x86-spr intel-oneapi-compilers intel-oneapi-mpi intel-oneapi-mkl fftw/3.3.10-intel-oneapi-mpi-intel hdf5/1.14.1-2-intel-oneapi-mpi-intel netcdf-c/4.9.2-intel-oneapi-mpi-intel petsc/3.20.4-intel-oneapi-mpi-intel PrgEnv-intel
         do
                 echo "Loading $mod....."
                 module load $mod
@@ -258,9 +258,9 @@ load_modules() {
         module unload gcc
 
         # Set compiler environment variables
-        export CC=icc
-        export CXX=icpc
-        export FC=ifort
+        # export CC=icc
+        # export CXX=icpc
+        # export FC=ifort
         
     fi
 }
