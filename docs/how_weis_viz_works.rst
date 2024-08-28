@@ -27,7 +27,7 @@ Full-stack development for WEIS input/output visualization. This application pro
 Installation
 ------------
 
-We offer two types of installation for users who wants to leverage HPC and the ones who have only local machine to use. For users who want to have a main set up on HPC, the whole installation, including WEIS and its dependencies, optimization, applications, will be done on HPC. From our preliminary study, the app was able to successfully run with the example optimization case which takes around 430GB.
+We offer two types of installation: (1) for users who wants to leverage HPC and (2) for users working on their local machines. The HPC set up is in steps 1--3.  Users on local machines can skip to step 4. From our preliminary study, the app was able to successfully visualize the example optimization case which has around 430GB of information included.
 
 Set up on HPC
 ~~~~~~~~~~~~~
@@ -45,7 +45,7 @@ Set up on HPC
 
 3. Install WEIS and dependencies
 
-We created a bash script which installs all of the related libraries with a single command. We recommend to download a file first and then run the script.
+We created a bash script which installs all of the related libraries with a single command. We recommend downloading that file first and then running the script.
 
 .. code-block:: console
 
@@ -98,15 +98,7 @@ Set up on Local Machine
 
 2. Install WEIS and dependencies
 
-We created a bash script which installs all of the related libraries with a single command. We recommend to download a file first and then run the script.
-
-.. code-block:: console
-
-   wget https://raw.githubusercontent.com/WISDEM/WEIS/main/share/kestrel_install.sh -O kestrel_install.sh
-   bash kestrel_install.sh -p [conda_env_path] -raft -wisdem
-   # For example: bash kestrel_install.sh -p env/weis-env -raft -wisdem
-
-The whole installation process might take around 20 mins. Please check if the installation of weis, conda virtual environment, openfast, rosco, wisdem and raft are successful.
+Please use the installation instructions here: https://github.com/WISDEM/WEIS
 
 3. Generate visualization input yaml file
 
@@ -133,7 +125,7 @@ Now, you are able to see the hosting url with defined port number where your app
 Results
 ------------
 
-All of the graphical objects has been generated via Plotly library, which makes users to easily interact, zoom in, download with it. We also offer graph channel saving functions, which help users to resume their research from their previous status. Note that graph channels from the OpenFAST page will be saved once save button has been clicked.
+All of the graphical objects has been generated via Plotly library, which it easy to interact, zoom, and download the plots. The selected channels should be saved between runs, which help users to resume their previous work. Channels from the OpenFAST page will be saved once save button has been clicked.
 
 OpenFAST
 ~~~~~~~~
@@ -159,7 +151,7 @@ First, we need to check if the optimization type is correct. For OpenFAST Optimi
 
 .. image:: ../images/viz/Optimize2_2.pdf
 
-Optimization convergence trend data will be first shown on the left layout from the analyzed log_opt.sql file. Then, user can click specific iteration and corresponding DLC visualization will be shown on the right layout. The specific OpenFAST time-series plots can be visualized as well via clicking specific outlier data.
+Optimization convergence trend data will be first shown on the left layout from the analyzed log_opt.sql file. Then, user can click on a specific iteration, and then the corresponding DLC visualization will be shown on the right. The specific OpenFAST time-series plots can be visualized as well via clicking specific data points.
 
 
 RAFT optimization
@@ -177,7 +169,7 @@ Once clicking specific iteration, the corresponding 3D platform design plot appe
 
 WISDEM - Blade
 ~~~~~~~~~~~~~~
-Read blade related properties and WISDEM output file path from the input yaml file, and visualize the graphs based on them.
+Read blade related properties and WISDEM output file path from the input yaml file, and visualize the relevant information.
 
 .. image:: ../images/viz/wisdem_yaml.png
 
@@ -187,6 +179,6 @@ Read blade related properties and WISDEM output file path from the input yaml fi
 
 WISDEM - Cost
 ~~~~~~~~~~~~~
-Cost related variables are already defined from the code. Read WISDEM output file path from the input yaml file, and visualize the cost-breakdown nested graph. Note that cost calculation is based on NREL CSM model (https://wisdem.readthedocs.io/en/master/wisdem/nrelcsm/theory.html#blades).
+Cost-related variables are an output of WISDEM and WEIS. The tool reads the WISDEM output file path from the input yaml file, and visualizes the cost-breakdown. Note that cost calculation is based on NREL CSM model (https://wisdem.readthedocs.io/en/master/wisdem/nrelcsm/theory.html#blades).
 
 .. image:: ../images/viz/WISDEM-Cost.pdf
