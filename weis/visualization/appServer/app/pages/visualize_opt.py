@@ -33,7 +33,7 @@ pio.templates.default = "ggplot2"
 
 def read_opt_vars_per_type(input_dict):
     opt_options = {}
-    opt_type_reference = {1: 'RAFT', 2: 'OpenFAST'}     # TODO: Expand other types of optimizations
+    opt_type_reference = {1: 'RAFT', 3: 'OpenFAST'}     # TODO: Expand other types of optimizations
 
     opt_options['root_file_path'] = '/'.join(input_dict['userOptions']['output_folder'].split('/')[:-1])           # Remove the last output folder name for future path join
     opt_options['log_file_path'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], input_dict['userOptions']['sql_recorder_file'])) if k not in ['dirs', 'files']))
