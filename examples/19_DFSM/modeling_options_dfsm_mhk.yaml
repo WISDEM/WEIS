@@ -1,0 +1,192 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: RM1
+        # OF_run_dir: outputs/05_low_shear_hi_TI
+        save_timeseries: True
+        save_iterations: True
+        use_exe: True
+        allow_fails: True
+        fail_value: 9999
+
+
+WISDEM:
+    RotorSE:
+        flag: False
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+        rank_and_file: True
+        frame3dd:
+            flag: False
+    BOS:
+        flag: False
+
+Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    from_openfast: True
+    openfast_file: MHK_RM1_Floating.fst
+    openfast_dir: OpenFAST    #../01_aeroelasticse/OpenFAST_models/MHK_RM1/MHK_RM1_Floating
+    simulation:
+        # CompElast: 1
+        # CompInflow: 1
+        # CompAero: 2
+        # CompServo: 1
+        CompHydro: 1
+        # CompSub: 0
+        CompMooring: 3
+        # CompIce: 0
+        OutFileFmt: 3
+        DT: 0.01
+        # DT_Out: default
+        NumCrctn: 5
+        # Gravity: 9.81
+        # WtrDpth: 35
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : False
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
+        PtfmSgDOF: False
+        PtfmSwDOF: False
+        PtfmHvDOF: False
+        PtfmRDOF : False
+        PtfmPDOF : True
+        PtfmYDOF : False
+        # TwrNodes: 20
+        # RotSpeed: 4
+        # BlPitch1: 0
+        # BlPitch2: 0
+    HydroDyn:
+    #     WaveSeed1: 123456789
+    #     WaveSeed2: 123456789
+    #     AddBLin3: [0.0, 0.0,0.0, 0.0, 0.0, 0.0]
+        WaveMod: 0
+    #     WaveHs: 2.0
+    #     WaveTp: 6.75
+    #     WaveTMax: 600
+    #     WvLowCOff: 0.314159
+    #     WvHiCOff: 1.570796
+    #     WvSumQTF: False
+    #     RdtnMod: 0
+    #     PotMod: 1
+    #     ExctnMod: 0
+    #     DiffQTF: 0
+    #     PotFile: examples/01_aeroelasticse/OpenFAST_models/MHK-RM1/MHK-RM1-Floating/HydroData/MHK_RM1_Floating
+    # ServoDyn:
+    #     PitManRat(1): 2.
+    #     PitManRat(2): 2.
+    #     PitManRat(3): 2.
+    # SubDyn:
+    #     SDdeltaT: 0.005
+
+    # InflowWind:
+    #     RefHt: 150.0
+
+DFSM:
+    flag: False
+    general_options:
+        model_data_availability: offline 
+        storage_type: outb
+        modeling_data_path: /home/athulsun/WEIS-AKS/examples/17_DFSM/outputs/simple_sim_TR/openfast_runs/rank_0
+        testing_data_availability: online
+        save_results: True
+    usecase_options:
+        usecase: simulation 
+        plot_flag: False
+        solver_options:
+            atol: 1e-4
+            rto: 1e-4
+    model_options: 
+        reqd_states: [GenSpeed]
+        state_props:
+            units: [rpm]
+            key_freq_name: [[2P]]
+            key_freq_val: [[0.39]]
+        reqd_controls: [RtVAvgxh,GenTq,BldPitch1]
+        reqd_outputs: [GenPwr,TwrBsMyt,'RtFldCp','RotSpeed']
+    construction_options: 
+        L_type: LTI
+        N_type: None
+        train_split: 0.4
+        
+    
+ROSCO:
+    flag: True
+    tuning_yaml: OpenFAST/RM1_MHK.yaml
+
+
+DLC_driver:
+    metocean_conditions:
+        current_speed: [0.5 , 0.75, 1.  , 1.25, 1.5 , 1.75, 2.  , 2.25, 2.5 , 2.75, 3.  , 3.25, 3.5 , 3.75, 4.  ]
+        current_std: [0.100,0.096,0.093,0.089,0.086,0.082,0.079,0.075,0.071,0.068,0.064,0.061,0.057,0.054,0.050]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+        current_50: 4.5
+        user_probability: 
+            speed: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 3, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6]
+            probability: [0.176358711313469, 0.225347242233877, 0.233415941444297, 0.231686934470636, 0.210362515128811, 0.213820529076134, 0.240331969338943, 0.228228920523313, 0.245518990259927, 0.245518990259927, 0.253011353812460, 0.275488444470059, 0.293354849864562, 0.327934989337790, 0.352717422626938, 0.374041841968762, 0.391908247363264, 0.447812806178319, 0.501412022361823, 0.577488329202929, 0.566537951703071, 0.586709699729122, 0.515244078151115, 0.510633392888018, 0.442625785257335, 0.383839548152844, 0.301423549074981, 0.262809059996542, 0.169442683418823, 0.0829923347357504, 0.0547518874992795, 0.0443778456573108, 0.0190190767102761, 0.00806869921042014, 0.00403434960521009, 0.00172900697366146]
+    DLCs:
+        # - DLC: "1.1"
+        #   n_seeds: 2
+        #   current_speed: [2.0] #[0.5 , 0.75, 1.  , 1.25, 1.5 , 1.75, 2.  , 2.25, 2.5 , 2.75, 3.]
+        # #   current_std: [ 0.079,0.075,0.071,0.068,0.064] #[0.100,0.096,0.093,0.089,0.086,0.082,0.079,0.075,0.071,0.068,0.064,0.061,0.057,0.054,0.050]
+        # #   wave_height_NSS: [ 1.58,1.82,2.08,2.34,2.66] #[0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        # #   wave_period_NSS: [ 2.75,2.75,2.75,2.75,2.75] #[6.1,6.2,6.2,6.7,7.1] #[8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        # #   wave_height_fatigue: [ 1.58,1.82,2.08,2.34,2.66] #[0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        # #   wave_period_fatigue: [6.2,6.2,6.2,6.2,6.2] #[8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        # #   wave_height_SSS: [9.7,9.7,9.7,9.7,9.7] #[9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        # #   wave_period_SSS: [13.6,13.6,13.6,13.6,13.6] #[13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        #   transient_time: 0.
+        #   analysis_time: 700. 
+        #   ws_bin_size: 0.25
+        #   turbulent_wind:
+        #     PLExp: 0
+        - DLC: "12.1"
+          wind_file: /home/athulsun/WEIS-AKS/examples/17_DFSM/step_2.wnd
+          analysis_time: 700
+          transient_time: 0
+          wave_period: [6.75]
+          wave_height: [2.0]
+
+
+        # - DLC: "1.2"
+        # #   current_speed: [2.2]
+        # #   wave_heading: [0, 30., 60.]
+        #   transient_time: 0.
+        #   analysis_time: 720.
+        #   ws_bin_size: 0.25
+        # - DLC: "1.3"
+        # #   current_speed: [2.2]
+        #   transient_time: 0.
+        #   analysis_time: 720.
+        #   ws_bin_size: 0.25
+        # - DLC: "6.1"
+        #   transient_time: 0.
+        #   analysis_time: 720.

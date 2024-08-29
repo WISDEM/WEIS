@@ -36,27 +36,27 @@ ROSCO:
 
 DLC_driver:
     DLCs:
-        - DLC: "1.1"
-          wind_speed: [16]
+        - DLC: "1.6"
+          wind_speed: [6]
           n_seeds: 1
-          analysis_time: 10.
-          transient_time: 0.1
+          analysis_time: 600.
+          transient_time: 0
           turbulent_wind:
               HubHt: 142
               RefHt: 142
               GridHeight: 275
               GridWidth: 275
-        - DLC: "6.1"
-          analysis_time: 10.
-          transient_time: 0.1
-          turbulent_wind:
-              HubHt: 142
-              RefHt: 142
-              GridHeight: 275
-              GridWidth: 275
-              URef: 46.789
-              PLExp: 0.14
-              IECturbc: 0.12
+        # - DLC: "6.1"
+        #   analysis_time: 10.
+        #   transient_time: 0.1
+        #   turbulent_wind:
+        #       HubHt: 142
+        #       RefHt: 142
+        #       GridHeight: 275
+        #       GridWidth: 275
+        #       URef: 46.789
+        #       PLExp: 0.14
+        #       IECturbc: 0.12
               
 
               

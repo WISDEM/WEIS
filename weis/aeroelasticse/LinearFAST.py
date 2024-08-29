@@ -14,15 +14,8 @@ import shutil
 
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-<<<<<<< HEAD
-from ROSCO_toolbox import utilities as ROSCO_utilities
-from weis.aeroelasticse.FileTools import load_yaml
-import weis
-weis_dir = os.path.dirname( os.path.dirname(os.path.realpath(weis.__file__) ) )  # get path to this file
-=======
 from rosco.toolbox import utilities as ROSCO_utilities
 
->>>>>>> e43a159c213a6842aac4cb4fc9cc8a80b5b5042c
 
 
 class LinearFAST(runFAST_pywrapper_batch):

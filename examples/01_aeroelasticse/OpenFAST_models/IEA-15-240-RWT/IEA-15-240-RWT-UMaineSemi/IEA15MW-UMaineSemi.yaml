@@ -25,7 +25,7 @@ turbine_params:
 #------------------------------- CONTROLLER PARAMETERS ----------------------------------
 controller_params:
   # Controller flags 
-  LoggingLevel:       1                     # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
+  LoggingLevel:       0                     # {0: write no debug files, 1: write standard output .dbg-file, 2: write standard output .dbg-file and complete avrSWAP-array .dbg2-file
   F_LPFType:          2                     # {1: first-order low-pass filter, 2: second-order low-pass filter}, [rad/s] (currently filters generator speed and pitch control signals)
   F_NotchType:        0                     # Notch on the measured generator speed {0: disable, 1: enable} 
   IPC_ControlMode:    0                     # Turn Individual Pitch Control (IPC) for fatigue load reductions (pitch contribution) {0: off, 1: 1P reductions, 2: 1P+2P reductions}
@@ -50,3 +50,17 @@ controller_params:
   min_pitch:          0.0                   # Minimum pitch angle [rad], {default = 0 degrees}
   vs_minspd:          0.523598775           # Minimum rotor speed [rad/s], {default = 0 rad/s}
   ps_percent:         0.8                   # Percent peak shaving  [%, <= 1 ], {default = 80%}
+
+  DISCON:
+    VS_Rng2K: 33627561.08955
+    F_FlpCornerFreq: [0.0000,1.0000]
+    VS_GenEff: 95.75600000000
+    WE_BladeRadius: 120.970
+    WE_Jtot: 315816896.00000
+    VS_ArSatTq: 19786767.46773
+    VS_MaxTq: 21765444.21450
+    VS_RtTq: 19786767.46773
+    VS_RefSpd: 0.791680000000
+    VS_KP: -37489692.52487
+    VS_KI: -4547763.30240
+

@@ -370,7 +370,7 @@ class TuneROSCO(ExplicitComponent):
         ROSCO_input['Ct'] = WISDEM_turbine.Ct
         ROSCO_input['Cq'] = WISDEM_turbine.Cq
 
-        if (self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']):
+        if (self.modeling_options['Level2']['flag'] or self.modeling_options['DFSM']['flag'] or self.modeling_options['Level3']['flag']):
             self.modeling_options['General']['openfast_configuration']['fst_vt']['DISCON_in'] = ROSCO_input
         
         # Outputs 
