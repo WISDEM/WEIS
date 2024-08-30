@@ -1803,32 +1803,32 @@ class FASTLoadCases(ExplicitComponent):
         # Initialize parametric inputs
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
-        rot_speed_initial = np.zeros(dlc_generator.n_cases)
-        pitch_initial = np.zeros(dlc_generator.n_cases)
-        shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
-        azimuth_init = np.full(dlc_generator.n_cases, fill_value = 0)
-        WindHd = np.zeros(dlc_generator.n_cases)
-        WaveHs = np.zeros(dlc_generator.n_cases)
-        WaveTp = np.zeros(dlc_generator.n_cases)
-        WaveHd = np.zeros(dlc_generator.n_cases)
-        WaveGamma = np.zeros(dlc_generator.n_cases)
-        WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
+        # rot_speed_initial = np.zeros(dlc_generator.n_cases)
+        # pitch_initial = np.zeros(dlc_generator.n_cases)
+        # shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
+        # azimuth_init = np.full(dlc_generator.n_cases, fill_value = 0)
+        # WindHd = np.zeros(dlc_generator.n_cases)
+        # WaveHs = np.zeros(dlc_generator.n_cases)
+        # WaveTp = np.zeros(dlc_generator.n_cases)
+        # WaveHd = np.zeros(dlc_generator.n_cases)
+        # WaveGamma = np.zeros(dlc_generator.n_cases)
+        # WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
         self.TMax = np.zeros(dlc_generator.n_cases)
         self.TStart = np.zeros(dlc_generator.n_cases)
-        dlc_label = [''] * dlc_generator.n_cases
-        wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
-        mean_wind_speed = np.zeros(dlc_generator.n_cases)
-        yaw_misalignment = np.zeros(dlc_generator.n_cases)
-        DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
-        aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
-        wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
-        tau1_const = np.zeros(dlc_generator.n_cases)
-        dt_fvw = np.zeros(dlc_generator.n_cases)
-        tMin = np.zeros(dlc_generator.n_cases)
-        nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
-        nNWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
-        nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
-        nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
+        # dlc_label = [''] * dlc_generator.n_cases
+        # wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
+        # mean_wind_speed = np.zeros(dlc_generator.n_cases)
+        # yaw_misalignment = np.zeros(dlc_generator.n_cases)
+        # DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
+        # aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
+        # wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
+        # tau1_const = np.zeros(dlc_generator.n_cases)
+        # dt_fvw = np.zeros(dlc_generator.n_cases)
+        # tMin = np.zeros(dlc_generator.n_cases)
+        # nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
+        # nNWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
+        # nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
+        # nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1923,17 +1923,14 @@ class FASTLoadCases(ExplicitComponent):
             # WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
             # WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
 
-            # # Other case info
-            # self.TMax[i_case] = dlc_generator.cases[i_case].total_time
-            # self.TStart[i_case] = dlc_generator.cases[i_case].transient_time
-            # dlc_label[i_case] = dlc_generator.cases[i_case].label
+        
             # wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
             # mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
             # yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
             # azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
 
 
-        # TODO: apply olaf settings, should be similar to above?
+        # Apply olaf settings, should be similar to above?
         if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
             apply_olaf_parameters(dlc_generator,fst_vt)
                     
@@ -1956,6 +1953,11 @@ class FASTLoadCases(ExplicitComponent):
             case[('InflowWind','WindType')] = wt
             case[('InflowWind','Filename_Uni')] = wf
             case[('InflowWind','FileName_BTS')] = wf
+
+        # Save some case info
+        self.TMax = [c.total_time for c in dlc_generator.cases]
+        self.TStart = [c.transient_time for c in dlc_generator.cases]
+        dlc_label = [c.label for c in dlc_generator.cases]
 
         # Old case_inputs for reference
         #         case_inputs = {}
@@ -2009,9 +2011,12 @@ class FASTLoadCases(ExplicitComponent):
         # fst_vt['DLC'] = []
 
 
-        # TODO: merge cases into single case matrix? pandas?
+        # Merge various cases into single case matrix
         case_df = pd.DataFrame(case_list)
         case_df.index = case_name
+        # Add case name and dlc label to front for readability
+        case_df.insert(0,'DLC',dlc_label)
+        case_df.insert(0,'case_name',case_name)
         text_table = case_df.to_string(index=False)
 
         # Write the text table to a yaml, text file
@@ -2632,6 +2637,7 @@ class FASTLoadCases(ExplicitComponent):
             tot_travel = 0
             num_dir_changes = 0
             for i_ts, ts in enumerate(chan_time):
+                # TODO: this will break with new dlc setup
                 t_span = self.TMax[i_ts] - self.TStart[i_ts]
                 for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
                     ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
