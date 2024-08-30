@@ -671,7 +671,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '1.5'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'EWS'
-        dlc_options['direction'] = ['n', 'p']
+        dlc_options['direction'] = ['p', 'n']
         dlc_options['shear'] = ['h', 'v']
         
 
