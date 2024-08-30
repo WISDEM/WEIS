@@ -1803,32 +1803,9 @@ class FASTLoadCases(ExplicitComponent):
         # Initialize parametric inputs
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
-        # rot_speed_initial = np.zeros(dlc_generator.n_cases)
-        # pitch_initial = np.zeros(dlc_generator.n_cases)
-        # shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
-        # azimuth_init = np.full(dlc_generator.n_cases, fill_value = 0)
-        # WindHd = np.zeros(dlc_generator.n_cases)
-        # WaveHs = np.zeros(dlc_generator.n_cases)
-        # WaveTp = np.zeros(dlc_generator.n_cases)
-        # WaveHd = np.zeros(dlc_generator.n_cases)
-        # WaveGamma = np.zeros(dlc_generator.n_cases)
-        # WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
+
         self.TMax = np.zeros(dlc_generator.n_cases)
         self.TStart = np.zeros(dlc_generator.n_cases)
-        # dlc_label = [''] * dlc_generator.n_cases
-        # wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
-        # mean_wind_speed = np.zeros(dlc_generator.n_cases)
-        # yaw_misalignment = np.zeros(dlc_generator.n_cases)
-        # DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
-        # aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
-        # wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
-        # tau1_const = np.zeros(dlc_generator.n_cases)
-        # dt_fvw = np.zeros(dlc_generator.n_cases)
-        # tMin = np.zeros(dlc_generator.n_cases)
-        # nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
-        # nNWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
-        # nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
-        # nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
 
         for i_case in range(dlc_generator.n_cases):
             if dlc_generator.cases[i_case].turbulent_wind:
@@ -1895,40 +1872,6 @@ class FASTLoadCases(ExplicitComponent):
                 WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
                     dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
 
-        
-
-
-        # for i_case in range(dlc_generator.n_cases):
-        #     if 'operating' in dlc_generator.cases[i_case].turbine_status:
-        #         # We have initial conditions from WISDEM
-        #         rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, rot_speed_interp)
-        #         pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, pitch_interp)
-        #         tau1_const[i_case] = np.interp(dlc_generator.cases[i_case].URef, U_interp, tau1_const_interp)
-                
-        #         if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
-        #             shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
-        #     else:
-        #         rot_speed_initial[i_case] = 0.
-        #         pitch_initial[i_case] = 90.
-        #         shutdown_time[i_case] = 0
-        #         aero_mod[i_case] = 1
-        #         wake_mod[i_case] = 0
-        #         tau1_const[i_case] = 0.
-
-            # # Wave inputs to HydroDyn
-            # WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
-            # WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
-            # WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
-            # WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
-            # WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
-            # WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
-
-        
-            # wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
-            # mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
-            # yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
-            # azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
-
 
         # Apply olaf settings, should be similar to above?
         if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
@@ -1958,57 +1901,6 @@ class FASTLoadCases(ExplicitComponent):
         self.TMax = [c.total_time for c in dlc_generator.cases]
         self.TStart = [c.transient_time for c in dlc_generator.cases]
         dlc_label = [c.label for c in dlc_generator.cases]
-
-        # Old case_inputs for reference
-        #         case_inputs = {}
-        # # Main fst
-        # case_inputs[("Fst","DT")] = {'vals':DT, 'group':1}
-        # case_inputs[("Fst","TMax")] = {'vals':self.TMax, 'group':1}
-        # case_inputs[("Fst","TStart")] = {'vals':self.TStart, 'group':1}
-        # # Inflow wind
-        # case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
-        # case_inputs[("InflowWind","HWindSpeed")] = {'vals':mean_wind_speed, 'group':1}
-        # case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
-        # case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
-        # case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
-        # case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
-        # case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[hub_height], 'group':0}
-        # # Initial conditions for rotor speed, pitch, and azimuth
-        # case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
-        # case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
-        # case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
-        # case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-        # case_inputs[("ElastoDyn","Azimuth")] = {'vals':azimuth_init, 'group':1}
-        # # Yaw offset
-        # case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
-        # # Inputs to HydroDyn
-        # case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
-        # case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
-        # case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
-        # case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
-        # case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
-        # # Inputs to ServoDyn (parking), PitManRat and BlPitchF are ServoDyn modeling_options
-        # case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
-        # case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
-        # case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
-
-        # # Inputs to AeroDyn (parking)
-        # case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
-        # case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
-        # case_inputs[("AeroDyn15","tau1_const")] = {'vals':tau1_const, 'group':1}
-
-        # # Inputs to OLAF
-        # case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
-        # case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
-        # case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
-        # case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
-        # case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1}
-
-        # # DLC Label add these for the case matrix and delete from the case_list
-        # case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
-        # case_inputs[("DLC","WindSeed")] = {'vals':wind_seed, 'group':1}
-        # case_inputs[("DLC","MeanWS")] = {'vals':mean_wind_speed, 'group':1}
-        # fst_vt['DLC'] = []
 
 
         # Merge various cases into single case matrix
