@@ -901,7 +901,7 @@ class DLCGenerator(object):
         dlc_options.update(self.default_options)
 
         # DLC Specific options:
-        dlc_options['label'] = '6.1'
+        dlc_options['label'] = '6.2'
         dlc_options['sea_state'] = '50-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
 
