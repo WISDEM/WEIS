@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import pickle
 import raft
 from raft.helpers import *
+from weis.dtqpy import objective
 
 try:
     import ruamel_yaml as ry
@@ -409,6 +410,7 @@ def consolidate_multi(
         dataOMbest_DE : dict
             dictionary of the per-iteration best-feasible simulations
     """
+    objective_name = list(vars_dict["objectives"].values())[0]["name"]
 
     dfOMmulti = pd.DataFrame(dataOMmulti)
     tfeas, cfeas = get_feasible_iterations(dataOMmulti, vars_dict, feas_tol=feas_tol)
@@ -416,7 +418,7 @@ def consolidate_multi(
     dfOMmulti = dfOMmulti[tfeas].reset_index()
 
     dataOMbest_DE = dfOMmulti.groupby("iter").apply(
-        lambda grp : grp.loc[grp["floatingse.system_structural_mass"].idxmin()],
+        lambda grp : grp.loc[grp[objective_name].idxmin()],
         include_groups=False,
     ).to_dict()
 
