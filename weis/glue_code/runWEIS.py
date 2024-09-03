@@ -1,5 +1,6 @@
 import numpy as np
 import os, sys, time, json
+from pprint import pprint  # DEBUG!!!!!
 import openmdao.api as om
 from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
@@ -231,9 +232,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 desvar_opts=["lower", "upper",],
                 cons_opts=["lower", "upper", "equals",],
             )
-            # output the problem variables as a dictionary in the output dir
-            save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
-
             # clean up the problem_var_dict that we extracted for output
             for k in problem_var_dict.keys():
                 if not problem_var_dict.get(k): continue
@@ -243,6 +241,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                             problem_var_dict[k][idx][1][kk] = problem_var_dict[k][idx][1][kk].tolist()
                         if isinstance(problem_var_dict[k][idx][1][kk], np.int32):
                             problem_var_dict[k][idx][1][kk] = int(problem_var_dict[k][idx][1][kk])
+                        if isinstance(problem_var_dict[k][idx][1][kk], np.float64):
+                            problem_var_dict[k][idx][1][kk] = float(problem_var_dict[k][idx][1][kk])
+
+            save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
 
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)
