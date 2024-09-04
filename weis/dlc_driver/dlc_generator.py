@@ -896,7 +896,7 @@ class DLCGenerator(object):
         # This is the same as DLC 6.1 in the 61400-3-1 standards, except there's a loss of electrical network.
         # In DLC 6.1, the generator is disabled already, so the only difference in 6.2 may be that users may want to simulate larger yaw misalignments
         # extra dlc_options: 
-        # yaw_misalign: default = [-8,8]
+        # yaw_misalign: default = [-180 to 180]
 
         # Get default options
         dlc_options.update(self.default_options)
@@ -908,7 +908,7 @@ class DLCGenerator(object):
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
-            dlc_options['yaw_misalign'] = [-8,8]
+            dlc_options['yaw_misalign'] = np.arange(-180+15,180+15,15).tolist()     # -180 is not valid in OF
 
         dlc_options['wind_speed'] = [50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
 
