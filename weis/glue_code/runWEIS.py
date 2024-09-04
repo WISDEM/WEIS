@@ -9,8 +9,8 @@ from wisdem.commonse.mpi_tools        import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
-from weis.aeroelasticse.FileTools import load_yaml, save_yaml
-from wisdem.inputs.validation import simple_types
+from weis.aeroelasticse.FileTools     import save_yaml
+from wisdem.inputs.validation         import simple_types
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 evolutionary_methods = ['DE', 'NSGA2']
