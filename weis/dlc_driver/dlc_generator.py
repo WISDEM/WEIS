@@ -524,8 +524,9 @@ class DLCGenerator(object):
         '''
         met_options = self.get_metocean(dlc_options)
         
-        # Apply normal wave conditions based on wind speeds
+        # Apply wave conditions based on wind speeds
         self.apply_sea_state(met_options,sea_state=sea_state)
+        
         make_equal_length(met_options,'wind_speed')
         return met_options
 
@@ -1060,7 +1061,17 @@ def make_equal_length(option_dict,target_name):
     target_len = len(option_dict[target_name])
     for key in option_dict:
         if len(option_dict[key]) == 1:
-            option_dict[key] = option_dict[key] * target_len
+            if isinstance(option_dict[key], np.ndarray):
+                option_dict[key] = np.tile(option_dict[key],target_len)
+            elif isinstance(option_dict[key], list):
+                option_dict[key] = option_dict[key] * target_len
+            else:
+                raise Exception(f'Cannot coerce {key} into an array with same length as wind_speed')
+            
+            # re-normalize probabilities
+            if key == 'probabilities':
+                option_dict['probabilities'] /= target_len
+            
 
 def combine_options(*dicts):
     """
