@@ -31,8 +31,8 @@ openfast_input_map = {
     'azimuth_init': ("ElastoDyn","Azimuth"),
     'yaw_misalign': ("ElastoDyn","NacYaw"),
     
-    'wave_Hs': ("HydroDyn","WaveHs"),
-    'wave_Tp': ("HydroDyn","WaveTp"),
+    'wave_height': ("HydroDyn","WaveHs"),
+    'wave_period': ("HydroDyn","WaveTp"),
     'WaveHd': ("HydroDyn","WaveDir"),
     'WaveGamma': ("HydroDyn","WavePkShp"),
     'WaveSeed1': ("HydroDyn","WaveSeed1"),
@@ -213,10 +213,10 @@ class DLCGenerator(object):
             raise Exception('The vector of metocean conditions wave_period_SSS in the modeling options must have the same length of the tabulated wind speeds')
 
         # Load extreme wave heights and periods
-        self.wave_Hs50 = np.array([metocean['wave_height50']])
-        self.wave_Tp50 = np.array([metocean['wave_period50']])
-        self.wave_Hs1 = np.array([metocean['wave_height1']])
-        self.wave_Tp1 = np.array([metocean['wave_period1']])
+        self.wave_height50 = np.array([metocean['wave_height50']])
+        self.wave_period50 = np.array([metocean['wave_period50']])
+        self.wave_height1 = np.array([metocean['wave_height1']])
+        self.wave_period1 = np.array([metocean['wave_period1']])
 
         self.initial_condition_table = initial_condition_table
 
@@ -267,19 +267,19 @@ class DLCGenerator(object):
             wind_heading = np.array([])
         return wind_heading
 
-    def get_wave_Hs(self, options):
+    def get_wave_height(self, options):
         if len(options['wave_height']) > 0:
-            wave_Hs = np.array( [float(m) for m in options['wave_height']] )
+            wave_height = np.array( [float(m) for m in options['wave_height']] )
         else:
-            wave_Hs = np.array([])
-        return wave_Hs
+            wave_height = np.array([])
+        return wave_height
 
-    def get_wave_Tp(self, options):
+    def get_wave_period(self, options):
         if len(options['wave_period']) > 0:
-            wave_Tp = np.array( [float(m) for m in options['wave_period']] )
+            wave_period = np.array( [float(m) for m in options['wave_period']] )
         else:
-            wave_Tp = np.array([])
-        return wave_Tp
+            wave_period = np.array([])
+        return wave_period
 
     def get_wave_gamma(self, options):
         if len(options['wave_gamma']) > 0:
@@ -307,8 +307,8 @@ class DLCGenerator(object):
         wind_speeds, wind_seeds = self.get_wind_seeds(options, wind_speeds_indiv)
         wave_seeds = self.get_wave_seeds(options, wind_speeds)
         wind_heading = self.get_wind_heading(options)
-        wave_Hs = self.get_wave_Hs(options)
-        wave_Tp = self.get_wave_Tp(options)
+        wave_height = self.get_wave_height(options)
+        wave_period = self.get_wave_period(options)
         wave_gamma = self.get_wave_gamma(options)
         wave_heading = self.get_wave_heading(options)
         probabilities = self.get_probabilities(options)
@@ -319,9 +319,9 @@ class DLCGenerator(object):
             raise Exception("The vector of wind_heading must have either length=1 or the same length of wind speeds")
         if len(wave_seeds) > 1 and len(wave_seeds) != len(wind_speeds):
             raise Exception("The vector of wave seeds must have the same length of wind speeds or not defined")
-        if len(wave_Hs) > 1 and len(wave_Hs) != len(wind_speeds):
+        if len(wave_height) > 1 and len(wave_height) != len(wind_speeds):
             raise Exception("The vector of wave heights must have either length=1 or the same length of wind speeds")
-        if len(wave_Tp) > 1 and len(wave_Tp) != len(wind_speeds):
+        if len(wave_period) > 1 and len(wave_period) != len(wind_speeds):
             raise Exception("The vector of wave periods must have either length=1 or the same length of wind speeds")
         if len(wave_gamma) > 1 and len(wave_gamma) != len(wind_speeds):
             raise Exception("The vector of wave_gamma must have either length=1 or the same length of wind speeds")
@@ -337,8 +337,8 @@ class DLCGenerator(object):
         metocean_case_info['rand_seeds'] = wind_seeds
         metocean_case_info['wave_seeds'] = wave_seeds
         metocean_case_info['wind_heading'] = wind_heading
-        metocean_case_info['wave_Hs'] = wave_Hs
-        metocean_case_info['wave_Tp'] = wave_Tp
+        metocean_case_info['wave_height'] = wave_height
+        metocean_case_info['wave_period'] = wave_period
         # metocean_case_info['current_speeds'] = current_speeds
         metocean_case_info['wave_gamma'] = wave_gamma
         metocean_case_info['wave_heading'] = wave_heading
@@ -451,19 +451,19 @@ class DLCGenerator(object):
             wave_period_table = self.mo_Tp_SSS
         elif sea_state == '50-year':
             wind_speed_table = [50.]
-            wave_height_table = self.wave_Hs50
-            wave_period_table = self.wave_Tp50
+            wave_height_table = self.wave_height50
+            wave_period_table = self.wave_period50
         elif sea_state == '1-year':
             wind_speed_table = [50.]
-            wave_height_table = self.wave_Hs50
-            wave_period_table = self.wave_Tp50
+            wave_height_table = self.wave_height50
+            wave_period_table = self.wave_period50
 
 
         # If the user has not defined Hs (wave_height in modopts) and Tp (wave_period in modopts), apply the metocean conditions defined by the table
-        if len(met_options['wave_Hs'])==0:
-            met_options['wave_Hs'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_height_table)
-        if len(met_options['wave_Tp'])==0:
-            met_options['wave_Tp'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_period_table)
+        if len(met_options['wave_height'])==0:
+            met_options['wave_height'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_height_table)
+        if len(met_options['wave_period'])==0:
+            met_options['wave_period'] = np.interp(met_options['wind_speeds'], wind_speed_table, wave_period_table)
 
     def set_time_options(self, options):
         '''
@@ -576,7 +576,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -601,7 +601,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -628,7 +628,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -659,7 +659,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','aero_mod'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign','azimuth_init']) # group 2: 
         generic_case_inputs.append(['direction']) # group 3: 
 
@@ -690,7 +690,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2: 
         generic_case_inputs.append(['direction']) # group 3: 
         generic_case_inputs.append(['shear']) # group 4: 
@@ -718,7 +718,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -756,7 +756,7 @@ class DLCGenerator(object):
         
 
         generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -782,7 +782,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
         
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','genfault_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -811,7 +811,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','startup_time','wake_mod','wave_model','pitch_initial'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         # generic_case_inputs.append(['azimuth_init']) # group 2
       
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -851,7 +851,7 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','shutdown_time','wake_mod','wave_model','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['azimuth_init']) # group 2
       
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -890,7 +890,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
                                     'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
       
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -930,7 +930,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
                                     'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
       
         self.generate_cases(generic_case_inputs,dlc_options)
@@ -970,7 +970,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
                                     'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling        
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
@@ -1016,7 +1016,7 @@ class DLCGenerator(object):
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
                                     'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
@@ -1046,7 +1046,7 @@ class DLCGenerator(object):
         # The options in each group should have the same length
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
-        generic_case_inputs.append(['wind_speeds','wave_Hs','wave_Tp', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['wind_speeds','wave_height','wave_period', 'rand_seeds']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
