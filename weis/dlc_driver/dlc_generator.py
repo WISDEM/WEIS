@@ -394,7 +394,8 @@ class DLCGenerator(object):
         met_options = self.gen_met_options(dlc_options, sea_state=dlc_options['sea_state'])
         
         # Add met options to dlc_options for output reporting
-        dlc_options = remove_numpy(dlc_options.update(met_options))
+        dlc_options.update(met_options)
+        dlc_options = remove_numpy(dlc_options)
 
         generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
