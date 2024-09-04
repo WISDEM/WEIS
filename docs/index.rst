@@ -20,7 +20,16 @@ Using WEIS
    installation
    how_weis_works
    
-   
+
+WEIS Visualization APP
+======================
+
+.. toctree::
+   :maxdepth: 2
+
+   how_weis_viz_works
+
+
 Other Useful Docs
 =================
 

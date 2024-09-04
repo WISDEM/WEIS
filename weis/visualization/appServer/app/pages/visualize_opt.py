@@ -446,7 +446,9 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     # Add subplots for multiple y-channels vertically
     fig = make_subplots(
         rows = len(y_channels),
-        cols = 1)
+        cols = 1,
+        shared_xaxes=True,
+        vertical_spacing=0.05)
 
     # Add traces
     for row_idx, y_channel in enumerate(y_channels):
@@ -461,7 +463,7 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
         height=300 * len(y_channels),
         title_text='DLC Analysis')
     
-    fig.update_xaxes(title_text=f'{x_chan_option.capitalize()} {x_channel}')
+    fig.update_xaxes(title_text=f'{x_chan_option.capitalize()} {x_channel}', row=len(y_channels), col=1)
     
     return fig
 
@@ -532,7 +534,7 @@ def update_timegraphs(signaly):
     #         col = 1)
     
     # 2) Multiple subplots
-    fig = make_subplots(rows = len(signaly), cols = 1)
+    fig = make_subplots(rows = len(signaly), cols = 1, shared_xaxes=True, vertical_spacing=0.05)
     for row_idx, label in enumerate(signaly):
         fig.append_trace(go.Scatter(
             x = timeseries_data['Time'],
