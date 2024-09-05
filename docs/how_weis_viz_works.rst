@@ -131,9 +131,9 @@ OpenFAST
 ~~~~~~~~
 Read OpenFAST related variables from the input yaml file, including OpenFAST output file paths and graph x,y axis settings, and visualize the graphs based on them. Note that we allow maximum 5 files to visualize and please keep 5 rows. If you have only three files to visualize, keep file4 and file5 values as 'None' and don't delete them. We recommend the file paths to be absolute path.
 
-.. image:: ../images/viz/openfast_yaml.png
+.. image:: images/viz/openfast_yaml.png
 
-.. image:: ../images/viz/OpenFAST.pdf
+.. image:: images/viz/OpenFAST.pdf
 
 
 Optimization
@@ -145,11 +145,11 @@ OpenFAST optimization
 
 First, we need to check if the optimization type is correct. For OpenFAST Optimization, please check if status is true and type is 3 from the userOptions/optimization. Then, we read design constraints and variables from userPreferences/optimization.
 
-.. image:: ../images/viz/of_opt_yaml.png
+.. image:: images/viz/of_opt_yaml.png
 
-.. image:: ../images/viz/Optimize2_1.pdf
+.. image:: images/viz/Optimize2_1.pdf
 
-.. image:: ../images/viz/Optimize2_2.pdf
+.. image:: images/viz/Optimize2_2.pdf
 
 Optimization convergence trend data will be first shown on the left layout from the analyzed log_opt.sql file. Then, user can click on a specific iteration, and then the corresponding DLC visualization will be shown on the right. The specific OpenFAST time-series plots can be visualized as well via clicking specific data points.
 
@@ -159,9 +159,9 @@ RAFT optimization
 
 First, we need to check if the optimization type is correct. For RAFT Optimization, please check if status is true and type is 1 from the userOptions/optimization. Then, we read platform design variables from userPreferences/optimization/convergence/channels.
 
-.. image:: ../images/viz/raft_opt_yaml.png
+.. image:: images/viz/raft_opt_yaml.png
 
-.. image:: ../images/viz/Optimize1.pdf
+.. image:: images/viz/Optimize1.pdf
 
 Once clicking specific iteration, the corresponding 3D platform design plot appears from the right layout.
 
@@ -171,9 +171,9 @@ WISDEM - Blade
 ~~~~~~~~~~~~~~
 Read blade related properties and WISDEM output file path from the input yaml file, and visualize the relevant information.
 
-.. image:: ../images/viz/wisdem_yaml.png
+.. image:: images/viz/wisdem_yaml.png
 
-.. image:: ../images/viz/WISDEM-Blade.pdf
+.. image:: images/viz/WISDEM-Blade.pdf
 
 
 
@@ -181,4 +181,4 @@ WISDEM - Cost
 ~~~~~~~~~~~~~
 Cost-related variables are an output of WISDEM and WEIS. The tool reads the WISDEM output file path from the input yaml file, and visualizes the cost-breakdown. Note that cost calculation is based on NREL CSM model (https://wisdem.readthedocs.io/en/master/wisdem/nrelcsm/theory.html#blades).
 
-.. image:: ../images/viz/WISDEM-Cost.pdf
+.. image:: images/viz/WISDEM-Cost.pdf
