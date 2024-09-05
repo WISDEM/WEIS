@@ -12,6 +12,7 @@ import plotly.graph_objects as go
 import os
 import io
 import yaml
+import yamllint
 import re
 import socket
 from dash import html
@@ -58,10 +59,18 @@ def parse_yaml(file_path):
     '''
     Parse the data contents in dictionary format
     '''
+    # TODO: Encountering the error for parsing hyperlink data - either skip or add that?
+    #       load_yaml doesn't work as well..
     # print('Reading the input yaml file..')
     try:
+        # dict = load_yaml(file_path, 1)
         with io.open(file_path, 'r') as stream:
             dict = yaml.safe_load(stream)
+            # try:
+            #     dict = yaml.safe_load(stream)
+            # except yaml.YAMLError as exc:
+            #     from subprocess import call
+            #     call(["yamllint", "-f", "parsable", file_path])
         
         dict['yamlPath'] = file_path
         # print('input file dict:\n', dict)
@@ -911,3 +920,22 @@ def render_mesh_with_faces():
     ])
     
     return content
+
+
+def render_cylinder():
+    cylinder = pv.Cylinder(
+        center = [1,2,3], direction=[1,1,1], radius=1, height=2
+    )
+    mesh_state = to_mesh_state(cylinder)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    return content
+
+def render_tower():
+    pass

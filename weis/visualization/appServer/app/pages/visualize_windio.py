@@ -7,6 +7,7 @@ import numpy as np
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
+import weis.inputs as sch
 from weis.visualization.utils import *
 
 register_page(
@@ -15,6 +16,20 @@ register_page(
     top_nav=True,
     path='/windio'
 )
+
+@callback(Output('var-windio', 'data'),
+          Input('input-dict', 'data'))
+def read_variables(input_dict):
+    
+    if input_dict is None or input_dict == {}:
+        raise PreventUpdate
+    
+    # windio_options = parse_yaml(input_dict['wtInputPath'])
+    # windio_options = input_dict['wtInputPath']
+    windio_options = sch.load_geometry_yaml(input_dict['wtInputPath'])
+    print('windio_options\n', windio_options)
+
+    return windio_options
 
 
 # We are using card container where we define sublayout with rows and cols.
@@ -27,11 +42,18 @@ def layout():
     # content = load_mesh(file_path)
 
     # 2) Create mesh from scratch
-    content = render_mesh_with_grid()
+    tower = render_cylinder()
 
-    layout = html.Div(
-        style={'width':'100%', 'height':'600px'},
-        children=[content]
-    )
+    layout = dbc.Row([
+                dcc.Store(id='var-windio', data={}),
+                dbc.Col(html.Div(
+                    style={'width':'100%', 'height':'600px'},
+                    children=[tower]))
+            ], className='wrapper')
+
+    # layout = html.Div(
+    #     style={'width':'100%', 'height':'600px'},
+    #     children=[content]
+    # )
 
     return layout
