@@ -19,6 +19,7 @@ Using WEIS
 
    installation
    how_weis_works
+   inputs/yaml_inputs
    
 
 WEIS Visualization APP
