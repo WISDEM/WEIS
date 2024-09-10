@@ -21,6 +21,8 @@ dependencies:
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
+    - dash-vtk
+    - pyvista
     - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:
