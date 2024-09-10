@@ -56,7 +56,11 @@ navbar = dbc.NavbarSimple(
             label="WISDEM",
             nav=True
         ),
-        dbc.NavItem(dbc.NavLink("WindIO", href='/windio'))
+        dbc.DropdownMenu(
+            [dbc.DropdownMenuItem('3D', href='/windio_3d'), dbc.DropdownMenuItem('Airfoils', href='/windio_airfoils')],
+            label="WindIO",
+            nav=True
+        )
     ],
     brand = APP_TITLE,
     color = "darkblue",

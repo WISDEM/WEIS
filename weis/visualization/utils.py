@@ -2,6 +2,8 @@
 Various functions for help visualizing WEIS outputs
 '''
 from weis.aeroelasticse.FileTools import load_yaml
+import weis.inputs as sch
+
 import pandas as pd
 import numpy as np
 import openmdao.api as om
@@ -12,7 +14,6 @@ import plotly.graph_objects as go
 import os
 import io
 import yaml
-import yamllint
 import re
 import socket
 from dash import html
@@ -728,6 +729,170 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
 ############################
 # Viz Utils for WindIO
 ############################
+def render_meshes():
+    meshes = []
+
+    cylinder = {'center': [1,2,3], 'direction': [1,1,1], 'radius': 1, 'height': 2}
+    sphere = {'center': [0,0,0], 'direction': [0,0,1], 'radius': 0.5}
+    plane = {'center': [0,0,0], 'direction': [0,0,1]}
+    line = {'pointa': [-0.5,0,0], 'pointb':[0.5,0,0]}
+    box = {'bounds': [-1.0,1.0,-1.0,1.0,-1.0,1.0]}
+    
+    # Define structured points with numpy
+    x = np.arange(-10, 10, 0.25)    # (80,)
+    y = np.arange(-10, 10, 0.25)    # (80,)
+    x, y = np.meshgrid(x, y)        # both (80, 80)
+    r = np.sqrt(x**2, y**2)
+    z = np.sin(r)
+    points = (x, y, z)
+
+    mesh_cylinder = render_cylinder(cylinder)
+    mesh_sphere = render_sphere(sphere)
+    mesh_plane = render_plane(plane)
+    mesh_line = render_line(line)
+    mesh_box = render_box(box)
+    mesh_random = render_our_own(points)
+
+    meshes.append(mesh_cylinder)
+    meshes.append(mesh_sphere)
+    meshes.append(mesh_plane)
+    meshes.append(mesh_line)
+    meshes.append(mesh_box)
+    meshes.append(mesh_random)
+
+    return meshes
+
+
+def render_cylinder(cylinder):
+    cylinder = pv.Cylinder(
+        center=cylinder['center'], direction=cylinder['direction'], radius=cylinder['radius'], height=cylinder['height']
+    )
+    mesh_state = to_mesh_state(cylinder)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    return content
+
+
+def render_sphere(sphere):
+    sphere = pv.Sphere(
+        center=sphere['center'], direction=sphere['direction'], radius=sphere['radius']
+    )
+    mesh_state = to_mesh_state(sphere)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    return content
+
+
+def render_plane(plane):
+    plane = pv.Plane(
+        center=plane['center'], direction=plane['direction']
+    )
+    mesh_state = to_mesh_state(plane)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    return content
+
+
+def render_line(line):
+    line = pv.Line(
+        pointa=line['pointa'], pointb=line['pointb']
+    )
+    mesh_state = to_mesh_state(line)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    return content
+
+
+def render_box(box):
+    box = pv.Box(
+        bounds=box['bounds']
+    )
+    mesh_state = to_mesh_state(box)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    return content
+
+
+def render_our_own(points):
+    '''
+    Create and fill the VTK Data Object with your own data using VTK library and pyvista high level api
+
+    Reference: https://tutorial.pyvista.org/tutorial/06_vtk/b_create_vtk.html
+    '''
+    # Join the points
+    x, y, z = points
+    values = np.c_[x.ravel(), y.ravel(), z.ravel()]     # (6400, 3) where each column is x, y, z coords
+    coords = numpy_to_vtk(values)
+    
+    points = vtk.vtkPoints()
+    points.SetData(coords)
+
+    grid = vtk.vtkStructuredGrid()
+    grid.SetDimensions(*z.shape, 1)
+    grid.SetPoints(points)
+
+    # Add point data
+    arr = numpy_to_vtk(z.ravel())
+    arr.SetName("z")
+    grid.GetPointData().SetScalars(arr)
+
+    mesh_state = to_mesh_state(grid)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            mapper={'orientationArray': 'Normals'},
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+    
+    return content
+
+
+def load_airfoils():
+    # Read geometry input file
+    # TODO: This is for simplicity. Need to think another way to load geometries.
+    wt_options = sch.load_geometry_yaml('/projects/weis/sryu/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')
+    airfoils = wt_options['airfoils']
+    print('airfoils\n', airfoils)
+
+    return airfoils
+
+
+
+###################################################
+# Not needed below.. Will be deleted later
+###################################################
 def load_mesh(file_path):
     '''
     Read either STL or VTK file and load the 3D mesh
@@ -921,21 +1086,3 @@ def render_mesh_with_faces():
     
     return content
 
-
-def render_cylinder():
-    cylinder = pv.Cylinder(
-        center = [1,2,3], direction=[1,1,1], radius=1, height=2
-    )
-    mesh_state = to_mesh_state(cylinder)
-
-    content = dash_vtk.View([
-        dash_vtk.GeometryRepresentation(
-            children=[dash_vtk.Mesh(state=mesh_state)],
-            showCubeAxes=True,      # Show origins
-        )
-    ])
-
-    return content
-
-def render_tower():
-    pass
