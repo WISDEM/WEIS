@@ -232,7 +232,7 @@ class PoseOptimizationWEIS(PoseOptimization):
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
                 
-            if blade_opt['structure']['spar_cap_ss']['flag'] or blade_opt['structure']['spar_cap_ps']['flag']:
+            if len(blade_opt["structure"]) > 0:
                 wt_opt.model.add_constraint('tcons_post.tip_deflection_ratio', upper=1.0)
             else:
                 print('WARNING: the tip deflection is set to be constrained, but spar caps thickness is not an active design variable. The constraint is not enforced.')
@@ -244,23 +244,30 @@ class PoseOptimizationWEIS(PoseOptimization):
                 wt_opt.model._responses.pop( name )
             if name in wt_opt.model._static_responses:
                 wt_opt.model._static_responses.pop( name )
-            if blade_opt["structure"]["spar_cap_ss"]["flag"]:
-                indices_strains_spar_cap_ss = range(blade_constr["strains_spar_cap_ss"]["index_start"], blade_constr["strains_spar_cap_ss"]["index_end"])
-                wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainU_spar", indices = indices_strains_spar_cap_ss, upper=1.0)
+            indices_strains_spar_cap_ss = range(
+                blade_constr["strains_spar_cap_ss"]["index_start"], 
+                blade_constr["strains_spar_cap_ss"]["index_end"]
+            )
+            wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainU_spar", 
+                                        indices = indices_strains_spar_cap_ss, 
+                                        upper=1.0
+            )
 
         if blade_constr["strains_spar_cap_ps"]["flag"]:
-            if (
-                blade_opt["structure"]["spar_cap_ps"]["flag"]
-                or blade_opt["structure"]["spar_cap_ps"]["equal_to_suction"]
-            ):
-                # Remove generic WISDEM one
-                name = 'rotorse.rs.constr.constr_max_strainL_spar'
-                if name in wt_opt.model._responses:
-                    wt_opt.model._responses.pop( name )
-                if name in wt_opt.model._static_responses:
-                    wt_opt.model._static_responses.pop( name )
-                indices_strains_spar_cap_ps = range(blade_constr["strains_spar_cap_ps"]["index_start"], blade_constr["strains_spar_cap_ps"]["index_end"])
-                wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", indices = indices_strains_spar_cap_ps, upper=1.0)
+            # Remove generic WISDEM one
+            name = 'rotorse.rs.constr.constr_max_strainL_spar'
+            if name in wt_opt.model._responses:
+                wt_opt.model._responses.pop( name )
+            if name in wt_opt.model._static_responses:
+                wt_opt.model._static_responses.pop( name )
+            indices_strains_spar_cap_ps = range(
+                blade_constr["strains_spar_cap_ps"]["index_start"], 
+                blade_constr["strains_spar_cap_ps"]["index_end"]
+            )
+            wt_opt.model.add_constraint("rlds_post.constr.constr_max_strainL_spar", 
+                                        indices = indices_strains_spar_cap_ps,
+                                        upper=1.0
+            )
 
         ### CONTROL CONSTRAINTS
         control_constraints = self.opt['constraints']['control']
