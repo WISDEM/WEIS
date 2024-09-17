@@ -106,3 +106,6 @@ html_sidebars = {
         'searchbox.html'        
     ]
 }
+
+# Bibtex configuration
+bibtex_bibfiles = ["references.bib"]
