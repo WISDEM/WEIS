@@ -8,7 +8,7 @@ General:
         use_exe: True
         allow_fails: True
         fail_value: 9999
-        # FAST_exe: /home/dzalkind/Tools/openfast/build/glue-codes/openfast/openfast        # faster on kestrel
+        FAST_exe: /projects/weis/cfrontin/software/openfast/build/glue-codes/openfast/openfast  # faster on kestrel
         # turbsim_exe: /home/dzalkind/Tools/openfast/build/modules/turbsim/turbsim      # faster on kestrel
 WISDEM:
     RotorSE:
@@ -68,9 +68,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         FlapDOF2: True
         EdgeDOF: True
         TeetDOF: False
-        DrTrDOF: False 
+        DrTrDOF: False
         GenDOF: True
-        YawDOF: False  
+        YawDOF: False
         TwFADOF1 : True
         TwFADOF2 : True
         TwSSDOF1 : True
@@ -94,12 +94,12 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     #     PotMod: 1
         # WaveMod: 0
         # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
-# Level1:
-#     flag: True
-#     potential_model_override: 0
-#     trim_ballast: 2
-#     heave_tol: 1
-#     save_designs: True
+Level1:
+    flag: True
+    potential_model_override: 0
+    trim_ballast: 2
+    heave_tol: 1
+    save_designs: True
 ROSCO:
     flag: True
     # SD_Mode: 0
@@ -107,13 +107,13 @@ ROSCO:
     # ps_percent: 0.9
     # F_LPFType: 2
     # F_NotchType: 2
-    # Fl_Mode: 2 
+    # Fl_Mode: 2
     tuning_yaml: IEA-22-280-RWT-Semi_ROSCO.yaml
     # zeta_pc: [1]
     # omega_pc: [0.1]
     # U_pc: [12]
     # zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
-    # omega_vs: 0.12  
+    # omega_vs: 0.12
     # twr_freq: 3.2
     # ptfm_freq: 0.2
     # Kp_float: -10
@@ -136,8 +136,8 @@ DLC_driver:
         - DLC: "1.6"    # local, lite
           n_seeds: 1
           wind_speed: [12]
-          transient_time: 0.
-          analysis_time: 10.
+          transient_time: 120.0  # 0.
+          analysis_time: 600.0  # 10.
         # - DLC: "6.1"
         #   n_seeds: 6
         #   turbulent_wind:
