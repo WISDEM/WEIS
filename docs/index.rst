@@ -30,6 +30,14 @@ WEIS Visualization APP
 
    how_weis_viz_works
 
+DLC Generator
+=============
+
+.. toctree::
+   :maxdepth: 2
+
+   dlc_generator
+
 
 Other Useful Docs
 =================
