@@ -421,6 +421,12 @@ class DLCGenerator(object):
             idlc.label = dlc_options['label']
             idlc.total_time = case['total_time']
             idlc.IEC_WindType = dlc_options['IEC_WindType']
+            idlc.turbine_status = dlc_options['turbine_status']
+
+            # Apply case_list info to idlc
+            for key in case:
+                setattr(idlc,key,case[key])
+
             #if dlc_options['label'] == '1.2':
             #    idlc.probability = probabilities[i_WaH]
             self.cases.append(idlc)
@@ -876,7 +882,7 @@ class DLCGenerator(object):
         if 'yaw_misalign' not in dlc_options:
             dlc_options['yaw_misalign'] = [-8,8]
 
-        dlc_options['wind_speed'] = [50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
+        dlc_options['wind_speed'] = [self.V_e50]
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
@@ -916,7 +922,7 @@ class DLCGenerator(object):
         if 'yaw_misalign' not in dlc_options:
             dlc_options['yaw_misalign'] = np.arange(-180+15,180+15,15).tolist()     # -180 is not valid in OF
 
-        dlc_options['wind_speed'] = [50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
+        dlc_options['wind_speed'] = [self.V_e50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
@@ -956,7 +962,7 @@ class DLCGenerator(object):
         else: # default
             dlc_options['yaw_misalign'] = [-20.,20.]
 
-        dlc_options['wind_speed'] = [50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
+        dlc_options['wind_speed'] = [self.V_e1]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
