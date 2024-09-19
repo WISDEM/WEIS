@@ -4,6 +4,7 @@ import sys
 
 from weis.glue_code.runWEIS     import run_weis
 from wisdem.commonse.mpi_tools  import MPI
+from wisdem.inputs.validation import load_yaml
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
@@ -22,3 +23,9 @@ else:
 if rank == 0:
     print('Run time: %f'%(time.time()-tt))
     sys.stdout.flush()
+
+# Test that the input we are providing RAFT has not changed
+this_raft_input = load_yaml(os.path.join(run_dir,'outputs','15_RAFT_Rect','raft_designs','raft_design_0.yaml'))
+standard_raft_input = load_yaml(os.path.join(run_dir,'raft_opt_out.yaml'))
+assert(this_raft_input == standard_raft_input)
+# If the values have changed for a purpose, move this_raft_input to standard_raft_input and commit
