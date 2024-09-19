@@ -452,7 +452,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during all OpenFAST simulations')  # is this over a set of sims?
         self.add_output('max_nac_accel',    val=0.0, units='m/s**2', desc='Maximum nacelle acceleration magnitude all OpenFAST simulations')  # is this over a set of sims?
         self.add_output('avg_pitch_travel',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
-        self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
+        self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Number of pitch direction changes')  # is this over a set of sims?
+        self.add_output('max_pitch_rate',    val=0.0, units='deg/s', desc='Maximum pitch command rate')  # is this over a set of sims?
 
         # Blade outputs
         self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
@@ -2585,6 +2586,7 @@ class FASTLoadCases(ExplicitComponent):
             tot_time = 0
             tot_travel = 0
             num_dir_changes = 0
+            max_pitch_rate = [0,0,0]
             for i_ts, ts in enumerate(chan_time):
                 t_span = self.TMax[i_ts] - self.TStart[i_ts]
                 for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
@@ -2601,12 +2603,17 @@ class FASTLoadCases(ExplicitComponent):
                     # number of direction changes on each blade
                     num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
+                    # max operational pitch rate
+                    max_pitch_rate[i_blade] = max(np.max(np.abs(ts[f'dBldPitch{i_blade+1}'])),max_pitch_rate[i_blade])
+
             # Normalize by number of blades, total time
             avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['avg_pitch_travel'] = avg_travel_per_sec
 
             dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['pitch_duty_cycle'] = dir_change_per_sec
+
+            outputs['max_pitch_rate'] = max(max_pitch_rate)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
