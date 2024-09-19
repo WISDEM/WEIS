@@ -11,80 +11,8 @@ logger = logging.getLogger("wisdem/weis")
 
 
 
-# TODO: not sure where this should live, so it's a global for now
-# Could it be an input yaml?
-openfast_input_map = {
-    # Generic name: OpenFAST input (list if necessary)
-    'total_time': ("Fst","TMax"),
-    'transient_time': ("Fst","TStart"),
-    
-    'WindFile_type': ("InflowWind","WindType"),
-    'wind_speed': ("InflowWind","HWindSpeed"),
-    'WindFile_name': ("InflowWind","FileName_BTS"),
-    'WindFile_name': ("InflowWind","Filename_Uni"),
-    'rotorD': ("InflowWind","RefLength"),
-    'WindHd': ("InflowWind","PropagationDir"),
-    'hub_height': ("InflowWind","RefHt_Uni"),
-    
-    'rot_speed_initial': ("ElastoDyn","RotSpeed"),
-    'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
-    'azimuth_init': ("ElastoDyn","Azimuth"),
-    'yaw_misalign': ("ElastoDyn","NacYaw"),
-    
-    'wave_height': ("HydroDyn","WaveHs"),
-    'wave_period': ("HydroDyn","WaveTp"),
-    'WaveHd': ("HydroDyn","WaveDir"),
-    'WaveGamma': ("HydroDyn","WavePkShp"),
-    'WaveSeed1': ("HydroDyn","WaveSeed1"),
-
-    'wave_model': ("HydroDyn","WaveMod"),
-    
-    'shutdown_time': [
-        ("ServoDyn","TPitManS1"),
-        ("ServoDyn","TPitManS2"),
-        ("ServoDyn","TPitManS3"),
-        ("ServoDyn","TimGenOf"),
-        ],
-
-    'startup_time': [
-        ("ServoDyn","TimGenOn"),
-        ("ServoDyn","TPCOn"),
-    ],
-        
-
-    'final_blade_pitch': [
-        ("ServoDyn","BlPitchF(1)"),
-        ("ServoDyn","BlPitchF(2)"),
-        ("ServoDyn","BlPitchF(3)"),
-        
-    ],
-
-    'pitchfault_time1': ("ServoDyn","TPitManS1"),
-    'pitchfault_time2': ("ServoDyn","TPitManS2"),
-    'pitchfault_time3': ("ServoDyn","TPitManS3"),
-    'pitchfault_blade1': ("ServoDyn","BlPitchF(1)"),
-    'pitchfault_blade2': ("ServoDyn","BlPitchF(2)"),
-    'pitchfault_blade3': ("ServoDyn","BlPitchF(3)"),
-    'genfault_time': ("ServoDyn","TimGenOf"),
-    
-    'aero_mod': ("AeroDyn15","AFAeroMod"),
-    'wake_mod': ("AeroDyn15","WakeMod"),
-    'tau1_const': ("AeroDyn15","tau1_const"),
 
 
-    # 'dlc_label': ("DLC","Label"),
-    # 'wind_seed': ("DLC","WindSeed"),
-    # 'wind_speed': ("DLC","MeanWS"),
-
-    # TODO: where should turbsim live?
-    # These aren't actually used to generate turbsim, the generic inputs are used
-    # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
-    'wind_seed': ("TurbSim", "RandSeed1"),
-    'direction': ("TurbSim", "direction_pn"),
-    'shear': ("TurbSim", "shear_hv")
-}
-
-dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']
 
 class DLCInstance(object):
 
@@ -149,6 +77,82 @@ class DLCGenerator(object):
         ("AeroDyn15","OLAF","nFWPanels"):0,
         ("AeroDyn15","OLAF","nFWPanelsFree"):0,
     }
+
+    dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']
+
+    # TODO: not sure where this should live, so it's a global for now
+    # Could it be an input yaml?
+    openfast_input_map = {
+        # Generic name: OpenFAST input (list if necessary)
+        'total_time': ("Fst","TMax"),
+        'transient_time': ("Fst","TStart"),
+        
+        'WindFile_type': ("InflowWind","WindType"),
+        'wind_speed': ("InflowWind","HWindSpeed"),
+        'WindFile_name': ("InflowWind","FileName_BTS"),
+        'WindFile_name': ("InflowWind","Filename_Uni"),
+        'rotorD': ("InflowWind","RefLength"),
+        'WindHd': ("InflowWind","PropagationDir"),
+        'hub_height': ("InflowWind","RefHt_Uni"),
+        
+        'rot_speed_initial': ("ElastoDyn","RotSpeed"),
+        'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
+        'azimuth_init': ("ElastoDyn","Azimuth"),
+        'yaw_misalign': ("ElastoDyn","NacYaw"),
+        
+        'wave_height': ("HydroDyn","WaveHs"),
+        'wave_period': ("HydroDyn","WaveTp"),
+        'WaveHd': ("HydroDyn","WaveDir"),
+        'WaveGamma': ("HydroDyn","WavePkShp"),
+        'WaveSeed1': ("HydroDyn","WaveSeed1"),
+
+        'wave_model': ("HydroDyn","WaveMod"),
+        
+        'shutdown_time': [
+            ("ServoDyn","TPitManS1"),
+            ("ServoDyn","TPitManS2"),
+            ("ServoDyn","TPitManS3"),
+            ("ServoDyn","TimGenOf"),
+            ],
+
+        'startup_time': [
+            ("ServoDyn","TimGenOn"),
+            ("ServoDyn","TPCOn"),
+        ],
+            
+
+        'final_blade_pitch': [
+            ("ServoDyn","BlPitchF(1)"),
+            ("ServoDyn","BlPitchF(2)"),
+            ("ServoDyn","BlPitchF(3)"),
+            
+        ],
+
+        'pitchfault_time1': ("ServoDyn","TPitManS1"),
+        'pitchfault_time2': ("ServoDyn","TPitManS2"),
+        'pitchfault_time3': ("ServoDyn","TPitManS3"),
+        'pitchfault_blade1': ("ServoDyn","BlPitchF(1)"),
+        'pitchfault_blade2': ("ServoDyn","BlPitchF(2)"),
+        'pitchfault_blade3': ("ServoDyn","BlPitchF(3)"),
+        'genfault_time': ("ServoDyn","TimGenOf"),
+        
+        'aero_mod': ("AeroDyn15","AFAeroMod"),
+        'wake_mod': ("AeroDyn15","WakeMod"),
+        'tau1_const': ("AeroDyn15","tau1_const"),
+
+
+        # 'dlc_label': ("DLC","Label"),
+        # 'wind_seed': ("DLC","WindSeed"),
+        # 'wind_speed': ("DLC","MeanWS"),
+
+        # TODO: where should turbsim live?
+        # These aren't actually used to generate turbsim, the generic inputs are used
+        # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
+        'wind_seed': ("TurbSim", "RandSeed1"),
+        'direction': ("TurbSim", "direction_pn"),
+        'shear': ("TurbSim", "shear_hv")
+    }
+
     
 
     def __init__(
@@ -350,7 +354,7 @@ class DLCGenerator(object):
 
     def generate(self, label, options):
         # Use schema to determine known_dlcs (weis/inputs/modeling_schema.yaml)
-        known_dlcs = dlc_schema['DLC']['enum']
+        known_dlcs = self.dlc_schema['DLC']['enum']
         self.OF_dlccaseinputs = {key: None for key in known_dlcs}
 
         # Get extreme wind speeds
@@ -516,7 +520,7 @@ class DLCGenerator(object):
         # Generate generic case list
         generic_case_list, _ = CaseGen_General(gen_case_inputs,save_matrix=False)
 
-        case_inputs_openfast = map_generic_to_openfast(generic_case_inputs, comb_options)
+        case_inputs_openfast = self.map_generic_to_openfast(generic_case_inputs, comb_options)
         self.openfast_case_inputs.append(case_inputs_openfast)
         return generic_case_list
 
@@ -562,6 +566,26 @@ class DLCGenerator(object):
             generic_case_inputs[wind_group] = group
             
         return generic_case_inputs
+    
+    def map_generic_to_openfast(self,generic_case_inputs, comb_options):
+        case_inputs_openfast = {}
+        for i_group, generic_case_group in enumerate(generic_case_inputs):
+            for generic_input in generic_case_group:
+                
+                if generic_input not in self.openfast_input_map.keys():
+                    raise Exception(f'The input {generic_input} does not map to an OpenFAST input key in openfast_input_map')
+
+                openfast_input = self.openfast_input_map[generic_input]
+
+                if type(openfast_input) == list:
+                    # Apply to all list of openfast_inputs
+                    for of_input in openfast_input:
+                        case_inputs_openfast[of_input] = {'vals': comb_options[generic_input], 'group': i_group}
+
+                else:
+                    case_inputs_openfast[openfast_input] = {'vals': comb_options[generic_input], 'group': i_group}
+
+        return case_inputs_openfast
 
     def generate_1p1(self, dlc_options):
         # Power production normal turbulence model - normal sea state
@@ -839,10 +863,10 @@ class DLCGenerator(object):
         dlc_options['final_blade_pitch'] = 90.
 
         # Time options, set defaults if not provided
-        if dlc_options['analysis_time'] == dlc_schema['analysis_time']['default']: 
+        if dlc_options['analysis_time'] == self.dlc_schema['analysis_time']['default']: 
             dlc_options['analysis_time'] = 600
 
-        if dlc_options['shutdown_time'] == dlc_schema['shutdown_time']['default']:
+        if dlc_options['shutdown_time'] == self.dlc_schema['shutdown_time']['default']:
             dlc_options['shutdown_time'] = 300
 
         
@@ -1103,25 +1127,6 @@ def combine_options(*dicts):
 
     return comb_options
 
-def map_generic_to_openfast(generic_case_inputs, comb_options):
-    case_inputs_openfast = {}
-    for i_group, generic_case_group in enumerate(generic_case_inputs):
-        for generic_input in generic_case_group:
-            
-            if generic_input not in openfast_input_map.keys():
-                raise Exception(f'The input {generic_input} does not map to an OpenFAST input key in openfast_input_map')
-
-            openfast_input = openfast_input_map[generic_input]
-
-            if type(openfast_input) == list:
-                # Apply to all list of openfast_inputs
-                for of_input in openfast_input:
-                    case_inputs_openfast[of_input] = {'vals': comb_options[generic_input], 'group': i_group}
-
-            else:
-                case_inputs_openfast[openfast_input] = {'vals': comb_options[generic_input], 'group': i_group}
-
-    return case_inputs_openfast
 
 
 if __name__ == "__main__":
