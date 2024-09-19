@@ -3361,7 +3361,7 @@ properties:
                                     type: number
                                     unit: m/s
                                     default: -1
-                                    description: Mean (total) velocity at the reference height [m/s] (or 'default' for JET velocity profile) [must be 1-hr mean for API model; otherwise is the mean over AnalysisTime seconds]
+                                    description: URef is an input to TurbSim, but it's not honored in WEIS.  Please use the wind_speed input to each DLC instead.
                                 IECturbc:
                                     type: number
                                     unit: '(-)'

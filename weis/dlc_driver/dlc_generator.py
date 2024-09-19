@@ -906,7 +906,8 @@ class DLCGenerator(object):
         if 'yaw_misalign' not in dlc_options:
             dlc_options['yaw_misalign'] = [-8,8]
 
-        dlc_options['wind_speed'] = [self.V_e50]
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = [self.V_e50]
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
@@ -946,7 +947,8 @@ class DLCGenerator(object):
         if 'yaw_misalign' not in dlc_options:
             dlc_options['yaw_misalign'] = np.arange(-180+15,180+15,15).tolist()     # -180 is not valid in OF
 
-        dlc_options['wind_speed'] = [self.V_e50]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = [self.V_e50]
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
@@ -986,8 +988,9 @@ class DLCGenerator(object):
         else: # default
             dlc_options['yaw_misalign'] = [-20.,20.]
 
-        dlc_options['wind_speed'] = [self.V_e1]   # placeholder, could be anything as long as the length is 1, since the EWM50 is just a single speed that turbsim will determine 
-
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = [self.V_e1]
+            
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
         dlc_options['wake_mod'] = 0
