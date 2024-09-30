@@ -884,7 +884,6 @@ def load_airfoils():
     # TODO: This is for simplicity. Need to think another way to load geometries.
     wt_options = sch.load_geometry_yaml('/projects/weis/sryu/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')
     airfoils = wt_options['airfoils']
-    print('airfoils\n', airfoils)
 
     return airfoils
 
