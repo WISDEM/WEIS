@@ -1,6 +1,7 @@
 import os
 import time
 import sys
+import subprocess
 
 from weis.glue_code.runWEIS     import run_weis
 from wisdem.commonse.mpi_tools  import MPI
@@ -27,5 +28,12 @@ if rank == 0:
 # Test that the input we are providing RAFT has not changed
 this_raft_input = load_yaml(os.path.join(run_dir,'outputs','15_RAFT_Rect','raft_designs','raft_design_0.yaml'))
 standard_raft_input = load_yaml(os.path.join(run_dir,'raft_input_weis.yaml'))
-assert(this_raft_input == standard_raft_input)
+if this_raft_input != standard_raft_input:
+    print('this_raft_input:')
+    subprocess.call(['cat',os.path.join(run_dir,'outputs','15_RAFT_Rect','raft_designs','raft_design_0.yaml')])
+
+    print('standard_raft_input:')
+    subprocess.call(['cat',os.path.join(run_dir,'raft_input_weis.yaml')])
+    assert(False)
+
 # If the values have changed for a purpose, move this_raft_input to standard_raft_input and commit
