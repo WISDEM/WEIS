@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import shutil
+import numpy as np
 
 from rosco import discon_lib_path
 import weis.inputs as sch
@@ -193,11 +194,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
-        if hasattr(dlc_generator,'n_ws_dlc11'):
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = dlc_generator.n_ws_dlc11
+        
+        # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
+        DLCs = [i_dlc['DLC'] for i_dlc in self.modeling_options['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
         else:
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
+            DLC_label_for_AEP = '1.1'
+        dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
+        self.modeling_options['DLC_driver']['n_ws_aep'] = len(np.unique(dlc_aep_ws))
 
+        # TMD modeling
         self.modeling_options['flags']['TMDs'] = False
         if 'TMDs' in self.wt_init:
             if self.modeling_options['Level3']['flag']:

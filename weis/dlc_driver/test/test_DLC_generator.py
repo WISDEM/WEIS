@@ -36,8 +36,18 @@ class TestIECWind(unittest.TestCase):
             
 
         np.testing.assert_equal(dlc_generator.cases[11].URef, ws_cut_out)
-        np.testing.assert_equal(dlc_generator.n_ws_dlc11, 6)
         np.testing.assert_equal(dlc_generator.n_cases, 60)
 
+        # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
+        DLCs = [i_dlc['DLC'] for i_dlc in self.modeling_options['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
+        else:
+            DLC_label_for_AEP = '1.1'
+        dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
+        n_ws_aep = len(np.unique(dlc_aep_ws))
+
+        np.testing.assert_equal(n_ws_aep, 6)
+        
 if __name__ == "__main__":
     unittest.main()
