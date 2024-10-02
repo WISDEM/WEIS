@@ -26,6 +26,6 @@ if rank == 0:
 
 # Test that the input we are providing RAFT has not changed
 this_raft_input = load_yaml(os.path.join(run_dir,'outputs','15_RAFT_Rect','raft_designs','raft_design_0.yaml'))
-standard_raft_input = load_yaml(os.path.join(run_dir,'raft_opt_out.yaml'))
+standard_raft_input = load_yaml(os.path.join(run_dir,'raft_input_weis.yaml'))
 assert(this_raft_input == standard_raft_input)
 # If the values have changed for a purpose, move this_raft_input to standard_raft_input and commit
