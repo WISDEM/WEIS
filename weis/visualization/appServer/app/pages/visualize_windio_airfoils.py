@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from plotly.subplots import make_subplots
+import plotly
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import weis.inputs as sch
@@ -25,7 +26,9 @@ def categorize_airfoils():
     # airfoil_by_names = {airfoil['name']: dict(list(airfoil.items())[1:]) for airfoil in airfoils}       # {'FB90': {'coordinates': {'x': [1.0, 0.9921, ...]}, ...}, ...}
     # airfoil_names = [airfoil['name'] for airfoil in airfoils]
 
-
+def set_colors():
+    global cols
+    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
 
 
 # We are using card container where we define sublayout with rows and cols.
@@ -33,6 +36,9 @@ def layout():
 
     # Load/process airfoils data
     categorize_airfoils()
+
+    # Set color panel
+    set_colors()
 
     # Define layout for airfoil coords
     airfoil_items = dcc.Dropdown(id='airfoil-names', options=list(airfoil_by_names.keys()), value=None, multi=True)
@@ -101,7 +107,7 @@ def draw_airfoil_shape(airfoil_names):
     text = []
     fig = make_subplots(rows = 1, cols = 1, shared_xaxes=True)
 
-    for airfoil_name in airfoil_names:
+    for idx, airfoil_name in enumerate(airfoil_names):
         # Define description text (which is not must-have)
         text.append(html.P([html.B(airfoil_name), html.Br(), airfoil_by_names[airfoil_name]['description']]) if 'description' in airfoil_by_names[airfoil_name] else html.P([html.B(airfoil_name), html.Br(), 'N/A']))
         # Define graph -- add a trace per airfoil
@@ -112,6 +118,7 @@ def draw_airfoil_shape(airfoil_names):
                     x = x,
                     y = y,
                     mode = 'lines',
+                    line=dict(color=cols[idx]),
                     name = airfoil_name),
                     row = 1,
                     col = 1)
@@ -136,18 +143,22 @@ def draw_airfoil_polar(airfoil_names, switches_value):
         raise PreventUpdate
     
     fig = make_subplots(rows = 1, cols = 1, shared_xaxes=True)
-    for airfoil_name in airfoil_names:
+    for idx, airfoil_name in enumerate(airfoil_names):
         polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
         airfoil_re = html.P('re: ' + str(polars_dict['re']))
+        # re_value = str(polars_dict['re'])
 
         if 1 in switches_value:
             fig.append_trace(go.Scatter(
                         x = np.rad2deg(polars_dict['c_l']['grid']),
                         y = polars_dict['c_l']['values'],
                         mode = 'lines+markers',
-                        marker=dict(symbol='diamond'),
+                        marker=dict(symbol='diamond', color=cols[idx]),
+                        line=dict(color=cols[idx]),
+                        name = f'{dcc.Markdown("$C_{L}$", mathjax=True)}'),
+                        # name = '$C_{L}, Re=$' + str(polars_dict['re'])),            # Doesn't work
                         # name = dcc.Markdown('$C_{L}$ f"({airfoil_name})"', mathjax=True)),      # Doesn't work
-                        name = f'{dcc.Markdown("$C_{L}$", mathjax=True)} ({airfoil_name})'),        # No error but airfoil name doesn't come up
+                        # name = f'{dcc.Markdown("$C_{L}$", mathjax=True)} ({airfoil_name})'),        # No error but airfoil name doesn't come up
                         row = 1,
                         col = 1)
 
@@ -156,8 +167,9 @@ def draw_airfoil_polar(airfoil_names, switches_value):
                         x = np.rad2deg(polars_dict['c_d']['grid']),
                         y = polars_dict['c_d']['values'],
                         mode = 'lines+markers',
-                        marker=dict(symbol='arrow', angleref='previous'),
-                        name = f'{dcc.Markdown("$C_{D}$", mathjax=True)} ({airfoil_name})'),
+                        marker=dict(symbol='arrow', angleref='previous', size=10, color=cols[idx]),
+                        line=dict(color=cols[idx]),
+                        name = f'{dcc.Markdown("$C_{D}$", mathjax=True)}'),
                         row = 1,
                         col = 1)
         
@@ -166,8 +178,9 @@ def draw_airfoil_polar(airfoil_names, switches_value):
                         x = np.rad2deg(polars_dict['c_m']['grid']),
                         y = polars_dict['c_m']['values'],
                         mode = 'lines+markers',
-                        marker=dict(symbol='diamond-open'),
-                        name = f'{dcc.Markdown("$C_{M}$", mathjax=True)} ({airfoil_name})'),
+                        marker=dict(symbol='cross', color=cols[idx]),
+                        line=dict(color=cols[idx]),
+                        name = f'{dcc.Markdown("$C_{M}$", mathjax=True)}'),
                         row = 1,
                         col = 1)
 
@@ -175,6 +188,5 @@ def draw_airfoil_polar(airfoil_names, switches_value):
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text='$\\alpha [^\\circ]$', row=1, col=1)
-    fig.update_yaxes(title_text='value', row=1, col=1)
     
     return airfoil_re, fig
