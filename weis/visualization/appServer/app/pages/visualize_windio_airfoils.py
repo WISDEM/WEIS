@@ -1,7 +1,7 @@
 '''This is the page for visualize the WEIS inputs in 3D simulation model'''
 
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc
+from dash import html, register_page, callback, Input, Output, dcc, dash_table
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -55,6 +55,7 @@ def layout():
                                     coords_inputs,
                                     html.Br(),
                                     dcc.Loading(html.P(id='airfoil-description')),
+                                    html.Br(),
                                     dcc.Loading(dcc.Graph(id='airfoil-coords', figure=empty_figure())),
                                 ])
                              ], className='card')
@@ -83,7 +84,9 @@ def layout():
                                 dbc.CardBody([
                                     # Toggle switches
                                     polars_inputs,
-                                    html.P(id='airfoil-re'),
+                                    # Table for Re
+                                    # html.Div(id='re-table'),      # For callback: Output('re-table', 'children'),
+                                    html.Br(),
                                     # Graph layout for polars
                                     dcc.Loading(dcc.Graph(id='airfoil-polars', figure=empty_figure(), mathjax=True)),
                                 ])
@@ -125,7 +128,7 @@ def draw_airfoil_shape(airfoil_names):
     
     # fig.update_layout(plot_bgcolor='white', legend={'x':0.0, 'y':-0.75})      # Relocate legend position
     # fig.update_layout(plot_bgcolor='white', legend=dict(yanchor='bottom', y=-0.75, xanchor='left', x=0.01))
-    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3))
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text=f'coords', row=1, col=1)
@@ -134,19 +137,20 @@ def draw_airfoil_shape(airfoil_names):
     return fig, text
 
 
-@callback(Output('airfoil-re', 'children'),
-          Output('airfoil-polars', 'figure'),
+@callback(Output('airfoil-polars', 'figure'),
           Input('airfoil-names', 'value'),
           Input('switch-polar', 'value'))
 def draw_airfoil_polar(airfoil_names, switches_value):
     if airfoil_names is None:
         raise PreventUpdate
     
+    # Update graph with selected airfoils options
+    # re_data = []
     fig = make_subplots(rows = 1, cols = 1, shared_xaxes=True)
     for idx, airfoil_name in enumerate(airfoil_names):
         polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
-        airfoil_re = html.P('re: ' + str(polars_dict['re']))
-        # re_value = str(polars_dict['re'])
+        # re_data.append(html.Tr([html.Td(airfoil_name), html.Td(polars_dict['re'])]))            # For 1)
+        # re_data.append({'airfoil': airfoil_name, 'Re': polars_dict['re']})                      # For 2)
 
         if 1 in switches_value:
             fig.append_trace(go.Scatter(
@@ -155,10 +159,7 @@ def draw_airfoil_polar(airfoil_names, switches_value):
                         mode = 'lines+markers',
                         marker=dict(symbol='diamond', color=cols[idx]),
                         line=dict(color=cols[idx]),
-                        name = f'{dcc.Markdown("$C_{L}$", mathjax=True)}'),
-                        # name = '$C_{L}, Re=$' + str(polars_dict['re'])),            # Doesn't work
-                        # name = dcc.Markdown('$C_{L}$ f"({airfoil_name})"', mathjax=True)),      # Doesn't work
-                        # name = f'{dcc.Markdown("$C_{L}$", mathjax=True)} ({airfoil_name})'),        # No error but airfoil name doesn't come up
+                        name = f'{dcc.Markdown("$C_{}, Re={}$".format("L", polars_dict["re"]), mathjax=True)}'),
                         row = 1,
                         col = 1)
 
@@ -169,7 +170,7 @@ def draw_airfoil_polar(airfoil_names, switches_value):
                         mode = 'lines+markers',
                         marker=dict(symbol='arrow', angleref='previous', size=10, color=cols[idx]),
                         line=dict(color=cols[idx]),
-                        name = f'{dcc.Markdown("$C_{D}$", mathjax=True)}'),
+                        name = f'{dcc.Markdown("$C_{}, Re={}$".format("D", polars_dict["re"]), mathjax=True)}'),
                         row = 1,
                         col = 1)
         
@@ -180,13 +181,78 @@ def draw_airfoil_polar(airfoil_names, switches_value):
                         mode = 'lines+markers',
                         marker=dict(symbol='cross', color=cols[idx]),
                         line=dict(color=cols[idx]),
-                        name = f'{dcc.Markdown("$C_{M}$", mathjax=True)}'),
+                        name = f'{dcc.Markdown("$C_{}, Re={}$".format("M", polars_dict["re"]), mathjax=True)}'),
                         row = 1,
                         col = 1)
 
-    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3))
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text='$\\alpha [^\\circ]$', row=1, col=1)
+
+
+    # Update Re data table with selected airfoils
+    # 1) Nice layout but no interaction/responsive
+    # table_header = [html.Thead(html.Tr([html.Th('Airfoil Name'), html.Th('Re')]))]
+    # table_body = [html.Tbody(re_data)]
+    # airfoil_re = html.Div([
+    #                 dbc.Table(
+    #                     table_header + table_body,
+    #                     color='primary',
+    #                     bordered=True
+    #                 )
+    #             ])
+
+    # 2) Allow interaction but poor design
+    # airfoil_re = html.Div([dash_table.DataTable(
+    #     columns=[
+    #         {"name": i, "id": i} for i in ['airfoil', 'Re']
+    #     ],
+    #     data=re_data,
+    #     sort_action="native",
+    #     sort_mode="multi",
+    #     # style_data_conditional=[
+    #     #     {
+    #     #         "if": {
+    #     #             "filter_query": '{airfoil} = {}'.format(airfoil_name),
+    #     #         },
+    #     #         "color": cols[idx],
+    #     #         "fontWeight": "bold"
+    #     #     } for idx, airfoil_name in enumerate(airfoil_names)
+    #     # ],
+    #     style_data={
+    #         "color": "black",
+    #         "backgroundColor": "white",
+    #         "textAlign": "center"
+    #     },
+    #     style_header={
+    #         "backgroundColor": "rgba(210, 210, 210, 0.65)",
+    #         "color": "black",
+    #         "fontWeight": "bold",
+    #         "textAlign": "center"
+    #     }
+
+    # )])
+
+    # 2) Allow interaction but poor design
+    # airfoil_re = html.Div([dash_table.DataTable(
+    #     columns=[
+    #         {"name": i, "id": i, "deletable": True, "selectable": True} for i in ['airfoil name', 'Re']
+    #     ],
+    #     data=re_data,
+    #     editable=True,
+    #     filter_action="native",
+    #     sort_action="native",
+    #     sort_mode="multi",
+    #     column_selectable="single",
+    #     row_selectable="multi",
+    #     row_deletable=True,
+    #     selected_columns=[],
+    #     selected_rows=[],
+    #     page_action="native",
+    #     page_current= 0,
+    #     page_size= 10,
+    # )])
     
-    return airfoil_re, fig
+    
+    return fig
