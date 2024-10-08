@@ -31,22 +31,55 @@ def categorize_airfoils():
 # We are using card container where we define sublayout with rows and cols.
 def layout():
 
+    # Load/process airfoils data
     categorize_airfoils()
 
+    # Define layout for airfoil coords
+    airfoil_items = dcc.Dropdown(id='airfoil-names', options=list(airfoil_by_names.keys()), value=None, multi=True)
+
+    coords_inputs = html.Div([
+                        dbc.Label('Please select airfoils:'),
+                        dbc.Form(airfoil_items)
+                    ])
+
+
     coords_layout = dbc.Card([
-                                dbc.CardHeader("Airfoil Name: ", className='cardHeader'),
+                                dbc.CardHeader("Airfoil Coordinates", className='cardHeader'),
                                 dbc.CardBody([
-                                    dcc.Dropdown(id='airfoil-name', options=list(airfoil_by_names.keys()), value=None, multi=False),
+                                    coords_inputs,
+                                    html.Br(),
                                     dcc.Loading(html.P(id='airfoil-description')),
                                     dcc.Loading(dcc.Graph(id='airfoil-coords', figure=empty_figure())),
                                 ])
                              ], className='card')
         
+
+    # Define layout for airfoil polars
+    polars_switches = dbc.Checklist(
+                        options=[
+                            {'label': dcc.Markdown('Lift $C_{L}$', mathjax=True), 'value': 1},
+                            {'label': dcc.Markdown('Drag $C_{D}$', mathjax=True), 'value': 2},
+                            {'label': dcc.Markdown('Moment $C_{M}$', mathjax=True), 'value': 3}
+                        ],
+                        value=[1],      # Defualt with only c_l turned on
+                        id='switch-polar',
+                        inline=True,
+                        switch=True,
+                    )
+    
+    polars_inputs = html.Div([
+                        dbc.Label('Please select coefficients to visualize:'),
+                        dbc.Form(polars_switches)
+                    ])
+
     polars_layout = dbc.Card([
-                                dbc.CardHeader(html.P(id='airfoil-re'), className='cardHeader'),
+                                dbc.CardHeader("Airfoil Polars", className='cardHeader'),
                                 dbc.CardBody([
-                                    # dcc.Dropdown(id='airfoil-name', options=list(airfoil_by_names.keys()), value=None, multi=False),
-                                    dcc.Loading(dcc.Graph(id='airfoil-polars', figure=empty_figure())),
+                                    # Toggle switches
+                                    polars_inputs,
+                                    html.P(id='airfoil-re'),
+                                    # Graph layout for polars
+                                    dcc.Loading(dcc.Graph(id='airfoil-polars', figure=empty_figure(), mathjax=True)),
                                 ])
                              ], className='card')
 
@@ -60,81 +93,88 @@ def layout():
 
 @callback(Output('airfoil-coords', 'figure'),
           Output('airfoil-description', 'children'),
-          Input('airfoil-name', 'value'))
-def draw_airfoil_shape(airfoil_name):
-    if airfoil_name is None:
+          Input('airfoil-names', 'value'))
+def draw_airfoil_shape(airfoil_names):
+    if airfoil_names is None:
         raise PreventUpdate
     
-    # Define description text (which is not must-have)
-    text = html.P(str(airfoil_by_names[airfoil_name]['description'])) if 'description' in airfoil_by_names[airfoil_name] else html.P('Description: None')
-    
-    x = airfoil_by_names[airfoil_name]['coordinates']['x']
-    y = airfoil_by_names[airfoil_name]['coordinates']['y']
-
+    text = []
     fig = make_subplots(rows = 1, cols = 1, shared_xaxes=True)
 
-    fig.append_trace(go.Scatter(
-                x = x,
-                y = y,
-                mode = 'lines'),
-                row = 1,
-                col = 1)
+    for airfoil_name in airfoil_names:
+        # Define description text (which is not must-have)
+        text.append(html.P([html.B(airfoil_name), html.Br(), airfoil_by_names[airfoil_name]['description']]) if 'description' in airfoil_by_names[airfoil_name] else html.P([html.B(airfoil_name), html.Br(), 'N/A']))
+        # Define graph -- add a trace per airfoil
+        x = airfoil_by_names[airfoil_name]['coordinates']['x']
+        y = airfoil_by_names[airfoil_name]['coordinates']['y']
+
+        fig.append_trace(go.Scatter(
+                    x = x,
+                    y = y,
+                    mode = 'lines',
+                    name = airfoil_name),
+                    row = 1,
+                    col = 1)
     
-    fig.update_layout(plot_bgcolor='white')
+    # fig.update_layout(plot_bgcolor='white', legend={'x':0.0, 'y':-0.75})      # Relocate legend position
+    # fig.update_layout(plot_bgcolor='white', legend=dict(yanchor='bottom', y=-0.75, xanchor='left', x=0.01))
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3))
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text=f'coords', row=1, col=1)
     fig.update_yaxes(title_text=f'value', row=1, col=1)
-
-    print(airfoil_by_names[airfoil_name]['polars'])
     
     return fig, text
 
 
 @callback(Output('airfoil-re', 'children'),
           Output('airfoil-polars', 'figure'),
-          Input('airfoil-name', 'value'))
-def draw_airfoil_polar(airfoil_name):
-    if airfoil_name is None:
+          Input('airfoil-names', 'value'),
+          Input('switch-polar', 'value'))
+def draw_airfoil_polar(airfoil_names, switches_value):
+    if airfoil_names is None:
         raise PreventUpdate
     
-    polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
-    airfoil_re = html.P('re: ' + str(polars_dict['re']))
-
     fig = make_subplots(rows = 1, cols = 1, shared_xaxes=True)
+    for airfoil_name in airfoil_names:
+        polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
+        airfoil_re = html.P('re: ' + str(polars_dict['re']))
 
-    fig.append_trace(go.Scatter(
-                x = np.rad2deg(polars_dict['c_l']['grid']),
-                y = polars_dict['c_l']['values'],
-                mode = 'lines+markers',
-                marker=dict(symbol='diamond'),
-                name = 'c_l'),
-                row = 1,
-                col = 1)
+        if 1 in switches_value:
+            fig.append_trace(go.Scatter(
+                        x = np.rad2deg(polars_dict['c_l']['grid']),
+                        y = polars_dict['c_l']['values'],
+                        mode = 'lines+markers',
+                        marker=dict(symbol='diamond'),
+                        # name = dcc.Markdown('$C_{L}$ f"({airfoil_name})"', mathjax=True)),      # Doesn't work
+                        name = f'{dcc.Markdown("$C_{L}$", mathjax=True)} ({airfoil_name})'),        # No error but airfoil name doesn't come up
+                        row = 1,
+                        col = 1)
 
-    fig.append_trace(go.Scatter(
-                x = np.rad2deg(polars_dict['c_d']['grid']),
-                y = polars_dict['c_d']['values'],
-                mode = 'lines+markers',
-                marker=dict(symbol='arrow', angleref='previous'),
-                name = 'c_d'),
-                row = 1,
-                col = 1)
-    
-    fig.append_trace(go.Scatter(
-                x = np.rad2deg(polars_dict['c_m']['grid']),
-                y = polars_dict['c_m']['values'],
-                mode = 'lines+markers',
-                marker=dict(symbol='diamond-open'),
-                name = 'c_m'),
-                row = 1,
-                col = 1)
+        if 2 in switches_value:
+            fig.append_trace(go.Scatter(
+                        x = np.rad2deg(polars_dict['c_d']['grid']),
+                        y = polars_dict['c_d']['values'],
+                        mode = 'lines+markers',
+                        marker=dict(symbol='arrow', angleref='previous'),
+                        name = f'{dcc.Markdown("$C_{D}$", mathjax=True)} ({airfoil_name})'),
+                        row = 1,
+                        col = 1)
+        
+        if 3 in switches_value:
+            fig.append_trace(go.Scatter(
+                        x = np.rad2deg(polars_dict['c_m']['grid']),
+                        y = polars_dict['c_m']['values'],
+                        mode = 'lines+markers',
+                        marker=dict(symbol='diamond-open'),
+                        name = f'{dcc.Markdown("$C_{M}$", mathjax=True)} ({airfoil_name})'),
+                        row = 1,
+                        col = 1)
 
-    fig.update_layout(plot_bgcolor='white')
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3))
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
-    fig.update_xaxes(title_text=f'grid', row=1, col=1)
-    fig.update_yaxes(title_text=f'value', row=1, col=1)
-
+    fig.update_xaxes(title_text='$\\alpha [^\\circ]$', row=1, col=1)
+    fig.update_yaxes(title_text='value', row=1, col=1)
     
     return airfoil_re, fig
