@@ -130,7 +130,7 @@ def draw_airfoil_shape(airfoil_names):
     # fig.update_layout(plot_bgcolor='white', legend=dict(yanchor='bottom', y=-0.75, xanchor='left', x=0.01))
     fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
-    fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey', scaleanchor='x')      # Make it 1:1 xy-ratio
     fig.update_xaxes(title_text=f'coords', row=1, col=1)
     fig.update_yaxes(title_text=f'value', row=1, col=1)
     
@@ -144,7 +144,62 @@ def draw_airfoil_polar(airfoil_names, switches_value):
     if airfoil_names is None:
         raise PreventUpdate
     
+    if len(switches_value) == 0:
+        return empty_figure()
+    
+    # Update dynamic subplots graph with selected airfoils options
+    fig = make_subplots(rows = len(switches_value), cols = 1, shared_xaxes=True)
+    for row_idx, value in enumerate(switches_value):
+        for idx, airfoil_name in enumerate(airfoil_names):
+            polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
+            # re_data.append(html.Tr([html.Td(airfoil_name), html.Td(polars_dict['re'])]))            # For 1)
+            # re_data.append({'airfoil': airfoil_name, 'Re': polars_dict['re']})                      # For 2)
+
+            if value == 1:
+                fig.append_trace(go.Scatter(
+                            x = np.rad2deg(polars_dict['c_l']['grid']),
+                            y = polars_dict['c_l']['values'],
+                            mode = 'lines+markers',
+                            marker=dict(symbol='diamond', color=cols[idx]),
+                            line=dict(color=cols[idx]),
+                            name = f'{dcc.Markdown("$C_{}, Re={}$".format("L", polars_dict["re"]), mathjax=True)}'),
+                            row = row_idx+1,
+                            col = 1)
+                fig.update_yaxes(title_text='$C_{L}$', row=row_idx+1, col=1)
+
+            elif value == 2:
+                fig.append_trace(go.Scatter(
+                            x = np.rad2deg(polars_dict['c_d']['grid']),
+                            y = polars_dict['c_d']['values'],
+                            mode = 'lines+markers',
+                            marker=dict(symbol='arrow', angleref='previous', size=10, color=cols[idx]),
+                            line=dict(color=cols[idx]),
+                            name = f'{dcc.Markdown("$C_{}, Re={}$".format("D", polars_dict["re"]), mathjax=True)}'),
+                            row = row_idx+1,
+                            col = 1)
+                fig.update_yaxes(title_text='$C_{D}$', row=row_idx+1, col=1)
+            
+            elif value == 3:
+                fig.append_trace(go.Scatter(
+                            x = np.rad2deg(polars_dict['c_m']['grid']),
+                            y = polars_dict['c_m']['values'],
+                            mode = 'lines+markers',
+                            marker=dict(symbol='cross', color=cols[idx]),
+                            line=dict(color=cols[idx]),
+                            name = f'{dcc.Markdown("$C_{}, Re={}$".format("M", polars_dict["re"]), mathjax=True)}'),
+                            row = row_idx+1,
+                            col = 1)
+                fig.update_yaxes(title_text='$C_{M}$', row=row_idx+1, col=1)
+
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.2), margin={"l": 0, "r": 0, "t": 0, "b": 0}, height=300 * len(switches_value))
+    fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_xaxes(title_text='$\\alpha [^\\circ]$', row=len(switches_value), col=1)
+
+
+    
     # Update graph with selected airfoils options
+    '''
     # re_data = []
     fig = make_subplots(rows = 1, cols = 1, shared_xaxes=True)
     for idx, airfoil_name in enumerate(airfoil_names):
@@ -189,6 +244,7 @@ def draw_airfoil_polar(airfoil_names, switches_value):
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text='$\\alpha [^\\circ]$', row=1, col=1)
+    '''
 
 
     # Update Re data table with selected airfoils
