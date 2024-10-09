@@ -453,7 +453,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('max_nac_accel',    val=0.0, units='m/s**2', desc='Maximum nacelle acceleration magnitude all OpenFAST simulations')  # is this over a set of sims?
         self.add_output('avg_pitch_travel',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
         self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Number of pitch direction changes')  # is this over a set of sims?
-        self.add_output('max_pitch_rate',    val=0.0, units='deg/s', desc='Maximum pitch command rate')  # is this over a set of sims?
+        self.add_output('max_pitch_rate_sim',    val=0.0, units='deg/s', desc='Maximum pitch command rate')  # is this over a set of sims?
 
         # Blade outputs
         self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
@@ -2613,7 +2613,7 @@ class FASTLoadCases(ExplicitComponent):
             dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['pitch_duty_cycle'] = dir_change_per_sec
 
-            outputs['max_pitch_rate'] = max(max_pitch_rate)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
+            outputs['max_pitch_rate_sim'] = max(max_pitch_rate)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 

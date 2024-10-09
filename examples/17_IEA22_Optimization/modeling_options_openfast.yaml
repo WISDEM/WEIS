@@ -109,9 +109,9 @@ ROSCO:
     # F_NotchType: 2
     # Fl_Mode: 2
     tuning_yaml: IEA-22-280-RWT-Semi_ROSCO.yaml
-    # zeta_pc: [1]
-    # omega_pc: [0.1]
-    # U_pc: [12]
+    # zeta_pc: [1.0,1.0,1.0]
+    # omega_pc: [0.2,0.15,0.15]
+    # U_pc: [12.0,18.0,24.0]
     # zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     # omega_vs: 0.12
     # twr_freq: 3.2
@@ -131,13 +131,18 @@ DLC_driver:
     DLCs:
         # - DLC: "1.1"
         #   n_seeds: 6
-        # - DLC: "1.6"    # kestrel
-        #   n_seeds: 6
-        - DLC: "1.6"    # local, lite
-          n_seeds: 1
-          wind_speed: [12]
+        - DLC: "1.1"    # local, lite
+          n_seeds: 6
+          # wind_speed: [12.0, 18.0, 24.0]
           transient_time: 120.0  # 0.
           analysis_time: 600.0  # 10.
+        # - DLC: "1.6"    # kestrel
+        #   n_seeds: 6
+        # - DLC: "1.6"    # local, lite
+        #   n_seeds: 1
+        #   wind_speed: [12.0, 18.0, 24.0]
+        #   transient_time: 120.0  # 0.
+        #   analysis_time: 600.0  # 10.
         # - DLC: "6.1"
         #   n_seeds: 6
         #   turbulent_wind:
