@@ -13,16 +13,53 @@ register_page(
 
 def layout():
 
-    layout = dbc.Row([
-                dbc.InputGroup([
-                    dbc.Input(id='vizInput_path', placeholder='Enter input visualization file path..', type='text'),
-                    dbc.Button('Reload', id='reload', n_clicks=0)
-                    ], style={'width':'50vw', 'marginLeft': 50, 'marginTop': 50, 'display':'flex', 'justify-content':'space-between'}),
-                html.Div([
-                    html.H3('vizInputFile'),
-                    dbc.Col(dcc.Loading(html.Div(id='input-cfg-div')))
-                    ], style={'width':'50vw', 'marginLeft': 50, 'marginTop': 50})
-    ])
+    # Layout for form
+    file_input = dbc.Row([
+                    dbc.Label('File', width=2),
+                    dbc.Col(
+                        dbc.Input(
+                            id='vizInput_path', type='text', placeholder='Enter the absolute path for file to import'
+                        ),
+                        width=6
+                    ),
+                    dbc.Col(
+                        dbc.Button('Reload', id='reload', n_clicks=0),
+                        width='auto'
+                    )
+                ], className="mb-3")
+
+    form_layout = dbc.Card([
+                            dbc.CardHeader("Import WEIS Input Visualization File"),
+                            dbc.CardBody([
+                                dbc.Form([file_input])
+                            ])
+                  ], className='card')
+    
+    # Layout for file tree output
+    tree_input = dbc.Col(dcc.Loading(html.Div(id='input-cfg-div')))
+    tree_layout = dbc.Card([
+                            dbc.CardHeader("vizInputFile"),
+                            dbc.CardBody([
+                                dbc.Form([tree_input])
+                            ])
+                  ], className='card')
+
+    layout = html.Div([
+                form_layout,
+                tree_layout
+            ])
+
+    # Previous version
+    # layout = dbc.Row([
+    #             dbc.InputGroup([
+    #                 dbc.Input(id='vizInput_path', placeholder='Enter input visualization file path..', type='text'),
+    #                 dbc.Button('Reload', id='reload', n_clicks=0)
+    #                 ], style={'width':'50vw', 'marginLeft': 50, 'marginTop': 50, 'display':'flex', 'justify-content':'space-between'}),
+    #             html.Div([
+    #                 html.H3('vizInputFile'),
+    #                 dbc.Col(dcc.Loading(html.Div(id='input-cfg-div')))
+    #                 ], style={'width':'50vw', 'marginLeft': 50, 'marginTop': 50})
+    # ])
 
     return layout
 
