@@ -49,12 +49,12 @@ DLC_driver:
         - DLC: "6.1"
           analysis_time: 10.
           transient_time: 0.1
+          wind_speed: [46.789]
           turbulent_wind:
               HubHt: 142
               RefHt: 142
               GridHeight: 275
               GridWidth: 275
-              URef: 46.789
               PLExp: 0.14
               IECturbc: 0.12
               
