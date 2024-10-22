@@ -89,6 +89,9 @@ app.layout = dcc.Loading(
                 ),
                 # Optimization related Data fetched from input-dict
                 dcc.Store(id='var-opt', data={}),
+                # WindIO Input Files
+                dcc.Store(id='file-df', data={'File Path': [], 'Nickname': [], 'Type': []}),
+                dcc.Store(id='selected-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
                 navbar,
                 dash.page_container
             ]

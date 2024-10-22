@@ -19,29 +19,37 @@ register_page(
     path='/windio_airfoils'
 )
 
-def categorize_airfoils():
-    global airfoil_by_names         # Need to exclude this later (for simplicity for now)
-    airfoils = load_airfoils()      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
-    airfoil_by_names = {Path(filepath).stem+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for filepath, airfoils_by_file in airfoils.items() for airfoil in airfoils_by_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
-    # airfoil_by_names = {airfoil['name']: dict(list(airfoil.items())[1:]) for airfoil in airfoils}       # {'FB90': {'coordinates': {'x': [1.0, 0.9921, ...]}, ...}, ...}
-    # airfoil_names = [airfoil['name'] for airfoil in airfoils]
+@callback(Output('airfoil-by-names', 'data'),
+          Input('selected-file-df', 'data'))
+def categorize_airfoils(df):
+    '''
+    This function is for loading and processing airfoils data
+    '''
+    airfoils = load_airfoils(df['geometry'])      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
+    airfoil_by_names = {nickname+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for nickname, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
+
+    return airfoil_by_names
 
 def set_colors():
     global cols
     cols = plotly.colors.DEFAULT_PLOTLY_COLORS
 
 
+@callback(Output('airfoil-names', 'options'),
+          Input('airfoil-by-names', 'data'))
+def list_airfoils(airfoil_by_names):
+    print('\nairfoil_by_names\n', list(airfoil_by_names.keys()))
+    return list(airfoil_by_names.keys())
+
+
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-
-    # Load/process airfoils data
-    categorize_airfoils()
-
+    
     # Set color panel
     set_colors()
 
     # Define layout for airfoil coords
-    airfoil_items = dcc.Dropdown(id='airfoil-names', options=list(airfoil_by_names.keys()), value=None, multi=True)
+    airfoil_items = dcc.Dropdown(id='airfoil-names', options=[], value=None, multi=True)
 
     coords_inputs = html.Div([
                         dbc.Label('Please select airfoils:'),
@@ -93,6 +101,7 @@ def layout():
                              ], className='card')
 
     layout = dbc.Row([
+                dcc.Store(id='airfoil-by-names', data={}),
                 dbc.Col(coords_layout, width=6),
                 dbc.Col(polars_layout, width=6)
             ], className='wrapper')
@@ -102,8 +111,9 @@ def layout():
 
 @callback(Output('airfoil-coords', 'figure'),
           Output('airfoil-description', 'children'),
-          Input('airfoil-names', 'value'))
-def draw_airfoil_shape(airfoil_names):
+          Input('airfoil-names', 'value'),
+          Input('airfoil-by-names', 'data'))
+def draw_airfoil_shape(airfoil_names, airfoil_by_names):
     if airfoil_names is None:
         raise PreventUpdate
     
@@ -139,8 +149,9 @@ def draw_airfoil_shape(airfoil_names):
 
 @callback(Output('airfoil-polars', 'figure'),
           Input('airfoil-names', 'value'),
+          Input('airfoil-by-names', 'data'),
           Input('switch-polar', 'value'))
-def draw_airfoil_polar(airfoil_names, switches_value):
+def draw_airfoil_polar(airfoil_names, airfoil_by_names, switches_value):
     if airfoil_names is None:
         raise PreventUpdate
     

@@ -1,5 +1,6 @@
+import pandas as pd
 from dash import html, register_page
-from dash import dcc, Input, State, Output, callback
+from dash import dcc, Input, State, Output, callback, ALL, dash_table
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 from weis.visualization.utils import parse_yaml, dict_to_html
@@ -18,12 +19,12 @@ def layout():
                     dbc.Label('File', width=2),
                     dbc.Col(
                         dbc.Input(
-                            type='text', placeholder='Enter file path to import'
+                            id='file-path', type='text', placeholder='Enter the absolute path for file to import'
                         ),
                         width=6
                     ),
                     dbc.Col(
-                        dbc.Button('Submit', id='import-btn', color='primary'),
+                        dbc.Button('Add', id='import-btn', n_clicks=0, color='primary'),
                         width='auto'
                     )
                 ], className="mb-3")
@@ -32,7 +33,7 @@ def layout():
                         dbc.Label('Nickname', width=2),
                         dbc.Col(
                             dbc.Input(
-                                type='text', placeholder='Enter nickname'
+                                id='nickname', type='text', placeholder='Enter nickname'
                             ),
                             width=6
                         )
@@ -44,19 +45,30 @@ def layout():
                                 dbc.RadioItems(
                                     id='file-type',
                                     options=[
-                                        {'label': 'Model', 'value': 1},
-                                        {'label': 'Analysis', 'value': 2},
-                                        {'label': 'Geometry', 'value':3}
+                                        {'label': 'Model', 'value': 'model'},
+                                        {'label': 'Analysis', 'value': 'analysis'},
+                                        {'label': 'Geometry', 'value': 'geometry'}
                                     ]
                                 ),
                                 width='auto'
                             )
                         ], className="mb-3")
+    
+    warning_msg = dbc.Toast(
+                        html.P(id='form-warning-text'),
+                        id="form-warning",
+                        header="Warning",
+                        is_open=False,
+                        dismissable=True,
+                        icon="danger",
+                        style={"position": "fixed", "top": 66, "right": 10, "width": 350}
+                    )
 
     form_layout = dbc.Card([
                             dbc.CardHeader("Import WEIS Input Files"),
                             dbc.CardBody([
-                                dbc.Form([file_input, nickname_input, type_input])
+                                dbc.Form([file_input, nickname_input, type_input]),
+                                warning_msg
                             ])
                   ], className='card')
 
@@ -76,7 +88,158 @@ def layout():
     return layout
 
 
-@callback(Output('file-table', 'data'),
-          Input('import-btn', 'click'))
-def update_table(btn):
-    pass
+@callback(Output('file-table', 'children'),
+          Input('file-df', 'data'))
+def update_table(df_dict):
+
+    df = pd.DataFrame(df_dict)
+
+    return dash_table.DataTable(
+        id = 'file-table-interactivity',
+        columns = [
+            {'name': i, 'id': i, 'deletable': True, 'selectable': True} for i in df.columns
+        ],
+        data = df.to_dict('records'),
+        editable = True,
+        sort_action = "native",
+        sort_mode = "multi",
+        row_selectable = "multi",
+        row_deletable = True,
+        selected_rows = [],
+        persistence=True,
+        # persistence_type='session',
+    )
+
+
+@callback(Output('file-table-interactivity', 'style_data_conditional'),
+          Input('file-table-interactivity', 'derived_virtual_selected_rows'))
+def update_styles(selected_rows_indices):
+
+    if selected_rows_indices is None:
+        selected_rows_indices = []
+    
+    return [{
+        'if': { 'row_index': i },
+        'background_color': '#D2F3FF'
+    } for i in selected_rows_indices]
+
+
+@callback(Output('selected-file-df', 'data'),
+          State('file-table-interactivity', 'derived_virtual_data'),
+          Input('file-table-interactivity', 'derived_virtual_selected_rows'))
+def save_selections(rows, selected_rows_indices):
+    if selected_rows_indices is None:
+        selected_rows_indices = []
+    
+    selected_rows = [rows[i] for i in selected_rows_indices]
+    print('selected rows\n', selected_rows)
+
+    df = {'model': [], 'analysis': [], 'geometry': []}
+    for row in selected_rows:
+        row_type = row['Type']
+        row.popitem()               # Remove duplicated 'Type' field
+        df[row_type].append(row)
+
+    print('selected df\n', df)
+    
+    return df
+
+
+
+@callback(Output('form-warning', 'is_open'),
+          Output('form-warning-text', 'children'),
+          Output('file-df', 'data'),
+          Input('import-btn', 'n_clicks'),
+          State('file-path', 'value'),
+          State('nickname', 'value'),
+          State('file-type', 'value'),
+          State('file-df', 'data'))
+def add_row(nclick, filepath, nickname, filetype, df_dict):
+
+    if nclick is None or nclick==0:
+        raise PreventUpdate
+    
+    elif (filepath in [None, '']) or (nickname in [None, '']) or (filetype in [None, '']):
+        return True, "Please enter all of the forms", df_dict
+
+    if not filepath.endswith('.yaml'):
+        return True, "Please enter yaml file", df_dict
+    
+    # Check if row already exists
+    df = pd.DataFrame(df_dict)
+    if ((df['File Path'] == filepath) & (df['Nickname'] == nickname) & (df['Type'] == filetype)).any():
+        return True, "Already entered", df_dict
+    
+    df_dict['File Path'] += [filepath]
+    df_dict['Nickname'] += [nickname]
+    df_dict['Type'] += [filetype]
+
+    return False, "", df_dict
+
+'''
+# Use dbc.DataTable -- issue occurs on duplicated outputs, which doesn't allow initial callback. Need more than twice clicks to be actioned.
+@callback(Output('file-table', 'children'),
+          Output('form-warning', 'is_open'),
+          Output('form-warning-text', 'children'),
+          Output('file-df', 'data'),
+          Input('import-btn', 'n_clicks'),
+          State('file-path', 'value'),
+          State('nickname', 'value'),
+          State('file-type', 'value'),
+          State('file-df', 'data'))
+def add_row(nclick, filepath, nickname, filetype, df):
+
+    if nclick is None or nclick==0:
+        raise PreventUpdate
+    
+    elif (filepath in [None, '']) or (nickname in [None, '']) or (filetype in [None, '']):
+        return dbc.Table.from_dataframe(pd.DataFrame(df)), True, "Please enter all of the forms", df
+
+    if not filepath.endswith('.yaml'):
+        return dbc.Table.from_dataframe(pd.DataFrame(df)), True, "Please enter yaml file", df
+
+    # Check if row already exists
+    if ((pd.DataFrame(df)['File Path'] == filepath) & (pd.DataFrame(df)['Nickname'] == nickname) & (pd.DataFrame(df)['Type'] == filetype)).any():
+        return dbc.Table.from_dataframe(pd.DataFrame(df)), True, "Already entered", df
+    
+
+    print('Adding new row:\n', filepath, nickname, filetype)
+    df['File Path'] += [filepath]
+    df['Nickname'] += [nickname]
+    df['Type'] += [filetype]
+    print('df\n', df)
+
+    # table_header = [
+    #     html.Thead(html.Tr([html.Th('File Path'), html.Th('Nickname'), html.Th('Type')]))
+    # ]
+
+    # table_body = [
+    #     html.Tbody([html.Td(0), html.Td(0), html.Td(0), dbc.Button('Select', color='success', id={'type': 'add'}, n_clicks=0)])
+    # ]
+
+    # table = dbc.Table(table_header + table_body)
+
+    # df = {
+    #         "Service": ['1','2','3','4'],
+    #         "Status": ['1','2','3','4'],
+    #         "Select": [dbc.Button('Select', color='success', id={'type': 'add'}, n_clicks=0), dbc.Button('Select', color='success', id={'type': 'add'}, n_clicks=0), dbc.Button('Select', color='success', id={'type': 'add'}, n_clicks=0), dbc.Button('Select', color='success', id={'type': 'add'}, n_clicks=0)]
+    #     }
+    
+    # Update file table - adding new row with 'select/delete' button
+    table = dbc.Table.from_dataframe(pd.DataFrame(df))
+    tbody = table.children[1].children
+    # tbody = [html.Tr(row.children + [dbc.Button('Select', id=f'select-btn-{idx}', n_clicks=0, color='success', className="me-2"), dbc.Button('Delete', id=f'delete-btn-{idx}', n_clicks=0, color='danger', outline=False)]) for idx, row in enumerate(tbody)]
+    tbody = [html.Tr(row.children + [dbc.Button('Select', id={'type': 'add', 'index': idx}, n_clicks=0, color='success', className="me-2"), dbc.Button('Delete', id={'type': 'remove', 'index': idx}, n_clicks=0, color='danger', outline=False)]) for idx, row in enumerate(tbody)]
+    table.children[1].children = tbody
+
+    return table, False, "", df
+
+
+@callback(Output('file-table', 'children'),
+          Input({'type': 'add', 'index': ALL}, 'n_clicks'))
+def select_row(nclick):
+    if nclick is None or nclick==0:
+        raise PreventUpdate
+    
+    print('nclick', nclick)
+'''

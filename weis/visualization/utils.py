@@ -879,16 +879,14 @@ def render_our_own(points):
     return content
 
 
-def load_airfoils():
-    # Read geometry input file
-    # TODO: This is for simplicity. Need to think another way to load geometries.
+def load_airfoils(geometry_paths):
+    # Read geometry input file and load airfoils data
     # wt_options = sch.load_geometry_yaml('/projects/weis/sryu/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')       # For HPC
     # wt_options = sch.load_geometry_yaml('/Users/sryu/Desktop/FY24/WEIS-Visualization/data/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')       # For Local
     airfoils = {}
-    geometry_paths = ['/Users/sryu/Desktop/FY24/WEIS-Visualization/data/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml', '/Users/sryu/Desktop/FY24/WEIS-Visualization/data/visualization_cases/1_raft_opt/IEA-22-280-RWT copy.yaml']
-    for file_path in geometry_paths:
-        wt_options = sch.load_geometry_yaml(file_path)
-        airfoils[file_path] = wt_options['airfoils']
+    for row in geometry_paths:
+        wt_options = sch.load_geometry_yaml(row['File Path'])
+        airfoils[row['Nickname']] = wt_options['airfoils']
 
     return airfoils
 
