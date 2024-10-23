@@ -365,9 +365,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to current working directory
+        # If the path is relative, make it an absolute path to modeling options file
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+            FAST_directory_base = os.path.join(os.path.dirname(modopt['fname_input_modeling']), FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
