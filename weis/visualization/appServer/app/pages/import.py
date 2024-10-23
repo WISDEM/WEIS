@@ -3,7 +3,7 @@ from dash import html, register_page
 from dash import dcc, Input, State, Output, callback, ALL, dash_table
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from weis.visualization.utils import parse_yaml, dict_to_html
+from weis.visualization.utils import parse_yaml, dict_to_html, load_geometry_data
 
 register_page(
     __name__,
@@ -88,64 +88,6 @@ def layout():
     return layout
 
 
-@callback(Output('file-table', 'children'),
-          Input('file-df', 'data'))
-def update_table(df_dict):
-
-    df = pd.DataFrame(df_dict)
-
-    return dash_table.DataTable(
-        id = 'file-table-interactivity',
-        columns = [
-            {'name': i, 'id': i, 'deletable': True, 'selectable': True} for i in df.columns
-        ],
-        data = df.to_dict('records'),
-        editable = True,
-        sort_action = "native",
-        sort_mode = "multi",
-        row_selectable = "multi",
-        row_deletable = True,
-        selected_rows = [],
-        persistence=True,
-        # persistence_type='session',
-    )
-
-
-@callback(Output('file-table-interactivity', 'style_data_conditional'),
-          Input('file-table-interactivity', 'derived_virtual_selected_rows'))
-def update_styles(selected_rows_indices):
-
-    if selected_rows_indices is None:
-        selected_rows_indices = []
-    
-    return [{
-        'if': { 'row_index': i },
-        'background_color': '#D2F3FF'
-    } for i in selected_rows_indices]
-
-
-@callback(Output('selected-file-df', 'data'),
-          State('file-table-interactivity', 'derived_virtual_data'),
-          Input('file-table-interactivity', 'derived_virtual_selected_rows'))
-def save_selections(rows, selected_rows_indices):
-    if selected_rows_indices is None:
-        selected_rows_indices = []
-    
-    selected_rows = [rows[i] for i in selected_rows_indices]
-    print('selected rows\n', selected_rows)
-
-    df = {'model': [], 'analysis': [], 'geometry': []}
-    for row in selected_rows:
-        row_type = row['Type']
-        row.popitem()               # Remove duplicated 'Type' field
-        df[row_type].append(row)
-
-    print('selected df\n', df)
-    
-    return df
-
-
-
 @callback(Output('form-warning', 'is_open'),
           Output('form-warning-text', 'children'),
           Output('file-df', 'data'),
@@ -155,7 +97,9 @@ def save_selections(rows, selected_rows_indices):
           State('file-type', 'value'),
           State('file-df', 'data'))
 def add_row(nclick, filepath, nickname, filetype, df_dict):
-
+    '''
+    Update data frame to be shown in table once the form input button has been clicked
+    '''
     if nclick is None or nclick==0:
         raise PreventUpdate
     
@@ -175,6 +119,98 @@ def add_row(nclick, filepath, nickname, filetype, df_dict):
     df_dict['Type'] += [filetype]
 
     return False, "", df_dict
+
+
+@callback(Output('file-table', 'children'),
+          Input('file-df', 'data'))
+def update_table(df_dict):
+    '''
+    Create/update the (editable) table based on data frame
+    '''
+
+    df = pd.DataFrame(df_dict)
+    print('\nUpdate Table Data\n', df)
+
+    return dash_table.DataTable(
+        id = 'file-table-interactivity',
+        columns = [{'name': i, 'id': i, 'deletable': True, 'selectable': True} for i in df.columns],
+        data = df.to_dict('records'),
+        editable = True,
+        sort_action = "native",
+        sort_mode = "multi",
+        row_selectable = "multi",
+        row_deletable = True,
+        selected_rows = [],
+        # persistence=True,
+        # persistence_type='session',
+    )
+
+# @callback(Output('file-table-interactivity', 'data'),
+#           Output('file-table-interactivity', 'columns'),
+#           Input('file-df', 'data'))
+# def update_table_data(df_dict):
+#     df = pd.DataFrame(df_dict)
+#     print('\nUpdate Table Data\n', df)
+
+#     data = df.to_dict('records')
+#     cols = [{'name': i, 'id': i, 'deletable': True, 'selectable': True} for i in df.columns]
+
+#     return data, cols
+
+
+@callback(Output('file-table-interactivity', 'style_data_conditional'),
+          Input('file-table-interactivity', 'derived_virtual_selected_rows'))
+def update_styles(selected_rows_indices):
+    '''
+    Change the row color once clicked
+    '''
+
+    if selected_rows_indices is None:
+        selected_rows_indices = []
+    
+    return [{
+        'if': { 'row_index': i },
+        'background_color': '#D2F3FF'
+    } for i in selected_rows_indices]
+
+
+@callback(Output('selected-file-df', 'data'),
+          State('file-table-interactivity', 'derived_virtual_data'),
+          Input('file-table-interactivity', 'derived_virtual_selected_rows'))
+def save_selections(rows, selected_rows_indices):
+    '''
+    Save selections into another small version of dataframe, where this will be ultimately used over other pages
+    '''
+    if selected_rows_indices is None:
+        selected_rows_indices = []
+    
+    selected_rows = [rows[i] for i in selected_rows_indices]
+
+    df = {'model': [], 'analysis': [], 'geometry': []}
+    for row in selected_rows:
+        row_type = row['Type']
+        row.popitem()               # Remove duplicated 'Type' field
+        df[row_type].append(row)
+
+    print('selected df\n', df)
+    
+    return df
+
+
+@callback(Output('airfoil-by-names', 'data'),
+          Output('geometry-components', 'data'),
+          Input('selected-file-df', 'data'))
+def categorize_airfoils(df):
+    '''
+    This function is for loading and processing airfoils data
+    Note that even if you don't navigate to this page, variables are all defined from main app page so this callback function will be auto-initiated.
+    '''
+    airfoils, geom_comps = load_geometry_data(df['geometry'])      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
+    airfoil_by_names = {nickname+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for nickname, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
+    geom_comps_by_names = {nickname+': '+comp_type: comp_info for nickname, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
+
+    return airfoil_by_names, geom_comps_by_names
+
 
 '''
 # Use dbc.DataTable -- issue occurs on duplicated outputs, which doesn't allow initial callback. Need more than twice clicks to be actioned.

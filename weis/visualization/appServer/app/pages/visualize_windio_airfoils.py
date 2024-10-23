@@ -19,17 +19,6 @@ register_page(
     path='/windio_airfoils'
 )
 
-@callback(Output('airfoil-by-names', 'data'),
-          Input('selected-file-df', 'data'))
-def categorize_airfoils(df):
-    '''
-    This function is for loading and processing airfoils data
-    '''
-    airfoils = load_airfoils(df['geometry'])      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
-    airfoil_by_names = {nickname+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for nickname, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
-
-    return airfoil_by_names
-
 def set_colors():
     global cols
     cols = plotly.colors.DEFAULT_PLOTLY_COLORS
@@ -38,13 +27,12 @@ def set_colors():
 @callback(Output('airfoil-names', 'options'),
           Input('airfoil-by-names', 'data'))
 def list_airfoils(airfoil_by_names):
-    print('\nairfoil_by_names\n', list(airfoil_by_names.keys()))
     return list(airfoil_by_names.keys())
 
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-    
+
     # Set color panel
     set_colors()
 
@@ -101,7 +89,6 @@ def layout():
                              ], className='card')
 
     layout = dbc.Row([
-                dcc.Store(id='airfoil-by-names', data={}),
                 dbc.Col(coords_layout, width=6),
                 dbc.Col(polars_layout, width=6)
             ], className='wrapper')
