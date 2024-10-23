@@ -16,7 +16,7 @@ design_variables:
             max: 3.0
           Kp_float:
             flag: True
-            min: -0.25
+            min: -40.0  # -0.25
             max: 0
           ptfm_freq:
             flag: True
