@@ -1428,7 +1428,7 @@ class FASTLoadCases(ExplicitComponent):
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                 for k in range(fst_vt['HydroDyn']['NMembers']):
-                    idx = discrete_inputs['platform_elem_memid'][k]
+                    idx = modopt['floating']['members']['platform_elem_memid'][k]
                     PropPotBool[k] = modopt["Level1"]["model_potential"][idx]
                 fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
