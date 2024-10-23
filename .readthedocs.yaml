@@ -9,11 +9,12 @@ version: 2
 build:
   os: ubuntu-22.04
   tools:
-    python: "mambaforge-4.10"
+    python: "mambaforge-22.9"
   jobs:
     # Read the docs needs a couple packages not in the environment file
     pre_install:
-      - conda install cmake compilers
+      - conda install -y cmake compilers sphinx sphinxcontrib-bibtex sphinx-jsonschema
+      - conda install sphinx_rtd_theme>=1.3
 
 
 # Shouldn't need conda for building the docs, but it is an option
