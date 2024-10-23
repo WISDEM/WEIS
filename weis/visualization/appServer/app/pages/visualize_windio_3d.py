@@ -23,7 +23,7 @@ def visualize(geom_comps_by_names):
     '''
     This function is for visualize per geometry component types
     '''
-    for k, v in geom_comps_by_names.items():        # where k is 'filenickname:componenttype'
+    for k, v in geom_comps_by_names.items():        # where k is 'filelabelname:componenttype'
         print(k, v)
         # TODO: Add something here
     

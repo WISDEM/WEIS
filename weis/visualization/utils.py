@@ -886,8 +886,8 @@ def load_geometry_data(geometry_paths):
     airfoils, geom_comps = {}, {}
     for row in geometry_paths:
         wt_options = sch.load_geometry_yaml(row['File Path'])
-        airfoils[row['Nickname']] = wt_options['airfoils']
-        geom_comps[row['Nickname']] = wt_options['components']
+        airfoils[row['Label']] = wt_options['airfoils']
+        geom_comps[row['Label']] = wt_options['components']
 
     return airfoils, geom_comps
 

@@ -29,11 +29,11 @@ def layout():
                     )
                 ], className="mb-3")
     
-    nickname_input = dbc.Row([
-                        dbc.Label('Nickname', width=2),
+    label_input = dbc.Row([
+                        dbc.Label('Label', width=2),
                         dbc.Col(
                             dbc.Input(
-                                id='nickname', type='text', placeholder='Enter nickname'
+                                id='file-label', type='text', placeholder='Enter label'
                             ),
                             width=6
                         )
@@ -67,7 +67,7 @@ def layout():
     form_layout = dbc.Card([
                             dbc.CardHeader("Import WEIS Input Files"),
                             dbc.CardBody([
-                                dbc.Form([file_input, nickname_input, type_input]),
+                                dbc.Form([file_input, label_input, type_input]),
                                 warning_msg
                             ])
                   ], className='card')
@@ -93,17 +93,17 @@ def layout():
           Output('file-df', 'data'),
           Input('import-btn', 'n_clicks'),
           State('file-path', 'value'),
-          State('nickname', 'value'),
+          State('file-label', 'value'),
           State('file-type', 'value'),
           State('file-df', 'data'))
-def add_row(nclick, filepath, nickname, filetype, df_dict):
+def add_row(nclick, filepath, filelabel, filetype, df_dict):
     '''
     Update data frame to be shown in table once the form input button has been clicked
     '''
     if nclick is None or nclick==0:
         raise PreventUpdate
     
-    elif (filepath in [None, '']) or (nickname in [None, '']) or (filetype in [None, '']):
+    elif (filepath in [None, '']) or (filelabel in [None, '']) or (filetype in [None, '']):
         return True, "Please enter all of the forms", df_dict
 
     if not filepath.endswith('.yaml'):
@@ -111,11 +111,11 @@ def add_row(nclick, filepath, nickname, filetype, df_dict):
     
     # Check if row already exists
     df = pd.DataFrame(df_dict)
-    if ((df['File Path'] == filepath) & (df['Nickname'] == nickname) & (df['Type'] == filetype)).any():
+    if ((df['File Path'] == filepath) & (df['Label'] == filelabel) & (df['Type'] == filetype)).any():
         return True, "Already entered", df_dict
     
     df_dict['File Path'] += [filepath]
-    df_dict['Nickname'] += [nickname]
+    df_dict['Label'] += [filelabel]
     df_dict['Type'] += [filetype]
 
     return False, "", df_dict
@@ -206,8 +206,8 @@ def categorize_airfoils(df):
     Note that even if you don't navigate to this page, variables are all defined from main app page so this callback function will be auto-initiated.
     '''
     airfoils, geom_comps = load_geometry_data(df['geometry'])      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
-    airfoil_by_names = {nickname+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for nickname, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
-    geom_comps_by_names = {nickname+': '+comp_type: comp_info for nickname, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
+    airfoil_by_names = {label+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for label, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
+    geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
 
     return airfoil_by_names, geom_comps_by_names
 
@@ -220,33 +220,33 @@ def categorize_airfoils(df):
           Output('file-df', 'data'),
           Input('import-btn', 'n_clicks'),
           State('file-path', 'value'),
-          State('nickname', 'value'),
+          State('Label', 'value'),
           State('file-type', 'value'),
           State('file-df', 'data'))
-def add_row(nclick, filepath, nickname, filetype, df):
+def add_row(nclick, filepath, label, filetype, df):
 
     if nclick is None or nclick==0:
         raise PreventUpdate
     
-    elif (filepath in [None, '']) or (nickname in [None, '']) or (filetype in [None, '']):
+    elif (filepath in [None, '']) or (label in [None, '']) or (filetype in [None, '']):
         return dbc.Table.from_dataframe(pd.DataFrame(df)), True, "Please enter all of the forms", df
 
     if not filepath.endswith('.yaml'):
         return dbc.Table.from_dataframe(pd.DataFrame(df)), True, "Please enter yaml file", df
 
     # Check if row already exists
-    if ((pd.DataFrame(df)['File Path'] == filepath) & (pd.DataFrame(df)['Nickname'] == nickname) & (pd.DataFrame(df)['Type'] == filetype)).any():
+    if ((pd.DataFrame(df)['File Path'] == filepath) & (pd.DataFrame(df)['Label'] == label) & (pd.DataFrame(df)['Type'] == filetype)).any():
         return dbc.Table.from_dataframe(pd.DataFrame(df)), True, "Already entered", df
     
 
-    print('Adding new row:\n', filepath, nickname, filetype)
+    print('Adding new row:\n', filepath, label, filetype)
     df['File Path'] += [filepath]
-    df['Nickname'] += [nickname]
+    df['Label'] += [label]
     df['Type'] += [filetype]
     print('df\n', df)
 
     # table_header = [
-    #     html.Thead(html.Tr([html.Th('File Path'), html.Th('Nickname'), html.Th('Type')]))
+    #     html.Thead(html.Tr([html.Th('File Path'), html.Th('Label'), html.Th('Type')]))
     # ]
 
     # table_body = [

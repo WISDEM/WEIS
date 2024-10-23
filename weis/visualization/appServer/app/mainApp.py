@@ -90,11 +90,11 @@ app.layout = dcc.Loading(
                 # Optimization related Data fetched from input-dict
                 dcc.Store(id='var-opt', data={}),
                 # WindIO Input Files
-                dcc.Store(id='file-df', data={'File Path': [], 'Nickname': [], 'Type': []}),
+                dcc.Store(id='file-df', data={'File Path': [], 'Label': [], 'Type': []}),
                 dcc.Store(id='selected-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
-                # Airfoils categorized by 'filenickname:airfoilname' pairs
+                # Airfoils categorized by 'filelabelname:airfoilname' pairs
                 dcc.Store(id='airfoil-by-names', data={}),
-                # Geometry components categorized by 'filenickname:componenttype' pairs
+                # Geometry components categorized by 'filelabelname:componenttype' pairs
                 dcc.Store(id='geometry-components', data={}),
                 navbar,
                 dash.page_container
