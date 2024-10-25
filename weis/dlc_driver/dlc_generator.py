@@ -466,8 +466,8 @@ class DLCGenerator(object):
             wave_period_table = self.wave_period50
         elif sea_state == '1-year':
             wind_speed_table = [50.]
-            wave_height_table = self.wave_height50
-            wave_period_table = self.wave_period50
+            wave_height_table = self.wave_height1
+            wave_period_table = self.wave_period1
 
 
         # If the user has not defined Hs (wave_height in modopts) and Tp (wave_period in modopts), apply the metocean conditions defined by the table
