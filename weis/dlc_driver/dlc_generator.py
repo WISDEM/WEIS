@@ -1057,6 +1057,101 @@ class DLCGenerator(object):
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
 
+    def generate_7p1(self, dlc_options):
+        # Parked (standing still or idling) - extreme wind model 1-year return period - ultimate loads, usually larger (20 deg) yaw offset
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = '7.1'
+        dlc_options['sea_state'] = '1-year'
+        dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM1'
+
+        # Set dlc-specific options, like yaw_misalign, initial azimuth
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0.] # default
+
+        if not dlc_options['wind_speed']:
+            dlc_options['wind_speed'] = [self.V_e1]
+            
+        # parked options
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['wake_mod'] = 0
+        dlc_options['pitch_initial'] = 90.
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['shutdown_time'] = 0.
+        dlc_options['final_blade_pitch'] = 90.
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+
+        group0 = ['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                'rot_speed_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
+        
+        if 'pitchfault_time1' in dlc_options:
+            group0.extend(['pitchfault_time1','pitchfault_blade1'])
+        if 'pitchfault_time2' in dlc_options:
+            group0.extend(['pitchfault_time2','pitchfault_blade2'])
+        if 'pitchfault_time3' in dlc_options:
+            group0.extend(['pitchfault_time3','pitchfault_blade3'])
+        if 'genfault_time' in dlc_options:
+            group0.extend(['genfault_time'])  
+
+        generic_case_inputs.append(group0)  
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_7p2(self, dlc_options):
+        # Parked (standing still or idling) - normal turbulence model - fatigue loads
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = '7.2'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+        
+        # Set wind speeds to DLC spec if not defined by the user
+        if len(dlc_options['wind_speed']) == 0:
+            dlc_options['wind_speed'] = np.arange(0,self.ws_cut_out, dlc_options['ws_bin_size'])
+            dlc_options['wind_speed'] = dlc_options['wind_speed'].tolist()
+
+        # Set dlc-specific options, like yaw_misalign, initial azimuth
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0.]
+
+        # parked options
+        dlc_options['turbine_status'] = 'parked-idling'
+        dlc_options['wake_mod'] = 0
+        dlc_options['pitch_initial'] = 90.
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['shutdown_time'] = 0.
+        dlc_options['final_blade_pitch'] = 90.
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_new_dlc(self,dlc_options):
         # Describe the new design load case
