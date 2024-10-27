@@ -9,11 +9,6 @@ from weis.aeroelasticse.utils import OLAFParams
 
 logger = logging.getLogger("wisdem/weis")
 
-
-
-
-
-
 class DLCInstance(object):
 
     def __init__(self, options=None):
@@ -127,14 +122,15 @@ class DLCGenerator(object):
             ("ServoDyn","BlPitchF(3)"),
             
         ],
-
         'pitchfault_time1': ("ServoDyn","TPitManS1"),
         'pitchfault_time2': ("ServoDyn","TPitManS2"),
         'pitchfault_time3': ("ServoDyn","TPitManS3"),
-        'pitchfault_blade1': ("ServoDyn","BlPitchF(1)"),
-        'pitchfault_blade2': ("ServoDyn","BlPitchF(2)"),
-        'pitchfault_blade3': ("ServoDyn","BlPitchF(3)"),
+        'pitchfault_blade1pos': ("ServoDyn","BlPitchF(1)"),
+        'pitchfault_blade2pos': ("ServoDyn","BlPitchF(2)"),
+        'pitchfault_blade3pos': ("ServoDyn","BlPitchF(3)"),
         'genfault_time': ("ServoDyn","TimGenOf"),
+        'yawfault_time': ("ServoDyn","TYawManS"),
+        'yawfault_yawpos': ("ServoDyn","NacYawF"),
         
         'aero_mod': ("AeroDyn15","AFAeroMod"),
         'wake_mod': ("AeroDyn15","WakeMod"),
@@ -778,11 +774,13 @@ class DLCGenerator(object):
         group0 = ['total_time','transient_time','wake_mod','wave_model']
         
         if 'pitchfault_time1' in dlc_options:
-            group0.extend(['pitchfault_time1','pitchfault_blade1'])
+            group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
         if 'pitchfault_time2' in dlc_options:
-            group0.extend(['pitchfault_time2','pitchfault_blade2'])
+            group0.extend(['pitchfault_time2','pitchfault_blade2pos'])
         if 'pitchfault_time3' in dlc_options:
-            group0.extend(['pitchfault_time3','pitchfault_blade3'])
+            group0.extend(['pitchfault_time3','pitchfault_blade3pos'])
+        if 'yawfault_time' in dlc_options:
+            group0.extend(['yawfault_time','yawfault_yawpos'])
         if 'genfault_time' in dlc_options:
             group0.extend(['genfault_time'])
         
@@ -1095,13 +1093,15 @@ class DLCGenerator(object):
                 'rot_speed_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
         
         if 'pitchfault_time1' in dlc_options:
-            group0.extend(['pitchfault_time1','pitchfault_blade1'])
+            group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
         if 'pitchfault_time2' in dlc_options:
-            group0.extend(['pitchfault_time2','pitchfault_blade2'])
+            group0.extend(['pitchfault_time2','pitchfault_blade2pos'])
         if 'pitchfault_time3' in dlc_options:
-            group0.extend(['pitchfault_time3','pitchfault_blade3'])
+            group0.extend(['pitchfault_time3','pitchfault_blade3pos'])
+        if 'yawfault_time' in dlc_options:
+            group0.extend(['yawfault_time','yawfault_yawpos'])
         if 'genfault_time' in dlc_options:
-            group0.extend(['genfault_time'])  
+            group0.extend(['genfault_time'])
 
         generic_case_inputs.append(group0)  
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
