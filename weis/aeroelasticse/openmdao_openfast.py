@@ -1408,121 +1408,57 @@ class FASTLoadCases(ExplicitComponent):
                 N2 = np.array([], dtype=np.int_)
                 d_coarse = np.array([])
                 t_coarse = np.array([])
+
+                # Look over members and grab all nodes and internal connections
+                n_member = modopt["floating"]["members"]["n_members"]
+                for k in range(n_member):
+                    s_grid = inputs[f"member{k}:s"]
+                    idiam = inputs[f"member{k}:outer_diameter"]
+                    s_coarse = make_coarse_grid(s_grid, idiam)
+                    s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}:s_ghost1"]), inputs[f"member{k}:s_ghost2"]) )
+                    id_coarse = np.interp(s_coarse, s_grid, idiam)
+                    it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}:wall_thickness"])
+                    xyz0 = inputs[f"member{k}:joint1"]
+                    xyz1 = inputs[f"member{k}:joint2"]
+                    dxyz = xyz1 - xyz0
+                    inode_xyz = np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :]
+                    inode_range = np.arange(inode_xyz.shape[0] - 1)
+
+                    nk = joints_xyz.shape[0]
+                    N1 = np.append(N1, nk + inode_range + 1)
+                    N2 = np.append(N2, nk + inode_range + 2)
+                    d_coarse = np.append(d_coarse, id_coarse)  
+                    t_coarse = np.append(t_coarse, it_coarse)  
+                    joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
+
+                    # Axial coefficients
+                    joint_1_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint1'][k]]
+                    joint_2_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint2'][k]]
+                    
+                    # may need to check if joint is in original list, axial joints will not be
+                    if modopt['floating']['members']['joint1'][k] in modopt['floating']['joints']['name'] and \
+                        modopt['floating']['members']['joint2'][k] in modopt['floating']['joints']['name'] :
+
+                        i_axial_coeff_1 = [
+                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cd'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Ca'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cp']
+                        ]
+
+                        i_axial_coeff_2 = [
+                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cd'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Ca'],
+                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cp']
+                        ]
+                    else:
+                        # not originally defined
+                        i_axial_coeff_1 = np.zeros(3)
+                        i_axial_coeff_2 = np.zeros(3)
+
+
+                    i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
+                    axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
                 
-            # Tweak z-position
-            idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
-            if len(idx) > 0:
-                joints_xyz[idx,2] += 1e-2
-            # Store data
-            n_joints = joints_xyz.shape[0]
-            n_members = N1.shape[0]
-            ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
-            imembers = np.arange( n_members, dtype=np.int_ ) + 1
-            fst_vt['HydroDyn']['NJoints'] = n_joints
-            fst_vt['HydroDyn']['JointID'] = ijoints
-            fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
-            fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
-            fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-            fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
-            fst_vt['HydroDyn']['PropSetID'] = ijoints
-            fst_vt['HydroDyn']['PropD'] = d_coarse
-            fst_vt['HydroDyn']['PropThck'] = t_coarse
-            fst_vt['HydroDyn']['NMembers'] = n_members
-            fst_vt['HydroDyn']['MemberID'] = imembers
-            fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
-            fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
-            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
-            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
-            fst_vt['HydroDyn']['NCoefDpth'] = 0
-            fst_vt['HydroDyn']['NCoefMembers'] = 0
-            fst_vt['HydroDyn']['NFillGroups'] = 0
-            fst_vt['HydroDyn']['NMGDepths'] = 0
-
-            if modopt["Level1"]["potential_model_override"] == 1:
-                # Strip theory only, no BEM
-                fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
-            elif modopt["Level1"]["potential_model_override"] == 2:
-                # BEM only, no strip theory
-                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
-                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCd'] = fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
-                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
-                fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
-            else:
-                PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
-                for k in range(fst_vt['HydroDyn']['NMembers']):
-                    # Potential modeling of fixed substructres not supported
-                    if modopt['flags']['floating']:
-                        idx = modopt['floating']['members']['platform_elem_memid'][k]
-                        PropPotBool[k] = modopt["Level1"]["model_potential"][idx]    
-                fst_vt['HydroDyn']['PropPot'] = PropPotBool
-
-            if fst_vt['HydroDyn']['NBody'] > 1:
-                raise Exception('Multiple HydroDyn bodies (NBody > 1) is currently not supported in WEIS')
-
-            # Offset of body reference point
-            fst_vt['HydroDyn']['PtfmRefxt']     = 0
-            fst_vt['HydroDyn']['PtfmRefyt']     = 0
-            fst_vt['HydroDyn']['PtfmRefzt']     = 0
-            fst_vt['HydroDyn']['PtfmRefztRot']  = 0
-
-            # If we're using the potential model, need these settings that aren't default
-            if fst_vt['HydroDyn']['PotMod'] == 1:
-                fst_vt['HydroDyn']['ExctnMod'] = 1
-                fst_vt['HydroDyn']['RdtnMod'] = 1
-                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
-
-            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['Level2']['flag'] and modopt['Level1']['runPyHAMS']:
-                fst_vt['HydroDyn']['ExctnMod'] = 1
-                fst_vt['HydroDyn']['RdtnMod'] = 1
-                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
-
-                from weis.ss_fitting.SS_FitTools import SSFit_Excitation, FDI_Fitting
-                logger.warning('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
-                exctn_fit = SSFit_Excitation(HydroFile=fst_vt['HydroDyn']['PotFile'])
-                rad_fit = FDI_Fitting(HydroFile=fst_vt['HydroDyn']['PotFile'])
-                exctn_fit.writeMats()
-                rad_fit.fit()
-                rad_fit.outputMats()
-                iif True:
-                    fig_list = rad_fit.visualizeFits()
-                    
-                    os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'), exist_ok=True)
-
-                    for i_fig, fig in enumerate(fig_list):
-                        fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
-
-                    
-            # may need to check if joint is in original list, axial joints will not be
-            if modopt['floating']['members']['joint1'][k] in modopt['floating']['joints']['name'] and \
-                modopt['floating']['members']['joint2'][k] in modopt['floating']['joints']['name'] :
-
-                i_axial_coeff_1 = [
-                    modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cd'],
-                    modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Ca'],
-                    modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cp']
-                ]
-
-                i_axial_coeff_2 = [
-                    modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cd'],
-                    modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Ca'],
-                    modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cp']
-                ]
-            else:
-                # not originally defined
-                i_axial_coeff_1 = np.zeros(3)
-                i_axial_coeff_2 = np.zeros(3)
-
-
-            i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
-
-            axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
-
-
 
                     
             if modopt['flags']['offshore']:
@@ -1566,24 +1502,24 @@ class FASTLoadCases(ExplicitComponent):
                 # Store data
                 n_joints = joints_xyz.shape[0]
                 n_members = N1.shape[0]
+                ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
                 imembers = np.arange( n_members, dtype=np.int_ ) + 1
                 fst_vt['HydroDyn']['NJoints'] = n_joints
-                fst_vt['HydroDyn']['JointID'] = 1 + np.arange( n_joints, dtype=np.int_)
+                fst_vt['HydroDyn']['JointID'] = ijoints
                 fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
                 fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
                 fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-                fst_vt['HydroDyn']['NPropSets'] = n_members
-                fst_vt['HydroDyn']['PropSetID'] = imembers
+                fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
+                fst_vt['HydroDyn']['PropSetID'] = ijoints
                 fst_vt['HydroDyn']['PropD'] = d_coarse
                 fst_vt['HydroDyn']['PropThck'] = t_coarse
                 fst_vt['HydroDyn']['NMembers'] = n_members
                 fst_vt['HydroDyn']['MemberID'] = imembers
-                fst_vt['HydroDyn']['MJointID1'] = N1
-                fst_vt['HydroDyn']['MJointID2'] = N2
-                fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = imembers
+                fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
+                fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
                 fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
                 fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-                fst_vt['HydroDyn']['JointAxID'] = fst_vt['HydroDyn']['AxCoefID']  # joints and axial coeffs should be 1 to 1
+                fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
                 fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
                 fst_vt['HydroDyn']['NCoefDpth'] = 0
                 fst_vt['HydroDyn']['NCoefMembers'] = 0
@@ -1605,7 +1541,7 @@ class FASTLoadCases(ExplicitComponent):
                 else:
                     PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                     for k in range(fst_vt['HydroDyn']['NMembers']):
-                        idx = discrete_inputs['platform_elem_memid'][k]
+                        idx = modopt['floating']['members']['platform_elem_memid'][k]
                         PropPotBool[k] = modopt["Level1"]["model_potential"][idx]
                     fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
