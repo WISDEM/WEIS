@@ -947,9 +947,6 @@ class FASTLoadCases(ExplicitComponent):
         tower_top_height = float(inputs['hub_height']) - float(inputs['distance_tt_hub']) # Height of tower above ground level [onshore] or MSL [offshore] (meters)
         # The Twr2Shft is just the difference between hub height, tower top height, and sin(tilt)*overhang
         fst_vt['ElastoDyn']['Twr2Shft']  = float(inputs['hub_height']) - tower_top_height - abs(fst_vt['ElastoDyn']['OverHang'])*np.sin(np.deg2rad(inputs['tilt'][0]))
-        # Flip Twr2Shft if floating MHK
-        if modopt['flags']['marine_hydro'] and modopt['flags']['floating']:
-            fst_vt['ElastoDyn']['Twr2Shft'] *= -1
         fst_vt['ElastoDyn']['GenIner']   = float(inputs['GenIner'])
 
         # Mass and inertia inputs
