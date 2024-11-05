@@ -32,9 +32,9 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         n_add = 0
         if self.opt['design_variables']['control']['servo']['pitch_control']['omega']['flag']:
-            n_add += 1
+            n_add += len(self.modeling['ROSCO']['omega_pc'])
         if self.opt['design_variables']['control']['servo']['pitch_control']['zeta']['flag']:
-            n_add += 1
+            n_add += len(self.modeling['ROSCO']['zeta_pc'])
         if self.opt['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
             n_add += 1
         if self.opt['design_variables']['control']['servo']['pitch_control']['ptfm_freq']['flag']:
