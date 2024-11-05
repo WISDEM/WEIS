@@ -220,7 +220,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
             self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
             self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-            self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
             self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
             self.add_input("platform_mass", 0.0, units="kg")
             self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -1940,15 +1939,7 @@ class FASTLoadCases(ExplicitComponent):
                     dlc_generator.cases[i_case].GridHeight =  2. * np.abs(hub_height) - 1.e-3
 
                 if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridWidth =  2. * np.abs(hub_height) - 1.e-3
-                # Height of wind grid, it stops 1 mm above the ground
-                # dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
-                # If OLAF is called, make wind grid 3x higher, taller, and wider
-                if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dlc_generator.cases[i_case].HubHt *= 3.
-                    dlc_generator.cases[i_case].GridHeight *= 3.
-                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
-                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+                    dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
@@ -2629,7 +2620,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = stats_pwrcrv['GenPwr']['mean']
-                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
                 outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
@@ -2638,7 +2629,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
-                    outputs['P_out'] = sum_stats['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = sum_stats['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
         if len(U)>0:

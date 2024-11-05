@@ -7,12 +7,8 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 from weis.dtqpy.solver.DTQPy_SOLVER_osqp import DTQPy_SOLVER_osqp
-PYOPT = True
-try:
-    from weis.dtqpy.solver.DTQPy_SOLVER_ipopt import DTQPy_SOLVER_ipopt
-    from weis.dtqpy.solver.DTQPy_SOLVER_slsqp import DTQPy_SOLVER_slsqp
-except Exception:
-    PYOPT = False
+from weis.dtqpy.solver.DTQPy_SOLVER_ipopt import DTQPy_SOLVER_ipopt
+from weis.dtqpy.solver.DTQPy_SOLVER_slsqp import DTQPy_SOLVER_slsqp
 
 def DTQPy_SOLVER(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     
@@ -20,7 +16,7 @@ def DTQPy_SOLVER(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     displevel = opts.general.displevel
 
     # osqp
-    if opts.solver.function == 'osqp' or not PYOPT:
+    if opts.solver.function == 'osqp':
         X,F,intrnal,opts = DTQPy_SOLVER_osqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts)
         
     elif opts.solver.function == 'ipopt':
