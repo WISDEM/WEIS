@@ -363,9 +363,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to current working directory
+        # If the path is relative, make it an absolute path to modeling options file
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+            FAST_directory_base = os.path.join(os.path.dirname(modopt['fname_input_modeling']), FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -470,6 +470,8 @@ class FASTLoadCases(ExplicitComponent):
         # Hub outputs
         self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
+        self.add_output('hub_Fxyz_aero', val=np.zeros(3), units='N', desc = 'Aero-only maximum hub forces in the non rotating frame')
+        self.add_output('hub_Mxyz_aero', val=np.zeros(3), units='N*m', desc = 'Aero-only maximum hub moments in the non rotating frame')
 
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('max_TwrBsMyt_ratio',val=0.0,  desc='ratio of maximum of tower base bending moment in fore-aft direction to maximum allowable bending moment')
@@ -611,6 +613,8 @@ class FASTLoadCases(ExplicitComponent):
                 
         if self.model_only == True:
             # Write input OF files, but do not run OF
+            fst_vt['Fst']['TMax'] = 10.
+            fst_vt['Fst']['TStart'] = 0.
             self.write_FAST(fst_vt, discrete_outputs)
         else:
             # Write OF model and run
@@ -1405,55 +1409,118 @@ class FASTLoadCases(ExplicitComponent):
                 d_coarse = np.array([])
                 t_coarse = np.array([])
                 
-                # Look over members and grab all nodes and internal connections
-                n_member = modopt["floating"]["members"]["n_members"]
-                for k in range(n_member):
-                    s_grid = inputs[f"member{k}:s"]
-                    idiam = inputs[f"member{k}:outer_diameter"]
-                    s_coarse = make_coarse_grid(s_grid, idiam)
-                    s_coarse = np.unique( np.minimum( np.maximum(s_coarse, inputs[f"member{k}:s_ghost1"]), inputs[f"member{k}:s_ghost2"]) )
-                    id_coarse = np.interp(s_coarse, s_grid, idiam)
-                    it_coarse = util.sectional_interp(s_coarse, s_grid, inputs[f"member{k}:wall_thickness"])
-                    xyz0 = inputs[f"member{k}:joint1"]
-                    xyz1 = inputs[f"member{k}:joint2"]
-                    dxyz = xyz1 - xyz0
-                    inode_xyz = np.r_[[xyz0],[xyz1]]   #  old way: np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :], OpenFAST doesn't want all these joints if they don't make new memebers
-                    inode_range = np.arange(inode_xyz.shape[0] - 1)
+            # Tweak z-position
+            idx = np.where(joints_xyz[:,2]==-fst_vt['HydroDyn']['WtrDpth'])[0]
+            if len(idx) > 0:
+                joints_xyz[idx,2] += 1e-2
+            # Store data
+            n_joints = joints_xyz.shape[0]
+            n_members = N1.shape[0]
+            ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
+            imembers = np.arange( n_members, dtype=np.int_ ) + 1
+            fst_vt['HydroDyn']['NJoints'] = n_joints
+            fst_vt['HydroDyn']['JointID'] = ijoints
+            fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
+            fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
+            fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
+            fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
+            fst_vt['HydroDyn']['PropSetID'] = ijoints
+            fst_vt['HydroDyn']['PropD'] = d_coarse
+            fst_vt['HydroDyn']['PropThck'] = t_coarse
+            fst_vt['HydroDyn']['NMembers'] = n_members
+            fst_vt['HydroDyn']['MemberID'] = imembers
+            fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
+            fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
+            fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
+            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
+            fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
+            fst_vt['HydroDyn']['NCoefDpth'] = 0
+            fst_vt['HydroDyn']['NCoefMembers'] = 0
+            fst_vt['HydroDyn']['NFillGroups'] = 0
+            fst_vt['HydroDyn']['NMGDepths'] = 0
 
-                    nk = joints_xyz.shape[0]
-                    N1 = np.append(N1, nk + inode_range + 1)
-                    N2 = np.append(N2, nk + inode_range + 2)
-                    d_coarse = np.append(d_coarse, np.mean(id_coarse))  # OpenFAST only wants one thickness
-                    t_coarse = np.append(t_coarse, np.mean(it_coarse))  # OpenFAST only wants one thickness
-                    joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
+            if modopt["Level1"]["potential_model_override"] == 1:
+                # Strip theory only, no BEM
+                fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+            elif modopt["Level1"]["potential_model_override"] == 2:
+                # BEM only, no strip theory
+                fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
+                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
+                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCd'] = fst_vt['HydroDyn']['SimplAxCdMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
+                fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
+            else:
+                PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
+                for k in range(fst_vt['HydroDyn']['NMembers']):
+                    # Potential modeling of fixed substructres not supported
+                    if modopt['flags']['floating']:
+                        idx = modopt['floating']['members']['platform_elem_memid'][k]
+                        PropPotBool[k] = modopt["Level1"]["model_potential"][idx]    
+                fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
-                    joint_1_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint1'][k]]
-                    joint_2_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint2'][k]]
+            if fst_vt['HydroDyn']['NBody'] > 1:
+                raise Exception('Multiple HydroDyn bodies (NBody > 1) is currently not supported in WEIS')
+
+            # Offset of body reference point
+            fst_vt['HydroDyn']['PtfmRefxt']     = 0
+            fst_vt['HydroDyn']['PtfmRefyt']     = 0
+            fst_vt['HydroDyn']['PtfmRefzt']     = 0
+            fst_vt['HydroDyn']['PtfmRefztRot']  = 0
+
+            # If we're using the potential model, need these settings that aren't default
+            if fst_vt['HydroDyn']['PotMod'] == 1:
+                fst_vt['HydroDyn']['ExctnMod'] = 1
+                fst_vt['HydroDyn']['RdtnMod'] = 1
+                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+
+            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['Level2']['flag'] and modopt['Level1']['runPyHAMS']:
+                fst_vt['HydroDyn']['ExctnMod'] = 1
+                fst_vt['HydroDyn']['RdtnMod'] = 1
+                fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
+
+                from weis.ss_fitting.SS_FitTools import SSFit_Excitation, FDI_Fitting
+                logger.warning('Writing .ss and .ssexctn models to: {}'.format(fst_vt['HydroDyn']['PotFile']))
+                exctn_fit = SSFit_Excitation(HydroFile=fst_vt['HydroDyn']['PotFile'])
+                rad_fit = FDI_Fitting(HydroFile=fst_vt['HydroDyn']['PotFile'])
+                exctn_fit.writeMats()
+                rad_fit.fit()
+                rad_fit.outputMats()
+                iif True:
+                    fig_list = rad_fit.visualizeFits()
                     
-                    # may need to check if joint is in original list, axial joints will not be
-                    if modopt['floating']['members']['joint1'][k] in modopt['floating']['joints']['name'] and \
-                        modopt['floating']['members']['joint2'][k] in modopt['floating']['joints']['name'] :
+                    os.makedirs(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit'), exist_ok=True)
 
-                        i_axial_coeff_1 = [
-                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cd'],
-                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Ca'],
-                            modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cp']
-                        ]
+                    for i_fig, fig in enumerate(fig_list):
+                        fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
 
-                        i_axial_coeff_2 = [
-                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cd'],
-                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Ca'],
-                            modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cp']
-                        ]
-                    else:
-                        # not originally defined
-                        i_axial_coeff_1 = np.zeros(3)
-                        i_axial_coeff_2 = np.zeros(3)
+                    
+            # may need to check if joint is in original list, axial joints will not be
+            if modopt['floating']['members']['joint1'][k] in modopt['floating']['joints']['name'] and \
+                modopt['floating']['members']['joint2'][k] in modopt['floating']['joints']['name'] :
+
+                i_axial_coeff_1 = [
+                    modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cd'],
+                    modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Ca'],
+                    modopt['floating']['joints']['axial_coeffs'][joint_1_orig_index]['Cp']
+                ]
+
+                i_axial_coeff_2 = [
+                    modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cd'],
+                    modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Ca'],
+                    modopt['floating']['joints']['axial_coeffs'][joint_2_orig_index]['Cp']
+                ]
+            else:
+                # not originally defined
+                i_axial_coeff_1 = np.zeros(3)
+                i_axial_coeff_2 = np.zeros(3)
 
 
-                    i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
+            i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
 
-                    axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
+            axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
 
 
 
@@ -1761,6 +1828,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
         channels_out += ["Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
         channels_out += ["RtFldCp", "RtFldCt"]
+        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh", "RtFldMxh", "RtFldMyh", "RtFldMzh"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
@@ -1773,7 +1841,6 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt"]
         channels_out += ["TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt"]
         channels_out += ["TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt"]
-        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
         channels_out += ["RotThrust", "LSShftFxs", "LSShftFys", "LSShftFzs", "LSShftFxa", "LSShftFya", "LSShftFza"]
         channels_out += ["RotTorq", "LSSTipMxs", "LSSTipMys", "LSSTipMzs", "LSSTipMxa", "LSSTipMya", "LSSTipMza"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
@@ -2239,6 +2306,10 @@ class FASTLoadCases(ExplicitComponent):
                         else:
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
+            # Aero-only hub loads
+            magnitude_channels["RtFldF"] = ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
+            magnitude_channels["RtFldM"] = ["RtFldMxh", "RtFldMyh", "RtFldMzh"]
+
             # Fatigue at the tower base
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
             tower_fatigue_base = FatigueParams(load2stress=1.0,
@@ -2421,6 +2492,14 @@ class FASTLoadCases(ExplicitComponent):
         outputs['hub_Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
+        
+        # Aero-only for WISDEM (outputs are in N and N-m)
+        outputs['hub_Fxyz_aero'] = np.array([extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFxh'],
+                                    extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFyh'],
+                                    extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFzh']])
+        outputs['hub_Mxyz_aero'] = np.array([extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMxh'],
+                                    extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMyh'],
+                                    extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMzh']])
 
         ## Post process aerodynamic data
         # Angles of attack - max, std, mean
