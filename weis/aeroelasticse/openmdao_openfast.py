@@ -609,6 +609,8 @@ class FASTLoadCases(ExplicitComponent):
                 
         if self.model_only == True:
             # Write input OF files, but do not run OF
+            fst_vt['Fst']['TMax'] = 10.
+            fst_vt['Fst']['TStart'] = 0.
             self.write_FAST(fst_vt, discrete_outputs)
         else:
             # Write OF model and run
