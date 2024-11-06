@@ -124,6 +124,8 @@ driver:
         maxiter: 100         # Maximum number of iterations (NLopt)
         max_iter: 1000         # Maximum number of iterations (SLSQP)
         solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        penalty_exponent: 2.0     # constraint penalty exponent
+        # penalty_parameter: 2.0    # constraint penalty exponent
         run_parallel: True
 
 recorder:
