@@ -139,6 +139,8 @@ Solver        Toolset      Scope    Derivatives   Convergent   Constraints
 SLSQP         scipy        local    True          ???          =, < (NL)
 Nelder-Mead   scipy        local    False         False        None
 COBYLA        scipy        local    False         ???          =, < (NL)
+LN_COBYLA     NLopt        local    False         ???          =, < (NL)
+LD_SLSQP      NLopt        local    True          ???          =, < (NL)
 SNOPT         pyoptsparse  local    True          ???          =, < (NL)
 CONMIN        pyoptsparse  local    True          ???          =, < (NL)
 NSGA2         pyoptsparse  global   ???           ???          =, < (NL)
@@ -172,59 +174,172 @@ Key
 .. *TO DO!!!*
 ..
 
+
+Optimization and parallel performance
+=====================================
+
+In general, industral use of optimization is a straightfoward two-step process:
+
+1) take a certain amount of resources (time, labor hours, computational resources, etc.)
+2) use them to arrive at the best possible design
+
+A goal of the WEIS project is to enable wider use of system-level optimization
+by industrial offshore wind practicioners.
+Towards this end, we can quantify two metrics of cost that are of key interest
+to practicioners, in order to better understand the tradeoffs implicit in
+running optimizations:
+
+1) the total cost of a simulation: quantifies amount of energy used or billable computer use-hours
+2) the wall-clock time necessary to run a simulation: "get me an answer by Friday"
+
+We start by assuming that the driving computational cost is a system simulation
+that requires :math:`T_{\mathrm{case}}` of irreducable simulation time (i.e., it
+can not be reduced by parallelization or saavy computational efforts),
+representing one period of simulation time for one realization of metocean
+conditions.
+We also assume that a user is interested in :math:`M_{\mathrm{case}}` cases,
+totaled across the specifications within any given DLC and across all DLCs;
+these can be run multiple times for a statisically representative result, with
+the :math:`m`-th case being run :math:`N_{\mathrm{seed}}^{(m)}` times.
+
+The progression of any optimization method will require some algorithm-dependent
+number :math:`P` of evaluations to iterate in the design space, which can also be
+parallelized:
+
+- :math:`P=1` for gradient-free methods
+- :math:`P=2 N_{\mathrm{DV}}` for gradient-based methods with centered finite differences approximation
+  - :math:`P \sim N_{\mathrm{DV}}` for gradient-based methods with generic gradient approximation
+  - :math:`P \sim 1` for gradient-based methods with analytical or adjoint-based gradients
+- :math:`P=p_{\mathrm{evo}} N_{\mathrm{DV}}` for evolutionary methods
+  - in practice, :math:`P` can be varied arbitrarily, but :math:`P \sim N_{\mathrm{DV}}` gives more consistent performance across problem size
+  - optimal choice of :math:`p_{\mathrm{evo}}` can vary based on problem and method
+  - :math:`p_{\mathrm{evo}}` between 5-10 is a common rule of thumb
+
+Thus, any given iteration will require
+
+.. math::
+    M_{\mathrm{iter}} = P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right)
+
+parallelizable simulations, with a total cost given by
+
+.. math::
+   \begin{aligned}
+      C_{\mathrm{iter}} &= M_{\mathrm{iter}} T_{\mathrm{case}} \\
+      &= P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) T_{\mathrm{case}}
+   \end{aligned}
+
+for the iteration.
+Over :math:`N_{\mathrm{iter}}` iterations of the optimization algorithm, we
+arrive at a total cost:
+
+.. math::
+   \begin{aligned}
+      C_{\mathrm{total}} &= N_{\mathrm{iter}} C_{\mathrm{iter}} \\
+      &= N_{\mathrm{iter}} M_{\mathrm{iter}} T_{\mathrm{case}} \\
+      &= N_{\mathrm{iter}} P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) T_{\mathrm{case}} = C_{\mathrm{total}}
+   \end{aligned}
+
+In practice, this total cost is not equivalent to the wall-clock time to a
+solution because within an interation, :math:`M_{\mathrm{iter}}` can be divided
+across the number of parallel computing cores available in a machine
+:math:`N_{\mathrm{cores}}`:
+
+.. math::
+   \begin{aligned}
+      T_{\mathrm{iter}} &= \left\lceil \frac{M_{\mathrm{iter}}}{\min(M_{\mathrm{iter}}, N_{\mathrm{cores}})} \right\rceil T_{\mathrm{case}} \\
+      &= \left\lceil \frac{P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right)}{\min \left( P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right), N_{\mathrm{cores}} \right) } \right\rceil T_{\mathrm{case}} \\
+      &\approx \frac{P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) T_{\mathrm{case}}}{\min \left( P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right), N_{\mathrm{cores}} \right)}
+   \end{aligned}
+
+This allows for the total wall-clock time:
+
+.. math::
+      \begin{aligned}
+        T_{\mathrm{total}} &= N_{\mathrm{iter}} T_{\mathrm{iter}} \\
+        &\approx \frac{N_{\mathrm{iter}} P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) T_{\mathrm{case}}}{\min \left( P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right), N_{\mathrm{cores}} \right)}
+      \end{aligned}
+
+which gives two limiting cases:
+
+- many more cores than cases, :math:`P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) \ll N_{\mathrm{cores}}`
+
+   .. math::
+      T_{\mathrm{total}} \approx N_{\mathrm{iter}} T_{\mathrm{case}} \not\sim N_{\mathrm{cores}}
+
+- many more cases than cores, :math:`P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) \gg N_{\mathrm{cores}}`
+
+   .. math::
+      T_{\mathrm{total}} \approx \frac{N_{\mathrm{iter}} P \left( \sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} \right) T_{\mathrm{case}}}{N_{\mathrm{cores}}} \sim N_{\mathrm{cores}}^{-1}
+
+Thus, when there's work to spread out across a computer, we get strong scaling,
+approaching a best-case performance where the cost of an optimization is
+:math:`T_{\mathrm{case}}` times the number of iterations.
+
+With this dual perspective, we can see the intereactions between the problem to
+be solved, which impacts the parallelizability and both costs; the choice of
+algorithm, which impacts parallelizability, total work, the amount of iterations
+necessary to achieve a sufficiently optimal result, and both cost metrics;
+and the choice of computer, which can decrease the wall-clock time necessary to
+get an optimization done.
+These all come together to impact the effectiveness of a given optimization
+strategy.
+
+
 Optimization case study: IEA22
 ==============================
 
-In ``WEIS/examples/17_IEA22_Optimization``, we have an optimization
-example which can be used to design the semisubmersible platform for the
-IEA 22 280m reference wind turbine. We will concentrate on the files
-``analysis_options_raft_ptfm_opt.yaml`` and
-``modeling_options_raft.yaml``, which specify the platform design study.
+NEEDS REVISION!!!
 
-The study sets design variables:
-   - ``floating.joints``
-      - ``z_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``
-      - ``r_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``
-      - not sure exactly what these do, but presumably they set cylindrical coordinates of the truss system members (less an angle?)
-   - ``floating.members``
-      - ``groups["column1, column2, column3]:diameter``
-      - presumably this is setting the diameters of the truss system members?
+.. In ``WEIS/examples/17_IEA22_Optimization``, we have an optimization
+.. example which can be used to design the semisubmersible platform for the
+.. IEA 22 280m reference wind turbine. We will concentrate on the files
+.. ``analysis_options_raft_ptfm_opt.yaml`` and
+.. ``modeling_options_raft.yaml``, which specify the platform design study.
+..
+.. The study sets design variables:
+..    - ``floating.joints``
+..       - ``z_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``
+..       - ``r_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``
+..       - not sure exactly what these do, but presumably they set cylindrical coordinates of the truss system members (less an angle?)
+..    - ``floating.members``
+..       - ``groups["column1, column2, column3]:diameter``
+..       - presumably this is setting the diameters of the truss system members?
+..
+.. and constraints:
+..    - ``floating.survival_heel``: upper bound
+..       - maximum pitching heel allowable in parked conditions
+..    - ``floating.metacentric_height``: lower bound
+..       - “Ensures hydrostatic stability with a positive metacentric height”
+..       - distance between center of gravity of a marine vessel and its metacenter (point between vessel-fixed vertical line through C.o.G. and inertial-frame-fixed line through center of buoyancy)
+..       - dictates static stability in the small-heel angle limit (i.e. characterizes stability)
+..    - ``floating.pitch_period``: upper & lower bound
+..       - period of the pitching motion (bow (stern) up vs. down rotation about center of mass)
+..    - ``floating.heave_period``: upper & lower bound
+..       - period of the heave (linear vertical motion of a marine vessel)
+..    - ``floating.fixed_ballast_capacity``: on
+..       - “Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast”
+..    - ``floating.variable_ballast_capacity``: on
+..       - “Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy”
+..    - ``floating.freeboard_margin``: on
+..       - “Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset”
+..       - the deck surface should not be submerged in the worst-case conditions
+..    - ``floating.draft_margin``: on
+..       - “keep draft from raising above water line during survival_heel, largest wave”
+..       - the bottom of the hull should not rise above the water surface in the worst-case conditions
+..    - ``floating.fairlead_depth``: on
+..       - “keep the fairlead above bottom trough of largest wave”
+..       - don’t dunk the fairlead in worst-case conditions
+..    - ``control.Max_PtfmPitch``: max
+..       - “Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
+..    - ``control.Std_PtfmPitch``: max
+..       - “Maximum platform pitch standard deviation over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
+..    - ``control.nacelle_acceleration``: max
+..       - “Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
+..
+.. with a merit figure of the structural mass
+..    - ``structural_mass`` (``floatingse.system_structural_mass``)
 
-and constraints:
-   - ``floating.survival_heel``: upper bound
-      - maximum pitching heel allowable in parked conditions
-   - ``floating.metacentric_height``: lower bound
-      - “Ensures hydrostatic stability with a positive metacentric height”
-      - distance between center of gravity of a marine vessel and its metacenter (point between vessel-fixed vertical line through C.o.G. and inertial-frame-fixed line through center of buoyancy)
-      - dictates static stability in the small-heel angle limit (i.e. characterizes stability)
-   - ``floating.pitch_period``: upper & lower bound
-      - period of the pitching motion (bow (stern) up vs. down rotation about center of mass)
-   - ``floating.heave_period``: upper & lower bound
-      - period of the heave (linear vertical motion of a marine vessel)
-   - ``floating.fixed_ballast_capacity``: on
-      - “Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast”
-   - ``floating.variable_ballast_capacity``: on
-      - “Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy”
-   - ``floating.freeboard_margin``: on
-      - “Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset”
-      - the deck surface should not be submerged in the worst-case conditions
-   - ``floating.draft_margin``: on
-      - “keep draft from raising above water line during survival_heel, largest wave”
-      - the bottom of the hull should not rise above the water surface in the worst-case conditions
-   - ``floating.fairlead_depth``: on
-      - “keep the fairlead above bottom trough of largest wave”
-      - don’t dunk the fairlead in worst-case conditions
-   - ``control.Max_PtfmPitch``: max
-      - “Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
-   - ``control.Std_PtfmPitch``: max
-      - “Maximum platform pitch standard deviation over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
-   - ``control.nacelle_acceleration``: max
-      - “Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
-
-with a merit figure of the structural mass
-   - ``structural_mass`` (``floatingse.system_structural_mass``)
 
 
-.. raw:: html
 
-   <!-- -->
+
