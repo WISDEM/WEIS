@@ -64,7 +64,7 @@ The installation instructions below use the environment name, "weis-env," but an
 
         module load comp-intel intel-mpi mkl
         module unload gcc
-        pip install -e .
+        pip install --no-deps -e . -v
 
 **NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
 

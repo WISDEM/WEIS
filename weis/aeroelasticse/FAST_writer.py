@@ -9,6 +9,11 @@ from functools import reduce
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from rosco.toolbox.utilities import write_rotor_performance, write_DISCON
 
+try:
+    from rosco.toolbox import utilities as ROSCO_utilities
+    ROSCO = True
+except ImportError:
+    ROSCO = False
 
 
 def auto_format(f, var):

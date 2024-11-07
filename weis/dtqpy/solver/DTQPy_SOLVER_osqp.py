@@ -6,7 +6,11 @@ Reorganize matrices and solve the problem using osqp
 Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
-import osqp 
+try:
+    import osqp
+    OSQP_Flag = True
+except ImportError:
+    OSQP_Flag = False
 from scipy import sparse
 import numpy as np
 

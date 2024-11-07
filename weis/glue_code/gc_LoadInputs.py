@@ -1,28 +1,52 @@
 import os
 import os.path as osp
 import shutil
+import numpy as np
 
 from rosco import discon_lib_path
 import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
-from weis.dlc_driver.dlc_generator_New    import DLCGenerator
+from weis.dlc_driver.dlc_generator    import DLCGenerator
 from wisdem.commonse.mpi_tools              import MPI
 
-                    
+def update_options(options,override):
+    for key, value in override.items():
+        if isinstance(value, dict) and key in options:
+            update_options(options[key], value)
+        elif key in options:
+            options[key] = value
+        else:
+            raise Exception(f'Error updating option overrides. {key} is not part of {options.keys()}')
 
 class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     # Pure python class inheriting the class WindTurbineOntologyPython from WISDEM
     # and adding the WEIS options, namely the paths to the WEIS submodules
     # (OpenFAST, ROSCO, TurbSim, XFoil) and initializing the control parameters.
 
-    def __init__(self, fname_input_wt, fname_input_modeling, fname_input_analysis):
+    def __init__(
+            self, 
+            fname_input_wt, 
+            fname_input_modeling, 
+            fname_input_analysis,
+            modeling_override = None,
+            analysis_override = None,
+            ):
 
         self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
         self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         self.analysis_options['fname_input_analysis'] = fname_input_analysis
+
+        if modeling_override:
+            update_options(self.modeling_options, modeling_override)
+            sch.re_validate_modeling(self.modeling_options)
+                
+        
+        if analysis_override:
+            update_options(self.analysis_options, analysis_override)
+            sch.re_validate_analysis(self.analysis_options)
 
         self.set_run_flags()
         self.set_openmdao_vectors()
@@ -35,6 +59,24 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Directory of modeling option input, if we want to use it for relative paths
         mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
+        # OpenFAST prefixes
+        if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
+            
+        if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
+                mod_opt_dir,        # If it's a relative path, will be relative to mod_opt directory
+                self.analysis_options['general']['folder_output'], 
+                'openfast_runs'
+                )
+
+        # BEM dir, all levels
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = osp.join(base_run_dir,'BEM')
 
 
 
@@ -44,16 +86,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
-            # OpenFAST prefixes
-            if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
-                
-            if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
-                    osp.dirname(self.analysis_options['fname_input_analysis']),
-                    self.analysis_options['general']['folder_output'], 
-                    'openfast_runs'
-                    )
                 
             # User-defined control dylib (path2dll)
             path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
@@ -170,11 +202,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
-        if hasattr(dlc_generator,'n_ws_dlc11'):
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = dlc_generator.n_ws_dlc11
+        
+        # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
+        DLCs = [i_dlc['DLC'] for i_dlc in self.modeling_options['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
         else:
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
+            DLC_label_for_AEP = '1.1'
+        dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
+        self.modeling_options['DLC_driver']['n_ws_aep'] = len(np.unique(dlc_aep_ws))
 
+        # TMD modeling
         self.modeling_options['flags']['TMDs'] = False
         if 'TMDs' in self.wt_init:
             if self.modeling_options['Level3']['flag']:

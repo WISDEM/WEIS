@@ -6,7 +6,7 @@ all_scripts = [
     "01_aeroelasticse/run_OLAF",
     "01_aeroelasticse/run_nodalOutputs",
     "02_run_openfast_cases/weis_driver_loads",
-    #"03_NREL5MW_OC3_spar/weis_driver", # executed in the test_OC3.py
+    "03_NREL5MW_OC3_spar/weis_driver",
     # "03_NREL5MW_OC3_spar/weis_freq_driver", # executed in examples_skinny
     # "04_NREL5MW_OC4_semi/weis_driver",  # skipping until we resolve multiple variable ballasts
     "04_NREL5MW_OC4_semi/weis_freq_driver",
