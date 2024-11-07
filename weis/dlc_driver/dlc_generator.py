@@ -431,12 +431,11 @@ class DLCGenerator(object):
             #    idlc.probability = probabilities[i_WaH]
             self.cases.append(idlc)
 
-        # Save number of DLC 1.1 cases (this info isn't passed back to generate_1p1)
-        if dlc_options['label'] == '1.1':
-            dlc11_ws = [c.URef for c in self.cases if c.label == '1.1']
-            self.n_ws_dlc11 = len(np.unique(dlc11_ws))
-            
+            # AEP DLC: set constant turbulence intensity
+            if dlc_options['label'] == 'AEP':
+                idlc.IECturbc = dlc_options['TI']
 
+            
     def apply_sea_state(self,met_options,sea_state='normal'):
         '''
         Apply waves based on the expected values provided in the metocean inputs
@@ -605,6 +604,35 @@ class DLCGenerator(object):
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_AEP(self, dlc_options):
+        # Same as DLC 1.1, but with a constant TI
+        
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Handle DLC Specific options:
+        dlc_options['label'] = 'AEP'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['PSF'] = 1.35
+
+        if 'TI' not in dlc_options:
+            raise Exception('A TI must be set for the AEP DLC.')
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)

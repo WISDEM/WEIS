@@ -357,7 +357,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
         # DLC options
-        n_ws_dlc11 = np.max([1,modopt['DLC_driver']['n_ws_dlc11']])
+        n_ws_aep = np.max([1,modopt['DLC_driver']['n_ws_aep']])
 
         # OpenFAST options
         OFmgmt = modopt['General']['openfast_configuration']
@@ -422,12 +422,12 @@ class FASTLoadCases(ExplicitComponent):
         
 
         # Rotor power outputs
-        self.add_output('V_out', val=np.zeros(n_ws_dlc11), units='m/s', desc='wind speed vector from the OF simulations')
-        self.add_output('P_out', val=np.zeros(n_ws_dlc11), units='W', desc='rotor electrical power')
-        self.add_output('Cp_out', val=np.zeros(n_ws_dlc11), desc='rotor aero power coefficient')
-        self.add_output('Ct_out', val=np.zeros(n_ws_dlc11), desc='rotor aero thrust coefficient')
-        self.add_output('Omega_out', val=np.zeros(n_ws_dlc11), units='rpm', desc='rotation speeds to run')
-        self.add_output('pitch_out', val=np.zeros(n_ws_dlc11), units='deg', desc='pitch angles to run')
+        self.add_output('V_out', val=np.zeros(n_ws_aep), units='m/s', desc='wind speed vector from the OF simulations')
+        self.add_output('P_out', val=np.zeros(n_ws_aep), units='W', desc='rotor electrical power')
+        self.add_output('Cp_out', val=np.zeros(n_ws_aep), desc='rotor aero power coefficient')
+        self.add_output('Ct_out', val=np.zeros(n_ws_aep), desc='rotor aero thrust coefficient')
+        self.add_output('Omega_out', val=np.zeros(n_ws_aep), units='rpm', desc='rotation speeds to run')
+        self.add_output('pitch_out', val=np.zeros(n_ws_aep), units='deg', desc='pitch angles to run')
         self.add_output('AEP', val=0.0, units='kW*h', desc='annual energy production reconstructed from the openfast simulations')
 
         self.add_output('My_std',      val=0.0,            units='N*m',  desc='standard deviation of blade root flap bending moment in out-of-plane direction')
@@ -2393,10 +2393,18 @@ class FASTLoadCases(ExplicitComponent):
 
         # determine which dlc will be used for the powercurve calculations, allows using dlc 1.1 if specific power curve calculations were not run
 
+        modopts = self.options['modeling_options']
+        DLCs = [i_dlc['DLC'] for i_dlc in modopts['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
+        else:
+            DLC_label_for_AEP = '1.1'
+            logger.warning('WARNING: DLC 1.1 is being used for AEP calculations.  Use the AEP DLC for more accurate wind modeling with constant TI.')
+
         idx_pwrcrv = []
         U = []
         for i_case in range(dlc_generator.n_cases):
-            if dlc_generator.cases[i_case].label == '1.1':
+            if dlc_generator.cases[i_case].label == DLC_label_for_AEP:
                 idx_pwrcrv = np.append(idx_pwrcrv, i_case)
                 U = np.append(U, dlc_generator.cases[i_case].URef)
 
@@ -2433,7 +2441,7 @@ class FASTLoadCases(ExplicitComponent):
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
                     outputs['P_out'] = sum_stats['GenPwr']['mean'].iloc[0] * 1.e3
-                logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
+                logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated. Using average power instead.')
 
         if len(U)>0:
             outputs['V_out'] = np.unique(U)
