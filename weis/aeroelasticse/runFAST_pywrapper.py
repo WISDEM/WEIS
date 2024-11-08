@@ -12,6 +12,7 @@ import multiprocessing as mp
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from weis.aeroelasticse.calculated_channels import calculate_channels
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis, FatigueParams
 from weis.aeroelasticse.openfast_library import FastLibAPI
@@ -255,6 +256,9 @@ class runFAST_pywrapper(object):
                 # Add channel to indicate failed run
                 output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
+                # Calculated channels
+                calculate_channels(output_dict, self.fst_vt)
+
                 # Re-make output
                 output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut)
             
@@ -270,6 +274,9 @@ class runFAST_pywrapper(object):
                 output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
 
                 output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+
+            # clear dictionary if we're not keeping time
+            if not self.keep_time: output_dict = None
 
 
 
