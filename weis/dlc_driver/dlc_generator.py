@@ -46,32 +46,6 @@ class DLCInstance(object):
             setattr(self, key, options['turbulent_wind'][key])
 
 class DLCGenerator(object):
-    OF_dlccaseinputvars = {("InflowWind","WindType"):0,
-        ("ElastoDyn","RotSpeed"):0,
-        ("ElastoDyn","BlPitch1"):90.0,
-        ("ElastoDyn","BlPitch2"):90.0,
-        ("ElastoDyn","BlPitch3"):90.0,
-        ("ServoDyn","TPitManS1"):9999,
-        ("ElastoDyn","Azimuth"):0,
-        ("InflowWind","PropagationDir"):0,
-        ("HydroDyn","WaveHs"):0,
-        ("HydroDyn","WaveTp"):0,
-        ("HydroDyn","WaveDir"):0,
-        ("HydroDyn","WavePkShp"):0,
-        ("HydroDyn","WaveSeed1"):0,
-        ("Fst","TMax"):0,
-        ("Fst","TStart"):0,
-        ("DLC","Label"):0,
-        ("DLC","WindSeed"):0,
-        ("DLC","MeanWS"):0,
-        ("ElastoDyn","NacYaw"):0,
-        ("AeroDyn15","tau1_const"):0,
-        ("AeroDyn15","OLAF","DTfvw"):0,
-        ("AeroDyn15","OLAF","nNWPanels"):0,
-        ("AeroDyn15","OLAF","nNWPanelsFree"):0,
-        ("AeroDyn15","OLAF","nFWPanels"):0,
-        ("AeroDyn15","OLAF","nFWPanelsFree"):0,
-    }
 
     dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']
 
@@ -397,7 +371,7 @@ class DLCGenerator(object):
         dlc_options.update(met_options)
         dlc_options = remove_numpy(dlc_options)
 
-        generic_case_list = self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
+        self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
@@ -560,7 +534,6 @@ class DLCGenerator(object):
             # Apply new group
             generic_case_inputs[wind_group] = group
             
-        return generic_case_inputs
     
     def map_generic_to_openfast(self,generic_case_inputs, comb_options):
         case_inputs_openfast = {}

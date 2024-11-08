@@ -1816,7 +1816,6 @@ class FASTLoadCases(ExplicitComponent):
             if dlc_generator.cases[i_case].turbulent_wind:
                 # Assign values common to all DLCs
                 # Wind turbulence class
-                # TODO AG: dlc driver (dlc_generator) does not seem to have IECturbc parameter, Check the logic below
                 if dlc_generator.cases[i_case].IECturbc > 0:    # use custom TI for DLC case
                     dlc_generator.cases[i_case].IECturbc = str(dlc_generator.cases[i_case].IECturbc)
                     dlc_generator.cases[i_case].IEC_WindType = 'NTM'        # must use NTM for custom TI
@@ -2547,7 +2546,6 @@ class FASTLoadCases(ExplicitComponent):
             tot_travel = 0
             num_dir_changes = 0
             for i_ts, ts in enumerate(chan_time):
-                # TODO: this will break with new dlc setup
                 t_span = self.TMax[i_ts] - self.TStart[i_ts]
                 for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
                     ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
