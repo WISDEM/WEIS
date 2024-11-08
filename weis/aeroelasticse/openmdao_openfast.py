@@ -2574,6 +2574,10 @@ class FASTLoadCases(ExplicitComponent):
         # nacelle accelleration
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 
+        # Max pitch rate
+        max_pitch_rates = np.r_[sum_stats['dBldPitch1']['max'],sum_stats['dBldPitch2']['max'],sum_stats['dBldPitch3']['max']]
+        outputs['max_pitch_rate_sim'] = max(max_pitch_rates)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
+
         # pitch travel and duty cycle
         if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
             tot_time = 0
@@ -2605,8 +2609,8 @@ class FASTLoadCases(ExplicitComponent):
 
             dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['pitch_duty_cycle'] = dir_change_per_sec
+            # TODO: figure out aggregated calculated channels
 
-            outputs['max_pitch_rate_sim'] = max(max_pitch_rate)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
@@ -2634,9 +2638,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
         # Max platform offset        
-        for timeseries in chan_time:
-            max_offset_ts = np.sqrt(timeseries['PtfmSurge']**2 + timeseries['PtfmSway']**2).max()
-            outputs['Max_Offset'] = np.r_[outputs['Max_Offset'],max_offset_ts].max()
+        outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
         return outputs, discrete_outputs
 
@@ -2752,6 +2754,7 @@ class FASTLoadCases(ExplicitComponent):
     def save_timeseries(self,chan_time):
         '''
         Save ALL the timeseries: each iteration and openfast run thereof
+        TODO: move this deeper into runFAST so we can clear chan_time
         '''
 
         # Make iteration directory
