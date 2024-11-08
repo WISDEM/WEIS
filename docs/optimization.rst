@@ -335,6 +335,99 @@ with a merit figure of the structural mass
    - ``structural_mass`` (``floatingse.system_structural_mass``)
 
 
+Optimization results with RAFT modeling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From our modeling and analysis options:
+   - The time to run an OpenFAST simulation, :math:`T_{solve}`, is about 30 seconds.
+   - The number of cases is :math:`\sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} = 1`.  RAFT is actually running 14 DLCs (12 DLC 1.6 and 2 DLC 6.1, seeds are not necessary for RAFT), but they are not parallelized, so for the purposes of our cost/time estimates, the number of cases is 1.
+   - The number of cores is :math:`N_{\mathrm{cores}} = 100`, and 
+   - The number of design variables is :math:`N_{\mathrm{DVs}} = 3`.  WEIS does paralleize the runs across DVs for the SLSQP and DE solvers.
+
+Thus, the number of cores is much more than the cases per iteration, and the time to convergence is relative to the number of iterations.
+
+.. .. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+..    :width: 55%
+
+.. |cost_of| |time_of|
+
+.. .. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+..    :width: 45%
+
+.. .. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+..    :width: 45%
+
+Optimization results with OpenFAST modeling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From our modeling and analysis options:
+   - The time to run an OpenFAST simulation, :math:`T_{solve}`, is about 10 minutes.
+   - The number of cases is :math:`\sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} = 3`.
+   - The number of cores is :math:`N_{\mathrm{cores}} = 100`, and 
+   - The number of design variables is :math:`N_{\mathrm{DVs}} = 3`.
+
+Thus, the number of cores is much more than the cases per iteration, and the time to convergence is relative to the number of iterations.
+
+.. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+   :width: 55%
+
+|cost_of| |time_of|
+
+.. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+   :width: 45%
+
+.. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+   :width: 45%
+
+.. .. image:: /images/opt/Ptfm_OpenFAST_DE.png
+..    :width: 55%
+
+
+
+Optimization case study: IEA22 Controller optimization
+-------------------------------------------------------
+
+Here, the goal is to optimize the ROSCO pitch controller of the IEA-22MW RWT.
+
+We use the following design variables, constraints, and merit figure:
+
+This optimization varies the design variables:
+   - ``control.servo.pitch_control.omega``, which controls the bandwidth (speed) of the pitch response to generator speed transients.  This value can be an array.  For the IEA-22MW controller, it has a length of 3.
+   - ``control.servo.pitch_control.zeta``, sets the desired damping of the pitch response.   This value can be an array.  For the IEA-22MW controller, it has a length of 3.
+   - ``control.servo.pitch_control.Kp_float``, which determines the floating feedback gain for damping platform motion
+   - ``control.servo.pitch_control.ptfm_freq``, sets the low pass filter on the floating feedback loop
+
+The merit figure of this optimization to be minimized is ``DEL_TwrBsMyt``, or the tower base damage equivalent load.  
+
+We have two constraints:
+   -  ``control.rotor_overspeed``: (flag, min, max)
+      -  Over all load cases, the (maximum generator speed - rated generator speed) / (rated generator speed)
+      -  Sometimes, larger values are requiered for feasible floating controllers
+   -  ``user.name.aeroelastic.max_pitch_rate_sim``: (upper_bound)
+      - Over all load cases, the maximum pitch rate normalized by the maximum allowed pitch rate
+      - Unstable controllers often result in pitch commands saturated by the rate limit.  This constraint ensures solutions are stable in nonlinear simulations.
+
+
+From our modeling and analysis options:
+   - The time to run an OpenFAST simulation, :math:`T_{solve}`, is about 10 minutes.
+   - The number of cases is :math:`\sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} = 3`.
+   - The number of cores is :math:`N_{\mathrm{cores}} = 100` for COBYLA, and , :math:`N_{\mathrm{cores}} = 400` for SLSQP and DE.
+   - The number of design variables is :math:`N_{\mathrm{DVs}} = 8`.  ``omega`` and ``zeta`` are 3 each.
+
+In this case, for COBYLA, the number of cores is more than the cases per iteration, so the time to convergence is relative to the number of iterations.
+For the other solvers, the number of cases per iteration is less than the number of cores, so the time to convergences is greater.
+
+.. .. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+..    :width: 55%
+
+.. .. |cost_of| |time_of|
+
+.. .. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+..    :width: 45%
+
+.. .. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+..    :width: 45%
+
 
 
 
