@@ -70,6 +70,7 @@ class TuneROSCO(ExplicitComponent):
         self.controller_params['SD_Mode'] = rosco_init_options['SD_Mode']
         self.controller_params['Fl_Mode'] = rosco_init_options['Fl_Mode']
         self.controller_params['Flp_Mode'] = rosco_init_options['Flp_Mode']
+        self.controller_params['PRC_Mode'] = rosco_init_options['PRC_Mode']
         self.controller_params['PC_GS_n'] = rosco_init_options['PC_GS_n']
         self.controller_params['WS_GS_n'] = rosco_init_options['WS_GS_n']
 
