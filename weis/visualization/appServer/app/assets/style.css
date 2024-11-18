@@ -1,0 +1,35 @@
+body {
+    font-family: "Lato", sans-serif;
+    margin: 0;
+    background-color: #F7F7F7;
+}
+
+h4, h5, h6 {
+    color:rgb(3, 43, 86)
+}
+
+.cardHeader{
+    color: rgb(70, 70, 70);
+    text-align: center;
+    /* text-shadow: 2px 4px 3px rgba(0,0,0,0.3); */
+    font-weight: bold;
+    font-size: 23px;
+    background-color: white;
+    border: none;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    /* height: 50; */
+}
+
+.card {
+    margin: 20px;
+    box-shadow: 0 4px 6px 0 rgba(0, 0, 0, 0.18);
+}
+
+.wrapper {
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 10px;
+    padding-left: 10px;
+    margin-top:24px;
+}

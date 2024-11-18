@@ -218,7 +218,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
             self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
             self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-            self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
             self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
             self.add_input("platform_mass", 0.0, units="kg")
             self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -1809,14 +1808,6 @@ class FASTLoadCases(ExplicitComponent):
 
                 if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
                     dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
-                # Height of wind grid, it stops 1 mm above the ground
-                # dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
-                # If OLAF is called, make wind grid 3x higher, taller, and wider
-                if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dlc_generator.cases[i_case].HubHt *= 3.
-                    dlc_generator.cases[i_case].GridHeight *= 3.
-                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
-                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
