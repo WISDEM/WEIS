@@ -200,7 +200,7 @@ def save_selections(rows, selected_rows_indices):
 @callback(Output('airfoil-by-names', 'data'),
           Output('geometry-components', 'data'),
           Input('selected-file-df', 'data'))
-def categorize_airfoils(df):
+def categorize_data(df):
     '''
     This function is for loading and processing airfoils data
     Note that even if you don't navigate to this page, variables are all defined from main app page so this callback function will be auto-initiated.

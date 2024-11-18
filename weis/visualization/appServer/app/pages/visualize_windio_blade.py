@@ -1,0 +1,172 @@
+'''This is the page for visualize the WEIS inputs specialized in Blade OML, Axis, Elastic & Mass properties.'''
+
+import dash_bootstrap_components as dbc
+from dash import html, register_page, callback, Input, Output, dcc, dash_table
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from plotly.subplots import make_subplots
+import plotly
+import plotly.graph_objects as go
+from dash.exceptions import PreventUpdate
+import weis.inputs as sch
+from weis.visualization.utils import *
+
+register_page(
+    __name__,
+    name='WindIO',
+    top_nav=True,
+    path='/windio_blade'
+)
+
+def set_colors():
+    global cols
+    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
+
+
+@callback(Output('blade-names', 'options'),
+          Output('blade-by-names', 'data'),
+          Input('geometry-components', 'data'))
+def load_blade_comps(geom_comps_by_names):
+    '''
+    This function is for loading blade related components
+    '''
+    blade_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'blade' in k}     # where now k is 'filelabelname' and v is dict
+    
+    return list(blade_by_names.keys()), blade_by_names
+
+
+# We are using card container where we define sublayout with rows and cols.
+def layout():
+
+    # Set color panel
+    set_colors()
+
+    # Define layout for blade oml properties
+    blade_items = dcc.Dropdown(id='blade-names', options=[], value=None, multi=True)
+
+    blade_inputs = html.Div([
+                        dbc.Card([
+                            dbc.CardBody([
+                                dbc.Label('Please select blades:'),
+                                dbc.Form(blade_items)
+                            ])
+                        ])
+                   ])
+
+    oml_layout = dbc.Card([
+                        dbc.CardHeader('OML & Axis Properties', className='cardHeader'),
+                        dbc.CardBody([
+                            dcc.Loading(dcc.Graph(id='blade-oml', figure=empty_figure()))
+                        ])
+                  ], className='card')
+
+    # Define layout for elastic and mass properties
+    matrix_layout = dbc.Card([
+                        dbc.CardHeader('Elastic & Mass Properties', className='cardHeader'),
+                        dbc.CardBody([
+                            dcc.Loading(dcc.Graph(id='blade-elastic', figure=empty_figure())),
+                            dcc.Loading(dcc.Graph(id='blade-mass', figure=empty_figure()))
+                        ])
+                  ], className='card')
+    
+    layout = html.Div([
+                dcc.Store(id='blade-by-names', data={}),
+                blade_inputs,
+                dbc.Row([
+                    dbc.Col(oml_layout, width=6),
+                    dbc.Col(matrix_layout, width=6),
+                ])
+            ], className='wrapper')
+    
+    # layout = dbc.Row([
+    #             dcc.Store(id='blade-by-names', data={}),
+    #             blade_inputs,
+    #             dbc.Col(oml_layout, width=6),
+    #             dbc.Col(matrix_layout, width=6),
+    #         ], className='wrapper')
+    
+    return layout
+
+
+
+@callback(Output('blade-oml', 'figure'),
+          Input('blade-names', 'value'),
+          Input('blade-by-names', 'data'))
+def draw_blade_oml(blade_names, blade_by_names):
+    if blade_names is None:
+        raise PreventUpdate
+    
+    fig = make_subplots(rows=1, cols=1, shared_xaxes=True)
+
+    for idx, blade_name in enumerate(blade_names):
+        # Add a trace per blade
+        for channel in ['chord', 'twist']:
+            trace = blade_by_names[blade_name]['outer_shape_bem'][channel]
+
+            fig.append_trace(go.Scatter(
+                                    x = trace['grid'],
+                                    y = trace['values'],
+                                    mode = 'lines+markers',
+                                    line = dict(color=cols[idx]),
+                                    name = ' - '.join([blade_name, channel])),
+                                    row = 1,
+                                    col = 1)
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
+    fig.update_xaxes(title_text=f'grid', row=1, col=1)
+    fig.update_yaxes(title_text=f'value', row=1, col=1)
+
+    return fig
+
+
+@callback(Output('blade-elastic', 'figure'),
+          Output('blade-mass', 'figure'),
+          Input('blade-names', 'value'),
+          Input('blade-by-names', 'data'))
+def draw_blade_matrix(blade_names, blade_by_names):
+    if blade_names is None:
+        raise PreventUpdate
+
+    # Initialize 6x6 matrix per blade
+    fig_elastic = make_subplots(rows=6, cols=6, shared_xaxes=True)
+    fig_mass = make_subplots(rows=6, cols=6, shared_xaxes=True)
+
+    for idx, blade_name in enumerate(blade_names):
+        stiff_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['stiff_matrix']
+        inertia_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['inertia_matrix']
+
+        stiff_grid = stiff_matrix['grid']
+        stiff_values = np.array(stiff_matrix['values'])         # n rows x 21 cols (where 21 = 6+5+4+3+2+1)
+
+        inertia_grid = inertia_matrix['grid']
+        inertia_values = np.array(inertia_matrix['values'])     # n rows x 21 cols (where 21 = 6+5+4+3+2+1)
+
+        counter = 0
+        for pltRow in range(6):
+            for pltCol in range(pltRow, 6):
+                # Define Stiff Matrix
+                fig_elastic.append_trace(go.Scatter(
+                                        x = stiff_grid,
+                                        y = stiff_values[:,counter],
+                                        mode = 'lines',
+                                        line = dict(color=cols[idx])),
+                                        row = pltRow+1,
+                                        col = pltCol+1)
+                fig_elastic.update_layout(title='Stiff Matrix')
+
+                # Define Mass Matrix
+                fig_mass.append_trace(go.Scatter(
+                                        x = inertia_grid,
+                                        y = inertia_values[:,counter],
+                                        mode = 'lines',
+                                        line = dict(color=cols[idx])),
+                                        row = pltRow+1,
+                                        col = pltCol+1)
+                fig_mass.update_layout(title='Inertia Matrix')
+
+                counter += 1
+
+
+    return fig_elastic, fig_mass
