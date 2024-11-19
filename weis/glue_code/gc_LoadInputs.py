@@ -32,35 +32,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             analysis_override = None,
             ):
 
-        # If MPI, load the three WEIS yaml input files once in rank 0 
-        # and then broadcast them to all other ranks. If all ranks load the files
-        # simultaneously, we run the risk of herratic behavior of the code
-        if MPI:
-            rank = MPI.COMM_WORLD.Get_rank()
-            # Initialize variables for all ranks
-            modeling_options = None
-            analysis_options = None
-            wt_init = None
-        else:
-            rank = 0
-
-        # Loading in rank 0
-        if rank == 0:
-            modeling_options = sch.load_modeling_yaml(fname_input_modeling)
-            analysis_options = sch.load_analysis_yaml(fname_input_analysis)
-            wt_init = sch.load_geometry_yaml(fname_input_wt)
-
-        # Broadcasting to all other ranks
-        if MPI:
-            self.modeling_options = MPI.COMM_WORLD.bcast(modeling_options, root = 0)
-            self.analysis_options = MPI.COMM_WORLD.bcast(analysis_options, root = 0)
-            self.wt_init = MPI.COMM_WORLD.bcast(wt_init, root = 0)
-        else:
-            self.modeling_options = modeling_options
-            self.analysis_options = analysis_options
-            self.wt_init = wt_init
-
+        self.modeling_options = sch.load_modeling_yaml(fname_input_modeling)
         self.modeling_options['fname_input_modeling'] = fname_input_modeling
+        self.wt_init          = sch.load_geometry_yaml(fname_input_wt)
+        self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         self.analysis_options['fname_input_analysis'] = fname_input_analysis
 
         if modeling_override:
