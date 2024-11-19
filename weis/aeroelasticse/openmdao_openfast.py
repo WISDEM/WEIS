@@ -1733,11 +1733,59 @@ class FASTLoadCases(ExplicitComponent):
 
         return channels
 
-    def run_FAST(self, inputs, discrete_inputs, fst_vt):
+    def setup_cases(self,modeling_options,inputs,discrete_inputs,fst_vt):
+        '''
+        Set up DLCs, initial conditions, etc. in this function so we can use it outside of WEIS
 
-        modopt = self.options['modeling_options']
+        Inputs: modeling_options (dict)
+                inputs (dict)
+                discrete_inputs (dict)
+                fst_vt (dict)
+
+        Output: case_list
+
+        Required keys will be checked
+        
+        '''
+
+        required_inputs = [
+            'V_cutin',
+            'V_cutout',
+            'Vrated',
+            'hub_height',
+            'Rtip',
+            'shearExp',
+        ]
+
+        required_discrete_inputs = [
+            'turbine_class',
+            'turbulence_class',
+        ]
+
+        required_dlc_options = [
+            'DLCs', 
+            'fix_wind_seeds', 
+            'fix_wave_seeds', 
+            'metocean_conditions', 
+        ]
+
+        # Check inputs
+        for inp in required_inputs:
+            if inp not in inputs:
+                raise  Exception(f'The required input {inp} is not in the inputs to setup_cases')
+            
+        for inp in required_discrete_inputs:
+            if inp not in discrete_inputs:
+                raise  Exception(f'The required input {inp} is not in the discrete_inputs to setup_cases')
+            
+        dlc_options = modeling_options['DLC_driver']
+        for inp in required_dlc_options:
+            if inp not in dlc_options:
+                raise  Exception(f'The required input {inp} is not in the DLC_driver modeling options to setup_cases')
+            
+        # Unpack options
+        modopt = modeling_options
         DLCs = modopt['DLC_driver']['DLCs']
-        # Initialize the DLC generator
         cut_in = float(inputs['V_cutin'])
         cut_out = float(inputs['V_cutout'])
         rated = float(inputs['Vrated'])
@@ -1749,7 +1797,7 @@ class FASTLoadCases(ExplicitComponent):
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
         metocean = modopt['DLC_driver']['metocean_conditions']
-        
+
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
@@ -1787,8 +1835,9 @@ class FASTLoadCases(ExplicitComponent):
         initial_condition_table['rot_speed_initial'] = rot_speed_interp
         initial_condition_table['Ct_aero'] = Ct_aero_interp
         initial_condition_table['tau1_const'] = tau1_const_interp
-        
-        
+
+
+        # Generate DLC information
         dlc_generator = DLCGenerator(
             cut_in, 
             cut_out, 
@@ -1805,7 +1854,7 @@ class FASTLoadCases(ExplicitComponent):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
 
-        # Initialize parametric inputs
+        # Set up wind file generation
         WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
         WindFile_name = [''] * dlc_generator.n_cases
 
@@ -1867,13 +1916,12 @@ class FASTLoadCases(ExplicitComponent):
             for i_case in range(dlc_generator.n_cases):
                 WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
                     dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
-
-
+                
         # Apply olaf settings, should be similar to above?
         if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
             apply_olaf_parameters(dlc_generator,fst_vt)
                     
-        # Parameteric inputs
+        # Generate cases
         case_name = []
         case_list = []
         for i_case, case_inputs in enumerate(dlc_generator.openfast_case_inputs):
@@ -1910,17 +1958,31 @@ class FASTLoadCases(ExplicitComponent):
         # Write the text table to a yaml, text file
         write_yaml(case_df.to_dict(),os.path.join(self.FAST_runDirectory,'case_matrix_combined.yaml'))
         with open(os.path.join(self.FAST_runDirectory,'case_matrix_combined.txt'), 'w') as file:
-            file.write(text_table)
-            
-            
-        channels= self.output_channels(fst_vt)
+            file.write(text_table)            
 
         # Delete the extra case_inputs because they don't play nicely with aeroelasticse
         for case in case_list:
             for key in list(case):
                 if key[0] in ['DLC','TurbSim']:
                     del case[key]
+            
         
+            
+
+
+
+        print('here')
+    
+    
+    def run_FAST(self, inputs, discrete_inputs, fst_vt):
+
+        modopt = self.options['modeling_options']
+
+
+        case_list, case_name = self.setup_cases(modopt,inputs,discrete_inputs,fst_vt)
+
+        channels= self.output_channels(fst_vt)
+
         
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization
