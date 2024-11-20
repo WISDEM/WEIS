@@ -5,7 +5,7 @@ from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.gc_PoseOptimization  import PoseOptimizationWEIS
 from weis.glue_code.glue_code         import WindPark
-from wisdem.commonse.mpi_tools        import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
@@ -16,7 +16,7 @@ fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 evolutionary_methods = ['DE', 'NSGA2']
 
 if MPI:
-    from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)

@@ -7,7 +7,7 @@ import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
 
 def update_options(options,override):
     for key, value in override.items():

@@ -10,7 +10,7 @@ import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse import NFREQ
 from wisdem.commonse.cylinder_member import get_nfull
 import wisdem.commonse.utilities              as util
@@ -37,9 +37,6 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml
-
-if MPI:
-    from mpi4py   import MPI
 
 logger = logging.getLogger("wisdem/weis")
 

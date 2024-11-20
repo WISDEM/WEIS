@@ -417,7 +417,7 @@ class runFAST_pywrapper_batch(object):
     def run_mpi(self, mpi_comm_map_down):
 
         # Run in parallel with mpi
-        from mpi4py import MPI
+        from openmdao.utils.mpi import MPI
 
         # mpi comm management
         comm = MPI.COMM_WORLD
