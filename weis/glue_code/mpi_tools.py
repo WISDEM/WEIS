@@ -23,7 +23,6 @@ def under_mpirun():
 
 
 if under_mpirun():
-    from mpi4py import MPI
 
     def debug(*msg):  # pragma: no cover
         newmsg = ["%d: " % MPI.COMM_WORLD.rank] + list(msg)
@@ -132,7 +131,6 @@ def subprocessor_stop(comm_map_down):
 
 
 if __name__ == "__main__":
-    from mpi4py import MPI
 
     (
         _,
