@@ -205,6 +205,9 @@ class runFAST_pywrapper(object):
             # Add channel to indicate failed run
             output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
+            # Calculated channels
+            calculate_channels(output_dict, self.fst_vt)
+
             output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
