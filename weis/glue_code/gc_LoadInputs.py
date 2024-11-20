@@ -7,7 +7,7 @@ import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
 from rosco.toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
 
@@ -61,6 +61,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Directory of modeling option input, if we want to use it for relative paths
         mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
+        # OpenFAST prefixes
+        if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
+            
+        if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
+                mod_opt_dir,        # If it's a relative path, will be relative to mod_opt directory
+                self.analysis_options['general']['folder_output'], 
+                'openfast_runs'
+                )
+
         # BEM dir, all levels
         base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
         if MPI:
@@ -81,15 +92,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
-            # OpenFAST prefixes
-            if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
-                
-            if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
-                    self.analysis_options['general']['folder_output'], 
-                    'openfast_runs'
-                    )
+
                 
             # User-defined control dylib (path2dll)
             path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']

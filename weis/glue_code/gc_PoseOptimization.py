@@ -28,9 +28,148 @@ class PoseOptimizationWEIS(PoseOptimization):
         
     def get_number_design_variables(self):
         # Determine the number of design variables
-        n_DV = super(PoseOptimizationWEIS, self).get_number_design_variables()
+        n_DV = 0
 
-        n_add = 0
+        rotorD_opt = self.opt["design_variables"]["rotor_diameter"]
+        blade_opt = self.opt["design_variables"]["blade"]
+        tower_opt = self.opt["design_variables"]["tower"]
+        mono_opt = self.opt["design_variables"]["monopile"]
+        jacket_opt = self.opt["design_variables"]["jacket"]
+        hub_opt = self.opt["design_variables"]["hub"]
+        drive_opt = self.opt["design_variables"]["drivetrain"]
+        float_opt = self.opt["design_variables"]["floating"]
+        mooring_opt = self.opt["design_variables"]["mooring"]
+
+        if rotorD_opt["flag"]:
+            n_DV += 1
+        if blade_opt["aero_shape"]["twist"]["flag"]:
+            if blade_opt["aero_shape"]["twist"]["index_end"] > blade_opt["aero_shape"]["twist"]["n_opt"]:
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade twist is higher than the number of DVs n_opt"
+                )
+            elif blade_opt["aero_shape"]["twist"]["index_end"] == 0:
+                blade_opt["aero_shape"]["twist"]["index_end"] = blade_opt["aero_shape"]["twist"]["n_opt"]
+            n_DV += blade_opt["aero_shape"]["twist"]["index_end"] - blade_opt["aero_shape"]["twist"]["index_start"]
+        if blade_opt["aero_shape"]["chord"]["flag"]:
+            if blade_opt["aero_shape"]["chord"]["index_end"] > blade_opt["aero_shape"]["chord"]["n_opt"]:
+                raise Exception(
+                    "Check the analysis options yaml, index_end of the blade chord is higher than the number of DVs n_opt"
+                )
+            elif blade_opt["aero_shape"]["chord"]["index_end"] == 0:
+                blade_opt["aero_shape"]["chord"]["index_end"] = blade_opt["aero_shape"]["chord"]["n_opt"]
+            n_DV += blade_opt["aero_shape"]["chord"]["index_end"] - blade_opt["aero_shape"]["chord"]["index_start"]
+        if blade_opt["aero_shape"]["af_positions"]["flag"]:
+            n_DV += (
+                self.modeling["WISDEM"]["RotorSE"]["n_af_span"]
+                - blade_opt["aero_shape"]["af_positions"]["af_start"]
+                - 1
+            )
+        if "structure" in blade_opt:
+            if len(blade_opt["structure"])>0:
+                for i in range(len(blade_opt["structure"])):
+                    if blade_opt["structure"][i]["index_end"] > blade_opt["structure"][i]["n_opt"]:
+                        raise Exception(
+                            "Check the analysis options yaml, the index_end of a blade layer is higher than the number of DVs n_opt"
+                        )
+                    elif blade_opt["structure"][i]["index_end"] == 0:
+                        blade_opt["structure"][i]["index_end"] = blade_opt["structure"][i]["n_opt"]
+                    n_DV += (
+                        blade_opt["structure"][i]["index_end"]
+                        - blade_opt["structure"][i]["index_start"]
+                    )
+        if self.opt["design_variables"]["control"]["tsr"]["flag"]:
+            n_DV += 1
+
+        if tower_opt["outer_diameter"]["flag"]:
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height"]
+        if tower_opt["layer_thickness"]["flag"]:
+            n_DV += self.modeling["WISDEM"]["TowerSE"]["n_height"] * self.modeling["WISDEM"]["TowerSE"]["n_layers"]
+        if mono_opt["outer_diameter"]["flag"]:
+            n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        if mono_opt["layer_thickness"]["flag"]:
+            n_DV += (
+                self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+                * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
+            )
+        # TODO: FIX THIS
+        # if jacket_opt["outer_diameter"]["flag"]:
+        #    n_DV += self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        # if jacket_opt["layer_thickness"]["flag"]:
+        #    n_DV += (
+        #        self.modeling["WISDEM"]["FixedBottomSE"]["n_height"]
+        #        * self.modeling["WISDEM"]["FixedBottomSE"]["n_layers"]
+        #    )
+        if hub_opt["cone"]["flag"]:
+            n_DV += 1
+        if hub_opt["hub_diameter"]["flag"]:
+            n_DV += 1
+        for k in [
+            "uptilt",
+            "overhang",
+            "distance_tt_hub",
+            "distance_hub_mb",
+            "distance_mb_mb",
+            "generator_length",
+            "gear_ratio",
+            "generator_length",
+            "bedplate_web_thickness",
+            "bedplate_flange_thickness",
+            "bedplate_flange_width",
+        ]:
+            if drive_opt[k]["flag"]:
+                n_DV += 1
+        for k in [
+            "lss_diameter",
+            "lss_wall_thickness",
+            "hss_diameter",
+            "hss_wall_thickness",
+            "nose_diameter",
+            "nose_wall_thickness",
+        ]:
+            if drive_opt[k]["flag"]:
+                n_DV += 2
+        if drive_opt["bedplate_wall_thickness"]["flag"]:
+            n_DV += 4
+
+        if float_opt["joints"]["flag"]:
+            n_DV += len(float_opt["joints"]["z_coordinate"]) + len(float_opt["joints"]["r_coordinate"])
+
+        if float_opt["members"]["flag"]:
+            for k, kgrp in enumerate(float_opt["members"]["groups"]):
+                memname = kgrp["names"][0]
+                memidx = self.modeling["floating"]["members"]["name"].index(memname)
+                n_grid = len(self.modeling["floating"]["members"]["grid_member_" + memname])
+                n_layers = self.modeling["floating"]["members"]["n_layers"][memidx]
+                if "diameter" in kgrp:
+                    if "constant" in kgrp["diameter"]:
+                        n_DV += 1
+                    else:
+                        n_DV += n_grid
+                if "thickness" in kgrp:
+                    n_DV += n_grid * n_layers
+                if "ballast" in kgrp:
+                    n_DV += self.modeling["floating"]["members"]["ballast_flag_member_" + memname].count(False)
+                if "stiffeners" in kgrp:
+                    if "ring" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["ring"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["ring"]:
+                            n_DV += 1
+                    if "longitudinal" in kgrp["stiffeners"]:
+                        if "size" in kgrp["stiffeners"]["longitudinal"]:
+                            pass
+                        if "spacing" in kgrp["stiffeners"]["longitudinal"]:
+                            n_DV += 1
+                if "axial_joints" in kgrp:
+                    n_DV += len(kgrp["axial_joints"])
+        if self.modeling["flags"]["mooring"]:
+            n_design = 1 if self.modeling["mooring"]["symmetric"] else self.modeling["mooring"]["n_lines"]
+            if mooring_opt["line_length"]["flag"]:
+                n_DV += n_design
+            if mooring_opt["line_diameter"]["flag"]:
+                n_DV += n_design
+
+        # Count and add design variables from WEIS
         if self.opt['design_variables']['control']['servo']['pitch_control']['omega']['flag']:
             if hasattr(self.modeling['ROSCO']['omega_pc'],'__len__'):
                 n_add += len(self.modeling['ROSCO']['omega_pc'])
@@ -42,26 +181,26 @@ class PoseOptimizationWEIS(PoseOptimization):
             else:
                 n_add += 1
         if self.opt['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
-            n_add += 1
+            n_DV += 1
         if self.opt['design_variables']['control']['servo']['pitch_control']['ptfm_freq']['flag']:
-            n_add += 1
+            n_DV += 1
         if self.opt['design_variables']['control']['servo']['torque_control']['omega']['flag']:
-            n_add += 1
+            n_DV += 1
         if self.opt['design_variables']['control']['servo']['torque_control']['zeta']['flag']:
-            n_add += 1
+            n_DV += 1
         if self.opt['design_variables']['control']['servo']['flap_control']['flp_kp_norm']['flag']:
-            n_add += 1
+            n_DV += 1
         if self.opt['design_variables']['control']['servo']['flap_control']['flp_tau']['flag']:
-            n_add += 1
+            n_DV += 1
         if self.opt['design_variables']['control']['flaps']['te_flap_end']['flag']:
-            n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
+            n_DV += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
         if self.opt['design_variables']['control']['flaps']['te_flap_ext']['flag']:
-            n_add += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
+            n_DV += self.modeling['WISDEM']['RotorSE']['n_te_flaps']
         if self.opt['design_variables']['control']['ps_percent']['flag']:
-            n_add += 1
+            n_DV += 1
         
         if self.opt['driver']['optimization']['form'] == 'central':
-            n_add *= 2
+            n_DV *= 2
 
         # TMD DVs
         if self.opt['design_variables']['TMDs']['flag']:
@@ -70,17 +209,13 @@ class PoseOptimizationWEIS(PoseOptimization):
             # We only support one TMD for now
             for tmd_group in TMD_opt['groups']:
                 if 'mass' in tmd_group:
-                    n_add += 1
+                    n_DV += 1
                 if 'stiffness' in tmd_group:
-                    n_add += 1
+                    n_DV += 1
                 if 'damping' in tmd_group:
-                    n_add += 1
+                    n_DV += 1
 
-
-
-        
-
-        return n_DV+n_add
+        return n_DV
 
 
     

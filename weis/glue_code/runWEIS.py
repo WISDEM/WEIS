@@ -5,7 +5,7 @@ from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.gc_PoseOptimization  import PoseOptimizationWEIS
 from weis.glue_code.glue_code         import WindPark
-from wisdem.commonse.mpi_tools        import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
@@ -16,7 +16,7 @@ fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 evolutionary_methods = ['DE', 'NSGA2']
 
 if MPI:
-    from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)
@@ -231,26 +231,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 desvar_opts=["lower", "upper",],
                 cons_opts=["lower", "upper", "equals",],
             )
-            def simple_types_temp(indict : dict) -> dict:  # DEBUG!!!!!
-                """
-                until the changes to WISDEM go through...
-                """
-                def convert(value):
-                    if isinstance(value, np.ndarray):
-                        return convert(value.tolist())
-                    elif isinstance(value, dict):
-                        return {key: convert(value) for key, value in value.items()}
-                    elif isinstance(value, (list, tuple, set)):
-                        return [convert(item) for item in value]  # treat all as list
-                    elif isinstance(value, (np.generic)):
-                        return value.item()  # convert numpy primatives to python primative underlying
-                    elif isinstance(value, (float, int, bool, str)):
-                        return value  # this should be the end case
-                    else:
-                        return ""
-                return convert(indict)
-            save_yaml(folder_output, "problem_vars.yaml", simple_types_temp(problem_var_dict))
-            # save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
+            save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
 
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)

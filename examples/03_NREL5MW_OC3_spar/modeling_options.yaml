@@ -2,7 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: outputs/03_NREL5MW_OC3_spar
         use_exe: True
 
 WISDEM:
@@ -18,7 +17,6 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-        rank_and_file: True
     BOS:
         flag: True
 
@@ -55,9 +53,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : True
+        TwFADOF2 : False
         TwSSDOF1 : True
-        TwSSDOF2 : True
+        TwSSDOF2 : False
         PtfmSgDOF: True
         PtfmSwDOF: True
         PtfmHvDOF: True
