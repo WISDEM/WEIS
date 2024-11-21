@@ -24,6 +24,7 @@ class WindTurbineDOE2SM():
             rank = 0
 
         cr = om.CaseReader(sql_file)
+        print('reading cases from {:}'.format(sql_file))
         cases = cr.list_cases('driver')
 
         if (not MPI) or (MPI and rank == 0):
@@ -413,6 +414,7 @@ class WindTurbineDOE2SM():
             try:
                 with open(sm_filename, 'wb') as fid:
                     pkl.dump(self.dataset_list, fid, protocol=5)
+                    print('Surrogate model written in {:}'.format(sm_filename))
             except:
                 print('Unable to write surrogate model file: {:}.'.format(sm_filename))
                 raise Exception('Unable to write surrogate model file: {:}.'.format(sm_filename))

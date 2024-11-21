@@ -288,7 +288,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
     # If design_of_experiment, recorder flag, train_surrogate_model are all True,
     # collect sql files and create smt object
-    if opt_options['opt_flag'] and (not SKIP_DRIVER) and (not SKIP_SMT):
+    if opt_options['opt_flag'] and (not SKIP_SMT):
         if opt_options['driver']['design_of_experiments']['flag'] and opt_options['recorder']['flag']:
             if opt_options['driver']['design_of_experiments']['train_surrogate_model']:
                 WTSM = WindTurbineDOE2SM()
