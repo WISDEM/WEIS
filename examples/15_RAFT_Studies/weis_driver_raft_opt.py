@@ -3,7 +3,7 @@ import time
 import sys
 
 from weis.glue_code.runWEIS     import run_weis
-from wisdem.commonse.mpi_tools  import MPI
+from openmdao.utils.mpi  import MPI
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
