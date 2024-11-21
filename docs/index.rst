@@ -39,6 +39,15 @@ DLC Generator
    dlc_generator
 
 
+Optimization in WEIS
+====================
+
+.. toctree::
+   :maxdepth: 2
+
+   optimization
+
+
 Other Useful Docs
 =================
 

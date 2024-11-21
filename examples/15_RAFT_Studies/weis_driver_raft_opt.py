@@ -4,7 +4,7 @@ import sys
 import subprocess
 
 from weis.glue_code.runWEIS     import run_weis
-from wisdem.commonse.mpi_tools  import MPI
+from openmdao.utils.mpi  import MPI
 from wisdem.inputs.validation import load_yaml
 
 ## File management
