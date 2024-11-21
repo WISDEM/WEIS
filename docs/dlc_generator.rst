@@ -109,52 +109,100 @@ These outputs can be used as inputs for future runs to exactly reproduce specifi
 Expected DLC Outputs in OpenFAST
 --------------------------------
 
-DLC 1.1
--------
-For each:
-Short description.
-Defaults?
-Timeseries
+Coming soon.
 
-DLC 1.2
--------
+.. DLC 1.1
+.. -------
+.. For each:
+.. Short description.
+.. Defaults?
+.. Timeseries
 
-DLC 1.3
--------
+.. DLC 1.2
+.. -------
 
-DLC 1.4
--------
+.. DLC 1.3
+.. -------
 
-DLC 1.5
--------
+.. DLC 1.4
+.. -------
 
-DLC 1.6
--------
+.. DLC 1.5
+.. -------
 
-DLC 5.1
--------
+.. DLC 1.6
+.. -------
 
-DLC 6.1
--------
+.. DLC 5.1
+.. -------
 
-DLC 6.3
--------
+.. DLC 6.1
+.. -------
 
-DLC 6.4
--------
+.. DLC 6.3
+.. -------
+
+.. DLC 6.4
+.. -------
 
 
-------------------------
-User-defined DLC Example
-------------------------
+.. ------------------------
+.. User-defined DLC Example
+.. ------------------------
 
 
 ------------------------------------
-Setting up New DLCs (for developers)
+Setting Up DLCs (for developers)
 ------------------------------------
 
+In the dlc_generator class (``/weis/dlc_driver/dlc_generator.py``), you can add new functions for additional DLCs.
+Several examples are already there, like ``generate_2p3()``.  New functions should follow the ``generate_*`` naming convention.  Note that ``.`` is automatically mapped to ``p``.
 
+The function should start with some helpful comments::
 
+  # Power production normal turbulence model - normal sea state
+
+The ``dlc_options`` dictionary contains inputs for that particular DLC in the modeling options.  Default options include some modeling options common across DLCs.::
+
+  # Get default options
+  dlc_options.update(self.default_options)   
+
+Next, options specific to that DLC hard-coded in the function.  Error checking may be helpful here, too::
+  
+  # Handle DLC Specific options:
+  dlc_options['label'] = '1.1'
+  dlc_options['sea_state'] = 'normal'
+  dlc_options['PSF'] = 1.35
+
+  # Set yaw_misalign, else default
+  if 'yaw_misalign' in dlc_options:
+      dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+  else: # default
+      dlc_options['yaw_misalign'] = [0]
+
+Now, the special part happens, where we define groups of variables that are grouped and the cases are a cartesian product of the groups.
+For example in this DLC 1.1 example::
+
+  # DLC-specific: define groups
+  # These options should be the same length and we will generate a matrix of all cases
+  generic_case_inputs = []
+  generic_case_inputs.append(['total_time','transient_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+  generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed','wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+  generic_case_inputs.append(['yaw_misalign']) # group 2
+
+The time and other constant options are in the first group.  This group usually has a length of one.
+Wind speed, wave height, wave period, and the seeds are varied together in the second group.  
+For example the wind speed may be 8, 10, and 12, and the corresponding wave height/period will vary with the wind speed. 
+Initial conditions are automatically applied in this group via linear interpolation.  Search for the ``initial_condition_table`` dictionary.
+The wind speed and other metocean conditions are added to the dlc_options automatically.  
+The developer only needs to provide specific values in certain cases, like DLC 6.1.
+If the user also wants to vary the yaw_misalign, those offsets will be applied on each wind speed.
+
+Finally, the ``generate_cases`` method will do the rest of the work and (hopefully) check for errors along the way::
+
+  self.generate_cases(generic_case_inputs,dlc_options)
+
+Any options you want to vary across should be added to the ``dlc_options`` dictionary.  
 
 
 .. _DLC options:
@@ -167,36 +215,3 @@ The following inputs are a subset of the options available in the ``modeling_opt
 
 .. jsonschema:: inputs/modeling_schema.json#/definitions/DLC_driver
    :hide_key_if_empty: /**/default
-
-.. How WEIS works
-.. --------------
-
-.. WEIS is a stack of software that can be used for floating wind turbine design and analysis.  The turbine’s components (blade, tower, platform, mooring, and more) are parameterized in a geometry input. The system engineering tool `WISDEM <https://github.com/WISDEM/WISDEM>`_ determines component masses, costs, and engineering parameters that can be used to determine modeling inputs.  A variety of pre-processing tools are used to convert these system engineering models into simulation models.  
-
-.. The modeling_options.yaml determines how the turbine is simulated.  We currently support `OpenFAST <https://github.com/OpenFAST/openfast>`_ and `RAFT <https://github.com/WISDEM/RAFT>`_.  
-
-.. The analysis_options.yaml determine how to run simulations, either a single run for analysis, a sweep or design of experiments, or an optimization.  
-
-.. A full description of the inputs can be found `here <https://github.com/WISDEM/WEIS/tree/master/weis/inputs>`_ (will point to rst when available).
-
-.. .. image:: images/WEIS_Stack.png
-..   :width: 500
-..   :alt: Stack of software tools contained in WEIS
-
-.. WEIS is `"glued" <https://github.com/WISDEM/WEIS/blob/master/weis/glue_code/glue_code.py>`_ together using `openmdao <https://openmdao.org/>`_ components and groups.
-
-.. WEIS works best by running `examples <https://github.com/WISDEM/WEIS/tree/master/examples>`_:
-..  * `01_aeroelasticse <https://github.com/WISDEM/WEIS/tree/master/examples/01_aeroelasticse>`_ can be used to set up batches of aeroelastic simulations in OpenFAST
-..  * `02_control_opt <https://github.com/WISDEM/WEIS/tree/master/examples/02_control_opt>`_ can be used to run WEIS from an existing OpenFAST model, and optimize control parameters only
-..  * `03_NREL5MW_OC3 <https://github.com/WISDEM/WEIS/tree/master/examples/03_NREL5MW_OC3_spar>`_ and `04_NREL5MW_OC4_semi <https://github.com/WISDEM/WEIS/tree/master/examples/04_NREL5MW_OC4_semi>`_ can be used to simulate the OC spar and semi, respectively, from WISDEM geometries.
-..  * `05_IEA-3.4-130-RWT <https://github.com/WISDEM/WEIS/tree/master/examples/05_IEA-3.4-130-RWT>`_ runs the design load cases (DLCs) for the fixed-bottom IEA-3.4 turbine
-..  * `06_IEA-15-240-RWT <https://github.com/WISDEM/WEIS/tree/master/examples/06_IEA-15-240-RWT>`_ contains several examples for running the IEA-15MW with the VolturnUS platform, including tower and structural controller optimization routines
-..  * `15_RAFT_Studies <https://github.com/WISDEM/WEIS/tree/master/examples/15_RAFT_Studies>`_ contains an example for optimizing a the IEA-15MW with the VolturnUS platform in RAFT
-
-.. More documentation specific to these examples can be found there, with more to follow.
-
-.. This documentation only covers a summary of WEIS's functionality.  WEIS can be adapted to solve a wide variety of problems.  If you have questions or would like to discuss WEIS's functionality further, please email dzalkind (at) nrel (dot) gov. 
-
-.. .. image:: images/WEIS_Flow.png
-..   :width: 1000
-..   :alt: Stack of software tools contained in WEIS
