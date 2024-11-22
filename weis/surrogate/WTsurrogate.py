@@ -5,7 +5,7 @@ import time
 import re
 import pickle as pkl
 import openmdao.api as om
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 from smt.surrogate_models import SGP
 
 class WindTurbineDOE2SM():
