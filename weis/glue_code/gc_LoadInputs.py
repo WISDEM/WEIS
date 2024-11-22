@@ -7,7 +7,10 @@ import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
+from rosco.toolbox.inputs.validation import load_rosco_yaml
+from wisdem.inputs import load_yaml
+
 
 def update_options(options,override):
     for key, value in override.items():
@@ -176,6 +179,18 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             if not osp.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
                 self.modeling_options['ROSCO']['tuning_yaml'] = osp.realpath(osp.join(
                     mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
+                
+        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
+        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
+            inps = load_rosco_yaml(self.modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
+            self.modeling_options['ROSCO'].update(inps['controller_params'])
+
+            # Apply changes in modeling options, should have already been validated
+            modopts_no_defaults = load_yaml(self.modeling_options['fname_input_modeling'])  
+            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
+            for option, value in modopts_no_defaults['ROSCO'].items():
+                if option not in skip_options:
+                    self.modeling_options['ROSCO'][option] = value
         
         # XFoil
         if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:

@@ -1,6 +1,5 @@
 general:
-    # folder_output: /scratch/dzalkind/WEIS-2/outputs/17_IEA22_OptStudies/0_setup     # kestrel
-    folder_output: outputs/17_IEA22_OptStudies/1_change_opt/
+    folder_output: 17_IEA22_OptStudies/of_COBYLA/
     fname_output: IEA-22-280-RWT
 
 design_variables:
@@ -117,14 +116,18 @@ constraints:
             max: 2.0
 
 merit_figure: structural_mass
-            
+
 driver:
     optimization:
         flag: True         # Flag to enable optimization
         tol: 1.e-3         # Optimality tolerance
+        maxiter: 100         # Maximum number of iterations (NLopt)
         max_iter: 1000         # Maximum number of iterations (SLSQP)
         solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        penalty_exponent: 2.0     # constraint penalty exponent
+        # penalty_parameter: 2.0    # constraint penalty exponent
+        run_parallel: True
 
 recorder:
-    flag: True                            # Flag to activate OpenMDAO recorder
-    file_name: log_opt.sql    # Name of OpenMDAO recorder
+    flag: True              # Flag to activate OpenMDAO recorder
+    file_name: log_opt.sql  # Name of OpenMDAO recorder

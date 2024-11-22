@@ -1,5 +1,5 @@
 general:
-    folder_output: 42_UpdatePS_080
+    folder_output: 17_IEA22_OptStudies/of_ROSCO_COBYLA/
     fname_output: IEA-22-280-RWT
 
 design_variables:
@@ -8,7 +8,7 @@ design_variables:
       pitch_control:
           omega:
             flag: True
-            min: 0.1
+            min: 0.025
             max: 0.5
           zeta:
             flag: True
@@ -16,11 +16,11 @@ design_variables:
             max: 3.0
           Kp_float:
             flag: True
-            min: -0.25
+            min: -40.0  # -0.25
             max: 0
           ptfm_freq:
             flag: True
-            max: 4.0
+            max: 0.5
 
 merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
@@ -29,18 +29,31 @@ constraints:
     rotor_overspeed:
       flag: True
       min: 0.0
-      max: 0.25
+      max: 0.2
+    # max_pitch_travel:
+    #   flag: True
+    #   max: 0.75
+    # avg_pitch_travel:
+    #   flag: True
+    #   max: 0.2
+  user:
+    - name: aeroelastic.max_pitch_rate_sim
+      upper_bound: 0.75
 
 driver:
   optimization:
     flag: True
-    tol: 1.e-2            # Optimality tolerance
+    tol: 1.e-3            # Optimality tolerance
     max_major_iter: 2     # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-    max_iter: 40          # Maximum number of iterations (SLSQP)
+    max_iter: 100         # Maximum number of iterations (SLSQP)
+    maxiter: 100          # Maximum number of iterations (SLSQP)
     solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
     form: forward         # Finite differencing mode, either forward or central
+    # penalty_exponent: 1.0     # constraint penalty exponent
+    # penalty_parameter: 1000.0    # constraint penalty exponent
+    run_parallel: True    # DE parallelization
   design_of_experiments:
     flag: False            # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing
@@ -49,5 +62,5 @@ driver:
     criterion: center
 
 recorder:
-    flag: True             # Flag to activate OpenMDAO recorder
+    flag: True              # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder

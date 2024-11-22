@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "weis"
-version = "1.3"
+version = "1.4"
 description = 'Wind Energy with Integrated Servo-control'
 readme = "README.md"
 requires-python = ">=3.9"
@@ -92,8 +92,10 @@ docs = ["sphinx",
 "Homepage" = "https://github.com/WISDEM/WEIS"
 "Documentation" = "https://weis.readthedocs.io"
 
-#[project.scripts]
+[project.scripts]
 #wisdem = "weis.main:weis_cmd"
+weis_viz = "weis.visualization.appServer.app.mainApp:main"
+weis_viz_input_gen = "weis.visualization.appServer.share.vizFileGen:main"
 
 # This is configuration specific to the `setuptools` build backend.
 # If you are using a different build backend, you will need to change this.
