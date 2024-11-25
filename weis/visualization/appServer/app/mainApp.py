@@ -91,7 +91,7 @@ app.layout = dcc.Loading(
                 dcc.Store(id='var-opt', data={}),
                 # WindIO Input Files
                 dcc.Store(id='file-df', data={'File Path': [], 'Label': [], 'Type': []}),
-                dcc.Store(id='selected-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
+                # dcc.Store(id='sorted-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
                 # Airfoils categorized by 'filelabelname:airfoilname' pairs
                 dcc.Store(id='airfoil-by-names', data={}),
                 # Geometry components categorized by 'filelabelname:componenttype' pairs

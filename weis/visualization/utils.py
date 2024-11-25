@@ -879,15 +879,32 @@ def render_our_own(points):
     return content
 
 
+
+def find_rows(df_dict, df_type='geometry'):
+
+    df = pd.DataFrame(df_dict)
+    
+    return df[df['Type'] == df_type].to_dict('list')         # {'File Path': ['a.yaml', 'c.yaml'], 'Label': ['abc', 'ghi'], 'Type': [1, 1]}
+
+    # return {k: v[idx] for idx in range(len(df['Type'])) for k, v in df.items() if df['Type'][idx]==df_type}
+
+
+
 def load_geometry_data(geometry_paths):
     # Read geometry input file and load airfoils data
     # wt_options = sch.load_geometry_yaml('/projects/weis/sryu/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')       # For HPC
     # wt_options = sch.load_geometry_yaml('/Users/sryu/Desktop/FY24/WEIS-Visualization/data/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')       # For Local
     airfoils, geom_comps = {}, {}
-    for row in geometry_paths:
-        wt_options = sch.load_geometry_yaml(row['File Path'])
-        airfoils[row['Label']] = wt_options['airfoils']
-        geom_comps[row['Label']] = wt_options['components']
+    # for row in geometry_paths:
+    #     wt_options = sch.load_geometry_yaml(row['File Path'])
+    #     airfoils[row['Label']] = wt_options['airfoils']
+    #     geom_comps[row['Label']] = wt_options['components']
+
+    for filepath, filelabel, _ in zip(*geometry_paths.values()):
+        wt_options = sch.load_geometry_yaml(filepath)
+        airfoils[filelabel] = wt_options['airfoils']
+        geom_comps[filelabel] = wt_options['components']
+
 
     return airfoils, geom_comps
 

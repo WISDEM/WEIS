@@ -1,9 +1,10 @@
 import pandas as pd
+from pathlib import Path
 from dash import html, register_page
-from dash import dcc, Input, State, Output, callback, ALL, dash_table
+from dash import Dash, dcc, Input, State, Output, callback, no_update, dash_table, ctx
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from weis.visualization.utils import parse_yaml, dict_to_html, load_geometry_data
+from weis.visualization.utils import load_geometry_data, find_rows
 
 register_page(
     __name__,
@@ -73,21 +74,233 @@ def layout():
                   ], className='card')
 
     # Layout for result table
+    file_table = dash_table.DataTable(
+                    id = 'file-table-interactivity',
+                    columns = [],
+                    data = [],
+                    style_header={
+                        'fontWeight': 'bold'
+                    },
+                    style_cell={
+                        'font-family': 'sans-serif'
+                    },
+                    editable = True,
+                    sort_action = "native",
+                    sort_mode = "multi",
+                    # row_selectable = "multi",
+                    row_deletable = True,
+                    # selected_rows = [],
+                    persistence=True,
+                    persistence_type='session',
+                )
+    
     table_layout = dbc.Card([
                             dbc.CardBody([
-                                html.Div(id='file-table')
+                                dcc.Loading(file_table)
                             ])
                   ], className='card')
 
-    layout = html.Div([
+    layout = dcc.Loading(html.Div([
                 form_layout,
                 table_layout
-            ])
+            ]))
     
 
     return layout
 
 
+def handle_file_error(filepath, filelabel, filetype):
+    if (filepath in [None, '']) or (filelabel in [None, '']) or (filetype in [None, '']):
+        return True
+
+    if not filepath.endswith('.yaml'):
+        return True
+    
+    if not Path(filepath).is_file():
+        return True
+    
+    return False
+
+
+def add_row(filepath, filelabel, filetype, df_dict):
+    # Error handling
+    if handle_file_error(filepath, filelabel, filetype):
+        return True, "Please check file again", no_update
+    
+    # Check if row already exists
+    df = pd.DataFrame(df_dict)
+    if ((df['File Path'] == filepath) | (df['Label'] == filelabel)).any():
+        return True, "Already entered", df_dict
+    
+    # Add row to dataframes
+    df_dict['File Path'] += [filepath]
+    df_dict['Label'] += [filelabel]
+    df_dict['Type'] += [filetype]
+
+    return False, "", df_dict
+
+
+def del_row(curr_data, prev_data):
+    print(curr_data)
+    print(prev_data)
+
+    return True, "File has been deleted", curr_data
+
+
+@callback(Output('form-warning', 'is_open'),
+          Output('form-warning-text', 'children'),
+          Output('file-df', 'data'),
+          # Either triggered by form or table
+          Input('import-btn', 'n_clicks'),
+          Input('file-table-interactivity', 'data_timestamp'),
+          # Form
+          State('file-path', 'value'),
+          State('file-label', 'value'),
+          State('file-type', 'value'),
+          State('file-df', 'data'),
+          # Table
+          State('file-table-interactivity', 'data'),
+          State('file-table-interactivity', 'data_previous'))
+def edit_table(nclickForm, ts, filepath, filelabel, filetype, df_dict, curr_data, prev_data):
+    '''
+    Update data frame to be shown in table once the form input button has been clicked
+    form => table (add new row) => editable table where you can delete => update dataframe based on table
+    '''
+    # if 'import-btn.n_clicks' in dash.callback_context.triggered_map:
+    if nclickForm not in [None, 0] and ctx.triggered_id == 'import-btn':
+        print('form')
+        warning_flag, warning_msg, updated_df_dict = add_row(filepath, filelabel, filetype, df_dict)
+        return warning_flag, warning_msg, updated_df_dict
+    
+    elif ctx.triggered_id == 'file-table-interactivity':
+        print('table')
+        del_flag, del_msg, updated_df_dict = del_row(curr_data, prev_data)
+        return del_flag, del_msg, updated_df_dict
+
+    else:
+        return False, "", df_dict
+
+    
+
+
+
+######## 3 Attempt
+# @callback(Output('form-warning', 'is_open'),
+#           Output('form-warning-text', 'children'),
+#           Output('file-df', 'data'),
+#           Input('import-btn', 'n_clicks'),
+#           State('file-path', 'value'),
+#           State('file-label', 'value'),
+#           State('file-type', 'value'),
+#           State('file-df', 'data'),
+#           allow_duplicate=True)
+# def add_row_table(nclick, filepath, filelabel, filetype, df_dict):
+#     '''
+#     Update data frame to be shown in table once the form input button has been clicked
+#     form => table (add new row) => editable table where you can delete => update dataframe based on table
+#     '''
+#     if nclick is None or nclick==0:
+#         return False, "", no_update
+    
+#     # Error handling
+#     if (filepath in [None, '']) or (filelabel in [None, '']) or (filetype in [None, '']):
+#         return True, "Please enter all of the forms", df_dict
+
+#     if not filepath.endswith('.yaml'):
+#         return True, "Please enter yaml file", df_dict
+    
+#     if not Path(filepath).is_file():
+#         return True, "Please enter correct file path", df_dict
+    
+#     # Check if row already exists
+#     df = pd.DataFrame(df_dict)
+#     if ((df['File Path'] == filepath) | (df['Label'] == filelabel)).any():
+#         return True, "Already entered", df_dict
+    
+#     # Add row to dataframes
+#     df_dict['File Path'] += [filepath]
+#     df_dict['Label'] += [filelabel]
+#     df_dict['Type'] += [filetype]
+
+
+#     return False, "", df_dict
+
+
+@callback(Output('file-table-interactivity', 'columns'),
+          Output('file-table-interactivity', 'data'),
+          Input('file-df', 'data'))
+def update_table(df_dict):
+    '''
+    Create/update the (editable) table based on data frame
+    '''
+
+    df = pd.DataFrame(df_dict)
+    print('\nUpdate Table Data\n', df)
+
+    return [{'name': i, 'id': i, 'deletable': True, 'selectable': True} for i in df.columns], df.to_dict('records')
+
+
+# @callback(Output('file-df', 'data'),
+#           Input('file-table-interactivity', 'data_timestamp'),
+#           State('file-table-interactivity', 'data'),
+#           State('file-table-interactivity', 'data_previous'),
+#           allow_duplicate=True)
+# def delete_row(ts, curr_data, prev_data):
+#     '''
+#     Delete row from dataframe if corresponding row has been deleted from the table
+#     This callback doesn't work when new row has been added to the table
+#     '''
+#     print(ts)
+#     print(curr_data)
+#     print(prev_data)
+
+#     return curr_data
+
+# @callback(Output('selected-file-df', 'data'),
+#           State('file-table-interactivity', 'derived_virtual_data'),
+#           Input('file-table-interactivity', 'derived_virtual_selected_rows'))
+# def save_selections(rows, selected_rows_indices):
+#     '''
+#     Save selections into another small version of dataframe, where this will be ultimately used over other pages
+#     '''
+#     if selected_rows_indices is None:
+#         selected_rows_indices = []
+    
+#     selected_rows = [rows[i] for i in selected_rows_indices]
+
+#     df = {'model': [], 'analysis': [], 'geometry': []}
+#     for row in selected_rows:
+#         row_type = row['Type']
+#         row.popitem()               # Remove duplicated 'Type' field
+#         df[row_type].append(row)
+
+#     print('selected df\n', df)
+    
+#     return df
+
+
+@callback(Output('airfoil-by-names', 'data'),
+          Output('geometry-components', 'data'),
+          Input('file-df', 'data'))
+def categorize_data(df_dict):
+    '''
+    This function is for loading and processing airfoils data
+    Note that even if you don't navigate to this page, variables are all defined from main app page so this callback function will be auto-initiated.
+    '''
+    # airfoils, geom_comps = load_geometry_data(df['geometry'])
+    try:
+        airfoils, geom_comps = load_geometry_data(find_rows(df_dict, 'geometry'))      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
+        airfoil_by_names = {label+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for label, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
+        geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
+    except Exception as e:
+        print(e)
+
+    return airfoil_by_names, geom_comps_by_names
+
+
+
+"""
+######## 2 Attempt
 @callback(Output('form-warning', 'is_open'),
           Output('form-warning-text', 'children'),
           Output('file-df', 'data'),
@@ -103,6 +316,7 @@ def add_row(nclick, filepath, filelabel, filetype, df_dict):
     if nclick is None or nclick==0:
         raise PreventUpdate
     
+    # Error handling
     elif (filepath in [None, '']) or (filelabel in [None, '']) or (filetype in [None, '']):
         return True, "Please enter all of the forms", df_dict
 
@@ -111,7 +325,7 @@ def add_row(nclick, filepath, filelabel, filetype, df_dict):
     
     # Check if row already exists
     df = pd.DataFrame(df_dict)
-    if ((df['File Path'] == filepath) & (df['Label'] == filelabel) & (df['Type'] == filetype)).any():
+    if ((df['File Path'] == filepath) | (df['Label'] == filelabel)).any():
         return True, "Already entered", df_dict
     
     df_dict['File Path'] += [filepath]
@@ -135,6 +349,14 @@ def update_table(df_dict):
         id = 'file-table-interactivity',
         columns = [{'name': i, 'id': i, 'deletable': True, 'selectable': True} for i in df.columns],
         data = df.to_dict('records'),
+        style_header={
+            'backgroundColor': 'white',
+            'fontWeight': 'bold'
+        },
+        style_cell={
+            'fontSize': '23px',
+            'font-family': "Lato"
+        },
         editable = True,
         sort_action = "native",
         sort_mode = "multi",
@@ -210,9 +432,14 @@ def categorize_data(df):
     geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
 
     return airfoil_by_names, geom_comps_by_names
+"""
+
+
+
 
 
 '''
+######## 1 Attempt
 # Use dbc.DataTable -- issue occurs on duplicated outputs, which doesn't allow initial callback. Need more than twice clicks to be actioned.
 @callback(Output('file-table', 'children'),
           Output('form-warning', 'is_open'),
