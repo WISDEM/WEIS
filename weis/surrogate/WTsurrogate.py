@@ -514,6 +514,7 @@ class WindTurbineDOE2SM():
         for data_entry in dataset_list:
             t = time.time()
             try:
+                rng = np.random.RandomState(42)
                 outvalarr = data_entry['outputs']['vals']
                 outvalavg = np.mean(outvalarr)
                 # If response is constant
@@ -530,6 +531,10 @@ class WindTurbineDOE2SM():
                         smval = SGP_WT(eval_noise=True, print_global=False)
                         smval.set_training_values(
                             data_entry['inputs']['vals'][:n_data_80,:], data_entry['outputs']['vals'][:n_data_80,:])
+                        n_inducing = int(np.min([n_data_80/1.5, 100]))
+                        random_idx = rng.permutation(n_data_80)[:n_inducing]
+                        Z = data_entry['inputs']['vals'][random_idx].copy()
+                        smval.set_inducing_inputs(Z=Z)
                         smval.train()
                         smval.set_bounds(
                             data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
@@ -562,10 +567,14 @@ class WindTurbineDOE2SM():
                 data_entry['surrogate'] = SGP_WT(eval_noise=True, print_global=False)
                 data_entry['surrogate'].set_training_values(
                         data_entry['inputs']['vals'], data_entry['outputs']['vals'])
+                n_inducing = int(np.min([n_data/1.5, 100]))
+                random_idx = rng.permutation(n_data)[:n_inducing]
+                Z = data_entry['inputs']['vals'][random_idx].copy()
                 if outvalconst:
                     data_entry['surrogate'].constant = True
                     data_entry['surrogate'].constant_value = outvalavg
                 else:
+                    data_entry['surrogate'].set_inducing_inputs(Z=Z)
                     data_entry['surrogate'].train()
                 data_entry['surrogate'].set_bounds(
                         data_entry['inputs']['bounds'], data_entry['outputs']['bounds'])
