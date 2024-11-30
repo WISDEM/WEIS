@@ -58,8 +58,6 @@ class WindTurbineDOE2SM():
                 'towerse.tower.side_side_freqs', # 123
                 'towerse.tower.torsion_freqs', # 123
                 'towerse.tower.top_deflection',
-                'floatingse.platform_base_F', # xyz
-                'floatingse.platform_base_M', # xyz
                 'floating.member_main_column:joint1', # xyz
                 'floating.member_main_column:joint2', # xyz
                 'floating.member_column1:joint1', # xyz
