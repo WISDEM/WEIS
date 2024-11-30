@@ -11,6 +11,7 @@ from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
 from weis.aeroelasticse.FileTools     import save_yaml
 from wisdem.inputs.validation         import simple_types
+from weis.surrogate.WTsurrogate       import WindTurbineDOE2SM
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 evolutionary_methods = ['DE', 'NSGA2']
@@ -114,6 +115,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
     else:
         color_i = 0
         rank = 0
+        max_cores = 1
 
     # make the folder_output relative to the input, if it's a relative path
     analysis_input_dir = os.path.dirname(opt_options['fname_input_analysis'])
@@ -211,13 +213,42 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 checks = wt_opt.check_partials(compact_print=True)
 
         sys.stdout.flush()
+
+        # DOE and SMT skip logics
+        SKIP_DRIVER = False
+        SKIP_SMT = False
+        sm_filename = os.path.join(folder_output, os.path.splitext(opt_options['recorder']['file_name'])[0] + '.smt')
+        sql_filename = os.path.join(folder_output, opt_options['recorder']['file_name'])
+        if MPI and max_cores>1:
+            sql_filename += '_{:}'.format(rank)
+        if opt_options['opt_flag'] and opt_options['driver']['design_of_experiments']['flag']: # if DOE enabled
+            # Skip DOE Driver if SQL file exists
+            if opt_options['driver']['design_of_experiments']['skip_doe_if_results_exist']: # if DOE skip flag set
+                if MPI:
+                    doe_file_exist = MPI.COMM_WORLD.gather(os.path.isfile(sql_filename), root=0)
+                    doe_file_exist = MPI.COMM_WORLD.bcast(doe_file_exist, root=0)
+                else:
+                    doe_file_exist = [os.path.isfile(sql_filename)]
+                # If sql files exist for all MPI ranks, and no additional sql file exists outside of MPI size, set skip flag
+                if all(doe_file_exist) and not os.path.isfile(os.path.join(folder_output, opt_options['recorder']['file_name']) + '_{:}'.format(max_cores)):
+                    SKIP_DRIVER = True
+                    if (not MPI) or (MPI and rank == 0):
+                        print('File {:} exists. Skipping the design of experiments.'.format(sql_filename))
+            # Skip SM Training if SMT file exists
+            if opt_options['driver']['design_of_experiments']['skip_smt_if_results_exist']: # if SMT skip flag set
+                if os.path.isfile(sm_filename):
+                    SKIP_SMT = True
+                    if (not MPI) or (MPI and rank == 0):
+                        print('File {:} exists. Skipping the design of experiments.'.format(sm_filename))
+
         # Run openmdao problem
         if opt_options['opt_flag']:
-            wt_opt.run_driver()
+            if not SKIP_DRIVER:
+                wt_opt.run_driver()
         else:
             wt_opt.run_model()
 
-        if (not MPI) or (MPI and rank == 0):
+        if ((not MPI) or (MPI and rank == 0)) and (not SKIP_DRIVER):
             # Save data coming from openmdao to an output yaml file
             froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
             # Remove the fst_vt key from the dictionary and write out the modeling options
@@ -254,6 +285,16 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
     # Send each core in use to a barrier synchronization
     if MPI and color_i < 1000000:
         MPI.COMM_WORLD.Barrier()
+
+    # If design_of_experiment, recorder flag, train_surrogate_model are all True,
+    # collect sql files and create smt object
+    if opt_options['opt_flag'] and (not SKIP_SMT):
+        if opt_options['driver']['design_of_experiments']['flag'] and opt_options['recorder']['flag']:
+            if opt_options['driver']['design_of_experiments']['train_surrogate_model']:
+                WTSM = WindTurbineDOE2SM()
+                WTSM.read_doe(sql_filename, modeling_options, opt_options) # Parallel reading if MPI
+                WTSM.train_sm() # Parallel training if MPI
+                WTSM.write_sm(sm_filename) # Saving will be done in rank=0
 
     if rank == 0:
         return wt_opt, modeling_options, opt_options

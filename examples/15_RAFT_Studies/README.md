@@ -22,4 +22,25 @@ To optimize the UMaine semi using raft, run
  Two options are provided in this example: `../06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml` (original) and `raft_opt_out.yaml`, the optimized output.
 
  
+# RAFT Surrogate Model Training with Design of Experiment
+To create the surrogate model with RAFT simulations, run
+ ```
+ python weis_driver_level1_doe.py
+ ```
+ If parallel execution is possible (e.g., HPC) use slurm script to run with MPI across large number of cpus/nodes
+ ```
+ sbatch weis_driver_level1_doe.sh
+ ```
+ or MPI directly for cpus in a local computer
+ ```
+ mpirun -np 4 python weis_driver_level1_doe.py
+ ```
+
+ In `analysis_options_level1_doe.yaml`, the design variables (control and plant), driver (optimization:flag: False, design_of_experiments:flag: True), and recorder (flag: True, includes: ['*']) can be set up. Variables marked as design_variables (flag: True) are used as inputs, while all other variables are used as outputs of the surrogate model. Not all parameters are supported at this moment. Seven control parameters, diameters of floating platform members, joint locations, rotor diameter are currently implemented.
+ 
+ Once design of experiment is completed, a surrogate model for each output variable will be trained (in parallel if MPI is used), and recorder file_name.smt (log_opt.smt in the tutorial case) will be created.
+
+ At this moment, surrogate model training is not stable with large number of samples.
+
+ Further design coupling studies and/or surrogate-based optimization studies can be done in separate script files to be developed.
  

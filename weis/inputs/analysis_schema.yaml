@@ -499,7 +499,28 @@ properties:
                         description: Constrain design to one where OpenFAST simulations don't fail_value
                         default: False
 
-    
+    driver:
+        type: object
+        default: {}
+        properties:
+            design_of_experiments:
+                type: object
+                description: Specification of the design of experiments driver parameters
+                default: {}
+                properties:
+                    skip_doe_if_results_exist:
+                        type: boolean
+                        default: True
+                        description: Toggle skipping the design of experiments if recorded DOE results (.sql) exist
+                    skip_smt_if_results_exist:
+                        type: boolean
+                        default: True
+                        description: Toggle skipping the surrogate model training if surrogate model file (.smt) exist
+                    train_surrogate_model:
+                        type: boolean
+                        default: False
+                        description: Train surrogate model after running design of experiment
+
 
     merit_figure:
         type: string
