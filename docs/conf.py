@@ -106,3 +106,16 @@ html_sidebars = {
         'searchbox.html'        
     ]
 }
+
+html_css_files = [
+    'https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css',
+    "custom.css",
+]
+
+html_js_files = [
+    'https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js',
+    'main.js',
+]
+
+# Bibtex configuration
+bibtex_bibfiles = ["references.bib"]

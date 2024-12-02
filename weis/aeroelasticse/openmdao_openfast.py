@@ -221,7 +221,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
             self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
             self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-            self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
             self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
             self.add_input("platform_mass", 0.0, units="kg")
             self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -365,9 +364,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to current working directory
+        # If the path is relative, make it an absolute path to modeling options file
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+            FAST_directory_base = os.path.join(os.path.dirname(modopt['fname_input_modeling']), FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -472,6 +471,8 @@ class FASTLoadCases(ExplicitComponent):
         # Hub outputs
         self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
+        self.add_output('hub_Fxyz_aero', val=np.zeros(3), units='N', desc = 'Aero-only maximum hub forces in the non rotating frame')
+        self.add_output('hub_Mxyz_aero', val=np.zeros(3), units='N*m', desc = 'Aero-only maximum hub moments in the non rotating frame')
 
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('max_TwrBsMyt_ratio',val=0.0,  desc='ratio of maximum of tower base bending moment in fore-aft direction to maximum allowable bending moment')
@@ -613,6 +614,8 @@ class FASTLoadCases(ExplicitComponent):
                 
         if self.model_only == True:
             # Write input OF files, but do not run OF
+            fst_vt['Fst']['TMax'] = 10.
+            fst_vt['Fst']['TStart'] = 0.
             self.write_FAST(fst_vt, discrete_outputs)
         else:
 
@@ -1414,7 +1417,7 @@ class FASTLoadCases(ExplicitComponent):
                 N2 = np.array([], dtype=np.int_)
                 d_coarse = np.array([])
                 t_coarse = np.array([])
-                
+
                 # Look over members and grab all nodes and internal connections
                 n_member = modopt["floating"]["members"]["n_members"]
                 for k in range(n_member):
@@ -1427,16 +1430,17 @@ class FASTLoadCases(ExplicitComponent):
                     xyz0 = inputs[f"member{k}:joint1"]
                     xyz1 = inputs[f"member{k}:joint2"]
                     dxyz = xyz1 - xyz0
-                    inode_xyz = np.r_[[xyz0],[xyz1]]   #  old way: np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :], OpenFAST doesn't want all these joints if they don't make new memebers
+                    inode_xyz = np.outer(s_coarse, dxyz) + xyz0[np.newaxis, :]
                     inode_range = np.arange(inode_xyz.shape[0] - 1)
 
                     nk = joints_xyz.shape[0]
                     N1 = np.append(N1, nk + inode_range + 1)
                     N2 = np.append(N2, nk + inode_range + 2)
-                    d_coarse = np.append(d_coarse, np.mean(id_coarse))  # OpenFAST only wants one thickness
-                    t_coarse = np.append(t_coarse, np.mean(it_coarse))  # OpenFAST only wants one thickness
+                    d_coarse = np.append(d_coarse, id_coarse)  
+                    t_coarse = np.append(t_coarse, it_coarse)  
                     joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
 
+                    # Axial coefficients
                     joint_1_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint1'][k]]
                     joint_2_orig_index = modopt['floating']['joints']['name2idx'][modopt['floating']['members']['joint2'][k]]
                     
@@ -1462,10 +1466,8 @@ class FASTLoadCases(ExplicitComponent):
 
 
                     i_axial_coeffs = np.r_[[i_axial_coeff_1],[i_axial_coeff_2]]
-
                     axial_coeffs = np.append(axial_coeffs,i_axial_coeffs, axis = 0)
-
-
+                
 
                     
             if modopt['flags']['offshore']:
@@ -1509,24 +1511,24 @@ class FASTLoadCases(ExplicitComponent):
                 # Store data
                 n_joints = joints_xyz.shape[0]
                 n_members = N1.shape[0]
+                ijoints = np.arange( n_joints, dtype=np.int_ ) + 1
                 imembers = np.arange( n_members, dtype=np.int_ ) + 1
                 fst_vt['HydroDyn']['NJoints'] = n_joints
-                fst_vt['HydroDyn']['JointID'] = 1 + np.arange( n_joints, dtype=np.int_)
+                fst_vt['HydroDyn']['JointID'] = ijoints
                 fst_vt['HydroDyn']['Jointxi'] = joints_xyz[:,0]
                 fst_vt['HydroDyn']['Jointyi'] = joints_xyz[:,1]
                 fst_vt['HydroDyn']['Jointzi'] = joints_xyz[:,2]
-                fst_vt['HydroDyn']['NPropSets'] = n_members
-                fst_vt['HydroDyn']['PropSetID'] = imembers
+                fst_vt['HydroDyn']['NPropSets'] = n_joints      # each joint has a cross section
+                fst_vt['HydroDyn']['PropSetID'] = ijoints
                 fst_vt['HydroDyn']['PropD'] = d_coarse
                 fst_vt['HydroDyn']['PropThck'] = t_coarse
                 fst_vt['HydroDyn']['NMembers'] = n_members
                 fst_vt['HydroDyn']['MemberID'] = imembers
-                fst_vt['HydroDyn']['MJointID1'] = N1
-                fst_vt['HydroDyn']['MJointID2'] = N2
-                fst_vt['HydroDyn']['MPropSetID1'] = fst_vt['HydroDyn']['MPropSetID2'] = imembers
+                fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
+                fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
                 fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
                 fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-                fst_vt['HydroDyn']['JointAxID'] = fst_vt['HydroDyn']['AxCoefID']  # joints and axial coeffs should be 1 to 1
+                fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
                 fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
                 fst_vt['HydroDyn']['NCoefDpth'] = 0
                 fst_vt['HydroDyn']['NCoefMembers'] = 0
@@ -1548,7 +1550,7 @@ class FASTLoadCases(ExplicitComponent):
                 else:
                     PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                     for k in range(fst_vt['HydroDyn']['NMembers']):
-                        idx = discrete_inputs['platform_elem_memid'][k]
+                        idx = modopt['floating']['members']['platform_elem_memid'][k]
                         PropPotBool[k] = modopt["Level1"]["model_potential"][idx]
                     fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
@@ -1771,6 +1773,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
         channels_out += ["Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
         channels_out += ["RtFldCp", "RtFldCt"]
+        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh", "RtFldMxh", "RtFldMyh", "RtFldMzh"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
@@ -1783,7 +1786,6 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt"]
         channels_out += ["TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt"]
         channels_out += ["TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt"]
-        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
         channels_out += ["RotThrust", "LSShftFxs", "LSShftFys", "LSShftFzs", "LSShftFxa", "LSShftFya", "LSShftFza"]
         channels_out += ["RotTorq", "LSSTipMxs", "LSSTipMys", "LSSTipMzs", "LSSTipMxa", "LSSTipMya", "LSSTipMza"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
@@ -1949,15 +1951,7 @@ class FASTLoadCases(ExplicitComponent):
                     dlc_generator.cases[i_case].GridHeight =  2. * np.abs(hub_height) - 1.e-3
 
                 if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
-                    dlc_generator.cases[i_case].GridWidth =  2. * np.abs(hub_height) - 1.e-3
-                # Height of wind grid, it stops 1 mm above the ground
-                # dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
-                # If OLAF is called, make wind grid 3x higher, taller, and wider
-                if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dlc_generator.cases[i_case].HubHt *= 3.
-                    dlc_generator.cases[i_case].GridHeight *= 3.
-                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
-                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+                    dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
@@ -2257,6 +2251,10 @@ class FASTLoadCases(ExplicitComponent):
                         else:
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
 
+            # Aero-only hub loads
+            magnitude_channels["RtFldF"] = ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
+            magnitude_channels["RtFldM"] = ["RtFldMxh", "RtFldMyh", "RtFldMzh"]
+
             # Fatigue at the tower base
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
             tower_fatigue_base = FatigueParams(load2stress=1.0,
@@ -2439,6 +2437,14 @@ class FASTLoadCases(ExplicitComponent):
         outputs['hub_Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
+        
+        # Aero-only for WISDEM (outputs are in N and N-m)
+        outputs['hub_Fxyz_aero'] = np.array([extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFxh'],
+                                    extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFyh'],
+                                    extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFzh']])
+        outputs['hub_Mxyz_aero'] = np.array([extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMxh'],
+                                    extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMyh'],
+                                    extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMzh']])
 
         ## Post process aerodynamic data
         # Angles of attack - max, std, mean
@@ -2620,7 +2626,7 @@ class FASTLoadCases(ExplicitComponent):
                 'MHK': self.options['modeling_options']['flags']['marine_hydro'],
                 'user_dist': user_dist
             })
-            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RotSpeed", "BldPitch1"]
+            pwr_curve_vars   = ["GenPwr", "RtFldCp", "RtFldCt", "RotSpeed", "BldPitch1"]
             AEP, perf_data = pp.AEP(stats_pwrcrv, U, pwr_curve_vars)
 
             outputs['P_out'] = perf_data['GenPwr']['mean'] * 1.e3
@@ -2638,7 +2644,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = stats_pwrcrv['BldPitch1']['mean']
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = stats_pwrcrv['GenPwr']['mean']
-                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = stats_pwrcrv['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             else:
                 outputs['Cp_out'] = sum_stats['RtFldCp']['mean'].mean()
@@ -2647,7 +2653,7 @@ class FASTLoadCases(ExplicitComponent):
                 outputs['pitch_out'] = sum_stats['BldPitch1']['mean'].mean()
                 if self.fst_vt['Fst']['CompServo'] == 1:
                     outputs['AEP'] = sum_stats['GenPwr']['mean'].mean()
-                    outputs['P_out'] = sum_stats['GenPwr']['mean'][0] * 1.e3
+                    outputs['P_out'] = sum_stats['GenPwr']['mean'].iloc[0] * 1.e3
                 logger.warning('WARNING: OpenFAST is not run using DLC 1.1/1.2. AEP cannot be estimated. Using average power instead.')
 
         if len(U)>0:

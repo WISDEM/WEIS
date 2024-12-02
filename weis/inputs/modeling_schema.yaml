@@ -154,6 +154,10 @@ properties:
                 type: boolean
                 default: False
                 description: Save RAFT design iterations in <outputs>/raft_designs
+            plot_designs:
+                type: boolean
+                default: False
+                description: Plot RAFT design iterations in <outputs>/raft_designs
             runPyHAMS:
                 type: boolean
                 default: True

@@ -2,7 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: outputs/03_NREL5MW_OC3_spar
         use_exe: True
 
 WISDEM:
@@ -18,7 +17,6 @@ WISDEM:
         flag: True
     FloatingSE:
         flag: True
-        rank_and_file: True
     BOS:
         flag: True
 
@@ -112,4 +110,6 @@ DLC_driver:
               Clockwise: True
               RefHt: 90.0
               PLExp: 0.11
+
+              
 
