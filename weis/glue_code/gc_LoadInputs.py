@@ -84,7 +84,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
 
         # Openfast
-        if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
+        if self.modeling_options['Level2']['flag'] or self.modeling_options['DFSM']['flag'] or self.modeling_options['Level3']['flag']:
             fast = InputReader_OpenFAST()
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
@@ -169,6 +169,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # ROSCO
         self.modeling_options['ROSCO']['flag'] = (self.modeling_options['Level1']['flag'] or
                                                   self.modeling_options['Level2']['flag'] or
+                                                  self.modeling_options['DFSM']['flag'] or
                                                   self.modeling_options['Level3']['flag'])
         
         if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
@@ -194,6 +195,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 'ws_cut_out':cut_out, 
                 'MHK': self.wt_init['assembly']['marine_hydro'],
             })
+
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
