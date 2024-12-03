@@ -1886,11 +1886,11 @@ class FASTLoadCases(ExplicitComponent):
             case_list.extend(case_list_i)
             case_name.extend(case_name_i)
 
-        # Apply wind files to case_list
-        for case, wt, wf in zip(case_list,WindFile_type,WindFile_name):
-            case[('InflowWind','WindType')] = wt
-            case[('InflowWind','Filename_Uni')] = wf
-            case[('InflowWind','FileName_BTS')] = wf
+        # Apply wind files to case_list (this info will be in combined case matrix, but not individual DLCs)
+        for case_i, wt, wf in zip(case_list,WindFile_type,WindFile_name):
+            case_i[('InflowWind','WindType')] = wt
+            case_i[('InflowWind','Filename_Uni')] = wf
+            case_i[('InflowWind','FileName_BTS')] = wf
 
         # Save some case info
         self.TMax = [c.total_time for c in dlc_generator.cases]
