@@ -59,7 +59,7 @@ navbar = dbc.NavbarSimple(
             nav=True
         ),
         dbc.DropdownMenu(
-            [dbc.DropdownMenuItem('Import', href='/import'), dbc.DropdownMenuItem('3D', href='/windio_3d'), dbc.DropdownMenuItem('Airfoils', href='/windio_airfoils'), dbc.DropdownMenuItem('Blade', href='/windio_blade')],
+            [dbc.DropdownMenuItem('Import', href='/import'), dbc.DropdownMenuItem('3D', href='/windio_3d'), dbc.DropdownMenuItem('Airfoils', href='/windio_airfoils'), dbc.DropdownMenuItem('Blade', href='/windio_blade'), dbc.DropdownMenuItem('Tower', href='/windio_tower')],
             label="WindIO",
             nav=True
         )
