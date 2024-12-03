@@ -1814,7 +1814,7 @@ properties:
                         description: Low cut-off frequency or lower frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]
                     WvHiCOff:
                         type: number
-                        default: 0.783827
+                        default: 1.256637  # 5 sec.
                         minimum: 0.0
                         maximum: 1e3
                         unit: rad/s
