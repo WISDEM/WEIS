@@ -1,15 +1,12 @@
 '''This is the page for visualize the WEIS inputs specialized in Blade OML, Axis, Elastic & Mass properties.'''
 
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc, dash_table
-import pandas as pd
+from dash import html, register_page, callback, Input, Output, dcc
 import numpy as np
-from pathlib import Path
 from plotly.subplots import make_subplots
 import plotly
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
-import weis.inputs as sch
 from weis.visualization.utils import *
 
 register_page(
@@ -70,21 +67,14 @@ def layout():
                         ])
                   ], className='card')
     
-    layout = html.Div([
+    layout = dcc.Loading(html.Div([
                 dcc.Store(id='blade-by-names', data={}),
                 blade_inputs,
                 dbc.Row([
                     dbc.Col(oml_layout, width=6),
                     dbc.Col(matrix_layout, width=6),
                 ])
-            ], className='wrapper')
-    
-    # layout = dbc.Row([
-    #             dcc.Store(id='blade-by-names', data={}),
-    #             blade_inputs,
-    #             dbc.Col(oml_layout, width=6),
-    #             dbc.Col(matrix_layout, width=6),
-    #         ], className='wrapper')
+            ], className='wrapper'))
     
     return layout
 
@@ -97,26 +87,58 @@ def draw_blade_oml(blade_names, blade_by_names):
     if blade_names is None:
         raise PreventUpdate
     
-    fig = make_subplots(rows=1, cols=1, shared_xaxes=True)
+    channels = ['chord', 'twist', 'pitch_axis']
+    fig = make_subplots(rows=len(channels), cols=1, shared_xaxes=True)  # 3 subplots where chord, twist, LE/TE are each plotted
 
     for idx, blade_name in enumerate(blade_names):
-        # Add a trace per blade
-        for channel in ['chord', 'twist']:
+        # Add a trace per blade over subplots
+        for row_idx, channel in enumerate(channels):
             trace = blade_by_names[blade_name]['outer_shape_bem'][channel]
+            # LE/TE Equation
+            if channel == 'pitch_axis':
+                chord_values = np.array(blade_by_names[blade_name]['outer_shape_bem']['chord']['values'])
+                leading_edge = np.array(trace['values']) * chord_values
+                tailing_edge = leading_edge - chord_values
 
-            fig.append_trace(go.Scatter(
+                fig.append_trace(go.Scatter(
+                                    x = trace['grid'],
+                                    y = leading_edge,
+                                    mode = 'lines+markers',
+                                    line = dict(color=cols[idx]),
+                                    name = '-'.join([blade_name, 'LE']),
+                                    showlegend=False),
+                                    row = row_idx+1,
+                                    col = 1)
+                
+                fig.append_trace(go.Scatter(
+                                    x = trace['grid'],
+                                    y = tailing_edge,
+                                    mode = 'lines+markers',
+                                    line = dict(color=cols[idx]),
+                                    name = '-'.join([blade_name, 'TE']),
+                                    showlegend=False),
+                                    row = row_idx+1,
+                                    col = 1)
+                fig.update_yaxes(title_text='LE/TE', row=row_idx+1, col=1)
+            
+            # Chord, Twist
+            else:
+                fig.append_trace(go.Scatter(
                                     x = trace['grid'],
                                     y = trace['values'],
                                     mode = 'lines+markers',
                                     line = dict(color=cols[idx]),
-                                    name = ' - '.join([blade_name, channel])),
-                                    row = 1,
+                                    name = blade_name,
+                                    showlegend=True if channel=='chord' else False),
+                                    row = row_idx+1,
                                     col = 1)
+            
+                fig.update_yaxes(title_text=channel, row=row_idx+1, col=1)
+            
     fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
-    fig.update_xaxes(title_text=f'grid', row=1, col=1)
-    fig.update_yaxes(title_text=f'value', row=1, col=1)
+    fig.update_xaxes(title_text=f'grid', row=len(channels), col=1)
 
     return fig
 
@@ -151,20 +173,24 @@ def draw_blade_matrix(blade_names, blade_by_names):
                                         x = stiff_grid,
                                         y = stiff_values[:,counter],
                                         mode = 'lines',
-                                        line = dict(color=cols[idx])),
+                                        line = dict(color=cols[idx]),
+                                        name = blade_name,
+                                        showlegend = False),
                                         row = pltRow+1,
                                         col = pltCol+1)
-                fig_elastic.update_layout(title='Stiff Matrix')
+                fig_elastic.update_layout(title='Stiff Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
 
                 # Define Mass Matrix
                 fig_mass.append_trace(go.Scatter(
                                         x = inertia_grid,
                                         y = inertia_values[:,counter],
                                         mode = 'lines',
-                                        line = dict(color=cols[idx])),
+                                        line = dict(color=cols[idx]),
+                                        name = blade_name,
+                                        showlegend=False),
                                         row = pltRow+1,
                                         col = pltCol+1)
-                fig_mass.update_layout(title='Inertia Matrix')
+                fig_mass.update_layout(title='Inertia Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
 
                 counter += 1
 
