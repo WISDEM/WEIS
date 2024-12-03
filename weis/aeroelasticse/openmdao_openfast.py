@@ -355,69 +355,11 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_stiffness',    val=np.zeros(n_TMDs), units='N/m',        desc='TMD Stiffnes')
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
+        self.setup_directories()
+
+
         # DLC options
         n_ws_aep = np.max([1,modopt['DLC_driver']['n_ws_aep']])
-
-        # OpenFAST options
-        OFmgmt = modopt['General']['openfast_configuration']
-        self.model_only = OFmgmt['model_only']
-        FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to modeling options file
-        if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.path.dirname(modopt['fname_input_modeling']), FAST_directory_base)
-        # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
-        self.clean_FAST_directory = False
-        self.FAST_InputFile = OFmgmt['OF_run_fst']
-        # File naming changes whether in MPI or not
-        if MPI:
-            rank    = MPI.COMM_WORLD.Get_rank()
-            self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
-            self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
-        else:
-            self.FAST_runDirectory = FAST_directory_base
-            self.FAST_namingOut = self.FAST_InputFile
-        self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
-        if not os.path.exists(self.FAST_runDirectory):
-            os.makedirs(self.FAST_runDirectory, exist_ok=True)
-        if not os.path.exists(self.wind_directory):
-            os.makedirs(self.wind_directory, exist_ok=True)
-        # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
-        self.cores = OFmgmt['cores']
-        self.case = {}
-        self.channels = {}
-        self.mpi_run = False
-        if 'mpi_run' in OFmgmt.keys():
-            self.mpi_run         = OFmgmt['mpi_run']
-            if self.mpi_run:
-                self.mpi_comm_map_down   = OFmgmt['mpi_comm_map_down']
-
-        # User-defined FAST library/executable
-        if OFmgmt['FAST_exe'] != 'none':
-            if os.path.isabs(OFmgmt['FAST_exe']):
-                self.FAST_exe_user = OFmgmt['FAST_exe']
-            else:
-                self.FAST_exe_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             OFmgmt['FAST_exe'])
-        else:
-            self.FAST_exe_user = None
-
-        if OFmgmt['FAST_lib'] != 'none':
-            if os.path.isabs(OFmgmt['FAST_lib']):
-                self.FAST_lib_user = OFmgmt['FAST_lib']
-            else:
-                self.FAST_lib_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             OFmgmt['FAST_lib'])
-        else:
-            self.FAST_lib_user = None
-
-        if OFmgmt['turbsim_exe'] != 'none':
-            if os.path.isabs(OFmgmt['turbsim_exe']):
-                self.turbsim_exe = OFmgmt['turbsim_exe']
-            else:
-                self.turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
-                                             OFmgmt['turbsim_exe'])
-        else:
-            self.turbsim_exe = shutil.which('turbsim')
         
 
         # Rotor power outputs
@@ -543,6 +485,75 @@ class FASTLoadCases(ExplicitComponent):
             
             self.lin_idx = 0
 
+    
+    
+    def setup_directories(self):
+
+        modopt = self.options['modeling_options']
+
+
+        # OpenFAST options
+        OFmgmt = modopt['General']['openfast_configuration']
+        self.model_only = OFmgmt['model_only']
+        FAST_directory_base = OFmgmt['OF_run_dir']
+        # If the path is relative, make it an absolute path to modeling options file
+        if not os.path.isabs(FAST_directory_base):
+            FAST_directory_base = os.path.join(os.path.dirname(modopt['fname_input_modeling']), FAST_directory_base)
+        # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
+        self.clean_FAST_directory = False
+        self.FAST_InputFile = OFmgmt['OF_run_fst']
+        # File naming changes whether in MPI or not
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
+            self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
+        else:
+            self.FAST_runDirectory = FAST_directory_base
+            self.FAST_namingOut = self.FAST_InputFile
+        self.wind_directory = os.path.join(self.FAST_runDirectory, 'wind')
+        if not os.path.exists(self.FAST_runDirectory):
+            os.makedirs(self.FAST_runDirectory, exist_ok=True)
+        if not os.path.exists(self.wind_directory):
+            os.makedirs(self.wind_directory, exist_ok=True)
+        # Number of cores used outside of MPI. If larger than 1, the multiprocessing module is called
+        self.cores = OFmgmt['cores']
+        self.case = {}
+        self.channels = {}
+        self.mpi_run = False
+        if 'mpi_run' in OFmgmt.keys():
+            self.mpi_run         = OFmgmt['mpi_run']
+            if self.mpi_run:
+                self.mpi_comm_map_down   = OFmgmt['mpi_comm_map_down']
+
+        # User-defined FAST library/executable
+        if OFmgmt['FAST_exe'] != 'none':
+            if os.path.isabs(OFmgmt['FAST_exe']):
+                self.FAST_exe_user = OFmgmt['FAST_exe']
+            else:
+                self.FAST_exe_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             OFmgmt['FAST_exe'])
+        else:
+            self.FAST_exe_user = None
+
+        if OFmgmt['FAST_lib'] != 'none':
+            if os.path.isabs(OFmgmt['FAST_lib']):
+                self.FAST_lib_user = OFmgmt['FAST_lib']
+            else:
+                self.FAST_lib_user = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             OFmgmt['FAST_lib'])
+        else:
+            self.FAST_lib_user = None
+
+        if OFmgmt['turbsim_exe'] != 'none':
+            if os.path.isabs(OFmgmt['turbsim_exe']):
+                self.turbsim_exe = OFmgmt['turbsim_exe']
+            else:
+                self.turbsim_exe = os.path.join(os.path.dirname(self.options['modeling_options']['fname_input_modeling']),
+                                             OFmgmt['turbsim_exe'])
+        else:
+            self.turbsim_exe = shutil.which('turbsim')
+
+            
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         modopt = self.options['modeling_options']
         sys.stdout.flush()
@@ -577,35 +588,8 @@ class FASTLoadCases(ExplicitComponent):
             with open(self.lin_pkl_file_name, 'wb') as handle:
                 pickle.dump(ABCD_list, handle)
 
-        fst_vt = self.init_FAST_model()
-
-        if not modopt['Level3']['from_openfast']:
-            fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
-        else:
-            fast_reader = InputReader_OpenFAST()
-            fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
-            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
-            fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
-            fast_reader.execute()
-            fst_vt = fast_reader.fst_vt
-            # Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
-            modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
-            fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
-
-            # Fix TwrTI: WEIS modeling options have it as a single value...
-            if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
-                fst_vt['AeroDyn15']['TwrTI'] = [fst_vt['AeroDyn15']['TwrTI']] * len(fst_vt['AeroDyn15']['TwrElev'])
-            if not isinstance(fst_vt['AeroDyn15']['TwrCb'],list):
-                fst_vt['AeroDyn15']['TwrCb'] = [fst_vt['AeroDyn15']['TwrCb']] * len(fst_vt['AeroDyn15']['TwrElev'])
-
-            # Fix AddF0: Should be a n x 1 array (list of lists):
-            if fst_vt['HydroDyn']:
-                fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
-
-            if modopt['ROSCO']['flag']:
-                fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
-                
-                
+        fst_vt = self.create_fst_vt(inputs, discrete_inputs)
+                                
         if self.model_only == True:
             # Write input OF files, but do not run OF
             fst_vt['Fst']['TMax'] = 10.
@@ -770,6 +754,39 @@ class FASTLoadCases(ExplicitComponent):
                 shutil.rmtree(self.FAST_runDirectory)
             except:
                 logger.warning('Failed to delete directory: %s'%self.FAST_runDirectory)
+
+    def create_fst_vt(self, inputs, discrete_inputs):
+        modopt = self.options['modeling_options']
+
+        fst_vt = self.init_FAST_model()
+
+        if not modopt['Level3']['from_openfast']:
+            fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
+        else:
+            fast_reader = InputReader_OpenFAST()
+            fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
+            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
+            fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
+            fast_reader.execute()
+            fst_vt = fast_reader.fst_vt
+            # Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
+            modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+            fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
+
+            # Fix TwrTI: WEIS modeling options have it as a single value...
+            if not isinstance(fst_vt['AeroDyn15']['TwrTI'],list):
+                fst_vt['AeroDyn15']['TwrTI'] = [fst_vt['AeroDyn15']['TwrTI']] * len(fst_vt['AeroDyn15']['TwrElev'])
+            if not isinstance(fst_vt['AeroDyn15']['TwrCb'],list):
+                fst_vt['AeroDyn15']['TwrCb'] = [fst_vt['AeroDyn15']['TwrCb']] * len(fst_vt['AeroDyn15']['TwrElev'])
+
+            # Fix AddF0: Should be a n x 1 array (list of lists):
+            if fst_vt['HydroDyn']:
+                fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
+
+            if modopt['ROSCO']['flag']:
+                fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
+
+        return fst_vt
 
     def init_FAST_model(self):
 
@@ -1827,7 +1844,7 @@ class FASTLoadCases(ExplicitComponent):
         tau1_const_interp = np.zeros_like(Ct_aero_interp)
         for i in range(len(Ct_aero_interp)):
             a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
-            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
+            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * (rotorD/2) / U_interp[i]
 
         initial_condition_table = {}
         initial_condition_table['U'] = U_interp
@@ -1965,13 +1982,9 @@ class FASTLoadCases(ExplicitComponent):
             for key in list(case):
                 if key[0] in ['DLC','TurbSim']:
                     del case[key]
+
+        return case_list, case_name, dlc_generator
             
-        
-            
-
-
-
-        print('here')
     
     
     def run_FAST(self, inputs, discrete_inputs, fst_vt):
@@ -1979,7 +1992,7 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
 
-        case_list, case_name = self.setup_cases(modopt,inputs,discrete_inputs,fst_vt)
+        case_list, case_name, dlc_generator = self.setup_cases(modopt,inputs,discrete_inputs,fst_vt)
 
         channels= self.output_channels(fst_vt)
 
