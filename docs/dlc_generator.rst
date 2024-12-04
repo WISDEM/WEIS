@@ -206,14 +206,35 @@ Note that ``wind_speed`` in the ``metocean_conditions`` table is shared with the
 Here, we compare a DLC 1.1 simulation with a DLC 1.6 and the extreme waves modeled in that case.
 
 
-.. DLC 2.1  (AG)
-.. -------
+Power production with fault (2.X)
+---------------------------------
+DLCs 2.X involves cases where faults turbine and/or loss of electrical network connection occurs while the turbine is producing power and connected to an electircal load.
+In additions to the options used to describe power production, DLC 2.X allow foroptions to descibe blade pitch, generator and yaw faults.
+The azimuth position for the rotor at the time of a fault may have significant influence on the load levels.
+Therefore, the `azimuth_init` is required for DLC 2.X.
 
-.. DLC 2.2 (not yet)  This one has the joint probability
-.. -------
+DLC 2.1 
+-------
+DLC 2.1 related to normal control system fault or loss of electrical network.
+The faults included in this DLC are: blade pitch fault, yaw position fault and, loss of electrical network.
+What is a pitch 
+'pitchfault_time1','pitchfault_blade1pos'
+This DLC is evaulated for normal sea-state and normal turbulence model.
+The partial safety factor for this DLC is assumed to be 1.35.
+The azimuth position at time of occurrence of the fault is randomly selected.
 
-.. DLC 2.3
-.. -------
+
+.. DLC 2.2
+.. """""""
+.. Some genfault in 2.1 should be moved to 2.2, needs discussion
+plot of inflow, control signal, power, one load signal
+
+DLC 2.3 
+"""""""
+DLC 2.3 related to loss of electrical network under gust
+This DLC is evaulated for normal sea-state and extreme operating guest. 
+The partial safety factor for this DLC is assumed to be 1.35.
+The azimuth position at time of occurrence of the fault is randomly selected.
 
 .. DLC 2.4
 .. -------
