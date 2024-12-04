@@ -17,38 +17,74 @@ register_page(
     path='/windio_3d'
 )
 
-@callback(Output('dummy-div-1', 'children'),
+
+@callback(Output('geom-3d-names', 'options'),
           Input('geometry-components', 'data'))
-def visualize(geom_comps_by_names):
+def list_labels(geom_comps_by_names):
+    return list(set([k.split(':')[0] for k in list(geom_comps_by_names.keys())]))
+
+
+@callback(Output('meshes', 'data'),
+          Input('geom-3d-names', 'value'),
+          Input('geometry-components', 'data'))
+def visualize(geom_3d_names, geom_comps_by_names):
     '''
     This function is for visualize per geometry component types
     '''
-    for k, v in geom_comps_by_names.items():        # where k is 'filelabelname:componenttype'
-        print(k, v)
-        # TODO: Add something here
+    if geom_3d_names is None:
+        raise PreventUpdate
     
-    return html.P('')
+    tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
+
+    meshes = []
+    for name in geom_3d_names:
+        meshes += render_cylinderTower(tower_by_names[name]['outer_shape_bem']['outer_diameter']['grid'], 
+                                        tower_by_names[name]['outer_shape_bem']['outer_diameter']['values'])
+    
+    return meshes
+
+
+@callback(Output('mesh-layout', 'children'),
+          Input('meshes', 'data'))
+def load_meshes(meshes):
+    layout = [dbc.Row([
+                        dbc.Row([
+                            # First column
+                            dbc.Col(html.Div(
+                                style={'width':'100%', 'height':'600px'},
+                                children=[meshes[idx]])),
+                            # Second column
+                            dbc.Col(html.Div(
+                                style={'width':'100%', 'height':'600px'},
+                                children=[meshes[idx+1]]))
+                        ], className='wrapper') for idx in range(0, len(meshes)-1, 2)], className='wrapper')]
+    
+
+    return layout
 
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-    # Render mutliple meshes from raw data
-    meshes = render_meshes()
+
+    # Define layout for tower structures
+    geom_items = dcc.Dropdown(id='geom-3d-names', options=[], value=None, multi=True)
+
+    geom_inputs = html.Div([
+                        dbc.Card([
+                            dbc.CardBody([
+                                dbc.Label('Please select Geometry:'),
+                                dbc.Form(geom_items)
+                            ])
+                        ])
+                    ])
+    
+    mesh_layout = html.Div(id='mesh-layout')
 
     # TODO: Should be able to upload odd number of meshes as well
-    layout = dbc.Row(
-                [html.Div(id='dummy-div-1')]+
-                [
-                dbc.Row([
-                    # First column
-                    dbc.Col(html.Div(
-                        style={'width':'100%', 'height':'600px'},
-                        children=[meshes[idx]])),
-                    # Second column
-                    dbc.Col(html.Div(
-                        style={'width':'100%', 'height':'600px'},
-                        children=[meshes[idx+1]]))
-                ], className='wrapper') for idx in range(0, len(meshes)-1, 2)], className='wrapper')
-    
+    layout = dcc.Loading(html.Div([
+                dcc.Store(id='meshes', data=[]),
+                geom_inputs,
+                mesh_layout
+            ], className='wrapper'))
 
     return layout

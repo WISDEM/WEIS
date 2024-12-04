@@ -779,6 +779,31 @@ def render_cylinder(cylinder):
     return content
 
 
+def render_cylinderTower(towerGrid, TowerOD):
+    meshes = []
+
+    rad = TowerOD[0]
+
+    cylinder = pv.Cylinder(
+        center=[1,2,3], 
+        direction=[0,0,1], 
+        radius=rad, 
+        height=rad*2
+    )
+    mesh_state = to_mesh_state(cylinder)
+
+    content = dash_vtk.View([
+        dash_vtk.GeometryRepresentation(
+            children=[dash_vtk.Mesh(state=mesh_state)],
+            showCubeAxes=True,      # Show origins
+        )
+    ])
+
+    meshes.append(content)
+
+    return meshes
+
+
 def render_sphere(sphere):
     sphere = pv.Sphere(
         center=sphere['center'], direction=sphere['direction'], radius=sphere['radius']
