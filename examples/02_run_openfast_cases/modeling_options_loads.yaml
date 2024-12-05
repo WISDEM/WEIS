@@ -50,7 +50,7 @@ DLC_driver:
         wave_period1: 11.2
         wave_height50: 9.7
         wave_period50: 13.6
-        # Humbolt top 10 clusters (https://data.nrel.gov/submissions/241)
+        # Humboldt top 10 clusters (https://data.nrel.gov/submissions/241)
         probability: [0.0721, 0.0662, 0.0586, 0.0367, 0.0367, 0.0360, 0.0348, 0.0305, 0.0288, 0.0261]
         wave_height_fatigue: [1.93014, 2.86339, 1.48861, 2.44239, 2.00784, 2.46889, 1.44362, 1.72633, 1.28708, 3.52561]
         wave_period_fatigue: [7.44086,  8.92557,  7.81407,  11.2402,  13.0567,  11.5244,  8.43307,  11.2183,  9.4058,  8.93552]
