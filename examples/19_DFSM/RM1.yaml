@@ -326,7 +326,7 @@ components:
     nacelle:
         drivetrain:
             uptilt: -0.0
-            distance_tt_hub: -1.2
+            distance_tt_hub: 1.2
             distance_hub_mb: 2.0
             distance_mb_mb: 1.0
             overhang: 4.91
@@ -334,7 +334,7 @@ components:
             generator_radius_user: 0.25
             generator_mass_user: 8928.0
             generator_rpm_efficiency_user:
-                grid: [0.0,100]
+                grid: [0.0,1.0]
                 values: [1.0,1.0]
             gear_ratio: 53.0
             gearbox_length_user: 0.0
@@ -408,63 +408,89 @@ components:
         joints:
            -  name: 'downstream_upper_col'
               location: [28.0, 0.0, 6.0]
-              cylindrical: false
+              cylindrical: True
               axial_coeffs: &ax_coeffs_col
                 Cd: 0.0
                 Ca: 0.0
                 Cp: 0.0
            -  name: 'downstream_lower_col'
               location: [28.0, 0.0, -10.0]
-              cylindrical: false
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
            -  name: 'upstream_upper_col'
-              location: [-28.0, 0.0, 6.0]
-              cylindrical: false
+              location: [28.0, 3.141592653589793, 6.0]
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
            -  name: 'upstream_lower_col'
-              location: [-28.0, 0.0, -10.0]
-              cylindrical: false
+              location: [28.0, 3.141592653589793, -10.0]
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
            -  name: 'starboard_upper_col'
-              location: [0.0, -12.0, 6.0]
-              cylindrical: false
+              location: [12, -1.5707963267948966, 6.0]
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
            -  name: 'starboard_lower_col'
-              location: [0.0, -12.0, -10.0]
-              cylindrical: false
+              location: [12, -1.5707963267948966, -10.0]
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
            -  name: 'port_upper_col'
-              location: [0.0, 12.0, 6.0]
-              cylindrical: false
+              location: [12, 1.5707963267948966, 6.0]
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
            -  name: 'port_lower_col'
-              location: [0.0, 12.0, -10.0]
-              cylindrical: false
+              location: [12, 1.5707963267948966, -10.0]
+              cylindrical: True
               axial_coeffs: *ax_coeffs_col
+           -  name: upstream_heave_plate
+              location: [0, 0, -0.5]
+              relative: upstream_lower_col
+              axial_coeffs: &ax_coeffs_hp
+                Cd: 1.0
+                Ca: 1.0
+                Cp: 1.0
+           -  name: starboard_heave_plate
+              location: [0, 0, -0.5]
+              relative: starboard_lower_col
+              axial_coeffs: *ax_coeffs_hp
+           -  name: downstream_heave_plate
+              location: [0, 0, -0.5]
+              relative: downstream_lower_col
+              axial_coeffs: *ax_coeffs_hp
+           -  name: port_heave_plate
+              location: [0, 0, -0.5]
+              relative: port_lower_col
+              axial_coeffs: *ax_coeffs_hp
            -  name: 'anchor_1'
-              location: [-152.0, -50.0, -50.0]
+              location: [-124.0, -50.0, -50.0]
               cylindrical: false
-              axial_coeffs: *ax_coeffs_col
+              relative: upstream_lower_col
+              relative_dims: [True, True, False]  # z not relative
            -  name: 'anchor_2'
-              location: [-152.0, 50.0, -50.0]
+              location: [-124.0, 50.0, -50.0]
               cylindrical: false
-              axial_coeffs: *ax_coeffs_col
+              relative: upstream_lower_col
+              relative_dims: [True, True, False]  # z not relative
            -  name: 'anchor_3'
-              location: [152.0, -50.0, -50.0]
+              location: [-124.0, 0.0, -50.0]
               cylindrical: false
-              axial_coeffs: *ax_coeffs_col
+              relative: upstream_lower_col
+              relative_dims: [True, True, False]  # z not relative
            -  name: 'anchor_4'
-              location: [152.0, 50.0, -50.0]
+              location: [124.0, -50.0, -50.0]
               cylindrical: false
-              axial_coeffs: *ax_coeffs_col
+              relative: downstream_lower_col
+              relative_dims: [True, True, False]  # z not relative
            -  name: 'anchor_5'
-              location: [152.0, 0.0, -50.0]
+              location: [124.0, 50.0, -50.0]
               cylindrical: false
-              axial_coeffs: *ax_coeffs_col
+              relative: downstream_lower_col
+              relative_dims: [True, True, False]  # z not relative
            -  name: 'anchor_6'
-              location: [-152.0, 0.0, -50.0]
+              location: [124.0, 0.0, -50.0]
               cylindrical: false
-              axial_coeffs: *ax_coeffs_col
+              relative: downstream_lower_col
+              relative_dims: [True, True, False]  # z not relative
+           
         members:
            -  name: 'downstream_col'
               joint1: 'downstream_lower_col'
@@ -487,50 +513,100 @@ components:
                     #   volume: 40
                     #   grid: [0.0, 0.05]
                     - variable_flag: True
-                      grid: [0.0, 0.4]
+                      grid: [0.0, 0.5]
                   bulkhead:
                       material: 'steel'
                       thickness:
-                          grid: [0.0, 0.4, 1.0]
+                          grid: [0.0, 0.5, 1.0]
                           values: [0.02, 0.02, 0.02]
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
-                #   axial_joints:
-                #      -  {name: '', grid: 0}
+              axial_joints:
+                   -  {name: 'downstream_lower_pon', grid: 0.0625}
+                   -  {name: 'downstream_upper_pon', grid: 0.9375}
            -  name: 'upstream_col'
               joint1: 'upstream_lower_col'
               joint2: 'upstream_upper_col'
               outer_shape: *col_out
               internal_structure: *col_int
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
-              #   axial_joints:
-              #      -  {name: '', grid: 0}
+              axial_joints:
+                   -  {name: 'upstream_lower_pon', grid: 0.0625}
+                   -  {name: 'upstream_upper_pon', grid: 0.9375}
            -  name: 'starboard_col'
               joint1: 'starboard_lower_col'
               joint2: 'starboard_upper_col'
               outer_shape: *col_out
               internal_structure: *col_int
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
-              #   axial_joints:
-              #      -  {name: '', grid: 0}
+              axial_joints:
+                   -  {name: 'starboard_lower_pon', grid: 0.0625}
+                   -  {name: 'starboard_upper_pon', grid: 0.9375}
            -  name: 'port_col'
               joint1: 'port_lower_col'
               joint2: 'port_upper_col'
               outer_shape: *col_out
               internal_structure: *col_int
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
-              #   axial_joints:
-              #      -  {name: '', grid: 0}
+              axial_joints:
+                   -  {name: 'port_lower_pon', grid: 0.0625}
+                   -  {name: 'port_upper_pon', grid: 0.9375}
+        #    -  name: 'downstream_heave_plate'
+        #       joint1: 'downstream_heave_plate'
+        #       joint2: 'downstream_lower_col'
+        #       no_intersect: True
+        #       outer_shape: &heave_plate_out
+        #           shape: circular
+        #           outer_diameter:
+        #               grid: [0.0, 1.0]
+        #               values: [12.0, 12.0]
+        #       internal_structure: &heave_plate_int
+        #           layers:
+        #              - name: col_twall
+        #                material: steel
+        #                thickness:
+        #                 grid: [0.0, 1.0]
+        #                 values: [0.4, 0.4]
+        #       Ca: 1.0
+        #       Cd: 1.2
+        #       Cp: 1.0
+        #    -  name: 'upstream_heave_plate'
+        #       joint1: 'upstream_heave_plate'
+        #       joint2: 'upstream_lower_col'
+        #       no_intersect: True
+        #       outer_shape: *heave_plate_out
+        #       internal_structure: *heave_plate_int
+        #       Ca: 1.0
+        #       Cd: 1.2
+        #       Cp: 1.0
+        #    -  name: 'port_heave_plate'
+        #       joint1: 'port_heave_plate'
+        #       joint2: 'port_lower_col'
+        #       no_intersect: True
+        #       outer_shape: *heave_plate_out
+        #       internal_structure: *heave_plate_int
+        #       Ca: 1.0
+        #       Cd: 1.2
+        #       Cp: 1.0
+        #    -  name: 'starboard_heave_plate'
+        #       joint1: 'starboard_heave_plate'
+        #       joint2: 'starboard_lower_col'
+        #       no_intersect: True
+        #       outer_shape: *heave_plate_out
+        #       internal_structure: *heave_plate_int
+        #       Ca: 1.0
+        #       Cd: 1.2
+        #       Cp: 1.0
            -  name: 'upper_pontoon_DP'
-              joint1: 'downstream_upper_col'
-              joint2: 'port_upper_col'
+              joint1: 'downstream_upper_pon'
+              joint2: 'port_upper_pon'
               outer_shape: &pon_out
                   shape: circular
                   outer_diameter:
@@ -555,52 +631,52 @@ components:
                 #       thickness:
                 #           grid: []
                 #           values: []
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'upper_pontoon_DS'
-              joint1: 'downstream_upper_col'
-              joint2: 'starboard_upper_col'
+              joint1: 'downstream_upper_pon'
+              joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'upper_pontoon_UP'
-              joint1: 'upstream_upper_col'
-              joint2: 'port_upper_col'
+              joint1: 'upstream_upper_pon'
+              joint2: 'port_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'upper_pontoon_US'
-              joint1: 'upstream_upper_col'
-              joint2: 'starboard_upper_col'
+              joint1: 'upstream_upper_pon'
+              joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'upper_pontoon_PS'
-              joint1: 'port_upper_col'
-              joint2: 'starboard_upper_col'
+              joint1: 'port_upper_pon'
+              joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               internal_structure: *pon_int_upper
            -  name: 'lower_pontoon_DP'
-              joint1: 'downstream_lower_col'
-              joint2: 'port_lower_col'
+              joint1: 'downstream_lower_pon'
+              joint2: 'port_lower_pon'
               outer_shape: *pon_out
               internal_structure: &pon_int_lower
                   layers:
@@ -612,66 +688,66 @@ components:
                   ballasts:
                     - variable_flag: True
                       grid: [0.0, 1.0]
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'lower_pontoon_DS'
-              joint1: 'downstream_lower_col'
-              joint2: 'starboard_lower_col'
+              joint1: 'downstream_lower_pon'
+              joint2: 'starboard_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'lower_pontoon_UP'
-              joint1: 'upstream_lower_col'
-              joint2: 'port_lower_col'
+              joint1: 'upstream_lower_pon'
+              joint2: 'port_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'lower_pontoon_US'
-              joint1: 'upstream_lower_col'
-              joint2: 'starboard_lower_col'
+              joint1: 'upstream_lower_pon'
+              joint2: 'starboard_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               #   axial_joints:
               #      -  {name: '', grid: 0}
            -  name: 'lower_pontoon_PS'
-              joint1: 'port_lower_col'
-              joint2: 'starboard_lower_col'
+              joint1: 'port_lower_pon'
+              joint2: 'starboard_lower_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_upper   # no ballast because it fills from one end to other
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
               axial_joints:
                 -  {name: 'lower_brace', grid: 0.5}
            -  name: 'tower_brace_port'
-              joint1: 'port_upper_col'
-              joint2: 'lower_brace'
+              joint1: 'lower_brace'
+              joint2: 'port_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
            -  name: 'tower_brace_starboard'
-              joint1: 'starboard_upper_col'
-              joint2: 'lower_brace'
+              joint1: 'lower_brace'
+              joint2: 'starboard_upper_pon'
               outer_shape: *pon_out
               internal_structure: *pon_int_lower
-              Ca: 1.0
-              Cd: 1.2
+              Ca: [1.0,1.0]
+              Cd: [1.2,1.2]
               Cp: 1.0
                 
         transition_piece_mass: 0
@@ -686,10 +762,10 @@ components:
            -  {name: 'line6_anchor', node_type: fixed, joint: 'anchor_6', anchor_type: drag_embedment}
            -  {name: 'line1_fairlead', node_type: vessel, joint: 'upstream_lower_col', fairlead_type: rigid}
            -  {name: 'line2_fairlead', node_type: vessel, joint: 'upstream_lower_col', fairlead_type: rigid}
-           -  {name: 'line3_fairlead', node_type: vessel, joint: 'downstream_lower_col', fairlead_type: rigid}
+           -  {name: 'line3_fairlead', node_type: vessel, joint: 'upstream_lower_col', fairlead_type: rigid}
            -  {name: 'line4_fairlead', node_type: vessel, joint: 'downstream_lower_col', fairlead_type: rigid}
            -  {name: 'line5_fairlead', node_type: vessel, joint: 'downstream_lower_col', fairlead_type: rigid}
-           -  {name: 'line6_fairlead', node_type: vessel, joint: 'upstream_lower_col', fairlead_type: rigid}
+           -  {name: 'line6_fairlead', node_type: vessel, joint: 'downstream_lower_col', fairlead_type: rigid}
         lines:
            -  {name: 'line1', node1: 'line1_anchor', node2: 'line1_fairlead', line_type: 'main', unstretched_length: 160}
            -  {name: 'line2', node1: 'line2_anchor', node2: 'line2_fairlead', line_type: 'main', unstretched_length: 160}
@@ -978,10 +1054,10 @@ materials:
    -  {name: adhesive, description: Sample adhesive, source: https://www.nrel.gov/docs/fy19osti/73585.pdf, orth: 0, rho: 1100, E: 4560000.0, nu: 0.49, alpha: 0.0, Xt: 690000.0, Xc: 400000.0, S: 310000.0, G: 1520000.0, unit_cost: 9.0}
 control:
     supervisory: {Vin: 0.5, Vout: 4.0, maxTS: 60}
-    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: !!null '', max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
+    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: 1.0, max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
     torque: {control_type: !!null '', tsr: 7.64, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 1500000.0, VS_minspd: 0.0, VS_maxspd: 1.26711}
     setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
     shutdown: {limit_type: !!null '', limit_value: !!null ''}
-environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, speed_sound: 1500.0, shear_exp: 0.0, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 101325.0, air_vapor_pressure: 2500.0, significant_wave_height: !!null '', significant_wave_period: !!null ''}
+environment: {air_density: 1.225, air_dyn_viscosity: 1.81e-05, speed_sound: 1500.0, shear_exp: 0.0, gravity: 9.80665, weib_shape_parameter: 2.0, water_density: 1025.0, water_dyn_viscosity: 0.0013351, soil_shear_modulus: 140000000.0, soil_poisson: 0.4, water_depth: 50.0, air_pressure: 101325.0, air_vapor_pressure: 2500.0, significant_wave_height: 0.5, significant_wave_period: 2.0}
 bos: {plant_turbine_spacing: 7, plant_row_spacing: 7, commissioning_pct: 0.01, decommissioning_pct: 0.15, distance_to_substation: 1.0, distance_to_interconnection: 8.5, interconnect_voltage: 130.0, distance_to_site: 115.0, distance_to_landfall: 50.0, port_cost_per_month: 2000000.0, site_auction_price: 100000000.0, site_assessment_plan_cost: 1000000.0, site_assessment_cost: 25000000.0, construction_operations_plan_cost: 2500000.0, boem_review_cost: 0.0, design_install_plan_cost: 2500000.0}
 costs: {wake_loss_factor: 0.15, fixed_charge_rate: 0.056, bos_per_kW: 4053.0, opex_per_kW: 137.0, turbine_number: 40.0, labor_rate: 58.8, painting_rate: 30.0, blade_mass_cost_coeff: 14.6, hub_mass_cost_coeff: 3.9, pitch_system_mass_cost_coeff: 22.1, spinner_mass_cost_coeff: 11.1, lss_mass_cost_coeff: 11.9, bearing_mass_cost_coeff: 4.5, gearbox_mass_cost_coeff: 12.9, hss_mass_cost_coeff: 6.8, generator_mass_cost_coeff: 12.4, bedplate_mass_cost_coeff: 2.9, yaw_mass_cost_coeff: 8.3, converter_mass_cost_coeff: 18.8, transformer_mass_cost_coeff: 18.8, hvac_mass_cost_coeff: 124.0, cover_mass_cost_coeff: 5.7, elec_connec_machine_rating_cost_coeff: 41.85, platforms_mass_cost_coeff: 17.1, tower_mass_cost_coeff: 2.9, controls_machine_rating_cost_coeff: 21.15, crane_cost: 12000.0, electricity_price: 0.04, reserve_margin_price: 120.0, capacity_credit: 0.0, benchmark_price: 0.071}

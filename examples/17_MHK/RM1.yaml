@@ -1054,7 +1054,7 @@ materials:
    -  {name: adhesive, description: Sample adhesive, source: https://www.nrel.gov/docs/fy19osti/73585.pdf, orth: 0, rho: 1100, E: 4560000.0, nu: 0.49, alpha: 0.0, Xt: 690000.0, Xc: 400000.0, S: 310000.0, G: 1520000.0, unit_cost: 9.0}
 control:
     supervisory: {Vin: 0.5, Vout: 4.0, maxTS: 60}
-    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: !!null '', max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
+    pitch: {PC_zeta: !!null '', PC_omega: !!null '', ps_percent: 1.0, max_pitch: !!null '', max_pitch_rate: 0.1745, min_pitch: 0.00088}
     torque: {control_type: !!null '', tsr: 7.64, VS_zeta: !!null '', VS_omega: !!null '', max_torque_rate: 1500000.0, VS_minspd: 0.0, VS_maxspd: 1.26711}
     setpoint_smooth: {ss_vsgain: !!null '', ss_pcgain: !!null ''}
     shutdown: {limit_type: !!null '', limit_value: !!null ''}

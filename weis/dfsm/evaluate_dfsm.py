@@ -20,6 +20,7 @@ def evaluate_dfsm(DFSM,inputs,fun_type = 'deriv'):
         nonlin = DFSM.nonlin_deriv
         no = DFSM.n_deriv
         error_ind = DFSM.error_ind_deriv
+        scaler_outputs = DFSM.scaler_dx
         
     elif fun_type == 'outputs':
         
@@ -28,6 +29,7 @@ def evaluate_dfsm(DFSM,inputs,fun_type = 'deriv'):
         nonlin = DFSM.nonlin_outputs
         no = DFSM.n_outputs
         error_ind = DFSM.error_ind_outputs
+        scaler_outputs = DFSM.scaler_outputs
         
     if DFSM.L_type == None:
 
@@ -66,6 +68,7 @@ def evaluate_dfsm(DFSM,inputs,fun_type = 'deriv'):
                     # A and B matrices for the derivative function
                     A_ = A_fun(w)
                     B_ = B_fun(w)
+
                     
 
                     dx_lin = np.dot(A_,x) + np.dot(B_,u)
@@ -115,33 +118,105 @@ def evaluate_dfsm(DFSM,inputs,fun_type = 'deriv'):
     dx_nonlin = np.zeros((nt,no))
     
     # loop through and evaluate
-    if not(DFSM.N_type == None):
+    if not(all(nonlin == None)):
 
-        for io in range(no):
-        
-            if error_ind[io]:
-                
-                nonlin_func = nonlin[io]
-                
-                scaler = DFSM.scaler
-                
-                # scale
-                if scaler == None:
-                    inputs_ = inputs 
-                else:
-                    inputs_ = scaler.transform(inputs)
-        
-                # predict 
-                nonlin_prediction = nonlin_func.predict(inputs_)
-                
-                # # reshape if the prediction is for a single point
-                # if len(np.shape(nonlin_prediction)) == 1:
-                #     nonlin_prediction = nonlin_prediction.reshape(-1,1)
+        if DFSM.N_type == 'GPR':
 
-                # add
-                dx_nonlin[:,io] = dx_nonlin[:,io] + nonlin_prediction
+            for io in range(no):
 
-        
+                if error_ind[io]:
+                    
+                    nonlin_func = nonlin[io]
+
+                    scaler = DFSM.scaler_inputs
+                    
+                    # scale
+                    if scaler == None:
+                        inputs_ = inputs 
+                    else:
+                        if nt  == 1:
+                            inputs_ = scaler.transform(inputs.reshape(1,-1))
+                        else:
+                            inputs_ = scaler.transform(inputs)
+
+                    if DFSM.ensemble_flag:
+                        n_committee = len(nonlin_func)
+                        nonlin_pred = np.zeros((nt,n_committee))
+
+                        for i_comm,committee_member in enumerate(nonlin_func):
+                            nonlin_pred[:,i_comm] = committee_member.predict(inputs_)
+
+                        dx_nonlin[:,io] = np.mean(nonlin_pred,axis = 1)
+
+        elif DFSM.N_type == 'KPLS':
+
+            for io in range(no):
+
+                if error_ind[io]:
+                    
+                    nonlin_func = nonlin[io]
+
+                    scaler_inputs = DFSM.scaler_inputs
+                    
+                    # scale
+                    if scaler_inputs == None:
+                        inputs_ = inputs 
+                    else:
+                        if nt  == 1:
+                            inputs_ = scaler_inputs.transform(inputs.reshape(1,-1))
+                        else:
+                            inputs_ = scaler_inputs.transform(inputs)
+
+                    if DFSM.ensemble_flag:
+
+                        n_committee = len(nonlin_func)
+                        nonlin_pred = np.zeros((nt,n_committee))
+
+                        for i_comm,committee_member in enumerate(nonlin_func):
+                            nonlin_pred[:,i_comm] = np.squeeze(committee_member.predict_values(inputs_))
+
+                        dx_nonlin[:,io] = np.mean(nonlin_pred,axis = 1)
+                        #breakpoint()
+
+
+
+
+        elif DFSM.N_type == 'NN':
+
+            for io in range(no):
+
+                if error_ind[io]:
+
+                    nonlin_func = nonlin[io] 
+
+                    scaler_inputs = DFSM.scaler_inputs
+                    
+                    # scale
+                    if scaler_inputs == None:
+                        inputs_ = inputs 
+                    else:
+
+                        if nt  == 1:
+                            inputs_ = scaler_inputs.transform(inputs.reshape(1,-1))
+                        else:
+                            inputs_ = scaler_inputs.transform(inputs)
+
+                    if DFSM.ensemble_flag:
+                        n_committee = len(nonlin_func)
+                        nonlin_pred = np.zeros((nt,n_committee))
+
+                        for i_comm,committee_member in enumerate(nonlin_func):
+                            nonlin_pred[:,i_comm] = committee_member.predict(inputs_)
+
+                        dx_nonlin[:,io] = np.mean(nonlin_pred,axis = 1)
+    
+        if not(scaler_outputs == None):
+            
+            dx_nonlin = scaler_outputs.inverse_transform(dx_nonlin)
+
+
+
+   
     dx = dx_lin + dx_nonlin
     
     if n_points == 1:

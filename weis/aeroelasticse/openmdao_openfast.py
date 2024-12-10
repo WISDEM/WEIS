@@ -10,7 +10,7 @@ import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse import NFREQ
 from wisdem.commonse.cylinder_member import get_nfull
 import wisdem.commonse.utilities              as util
@@ -374,7 +374,7 @@ class FASTLoadCases(ExplicitComponent):
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
             self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
-            self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
+            self.FAST_namingOut = self.FAST_InputFile#+'_%000d'%int(rank)
         else:
             self.FAST_runDirectory = FAST_directory_base
             self.FAST_namingOut = self.FAST_InputFile
@@ -761,9 +761,15 @@ class FASTLoadCases(ExplicitComponent):
 
             elif (modopt['DFSM']['flag']):
 
+                mpi_options = {}
+                mpi_options['mpi_run'] = modopt['General']['openfast_configuration']['mpi_run']
+                if mpi_options['mpi_run']:
+                    mpi_options['mpi_comm_map_down'] = modopt['General']['openfast_configuration']['mpi_comm_map_down']
+                print('gets here')
                 # Call DFSM wrapper
-                summary_stats, extreme_table, DELs, Damage,case_list,case_name, chan_time,dlc_generator,TMax,TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs)
+                summary_stats, extreme_table, DELs, Damage,case_list,case_name, chan_time,dlc_generator,TMax,TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs,self.FAST_runDirectory,self.FAST_namingOut,mpi_options)
                 self.fst_vt = fst_vt
+                self.TMax = TMax;self.TStart = TStart
 
             # Post process regardless of level
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)

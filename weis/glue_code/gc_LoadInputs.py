@@ -7,7 +7,7 @@ import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
 
 def update_options(options,override):
     for key, value in override.items():
@@ -172,6 +172,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                                                   self.modeling_options['DFSM']['flag'] or
                                                   self.modeling_options['Level3']['flag'])
         
+        self.modeling_options['flags']['marine_hydro'] = self.wt_init['assembly']['marine_hydro']
+
         if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
             # Make path absolute if not, relative to modeling options input
             if not osp.isabs(self.modeling_options['ROSCO']['tuning_yaml']):

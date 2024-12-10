@@ -5,7 +5,7 @@ from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.gc_PoseOptimization  import PoseOptimizationWEIS
 from weis.glue_code.glue_code         import WindPark
-from wisdem.commonse.mpi_tools        import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
@@ -16,7 +16,8 @@ fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
 evolutionary_methods = ['DE', 'NSGA2']
 
 if MPI:
-    from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)
@@ -77,6 +78,16 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             n_DV = max([n_DV, 1])
             max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
             n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
+
+        elif modeling_options['DFSM']['flag']:
+            
+            # Always set n_DV as 1
+            n_DV = 1
+            n_FD = 1
+            n_OF_runs = modeling_options['DLC_driver']['n_cases']
+            n_DV = max([n_DV, 1])
+            max_parallel_OF_runs = max([int(np.floor((max_cores - n_DV) / n_DV)), 1])
+            n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
         else:
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             n_FD = min([max_cores, n_DV])
@@ -86,7 +97,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 n_FD = max_cores
 
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
-        if opt_options['driver']['design_of_experiments']['flag']:
+        if opt_options['driver']['design_of_experiments']['flag'] and not(modeling_options['DFSM']['flag']):
             n_FD = MPI.COMM_WORLD.Get_size()
             n_OF_runs_parallel = 1
             rank    = MPI.COMM_WORLD.Get_rank()
@@ -102,6 +113,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 olaf = False
             comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel, openmp=olaf)
             rank    = MPI.COMM_WORLD.Get_rank()
+            
             if rank < len(color_map):
                 try:
                     color_i = color_map[rank]
@@ -110,7 +122,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             else:
                 color_i = max(color_map) + 1
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
-
     else:
         color_i = 0
         rank = 0
@@ -118,15 +129,16 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
     # make the folder_output relative to the input, if it's a relative path
     analysis_input_dir = os.path.dirname(opt_options['fname_input_analysis'])
     opt_options['general']['folder_output'] = os.path.join(analysis_input_dir,opt_options['general']['folder_output'])
-
+    
     folder_output = opt_options['general']['folder_output']
     if rank == 0 and not os.path.isdir(folder_output):
         os.makedirs(folder_output,exist_ok=True)
 
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
+        
         if MPI:
-            if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
+            if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag'] or modeling_options['DFSM']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['General']['openfast_configuration']['mpi_run'] = True
                 modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down
@@ -134,9 +146,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                     modeling_options['General']['openfast_configuration']['cores'] = 1
                 else:
                     modeling_options['General']['openfast_configuration']['cores'] = n_OF_runs_parallel
-
+                print('gets here 3')
             # Parallel settings for OpenMDAO
-            if opt_options['driver']['design_of_experiments']['flag']:
+            if opt_options['driver']['design_of_experiments']['flag'] and not(modeling_options['DFSM']['flag']):
                 wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
             else:
                 wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i, reports=False)
@@ -256,8 +268,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             fileIO.save_data(froot_out, wt_opt)
 
     if MPI and \
-            (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
-            (not opt_options['driver']['design_of_experiments']['flag']) and \
+            (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag'] or modeling_options['DFSM']['flag']) and \
+            (opt_options['driver']['design_of_experiments']['flag']) and \
             color_i < 1000000:
         # subprocessor ranks spin, waiting for FAST simulations to run.
         # Only true for cores actually in use, not the ones supporting openfast openmp (marked as color_i = 1000000)

@@ -60,6 +60,10 @@ properties:
                         type: string
                         default: none
                         description: Path to FAST dynamic library to override default WEIS value (e.g. /home/user/OpenFAST/lib/libopenfast.so)
+                    turbsim_exe:
+                        type: string
+                        default: none
+                        description: Path to turbsim executable to override default WEIS value (e.g. /home/user/OpenFAST/bin/turbsim)
                     path2dll:
                         type: string
                         default: none
@@ -162,6 +166,14 @@ properties:
                 type: boolean
                 default: True
                 description: Flag to run pyHAMS
+            analyze_cases:
+                type: boolean
+                default: True
+                description: Run cases in RAFT, outputs will be in stats_, along with a few aggregate statistics
+            use_props_in_openfast:
+                type: boolean
+                default: False
+                description: Run cases in RAFT, outputs will be in stats_, along with a few aggregate statistics
     Level3: &ofmodopt
         type: object
         default: {}
@@ -3036,106 +3048,39 @@ properties:
             general_options:
                 type: object
                 default: {}
-                description: general options need for DFSM
+                description: general options needed for DFSM
                 properties:
-                    modeling_data_availability:
+                    dfsm_file:
                         type: string
-                        default: offline
-                        description: Option to use pre run data/model for constructing DFSM, or to run OpenFAST and construct DFSM.
-                        enum: [online,offline]
-                    testing_data_availability:
-                        type: string
-                        default: offline 
-                        description: Specifies the location/type of data for running the different usecase/testing the DFSM.
-                        enum: [online,offline]
-                    storage_type:
-                        type: string
-                        default: outb
-                        description: Denotes how the data used to construct DFSM is stored. Pickle implies the DFSM model is stored in a pickle fine. outb denotes that the data is available in a pre-run simulation, and the DFSM is constructed from that
-                        enum: [outb,pickle]
+                        description: Name of the pickle file that contains the DFSM
                     save_results:
                         type: boolean
                         default: False
                         description: Flag to save the results from DFSM
                     modeling_data_path:
                         type: string
-                        description: Name of the folder that contains the .outb/pickle files used to construct the DFSM model. If testing data availability is online, then this corresponds to the openfast run dir 
-                    testing_data_path:
-                        type: string 
-                        description: Path to usecase/testing files. If testing data availability is online, then this corresponds to the openfast run dir 
-            usecase_options:
-                type: object
-                default: {}
-                description: Use case options for the DFSM model
-                properties:
+                        description: Name of the folder that contains the .outb/pickle files used to construct the DFSM model.
                     usecase:
                         type: string
-                        default: test
-                        enum: ['test','simulation','open-loop-optimal-control']
-                        description: Use case for the DFSM model
-                    test_options:
-                        type: object
-                        default: {}
-                        description: List of options for testing DFSM model
-                        properties:
-                            test_ind: 
-                                type: array
-                                default: [0]
-                                description: The index of the test simulation
-                            simulation_flag:
-                                type: boolean
-                                default: True 
-                                description: Flag to enable simulation
-                            plot_flag:
-                                type: boolean
-                                default: False 
-                                description: Flag to plot DFSM simulation against OpenFAST
-                    param:
-                        type: object
-                        default: {}
-                        description: Parameters to be provided to the controller interface
-                        properties:
-                            VS_GenEff:
-                                type: number 
-                                description: generator efficiency
-                            WE_GearboxRatio:
-                                type: number 
-                                description: gearbox ratio
-                            VS_RtPwr:
-                                type: number
-                                description: rated power
-                            DT:
-                                type: number 
-                                description: step size used in simulations
-                            num_blade:
-                                type: number
-                                description: number of blades in the turbine
-                            DLL_FileName:
-                                type: string
-                                description: name of the dynamic library
-                    solver_options:
-                        url: https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-                        type: object
-                        default: {}
-                        description: Options used for the ode solver used to simulate the DFSM
-                        properties:
-                            method:
-                                type: string
-                                description: The algorithm used in the ode solver
-                                default: RK45
-                                enum: [RK45,RK23,DOP853,Radau,BDF,LSODA] 
-                            rtol:
-                                type: number 
-                                description: The relative tolerence used for the solver
-                                default: 1e-6
-                            atol:
-                                type: number
-                                description: The absolute tolerence used for the solver
-                                default: 1e-6   
+                        default: closed-loop-simulation
+                        enum: ['closed-loop-simulation','open-loop-optimal-control']
+                        description: Use case for the DFSM model. Options are closed-loop simulation, where the DFSM is linked to the ROSCO controller to run simulation, and open-loop-optimal-control, where an optimal-control problem is formulated and solved.
+                    run_dir:
+                        type: string
+                        default: none
+                        description: Path to place FAST output files (e.g. /home/user/myturbines/output)
             model_options:
                 type: object
                 default: {}
                 properties:
+                    ode_method:
+                        type: string
+                        default: RK4
+                        description: ode method used to solve the closed-loop simulation
+                    interp_type:
+                        type: string
+                        default: linear
+                        description: interpolation method used to setup the LPV problem
                     run_dir:
                         type: string
                         default: none
@@ -3433,6 +3378,10 @@ properties:
                             description: Status of the turbine, it can be either operating, parked-idling, or parked-still. Each DLC come with its default turbine status specified by the standards.
                             default: operating
                             enum: ['operating','parked-idling','parked-still']
+                        constrained_wave:
+                            type: boolean
+                            description: Use ConstWaveMod in this DLC
+                            default: false
                         wave_period:
                             type: array
                             description: Period between waves. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_period is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
@@ -3453,10 +3402,30 @@ properties:
                                 minItems: 1
                                 minimum: 0.0
                                 maximum: 100.0
+                        current_speed:
+                            type: array
+                            description: Water current. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_height is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
+                            default: []
+                            items:
+                                type: number
+                                unit: m/s
+                                minItems: 1
+                                minimum: 0.0
+                                maximum: 100.0
+                        current_std:
+                            type: array
+                            description: Standard deviation of water current speed. Versus current_speed for MHK. If this array is populated by the user, then the field metocean_conditions is neglected. If wave_height is not defined, metocean_conditions will be used, either in the values provided by the user or with its default values (the first option is highly recommended).
+                            default: []
+                            items:
+                                type: number
+                                unit: m/s
+                                minItems: 1
+                                minimum: 0.0
+                                maximum: 100.0
                         wave_heading:
                             type: array
                             description: Heading of the waves with respect to north. This array must currently have either length=1, i.e. one constant value, or the same length of the array wind_speed
-                            default: [0.]
+                            default: [0]
                             items:
                                 type: number
                                 unit: deg
@@ -3510,7 +3479,7 @@ properties:
                         wind_file:
                             type: string
                             description: File path of custom wind file
-                        turbulent_wind:
+                        turbsim_inputs:
                             type: object
                             default: {}
                             description: These are all inputs to TurbSim. These inputs usually do not need to be set unless you are trying to customize a DLC
@@ -3803,6 +3772,27 @@ properties:
                             minimum: 0.0
                             maximum: 50.0
                             uniqueItems: true
+                    current_speed:
+                        type: array
+                        description: Array of current speeds to tabulate Hs and Tp for MHK turbines
+                        default: [0.5 , 0.85, 1.2 , 1.55, 1.9 , 2.25, 2.6 , 2.95, 3.3 , 3.65, 4.  ]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 50.0
+                            uniqueItems: true
+                    current_std:
+                        type: array
+                        description: Default standard deviation of water current speed versus current_speed for MHK. 
+                        default: []
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
                     wave_height_NSS:
                         type: array
                         description: Array of Hs for NSS conditional to wind speed
@@ -3824,6 +3814,39 @@ properties:
                             minItems: 1
                             minimum: 0.0
                             maximum: 1000.0
+                            uniqueItems: false
+                    current_NSS:
+                        type: array
+                        description: Array of currents for NSS conditional to wind speed
+                        default: [0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.30]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    current_fatigue:
+                        type: array
+                        description: Array of currents for fatigue conditional to wind speed
+                        default: [0.10, 0.12, 0.14, 0.16, 0.18, 0.20, 0.22, 0.24, 0.26, 0.28, 0.30]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
+                            uniqueItems: false
+                    current_SSS:
+                        type: array
+                        description: Array of currnents for SSS conditional to wind speed
+                        default: [0.20, 0.24, 0.28, 0.32, 0.36, 0.40, 0.44, 0.48, 0.52, 0.56, 0.60]
+                        items:
+                            type: number
+                            unit: m/s
+                            minItems: 1
+                            minimum: 0.0
+                            maximum: 100.0
                             uniqueItems: false
                     wave_height_fatigue:
                         type: array
@@ -3876,6 +3899,20 @@ properties:
                             unit: m
                             minimum: 0.0
                             maximum: 100.0
+                    current_1:
+                            type: number
+                            description: Current with 1-year occurrence, used in DLC 6.3
+                            default: 0.75
+                            unit: m/s
+                            minimum: 0.0
+                            maximum: 100.0
+                    current_50:
+                            type: number
+                            description: Current with 50-year occurrence, used in DLC 6.1
+                            default: 1.3
+                            unit: m/s
+                            minimum: 0.0
+                            maximum: 100.0
                     wave_period50:
                             type: number
                             description: Wave period with 50-year occurrence, used in DLC 6.1
@@ -3897,6 +3934,21 @@ properties:
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
+                    user_distribution:
+                            type: object
+                            description: User probability mass distribution
+                            default: {}
+                            properties:
+                                speed:
+                                    type: array
+                                    description: Flow speeds (m/s)
+                                    items:
+                                        type: number
+                                probability:
+                                    type: array
+                                    description: Probability mass distirbution
+                                    items:
+                                        type: number
 
     ROSCO:
         type: object

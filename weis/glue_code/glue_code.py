@@ -61,16 +61,16 @@ class WindPark(om.Group):
         if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1].lower() != 'none':  # default is none
             inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
             modeling_options['ROSCO'].update(inps['controller_params'])
-
+            
             # Apply changes in modeling options, should have already been validated
-            modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
-            skip_options = ['tuning_yaml','DISCON']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
-            for option, value in modopts_no_defaults['ROSCO'].items():
-                if option not in skip_options:
-                    modeling_options['ROSCO'][option] = value
-            # Handle DISCON inputs separately
-            for option, value in modopts_no_defaults['ROSCO']['DISCON'].items():
-                modeling_options['ROSCO']['DISCON'][option] = value
+            # modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
+            # skip_options = ['tuning_yaml','DISCON']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
+            # for option, value in modopts_no_defaults['ROSCO'].items():
+            #     if option not in skip_options:
+            #         modeling_options['ROSCO'][option] = value
+            # # Handle DISCON inputs separately
+            # for option, value in modopts_no_defaults['ROSCO']['DISCON'].items():
+            #     modeling_options['ROSCO']['DISCON'][option] = value
 
         tune_rosco_ivc = om.IndepVarComp()
         if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
