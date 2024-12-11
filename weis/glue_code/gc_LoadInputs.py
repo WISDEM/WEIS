@@ -190,16 +190,20 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                     mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
                 
         # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
+        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1].lower() != 'none':  # default is none
             inps = load_rosco_yaml(self.modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
             self.modeling_options['ROSCO'].update(inps['controller_params'])
 
             # Apply changes in modeling options, should have already been validated
             modopts_no_defaults = load_yaml(self.modeling_options['fname_input_modeling'])  
-            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
+            skip_options = ['tuning_yaml','DISCON']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
             for option, value in modopts_no_defaults['ROSCO'].items():
                 if option not in skip_options:
                     self.modeling_options['ROSCO'][option] = value
+            # Handle DISCON inputs separately
+            if 'DISCON' in modopts_no_defaults['ROSCO']:
+                for option, value in modopts_no_defaults['ROSCO']['DISCON'].items():
+                    self.modeling_options['ROSCO']['DISCON'][option] = value
         
         # XFoil
         if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
