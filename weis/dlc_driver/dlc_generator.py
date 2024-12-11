@@ -407,7 +407,7 @@ class DLCGenerator(object):
 
             # AEP DLC: set constant turbulence intensity
             if dlc_options['label'] == 'AEP':
-                idlc.IECturbc = dlc_options['TI']
+                idlc.IECturbc = self.IECturb.NTM(idlc.URef) * dlc_options['TI_factor'] / idlc.URef * 100
 
             
     def apply_sea_state(self,met_options,sea_state='normal'):
@@ -591,9 +591,13 @@ class DLCGenerator(object):
         dlc_options['label'] = 'AEP'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.35
-
-        if 'TI' not in dlc_options:
-            raise Exception('A TI must be set for the AEP DLC.')
+        if 'TI_factor' not in dlc_options:
+            raise Exception('A TI_factor must be set for the AEP DLC.')
+        
+        if 'turbulence_class' in dlc_options:
+            self.IECturb.Turbulence_Class = dlc_options['turbulence_class']
+            self.IECturb.setup()
+            
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -803,7 +807,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '2.3'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'EOG'
-        dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
+        dlc_options['PSF'] = 1.1  # For fault cases, psf depends on the mean-time between faults
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -941,6 +945,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '6.2'
         dlc_options['sea_state'] = '50-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+        dlc_options['PSF'] = 1.1
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
@@ -1067,6 +1072,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '7.1'
         dlc_options['sea_state'] = '1-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM1'
+        dlc_options['PSF'] = 1.1
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
         if 'yaw_misalign' in dlc_options:

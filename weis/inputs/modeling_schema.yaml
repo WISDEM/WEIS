@@ -3204,10 +3204,14 @@ properties:
                         wind_file:
                             type: string
                             description: File path of custom wind file
-                        TI: 
+                        TI_factor: 
                             type: number
                             unit: Percentage
-                            description: The constant turbulence intensity used in the AEP DLC only.
+                            description: The fraction of the TI, relative to the class defined in the geometry options or by turbulence_class
+                        turbulence_class: 
+                            type: string
+                            enum: ['A+','A','B','C']
+                            description: The class of turbulence, will overwrite class defined in geometry options. Only valid in the AEP DLC.
                         turbulent_wind:
                             type: object
                             default: {}
