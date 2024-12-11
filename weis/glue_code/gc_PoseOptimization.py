@@ -131,6 +131,13 @@ class PoseOptimizationWEIS(PoseOptimization):
             if not dv['name'] in rosco_params:
                 raise Exception(f'The design variable {dv["name"]} is not part of the ROSCO schema.')
             
+            # Grab information about DV from ROSCO schema
+            if 'description' in rosco_params[dv['name']]:
+                dv['description'] = rosco_params[dv['name']]['description']
+
+            if 'unit' in rosco_params[dv['name']]:
+                dv['unit'] = rosco_params[dv['name']]['unit']
+
             # Check that min/max adhere to schema by applying the min/max to a copy of the modeling options and re-validating
             if 'min' in dv:
                 min_modopts = deepcopy(self.modeling)

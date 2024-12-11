@@ -162,8 +162,15 @@ class TuneROSCO(ExplicitComponent):
 
         for dv in rosco_tuning_dvs:
             # TODO: support arrays
-            # TODO: add desc, grabbed from rosco schema
-            self.add_input(dv['name'], val=0.0)
+            ivc_units = None
+            if 'units' in dv:
+                ivc_units = dv['units']
+
+            ivc_desc = None
+            if 'desc' in dv:
+                ivc_desc = dv['desc']
+
+            self.add_input(dv['name'], val=0.0, units=ivc_units, desc=ivc_desc)
         
         
         if rosco_init_options['linmodel_tuning']['type'] == 'robust':

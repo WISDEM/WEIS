@@ -78,10 +78,16 @@ class WindPark(om.Group):
         # Generic DVs
         rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
         for dv in rosco_tuning_dvs:
-            # TODO: grab name from rosco schema
             # TODO: support arrays
-            # TODO: grab units?
-            tune_rosco_ivc.add_output(dv['name'], val=0.0)
+            ivc_units = None
+            if 'units' in dv:
+                ivc_units = dv['units']
+
+            ivc_desc = None
+            if 'desc' in dv:
+                ivc_desc = dv['desc']
+
+            tune_rosco_ivc.add_output(dv['name'], val=0.0, units=ivc_units, desc=ivc_desc)
 
         # Specific DVs
         tune_rosco_ivc.add_output('omega_pc',         val=np.zeros(n_PC), units='rad/s',     desc='Pitch controller natural frequency')
