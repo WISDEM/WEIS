@@ -765,7 +765,7 @@ class FASTLoadCases(ExplicitComponent):
                 mpi_options['mpi_run'] = modopt['General']['openfast_configuration']['mpi_run']
                 if mpi_options['mpi_run']:
                     mpi_options['mpi_comm_map_down'] = modopt['General']['openfast_configuration']['mpi_comm_map_down']
-                print('gets here')
+                
                 # Call DFSM wrapper
                 summary_stats, extreme_table, DELs, Damage,case_list,case_name, chan_time,dlc_generator,TMax,TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs,self.FAST_runDirectory,self.FAST_namingOut,mpi_options)
                 self.fst_vt = fst_vt

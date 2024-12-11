@@ -146,7 +146,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                     modeling_options['General']['openfast_configuration']['cores'] = 1
                 else:
                     modeling_options['General']['openfast_configuration']['cores'] = n_OF_runs_parallel
-                print('gets here 3')
+                
             # Parallel settings for OpenMDAO
             if opt_options['driver']['design_of_experiments']['flag'] and not(modeling_options['DFSM']['flag']):
                 wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
