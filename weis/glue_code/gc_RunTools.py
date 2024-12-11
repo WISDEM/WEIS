@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import openmdao.api as om
 import numpy as np
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 
 class Outputs_2_Screen(om.ExplicitComponent):
     # Class to print outputs on screen

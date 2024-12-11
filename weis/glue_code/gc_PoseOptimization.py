@@ -5,14 +5,14 @@ class PoseOptimizationWEIS(PoseOptimization):
 
     def __init__(self, wt_init, modeling_options, analysis_options):
         
-        self.level_flags = np.array([modeling_options[level]['flag'] for level in ['Level1','Level2','Level3']])
+        self.level_flags = np.array([modeling_options[level]['flag'] for level in ['Level1','Level2','DFSM','Level3']])
         # if sum(self.level_flags) > 1:
             # raise Exception('Only one level in WEIS can be enabled at the same time')
 
         super(PoseOptimizationWEIS, self).__init__(wt_init, modeling_options, analysis_options)
 
         # Set solve component for some optimization constraints, and merit figures (RAFT or openfast)
-        if modeling_options['Level3']['flag']:
+        if modeling_options['Level3']['flag'] or modeling_options['DFSM']['flag']:
             self.floating_solve_component = 'aeroelastic'
         elif modeling_options['Level1']['flag']:
             self.floating_solve_component = 'raft'
@@ -28,7 +28,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         
     def get_number_design_variables(self):
         # Determine the number of design variables
-        n_DV = super(PoseOptimizationWEIS, self).get_number_design_variables()
+        n_DV = 0 #super(PoseOptimizationWEIS, self).get_number_design_variables()
 
         n_add = 0
         if self.opt['design_variables']['control']['servo']['pitch_control']['omega']['flag']:

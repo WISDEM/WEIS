@@ -8,12 +8,14 @@ General:
         use_exe: True
         # FAST_exe: /home/dzalkind/.conda-envs/rosco-env/bin/openfast
         # FAST_exe: /Users/dzalkind/opt/anaconda3/envs/rosco-env/bin/openfast
-        FAST_exe: /Users/dzalkind/opt/anaconda3/envs/weis-env4/bin/openfast
+        #FAST_exe: /Users/dzalkind/opt/anaconda3/envs/weis-env4/bin/openfast
         
 
 WISDEM:
     RotorSE:
-        flag: True
+        flag: False
+        n_pitch_perf_surfaces: 5
+        n_tsr_perf_surfaces: 5
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
@@ -21,15 +23,15 @@ WISDEM:
         frame3dd:
             flag: False
     TowerSE:
-        flag: True
+        flag: False
         frame3dd:
             flag: False
     DriveSE:
-        flag: True
+        flag: False
         frame3dd:
             flag: False
     FloatingSE:
-        flag: True
+        flag: False
         rank_and_file: True
         symmetric_moorings: False
         frame3dd:
@@ -38,12 +40,15 @@ WISDEM:
     #     flag: True
 
 OWENS:
-    flags: True
+    flags: False
     path_to_owens_dir: path
     
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
+    from_openfast: True
+    openfast_file: MHK_RM1_Floating.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/RM1
     simulation:
         DT: 0.01
         CompElast: 1
@@ -144,6 +149,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 ROSCO:
     flag: True
     tuning_yaml: RM1_MHK.rosco.yaml
+    PRC_Mode: 0
     # zeta_pc: 1.23
     # omega_pc: 0.198
     # U_pc: [12]
@@ -189,10 +195,10 @@ DLC_driver:
             probability: [0.2,0.2,0.3,0.15,0.15]
     DLCs:
         - DLC: "1.1"        # Eagle, full
-        #   n_seeds: 1
+          n_seeds: 2
           transient_time: 60.
-        #   current_speed: [1.5]
-          analysis_time: 300.
+          current_speed: [2.5]
+          analysis_time: 100.
           ws_bin_size: 0.25
           turbsim_inputs:
             PLExp: 0
