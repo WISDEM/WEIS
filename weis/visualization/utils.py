@@ -780,8 +780,6 @@ def render_cylinder(cylinder):
 
 
 def render_cylinderTower(towerGrid, TowerOD):
-    meshes = []
-
     rad = TowerOD[0]
 
     cylinder = pv.Cylinder(
@@ -792,16 +790,7 @@ def render_cylinderTower(towerGrid, TowerOD):
     )
     mesh_state = to_mesh_state(cylinder)
 
-    content = dash_vtk.View([
-        dash_vtk.GeometryRepresentation(
-            children=[dash_vtk.Mesh(state=mesh_state)],
-            showCubeAxes=True,      # Show origins
-        )
-    ])
-
-    meshes.append(content)
-
-    return meshes
+    return mesh_state
 
 
 def render_sphere(sphere):
@@ -873,6 +862,20 @@ def render_our_own(points):
     Create and fill the VTK Data Object with your own data using VTK library and pyvista high level api
 
     Reference: https://tutorial.pyvista.org/tutorial/06_vtk/b_create_vtk.html
+    https://docs.pyvista.org/examples/00-load/create-tri-surface
+    https://docs.pyvista.org/api/core/_autosummary/pyvista.polydatafilters.reconstruct_surface#pyvista.PolyDataFilters.reconstruct_surface
+    '''
+
+    # Join the points
+    x, y, z = points
+    values = np.c_[x.ravel(), y.ravel(), z.ravel()]     # (6400, 3) where each column is x, y, z coords
+    coords = numpy_to_vtk(values)
+    cloud = pv.PolyData(coords)
+    # mesh = cloud.delaunay_2d()          # From point cloud, apply a 2D Delaunary filter to generate a 2d surface from a set of points on a plane.
+    mesh = cloud.reconstruct_surface()
+
+
+    # Work for sin-plane but not for cylinder..
     '''
     # Join the points
     x, y, z = points
@@ -883,15 +886,16 @@ def render_our_own(points):
     points.SetData(coords)
 
     grid = vtk.vtkStructuredGrid()
-    grid.SetDimensions(*z.shape, 1)
+    grid.SetDimensions(*z.shape, 1)     # *zshape: (80 80) for sin-plane / 1000 for cylinder
     grid.SetPoints(points)
 
     # Add point data
     arr = numpy_to_vtk(z.ravel())
     arr.SetName("z")
     grid.GetPointData().SetScalars(arr)
+    '''
 
-    mesh_state = to_mesh_state(grid)
+    mesh_state = to_mesh_state(mesh)
 
     content = dash_vtk.View([
         dash_vtk.GeometryRepresentation(

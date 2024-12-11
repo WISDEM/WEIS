@@ -1,13 +1,8 @@
 '''This is the page for visualize the WEIS inputs in 3D simulation model'''
 
 import dash_bootstrap_components as dbc
-from dash import html, register_page, callback, Input, Output, dcc
-import pandas as pd
-import numpy as np
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
+from dash import html, register_page, callback, Input, Output, State, dcc
 from dash.exceptions import PreventUpdate
-import weis.inputs as sch
 from weis.visualization.utils import *
 
 register_page(
@@ -17,6 +12,10 @@ register_page(
     path='/windio_3d'
 )
 
+def set_components():
+    global component_types
+    component_types = ['blade', 'hub', 'nacelle', 'tower', 'monopile', 'floating_platform', 'mooring']
+
 
 @callback(Output('geom-3d-names', 'options'),
           Input('geometry-components', 'data'))
@@ -24,40 +23,167 @@ def list_labels(geom_comps_by_names):
     return list(set([k.split(':')[0] for k in list(geom_comps_by_names.keys())]))
 
 
-@callback(Output('meshes', 'data'),
+
+@callback(Output('vtk-view', 'children'),
           Input('geom-3d-names', 'value'),
-          Input('geometry-components', 'data'))
-def visualize(geom_3d_names, geom_comps_by_names):
+          Input('geom-types', 'value'),
+          State('geometry-components', 'data'))
+def visualize(geom_3d_names, geom_types, geom_comps_by_names):
     '''
-    This function is for visualize per geometry component types
+    This function is for visualizing per geometry component types from selected file data
     '''
-    if geom_3d_names is None:
+    if geom_3d_names is None or geom_types == []:
         raise PreventUpdate
+
+    geometries = []
+
+    for idx, gname in enumerate(geom_3d_names):
+        meshes = []
+        for gtype in geom_types:
+            if gtype == 'tower':
+                tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
+                meshes += [dash_vtk.Mesh(state=render_cylinderTower(tower_by_names[gname]['outer_shape_bem']['outer_diameter']['grid'], 
+                                            tower_by_names[gname]['outer_shape_bem']['outer_diameter']['values']))]
+            
+        # Add by geom data (same color over components from the turbine)
+        geometries += [dash_vtk.GeometryRepresentation(
+            children=meshes,
+            showCubeAxes=True,      # Show origins
+            property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+        )]
+
+    # Add rendered meshes to the final content at the end (at once!)    
+    content = dash_vtk.View(geometries)
     
-    tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
+    return content
 
-    meshes = []
-    for name in geom_3d_names:
-        meshes += render_cylinderTower(tower_by_names[name]['outer_shape_bem']['outer_diameter']['grid'], 
-                                        tower_by_names[name]['outer_shape_bem']['outer_diameter']['values'])
+
+
+def make_card(comp_type):
+    return dbc.Card([
+                dbc.CardHeader(f'{comp_type.title()}', className='cardHeader'),
+                dbc.CardBody([
+                    html.Div(id=f'{comp_type}-meshes')
+                ])
+           ])
+
+
+
+def define_mesh_layout():
+    # layout = [dbc.Row([
+    #                     dbc.Row([
+    #                         # First column
+    #                         dbc.Col(html.Div(
+    #                             style={'width':'100%', 'height':'600px'},
+    #                             children=[meshes[idx]])),
+    #                         # Second column
+    #                         dbc.Col(html.Div(
+    #                             style={'width':'100%', 'height':'600px'},
+    #                             children=[meshes[idx+1]]))
+    #                     ], className='wrapper') for idx in range(0, len(meshes)-1, 2)], className='wrapper')]
+
+    cards = [make_card(comp) for comp in component_types]
+
+    blade_layout = dbc.Card([
+                        dbc.CardHeader('Blade', className='cardHeader'),
+                        dbc.CardBody([
+                            html.Div(id='blade-meshes')
+                        ])
+                    ], style={'height': '600px'})
     
-    return meshes
+    hub_layout = dbc.Card([
+                        dbc.CardHeader('Hub', className='cardHeader'),
+                        dbc.CardBody([
+                        ])
+                    ], style={'height': '600px'})
+    
+    nacelle_layout = dbc.Card([
+                        dbc.CardHeader('Nacelle', className='cardHeader'),
+                        dbc.CardBody([
+                        ])
+                    ], style={'height': '600px'})
+    
 
+    tower_layout = dbc.Card([
+                        dbc.CardHeader('Tower', className='cardHeader'),
+                        dbc.CardBody([
+                            html.Div(dash_vtk.View([
+                                        dash_vtk.GeometryRepresentation(
+                                            id='tower-meshes',
+                                            children=[],
+                                            showCubeAxes=True,      # Show origins
+                                            # colorMapPreset='jet',   # Doesn't work
+                                            # colorDataRange=[0.2, 0.9]   # Doesn't work
+                                            # opcacity=0.5            # Set the transparency
+                                            property={"edgeVisibility": False, 'color': [(0,0,0), (0.5, 0.5, 0.5)]},
+                                            # mapper={
+                                            #     "colorByArrayName":"data",
+                                            #     "scalarMode": 1,
+                                            #     "interpolateScalarsBeforeMapping": True,
+                                            #     "useLookupTableScalarRange":True,
+                                            #     "colorMode":1,
+                                            #     "GetArray":1,
+                                            #     "scalarVisibility":True,
+                                            # },
+                                            # property={
+                                            #     "edgeVisibility": False,
+                                            #     'representation': 2,
+                                            # },
+                                            # actor={
+                                            #     "visibility":1,
+                                            # },
+                                            # colorMapPreset="rainbow",
+                                        )
+                                    ]),       # Need to define width, height for div itself to show up
+                                    style={'width':'100%', 'height':'100%'})
+                        ])
+                    ], style={'height': '600px'})
+    
+    monopile_layout = dbc.Card([
+                        dbc.CardHeader('Monopile', className='cardHeader'),
+                        dbc.CardBody([
+                        ])
+                    ], style={'height': '600px'})
+    
 
-@callback(Output('mesh-layout', 'children'),
-          Input('meshes', 'data'))
-def load_meshes(meshes):
-    layout = [dbc.Row([
+    floating_layout = dbc.Card([
+                        dbc.CardHeader('Floating', className='cardHeader'),
+                        dbc.CardBody([
+                        ])
+                    ], style={'height': '280px'})
+    
+    mooring_layout = dbc.Card([
+                        dbc.CardHeader('Mooring', className='cardHeader'),
+                        dbc.CardBody([
+                        ])
+                    ], style={'height': '280px'})
+    
+    full_layout = dbc.Card([
+                        dbc.CardHeader('Full', className='cardHeader'),
+                        dbc.CardBody([
+                        ])
+                    ], style={'height': '600px'})
+
+    layout = html.Div([
+                dbc.Row([
+                    dbc.Col(blade_layout, width=6),
+                    dbc.Col(hub_layout, width=3),
+                    dbc.Col(nacelle_layout, width=3),
+                ]),
+                dbc.Row([
+                    dbc.Col(tower_layout, width=3),
+                    dbc.Col(monopile_layout, width=3),
+                    dbc.Col([
                         dbc.Row([
-                            # First column
-                            dbc.Col(html.Div(
-                                style={'width':'100%', 'height':'600px'},
-                                children=[meshes[idx]])),
-                            # Second column
-                            dbc.Col(html.Div(
-                                style={'width':'100%', 'height':'600px'},
-                                children=[meshes[idx+1]]))
-                        ], className='wrapper') for idx in range(0, len(meshes)-1, 2)], className='wrapper')]
+                            dbc.Col(floating_layout),
+                        ]),
+                        dbc.Row([
+                            dbc.Col(mooring_layout),
+                        ])
+                    ], width=3),
+                    dbc.Col(full_layout, width=3),
+                ])
+            ])
     
 
     return layout
@@ -65,26 +191,74 @@ def load_meshes(meshes):
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
+    # Define which components to be visualized from the geometry files
+    set_components()
 
     # Define layout for tower structures
     geom_items = dcc.Dropdown(id='geom-3d-names', options=[], value=None, multi=True)
 
     geom_inputs = html.Div([
                         dbc.Card([
+                            dbc.CardHeader('Geometry Data'),
                             dbc.CardBody([
-                                dbc.Label('Please select Geometry:'),
                                 dbc.Form(geom_items)
                             ])
                         ])
                     ])
     
-    mesh_layout = html.Div(id='mesh-layout')
+    type_items = dcc.Checklist(id='geom-types', options=component_types, value=[])
 
-    # TODO: Should be able to upload odd number of meshes as well
+    type_inputs = html.Div([
+                    dbc.Card([
+                        dbc.CardHeader('Components to Visualize'),
+                        dbc.CardBody([
+                            dbc.Form(type_items)
+                        ])
+                    ])
+                ])
+    
+    controls = [geom_inputs, type_inputs]
+
+    vtk_view = html.Div(
+                    id='vtk-view',
+                    style={"width": "100%", "height": "400px"},
+                )
+
+    # Test with basic vtk function to create tower and blade (wrap the points with the surface)
+    # Define structured points with numpy
+
+    # # 1) Sin-plane
+    # x = np.arange(-10, 10, 0.25)    # (80,)
+    # y = np.arange(-10, 10, 0.25)    # (80,)
+    # x, y = np.meshgrid(x, y)        # both (80, 80)
+    # r = np.sqrt(x**2, y**2)
+    # z = np.sin(r)
+
+    # 2) Cylinder
+    radius = 2
+    height = 5
+    num_points = 10000
+    theta = np.random.uniform(0, 2 * np.pi, num_points)
+    z = np.random.uniform(0, height, num_points)
+
+    # Calculate x, y coordinates
+    x = radius * np.cos(theta)
+    y = radius * np.sin(theta)
+
+    points = (x, y, z)
+
+    vtk_view_own = html.Div(
+                        style={"width": "100%", "height": "400px"},
+                        children=[render_our_own(points)]
+                    )   
+
     layout = dcc.Loading(html.Div([
                 dcc.Store(id='meshes', data=[]),
-                geom_inputs,
-                mesh_layout
+                dbc.Row([
+                    dbc.Col(controls, width=4),
+                    dbc.Col(vtk_view, width=8)
+                ]),
+                dbc.Row(vtk_view_own)
             ], className='wrapper'))
 
     return layout
