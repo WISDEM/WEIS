@@ -54,25 +54,63 @@ def read_default_variables(input_dict):
 ###############################################
 # We are using card container where we define sublayout with rows and cols.
 def layout():
+
+    #######################################
+    # Layout for OpenFAST Viz Options
+    #######################################
+    signaly_input = dbc.Row([
+                        dbc.Label('Signal-Y', width=2),
+                        dbc.Col(
+                            dcc.Dropdown(id='signaly', options=[], value=None, multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                            width=7
+                        ),
+                        dbc.Col(
+                            dbc.Button('Save', id='save-of', n_clicks=0, color='primary'),
+                            width='auto'
+                        )
+                ], className="mb-3")
+    
+    signalx_input = dbc.Row([
+                        dbc.Label('Signal-X', width=2),
+                        dbc.Col(
+                            dcc.Dropdown(id='signalx', options=[], value=None),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
+                            width=7
+                        )
+                    ], className="mb-3")
+
+    plotoption_input = dbc.Row([
+                            dbc.Label('Plot Option', width=2),
+                            dbc.Col(
+                                dbc.RadioItems(
+                                    id='plotOption',
+                                    options=[
+                                        {'label': 'Single', 'value': 'single plot'},
+                                        {'label': 'Multiple', 'value': 'multiple plot'},
+                                    ],
+                                    value = 'multiple plot'
+                                ),
+                                width='auto'
+                            )
+                        ], className="mb-3")
+
+    form_layout = dbc.Card([
+                            dbc.CardHeader('Channels'),
+                            dbc.CardBody([
+                                dbc.Form([signaly_input, signalx_input, plotoption_input]),
+                            ])
+                  ], className='card')
+    
+    
     layout = dcc.Loading(html.Div([
                 # Confirm Dialog to check updated
                 dcc.ConfirmDialog(
                     id='confirm-update-of',
                     message='Updated'
                 ),
-                dbc.Card([
-                    dbc.CardBody([
-                        dbc.InputGroup(
-                            [
-                                # Layout for showing graph configuration setting
-                                html.Div(id='graph-cfg-div', className='text-center'),
-                                dbc.Button('Save', id='save-of', n_clicks=0, style={'float': 'right'})
-                            ]
-                        )
-                    ])
-                ]),
-                # Append cards per file
-                dbc.Row([], id='output')
+                dbc.Row([
+                    dbc.Col(form_layout, width=4),              # Channels
+                    dbc.Col(html.Div(id='output'), width=8)     # Append cards per file
+                ], className='g-0')         # No gutters where horizontal spacing is added between the columns by default
             ]))
     
     return layout
@@ -82,7 +120,10 @@ def layout():
 #   Update graph configuration layout - first row
 ###############################################
 
-@callback(Output('graph-cfg-div', 'children'),
+@callback(Output('signaly', 'options'),
+          Output('signaly', 'value'),
+          Output('signalx', 'options'),
+          Output('signalx', 'value'),
           Input('df-file1', 'data'),
           Input('var-openfast-graph', 'data'))
 def define_graph_cfg_layout(df1, of_options):
@@ -93,20 +134,7 @@ def define_graph_cfg_layout(df1, of_options):
     channels = sorted(df1['file1'][0].keys())
     # print(df_dict['file1'][0])          # First row channels
 
-    return html.Div([
-                html.Div([
-                    html.Label(['Signal-y:'], style={'font-weight':'bold', 'text-align':'center'}),
-                    dcc.Dropdown(id='signaly', options=channels, value=of_options['graph_y'], multi=True),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
-                ], style = {'float':'left', 'padding-left': '1.0rem'}),
-                html.Div([
-                    html.Label(['Signal-x:'], style={'font-weight':'bold', 'text-align':'center'}),
-                    dcc.Dropdown(id='signalx', options=channels, value=of_options['graph_x']),          # options look like ['Azimuth', 'B1N1Alpha', ...]. select ['Wind1VelX', 'Wind1VelY', 'Wind1VelZ'] as default value
-                ], style = {'float':'left', 'width': '200px', 'padding-left': '1.0rem'}),
-                html.Div([
-                    html.Label(['Plot options:'], style={'font-weight':'bold', 'text-align':'center'}),
-                    dcc.RadioItems(id='plotOption', options=['single plot', 'multiple plot'], value='multiple plot', inline=True),
-                ], style = {'float':'left', 'padding-left': '1.0rem', 'padding-right': '1.0rem'})
-            ])
+    return channels, of_options['graph_y'], channels, of_options['graph_x']
 
 
 ###############################################
@@ -120,20 +148,11 @@ def define_des_layout(file_info, df):
     modification_time = file_info['modification_time']
     
     return html.Div([
-                    # File Info
-                    html.H5(f'File Path: {file_abs_path}'),
-                    html.H5(f'File Size: {file_size} MB'),
-                    html.H5(f'Creation Date: {datetime.datetime.fromtimestamp(creation_time)}'),
-                    html.H5(f'Modification Date: {datetime.datetime.fromtimestamp(modification_time)}'),
-                    html.Br(),
-
-                    # Data Table
-                    # dash_table.DataTable(
-                    #     data=df,
-                    #     columns=[{'name': i, 'id': i} for i in pd.DataFrame(df).columns],
-                    #     fixed_columns = {'headers': True, 'data': 1},
-                    #     page_size=10,
-                    #     style_table={'height': '300px', 'overflowX': 'auto', 'overflowY': 'auto'})
+                # File Info
+                html.P(f'File Path: {file_abs_path}'),
+                html.P(f'File Size: {file_size} MB'),
+                html.P(f'Creation Date: {datetime.datetime.fromtimestamp(creation_time)}'),
+                html.P(f'Modification Date: {datetime.datetime.fromtimestamp(modification_time)}')
             ])
 
 
@@ -148,9 +167,9 @@ def update_figure(signalx, signaly, plotOption, df_dict):
 
 for idx in file_indices:
     callback(Output(f'graph-div-{idx}', 'figure'),
-                Input('signalx', 'value'),
-                Input('signaly', 'value'),
-                Input('plotOption', 'value'),
+                State('signalx', 'value'),
+                State('signaly', 'value'),
+                State('plotOption', 'value'),
                 Input(f'df-{idx}', 'data'))(update_figure)
 
 
@@ -199,17 +218,15 @@ def draw_graph(signalx, signaly, plotOption, df):
 
 def make_card(idx, file_path, df):
     file_info = get_file_info(file_path)
-    file_name = file_info['file_name']
+    file_abs_path = file_info['file_abs_path']
 
     return dbc.Card([
-        dbc.CardHeader(f'File name: {file_name}', className='cardHeader'),
+        dbc.CardHeader(f'File path: {file_abs_path}'),
         dbc.CardBody([
-            dbc.Row([
-                dbc.Col(dcc.Loading(define_des_layout(file_info, df)), width=3),
-                dbc.Col(dcc.Loading(dcc.Graph(id=f'graph-div-{idx}')), width=9)
-            ])
+            # define_des_layout(file_info, df),
+            dcc.Graph(id=f'graph-div-{idx}')
         ])
-    ])
+    ], className='card')
 
 
 @callback(Output('output', 'children'),
@@ -235,13 +252,13 @@ def manage_cards(var_openfast, df_dict_list):
 
 @callback(Output('confirm-update-of', 'displayed'),
           Output('var-openfast-graph', 'data', allow_duplicate=True),
-          State('var-openfast-graph', 'data'),
           Input('save-of', 'n_clicks'),
-          Input('input-dict', 'data'),
-          Input('signalx', 'value'),
-          Input('signaly', 'value'),
+          State('var-openfast-graph', 'data'),
+          State('input-dict', 'data'),
+          State('signalx', 'value'),
+          State('signaly', 'value'),
           prevent_initial_call=True)
-def save_openfast(of_options, btn, input_dict, signalx, signaly):
+def save_openfast(btn, of_options, input_dict, signalx, signaly):
     
     of_options['graph_x'] = signalx
     of_options['graph_y'] = signaly
