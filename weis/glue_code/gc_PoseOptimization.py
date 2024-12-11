@@ -1,5 +1,7 @@
 from wisdem.glue_code.gc_PoseOptimization import PoseOptimization
 import numpy as np
+from weis.inputs.validation import get_modeling_schema, re_validate_modeling
+from copy import deepcopy
 
 class PoseOptimizationWEIS(PoseOptimization):
 
@@ -265,7 +267,55 @@ class PoseOptimizationWEIS(PoseOptimization):
         super(PoseOptimizationWEIS, self).set_design_variables(wt_opt, wt_init)
 
         # -- Control --
+        rosco_tuning_dvs    = self.opt['design_variables']['control']['rosco_tuning']
+        mod_schema          = get_modeling_schema()
+        rosco_params        = mod_schema['properties']['ROSCO']['properties']
+        
+        # Generic rosco tuning param
+        for dv in rosco_tuning_dvs:
+
+            # Check that name is in rosco schema
+            if not dv['name'] in rosco_params:
+                raise Exception(f'The design variable {dv["name"]} is not part of the ROSCO schema.')
+            
+            # Grab information about DV from ROSCO schema
+            if 'description' in rosco_params[dv['name']]:
+                dv['description'] = rosco_params[dv['name']]['description']
+
+            if 'unit' in rosco_params[dv['name']]:
+                dv['unit'] = rosco_params[dv['name']]['unit']
+
+            # Check that min/max adhere to schema by applying the min/max to a copy of the modeling options and re-validating
+            if 'min' in dv:
+                min_modopts = deepcopy(self.modeling)
+                min_modopts['ROSCO'][dv['name']] = dv['min']  # apply to modopts
+                try:
+                    re_validate_modeling(min_modopts)
+                except:
+                    raise Exception(f'Error validating the design variable {dv["name"]} (min) against the ROSCO schema.')
+
+            if 'max' in dv:
+                max_modopts = deepcopy(self.modeling)
+                max_modopts['ROSCO'][dv['name']] = dv['max']  # apply to modopts
+                try:
+                    re_validate_modeling(max_modopts)
+                except:
+                    raise Exception(f'Error validating the design variable {dv["name"]} (max) against the ROSCO schema.')
+
+
+            # # Add design var
+            if 'min' in dv and 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', lower=dv["min"], upper=dv["max"])
+            elif 'min' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', lower=dv["min"])
+            elif 'max' in dv:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}', upper=dv["max"])
+            else:
+                wt_opt.model.add_design_var(f'tune_rosco_ivc.{dv["name"]}')
+
+        # Other, hardcoded control opts
         control_opt = self.opt['design_variables']['control']
+        
         if control_opt['servo']['pitch_control']['omega']['flag']:
             wt_opt.model.add_design_var('tune_rosco_ivc.omega_pc', lower=control_opt['servo']['pitch_control']['omega']['min'], 
                                                             upper=control_opt['servo']['pitch_control']['omega']['max'])

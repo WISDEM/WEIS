@@ -178,7 +178,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
         wt_opt = myopt.set_initial(wt_opt, wt_init)
         if modeling_options['Level3']['flag']:
             wt_opt = myopt.set_initial_weis(wt_opt)
-
         # If the user provides values in geometry_override, they overwrite
         # whatever values have been set by the yaml files.
         # This is useful for performing black-box wrapped optimization without

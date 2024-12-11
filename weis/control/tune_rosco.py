@@ -156,10 +156,29 @@ class TuneROSCO(ExplicitComponent):
         self.add_discrete_input('usecd',        val=True,                                       desc='use drag coefficient in computing induction factors')
 
         # Controller Tuning Parameters
+        
+        # Generic inputs
+        rosco_tuning_dvs = self.opt_options['design_variables']['control']['rosco_tuning']
+
+        for dv in rosco_tuning_dvs:
+            # TODO: support arrays
+            ivc_units = None
+            if 'units' in dv:
+                ivc_units = dv['units']
+
+            ivc_desc = None
+            if 'desc' in dv:
+                ivc_desc = dv['desc']
+
+            self.add_input(dv['name'], val=0.0, units=ivc_units, desc=ivc_desc)
+        
+        
         if rosco_init_options['linmodel_tuning']['type'] == 'robust':
             n_PC = 1
         else:
             n_PC = len(rosco_init_options['U_pc'])
+        
+        # Specific inputs, hardcoded
         self.add_input('zeta_pc',           val=np.zeros(n_PC),                                 desc='Pitch controller damping ratio')
         self.add_input('omega_pc',          val=np.zeros(n_PC),        units='rad/s',           desc='Pitch controller natural frequency')
         self.add_input('stability_margin',  val=0.0,                                            desc='Maximum stability margin for robust scheduling')
@@ -197,6 +216,8 @@ class TuneROSCO(ExplicitComponent):
         '''
         rosco_init_options   = self.modeling_options['ROSCO']
         # Add control tuning parameters to dictionary
+
+        # Speicifc parameters
         rosco_init_options['omega_pc']    = inputs['omega_pc'].tolist()
         rosco_init_options['zeta_pc']     = inputs['zeta_pc'].tolist()
         rosco_init_options['omega_vs']    = float(inputs['omega_vs'])
@@ -224,7 +245,13 @@ class TuneROSCO(ExplicitComponent):
         # If Kp_float is a design variable, do not automatically tune it
         if self.opt_options['design_variables']['control']['servo']['pitch_control']['Kp_float']['flag']:
             rosco_init_options['Kp_float'] = float(inputs['Kp_float'])
-            rosco_init_options['tune_Fl'] = False
+            rosco_init_options['tune_Fl'] = 0       # TODO: we'll want to figure out how to handle this
+
+        # Generic inputs
+        rosco_tuning_dvs = self.opt_options['design_variables']['control']['rosco_tuning']
+        for dv in rosco_tuning_dvs:
+            # TODO: support arrays, figure out casting
+            rosco_init_options[dv['name']] = inputs[dv['name']]
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()

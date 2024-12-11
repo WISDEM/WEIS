@@ -12,7 +12,6 @@ from openmdao.utils.mpi import MPI
 from rosco.toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
 
-
 def update_options(options,override):
     for key, value in override.items():
         if isinstance(value, dict) and key in options:
