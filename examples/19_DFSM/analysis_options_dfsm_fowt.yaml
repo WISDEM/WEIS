@@ -1,65 +1,38 @@
 general:
-    folder_output: outputs/FOWT_DFSM_test
+    folder_output: outputs/doe_mpi_5w_6s
     fname_output: refturb_output
-
 
 design_variables:
   control:
     servo:
       pitch_control:
         omega:
-          flag: False
+          flag: True
           min: 0.1
-          max: 0.4
+          max: 0.3
         zeta:
-            flag: False
-            min: 0.1
-            max: 3.0
+          flag: True
+          min: 0.1
+          max: 3.0
         Kp_float:
-            flag: False
-            min: -40
-            max: 0
+          flag: False
+          min: -40
+          max: 0
         ptfm_freq:
-            flag: False
-            max: 0.4
-
-  # floating:
-  #   joints:
-  #     flag: True
-  #     # z_coordinate:
-  #     #     - names: [main_keel, col1_keel, col2_keel, col3_keel]
-  #     #       lower_bound: -40.0
-  #     #       upper_bound: -15.0
-  #     r_coordinate:
-  #         - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
-  #           lower_bound: 38.8125
-  #           upper_bound: 64.6875
-  #   members:
-  #       flag: True
-  #       groups:
-  #         - names: [column1,column2,column3]
-  #           diameter:
-  #               lower_bound: 9.375
-  #               upper_bound: 15.625
-    #     groups:
-    #       - names: [main_column]
-    #         diameter:
-    #           lower_bound: 7.5
-    #           upper_bound: 12.5
-          
-
+          flag: False
+          max: 0.4
 
 constraints:
   control:
     rotor_overspeed:
-      flag: False
+      flag: True
       min: 0.0
       max: 0.25
     Max_PtfmPitch:
       flag: False
       max: 5.5
     Std_PtfmPitch:
-      flag: False
+      flag: True
       max: 2.
   Max_Offset:
     flag: False
@@ -70,15 +43,21 @@ merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The opti
 
 driver:
   optimization:
-    flag: False           # Flag to enable optimization
+    flag: True         # Flag to enable optimization
     solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     tol: 1.e-2            # Optimality tolerance
     max_iter: 100          # Maximum number of iterations (SLSQP)
   design_of_experiments:
-    flag: False            # Flag to enable design of experiments
+    flag: False         # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing
     generator: FullFact    # Type of input generator. (Uniform)
-    num_samples: 6       # number of samples for (Uniform only)
+    num_samples: 10       # number of samples for (Uniform only)
+  step_size_study:
+    flag: False
+    step_sizes: [1e-2, 5e-3, 1e-3, 5e-4, 1e-4, 5e-5, 1e-5, 5e-6, 1e-6, 5e-7, 1e-7, 5e-8, 1e-8]
+    form: central
+    of: [aeroelastic.DEL_TwrBsMyt]
+    wrt: [tune_rosco_ivc.omega_pc]
 
 recorder:
     flag: True              # Flag to activate OpenMDAO recorder

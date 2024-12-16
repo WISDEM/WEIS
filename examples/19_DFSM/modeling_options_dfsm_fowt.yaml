@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/FOWT_DFSM_test
+        OF_run_dir: outputs/doe_mpi_5w_6s
         save_iterations: True
         save_timeseries: True
         use_exe: True
@@ -30,7 +30,7 @@ WISDEM:
 
 Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
-    from_openfast: True 
+    from_openfast: False
     openfast_file: IEA_w_TMD.fst
     openfast_dir: IEA_15_MW
     simulation:
@@ -76,7 +76,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
         WaveMod: 2
-        # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 Level1:
     flag: False
@@ -94,8 +94,8 @@ ROSCO:
     F_NotchType: 2
     Fl_Mode: 2 
     tuning_yaml: IEA_15_MW/IEA15MW-tuning.yaml
-    zeta_pc: [1]
-    #omega_pc: [0.15]
+    zeta_pc: [1] #[1]
+    omega_pc: [0.15] #[0.15]
     U_pc: [12]
     zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
     omega_vs: 0.12  
@@ -107,38 +107,21 @@ ROSCO:
 DFSM:
     flag: True
     general_options:
-        model_data_availability: offline 
-        testing_data_availability: online
-        storage_type: outb
+        dfsm_file: /home/athulsun/WEIS-AKS-commit/examples/19_DFSM/dfsm_1p6_python.pkl
         modeling_data_path: /home/athulsun/DFSM/data/FOWT_1p6
-        testing_data_path: /home/athulsun/DFSM/data/1p6_test/test
         save_results: True
-    usecase_options:
-        usecase: simulation 
-        plot_flag: False
-        param:
-            VS_GenEff: 95.89835000000
-            WE_GearboxRatio: 1.0
-            VS_RtPwr: 15000000.00000
-            DT: 0.01
-            num_blade: 3
-            DLL_FileName: /home/athulsun/anaconda3/envs/weis-env/lib/libdiscon.so
+        usecase: closed-loop-simulation
     model_options: 
         reqd_states: [PtfmPitch,TTDspFA,GenSpeed]
         reqd_controls: [RtVAvgxh,GenTq,BldPitch1,Wave1Elev]
-        reqd_outputs: [TwrBsFxt,TwrBsMyt,YawBrTAxp,NcIMURAys,GenPwr]
+        reqd_outputs: [TwrBsFxt,TwrBsMyt,YawBrTAxp,NcIMURAys,GenPwr,RtFldCp,RtFldCt]
         scale_args:
-            state_scaling_factor: [1,1,100]
+            state_scaling_factor: [1,1,1]
         filter_args:
             state_filter_flag: [True,True,True]
             state_filter_type: [[filtfilt],[filtfilt],[filtfilt]]
             state_filter_tf: [[0.1],[0.1],[0.1]]
-        linear_model_file: /home/athulsun/WEIS-AKS-commit/examples/19_DFSM/FOWT_1p6_LPV.mat
-    construction_options: 
-        L_type: LPV
-        N_type: None
-        train_split: 0.5
-        n_samples: 1
+
     
 DLC_driver:
     metocean_conditions:
@@ -154,16 +137,25 @@ DLC_driver:
     DLCs:
         # - DLC: "1.1"
         #   n_seeds: 6
+        #   wind_speed: [4,6,8,10,12,14,16,18,20,22,24]
+        #   analysis_time: 600.
+        #   transient_time: 50.
+        #   turbulent_wind:
+        #     HubHt: 150.0
+        #     RefHt: 150.0
+        #     GridHeight: 299.999
+        #     GridWidth: 299.999
+        #     PLExp: 0.12
+        #     IECturbc: -1
         # - DLC: "1.3"
         #   n_seeds: 6
         # - DLC: "1.4"
         # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 4
-          wind_speed: [12,14,16] #,12,14,16,18,20,22,24]
-          #wind_speed: [3,5,7,9,11,13,15,17,19,21,23,25]
+          n_seeds: 6
+          wind_speed: [8,10,12,14,16]
           analysis_time: 600.
-          transient_time: 0.
+          transient_time: 50.
           turbulent_wind:
             HubHt: 150.0
             RefHt: 150.0

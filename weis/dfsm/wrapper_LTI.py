@@ -69,7 +69,7 @@ class wrapper_LTI():
         #print(Aeig.real)
         
         # constraints
-        funcs['con'] = Aeig.real
+        funcs['con'] = Aeig.real +0.1
         
         fail = False
         

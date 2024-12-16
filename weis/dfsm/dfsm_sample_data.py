@@ -96,7 +96,7 @@ def sample_data(data,sampling_type,n_samples,grouping = 'together'):
                     
         elif grouping == 'together':
             
-            
+
             if n_outputs > 0:
                 model_inputs_ = np.hstack([model_inputs,state_derivatives,outputs])
             else:

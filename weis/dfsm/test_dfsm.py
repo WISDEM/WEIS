@@ -50,7 +50,7 @@ def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True, 
         tspan = [t0,tf]
         
         x0 = states[0,:]
-        
+
 
         
         # create interpolating function for controls
@@ -59,7 +59,7 @@ def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True, 
         
         # solver method and options
         if solver_options == None:
-            solver_options = {'method':'RK45','rtol':1e-9,'atol':1e-9}
+            solver_options = {'method':'RK45','rtol':1e-6,'atol':1e-6}
         
         
         if simulation_flag:
@@ -74,31 +74,32 @@ def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True, 
             states_dfsm = sol['y']
             states_dfsm = states_dfsm.T
             
-            states = interp1d(time,states,axis = 0)(T)
-            controls = u_fun(T)
-            state_derivatives = interp1d(time,state_derivatives,axis = 0)(T)
+            states_dfsm = interp1d(T,states_dfsm,axis = 0)(time)
+            controls = u_fun(time)
+            #state_derivatives = interp1d(time,state_derivatives,axis = 0)(T)
             
-            if n_outputs > 0:
-                outputs = interp1d(time,outputs,axis = 0)(T)
+            # if n_outputs > 0:
+            #     outputs = interp1d(time,outputs,axis = 0)(T)
                 
             inputs_dfsm = np.hstack([controls,states_dfsm])
             inputs = np.hstack([controls,states])
-            time = T
+            #time = T
         
             simulation_time[idx] = t2-t1
             
-            X_dict = {'time':time,'names':case['state_names'],'n':case['n_states'],'OpenFAST':states,'DFSM':states_dfsm}
+            X_dict = {'time':time,'names':case['state_names'],'n':case['n_states'],'OpenFAST':states,'DFSM':states_dfsm,'error':states - states_dfsm}
             U_dict = {'time': time, 'names': case['control_names'],'n': case['n_controls'],'OpenFAST':controls,'DFSM':controls}
             
             X_list.append(X_dict)
             U_list.append(U_dict)
+
         else:
             
             simulation_time = 0
             
         # evaluate state derivatives predicted by the DFSM
         fun_type = 'deriv'
-        dx_dfsm = evaluate_dfsm(DFSM,inputs,fun_type)
+        dx_dfsm = evaluate_dfsm(DFSM,inputs_dfsm,fun_type)
         
         dx_dict = {'time':time,'names':case['dx_names'],'n':case['n_deriv'],'OpenFAST':state_derivatives,'DFSM':dx_dfsm}
         
@@ -109,7 +110,7 @@ def test_dfsm(DFSM,test_cases,test_ind,simulation_flag = True,plot_flag = True, 
             fun_type = 'outputs'
             outputs_dfsm = evaluate_dfsm(DFSM,inputs_dfsm,fun_type)
             
-            Y_dict = {'time':time,'names':case['output_names'],'n':case['n_outputs'],'OpenFAST':outputs,'DFSM':outputs_dfsm}
+            Y_dict = {'time':time,'names':case['output_names'],'n':case['n_outputs'],'OpenFAST':outputs,'DFSM':outputs_dfsm,'error': outputs - outputs_dfsm}
             
             Y_list.append(Y_dict)
             

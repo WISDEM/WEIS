@@ -13,6 +13,9 @@ def valid_extension(fp):
 def valid_extension_DISCON(fp):
     return any([fnmatch.fnmatch(fp,ext) for ext in ['*.IN']])
 
+def valid_extension_pickle(fp):
+    return any([fnmatch.fnmatch(fp,ext) for ext in ['*.p']])
+
 
 def calculate_MSE(x1,x2):
     
@@ -57,18 +60,18 @@ def calculate_SNE(x1,x2):
     
     return SNE
 
-def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names,control_names,output_names, tmin = 0):
+def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names,control_names,output_names, GB_ratio,tmin = 0):
 
     # initialize
     OutData = {}
 
-    # add time
-    OutData['Time'] = time
-    
     time_ind = (time >= tmin)
 
-    nt = np.sum(time_ind)
+    # add time
+    OutData['Time'] = time[time_ind]
 
+    nt = np.sum(time_ind)
+    gs_ind = state_names.index('GenSpeed')
 
     # add states
     for i,name_ in enumerate(state_names):
@@ -76,7 +79,18 @@ def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names
         if name_[0] == 'd':
             pass 
         else:
-            OutData[name_] = states_dfsm[:,i]
+            OutData[name_] = states_dfsm[time_ind,i]
+
+    # add controls
+    for i,name_ in enumerate(control_names):
+
+        OutData[name_] = controls_dfsm[time_ind,i]
+
+    # add controls
+    if len(output_names) >= 1:
+        for i,name_ in enumerate(output_names):
+
+            OutData[name_] = outputs_dfsm[time_ind,i]
 
     if not('PtfmPitch' in state_names):
         OutData['PtfmPitch'] = np.zeros((nt,))
@@ -87,16 +101,8 @@ def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names
     if not('PtfmSway' in state_names):
         OutData['PtfmSway'] = np.zeros((nt,))
 
-    # add controls
-    for i,name_ in enumerate(control_names):
-
-        OutData[name_] = controls_dfsm[:,i]
-
-    # add controls
-    if len(output_names) > 1:
-        for i,name_ in enumerate(output_names):
-
-            OutData[name_] = outputs_dfsm[:,i]
+    if not('RotSpeed' in output_names):
+        OutData['RotSpeed'] = states_dfsm[time_ind,gs_ind]/GB_ratio
 
     for i_blade in range(2):
         OutData[f'dBldPitch{i_blade+1}'] = np.zeros((nt,))

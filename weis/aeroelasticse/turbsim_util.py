@@ -230,7 +230,6 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         turbsim_input_file_path = os.path.join(wind_directory, turbsim_input_file_name)
         wind_file_name = turbsim_input_file_path[:-3] + '.bts'
 
-
         runTS = True
         if os.path.exists(wind_file_name) and os.path.exists(turbsim_input_file_path):
             runTS = False

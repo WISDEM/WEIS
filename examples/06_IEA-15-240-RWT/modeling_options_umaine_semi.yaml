@@ -54,23 +54,23 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     linearization:
         Linearize: False
     ElastoDyn:
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
+        FlapDOF1: False 
+        FlapDOF2: False 
+        EdgeDOF: False 
         TeetDOF: False
         DrTrDOF: False 
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : True
-        TwSSDOF1 : True
-        TwSSDOF2 : True
-        PtfmSgDOF: True
-        PtfmSwDOF: True
-        PtfmHvDOF: True
-        PtfmRDOF : True
+        TwFADOF2 : False 
+        TwSSDOF1 : False 
+        TwSSDOF2 : False 
+        PtfmSgDOF: False 
+        PtfmSwDOF: False 
+        PtfmHvDOF: False 
+        PtfmRDOF : False 
         PtfmPDOF : True
-        PtfmYDOF : True
+        PtfmYDOF : False 
     HydroDyn:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
@@ -82,8 +82,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        # WaveMod: 0
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        WaveMod: 2
+        # PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 Level1:
     flag: False
@@ -123,7 +123,7 @@ DLC_driver:
         - DLC: "1.6"
           wind_speed: [12]
           transient_time: 0.
-          analysis_time: 10.
+          analysis_time: 600.
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"

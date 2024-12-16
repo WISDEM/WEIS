@@ -3040,110 +3040,108 @@ properties:
             general_options:
                 type: object
                 default: {}
-                description: general options need for DFSM
+                description: general options needed for DFSM
                 properties:
-                    modeling_data_availability:
+                    dfsm_file:
                         type: string
-                        default: offline
-                        description: Option to use pre run data/model for constructing DFSM, or to run OpenFAST and construct DFSM.
-                        enum: [online,offline]
-                    testing_data_availability:
-                        type: string
-                        default: offline 
-                        description: Specifies the location/type of data for running the different usecase/testing the DFSM.
-                        enum: [online,offline]
-                    storage_type:
-                        type: string
-                        default: outb
-                        description: Denotes how the data used to construct DFSM is stored. Pickle implies the DFSM model is stored in a pickle fine. outb denotes that the data is available in a pre-run simulation, and the DFSM is constructed from that
-                        enum: [outb,pickle]
+                        description: Name of the pickle file that contains the DFSM
                     save_results:
                         type: boolean
                         default: False
                         description: Flag to save the results from DFSM
                     modeling_data_path:
                         type: string
-                        description: Name of the folder that contains the .outb/pickle files used to construct the DFSM model. If testing data availability is online, then this corresponds to the openfast run dir 
-                    testing_data_path:
-                        type: string 
-                        description: Path to usecase/testing files. If testing data availability is online, then this corresponds to the openfast run dir 
-            usecase_options:
-                type: object
-                default: {}
-                description: Use case options for the DFSM model
-                properties:
+                        description: Name of the folder that contains the .outb/pickle files used to construct the DFSM model.
                     usecase:
                         type: string
-                        default: test
-                        enum: ['test','simulation','open-loop-optimal-control']
-                        description: Use case for the DFSM model
-                    test_options:
-                        type: object
-                        default: {}
-                        description: List of options for testing DFSM model
-                        properties:
-                            test_ind: 
-                                type: array
-                                default: [0]
-                                description: The index of the test simulation
-                            simulation_flag:
-                                type: boolean
-                                default: True 
-                                description: Flag to enable simulation
-                            plot_flag:
-                                type: boolean
-                                default: False 
-                                description: Flag to plot DFSM simulation against OpenFAST
-                    param:
-                        type: object
-                        default: {}
-                        description: Parameters to be provided to the controller interface
-                        properties:
-                            VS_GenEff:
-                                type: number 
-                                description: generator efficiency
-                            WE_GearboxRatio:
-                                type: number 
-                                description: gearbox ratio
-                            VS_RtPwr:
-                                type: number
-                                description: rated power
-                            DT:
-                                type: number 
-                                description: step size used in simulations
-                            num_blade:
-                                type: number
-                                description: number of blades in the turbine
-                            DLL_FileName:
-                                type: string
-                                description: name of the dynamic library
-                    solver_options:
-                        url: https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
-                        type: object
-                        default: {}
-                        description: Options used for the ode solver used to simulate the DFSM
-                        properties:
-                            method:
-                                type: string
-                                description: The algorithm used in the ode solver
-                                default: RK45
-                                enum: [RK45,RK23,DOP853,Radau,BDF,LSODA] 
-                            rtol:
-                                type: number 
-                                description: The relative tolerence used for the solver
-                                default: 1e-6
-                            atol:
-                                type: number
-                                description: The absolute tolerence used for the solver
-                                default: 1e-6   
-            model_options:
-                type: object
-                default: {}
-                properties:
+                        default: closed-loop-simulation
+                        enum: ['closed-loop-simulation','open-loop-optimal-control']
+                        description: Use case for the DFSM model. Options are closed-loop simulation, where the DFSM is linked to the ROSCO controller to run simulation, and open-loop-optimal-control, where an optimal-control problem is formulated and solved.
                     run_dir:
                         type: string
                         default: none
                         description: Path to place FAST output files (e.g. /home/user/myturbines/output)
+            # usecase_options:
+            #     type: object
+            #     default: {}
+            #     description: Use case options for the DFSM model
+            #     properties:
+                    # usecase:
+                    #     type: string
+                    #     default: test
+                    #     enum: ['closed-loop-simulation','open-loop-optimal-control']
+                    #     description: Use case for the DFSM model. Options are closed-loop simulation, where the DFSM is linked to the ROSCO controller to run simulation, and open-loop-optimal-control, where an optimal-control problem is formulated and solved.
+                    # test_options:
+                    #     type: object
+                    #     default: {}
+                    #     description: List of options for testing DFSM model
+                    #     properties:
+                    #         test_ind: 
+                    #             type: array
+                    #             default: [0]
+                    #             description: The index of the test simulation
+                    #         simulation_flag:
+                    #             type: boolean
+                    #             default: True 
+                    #             description: Flag to enable simulation
+                    #         plot_flag:
+                    #             type: boolean
+                    #             default: False 
+                    #             description: Flag to plot DFSM simulation against OpenFAST
+                    # param:
+                    #     type: object
+                    #     default: {}
+                    #     description: Parameters to be provided to the controller interface
+                    #     properties:
+                    #         VS_GenEff:
+                    #             type: number 
+                    #             description: generator efficiency
+                    #         WE_GearboxRatio:
+                    #             type: number 
+                    #             description: gearbox ratio
+                    #         VS_RtPwr:
+                    #             type: number
+                    #             description: rated power
+                    #         DT:
+                    #             type: number 
+                    #             description: step size used in simulations
+                    #         num_blade:
+                    #             type: number
+                    #             description: number of blades in the turbine
+                    #         DLL_FileName:
+                    #             type: string
+                    #             description: name of the dynamic library
+                    # solver_options:
+                    #     url: https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html
+                    #     type: object
+                    #     default: {}
+                    #     description: Options used for the ode solver used to simulate the DFSM
+                    #     properties:
+                    #         method:
+                    #             type: string
+                    #             description: The algorithm used in the ode solver
+                    #             default: RK45
+                    #             enum: [RK45,RK23,DOP853,Radau,BDF,LSODA] 
+                    #         rtol:
+                    #             type: number 
+                    #             description: The relative tolerence used for the solver
+                    #             default: 1e-6
+                    #         atol:
+                    #             type: number
+                    #             description: The absolute tolerence used for the solver
+                    #             default: 1e-6   
+            model_options:
+                type: object
+                default: {}
+                properties:
+                    ode_method:
+                        type: string
+                        default: RK4
+                        description: ode method used to solve the closed-loop simulation
+                    interp_type:
+                        type: string
+                        default: linear
+                        description: interpolation method used to setup the LPV problem
                     reqd_states:
                         type: array
                         description: List of the states to be used in the DFSM model. The names of the quantities must be the same as OpenFAST names 
@@ -3177,13 +3175,13 @@ properties:
                                     type: string
                             key_freq_name:
                                 type: array
-                                description: name of the key frequencis to be plotted in PSD
+                                description: name of the key frequencies to be plotted in PSD
                                 default: [['2P']]
                                 items: 
                                     type: array
                             key_freq_val:
                                 type: array
-                                description: name of the key frequencis to be plotted in PSD
+                                description: name of the key frequencies to be plotted in PSD
                                 default: [[0.39]]
                                 items: 
                                     type: array
@@ -3244,23 +3242,6 @@ properties:
                         description: Type of the linear model to be used in the multifidelity DFSM model
                         default: LTI
                         enum: [None,LTI,LPV]
-                    LPV_options:
-                        type: object
-                        default: {}
-                        description: Meta options to setup the LPV model
-                        properties: 
-                            v_min:
-                                type: number
-                                description: The lower limit of the wind/current speed for the LPV range
-                                default: 1.85
-                            v_max:
-                                type: number
-                                description: The upper limit of the wind/current speed for the LPV range
-                                default: 2.15
-                            nv:
-                                type: integer
-                                description: Number of wind/current speeds between v_min and v_max for which the linear models must be constructed
-                                default: 50           
                     n_samples:
                         type: number 
                         default: 50
@@ -3341,6 +3322,8 @@ properties:
                                 type: number 
                                 description: Tolerence for the solver
                                 default: 1e-5
+
+
     DLC_driver:
         type: object
         default: {}

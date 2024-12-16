@@ -180,7 +180,7 @@ class SimulationDetails:
             
             # number of points
             nt = len(time)
-            
+            dt = time[1]-time[0]
             # extract states
             states = np.zeros((nt,len(self.reqd_states)))
             
@@ -204,6 +204,25 @@ class SimulationDetails:
             else:
                 
                 outputs = []
+
+            if dt < 0.01:
+                dt_ = 0.01
+                t0 = time[0];tf = time[-1]
+                time_ = np.arange(t0,tf+dt_,dt_)
+
+                cs_s = CubicSpline(time,states,axis = 0)
+                states = cs_s(time_)
+
+                cs_u = CubicSpline(time,controls,axis = 0)
+                controls = cs_u(time_)
+                
+                if self.n_outputs > 0:
+                    cs_y = CubicSpline(time,outputs)
+                    outputs = cs_y(time_)
+
+                time = time_
+
+
                     
             # scale the inputs and outputs according to the options present in scale_args
             if len(self.scale_args) > 0:

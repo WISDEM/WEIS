@@ -56,7 +56,7 @@ magnitude_channels_default = {
     'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
     'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
     'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'],
-    'TwrBsM': ['TwrBsMxt', 'TwrBsMyt', 'TwrBsMzt'],
+    'TwrBsM': ['TwrBsMyt'],
 }
 
 fatigue_channels_default = {
@@ -126,7 +126,7 @@ class runFAST_pywrapper(object):
         self.keep_time          = False
         self.use_exe            = False  # use openfast executable instead of library, helpful for debugging sometimes
         self.goodman            = False
-        self.magnitude_channels = magnitude_channels_default
+        self.magnitude_channels = magnitude_channels_default;print(self.magnitude_channels['TwrBsM'])
         self.fatigue_channels   = fatigue_channels_default
         self.la                 = None # Will be initialized on first run through
         self.allow_fails        = False

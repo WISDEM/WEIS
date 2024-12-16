@@ -376,7 +376,7 @@ class FASTLoadCases(ExplicitComponent):
         if MPI:
             rank    = MPI.COMM_WORLD.Get_rank()
             self.FAST_runDirectory = os.path.join(FAST_directory_base,'rank_%000d'%int(rank))
-            self.FAST_namingOut = self.FAST_InputFile+'_%000d'%int(rank)
+            self.FAST_namingOut = self.FAST_InputFile#+'_%000d'%int(rank)
         else:
             self.FAST_runDirectory = FAST_directory_base
             self.FAST_namingOut = self.FAST_InputFile
@@ -547,8 +547,9 @@ class FASTLoadCases(ExplicitComponent):
 
     def compute(self, inputs, outputs, discrete_inputs, discrete_outputs):
         modopt = self.options['modeling_options']
-        sys.stdout.flush()
 
+        #sys.stdout.flush()
+        
         if modopt['Level2']['flag']:
             self.sim_idx += 1
             ABCD = {
@@ -607,7 +608,7 @@ class FASTLoadCases(ExplicitComponent):
             if modopt['ROSCO']['flag']:
                 fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
                 
-                
+        
         if self.model_only == True:
             # Write input OF files, but do not run OF
             self.write_FAST(fst_vt, discrete_outputs)
@@ -615,9 +616,15 @@ class FASTLoadCases(ExplicitComponent):
 
             if (modopt['DFSM']['flag']):
 
+                mpi_options = {}
+                mpi_options['mpi_run'] = modopt['General']['openfast_configuration']['mpi_run']
+                if mpi_options['mpi_run']:
+                    mpi_options['mpi_comm_map_down'] = modopt['General']['openfast_configuration']['mpi_comm_map_down']
+                
                 # Call DFSM wrapper
-                summary_stats, extreme_table, DELs, Damage,case_list,case_name, chan_time,dlc_generator,TMax,TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs,self.FAST_runDirectory,self.FAST_namingOut)
+                summary_stats, extreme_table, DELs, Damage,case_list,case_name, chan_time,dlc_generator,TMax,TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs,self.FAST_runDirectory,self.FAST_namingOut,mpi_options)
                 self.fst_vt = fst_vt
+                self.TMax = TMax;self.TStart = TStart
 
             elif modopt['Level3']['flag'] or modopt['Level2']['flag']:    
                 # Write OF model and run
@@ -772,7 +779,7 @@ class FASTLoadCases(ExplicitComponent):
 
                 with open(self.lin_pkl_file_name, 'wb') as handle:
                     pickle.dump(ABCD_list, handle)
-        
+
         # delete run directory. not recommended for most cases, use for large parallelization problems where disk storage will otherwise fill up
         if self.clean_FAST_directory:
             try:
@@ -1663,7 +1670,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
         channels_out += ["RtVAvgxh", "RtVAvgyh", "RtVAvgzh"]
-        channels_out += ["TwrBsFxt",  "TwrBsFyt", "TwrBsFzt", "TwrBsMxt",  "TwrBsMyt", "TwrBsMzt","TTDspFA"]
+        channels_out += ["TwrBsFxt",  "TwrBsFyt", "TwrBsFzt", "TwrBsMxt",  "TwrBsMyt", "TwrBsMzt","TTDspFA","TTDspSS"]
         channels_out += ["YawBrFxp", "YawBrFyp", "YawBrFzp", "YawBrMxp", "YawBrMyp", "YawBrMzp"]
         channels_out += ["TwHt1FLxt", "TwHt2FLxt", "TwHt3FLxt", "TwHt4FLxt", "TwHt5FLxt", "TwHt6FLxt", "TwHt7FLxt", "TwHt8FLxt", "TwHt9FLxt"]
         channels_out += ["TwHt1FLyt", "TwHt2FLyt", "TwHt3FLyt", "TwHt4FLyt", "TwHt5FLyt", "TwHt6FLyt", "TwHt7FLyt", "TwHt8FLyt", "TwHt9FLyt"]
@@ -2172,7 +2179,7 @@ class FASTLoadCases(ExplicitComponent):
         # Analysis
         if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
             outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
-        if self.options['modeling_options']['flags']['tower']:
+        if self.options['modeling_options']['flags']['tower'] and not(self.options['modeling_options']['DFSM']['flag']):
             outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
         if modopt['flags']['monopile'] and modopt['Level3']['flag']:
@@ -2200,7 +2207,7 @@ class FASTLoadCases(ExplicitComponent):
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
             self.save_timeseries(chan_time)
-
+        
         if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(summary_stats,DELs,discrete_outputs)
 
@@ -2471,6 +2478,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs['AEP'] = AEP
         else:
             # If DLC 1.1 was run
+
             if len(stats_pwrcrv['RtFldCp']['mean']): 
                 outputs['Cp_out'] = stats_pwrcrv['RtFldCp']['mean']
                 outputs['Ct_out'] = stats_pwrcrv['RtFldCt']['mean']
@@ -2530,9 +2538,9 @@ class FASTLoadCases(ExplicitComponent):
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
         outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
-            
+
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
-        if not modopt['Level3']['from_openfast']:
+        if not modopt['Level3']['from_openfast'] and not(modopt['DFSM']['flag']):
             for k in range(1,self.n_blades+1):
                 for u in ['U','L']:
                     damage[f'BladeRootSpar{u}_Axial{k}'] = (damage[f'RootSpar{u}_Fzb{k}'] +

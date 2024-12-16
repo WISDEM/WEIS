@@ -18,17 +18,119 @@ from weis.aeroelasticse.turbsim_util import generate_wind_files
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 
 from weis.dfsm.simulation_details import SimulationDetails
-from weis.dfsm.dfsm_plotting_scripts import plot_inputs,plot_dfsm_results
 from weis.dfsm.dfsm_utilities import valid_extension,calculate_time,valid_extension_DISCON,compile_dfsm_results
-from weis.dfsm.test_dfsm import test_dfsm
 from weis.dfsm.construct_dfsm import DFSM
-from weis.dfsm.dfsm_rosco_simulation import run_sim_ROSCO
-from weis.dfsm.evaluate_dfsm import evaluate_dfsm
-from weis.dfsm.ode_algorithms import RK4
+from weis.dfsm.ode_algorithms import RK4,ABM4
 from weis.dfsm.generate_wave_elev import generate_wave_elev
 
 from scipy.interpolate import CubicSpline, interp1d
-from scipy.integrate import solve_ivp
+
+def evaluate_multi(case_data):
+
+    # initialize controller interface
+    case_data['param']['controller_interface'] = ROSCO_ci.ControllerInterface(case_data['param']['lib_name'],param_filename=case_data['param']['param_filename'],**case_data['param']['args'])
+
+    # run simulation
+    if case_data['ode_method'] == 'RK4':
+
+        output = RK4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
+
+    elif case_data['ode_method'] == 'ABM4':
+
+        output = ABM4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
+
+    # shut down controller
+    case_data['param']['controller_interface'].kill_discon()
+
+
+    return output
+
+
+def run_serial(case_data_all):
+
+    # initialize storage array for results
+    outputs = []
+
+    # loop through and evaluate simulations    
+    for case_data in case_data_all:
+        
+        # initialize controller interface
+        case_data['param']['controller_interface'] = ROSCO_ci.ControllerInterface(case_data['param']['lib_name'],param_filename=case_data['param']['param_filename'],**case_data['param']['args'])
+        
+        if case_data['ode_method'] == 'RK4':
+            t,x,u,y = RK4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
+
+        elif case_data['ode_method'] == 'ABM4':
+            t,x,u,y = ABM4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
+        # shut down controller
+        case_data['param']['controller_interface'].kill_discon()
+
+        # initialize
+        sim_results = {}
+        sim_results['case_no'] = case_data['case']
+        sim_results['T_dfsm'] = t 
+        sim_results['states_dfsm'] = x 
+        sim_results['controls_dfsm'] = u 
+        sim_results['outputs_dfsm'] = y
+
+        outputs.append(sim_results)
+    
+    return outputs
+
+def run_mpi(case_data_all,mpi_options):
+
+    from mpi4py import MPI
+
+    # mpi comm management
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    sub_ranks = mpi_options['mpi_comm_map_down'][rank]
+
+    size = len(sub_ranks)
+
+    N_cases = len(case_data_all)
+    N_loops = int(np.ceil(float(N_cases)/float(size)))
+
+    sim_results = []
+    for i in range(N_loops):
+        idx_s    = i*size
+        idx_e    = min((i+1)*size, N_cases)
+
+        for j, case_data in enumerate(case_data_all[idx_s:idx_e]):
+            data   = [evaluate_multi, case_data]
+            rank_j = sub_ranks[j]
+            comm.send(data, dest=rank_j, tag=0)
+
+        # for rank_j in sub_ranks:
+        for j, case_data in enumerate(case_data_all[idx_s:idx_e]):
+            rank_j = sub_ranks[j]
+            data_out = comm.recv(source=rank_j, tag=1)
+            sim_results.append(data_out)
+
+    # compile and store results
+    outputs = []
+    
+    for icase,result_ in enumerate(sim_results):
+        t = result_[0]
+        x = result_[1]
+        u = result_[2]
+        y = result_[3]
+
+        # initialize
+        sim_results = {}
+
+        # store
+        sim_results['case_no'] = icase
+        sim_results['T_dfsm'] = t 
+        sim_results['states_dfsm'] = x 
+        sim_results['controls_dfsm'] = u 
+        sim_results['outputs_dfsm'] = y
+
+        outputs.append(sim_results)
+
+
+
+    return outputs
 
 
 
@@ -129,6 +231,7 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
             # Length of wind grids
             dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
     turbsim_exe = shutil.which('turbsim')
+    print('generating wind files')
     for i_case in range(dlc_generator.n_cases):
             WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
                 dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, turbsim_exe,i_case)
@@ -183,6 +286,7 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
         case_inputs[("Fst","DT")] = {'vals':DT, 'group':1}
         case_inputs[("Fst","TMax")] = {'vals':TMax, 'group':1}
         case_inputs[("Fst","TStart")] = {'vals':TStart, 'group':1}
+       
         # Inflow wind
         case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
         case_inputs[("InflowWind","HWindSpeed")] = {'vals':mean_wind_speed, 'group':1}
@@ -191,20 +295,24 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
         case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
         case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
         case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[np.abs(hub_height)], 'group':0}   #TODO: check if this is the distance from sea level or bottom
+        
         # Initial conditions for rotor speed, pitch, and azimuth
         case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
         case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
         case_inputs[("ElastoDyn","Azimuth")] = {'vals':azimuth_init, 'group':1}
+        
         # Yaw offset
         case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
+       
         # Inputs to HydroDyn
         case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
         case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
         case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
         case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
         case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
+       
         # Inputs to ServoDyn (parking), PitManRat and BlPitchF are ServoDyn modeling_options
         case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
         case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
@@ -338,137 +446,97 @@ def construct_dfsm_helper(sim_detail, construction_options):
 
 
 
-def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = None, FAST_namingOut = None):
+def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = None, FAST_namingOut = None,mpi_options = None):
+
+    print('----------------------------------------------------')
+    print('Running DFSM')
+    print('Derivative Function Surrogate Model')
+    print('This program is licensed under Apache License Version 2.0 and comes with ABSOLUTELY NO WARRANTY.')
+    print('----------------------------------------------------')
 
     # Load the stored DFSM model and run simulations with it
     general_options = modopt['DFSM']['general_options']
-    usecase_options = modopt['DFSM']['usecase_options']
     model_options = modopt['DFSM']['model_options']
-    construction_options = modopt['DFSM']['construction_options']
 
-    model_options['run_dir'] = modopt['General']['openfast_configuration']['OF_run_dir']
+    reqd_states = model_options['reqd_states']
+    reqd_controls = model_options['reqd_controls']
+    reqd_outputs = model_options['reqd_outputs']
+    
+    # set run dir. THis is the directory where OpenFAST files are stored
+    general_options['run_dir'] = modopt['General']['openfast_configuration']['OF_run_dir']
 
 
-
-    # extract model/test availability
-    #-- can be online or offline
-    modeling_data_availability = general_options['modeling_data_availability']
-    testing_data_availability = general_options['testing_data_availability']
-
-    # check the storage type
-    #-- can be pickle files or outb files
-    storage_type = general_options['storage_type'] # outb files by default
-
-     # Extract datapath
+    # Extract datapath
     # --this is the folder in which the .outb files are available
     modeling_data_path = general_options['modeling_data_path']
+
+    # load DFSM model
+    dfsm_file = general_options['dfsm_file']
+
+    with open(dfsm_file,'rb') as handle:
+        dfsm = pickle.load(handle)
+
+    interp_type = model_options['interp_type']
+    ode_method = model_options['ode_method']
+
+    # setup interpolation method for LPV model
+    dfsm.setup_LPV(interp_type)
+
     
+    # If the test data is online, this implies, the DFSM will be used to run simulations
+    # and save them in the current openfast run directory 
+    testing_data_path = FAST_runDirectory
 
-    if testing_data_availability == 'online':
-        # If the test data is online, this implies, the DFSM will be used to run simulations
-        # and save them in the current openfast run directory 
-        testing_data_path = FAST_runDirectory
-
-    elif testing_data_availability == 'offline':
-        testing_data_path = general_options['testing_data_path']
-
+    # folder to save dfsm results
     dfsm_save_folder = testing_data_path + os.sep + 'dfsm_results'
 
-    if modeling_data_availability == 'offline':
-
-        if (storage_type == 'outb'):
-
-            sim_details = extract_simulation_results(modeling_data_path, model_options)
-
-            #---------------------------------------------------------------
-            # Construct DFSM model
-            #---------------------------------------------------------------
-
-            dfsm = construct_dfsm_helper(sim_details, construction_options)
-
-        elif storage_type == 'pickle':
-
-            # load DFSM model from pickle file
-            with open(modeling_data_path,'r') as handle:
-                stored_data = pickle.load(handle)
-
-            sim_details = stored_data['simulation_details']
-            dfsm = stored_data['dfsm']
 
     #------------------------------------------------------
     # Use case
     #------------------------------------------------------
 
     # Get usecase
-    usecase = usecase_options['usecase']
+    usecase = general_options['usecase']
 
-    # extract test options
-    test_options = usecase_options['test_options']
+    if usecase == 'closed-loop-simulation' :
 
-    # extract solver options
-    solver_options = usecase_options['solver_options']
+        # generate wind files
+        wind_directory = FAST_runDirectory + os.sep + 'wind'
+        dlc_generator, case_list, case_name, TMax, TStart = generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAST_namingOut, wind_directory)
+        fst_vt['Fst']['TMax'] = TMax[0]
+        fst_vt['Fst']['TStart'] = TStart[0]
+        # Extract disturbance(s)
+        test_dataset = []
 
-    if usecase == 'simulation':
+        # initialize random number generator
+        rng = np.random.default_rng(12345)
 
-        if testing_data_availability == 'offline':
+        for i_case,case in enumerate(case_list):
+            ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
+            ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
+            u_h         = ts_file['rot_avg'][0,:]
+            tt          = ts_file['t']
+            dt = case[('Fst','DT')]
             
-            if testing_data_path == modeling_data_path:
-            # If both the paths are the same, then it implies we are using a part of the data to construct the model
-            # and part of the data for testing. This testing data should be available from the DFSM class
+            eta = generate_wave_elev(tt,dlc_generator.cases[i_case].wave_height,dlc_generator.cases[i_case].wave_period,rng)
 
-                # extract test data
-                test_dataset = dfsm.test_data
+            test_dataset.append({'time':tt, 'wind_speed': u_h,'wave_elev':eta})
 
-                test_ind = test_options['test_ind']
+        # number of test cases
+        test_ind = np.arange(len(case_list))
 
-            else: 
-
-                # extract simulation results
-                test_sim_detail = extract_simulation_results(testing_data_path, model_options)
-
-                test_dataset = test_sim_detail.FAST_sim 
-                test_ind = np.arange(len(test_dataset))
-
-                n_test = len(test_ind)
-
-                case_list = ['dfsm_test_' + str(cn) for cn in range(n_test)]
-
-                dlc_generator = []
-
-
-
-        elif (testing_data_availability == 'online') and (modeling_data_availability == 'offline'):
-
-            # generate wind files
-            wind_directory = FAST_runDirectory + os.sep + 'wind'
-            dlc_generator, case_list, case_name, TMax, TStart = generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAST_namingOut, wind_directory)
-            
-            # Extract disturbance(s)
-            test_dataset = []
-            for case in case_list:
-                ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
-                ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
-                u_h         = ts_file['rot_avg'][0,:]
-                tt          = ts_file['t']
-                test_dataset.append({'time':tt, 'wind_speed': u_h})
-
-            test_ind = np.arange(len(case_list))
-            #breakpoint()
-            #test_dataset = generate_wave_elev(test_dataset,model_options['reqd_controls'])
-            
-            # generate OpenFAST files
-            # This step generates the DISCON.IN and cp-ct-cq.txt files which are need to run closed-loop simulations
-            
-            for case in case_name:
-                write_FAST_files(fst_vt, FAST_runDirectory, case)
-            breakpoint()
-            case_names = case_naming(len(case_name),'dfsm')
+        # generate OpenFAST files
+        # This step generates the DISCON.IN and cp-ct-cq.txt files which are need to run closed-loop simulations
+        
+        for case in case_name:
+            write_FAST_files(fst_vt, FAST_runDirectory, case)
+        
+        case_names = case_naming(len(case_name),'dfsm')
 
         
         # initialize storage lists
         output_list = []
         ct = []
-        status = [False]*len(test_ind)
         
         # required maginitude and fatigue channels
         #-- note: Some of these quantities are not always modeled using the DFSM. The corresponding outputs for these quantities will be 'Nan'
@@ -480,7 +548,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 'TipDc1': ['TipDxc1', 'TipDyc1', 'TipDzc1'],
                 'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
                 'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'], 
-                'TwrBsM': ['TwrBsMxt', 'TwrBsMyt', 'TwrBsMzt'],
+                'TwrBsM': [ 'TwrBsMyt'],
                 'NcIMUTA': ['NcIMUTAxs', 'NcIMUTAys', 'NcIMUTAzs']}
 
         fatigue_channels = {
@@ -494,285 +562,217 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                     'LSShftM': FatigueParams(slope=4),
                                         }
 
+        DISCON_file = [os.path.join(testing_data_path,f) for f in os.listdir(testing_data_path) if valid_extension_DISCON(f)]
+        GB_ratio = fst_vt['DISCON_in']['WE_GearboxRatio']
+        case_data_all = []
 
         for idx,ind in enumerate(test_ind):
 
-            if testing_data_availability == 'online':
-
-                test_data = test_dataset[ind]
-
-                time = test_data['time']; wind_speed = test_data['wind_speed']
-                x0 = np.array([ 609.36004639, -552.18917651])
-
-                # initialize param dict
-                param = {}
-
-                # populate dict with relevant info
-                param['VS_GenEff'] = fst_vt['DISCON_in']['VS_GenEff']
-                param['WE_GearboxRatio'] = fst_vt['DISCON_in']['WE_GearboxRatio']
-                param['VS_RtPwr'] = fst_vt['DISCON_in']['VS_RtPwr']
-
-
-                DISCON_file = [os.path.join(testing_data_path,f) for f in os.listdir(testing_data_path) if valid_extension_DISCON(f)]
-                DISCON_file = DISCON_file[idx]
-
-                param['controller_interface'] = ROSCO_ci.ControllerInterface(fst_vt['ServoDyn']['DLL_FileName'], param_filename = DISCON_file)
-
-                t0 = 0; 
-                tf = test_data['time'][-1]
-                tspan = [t0,tf]
-
-                if len(model_options['scale_args']) == 0:
-                    param['gen_speed_scaling'] = 1
-
-                param['t0'] = t0
-                param['tf'] = tf
-                param['time'] = [t0]
-                param['dt'] = [0]
-
-                param['blade_pitch'] = [15]
-                param['gen_torque'] = [0]
-
-                w_fun = CubicSpline(time, wind_speed)
+            case_data = {}
+            case_data['case'] = idx
                 
-                param['w_fun'] = w_fun 
+            test_data = test_dataset[ind]
+
+            time = test_data['time']
+            wind_speed = test_data['wind_speed']
+            wind_fun = CubicSpline(time, wind_speed)
+
+            x0 = np.zeros((dfsm.n_deriv,))
+
+            t0 = time[0]; 
+            tf = time[-1]
+            tspan = [t0,tf]
+
+            args = {'DT':dt,
+                        'num_blade':3,'pitch':15}
+
+
+            if 'Wave1Elev' in model_options['reqd_controls']:
+                wave_elev = test_data['wave_elev']
+                wave_fun = CubicSpline(time,wave_elev)
+
+            # initialize param dict
+            param = {}
+
+            # populate dictonary with relevant info
+            param['VS_GenEff'] = fst_vt['DISCON_in']['VS_GenEff']
+            param['WE_GearboxRatio'] = fst_vt['DISCON_in']['WE_GearboxRatio']
+            param['VS_RtPwr'] = fst_vt['DISCON_in']['VS_RtPwr']
+            param['time'] = [t0]
+            param['dt']= dt
+            param['blade_pitch'] = [15]
+            param['gen_torque'] = [19000]
+            param['t0'] = t0
+            param['tf'] = tf
+            param['w_fun'] = wind_fun 
+            param['gen_speed_scaling'] = 1
+            param['lib_name'] = fst_vt['ServoDyn']['DLL_FileName']
+            if 'Wave1Elev' in model_options['reqd_controls']:
+                param['wave_fun'] = wave_fun
+            else:
                 param['wave_fun'] = None
 
-                # extract solver options
-                solver_options = usecase_options['solver_options']
-
-                # start timer and solve for the states and controls
-                t1 = timer.time()
-                sol =  solve_ivp(run_sim_ROSCO,tspan,x0,method=solver_options['method'],args = (dfsm,param),rtol = solver_options['rtol'],atol = solver_options['atol'])
-                t2 = timer.time()
-                dfsm.simulation_time = (t2-t1)
-
-                status[idx] = sol.success
-
-                # extract solution
-                time = sol.t
-                
-                states = sol.y
-                states_dfsm = states.T
-
-                
-                # kill controller
-                param['controller_interface'].kill_discon()
-                wind_speed = w_fun(time)
-                tspan = [0,tf]
-                time_sim = param['time']
-                blade_pitch = np.array(param['blade_pitch'])
-                gen_torque = np.array(param['gen_torque'])
-                
-                # interpolate controls
-                blade_pitch_DFSM = interp1d(time_sim,blade_pitch)(time)
-                gen_torque_DFSM = interp1d(time_sim,gen_torque)(time)
-
-                controls_dfsm = np.array([wind_speed,gen_torque_DFSM,blade_pitch_DFSM]).T
-                inputs_dfsm = np.hstack([controls_dfsm,states_dfsm])
-
-                fun_type = 'outputs'
-                
-                if dfsm.n_outputs > 0:
-                    outputs_dfsm = evaluate_dfsm(dfsm,inputs_dfsm,fun_type)
-
-                else:
-                    outputs_dfsm = []
-
-                # plot properties
-                markersize = 10
-                linewidth = 1.5
-                fontsize_legend = 16
-                fontsize_axlabel = 18
-                fontsize_tick = 12
-
-                fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
-
-                # wind
-                ax1.plot(time,controls_dfsm[:,0])
-                ax1.set_title('Wind Speed [m/s]')
-                ax1.set_xlim([t0,tf])
-
-                # torue
-                ax2.plot(time,controls_dfsm[:,1])
-                #ax2.set_ylim([1.8,2])
-                ax2.set_title('Gen Torque [KWm]')
-                ax2.set_xlim([t0,tf])
-
-                # blade pitch
-                ax3.plot(time,controls_dfsm[:,2])
-                #ax3.set_ylim([0.2, 0.3])
-                ax3.set_title('Bld Pitch [deg]')
-                ax3.set_xlim([t0,tf])
-
-                fig.subplots_adjust(hspace = 0.65)
-
-                if general_options['save_results']:
-                    # save results
-                    if not os.path.exists(dfsm_save_folder):
-                        os.makedirs(dfsm_save_folder)
-                    
-                    fig.savefig(dfsm_save_folder +os.sep+ 'Controls' +str(idx) + '.pdf')
+            param['num_blade'] = 3
+            param['ny'] = dfsm.n_outputs
+            param['args'] = args
+            param['param_filename'] = DISCON_file[idx]
 
 
-                # post processing
-                case_name = case_names[idx]
 
-                # compile results from DFSM
-                OutData = compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,model_options['reqd_states'],
-                                               model_options['reqd_controls'],model_options['reqd_outputs'],TStart[idx])
+            # # start timer and solve for the states and controls
+            # t1 = timer.time()
+            # T_dfsm, states_dfsm, controls_dfsm,outputs_dfsm = RK4(x0, dt, tspan, dfsm, param)
+            # t2 = timer.time()
+            # dfsm.simulation_time = (t2-t1)
 
-                ct.append(OutData)
-                # get output
+            case_data = {}
+            case_data['case'] = idx
+            case_data['param'] = param 
+            case_data['dt'] = dt 
+            case_data['x0'] = x0 
+            case_data['tspan'] = tspan 
+            case_data['dfsm'] = dfsm
+            case_data['ode_method'] = ode_method
 
-                output = OpenFASTOutput.from_dict(OutData,case_name,magnitude_channels = magnitude_channels)
 
-                if general_options['save_results']:
-                    if not os.path.exists(dfsm_save_folder):
-                        os.makedirs(dfsm_save_folder)
+            case_data_all.append(case_data)
+
+        if mpi_options['mpi_run']:
+
+            # evaluate the closed loop simulations in parallel using MPI
+            sim_outputs = run_mpi(case_data_all,mpi_options)
+
+        else:
+
+            # evaluate the closed loop simulations serially
+            sim_outputs = run_serial(case_data_all)
+
+        # plot properties
+        markersize = 10
+        linewidth = 1.5
+        fontsize_legend = 16
+        fontsize_axlabel = 18
+        fontsize_tick = 12
+
+        # save results
+        if not os.path.exists(dfsm_save_folder):
+            os.makedirs(dfsm_save_folder)
+
+        for icase,sim_result in enumerate(sim_outputs):
+            
+            # extract results
+            T_dfsm = sim_result['T_dfsm']
+            states_dfsm = sim_result['states_dfsm']
+            controls_dfsm = sim_result['controls_dfsm']
+            outputs_dfsm = sim_result['outputs_dfsm']
+
         
-                        output.df.to_pickle(os.path.join(dfsm_save_folder,case_name+'.p'))
 
-                output_list.append(output)
-
-            elif testing_data_availability == 'offline':
-
-                test_data = test_dataset[ind]
-                time_OF = test_data['time']
-
-                wind_speed = test_data['controls'][:,dfsm.wind_speed_ind]
-                w_pp = CubicSpline(time_OF, wind_speed)
-                w_fun = lambda t: w_pp(t)
-
-
-                GT_OF = test_data['controls'][:,dfsm.gen_torque_ind]
-                BP_OF = test_data['controls'][:,dfsm.blade_pitch_ind]
-
-                if 'Wave1Elev' in model_options['reqd_controls']:
-                    wave_elev = test_data['controls'][:,dfsm.wave_elev_ind]
-                    wave_pp = CubicSpline(time_OF,wave_elev)
-                    wave_fun = lambda t:wave_pp(t)
-
-
-
-                time_OF = test_data['time']
-
-                states_OF = test_data['states']
-                x0 = test_data['states'][0,:]
-
-
-                # initialize param dict
-                param = usecase_options['param']
-
-                # find the discon files
-                DISCON_files = [os.path.join(testing_data_path,f) for f in os.listdir(testing_data_path) if valid_extension_DISCON(f)]
-                DISCON_file = DISCON_files[idx]
-
-                #initialize controller interface
-                args = {'DT':param['DT'],
-                        'num_blade':param['num_blade']}
-
-                param['controller_interface'] = ROSCO_ci.ControllerInterface(param['DLL_FileName'], param_filename = DISCON_file,**args)
-
-                t0 = 0; 
-                tf = test_data['time'][-1]
-                tspan = [t0,tf]
-
-                if len(model_options['scale_args']) == 0:
-                    param['gen_speed_scaling'] = 1
-
-                else:
-                    param['gen_speed_scaling'] = model_options['scale_args']['state_scaling_factor'][dfsm.gen_speed_ind]
-
-                param['t0'] = t0
-                param['tf'] = tf
-                param['time'] = [t0]
-                dt = param['DT']
-                param['ny'] = len(model_options['reqd_outputs'])
-                param['blade_pitch'] = [16]
-                param['gen_torque'] = [10000]
-
-                param['w_fun'] = w_fun 
-
-                if 'Wave1Elev' in model_options['reqd_controls']:
-                    param['wave_fun'] = wave_fun
-                else:
-                    param['wave_fun'] = None
-
-                # start timer and solve for the states and controls
-                t1 = timer.time()
-                T_dfsm, states_dfsm, controls_dfsm,outputs_dfsm,T_extrap, U_extrap = RK4(x0, dt, tspan, dfsm, param)
-                t2 = timer.time()
-                dfsm.simulation_time = (t2-t1)
-
-                # kill controller
-                param['controller_interface'].kill_discon()
-                
-                tspan = [t0,tf]
-                time = time_OF
-                time_sim = T_dfsm
-                blade_pitch = controls_dfsm[:,dfsm.blade_pitch_ind]
-                gen_torque = controls_dfsm[:,dfsm.gen_torque_ind]
-                
-                # interpolate controls
-                blade_pitch_DFSM = interp1d(time_sim,blade_pitch)(time)
-                gen_torque_DFSM = interp1d(time_sim,gen_torque)(time)
-
-                # plot properties
-                markersize = 10
-                linewidth = 1.5
-                fontsize_legend = 16
-                fontsize_axlabel = 18
-                fontsize_tick = 12
-                
+            for iu,control in enumerate(reqd_controls):
+        
                 fig,ax = plt.subplots(1)
-                ax.plot(time,blade_pitch_DFSM,label = 'DFSM')
-                ax.plot(time,BP_OF,label = 'OpenFAST')
-                ax.set_title('BldPitch [deg]',fontsize = fontsize_axlabel)
-                ax.set_xlim(tspan)
-                ax.tick_params(labelsize=fontsize_tick)
-
-                ax.legend(ncol = 2,fontsize = fontsize_legend)
-                ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
-
-                fig,ax = plt.subplots(1)
-                ax.plot(time,gen_torque_DFSM,label = 'DFSM')
-                ax.plot(time,GT_OF,label = 'OpenFAST',alpha = 0.9)
                 
-                ax.set_title('GenTq [kNm]',fontsize = fontsize_axlabel)
+                ax.plot(T_dfsm,controls_dfsm[:,iu],label = 'DFSM')
+                
+                ax.set_title(control,fontsize = fontsize_axlabel)
                 ax.set_xlim(tspan)
-                #ax.set_ylim([2,6])
                 ax.tick_params(labelsize=fontsize_tick)
                 ax.legend(ncol = 2,fontsize = fontsize_legend)
                 ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
+                
+                if general_options['save_results']:       
+                    fig.savefig(dfsm_save_folder +os.sep+ control + '_' + str(icase) +'_comp.pdf')
 
-                # post processing
-                case_name = 'dfsm_test_' + str(idx)
+                plt.close(fig)
 
-                # compile results from DFSM
-                OutData = compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,test_data['state_names'],test_data['control_names'],test_data['output_names'])
+            
 
-                ct.append(OutData)
-
-                if general_options['save_results']:
-                    # save results
-                    if not os.path.exists(dfsm_save_folder):
-                        os.makedirs(dfsm_save_folder)
+            #------------------------------------------------------
+            # Plot States
+            #------------------------------------------------------
+            for ix,state in enumerate(reqd_states):
                     
-                    fig.savefig(dfsm_save_folder +os.sep+ 'Controls' +str(idx) + '.pdf')
-
-                # get output
+                fig,ax = plt.subplots(1)
                 
-                output = OpenFASTOutput.from_dict(OutData,case_name,magnitude_channels = magnitude_channels)
-                output.df.to_pickle(os.path.join(testing_data_path,case_name+'.p'))
+                ax.plot(T_dfsm,states_dfsm[:,ix],label = 'DFSM')
+                
+                ax.set_title(state,fontsize = fontsize_axlabel)
+                ax.set_xlim(tspan)
+                ax.tick_params(labelsize=fontsize_tick)
+                ax.legend(ncol = 2,fontsize = fontsize_legend)
+                ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
+                
+                if general_options['save_results']:
+                        
+                    fig.savefig(dfsm_save_folder +os.sep+ state+ '_'+str(icase) +'_comp.pdf')
 
-                output_list.append(output)
-                TMax = tf;TStart = t0
-            param['controller_interface'] = []
-            param['w_fun'] = []
-            param['wave_fun'] = []
-        plt.show()
+                plt.close(fig)
 
+            #------------------------------------------
+            # Plot Outputs
+            #------------------------------------------
+            for iy,output_ in enumerate(reqd_outputs):
+
+                fig,ax = plt.subplots(1)
+                
+                ax.plot(T_dfsm,outputs_dfsm[:,iy],label = 'DFSM')
+                
+                
+                ax.set_title(output_,fontsize = fontsize_axlabel)
+                ax.set_xlim(tspan)
+                ax.tick_params(labelsize=fontsize_tick)
+                ax.legend(ncol = 2,fontsize = fontsize_legend)
+                ax.set_xlabel('Time [s]',fontsize = fontsize_axlabel)
+                
+                if general_options['save_results']:
+                        
+                    fig.savefig(dfsm_save_folder +os.sep+ output_+ '_'+str(icase) + '_comp.pdf')
+
+                plt.close(fig)
+
+            # fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
+
+            # # wind
+            # ax1.plot(T_dfsm,controls_dfsm[:,0])
+            # ax1.set_title('Wind Speed [m/s]')
+            # ax1.set_xlim([t0,tf])
+
+            # # torue
+            # ax2.plot(T_dfsm,controls_dfsm[:,1])
+            # #ax2.set_ylim([1.8,2])
+            # ax2.set_title('Gen Torque [KWm]')
+            # ax2.set_xlim([t0,tf])
+
+            # # blade pitch
+            # ax3.plot(T_dfsm,controls_dfsm[:,2])
+            # #ax3.set_ylim([0.2, 0.3])
+            # ax3.set_title('Bld Pitch [deg]')
+            # ax3.set_xlim([t0,tf])
+
+            # fig.subplots_adjust(hspace = 0.65)
+
+            # if general_options['save_results']:
+            #     # save results
+            #     if not os.path.exists(dfsm_save_folder):
+            #         os.makedirs(dfsm_save_folder)
+                
+            #     fig.savefig(dfsm_save_folder +os.sep+ 'Controls' +str(idx) + '.pdf')
+
+
+            # post processing
+            case_name = case_names[icase]
+
+            # compile results from DFSM
+            OutData = compile_dfsm_results(T_dfsm,states_dfsm,controls_dfsm,outputs_dfsm,model_options['reqd_states'],
+                                            model_options['reqd_controls'],model_options['reqd_outputs'],GB_ratio,TStart[icase])
+
+            ct.append(OutData)
+
+            # get output
+            output = OpenFASTOutput.from_dict(OutData,case_name,magnitude_channels = magnitude_channels)
+
+            output_list.append(output)
+        
         # Collect outputs
         ss = {}
         et = {}
@@ -795,7 +795,6 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
 
         summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
     
-
     return summary_stats,extreme_table,DELs,Damage,case_list, case_name, ct, dlc_generator, TMax, TStart
 
 

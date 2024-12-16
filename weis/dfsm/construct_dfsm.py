@@ -29,13 +29,20 @@ import argparse
 
 class DFSM:
     
-    def __init__(self,SimulationDetails,L_type = 'LTI',N_type = 'GPR',n_samples = 300,sampling_method = 'KM',train_split = 0.8):
+    def __init__(self,SimulationDetails,L_type = 'LTI',N_type = 'GPR',n_samples = 300,sampling_method = 'KM',train_split = 0.8,A_array = None,B_array = None,C_array = None, D_array = None,W = None,interp_type = 'linear'):
         
         self.L_type = L_type
         self.N_type = N_type 
         self.n_samples = n_samples
         self.sampling_method = sampling_method 
         self.train_split = train_split
+
+        self.A_array = A_array
+        self.B_array = B_array
+        self.C_array = C_array
+        self.D_array = D_array
+        self.W = W
+        self.interp_type = interp_type
         
         FAST_sim = SimulationDetails.FAST_sim
         
@@ -60,6 +67,24 @@ class DFSM:
         self.train_data = FAST_sim[0:train_index]
         
         self.test_data = FAST_sim[train_index:]
+
+    def setup_LPV(self,interp_type = None):
+
+        if interp_type == None:
+            interp_type = self.interp_type
+
+        A_array = self.A_array;B_array = self.B_array;C_array = self.C_array;D_array = self.D_array
+        W = self.W
+
+        A0 = np.squeeze(A_array[0,:,:]);A1 = np.squeeze(A_array[-1,:,:])
+        B0 = np.squeeze(B_array[0,:,:]);B1 = np.squeeze(B_array[-1,:,:])
+        C0 = np.squeeze(C_array[0,:,:]);C1 = np.squeeze(C_array[-1,:,:])
+        D0 = np.squeeze(D_array[0,:,:]);D1 = np.squeeze(D_array[-1,:,:])
+
+        self.A_fun = interp1d(W,A_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (A0,A1))
+        self.B_fun = interp1d(W,B_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (B0,B1))
+        self.C_fun = interp1d(W,C_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (C0,C1))
+        self.D_fun = interp1d(W,D_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (D0,D1))
         
     def construct_nonlinear(self,inputs,outputs,N_type,error_ind,n_inputs,n_outputs,ftype = 'deriv',scaling = True):
         
@@ -116,6 +141,8 @@ class DFSM:
             
        
     def construct_surrogate(self):
+        
+
         
         # extract samples
         t1 = timer.time()

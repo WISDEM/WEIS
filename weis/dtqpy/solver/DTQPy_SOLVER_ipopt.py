@@ -8,7 +8,12 @@ Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
 # import pyoptsparse
-from pyoptsparse import IPOPT, Optimization
+try:
+    # import pyoptsparse
+    from pyoptsparse import IPOPT, Optimization
+    PYOPT = True
+except ImportError:
+    PYOPT = False
 from scipy import sparse
 
 
