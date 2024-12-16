@@ -613,13 +613,10 @@ def toggle(click, is_open):
 
 
 def store_dataframes(var_files):
-    dfs = []
-    for idx, file_path in var_files.items():
-        if file_path == 'None':
-            dfs.append({idx: []})
-            continue
+    dfs = {}
+    for _, file_path in var_files.items():
         df = pd.read_csv(file_path, skiprows=[0,1,2,3,4,5,7], sep='\s+')
-        dfs.append({idx: df.to_dict('records')})
+        dfs[file_path] = df.to_dict('records')
     
     return dfs
 
@@ -724,6 +721,16 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
         image_filename = os.path.join(plot_dir,f'ptfm_{i_plot}.png')
         plt.savefig(image_filename, bbox_inches='tight')
         print('saved ', image_filename)
+
+
+def remove_duplicated_legends(fig):
+    names = set()
+    fig.for_each_trace(
+        lambda trace:
+            trace.update(showlegend=False)
+            if (trace.name in names) else names.add(trace.name))
+    
+    return fig
 
 
 ############################
