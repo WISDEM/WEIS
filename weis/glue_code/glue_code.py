@@ -70,10 +70,24 @@ class WindPark(om.Group):
                 ivc_units = dv['units']
 
             ivc_desc = None
-            if 'desc' in dv:
-                ivc_desc = dv['desc']
+            if 'description' in dv:
+                ivc_desc = dv['description']
 
             tune_rosco_ivc.add_output(dv['name'], val=0.0, units=ivc_units, desc=ivc_desc)
+
+        # DISCON DVs
+        discon_dvs = opt_options['design_variables']['control']['discon']
+        for dv in discon_dvs:
+            # TODO: support scalars
+            ivc_units = None
+            if 'units' in dv:
+                ivc_units = dv['units']
+
+            ivc_desc = None
+            if 'description' in dv:
+                ivc_desc = dv['description']
+
+            tune_rosco_ivc.add_output(f'discon:{dv['name']}', val=dv['start'], units=ivc_units, desc=ivc_desc)
 
         # Specific DVs
         tune_rosco_ivc.add_output('omega_pc',         val=np.zeros(n_PC), units='rad/s',     desc='Pitch controller natural frequency')
@@ -244,6 +258,11 @@ class WindPark(om.Group):
             # Connect generic ivc/dvs
             for dv in rosco_tuning_dvs:
                 self.connect(f'tune_rosco_ivc.{dv["name"]}',     f'sse_tune.tune_rosco.{dv["name"]}')
+
+            # Connect discon ivc/dvs
+            for dv in discon_dvs:
+                self.connect(f'tune_rosco_ivc.discon:{dv['name']}', f'sse_tune.tune_rosco.discon:{dv["name"]}')
+
 
         if modeling_options['Level1']['flag']:
             self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))

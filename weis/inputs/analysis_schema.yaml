@@ -104,6 +104,32 @@ properties:
                                     type: number
                                 max:
                                     type: number
+                    discon:
+                        type: array
+                        default: []
+                        items:
+                            type: object
+                            default: {}
+                            properties:
+                                name:
+                                    type: string
+                                    description: Name of DISCON input parameter
+                                start:
+                                    type: [number,array]
+                                    items:
+                                        type: number
+                                    description: Starting point of DISCON input. Size/shape should match the DISCON parameter.
+                                min: 
+                                    type: [number,array]
+                                    items:
+                                        type: number
+                                    description: Lower bound of DISCON input. Size/shape should match the DISCON parameter.
+                                max:
+                                    type: [number,array]
+                                    items:
+                                        type: number
+                                    description: Upper bound of DISCON input. Size/shape should match the DISCON parameter.
+
                     servo:
                         type: object
                         default: {}

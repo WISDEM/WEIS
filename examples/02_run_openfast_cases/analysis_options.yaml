@@ -1,25 +1,33 @@
 general:
-    folder_output: outputs/02_rosco_optimization
+    folder_output: outputs/02_DISCON_DV/0_setup
     fname_output: iea15mw
+# design_variables:
+#   control:
+#     servo:
+#       pitch_control:
+#           omega:
+#             flag: True
+#             min: 0.1
+#             max: 0.5
+#           zeta:
+#             flag: True
+#             min: 0.1
+#             max: 3.0
+#           Kp_float:
+#             flag: True
+#             min: -40
+#             max: 0
+#           ptfm_freq:
+#             flag: True
+#             max: 0.4
+
 design_variables:
   control:
-    servo:
-      pitch_control:
-          omega:
-            flag: True
-            min: 0.1
-            max: 0.5
-          zeta:
-            flag: True
-            min: 0.1
-            max: 3.0
-          Kp_float:
-            flag: True
-            min: -40
-            max: 0
-          ptfm_freq:
-            flag: True
-            max: 0.4
+    discon:
+      - name: F_FlCornerFreq
+        start: [0.250000, 0.500000]
+        min: [0.001, 0.1]
+        max: [1.0, 3.0]
 
 merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
