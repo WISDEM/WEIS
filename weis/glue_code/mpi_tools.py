@@ -35,54 +35,23 @@ else:
     MPI = None
 
 
-def map_comm_heirarchical(n_DV, n_OF, openmp=False):
+def map_comm_heirarchical(n_DV, n_OF):
     """
     Heirarchical parallelization communicator mapping.  Assumes a number of top level processes
-    equal to the number of design variables (x2 if central finite differencing is used), each
+    equal to the number of finite differences, each
     with its associated number of openfast simulations.
-    When openmp flag is turned on, the code spreads the openfast simulations across nodes to
-    lavereage the opnemp parallelization of OpenFAST. The cores that will run under openmp, are marked
-    in the color map as 1000000. The ones handling python and the DV are marked as 0, and
-    finally the master ones for each openfast run are marked with a 1.
     """
-    if openmp:
-        n_procs_per_node = 36  # Number of
-        num_procs = MPI.COMM_WORLD.Get_size()
-        n_nodes = num_procs / n_procs_per_node
+    N = n_DV + n_DV * n_OF
+    comm_map_down = {}
+    comm_map_up = {}
+    color_map = [0] * n_DV
 
-        comm_map_down = {}
-        comm_map_up = {}
-        color_map = [1000000] * num_procs
+    for i in range(n_DV):
+        comm_map_down[i] = [n_DV + j + i * n_OF for j in range(n_OF)]
+        color_map.extend([i + 1] * n_OF)
 
-        n_DV_per_node = n_DV / n_nodes
-
-        # for m in range(n_DV_per_node):
-        for nn in range(int(n_nodes)):
-            for n_dv in range(int(n_DV_per_node)):
-                comm_map_down[nn * n_procs_per_node + n_dv] = [
-                    int(n_DV_per_node) + n_dv * n_OF + nn * (n_procs_per_node) + j for j in range(n_OF)
-                ]
-
-                # This core handles python, so in the colormap the entry is 0
-                color_map[nn * n_procs_per_node + n_dv] = int(0)
-                # These cores handles openfast, so in the colormap the entry is 1
-                for k in comm_map_down[nn * n_procs_per_node + n_dv]:
-                    color_map[k] = int(1)
-
-                for j in comm_map_down[nn * n_procs_per_node + n_dv]:
-                    comm_map_up[j] = nn * n_procs_per_node + n_dv
-    else:
-        N = n_DV + n_DV * n_OF
-        comm_map_down = {}
-        comm_map_up = {}
-        color_map = [0] * n_DV
-
-        for i in range(n_DV):
-            comm_map_down[i] = [n_DV + j + i * n_OF for j in range(n_OF)]
-            color_map.extend([i + 1] * n_OF)
-
-            for j in comm_map_down[i]:
-                comm_map_up[j] = i
+        for j in comm_map_down[i]:
+            comm_map_up[j] = i
 
     return comm_map_down, comm_map_up, color_map
 

@@ -96,11 +96,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             color_i = 0
         else:
             n_FD = max([n_FD, 1])
-            if modeling_options['Level3']['flag'] == True and modeling_options['Level3']['AeroDyn']['WakeMod'] == 3:
-                olaf = True
-            else:
-                olaf = False
-            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel, openmp=olaf)
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_runs_parallel)
             rank    = MPI.COMM_WORLD.Get_rank()
             if rank < len(color_map):
                 try:
@@ -238,10 +234,8 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
     if MPI and \
             (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
-            (not opt_options['driver']['design_of_experiments']['flag']) and \
-            color_i < 1000000:
+            (not opt_options['driver']['design_of_experiments']['flag']):
         # subprocessor ranks spin, waiting for FAST simulations to run.
-        # Only true for cores actually in use, not the ones supporting openfast openmp (marked as color_i = 1000000)
         sys.stdout.flush()
         if rank in comm_map_up.keys():
             subprocessor_loop(comm_map_up)
@@ -252,7 +246,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
         sys.stdout.flush()
 
     # Send each core in use to a barrier synchronization
-    if MPI and color_i < 1000000:
+    if MPI:
         MPI.COMM_WORLD.Barrier()
 
     if rank == 0:
