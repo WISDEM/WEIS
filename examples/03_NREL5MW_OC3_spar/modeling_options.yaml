@@ -97,7 +97,7 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [14.]
+          wind_speed: [14.,16., 18., 20., 22.]
           wave_height: [7.]
           wave_period: [1.]
           n_seeds: 1

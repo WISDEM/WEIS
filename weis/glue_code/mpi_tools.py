@@ -1,8 +1,84 @@
 import os
 import sys
-
+import numpy as np
 from openmdao.utils.mpi import MPI
 
+def compute_optimal_nC(n_FD, n_OF_runs, modeling_options, opt_options, max_cores=0):
+    
+    
+    fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
+    evolutionary_methods = ['DE', 'NSGA2']
+    
+    print("\nYour problem has %d design variable(s) and %d OpenFAST run(s)\n"%(n_FD, n_OF_runs))
+
+    if modeling_options['Level3']['flag']:
+        # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
+        if not (opt_options['driver']['design_of_experiments']['flag']) and (opt_options['driver']['optimization']['solver'] in evolutionary_methods):
+            print("You are running an optimization based on an evolutionary solver. The number of parallel finite differencing is now multiplied by 5\n")
+            n_FD *= 5  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
+        elif not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+            print("You are not running a design of experiment or your optimizer is not gradient based. The number of parallel finite differencing is now set to 1\n")
+            n_FD = 1
+    elif modeling_options['Level2']['flag']:
+        if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+            print("You are not running a design of experiment or your optimizer is not gradient based. The number of parallel finite differencing is now set to 1\n")
+            n_FD = 1
+    # # if we're doing a GA or such, "FD" means "entities in epoch"
+    # if opt_options['driver']['optimization']['solver'] in evolutionary_methods:
+    #     n_FD = max_cores
+
+
+    print("To run the code in parallel with MPI, execute one of the following commands\n")
+
+    if max_cores != 0:
+        print("You have access to %d cores. Please call WEIS as:"%max_cores)
+        # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD)
+        # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
+        if modeling_options['Level3']['flag']:
+            # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs,
+            # otherwise it is half of the number of DV (rounded to the lower integer).
+            # We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
+            if max_cores > 2. * n_FD:
+                n_FD = n_FD
+            else:
+                n_FD = int(np.floor(max_cores / 2))
+            # Get the number of OpenFAST runs from the user input and the max that can run in parallel given the resources
+            # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and
+            # the number of cores available (minus the number of DV, which sit and wait for OF to complete)
+            n_FD = max([n_FD, 1])
+            max_parallel_OF_runs = max([int(np.floor((max_cores - n_FD) / n_FD)), 1])
+            n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
+        elif modeling_options['Level2']['flag']:
+            if max_cores > 2. * n_FD:
+                n_FD = n_FD
+            else:
+                n_FD = int(np.floor(max_cores / 2))
+            n_FD = max([n_FD, 1])
+            max_parallel_OF_runs = max([int(np.floor((max_cores - n_FD) / n_FD)), 1])
+            n_OF_runs_parallel = min([int(n_OF_runs), max_parallel_OF_runs])
+        else:
+            # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
+            n_FD = min([max_cores, n_FD])
+            n_OF_runs_parallel = 1
+        n_C = n_FD + n_FD * n_OF_runs_parallel
+    
+    else:
+        n_OF_runs_parallel = n_OF_runs
+        n_C = n_FD + n_FD * n_OF_runs_parallel
+        print("If you have access to (at least) %d cores, please call WEIS as:"%n_C)
+    
+    print("mpirun -np %d python weis_driver.py --n_FD=%d --n_OF_parallel=%d\n"%(n_C, n_FD, n_OF_runs_parallel))
+
+    if max_cores == 0:
+        print("\nIf you do not have access to %d cores"%n_C)
+        print("please provide your maximum available number of cores by typing:")
+        print("python weis_driver.py --maxCore=xx")
+        print("And substitute xx with your number of cores\n")
+    
+    print(f"nC={n_C}")
+    print(f"n_FD={n_FD}")
+    print(f"n_OFp={n_OF_runs_parallel}")
+    return None
 
 def under_mpirun():
     """Return True if we're being executed under mpirun."""
@@ -35,19 +111,19 @@ else:
     MPI = None
 
 
-def map_comm_heirarchical(n_DV, n_OF):
+def map_comm_heirarchical(n_FD, n_OF):
     """
     Heirarchical parallelization communicator mapping.  Assumes a number of top level processes
     equal to the number of finite differences, each
     with its associated number of openfast simulations.
     """
-    N = n_DV + n_DV * n_OF
+    N = n_FD + n_FD * n_OF
     comm_map_down = {}
     comm_map_up = {}
-    color_map = [0] * n_DV
+    color_map = [0] * n_FD
 
-    for i in range(n_DV):
-        comm_map_down[i] = [n_DV + j + i * n_OF for j in range(n_OF)]
+    for i in range(n_FD):
+        comm_map_down[i] = [n_FD + j + i * n_OF for j in range(n_OF)]
         color_map.extend([i + 1] * n_OF)
 
         for j in comm_map_down[i]:
