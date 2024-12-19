@@ -89,7 +89,7 @@ class WindPark(om.Group):
             if 'description' in dv:
                 ivc_desc = dv['description']
 
-            tune_rosco_ivc.add_output(f'discon:{dv['name']}', val=dv['start'], units=ivc_units, desc=ivc_desc)
+            tune_rosco_ivc.add_output(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
 
         # Specific DVs
         tune_rosco_ivc.add_output('omega_pc',         val=np.zeros(n_PC), units='rad/s',     desc='Pitch controller natural frequency')
@@ -927,7 +927,7 @@ class WindPark(om.Group):
 
                     # Generic DISCON DVs
                     for dv in discon_dvs:
-                        self.connect(f'tune_rosco_ivc.discon:{dv['name']}', f'aeroelastic.discon:{dv["name"]}')
+                        self.connect(f'tune_rosco_ivc.discon:{dv["name"]}', f'aeroelastic.discon:{dv["name"]}')
             
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:

@@ -183,7 +183,7 @@ class TuneROSCO(ExplicitComponent):
             if 'description' in dv:
                 ivc_desc = dv['description']
 
-            self.add_input(f'discon:{dv['name']}', val=dv['start'], units=ivc_units, desc=ivc_desc)
+            self.add_input(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
 
         
         
@@ -270,7 +270,7 @@ class TuneROSCO(ExplicitComponent):
         # Generic DISCON Inputs
         discon_dvs = self.opt_options['design_variables']['control']['discon']
         for dv in discon_dvs:
-            rosco_init_options['DISCON'][dv['name']] = inputs[f'discon:{dv['name']}']
+            rosco_init_options['DISCON'][dv['name']] = inputs[f'discon:{dv["name"]}']
 
         # Define necessary turbine parameters
         WISDEM_turbine = type('', (), {})()

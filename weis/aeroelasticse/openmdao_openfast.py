@@ -366,7 +366,7 @@ class FASTLoadCases(ExplicitComponent):
                 if 'description' in dv:
                     ivc_desc = dv['description']
 
-                self.add_input(f'discon:{dv['name']}', val=dv['start'], units=ivc_units, desc=ivc_desc)
+                self.add_input(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
                 
 
         # DLC options
@@ -624,7 +624,7 @@ class FASTLoadCases(ExplicitComponent):
                 # If we're not tuning ROSCO and the DVs are direct inputs to the DISCON
                 discon_dvs = self.options['opt_options']['design_variables']['control']['discon']
                 for dv in discon_dvs:
-                    fst_vt['DISCON_in'][dv['name']] = inputs[f'discon:{dv['name']}']
+                    fst_vt['DISCON_in'][dv['name']] = inputs[f'discon:{dv["name"]}']
                 
                 
         if self.model_only == True:
