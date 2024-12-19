@@ -320,7 +320,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         for dv in discon_dvs:
 
             # Check that name is in rosco schema
-            if not dv['name'] in discon_params:
+            if not dv['name'] in discon_params and self.modeling['ROSCO']['flag']:
                 raise Exception(f'The design variable {dv["name"]} is not part of the ROSCO DISCON schema.')
                 # Skip this if we don't have a schema, could create a schema from a sample input
             
@@ -522,7 +522,8 @@ class PoseOptimizationWEIS(PoseOptimization):
                 upper = control_constraints['rotor_overspeed']['max'])
         
         # Add PI gains if overspeed is merit_figure or constraint
-        if control_constraints['rotor_overspeed']['flag'] or self.opt['merit_figure'] == 'rotor_overspeed':
+        if (control_constraints['rotor_overspeed']['flag'] or self.opt['merit_figure'] == 'rotor_overspeed') and \
+            self.modeling['ROSCO']['flag']:
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
                 upper = 0.0)
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Ki', 

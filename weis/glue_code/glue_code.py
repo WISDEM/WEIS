@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import logging
 import openmdao.api as om
 from wisdem.glue_code.glue_code import WindPark as wisdemPark
 #from wisdem.glue_code.gc_WT_DataStruc import WindTurbineOntologyOpenMDAO
@@ -26,6 +27,7 @@ from rosco.toolbox.inputs.validation import load_rosco_yaml
 from wisdem.inputs import load_yaml
 from wisdem.commonse.cylinder_member import get_nfull
 
+logger = logging.getLogger("wisdem/weis")
 
 weis_dir = os.path.realpath(os.path.join(os.path.dirname(__file__),'../../'))
 
@@ -439,7 +441,8 @@ class WindPark(om.Group):
 
 
             if modeling_options['ROSCO']['flag']==False:
-                raise Exception("ERROR: WISDEM does not support openfast without the tuning of ROSCO")
+                logger.warning("Warning: ROSCO tuning is disabled in the modeling options")
+                
 
             # Configuration parameters needed if model comes from openfast
             self.connect('control.V_in',                    'aeroelastic.V_cutin')
@@ -911,10 +914,20 @@ class WindPark(om.Group):
                 self.connect('tower.diameter',                  'tcons_post.outer_diameter_full')
                 
             else:  # connections from outside WISDEM
-                self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
-                self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
-                self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
-                self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq')
+                if modeling_options['ROSCO']['flag']:
+                    self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
+                    self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
+                    self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
+                    self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq')
+                else:
+                    # TODO: how should we make these connections? We should be able to fill with assembly info or something
+                    # R and hub height for wind file generation, but the user can input GridWidth, etc. from modeling options
+                    # v_rated is an input to the dlc generator, but the user can also input the DLC 1.4, 1.5 inputs to the modeling options
+                    # Tower frequency can be ignored
+
+                    # Generic DISCON DVs
+                    for dv in discon_dvs:
+                        self.connect(f'tune_rosco_ivc.discon:{dv['name']}', f'aeroelastic.discon:{dv["name"]}')
             
             # Inputs to plantfinancese from wt group
             if not modeling_options['Level3']['from_openfast']:

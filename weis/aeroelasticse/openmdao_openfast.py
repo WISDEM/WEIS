@@ -352,6 +352,23 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('TMD_stiffness',    val=np.zeros(n_TMDs), units='N/m',        desc='TMD Stiffnes')
             self.add_input('TMD_damping',      val=np.zeros(n_TMDs), units='N/(m/s)',    desc='TMD Damping')
 
+        # Generic DISCON params
+        if not self.options['modeling_options']['ROSCO']['flag']:
+            # If the ROSCO flag were on, the DISCON params would have gone there
+
+            discon_dvs = self.options['opt_options']['design_variables']['control']['discon']
+            for dv in discon_dvs:
+                ivc_units = None
+                if 'units' in dv:
+                    ivc_units = dv['units']
+
+                ivc_desc = None
+                if 'description' in dv:
+                    ivc_desc = dv['description']
+
+                self.add_input(f'discon:{dv['name']}', val=dv['start'], units=ivc_units, desc=ivc_desc)
+                
+
         # DLC options
         n_ws_aep = np.max([1,modopt['DLC_driver']['n_ws_aep']])
 
@@ -601,7 +618,13 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['AddF0'] = [[F0] for F0 in fst_vt['HydroDyn']['AddF0']]
 
             if modopt['ROSCO']['flag']:
+                # This is usually populated in tune_rosco if the ROSCO flag is true
                 fst_vt['DISCON_in'] = modopt['General']['openfast_configuration']['fst_vt']['DISCON_in']
+            else:
+                # If we're not tuning ROSCO and the DVs are direct inputs to the DISCON
+                discon_dvs = self.options['opt_options']['design_variables']['control']['discon']
+                for dv in discon_dvs:
+                    fst_vt['DISCON_in'][dv['name']] = inputs[f'discon:{dv['name']}']
                 
                 
         if self.model_only == True:
