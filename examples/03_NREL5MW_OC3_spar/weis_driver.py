@@ -6,6 +6,12 @@ from weis.glue_code.runWEIS     import run_weis
 from openmdao.utils.mpi  import MPI
 from weis.glue_code.mpi_tools import compute_optimal_nC
 
+## File management
+run_dir                 = os.path.dirname( os.path.realpath(__file__) )
+fname_wt_input          = os.path.join(run_dir, "nrel5mw-spar_oc3.yaml")
+fname_modeling_options  = os.path.join(run_dir, 'modeling_options.yaml')
+fname_analysis_options  = os.path.join(run_dir, 'analysis_options.yaml')
+
 import argparse
 # Set up argument parser
 parser = argparse.ArgumentParser(description="Run WEIS driver with flag prepping for MPI run.")
@@ -21,14 +27,6 @@ if args.preMPIflag:
     print("Preprocessor flag is set to True. Running preprocessing setting up MPI run.")
 else:
     print("Preprocessor flag is set to False. Run WEIS now.")
-
-
-## File management
-run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input          = os.path.join(run_dir, "nrel5mw-spar_oc3.yaml")
-fname_modeling_options  = os.path.join(run_dir, 'modeling_options.yaml')
-fname_analysis_options  = os.path.join(run_dir, 'analysis_options.yaml')
-
 
 tt = time.time()
 # Use the flag in your script
