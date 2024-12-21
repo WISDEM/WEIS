@@ -114,77 +114,79 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
             # memory for the derivative arrays.
             wt_opt.setup(derivatives=False)
 
-        # If WEIS is called simply to prep for an MPI call, return the number of finite differences and OpenFAST calls, and stop
-        if prepMPI:
-            n_FD = len(wt_opt.model.list_outputs(is_design_var=True, out_stream=None))
-            return wt_opt, modeling_options, opt_options, n_FD, myopt.n_OF_runs
+        # Return number of design variables, used to setup WEIS for an MPI run
+        n_FD = len(wt_opt.model.list_outputs(is_design_var=True, out_stream=None))
 
-        # Load initial wind turbine data from wt_initial to the openmdao problem
-        wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
-        wt_opt = assign_ROSCO_values(wt_opt, modeling_options, opt_options)
-        if modeling_options['flags']['TMDs']:
-            wt_opt = assign_TMD_values(wt_opt, wt_init, opt_options)
+        # If WEIS is called simply to prep for an MPI call, no need to proceed and simply 
+        # return the number of finite differences and OpenFAST calls, and stop
+        # Otherwise, keep going assigning inputs and running the OpenMDAO model/driver
+        if not prepMPI:
+            # Load initial wind turbine data from wt_initial to the openmdao problem
+            wt_opt = yaml2openmdao(wt_opt, modeling_options, wt_init, opt_options)
+            wt_opt = assign_ROSCO_values(wt_opt, modeling_options, opt_options)
+            if modeling_options['flags']['TMDs']:
+                wt_opt = assign_TMD_values(wt_opt, wt_init, opt_options)
 
-        wt_opt = myopt.set_initial(wt_opt, wt_init)
-        if modeling_options['Level3']['flag']:
-            wt_opt = myopt.set_initial_weis(wt_opt)
+            wt_opt = myopt.set_initial(wt_opt, wt_init)
+            if modeling_options['Level3']['flag']:
+                wt_opt = myopt.set_initial_weis(wt_opt)
 
-        # If the user provides values in geometry_override, they overwrite
-        # whatever values have been set by the yaml files.
-        # This is useful for performing black-box wrapped optimization without
-        # needing to modify the yaml files.
-        # Some logic is used here if the user gives a smalller size for the
-        # design variable than expected to input the values into the end
-        # of the array.
-        # This is useful when optimizing twist, where the first few indices
-        # do not need to be optimized as they correspond to a circular cross-section.
-        if geometry_override is not None:
-            for key in geometry_override:
-                num_values = np.array(geometry_override[key]).size
-                key_size = wt_opt[key].size
-                idx_start = key_size - num_values
-                wt_opt[key][idx_start:] = geometry_override[key]
+            # If the user provides values in geometry_override, they overwrite
+            # whatever values have been set by the yaml files.
+            # This is useful for performing black-box wrapped optimization without
+            # needing to modify the yaml files.
+            # Some logic is used here if the user gives a smalller size for the
+            # design variable than expected to input the values into the end
+            # of the array.
+            # This is useful when optimizing twist, where the first few indices
+            # do not need to be optimized as they correspond to a circular cross-section.
+            if geometry_override is not None:
+                for key in geometry_override:
+                    num_values = np.array(geometry_override[key]).size
+                    key_size = wt_opt[key].size
+                    idx_start = key_size - num_values
+                    wt_opt[key][idx_start:] = geometry_override[key]
 
-        # Place the last design variables from a previous run into the problem.
-        # This needs to occur after the above setup() and yaml2openmdao() calls
-        # so these values are correctly placed in the problem.
-        wt_opt = myopt.set_restart(wt_opt)
+            # Place the last design variables from a previous run into the problem.
+            # This needs to occur after the above setup() and yaml2openmdao() calls
+            # so these values are correctly placed in the problem.
+            wt_opt = myopt.set_restart(wt_opt)
 
-        if 'check_totals' in opt_options['driver']['optimization']:
-            if opt_options['driver']['optimization']['check_totals']:
+            if 'check_totals' in opt_options['driver']['optimization']:
+                if opt_options['driver']['optimization']['check_totals']:
+                    wt_opt.run_model()
+                    totals = wt_opt.compute_totals()
+
+            if 'check_partials' in opt_options['driver']['optimization']:
+                if opt_options['driver']['optimization']['check_partials']:
+                    wt_opt.run_model()
+                    checks = wt_opt.check_partials(compact_print=True)
+
+            sys.stdout.flush()
+            # Run openmdao problem
+            if opt_options['opt_flag']:
+                wt_opt.run_driver()
+            else:
                 wt_opt.run_model()
-                totals = wt_opt.compute_totals()
 
-        if 'check_partials' in opt_options['driver']['optimization']:
-            if opt_options['driver']['optimization']['check_partials']:
-                wt_opt.run_model()
-                checks = wt_opt.check_partials(compact_print=True)
+            if (not MPI) or (MPI and rank == 0):
+                # Save data coming from openmdao to an output yaml file
+                froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
+                # Remove the fst_vt key from the dictionary and write out the modeling options
+                modeling_options['General']['openfast_configuration']['fst_vt'] = {}
+                if not modeling_options['Level3']['from_openfast']:
+                    wt_initial.write_ontology(wt_opt, froot_out)
+                wt_initial.write_options(froot_out)
 
-        sys.stdout.flush()
-        # Run openmdao problem
-        if opt_options['opt_flag']:
-            wt_opt.run_driver()
-        else:
-            wt_opt.run_model()
+                # openMDAO doesn't save constraint values, so we get them from this construction
+                problem_var_dict = wt_opt.list_driver_vars(
+                    desvar_opts=["lower", "upper",],
+                    cons_opts=["lower", "upper", "equals",],
+                )
+                save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
 
-        if (not MPI) or (MPI and rank == 0):
-            # Save data coming from openmdao to an output yaml file
-            froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
-            # Remove the fst_vt key from the dictionary and write out the modeling options
-            modeling_options['General']['openfast_configuration']['fst_vt'] = {}
-            if not modeling_options['Level3']['from_openfast']:
-                wt_initial.write_ontology(wt_opt, froot_out)
-            wt_initial.write_options(froot_out)
-
-            # openMDAO doesn't save constraint values, so we get them from this construction
-            problem_var_dict = wt_opt.list_driver_vars(
-                desvar_opts=["lower", "upper",],
-                cons_opts=["lower", "upper", "equals",],
-            )
-            save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
-
-            # Save data to numpy and matlab arrays
-            fileIO.save_data(froot_out, wt_opt)
+                # Save data to numpy and matlab arrays
+                fileIO.save_data(froot_out, wt_opt)
 
     if MPI and \
             (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
@@ -203,7 +205,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     if MPI:
         MPI.COMM_WORLD.Barrier()
 
-    if rank == 0:
-        return wt_opt, modeling_options, opt_options
+    if color_i == 0:
+        if prepMPI:
+            return wt_opt, modeling_options, opt_options, n_FD, myopt.n_OF_runs
+        else:
+            return wt_opt, modeling_options, opt_options
     else:
         return [], [], []

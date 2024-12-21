@@ -32,7 +32,7 @@ tt = time.time()
 # Use the flag in your script
 if args.preMPIflag:
     _, modeling_options, opt_options, n_FD, n_OF_runs = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options, prepMPI=True)
-    compute_optimal_nC(n_FD, n_OF_runs, modeling_options, opt_options, max_cores = args.maxCores)
+    n_C, n_FD, n_OF_parallel= compute_optimal_nC(n_FD, n_OF_runs, modeling_options, opt_options, max_cores = args.maxCores)
 else:
     wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options, n_FD = args.n_FD, n_OF_parallel = args.n_OF_parallel)
 

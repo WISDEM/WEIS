@@ -78,7 +78,7 @@ def compute_optimal_nC(n_FD, n_OF_runs, modeling_options, opt_options, max_cores
     print(f"nC={n_C}")
     print(f"n_FD={n_FD}")
     print(f"n_OFp={n_OF_runs_parallel}")
-    return None
+    return n_C, n_FD, n_OF_runs_parallel
 
 def under_mpirun():
     """Return True if we're being executed under mpirun."""
