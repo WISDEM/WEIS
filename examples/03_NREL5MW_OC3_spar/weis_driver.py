@@ -30,10 +30,26 @@ else:
 tt = time.time()
 # Use the flag in your script
 if args.preMPI:
-    _, _, _ = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options, prepMPI=True, maxnP = args.maxnP)
+    _, _, _ = run_weis(fname_wt_input, 
+                       fname_modeling_options, 
+                       fname_analysis_options, 
+                       prepMPI=True, 
+                       maxnP = args.maxnP)
 else:
-    _, modeling_options, _ = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options, prepMPI=True, maxnP = args.maxnP)
-    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, modeling_options, fname_analysis_options)
+    _, modeling_options, _ = run_weis(fname_wt_input,
+                                      fname_modeling_options, 
+                                      fname_analysis_options, 
+                                      prepMPI=True, 
+                                      maxnP = args.maxnP)
+    modeling_override = {}
+    modeling_override['General'] = {}
+    modeling_override['General']['openfast_configuration'] = {}
+    modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
+    modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
+    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
+                                                     fname_modeling_options, 
+                                                     fname_analysis_options,
+                                                     modeling_override=modeling_options)
 
 if MPI:
     rank = MPI.COMM_WORLD.Get_rank()
