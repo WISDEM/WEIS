@@ -67,7 +67,7 @@ def compute_optimal_nC(nFD, nOF, modeling_options, opt_options, maxnP=0):
         nC = nFD + nFD * nOFp
         print("If you have access to (at least) %d cores, please call WEIS as:"%nC)
     
-    print("mpirun -np %d python weis_driver.py --nFD=%d --n_OF_parallel=%d\n"%(nC, nFD, nOFp))
+    print("mpirun -np %d python weis_driver.py --nFD=%d --nOFp=%d\n"%(nC, nFD, nOFp))
 
     if maxnP == 0:
         print("\nIf you do not have access to %d cores"%nC)

@@ -35,8 +35,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     myopt = PoseOptimizationWEIS(wt_init, modeling_options, opt_options)
     
     if MPI:
-        nFD = modeling_options['General']['openfast_configuration']['nFD']
-        nOFp = modeling_options['General']['openfast_configuration']['nOFp']
+        if not prepMPI:
+            nFD = modeling_options['General']['openfast_configuration']['nFD']
+            nOFp = modeling_options['General']['openfast_configuration']['nOFp']
+        else:
+            nFD = 1
+            nOFp = 0
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
         if opt_options['driver']['design_of_experiments']['flag']:
             nFD = MPI.COMM_WORLD.Get_size()
