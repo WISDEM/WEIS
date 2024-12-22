@@ -11,7 +11,7 @@ from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
 from weis.aeroelasticse.FileTools     import save_yaml
 from wisdem.inputs.validation         import simple_types
-
+from weis.glue_code.mpi_tools import compute_optimal_nC
 
 
 if MPI:
@@ -19,7 +19,7 @@ if MPI:
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, 
              geometry_override=None, modeling_override=None, analysis_override=None, 
-             prepMPI=False, n_FD=1, n_OF_parallel=0):
+             prepMPI=False, maxnP=0):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(
         fname_wt_input,
@@ -35,24 +35,26 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     myopt = PoseOptimizationWEIS(wt_init, modeling_options, opt_options)
     
     if MPI:
+        nFD = modeling_options['General']['openfast_configuration']['nFD']
+        nOFp = modeling_options['General']['openfast_configuration']['nOFp']
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
         if opt_options['driver']['design_of_experiments']['flag']:
-            n_FD = MPI.COMM_WORLD.Get_size()
-            n_OF_parallel = 1
+            nFD = MPI.COMM_WORLD.Get_size()
+            nOFp = 1
             rank    = MPI.COMM_WORLD.Get_rank()
             comm_map_up = comm_map_down = {}
             for r in range(MPI.COMM_WORLD.Get_size()):
                 comm_map_up[r] = [r]
             color_i = 0
         else:
-            n_FD = max([n_FD, 1])
-            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(n_FD, n_OF_parallel)
+            nFD = max([nFD, 1])
+            comm_map_down, comm_map_up, color_map = map_comm_heirarchical(nFD, nOFp)
             rank    = MPI.COMM_WORLD.Get_rank()
             if rank < len(color_map):
                 try:
                     color_i = color_map[rank]
                 except IndexError:
-                    raise ValueError('The number of finite differencing variables is {} and the correct number of cores were not allocated'.format(n_FD))
+                    raise ValueError('The number of finite differencing variables is {} and the correct number of cores were not allocated'.format(nFD))
             else:
                 color_i = max(color_map) + 1
             comm_i  = MPI.COMM_WORLD.Split(color_i, 1)
@@ -79,13 +81,13 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
                 if opt_options['driver']['design_of_experiments']['flag']:
                     modeling_options['General']['openfast_configuration']['cores'] = 1
                 else:
-                    modeling_options['General']['openfast_configuration']['cores'] = n_OF_parallel
+                    modeling_options['General']['openfast_configuration']['cores'] = nOFp
 
             # Parallel settings for OpenMDAO
             if opt_options['driver']['design_of_experiments']['flag']:
                 wt_opt = om.Problem(model=WindPark(modeling_options = modeling_options, opt_options = opt_options), reports=False)
             else:
-                wt_opt = om.Problem(model=om.Group(num_par_fd=n_FD), comm=comm_i, reports=False)
+                wt_opt = om.Problem(model=om.Group(num_par_fd=nFD), comm=comm_i, reports=False)
                 wt_opt.model.add_subsystem('comp', WindPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
         else:
             # Sequential finite differencing and openfast simulations
@@ -114,8 +116,10 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
             # memory for the derivative arrays.
             wt_opt.setup(derivatives=False)
 
-        # Return number of design variables, used to setup WEIS for an MPI run
-        n_FD = len(wt_opt.model.list_outputs(is_design_var=True, out_stream=None))
+        # Estimate number of design variables and parallel calls to OpenFASRT given 
+        # the computational resources available. This is used to setup WEIS for an MPI run
+        nFD = len(wt_opt.model.list_outputs(is_design_var=True, out_stream=None))
+        modeling_options = compute_optimal_nC(nFD, myopt.n_OF_runs, modeling_options, opt_options, maxnP = maxnP)
 
         # If WEIS is called simply to prep for an MPI call, no need to proceed and simply 
         # return the number of finite differences and OpenFAST calls, and stop
@@ -206,9 +210,6 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
         MPI.COMM_WORLD.Barrier()
 
     if color_i == 0:
-        if prepMPI:
-            return wt_opt, modeling_options, opt_options, n_FD, myopt.n_OF_runs
-        else:
-            return wt_opt, modeling_options, opt_options
+        return wt_opt, modeling_options, opt_options
     else:
         return [], [], []
