@@ -210,10 +210,22 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
         sys.stdout.flush()
 
     # Send each core in use to a barrier synchronization
+    # Next, share WEIS outputs across all processors from rank=0 (root)
     if MPI:
         MPI.COMM_WORLD.Barrier()
+        rank = MPI.COMM_WORLD.Get_rank()
+        if rank != 0:
+            wt_opt = None
+            modeling_options = None
+            opt_options = None
+        
+        # MPI.COMM_WORLD.bcast cannot broadcast out a full OpenMDAO problem
+        # We don't need it for now, but this might become an issue if we start
+        # stacking multiple WEIS calls on top of each other and we need to 
+        # reuse wt_opt from one call to the next
+        modeling_options = MPI.COMM_WORLD.bcast(modeling_options, root = 0)
+        opt_options = MPI.COMM_WORLD.bcast(opt_options, root = 0)
+        MPI.COMM_WORLD.Barrier()
 
-    if color_i == 0:
-        return wt_opt, modeling_options, opt_options
-    else:
-        return [], [], []
+    return wt_opt, modeling_options, opt_options
+
