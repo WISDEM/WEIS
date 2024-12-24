@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from openmdao.utils.mpi import MPI
 
-def compute_optimal_nC(nFD, nOF, modeling_options, opt_options, maxnP=0):
+def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
     
     
     fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
@@ -60,26 +60,22 @@ def compute_optimal_nC(nFD, nOF, modeling_options, opt_options, maxnP=0):
             # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
             nFD = min([maxnP, nFD])
             nOFp = 1
-        nC = nFD + nFD * nOFp
+        nP = nFD + nFD * nOFp
     
     else:
         nOFp = nOF
-        nC = nFD + nFD * nOFp
-        print("If you have access to (at least) %d cores, please call WEIS as:"%nC)
+        nP = nFD + nFD * nOFp
+        print("If you have access to (at least) %d cores, please call WEIS as:"%nP)
     
-    print("mpirun -np %d python weis_driver.py --nFD=%d --nOFp=%d\n"%(nC, nFD, nOFp))
+    print("mpirun -np %d python weis_driver.py --nFD=%d --nOFp=%d\n"%(nP, nFD, nOFp))
 
     if maxnP == 0:
-        print("\nIf you do not have access to %d cores"%nC)
+        print("\nIf you do not have access to %d cores"%nP)
         print("please provide your maximum available number of cores by typing:")
-        print("python weis_driver.py --maxCore=xx")
+        print("python weis_driver.py --maxnP=xx")
         print("And substitute xx with your number of cores\n")
-    
-    print(f"nC={nC}")
-    print(f"nFD={nFD}")
-    print(f"n_OFp={nOFp}")
 
-    modeling_options['General']['openfast_configuration']['nC'] = nC
+    modeling_options['General']['openfast_configuration']['nP'] = nP
     modeling_options['General']['openfast_configuration']['nFD'] = nFD
     modeling_options['General']['openfast_configuration']['nOFp'] = nOFp
 

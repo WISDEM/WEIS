@@ -41,15 +41,17 @@ else:
                                       fname_analysis_options, 
                                       prepMPI=True, 
                                       maxnP = args.maxnP)
+    
     modeling_override = {}
     modeling_override['General'] = {}
     modeling_override['General']['openfast_configuration'] = {}
     modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
     modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
+    
     wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
                                                      fname_modeling_options, 
                                                      fname_analysis_options,
-                                                     modeling_override=modeling_options)
+                                                     modeling_override=modeling_override)
 
 if MPI:
     rank = MPI.COMM_WORLD.Get_rank()
