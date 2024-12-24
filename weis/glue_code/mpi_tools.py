@@ -17,11 +17,11 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
             print("You are running an optimization based on an evolutionary solver. The number of parallel finite differencing is now multiplied by 5\n")
             nFD *= 5  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
         elif not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
-            print("You are not running a design of experiment or your optimizer is not gradient based. The number of parallel finite differencing is now set to 1\n")
+            print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
             nFD = 1
     elif modeling_options['Level2']['flag']:
         if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
-            print("You are not running a design of experiment or your optimizer is not gradient based. The number of parallel finite differencing is now set to 1\n")
+            print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
             nFD = 1
     # # if we're doing a GA or such, "FD" means "entities in epoch"
     # if opt_options['driver']['optimization']['solver'] in evolutionary_methods:
@@ -31,20 +31,20 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
     print("To run the code in parallel with MPI, execute one of the following commands\n")
 
     if maxnP != 0:
-        print("You have access to %d cores. Please call WEIS as:"%maxnP)
+        print("You have access to %d processors. Please call WEIS as:"%maxnP)
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD)
         # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
         if modeling_options['Level3']['flag']:
-            # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs,
+            # If openfast is called, the maximum number of FD is the number of DV, if we have the number of processors available that doubles the number of DVs,
             # otherwise it is half of the number of DV (rounded to the lower integer).
-            # We need this because a top layer of cores calls a bottom set of cores where OpenFAST runs.
+            # We need this because a top layer of processors calls a bottom set of processors where OpenFAST runs.
             if maxnP > 2. * nFD:
                 nFD = nFD
             else:
                 nFD = int(np.floor(maxnP / 2))
             # Get the number of OpenFAST runs from the user input and the max that can run in parallel given the resources
             # The number of OpenFAST runs is the minimum between the actual number of requested OpenFAST simulations, and
-            # the number of cores available (minus the number of DV, which sit and wait for OF to complete)
+            # the number of processors available (minus the number of DV, which sit and wait for OF to complete)
             nFD = max([nFD, 1])
             max_parallel_OF_runs = max([int(np.floor((maxnP - nFD) / nFD)), 1])
             nOFp = min([int(nOF), max_parallel_OF_runs])
@@ -57,7 +57,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
             max_parallel_OF_runs = max([int(np.floor((maxnP - nFD) / nFD)), 1])
             nOFp = min([int(nOF), max_parallel_OF_runs])
         else:
-            # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of cores available and DV
+            # If OpenFAST is not called, the number of parallel calls to compute the FDs is just equal to the minimum of processors available and DV
             nFD = min([maxnP, nFD])
             nOFp = 1
         nP = nFD + nFD * nOFp
@@ -65,15 +65,15 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
     else:
         nOFp = nOF
         nP = nFD + nFD * nOFp
-        print("If you have access to (at least) %d cores, please call WEIS as:"%nP)
+        print("If you have access to (at least) %d processors, please call WEIS as:"%nP)
     
-    print("mpirun -np %d python weis_driver.py --nFD=%d --nOFp=%d\n"%(nP, nFD, nOFp))
+    print("mpirun -np %d python weis_driver.py\n"%nP)
 
     if maxnP == 0:
-        print("\nIf you do not have access to %d cores"%nP)
-        print("please provide your maximum available number of cores by typing:")
+        print("\nIf you do not have access to %d processors"%nP)
+        print("please provide your maximum available number of processors by typing:")
         print("python weis_driver.py --maxnP=xx")
-        print("And substitute xx with your number of cores\n")
+        print("And substitute xx with your number of processors\n")
 
     modeling_options['General']['openfast_configuration']['nP'] = nP
     modeling_options['General']['openfast_configuration']['nFD'] = nFD

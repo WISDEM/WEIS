@@ -36,18 +36,20 @@ if args.preMPI:
                        prepMPI=True, 
                        maxnP = args.maxnP)
 else:
-    _, modeling_options, _ = run_weis(fname_wt_input,
-                                      fname_modeling_options, 
-                                      fname_analysis_options, 
-                                      prepMPI=True, 
-                                      maxnP = args.maxnP)
-    
-    modeling_override = {}
-    modeling_override['General'] = {}
-    modeling_override['General']['openfast_configuration'] = {}
-    modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
-    modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
-    
+    if MPI:
+        _, modeling_options, _ = run_weis(fname_wt_input,
+                                        fname_modeling_options, 
+                                        fname_analysis_options, 
+                                        prepMPI=True, 
+                                        maxnP = args.maxnP)
+        
+        modeling_override = {}
+        modeling_override['General'] = {}
+        modeling_override['General']['openfast_configuration'] = {}
+        modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
+        modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
+    else:
+        modeling_override = None
     wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
                                                      fname_modeling_options, 
                                                      fname_analysis_options,

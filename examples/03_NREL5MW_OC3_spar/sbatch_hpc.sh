@@ -16,11 +16,4 @@ module unload gcc
 
 source activate weis-env
 
-output=$(python weis_driver.py --preMPIflag=True --maxCores=104)
-
-# Extract the values from the output (adjust based on actual format)
-nC=$(echo "$output" | grep 'nC=' | awk -F'=' '{print $2}')
-n_FD=$(echo "$output" | grep 'n_FD=' | awk -F'=' '{print $2}')
-n_OFp=$(echo "$output" | grep 'n_OFp=' | awk -F'=' '{print $2}')
-
-mpirun -np $nC python runWEIS.py --n_FD=$n_FD --n_OF_parallel=$n_OFp
+mpirun -np 12 python weis_driver.py
