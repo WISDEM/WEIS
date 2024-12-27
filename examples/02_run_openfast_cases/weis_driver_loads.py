@@ -4,14 +4,12 @@ import sys
 
 from weis.glue_code.runWEIS     import run_weis
 from openmdao.utils.mpi  import MPI
-from weis.glue_code.mpi_tools import compute_optimal_nP
 
 ## File management
-run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input          = run_dir + os.sep + 'IEA-15-240-RWT.yaml'
-fname_modeling_options  = run_dir + os.sep + 'modeling_options_loads.yaml'
-fname_analysis_options  = run_dir + os.sep + 'analysis_options_loads.yaml'
-
+run_dir = os.path.dirname( os.path.realpath(__file__) )
+fname_wt_input = os.path.join(run_dir, 'IEA-15-240-RWT.yaml')
+fname_modeling_options = os.path.join(run_dir, 'modeling_options_loads.yaml')
+fname_analysis_options = os.path.join(run_dir, 'analysis_options_loads.yaml')
 
 import argparse
 # Set up argument parser
@@ -29,20 +27,29 @@ else:
 
 tt = time.time()
 
+# Set max number of processes, either set by user or extracted from MPI
+if args.preMPI:
+    maxnP = args.preMPI
+else:
+    if MPI:
+        maxnP = MPI.COMM_WORLD.Get_size()
+    else:
+        maxnP = 1
+
 if args.preMPI:
     _, _, _ = run_weis(fname_wt_input, 
                        fname_modeling_options, 
                        fname_analysis_options, 
                        prepMPI=True, 
-                       maxnP = args.maxnP)
+                       maxnP = maxnP)
 else:
     if MPI:
         _, modeling_options, _ = run_weis(fname_wt_input,
                                         fname_modeling_options, 
                                         fname_analysis_options, 
                                         prepMPI=True, 
-                                        maxnP = args.maxnP)
-        
+                                        maxnP = maxnP)
+
         modeling_override = {}
         modeling_override['General'] = {}
         modeling_override['General']['openfast_configuration'] = {}
@@ -62,4 +69,3 @@ else:
 if rank == 0 and args.preMPI == False:
     print("Run time: %f"%(time.time()-tt))
     sys.stdout.flush()
-

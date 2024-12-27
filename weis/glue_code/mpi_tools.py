@@ -3,7 +3,7 @@ import sys
 import numpy as np
 from openmdao.utils.mpi import MPI
 
-def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
+def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     
     
     fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
@@ -30,7 +30,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
 
     print("To run the code in parallel with MPI, execute one of the following commands\n")
 
-    if maxnP != 0:
+    if maxnP != 1:
         print("You have access to %d processors. Please call WEIS as:"%maxnP)
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD)
         # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
@@ -69,7 +69,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=0):
     
     print("mpirun -np %d python weis_driver.py\n"%nP)
 
-    if maxnP == 0:
+    if maxnP == 1:
         print("\nIf you do not have access to %d processors"%nP)
         print("please provide your maximum available number of processors by typing:")
         print("python weis_driver.py --maxnP=xx")

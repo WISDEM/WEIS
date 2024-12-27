@@ -19,7 +19,7 @@ if MPI:
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, 
              geometry_override=None, modeling_override=None, analysis_override=None, 
-             prepMPI=False, maxnP=0):
+             prepMPI=False, maxnP=1):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(
         fname_wt_input,
