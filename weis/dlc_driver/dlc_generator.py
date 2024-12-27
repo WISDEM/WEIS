@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import logging
+import copy
 import weis.inputs as sch
 from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
@@ -8,6 +9,81 @@ from weis.aeroelasticse.FileTools import remove_numpy
 from weis.aeroelasticse.utils import OLAFParams
 
 logger = logging.getLogger("wisdem/weis")
+
+# TODO: not sure where this should live, so it's a global for now
+# This is a global that we copy into the DLC_Driver class as an attribute
+# Could it be an input yaml?
+openfast_input_map = {
+    # Generic name: OpenFAST input (list if necessary)
+    'total_time': ("Fst","TMax"),
+    'transient_time': ("Fst","TStart"),
+    
+    'WindFile_type': ("InflowWind","WindType"),
+    'wind_speed': ("InflowWind","HWindSpeed"),
+    'WindFile_name': ("InflowWind","FileName_BTS"),
+    'WindFile_name': ("InflowWind","Filename_Uni"),
+    'rotorD': ("InflowWind","RefLength"),
+    'WindHd': ("InflowWind","PropagationDir"),
+    'hub_height': ("InflowWind","RefHt_Uni"),
+    
+    'rot_speed_initial': ("ElastoDyn","RotSpeed"),
+    'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
+    'azimuth_init': ("ElastoDyn","Azimuth"),
+    'yaw_misalign': ("ElastoDyn","NacYaw"),
+    
+    'wave_height': ("HydroDyn","WaveHs"),
+    'wave_period': ("HydroDyn","WaveTp"),
+    'WaveHd': ("HydroDyn","WaveDir"),
+    'WaveGamma': ("HydroDyn","WavePkShp"),
+    'wave_seed': ("HydroDyn","WaveSeed1"),
+
+    'wave_model': ("HydroDyn","WaveMod"),
+    
+    'shutdown_time': [
+        ("ServoDyn","TPitManS1"),
+        ("ServoDyn","TPitManS2"),
+        ("ServoDyn","TPitManS3"),
+        ("ServoDyn","TimGenOf"),
+        ],
+
+    'startup_time': [
+        ("ServoDyn","TimGenOn"),
+        ("ServoDyn","TPCOn"),
+    ],
+        
+
+    'final_blade_pitch': [
+        ("ServoDyn","BlPitchF(1)"),
+        ("ServoDyn","BlPitchF(2)"),
+        ("ServoDyn","BlPitchF(3)"),
+        
+    ],
+    'pitchfault_time1': ("ServoDyn","TPitManS1"),
+    'pitchfault_time2': ("ServoDyn","TPitManS2"),
+    'pitchfault_time3': ("ServoDyn","TPitManS3"),
+    'pitchfault_blade1pos': ("ServoDyn","BlPitchF(1)"),
+    'pitchfault_blade2pos': ("ServoDyn","BlPitchF(2)"),
+    'pitchfault_blade3pos': ("ServoDyn","BlPitchF(3)"),
+    'genfault_time': ("ServoDyn","TimGenOf"),
+    'yawfault_time': ("ServoDyn","TYawManS"),
+    'yawfault_yawpos': ("ServoDyn","NacYawF"),
+    
+    'aero_mod': ("AeroDyn15","AFAeroMod"),
+    'wake_mod': ("AeroDyn15","WakeMod"),
+    'tau1_const': ("AeroDyn15","tau1_const"),
+
+
+    # 'dlc_label': ("DLC","Label"),
+    # 'wind_seed': ("DLC","WindSeed"),
+    # 'wind_speed': ("DLC","MeanWS"),
+
+    # TODO: where should turbsim live?
+    # These aren't actually used to generate turbsim, the generic inputs are used
+    # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
+    'wind_seed': ("TurbSim", "RandSeed1"),
+    'direction': ("TurbSim", "direction_pn"),
+    'shear': ("TurbSim", "shear_hv")
+}
 
 class DLCInstance(object):
 
@@ -47,83 +123,7 @@ class DLCInstance(object):
 
 class DLCGenerator(object):
 
-    dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']
-
-    # TODO: not sure where this should live, so it's a global for now
-    # Could it be an input yaml?
-    openfast_input_map = {
-        # Generic name: OpenFAST input (list if necessary)
-        'total_time': ("Fst","TMax"),
-        'transient_time': ("Fst","TStart"),
-        
-        'WindFile_type': ("InflowWind","WindType"),
-        'wind_speed': ("InflowWind","HWindSpeed"),
-        'WindFile_name': ("InflowWind","FileName_BTS"),
-        'WindFile_name': ("InflowWind","Filename_Uni"),
-        'rotorD': ("InflowWind","RefLength"),
-        'WindHd': ("InflowWind","PropagationDir"),
-        'hub_height': ("InflowWind","RefHt_Uni"),
-        
-        'rot_speed_initial': ("ElastoDyn","RotSpeed"),
-        'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
-        'azimuth_init': ("ElastoDyn","Azimuth"),
-        'yaw_misalign': ("ElastoDyn","NacYaw"),
-        
-        'wave_height': ("HydroDyn","WaveHs"),
-        'wave_period': ("HydroDyn","WaveTp"),
-        'WaveHd': ("HydroDyn","WaveDir"),
-        'WaveGamma': ("HydroDyn","WavePkShp"),
-        'wave_seed': ("HydroDyn","WaveSeed1"),
-
-        'wave_model': ("HydroDyn","WaveMod"),
-        
-        'shutdown_time': [
-            ("ServoDyn","TPitManS1"),
-            ("ServoDyn","TPitManS2"),
-            ("ServoDyn","TPitManS3"),
-            ("ServoDyn","TimGenOf"),
-            ],
-
-        'startup_time': [
-            ("ServoDyn","TimGenOn"),
-            ("ServoDyn","TPCOn"),
-        ],
-            
-
-        'final_blade_pitch': [
-            ("ServoDyn","BlPitchF(1)"),
-            ("ServoDyn","BlPitchF(2)"),
-            ("ServoDyn","BlPitchF(3)"),
-            
-        ],
-        'pitchfault_time1': ("ServoDyn","TPitManS1"),
-        'pitchfault_time2': ("ServoDyn","TPitManS2"),
-        'pitchfault_time3': ("ServoDyn","TPitManS3"),
-        'pitchfault_blade1pos': ("ServoDyn","BlPitchF(1)"),
-        'pitchfault_blade2pos': ("ServoDyn","BlPitchF(2)"),
-        'pitchfault_blade3pos': ("ServoDyn","BlPitchF(3)"),
-        'genfault_time': ("ServoDyn","TimGenOf"),
-        'yawfault_time': ("ServoDyn","TYawManS"),
-        'yawfault_yawpos': ("ServoDyn","NacYawF"),
-        
-        'aero_mod': ("AeroDyn15","AFAeroMod"),
-        'wake_mod': ("AeroDyn15","WakeMod"),
-        'tau1_const': ("AeroDyn15","tau1_const"),
-
-
-        # 'dlc_label': ("DLC","Label"),
-        # 'wind_seed': ("DLC","WindSeed"),
-        # 'wind_speed': ("DLC","MeanWS"),
-
-        # TODO: where should turbsim live?
-        # These aren't actually used to generate turbsim, the generic inputs are used
-        # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
-        'wind_seed': ("TurbSim", "RandSeed1"),
-        'direction': ("TurbSim", "direction_pn"),
-        'shear': ("TurbSim", "shear_hv")
-    }
-
-    
+    dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']    
 
     def __init__(
             self, 
@@ -155,6 +155,9 @@ class DLCGenerator(object):
             self.rng_wave = np.random.default_rng()
         self.n_cases = 0
         self.n_ws_dlc11 = 0
+
+        # OpenFAST input map
+        self.openfast_input_map = copy.deepcopy(openfast_input_map)
 
         # Set and update default_options, applied to dlc_options and first group in case_inputs
         self.default_options = {
@@ -198,6 +201,10 @@ class DLCGenerator(object):
         # Add to openfast_input_map
         if dlc_driver_options['openfast_input_map']:
             for key, value in dlc_driver_options['openfast_input_map'].items():
+
+                if key in self.openfast_input_map:
+                    raise Exception(f'The user-defined openfast_input_map key {key} is already defined.')
+
                 # If the value is a list
                 if is_list_of_lists(value):
                     self.openfast_input_map[key] = [tuple(v) for v in value]
