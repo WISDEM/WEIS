@@ -8,30 +8,35 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     
     fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
     evolutionary_methods = ['DE', 'NSGA2']
-    
-    print("\nYour problem has %d design variable(s) and %d OpenFAST run(s)\n"%(nFD, nOF))
+
+    if not MPI:
+        print("\nYour problem has %d design variable(s) and %d OpenFAST run(s)\n"%(nFD, nOF))
 
     if modeling_options['Level3']['flag']:
         # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
         if not (opt_options['driver']['design_of_experiments']['flag']) and (opt_options['driver']['optimization']['solver'] in evolutionary_methods):
-            print("You are running an optimization based on an evolutionary solver. The number of parallel finite differencing is now multiplied by 5\n")
+            if not MPI:
+                print("You are running an optimization based on an evolutionary solver. The number of parallel finite differencing is now multiplied by 5\n")
             nFD *= 5  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
         elif not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
-            print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
+            if not MPI:
+                print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
             nFD = 1
     elif modeling_options['Level2']['flag']:
         if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
-            print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
+            if not MPI:
+                print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
             nFD = 1
     # # if we're doing a GA or such, "FD" means "entities in epoch"
     # if opt_options['driver']['optimization']['solver'] in evolutionary_methods:
     #     nFD = maxnP
 
-
-    print("To run the code in parallel with MPI, execute one of the following commands\n")
+    if not MPI:
+        print("To run the code in parallel with MPI, execute one of the following commands\n")
 
     if maxnP != 1:
-        print("You have access to %d processors. Please call WEIS as:"%maxnP)
+        if not MPI:
+            print("You have access to %d processors. Please call WEIS as:"%maxnP)
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD)
         # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
         if modeling_options['Level3']['flag']:
@@ -65,11 +70,13 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     else:
         nOFp = nOF
         nP = nFD + nFD * nOFp
-        print("If you have access to (at least) %d processors, please call WEIS as:"%nP)
+        if not MPI:
+            print("If you have access to (at least) %d processors, please call WEIS as:"%nP)
     
-    print("mpiexec -np %d python weis_driver.py\n"%nP)
+    if not MPI:
+        print("mpiexec -np %d python weis_driver.py\n"%nP)
 
-    if maxnP == 1:
+    if maxnP == 1 and not MPI:
         print("\nIf you do not have access to %d processors"%nP)
         print("please provide your maximum available number of processors by typing:")
         print("python weis_driver.py --preMPI=True --maxnP=xx")
