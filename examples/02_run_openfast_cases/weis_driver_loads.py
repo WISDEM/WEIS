@@ -29,7 +29,7 @@ tt = time.time()
 
 # Set max number of processes, either set by user or extracted from MPI
 if args.preMPI:
-    maxnP = args.preMPI
+    maxnP = args.maxnP
 else:
     if MPI:
         maxnP = MPI.COMM_WORLD.Get_size()

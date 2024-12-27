@@ -72,7 +72,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     if maxnP == 1:
         print("\nIf you do not have access to %d processors"%nP)
         print("please provide your maximum available number of processors by typing:")
-        print("python weis_driver.py --maxnP=xx")
+        print("python weis_driver.py --preMPI=True --maxnP=xx")
         print("And substitute xx with your number of processors\n")
 
     modeling_options['General']['openfast_configuration']['nP'] = nP

@@ -8,8 +8,8 @@ from openmdao.utils.mpi  import MPI
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
 fname_wt_input = os.path.join(run_dir, 'nrel5mw-spar_oc3.yaml')
-fname_modeling_options = os.path.join(run_dir, 'modeling_options_loads.yaml')
-fname_analysis_options = os.path.join(run_dir, 'analysis_options_loads.yaml')
+fname_modeling_options = os.path.join(run_dir, 'modeling_options.yaml')
+fname_analysis_options = os.path.join(run_dir, 'analysis_options.yaml')
 
 import argparse
 # Set up argument parser
@@ -29,7 +29,7 @@ tt = time.time()
 
 # Set max number of processes, either set by user or extracted from MPI
 if args.preMPI:
-    maxnP = args.preMPI
+    maxnP = args.maxnP
 else:
     if MPI:
         maxnP = MPI.COMM_WORLD.Get_size()
