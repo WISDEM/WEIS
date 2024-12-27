@@ -7,14 +7,14 @@ WEIS can be run sequentially on a single processor. WEIS can also be parallelize
 Background
 ------------------------------------
 
-The parallelization of WEIS leverages the [MPI library](https://mpi4py.readthedocs.io/en/stable/). Before proceeding, please make sure that your WEIS environemnt includes the library mpi4py as discussed in the README.md at the root level of this repo, or on the `WEIS GitHub page <https://github.com/WISDEM/WEIS/>`_.
+The parallelization of WEIS leverages the [MPI library](https://mpi4py.readthedocs.io/en/stable/). Before proceeding, please make sure that your WEIS environment includes the library mpi4py as discussed in the README.md at the root level of this repo, or on the `WEIS GitHub page <https://github.com/WISDEM/WEIS/>`_.
 
 Parallelization in WEIS happens at two levels: 
 * The first level is triggered when an optimization is run and a gradient-based optimizer is called. In this case, the OpenMDAO library will execute the finite differences in parallel. OpenMDAO then assembles all partial derivatives in a single Jacobian and iterations progress.
 * The second level is triggered when multiple OpenFAST runs are specified. These are executed in parallel.
 The two levels of parallelization are integrated and can co-exist as long as sufficient computational resources are available.
 
-WEIS helps you set up the right call to MPI given the available computational resources, see the section below.
+WEIS helps you set up the right call to MPI given the available computational resources, see the sections below.
 
 
 How to run WEIS in parallel
@@ -46,7 +46,7 @@ At this point, you are ready to launch WEIS in parallel. If you have 20 processo
 
 .. code-block:: bash
 
-  mpirun -np 20 python weis_driver.py
+  mpiexec -np 20 python weis_driver.py
 
 
 Parallelize calls to OpenFAST
@@ -74,20 +74,20 @@ The terminal should return this message
   To run the code in parallel with MPI, execute one of the following commands
 
   If you have access to (at least) 8 processors, please call WEIS as:
-  mpirun -np 8 python weis_driver.py
+  mpiexec -np 8 python weis_driver.py
 
 
   If you do not have access to 8 processors
   please provide your maximum available number of processors by typing:
-  python weis_driver.py --maxnP=xx
+  python weis_driver.py --preMPI=True --maxnP=xx
   And substitute xx with your number of processors
 
 If you have access to 8 processors, you are now ready to execute your script by typing 
 
 .. code-block:: bash
-  mpirun -np 8 python weis_driver_loads.py
+  mpiexec -np 8 python weis_driver_loads.py
 
 If you have access to fewer processors, say 4, adjust the -np entry accordingly
 
 .. code-block:: bash
-  mpirun -np 4 python weis_driver_loads.py
+  mpiexec -np 4 python weis_driver_loads.py

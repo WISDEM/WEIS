@@ -67,7 +67,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
         nP = nFD + nFD * nOFp
         print("If you have access to (at least) %d processors, please call WEIS as:"%nP)
     
-    print("mpirun -np %d python weis_driver.py\n"%nP)
+    print("mpiexec -np %d python weis_driver.py\n"%nP)
 
     if maxnP == 1:
         print("\nIf you do not have access to %d processors"%nP)

@@ -1,67 +1,71 @@
+import os
+import time
+import sys
 
-from weis.glue_code.runWEIS     import run_weis
+from weis.glue_code.runWEIS import run_weis
 from openmdao.utils.mpi  import MPI
-import os, time, sys
 
 ## File management
-run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-fname_wt_input         = run_dir + os.sep + "IEA-3p4-130-RWT.yaml"
-fname_modeling_options = run_dir + "modeling_options.yaml"
-fname_analysis_options = run_dir + "analysis_options.yaml"
+run_dir = os.path.dirname( os.path.realpath(__file__) )
+fname_wt_input = os.path.join(run_dir, 'IEA-3p4-130-RWT.yaml')
+fname_modeling_options = os.path.join(run_dir, 'modeling_options.yaml')
+fname_analysis_options = os.path.join(run_dir, 'analysis_options.yaml')
 
-plot_flag = False
+import argparse
+# Set up argument parser
+parser = argparse.ArgumentParser(description="Run WEIS driver with flag prepping for MPI run.")
+# Add the flag
+parser.add_argument("--preMPI", type=bool, default=False, help="Flag for preprocessing MPI settings (True or False).")
+parser.add_argument("--maxnP", type=int, default=0, help="Maximum number of processors available.")
+# Parse the arguments
+args = parser.parse_args()
+# Use the flag in your script
+if args.preMPI:
+    print("Preprocessor flag is set to True. Running preprocessing setting up MPI run.")
+else:
+    print("Preprocessor flag is set to False. Run WEIS now.")
 
 tt = time.time()
-wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
 
-rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
+# Set max number of processes, either set by user or extracted from MPI
+if args.preMPI:
+    maxnP = args.maxnP
+else:
+    if MPI:
+        maxnP = MPI.COMM_WORLD.Get_size()
+    else:
+        maxnP = 1
 
-if rank == 0 and plot_flag:
-    print('Run time: %f'%(time.time()-tt))
+if args.preMPI:
+    _, _, _ = run_weis(fname_wt_input, 
+                       fname_modeling_options, 
+                       fname_analysis_options, 
+                       prepMPI=True, 
+                       maxnP = maxnP)
+else:
+    if MPI:
+        _, modeling_options, _ = run_weis(fname_wt_input,
+                                        fname_modeling_options, 
+                                        fname_analysis_options, 
+                                        prepMPI=True, 
+                                        maxnP = maxnP)
+
+        modeling_override = {}
+        modeling_override['General'] = {}
+        modeling_override['General']['openfast_configuration'] = {}
+        modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
+        modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
+    else:
+        modeling_override = None
+    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
+                                                     fname_modeling_options, 
+                                                     fname_analysis_options,
+                                                     modeling_override=modeling_override)
+
+if MPI:
+    rank = MPI.COMM_WORLD.Get_rank()
+else:
+    rank = 0
+if rank == 0 and args.preMPI == False:
+    print("Run time: %f"%(time.time()-tt))
     sys.stdout.flush()
-
-    import matplotlib.pyplot as plt
-    import numpy as np
-    from matplotlib import cm
-
-    X = wt_opt['sse_tune.aeroperf_tables.pitch_vector']
-    Y = wt_opt['sse_tune.aeroperf_tables.tsr_vector']
-    X, Y = np.meshgrid(X, Y)
-    pitch_schedule = wt_opt['rotorse.rp.powercurve.pitch']
-    tsr_schedule = wt_opt['rotorse.rp.powercurve.Omega'] / 30. * np.pi * wt_opt['rotorse.Rtip'] / wt_opt['rotorse.rp.powercurve.V']
-
-    # Plot the Cp surface
-    fig, ax = plt.subplots()
-    Z = wt_opt['sse_tune.aeroperf_tables.Cp']
-    cs = ax.contourf(X, Y, Z[:,:,0], cmap=cm.inferno, levels = [0, 0.1, 0.2, 0.3, 0.4, 0.44, 0.47, 0.50, 0.53, 0.56])
-    ax.plot(pitch_schedule, tsr_schedule, 'w--', label = 'Regulation trajectory')
-    ax.set_xlabel('Pitch angle (deg)', fontweight = 'bold')
-    ax.set_ylabel('Tip speed ratio (-)', fontweight = 'bold')
-    cbar = fig.colorbar(cs)
-    cbar.ax.set_ylabel('Aerodynamic power coefficient (-)', fontweight = 'bold')
-    plt.legend()
-
-    # Plot the Ct surface
-    fig, ax = plt.subplots()
-    Z = wt_opt['sse_tune.aeroperf_tables.Ct']
-    cs = ax.contourf(X, Y, Z[:,:,0], cmap=cm.inferno)
-    ax.plot(pitch_schedule, tsr_schedule, 'w--', label = 'Regulation trajectory')
-    ax.set_xlabel('Pitch angle (deg)', fontweight = 'bold')
-    ax.set_ylabel('Tip speed ratio (-)', fontweight = 'bold')
-    cbar = fig.colorbar(cs)
-    cbar.ax.set_ylabel('Aerodynamic thrust coefficient (-)', fontweight = 'bold')
-    plt.legend()
-
-    # Plot the Cq surface
-    fig, ax = plt.subplots()
-    Z = wt_opt['sse_tune.aeroperf_tables.Cq']
-    cs = ax.contourf(X, Y, Z[:,:,0], cmap=cm.inferno)
-    ax.plot(pitch_schedule, tsr_schedule, 'w--', label = 'Regulation trajectory')
-    ax.set_xlabel('Pitch angle (deg)', fontweight = 'bold')
-    ax.set_ylabel('Tip speed ratio (-)', fontweight = 'bold')
-    cbar = fig.colorbar(cs)
-    cbar.ax.set_ylabel('Aerodynamic torque coefficient (-)', fontweight = 'bold')
-    plt.legend()
-
-    plt.show()
-
