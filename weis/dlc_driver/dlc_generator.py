@@ -135,6 +135,7 @@ class DLCGenerator(object):
             fix_wind_seeds=True, 
             fix_wave_seeds=True, 
             metocean={},
+            dlc_driver_options={},      # note that with this addition, it includes metocean
             initial_condition_table = {},
             default_options = {},
             ):
@@ -193,6 +194,15 @@ class DLCGenerator(object):
         self.wave_period1 = np.array([metocean['wave_period1']])
 
         self.initial_condition_table = initial_condition_table
+
+        # Add to openfast_input_map
+        if dlc_driver_options['openfast_input_map']:
+            for key, value in dlc_driver_options['openfast_input_map'].items():
+                # If the value is a list
+                if is_list_of_lists(value):
+                    self.openfast_input_map[key] = [tuple(v) for v in value]
+                else:
+                    self.openfast_input_map[key] = tuple(value)
 
     def IECwind(self):
         self.IECturb = IEC_TurbulenceModels()
@@ -371,7 +381,13 @@ class DLCGenerator(object):
         dlc_options.update(met_options)
         dlc_options = remove_numpy(dlc_options)
 
+        # Apply initial conditions
         self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
+
+        # Add user defined groups
+        self.add_user_groups(generic_case_inputs, dlc_options)
+
+        # Generate case list
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
@@ -533,6 +549,27 @@ class DLCGenerator(object):
                 
             # Apply new group
             generic_case_inputs[wind_group] = group
+
+    def add_user_groups(self, generic_case_inputs, dlc_options):
+        if dlc_options['user_group']:
+            # If a list of user_groups, adds multiple groups
+            if type(dlc_options['user_group']) == list:
+                for user_group in dlc_options['user_group']:
+                    # Add input to options, make new group
+                    new_group = []
+                    for key, value in user_group.items():
+                        new_group.append(key)
+                        dlc_options[key] = value
+
+                    generic_case_inputs.append(new_group)
+            else:
+                # Add input to options, make new group
+                new_group = []
+                for key, value in dlc_options['user_group'].items():
+                    new_group.append(key)
+                    dlc_options[key] = value
+                
+                generic_case_inputs.append(new_group)
             
     
     def map_generic_to_openfast(self,generic_case_inputs, comb_options):
@@ -1267,7 +1304,17 @@ def combine_options(*dicts):
 
     return comb_options
 
+def is_list_of_lists(lst):
+    """Checks if a given object is a list of lists."""
 
+    if not isinstance(lst, list):
+        return False
+
+    for item in lst:
+        if not isinstance(item, list):
+            return False
+
+    return True
 
 if __name__ == "__main__":
 
