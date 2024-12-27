@@ -122,8 +122,9 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
 
         # Estimate number of design variables and parallel calls to OpenFASRT given 
         # the computational resources available. This is used to setup WEIS for an MPI run
-        nFD = len(wt_opt.model.list_outputs(is_design_var=True, out_stream=None))
-        modeling_options = compute_optimal_nP(nFD, myopt.n_OF_runs, modeling_options, opt_options, maxnP = maxnP)
+        if prepMPI:
+            nFD = max([1,len(wt_opt.model.list_outputs(is_design_var=True, out_stream=None))])
+            modeling_options = compute_optimal_nP(nFD, myopt.n_OF_runs, modeling_options, opt_options, maxnP = maxnP)
 
         # If WEIS is called simply to prep for an MPI call, no need to proceed and simply 
         # return the number of finite differences and OpenFAST calls, and stop
