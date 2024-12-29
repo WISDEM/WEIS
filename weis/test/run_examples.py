@@ -10,7 +10,7 @@ all_scripts = [
     # "03_NREL5MW_OC3_spar/weis_freq_driver", # executed in examples_skinny
     # "04_NREL5MW_OC4_semi/weis_driver",  # skipping until we resolve multiple variable ballasts
     "04_NREL5MW_OC4_semi/weis_freq_driver",
-    "05_IEA-3.4-130-RWT/weis_driver", # also executed via mpi in the gitthub workflow
+    # "05_IEA-3.4-130-RWT/weis_driver", # also executed via mpi in the gitthub workflow
     #"06_IEA-15-240-RWT/weis_driver", # executed in the test_IEA15.py
     # "07_te_flaps/dac_driver",
     "08_OLAF/weis_driver",
