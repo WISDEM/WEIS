@@ -16,9 +16,9 @@ import argparse
 parser = argparse.ArgumentParser(description="Run WEIS driver with flag prepping for MPI run.")
 # Add the flag
 parser.add_argument("--preMPI", type=bool, default=False, help="Flag for preprocessing MPI settings (True or False).")
-parser.add_argument("--maxnP", type=int, default=0, help="Maximum number of processors available.")
+parser.add_argument("--maxnP", type=int, default=1, help="Maximum number of processors available.")
 # Parse the arguments
-args = parser.parse_args()
+args, _ = parser.parse_known_args()
 # Use the flag in your script
 if args.preMPI:
     print("Preprocessor flag is set to True. Running preprocessing setting up MPI run.")
