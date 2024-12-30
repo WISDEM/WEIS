@@ -18,30 +18,23 @@ fname_analysis_options = os.path.join(run_dir, 'analysis_options_loads.yaml')
 tt = time.time()
 maxnP = get_max_procs(args)
 
-if args.preMPI:
-    # Do a dry-run to compute number of procs
-    _, _, _ = run_weis(fname_wt_input, 
-                       fname_modeling_options, 
-                       fname_analysis_options, 
-                       prepMPI=True, 
-                       maxnP = maxnP)
-else:
-    modeling_override = None
-    if MPI:
-        # Pre-compute number of cores needed in this run
-        _, modeling_options, _ = run_weis(fname_wt_input,
-                                        fname_modeling_options, 
-                                        fname_analysis_options, 
-                                        prepMPI=True, 
-                                        maxnP = maxnP)
+modeling_override = None
+if MPI:
+    # Pre-compute number of cores needed in this run
+    _, modeling_options, _ = run_weis(fname_wt_input,
+                                    fname_modeling_options, 
+                                    fname_analysis_options, 
+                                    prepMPI=True, 
+                                    maxnP = maxnP)
 
-        modeling_override = set_modopt_procs(modeling_options)
+    modeling_override = set_modopt_procs(modeling_options)
 
-    # Run WEIS for real now
-    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
-                                                     fname_modeling_options, 
-                                                     fname_analysis_options,
-                                                     modeling_override=modeling_override)
+# Run WEIS for real now
+wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
+                                                    fname_modeling_options, 
+                                                    fname_analysis_options,
+                                                    modeling_override=modeling_override,
+                                                    prepMPI=args.preMPI)
 
 if MPI:
     rank = MPI.COMM_WORLD.Get_rank()
