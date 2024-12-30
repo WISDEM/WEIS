@@ -30,6 +30,7 @@ def get_max_procs(args):
     return maxnP
 
 def set_modopt_procs(modeling_options):
+    print('Applying the modeling option updates as overrides.')
     modeling_override = {}
     modeling_override['General'] = {}
     modeling_override['General']['openfast_configuration'] = {}

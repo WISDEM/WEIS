@@ -2,6 +2,8 @@ import os
 import sys
 import numpy as np
 from openmdao.utils.mpi import MPI
+from weis.aeroelasticse.FileTools import print_yaml
+
 
 def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     
@@ -82,9 +84,18 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
         print("python weis_driver.py --preMPI=True --maxnP=xx")
         print("And substitute xx with your number of processors\n")
 
-    modeling_options['General']['openfast_configuration']['nP'] = nP
-    modeling_options['General']['openfast_configuration']['nFD'] = nFD
-    modeling_options['General']['openfast_configuration']['nOFp'] = nOFp
+    modeling_updates = {}
+    modeling_updates['General'] = {}
+    modeling_updates['General']['openfast_configuration'] = {}
+    modeling_updates['General']['openfast_configuration']['nP'] = nP
+    modeling_updates['General']['openfast_configuration']['nFD'] = nFD
+    modeling_updates['General']['openfast_configuration']['nOFp'] = nOFp
+
+    print('The following changes should be made to the modeling options:')
+    print_yaml(modeling_updates)
+
+    # Apply updates
+    modeling_options['General']['openfast_configuration'].update(modeling_updates['General']['openfast_configuration'])
 
     return modeling_options
 

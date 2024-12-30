@@ -3,6 +3,7 @@ import copy
 import operator
 import numpy as np
 import yaml
+import sys
 from functools import reduce
 try:
     import ruamel_yaml as ry
@@ -135,6 +136,12 @@ def save_yaml(outdir, fname, data_out):
     yaml.indent(mapping=4, sequence=6, offset=3)
     yaml.dump(data_out, f)
     f.close()
+
+def print_yaml(data_struct):
+    data_struct = remove_numpy(data_struct)
+    yaml=ry.YAML()
+    yaml.indent(mapping=4, sequence=6, offset=3)
+    yaml.dump(data_struct,sys.stdout)
 
 
 def select_cases(cases, var_sel, val_sel):
