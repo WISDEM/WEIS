@@ -786,46 +786,60 @@ def render_cylinder(cylinder):
     return content
 
 
-def render_cylinderTower(towerGrid = [0, 2, 4, 6], TowerOD = [5,4,3,2]):
+def render_cylinderTower(tower=None):
+
+    # temp to get around temp mesh by sora
+    if tower is None:
+        towerGrid = [0, 1]
+        TowerOD = [1, 1]
+        towerHeight = 1
+    else:
+
+        towerGrid = tower['outer_shape_bem']['outer_diameter']['grid']
+        TowerOD = tower['outer_shape_bem']['outer_diameter']['values']
+        towerHeight = tower['outer_shape_bem']['reference_axis']['z']['values'][-1] # can use grid axis as well via interp
+
+    towerGrid = np.array(towerGrid) * towerHeight
+
+    points = towerMesh(towerGrid, TowerOD)
+
+    return render_our_own_delaunay(points)
 
 
-    towerGrid = np.array(towerGrid) * 150
 
-    # Clear previous arrays
-    x = np.array([])
-    y = np.array([])
-    z = np.array([]) 
-    
-    # Create points for each cylinder segment
-    for i in range(len(towerGrid)-1):
-        # Get parameters for this segment
-        h_start = towerGrid[i]
-        h_end = towerGrid[i+1] 
-        r_start = TowerOD[i]/2
-        r_end = TowerOD[i+1]/2
-        
-        # Create points along height
-        h_points = np.linspace(h_start, h_end, 20)
-        
-        # For each height, create a circle of points
-        for h in h_points:
-            # Calculate interpolated radius at this height
-            r = r_start + (r_end - r_start) * (h - h_start)/(h_end - h_start)
-            
-            # Create circle of points at this height
-            theta = np.linspace(0, 2*np.pi, 36)
-            x = np.append(x, r * np.cos(theta))
-            y = np.append(y, r * np.sin(theta))
-            z = np.append(z, np.full_like(theta, h))
+def render_blade_only(bladeData, airfoils):
 
+    points = bladeMesh(bladeData, airfoils)
 
-    points = (x, y, z)
+    return render_our_own_delaunay(points)
 
-    return render_our_own_mesh(points)
+def render_hub_only(hubData):
 
-def render_blade(bladeData, airfoils):
+    points = hubMesh(hubData)
 
-    # Clear previous arrays
+    return render_our_own_delaunay(points)
+
+def render_monopile_only(monopileData):
+
+    points = monopileMesh(monopileData)
+
+    return render_our_own_delaunay(points)
+
+def render_nacelle_only(nacelleData, hubData):
+
+    points = nacelleMesh(nacelleData,hubData)
+
+    return render_our_own_delaunay(points)
+
+###################################################
+# Mesh generation for different turbine components
+###################################################
+
+def bladeMesh(bladeData, airfoils):
+    '''
+    Generate mesh for blade component
+    '''
+   # Clear previous arrays
     x = np.array([])
     y = np.array([])
     z = np.array([]) 
@@ -894,7 +908,120 @@ def render_blade(bladeData, airfoils):
 
     points = (x, y, z)
 
-    return render_our_own_mesh(points)
+    return points
+
+
+def towerMesh(towerGrid, TowerOD):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # Create points for each cylinder segment
+    for i in range(len(towerGrid)-1):
+        # Get parameters for this segment
+        h_start = towerGrid[i]
+        h_end = towerGrid[i+1] 
+        r_start = TowerOD[i]/2
+        r_end = TowerOD[i+1]/2
+        
+        # Create points along height
+        h_points = np.linspace(h_start, h_end, 20)
+        
+        # For each height, create a circle of points
+        for h in h_points:
+            # Calculate interpolated radius at this height
+            r = r_start + (r_end - r_start) * (h - h_start)/(h_end - h_start)
+            
+            # Create circle of points at this height
+            theta = np.linspace(0, 2*np.pi, 36)
+            x = np.append(x, r * np.cos(theta))
+            y = np.append(y, r * np.sin(theta))
+            z = np.append(z, np.full_like(theta, h))
+
+
+    points = (x, y, z)
+    return points
+
+def hubMesh(hubData):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    dia = hubData['diameter']
+    h = 0.5 * dia
+    '''
+    let the height of the hub be 0.5 of the diameter
+    The radius of the hub along the height varies from diameter to zero at the top and follows a parabolic function
+    '''
+    numPoints = 100
+    theta = np.linspace(0, 2*np.pi, numPoints)
+    z_dists = np.linspace(0, dia/2, 20)
+
+    for z_dist in z_dists:
+        r = dia/2 * np.sqrt(1 - (2*z_dist/dia)**2)
+        x = np.append(x, r * np.cos(theta))
+        y = np.append(y, r * np.sin(theta))
+        z = np.append(z, np.full_like(theta, z_dist))
+
+    points = (x, y, z)
+
+    return points
+    
+
+def monopileMesh(monopileData):
+
+    # Reusing the tower mesh function for monopile
+    monopileGrid = monopileData['outer_shape_bem']['outer_diameter']['grid']
+    MonopileOD = monopileData['outer_shape_bem']['outer_diameter']['values']
+    monopileHeight = monopileData['outer_shape_bem']['reference_axis']['z']['values'][-1] # can use grid axis as well via interp
+
+    points = towerMesh(monopileGrid, MonopileOD)
+
+    return points
+    
+def nacelleMesh(hubData, nacelleData):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # if the nacelle dict has length, width and height, we can create a box
+    if 'length' in nacelleData['drivetrain'].keys() and 'width' in nacelleData['drivetrain'].keys() and 'height' in nacelleData['drivetrain'].keys():
+        length = nacelleData['drivetrain']['length']
+        width = nacelleData['drivetrain']['width']
+        height = nacelleData['drivetrain']['height']
+        x = np.array([length/2, length/2, -length/2, -length/2, length/2, length/2, -length/2, -length/2])
+        y = np.array([width/2, -width/2, -width/2, width/2, width/2, -width/2, -width/2, width/2])
+        z = np.array([0, 0, 0, 0, height, height, height, height])
+    else:
+        # if not, we use the overhang, distance from tower top to hub, and hub diameter to create the box such that
+        # height = 1.5 * distance from tower top to hub
+        # length = 2 * overhang
+        # width = 1.5 * hub diameter
+        height = 1.5 * nacelleData['drivetrain']['distance_tt_hub']
+        length = 2 * nacelleData['drivetrain']['overhang']
+        width =  1.5 * hubData['diameter']
+        x = np.array([length/2, length/2, -length/2, -length/2, length/2, length/2, -length/2, -length/2])
+        y = np.array([width/2, -width/2, -width/2, width/2, width/2, -width/2, -width/2, width/2])
+        z = np.array([0, 0, 0, 0, height, height, height, height])
+    
+    points = (x, y, z)
+
+    return points
+
+def semisubMesh(semisubData):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # assuming the semisub follow
 
 
 
@@ -1060,8 +1187,6 @@ def load_geometry_data(geometry_paths):
 
 
     return airfoils, geom_comps
-
-
 
 ###################################################
 # Not needed below.. Will be deleted later

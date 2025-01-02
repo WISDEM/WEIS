@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, State, dcc
 from dash.exceptions import PreventUpdate
 from weis.visualization.utils import *
+from weis.visualization.meshRender import *
 
 register_page(
     __name__,
@@ -41,17 +42,23 @@ def visualize(geom_3d_names, geom_types, geom_comps_by_names,airfoils_by_names):
     hub_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'hub' in k}     
     nacelle_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'nacelle' in k}
 
-    
+    print('nacelle_by_names:', nacelle_by_names['34'])
+
+    # need logic for different sub structure types that are to be supported
+    monopile_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'monopile' in k}
 
     geometries = []
-
-    print(airfoils_by_names.keys())
 
     for idx, gname in enumerate(geom_3d_names):
         meshes = []
         for gtype in geom_types:
             if gtype == 'tower':
 
+                meshes += [dash_vtk.Mesh(
+                                        state=render_cylinderTower(tower_by_names[gname])
+                                            )]
+                
+            if gtype == 'blade':
 
                 airfoil_used = blade_by_names[gname]['outer_shape_bem']['airfoil_position']['labels']
                 selectAirfoils = {}
@@ -59,15 +66,28 @@ def visualize(geom_3d_names, geom_types, geom_comps_by_names,airfoils_by_names):
                     selectAirfoils[a] = airfoils_by_names[f'{gname}: {a}']
 
                 meshes += [dash_vtk.Mesh(
-
-                                        # state=render_cylinderTower(tower_by_names[gname]['outer_shape_bem']['outer_diameter']['grid'], 
-                                        #     tower_by_names[gname]['outer_shape_bem']['outer_diameter']['values'])
-
-                                        state=render_blade(blade_by_names[gname], 
+                                        state=render_blade_only(blade_by_names[gname], 
                                             selectAirfoils)
-                                            
                                             )]
-            
+                
+            if gtype == 'hub':
+                meshes += [dash_vtk.Mesh(
+                                        state=render_hub_only(hub_by_names[gname])
+                                        )]
+                
+            if gtype == 'monopile':
+                meshes += [dash_vtk.Mesh(
+                                        state=render_monopile_only(monopile_by_names[gname])
+                                        )]
+                
+            if gtype == 'nacelle':
+                meshes += [dash_vtk.Mesh(
+                                        state=render_nacelle_only(nacelle_by_names[gname], hub_by_names[gname])
+                                        )]
+
+
+            if len(gtype) > 1:
+                print('Multiple components selected')
 
         # Add by geom data (same color over components from the turbine)
         geometries += [dash_vtk.GeometryRepresentation(
