@@ -3,6 +3,8 @@
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, State, dcc
 from dash.exceptions import PreventUpdate
+import plotly.express as px
+import plotly
 from weis.visualization.utils import *
 from weis.visualization.meshRender import *
 
@@ -49,6 +51,11 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names,airfoils_b
     monopile_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'monopile' in k}
 
     geometries = []
+    # colors_scale = px.colors.sequential.Plasma
+    # colors_scale = px.colors.qualitative.Plotly
+    default_rgbs = plotly.colors.DEFAULT_PLOTLY_COLORS
+    colors_scale = [list(map(lambda x: int(x)/255, c[4:-1].split(', '))) for c in default_rgbs]
+
 
     for idx, gname in enumerate(geom_3d_names):         # gname: selected geometry file
         meshes = []
@@ -68,9 +75,15 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names,airfoils_b
         # Render, add meshes
         if 'tower' in geom_types:
 
-            meshes += [dash_vtk.Mesh(
+            meshes = [dash_vtk.Mesh(
                                     state=render_cylinderTower(tower_by_names[gname], coords)
                                         )]
+            
+            geometries += [dash_vtk.GeometryRepresentation(
+                children=meshes,
+                showCubeAxes=True,      # Show origins
+                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+            )]
                 
         if 'blade' in geom_types:
 
@@ -79,32 +92,57 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names,airfoils_b
             for a in airfoil_used:
                 selectAirfoils[a] = airfoils_by_names[f'{gname}: {a}']
 
-            meshes += [dash_vtk.Mesh(
+            meshes = [dash_vtk.Mesh(
                                     state=render_blade_only(blade_by_names[gname], 
                                         selectAirfoils, coords)
                                         )]
             
+            geometries += [dash_vtk.GeometryRepresentation(
+                children=meshes,
+                showCubeAxes=True,      # Show origins
+                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+            )]
+
         if 'hub' in geom_types:
-            meshes += [dash_vtk.Mesh(
+            meshes = [dash_vtk.Mesh(
                                     state=render_hub_only(hub_by_names[gname], coords)
                                     )]
             
+            geometries += [dash_vtk.GeometryRepresentation(
+                children=meshes,
+                showCubeAxes=True,      # Show origins
+                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+            )]
+            
         if 'monopile' in geom_types:
-            meshes += [dash_vtk.Mesh(
+            meshes = [dash_vtk.Mesh(
                                     state=render_monopile_only(monopile_by_names[gname], coords)
                                     )]
             
+            geometries += [dash_vtk.GeometryRepresentation(
+                children=meshes,
+                showCubeAxes=True,      # Show origins
+                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+            )]
+            
         if 'nacelle' in geom_types:
-            meshes += [dash_vtk.Mesh(
+            meshes = [dash_vtk.Mesh(
                                     state=render_nacelle_only(nacelle_by_names[gname], hub_by_names[gname], coords)
                                     )]
+            
+            geometries += [dash_vtk.GeometryRepresentation(
+                children=meshes,
+                showCubeAxes=True,      # Show origins
+                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                # property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+            )]
 
-        # Add by geom data (same color over components from the turbine)
-        geometries += [dash_vtk.GeometryRepresentation(
-            children=meshes,
-            showCubeAxes=True,      # Show origins
-            property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-        )]
+        # # Add by geom data (same color over components from the turbine)
+        # geometries += [dash_vtk.GeometryRepresentation(
+        #     children=meshes,
+        #     showCubeAxes=True,      # Show origins
+        #     property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+        # )]
 
     # Add rendered meshes to the final content at the end (at once!)    
     content = dash_vtk.View(geometries)
