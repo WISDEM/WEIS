@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, State, dcc
 from dash.exceptions import PreventUpdate
 from weis.visualization.utils import *
+from weis.visualization.meshRender import *
 
 register_page(
     __name__,
@@ -27,13 +28,24 @@ def list_labels(geom_comps_by_names):
 @callback(Output('vtk-view', 'children'),
           Input('geom-3d-names', 'value'),
           Input('geom-types', 'value'),
-          State('geometry-components', 'data'))
-def visualize(geom_3d_names, geom_types, geom_comps_by_names):
+          State('geometry-components', 'data'),
+          State('airfoil-by-names', 'data'))
+def visualize(geom_3d_names, geom_types, geom_comps_by_names,airfoils_by_names):
     '''
     This function is for visualizing per geometry component types from selected file data
     '''
     if geom_3d_names is None or geom_types == []:
         raise PreventUpdate
+
+    tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
+    blade_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'blade' in k}     # where now k is 'filelabelname' and v is dict
+    hub_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'hub' in k}     
+    nacelle_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'nacelle' in k}
+
+    print('nacelle_by_names:', nacelle_by_names['34'])
+
+    # need logic for different sub structure types that are to be supported
+    monopile_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'monopile' in k}
 
     geometries = []
 
@@ -41,10 +53,42 @@ def visualize(geom_3d_names, geom_types, geom_comps_by_names):
         meshes = []
         for gtype in geom_types:
             if gtype == 'tower':
-                tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
-                meshes += [dash_vtk.Mesh(state=render_cylinderTower(tower_by_names[gname]['outer_shape_bem']['outer_diameter']['grid'], 
-                                            tower_by_names[gname]['outer_shape_bem']['outer_diameter']['values']))]
-            
+
+                meshes += [dash_vtk.Mesh(
+                                        state=render_cylinderTower(tower_by_names[gname])
+                                            )]
+                
+            if gtype == 'blade':
+
+                airfoil_used = blade_by_names[gname]['outer_shape_bem']['airfoil_position']['labels']
+                selectAirfoils = {}
+                for a in airfoil_used:
+                    selectAirfoils[a] = airfoils_by_names[f'{gname}: {a}']
+
+                meshes += [dash_vtk.Mesh(
+                                        state=render_blade_only(blade_by_names[gname], 
+                                            selectAirfoils)
+                                            )]
+                
+            if gtype == 'hub':
+                meshes += [dash_vtk.Mesh(
+                                        state=render_hub_only(hub_by_names[gname])
+                                        )]
+                
+            if gtype == 'monopile':
+                meshes += [dash_vtk.Mesh(
+                                        state=render_monopile_only(monopile_by_names[gname])
+                                        )]
+                
+            if gtype == 'nacelle':
+                meshes += [dash_vtk.Mesh(
+                                        state=render_nacelle_only(nacelle_by_names[gname], hub_by_names[gname])
+                                        )]
+
+
+            if len(gtype) > 1:
+                print('Multiple components selected')
+
         # Add by geom data (same color over components from the turbine)
         geometries += [dash_vtk.GeometryRepresentation(
             children=meshes,
@@ -224,32 +268,15 @@ def layout():
                     style={"width": "100%", "height": "400px"},
                 )
 
-    # Test with basic vtk function to create tower and blade (wrap the points with the surface)
-    # Define structured points with numpy
-
-    # # 1) Sin-plane
-    # x = np.arange(-10, 10, 0.25)    # (80,)
-    # y = np.arange(-10, 10, 0.25)    # (80,)
-    # x, y = np.meshgrid(x, y)        # both (80, 80)
-    # r = np.sqrt(x**2, y**2)
-    # z = np.sin(r)
-
-    # 2) Cylinder
-    radius = 2
-    height = 5
-    num_points = 10000
-    theta = np.random.uniform(0, 2 * np.pi, num_points)
-    z = np.random.uniform(0, height, num_points)
-
-    # Calculate x, y coordinates
-    x = radius * np.cos(theta)
-    y = radius * np.sin(theta)
-
-    points = (x, y, z)
-
     vtk_view_own = html.Div(
                         style={"width": "100%", "height": "400px"},
-                        children=[render_our_own(points)]
+                        children=[dash_vtk.View([
+                                dash_vtk.GeometryRepresentation(
+                                    mapper={'orientationArray': 'Normals'},
+                                    children=[dash_vtk.Mesh(state=render_cylinderTower())],
+                                    showCubeAxes=True,      # Show origins
+                                )
+                            ])]
                     )   
 
     layout = dcc.Loading(html.Div([

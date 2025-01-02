@@ -786,18 +786,243 @@ def render_cylinder(cylinder):
     return content
 
 
-def render_cylinderTower(towerGrid, TowerOD):
-    rad = TowerOD[0]
+def render_cylinderTower(tower=None):
 
-    cylinder = pv.Cylinder(
-        center=[1,2,3], 
-        direction=[0,0,1], 
-        radius=rad, 
-        height=rad*2
-    )
-    mesh_state = to_mesh_state(cylinder)
+    # temp to get around temp mesh by sora
+    if tower is None:
+        towerGrid = [0, 1]
+        TowerOD = [1, 1]
+        towerHeight = 1
+    else:
 
-    return mesh_state
+        towerGrid = tower['outer_shape_bem']['outer_diameter']['grid']
+        TowerOD = tower['outer_shape_bem']['outer_diameter']['values']
+        towerHeight = tower['outer_shape_bem']['reference_axis']['z']['values'][-1] # can use grid axis as well via interp
+
+    towerGrid = np.array(towerGrid) * towerHeight
+
+    points = towerMesh(towerGrid, TowerOD)
+
+    return render_our_own_delaunay(points)
+
+
+
+def render_blade_only(bladeData, airfoils):
+
+    points = bladeMesh(bladeData, airfoils)
+
+    return render_our_own_delaunay(points)
+
+def render_hub_only(hubData):
+
+    points = hubMesh(hubData)
+
+    return render_our_own_delaunay(points)
+
+def render_monopile_only(monopileData):
+
+    points = monopileMesh(monopileData)
+
+    return render_our_own_delaunay(points)
+
+def render_nacelle_only(nacelleData, hubData):
+
+    points = nacelleMesh(nacelleData,hubData)
+
+    return render_our_own_delaunay(points)
+
+###################################################
+# Mesh generation for different turbine components
+###################################################
+
+def bladeMesh(bladeData, airfoils):
+    '''
+    Generate mesh for blade component
+    '''
+   # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # interpolate the chord, twist, pitch axis and reference axis to the locations of the airfoils
+    chord = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'], 
+                        bladeData['outer_shape_bem']['chord']['grid'],
+                        bladeData['outer_shape_bem']['chord']['values'])
+    
+    twist = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
+                        bladeData['outer_shape_bem']['twist']['grid'],
+                        bladeData['outer_shape_bem']['twist']['values'])
+    
+    pitch_axis = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
+                            bladeData['outer_shape_bem']['pitch_axis']['grid'],
+                            bladeData['outer_shape_bem']['pitch_axis']['values'])
+    
+    ref_axis_x = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
+                            bladeData['outer_shape_bem']['reference_axis']['x']['grid'],
+                            bladeData['outer_shape_bem']['reference_axis']['x']['values'])
+    
+    ref_axis_y = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
+                            bladeData['outer_shape_bem']['reference_axis']['y']['grid'],
+                            bladeData['outer_shape_bem']['reference_axis']['y']['values'])
+    
+    ref_axis_z = np.interp(bladeData['outer_shape_bem']['airfoil_position']['grid'],
+                            bladeData['outer_shape_bem']['reference_axis']['z']['grid'],
+                            bladeData['outer_shape_bem']['reference_axis']['z']['values'])
+    
+
+    # extract the airfoil names at the grid locations 
+    airfoil_names = [bladeData['outer_shape_bem']['airfoil_position']['labels'][i] for i in range(len(bladeData['outer_shape_bem']['airfoil_position']['grid']))]
+
+    # Arrays to store points
+    x = np.array([])
+    y = np.array([])
+    z = np.array([])
+
+    # For each blade station, we transform the coordinates and store
+    for i in range(len(ref_axis_z)):
+        # Get the airfoil coordinates for this section
+        af_coordinates = np.array([airfoils[airfoil_names[i]]['coordinates']['x'], airfoils[airfoil_names[i]]['coordinates']['y']]).T
+        
+        # Scale by chord
+        af_coordinates[:, 0] = (af_coordinates[:, 0] - pitch_axis[i]) * chord[i]
+        af_coordinates[:, 1] = af_coordinates[:, 1] * chord[i]
+        
+        # Create rotation matrix for twist angle
+        cos_t = np.cos(np.radians(twist[i]))
+        sin_t = np.sin(np.radians(twist[i]))
+        rot_matrix = np.array([[cos_t, -sin_t], [sin_t, cos_t]])
+        
+        # Apply rotation
+        af_coordinates = np.dot(af_coordinates, rot_matrix.T)
+        
+        # Translate to reference axis position
+        af_coordinates_3d = np.zeros((af_coordinates.shape[0], 3))
+        af_coordinates_3d[:, 0] = af_coordinates[:, 0] + ref_axis_x[i]
+        af_coordinates_3d[:, 1] = af_coordinates[:, 1] + ref_axis_y[i] 
+        af_coordinates_3d[:, 2] = np.full(af_coordinates.shape[0], ref_axis_z[i])
+
+        # Append points
+        x = np.append(x, af_coordinates_3d[:,0])
+        y = np.append(y, af_coordinates_3d[:,1]) 
+        z = np.append(z, af_coordinates_3d[:,2])
+
+    points = (x, y, z)
+
+    return points
+
+
+def towerMesh(towerGrid, TowerOD):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # Create points for each cylinder segment
+    for i in range(len(towerGrid)-1):
+        # Get parameters for this segment
+        h_start = towerGrid[i]
+        h_end = towerGrid[i+1] 
+        r_start = TowerOD[i]/2
+        r_end = TowerOD[i+1]/2
+        
+        # Create points along height
+        h_points = np.linspace(h_start, h_end, 20)
+        
+        # For each height, create a circle of points
+        for h in h_points:
+            # Calculate interpolated radius at this height
+            r = r_start + (r_end - r_start) * (h - h_start)/(h_end - h_start)
+            
+            # Create circle of points at this height
+            theta = np.linspace(0, 2*np.pi, 36)
+            x = np.append(x, r * np.cos(theta))
+            y = np.append(y, r * np.sin(theta))
+            z = np.append(z, np.full_like(theta, h))
+
+
+    points = (x, y, z)
+    return points
+
+def hubMesh(hubData):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    dia = hubData['diameter']
+    h = 0.5 * dia
+    '''
+    let the height of the hub be 0.5 of the diameter
+    The radius of the hub along the height varies from diameter to zero at the top and follows a parabolic function
+    '''
+    numPoints = 100
+    theta = np.linspace(0, 2*np.pi, numPoints)
+    z_dists = np.linspace(0, dia/2, 20)
+
+    for z_dist in z_dists:
+        r = dia/2 * np.sqrt(1 - (2*z_dist/dia)**2)
+        x = np.append(x, r * np.cos(theta))
+        y = np.append(y, r * np.sin(theta))
+        z = np.append(z, np.full_like(theta, z_dist))
+
+    points = (x, y, z)
+
+    return points
+    
+
+def monopileMesh(monopileData):
+
+    # Reusing the tower mesh function for monopile
+    monopileGrid = monopileData['outer_shape_bem']['outer_diameter']['grid']
+    MonopileOD = monopileData['outer_shape_bem']['outer_diameter']['values']
+    monopileHeight = monopileData['outer_shape_bem']['reference_axis']['z']['values'][-1] # can use grid axis as well via interp
+
+    points = towerMesh(monopileGrid, MonopileOD)
+
+    return points
+    
+def nacelleMesh(hubData, nacelleData):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # if the nacelle dict has length, width and height, we can create a box
+    if 'length' in nacelleData['drivetrain'].keys() and 'width' in nacelleData['drivetrain'].keys() and 'height' in nacelleData['drivetrain'].keys():
+        length = nacelleData['drivetrain']['length']
+        width = nacelleData['drivetrain']['width']
+        height = nacelleData['drivetrain']['height']
+        x = np.array([length/2, length/2, -length/2, -length/2, length/2, length/2, -length/2, -length/2])
+        y = np.array([width/2, -width/2, -width/2, width/2, width/2, -width/2, -width/2, width/2])
+        z = np.array([0, 0, 0, 0, height, height, height, height])
+    else:
+        # if not, we use the overhang, distance from tower top to hub, and hub diameter to create the box such that
+        # height = 1.5 * distance from tower top to hub
+        # length = 2 * overhang
+        # width = 1.5 * hub diameter
+        height = 1.5 * nacelleData['drivetrain']['distance_tt_hub']
+        length = 2 * nacelleData['drivetrain']['overhang']
+        width =  1.5 * hubData['diameter']
+        x = np.array([length/2, length/2, -length/2, -length/2, length/2, length/2, -length/2, -length/2])
+        y = np.array([width/2, -width/2, -width/2, width/2, width/2, -width/2, -width/2, width/2])
+        z = np.array([0, 0, 0, 0, height, height, height, height])
+    
+    points = (x, y, z)
+
+    return points
+
+def semisubMesh(semisubData):
+
+    # Clear previous arrays
+    x = np.array([])
+    y = np.array([])
+    z = np.array([]) 
+    
+    # assuming the semisub follow
+
 
 
 def render_sphere(sphere):
@@ -879,7 +1104,7 @@ def render_our_own(points):
     coords = numpy_to_vtk(values)
     cloud = pv.PolyData(coords)
     # mesh = cloud.delaunay_2d()          # From point cloud, apply a 2D Delaunary filter to generate a 2d surface from a set of points on a plane.
-    mesh = cloud.reconstruct_surface()
+    mesh = cloud.delaunay_3d()
 
 
     # Work for sin-plane but not for cylinder..
@@ -914,7 +1139,26 @@ def render_our_own(points):
     
     return content
 
+def render_our_own_delaunay(points):
+    '''
+    Create and fill the VTK Data Object with your own data using VTK library and pyvista high level api
 
+    Reference: https://tutorial.pyvista.org/tutorial/06_vtk/b_create_vtk.html
+    https://docs.pyvista.org/examples/00-load/create-tri-surface
+    https://docs.pyvista.org/api/core/_autosummary/pyvista.polydatafilters.reconstruct_surface#pyvista.PolyDataFilters.reconstruct_surface
+    '''
+
+    # Join the points
+    x, y, z = points
+    values = np.c_[x.ravel(), y.ravel(), z.ravel()]     # (6400, 3) where each column is x, y, z coords
+    coords = numpy_to_vtk(values)
+    cloud = pv.PolyData(coords)
+    # mesh = cloud.delaunay_2d()          # From point cloud, apply a 2D Delaunary filter to generate a 2d surface from a set of points on a plane.
+    mesh = cloud.delaunay_3d()
+
+    mesh_state = to_mesh_state(mesh)
+
+    return mesh_state
 
 def find_rows(df_dict, df_type='geometry'):
 
@@ -943,8 +1187,6 @@ def load_geometry_data(geometry_paths):
 
 
     return airfoils, geom_comps
-
-
 
 ###################################################
 # Not needed below.. Will be deleted later
