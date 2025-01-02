@@ -786,7 +786,7 @@ def render_cylinder(cylinder):
     return content
 
 
-def render_cylinderTower(tower=None):
+def render_cylinderTower(tower=None, coords='local'):
 
     # temp to get around temp mesh by sora
     if tower is None:
@@ -807,25 +807,25 @@ def render_cylinderTower(tower=None):
 
 
 
-def render_blade_only(bladeData, airfoils):
+def render_blade_only(bladeData, airfoils, coords='local'):
 
     points = bladeMesh(bladeData, airfoils)
 
     return render_our_own_delaunay(points)
 
-def render_hub_only(hubData):
+def render_hub_only(hubData, coords='local'):
 
     points = hubMesh(hubData)
 
     return render_our_own_delaunay(points)
 
-def render_monopile_only(monopileData):
+def render_monopile_only(monopileData, coords='local'):
 
     points = monopileMesh(monopileData)
 
     return render_our_own_delaunay(points)
 
-def render_nacelle_only(nacelleData, hubData):
+def render_nacelle_only(nacelleData, hubData, coords='local'):
 
     points = nacelleMesh(nacelleData,hubData)
 
