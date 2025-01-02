@@ -177,7 +177,7 @@ def check_input_file(contents):
 
 @callback(Output('input-dict', 'data'),
           State('input-dict', 'data'),
-          Input('vizInput_path', 'value'),
+          State('vizInput_path', 'value'),
           Input('reload', 'n_clicks'))
 def reload_input_file(contents, vizInput_path, btn):
 
