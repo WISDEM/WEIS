@@ -3,7 +3,11 @@ import time
 import sys
 
 from weis.glue_code.runWEIS     import run_weis
+from weis.glue_code.weis_args   import weis_args, get_max_procs, set_modopt_procs
 from openmdao.utils.mpi  import MPI
+
+# Parse args
+args = weis_args()
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -11,56 +15,26 @@ fname_wt_input = os.path.join(run_dir, 'nrel5mw-spar_oc3.yaml')
 fname_modeling_options = os.path.join(run_dir, 'modeling_options.yaml')
 fname_analysis_options = os.path.join(run_dir, 'analysis_options.yaml')
 
-import argparse
-# Set up argument parser
-parser = argparse.ArgumentParser(description="Run WEIS driver with flag prepping for MPI run.")
-# Add the flag
-parser.add_argument("--preMPI", type=bool, default=False, help="Flag for preprocessing MPI settings (True or False).")
-parser.add_argument("--maxnP", type=int, default=1, help="Maximum number of processors available.")
-# Parse the arguments
-args, _ = parser.parse_known_args()
-# Use the flag in your script
-if args.preMPI:
-    print("Preprocessor flag is set to True. Running preprocessing setting up MPI run.")
-else:
-    print("Preprocessor flag is set to False. Run WEIS now.")
-
 tt = time.time()
+maxnP = get_max_procs(args)
 
-# Set max number of processes, either set by user or extracted from MPI
-if args.preMPI:
-    maxnP = args.maxnP
-else:
-    if MPI:
-        maxnP = MPI.COMM_WORLD.Get_size()
-    else:
-        maxnP = 1
+modeling_override = None
+if MPI:
+    # Pre-compute number of cores needed in this run
+    _, modeling_options, _ = run_weis(fname_wt_input,
+                                    fname_modeling_options, 
+                                    fname_analysis_options, 
+                                    prepMPI=True, 
+                                    maxnP = maxnP)
 
-if args.preMPI:
-    _, _, _ = run_weis(fname_wt_input, 
-                       fname_modeling_options, 
-                       fname_analysis_options, 
-                       prepMPI=True, 
-                       maxnP = maxnP)
-else:
-    if MPI:
-        _, modeling_options, _ = run_weis(fname_wt_input,
-                                        fname_modeling_options, 
-                                        fname_analysis_options, 
-                                        prepMPI=True, 
-                                        maxnP = maxnP)
+    modeling_override = set_modopt_procs(modeling_options)
 
-        modeling_override = {}
-        modeling_override['General'] = {}
-        modeling_override['General']['openfast_configuration'] = {}
-        modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
-        modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
-    else:
-        modeling_override = None
-    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
-                                                     fname_modeling_options, 
-                                                     fname_analysis_options,
-                                                     modeling_override=modeling_override)
+# Run WEIS for real now
+wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
+                                                    fname_modeling_options, 
+                                                    fname_analysis_options,
+                                                    modeling_override=modeling_override,
+                                                    prepMPI=args.preMPI)
 
 if MPI:
     rank = MPI.COMM_WORLD.Get_rank()
