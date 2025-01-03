@@ -803,7 +803,7 @@ def render_cylinderTower(tower=None, coords='local'):
 
     points = towerMesh(towerGrid, TowerOD)
 
-    return render_our_own_delaunay(points)
+    return render_our_own_delaunay(points), points
 
 
 
@@ -811,25 +811,25 @@ def render_blade_only(bladeData, airfoils, coords='local'):
 
     points = bladeMesh(bladeData, airfoils)
 
-    return render_our_own_delaunay(points)
+    return render_our_own_delaunay(points), points
 
 def render_hub_only(hubData, coords='local'):
 
     points = hubMesh(hubData)
 
-    return render_our_own_delaunay(points)
+    return render_our_own_delaunay(points), points
 
 def render_monopile_only(monopileData, coords='local'):
 
     points = monopileMesh(monopileData)
 
-    return render_our_own_delaunay(points)
+    return render_our_own_delaunay(points), points
 
 def render_nacelle_only(nacelleData, hubData, coords='local'):
 
     points = nacelleMesh(nacelleData,hubData)
 
-    return render_our_own_delaunay(points)
+    return render_our_own_delaunay(points), points
 
 ###################################################
 # Mesh generation for different turbine components
