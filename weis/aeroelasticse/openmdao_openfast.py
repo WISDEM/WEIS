@@ -10,6 +10,7 @@ import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
+from openmdao.utils.mpi import MPI
 from wisdem.commonse import NFREQ
 from wisdem.commonse.cylinder_member import get_nfull
 import wisdem.commonse.utilities              as util
@@ -768,6 +769,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt = fast_reader.fst_vt
             # Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
             modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+
+            # Populate empty directories that are needed (controller testbench)
+            if 'General' not in modopts_no_defaults:
+                modopts_no_defaults['General'] = {}
+                modopts_no_defaults['General']['openfast_configuration'] = {}
+
             fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
 
             # Fix TwrTI: WEIS modeling options have it as a single value...
@@ -1843,7 +1850,7 @@ class FASTLoadCases(ExplicitComponent):
         tau1_const_interp = np.zeros_like(Ct_aero_interp)
         for i in range(len(Ct_aero_interp)):
             a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
-            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
+            tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * float(inputs['Rtip']) / U_interp[i]
 
         initial_condition_table = {}
         initial_condition_table['U'] = U_interp

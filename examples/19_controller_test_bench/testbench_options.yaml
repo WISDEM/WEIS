@@ -1,0 +1,56 @@
+Testbench_Options:
+    output_directory: outputs/2_setup_input   # relative to this file
+    output_filebase: testbench
+
+Turbine_Info:
+    # used to generate wind inputs
+    wind_speed_cut_in: 5
+    wind_speed_cut_out: 25
+    wind_speed_rated: 11.4  
+    hub_height: 148.734         
+    rotor_radius:  120.97
+    turbine_class: I
+    turbulence_class: B
+    
+    # Determines OpenFAST output channels
+    flags:
+        offshore: True
+        floating: True
+        monopile: False
+        TMDs: False  
+
+
+Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+    flag: True
+    from_openfast: True
+    regulation_trajectory: IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+
+DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
+    DLCs:
+        - DLC: "1.6"
+          wind_speed: [8,15]
+          n_seeds: 2
+          analysis_time: 10.
+          transient_time: 0.0
+        - DLC: "5.1"
+          wind_speed: [12]
+          n_seeds: 1
+          n_azimuth: 3
+          analysis_time: 20.
+          shutdown_time: 10.
+          transient_time: 0.0
+
