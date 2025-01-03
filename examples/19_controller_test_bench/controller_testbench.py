@@ -8,10 +8,12 @@ from wisdem.inputs.validation import load_yaml, write_yaml, _validate, simple_ty
 this_dir = os.path.dirname( os.path.realpath(__file__) )
 
 def load_testbench_yaml(filename):
+    # TODO: add testbench schema to modeling schema
+    
+    
     # Will eventually move this somewhere else for clarity
-    options = load_yaml(filename)
+    options = sch.load_modeling_yaml(filename)
 
-    # TODO: validate against schema
 
     return options
 
@@ -27,10 +29,9 @@ def main():
 
     # Configure modeling options for FASTLoadCases 
     modopt_file = os.path.join(this_dir,input_file)
-    modeling_options = sch.load_modeling_yaml(modopt_file)
-    modeling_options['General']['openfast_configuration']['fst_vt'] = {}
-    modeling_options['fname_input_modeling'] = modopt_file
-    modeling_options['materials'] = {}
+    testbench_options['General']['openfast_configuration']['fst_vt'] = {}
+    testbench_options['fname_input_modeling'] = modopt_file
+    testbench_options['materials'] = {}
 
     # Unpack inputs to openmdao_openfast
     inputs = {
@@ -47,25 +48,25 @@ def main():
         'turbulence_class': testbench_options['Turbine_Info']['turbulence_class'],
     }
 
-    modeling_options['flags'] = testbench_options['Turbine_Info']['flags']  # Used to determine output channels in OpenFAST
+    testbench_options['flags'] = testbench_options['Turbine_Info']['flags']  # Used to determine output channels in OpenFAST
 
 
     # Usually, in WEIS, we populate fst_vt['DISCON'] with previously tuned ROSCO.  
     # This will just use the DISCON referenced by the OpenFAST model. 
     # TODO: should we do any tuning or specify a DISCON?
-    modeling_options['ROSCO']['flag'] = False   
+    testbench_options['ROSCO']['flag'] = False   
 
-    OFmgmt = modeling_options['General']['openfast_configuration']
-    OFmgmt['cores'] = modeling_options['Testbench_Options']['n_cores']
+    OFmgmt = testbench_options['General']['openfast_configuration']
+    OFmgmt['cores'] = testbench_options['Testbench_Options']['n_cores']
     OFmgmt['path2dll'] = discon_lib_path
 
     # Set default directories, relative to testbench options
     OFmgmt['OF_run_fst'] = testbench_options['Testbench_Options']['output_filebase']
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
-    modeling_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
+    testbench_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
 
     flc = FASTLoadCases()
-    flc.options['modeling_options'] = modeling_options
+    flc.options['modeling_options'] = testbench_options
     flc.n_blades = 3
     flc.of_inumber = 0
 
