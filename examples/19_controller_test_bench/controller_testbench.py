@@ -56,20 +56,13 @@ def main():
     modeling_options['ROSCO']['flag'] = False   
 
     OFmgmt = modeling_options['General']['openfast_configuration']
-    OFmgmt['cores'] = 1  # TB option?
-
-    # # Merge Level3 and OpenFAST, will merge in WEIS soon
-    # modeling_options['Level3'].update(testbench_options['OpenFAST'])
-    # modeling_options['OpenFAST']
-
+    OFmgmt['cores'] = modeling_options['Testbench_Options']['n_cores']
+    OFmgmt['path2dll'] = discon_lib_path
 
     # Set default directories, relative to testbench options
     OFmgmt['OF_run_fst'] = testbench_options['Testbench_Options']['output_filebase']
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
     modeling_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
-
-
-    modeling_options['General']['openfast_configuration']['path2dll'] = discon_lib_path
 
     flc = FASTLoadCases()
     flc.options['modeling_options'] = modeling_options
@@ -83,8 +76,6 @@ def main():
 
 
     # Post-processing here
-
-
     print('here')
 
 if __name__=='__main__':

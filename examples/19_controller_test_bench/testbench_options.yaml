@@ -1,6 +1,7 @@
 Testbench_Options:
     output_directory: outputs/2_setup_input   # relative to this file
     output_filebase: testbench
+    n_cores: 1
 
 Turbine_Info:
     # used to generate wind inputs
