@@ -281,6 +281,7 @@ def update_table(df_dict):
 
 @callback(Output('airfoil-by-names', 'data'),
           Output('geometry-components', 'data'),
+          Output('wt-options', 'data'),
           Input('file-df', 'data'))
 def categorize_data(df_dict):
     '''
@@ -289,10 +290,10 @@ def categorize_data(df_dict):
     '''
     # airfoils, geom_comps = load_geometry_data(df['geometry'])
     try:
-        airfoils, geom_comps = load_geometry_data(find_rows(df_dict, 'geometry'))      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
+        airfoils, geom_comps, wt_options_by_files = load_geometry_data(find_rows(df_dict, 'geometry'))      # Data structure: {file1: [{'name': 'FB90', 'coordinates': {'x': [1.0, 0.9921, ...]}}], file2: ~~~}
         airfoil_by_names = {label+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for label, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }
         geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
     except Exception as e:
         print(e)
 
-    return airfoil_by_names, geom_comps_by_names
+    return airfoil_by_names, geom_comps_by_names, wt_options_by_files

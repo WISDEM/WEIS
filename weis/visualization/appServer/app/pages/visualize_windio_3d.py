@@ -32,8 +32,9 @@ def list_labels(geom_comps_by_names):
           State('geom-3d-names', 'value'),
           State('geom-types', 'value'),
           State('geometry-components', 'data'),
-          State('airfoil-by-names', 'data'))
-def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names,airfoils_by_names):
+          State('airfoil-by-names', 'data'),
+          State('wt-options', 'data'))
+def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_by_names, wt_options_by_names):
     '''
     This function is for visualizing per geometry component types from selected file data
     '''
@@ -59,7 +60,7 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names,airfoils_b
     colors_scale = [list(map(lambda x: int(x)/255, c[4:-1].split(', '))) for c in default_rgbs]
 
 
-    for idx, gname in enumerate(geom_3d_names):         # gname: selected geometry file
+    for idx, gname in enumerate(geom_3d_names):         # gname: selected geometry file (selected filelabelname)
 
         # Set 'Coords' flag depending on the size of components
         if len(geom_types) > 1:
@@ -74,6 +75,8 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names,airfoils_b
             print('nothing selected..')
         
         # Render, add meshes
+        print(f"{gname} with wt_options\n {wt_options_by_names[gname]}")
+
         # Note: Geometry Representation include only one mesh. Cannot include multiple meshes..
         if 'tower' in geom_types:
             

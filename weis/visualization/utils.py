@@ -1174,7 +1174,7 @@ def load_geometry_data(geometry_paths):
     # Read geometry input file and load airfoils data
     # wt_options = sch.load_geometry_yaml('/projects/weis/sryu/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')       # For HPC
     # wt_options = sch.load_geometry_yaml('/Users/sryu/Desktop/FY24/WEIS-Visualization/data/visualization_cases/1_raft_opt/IEA-22-280-RWT.yaml')       # For Local
-    airfoils, geom_comps = {}, {}
+    airfoils, geom_comps, wt_options_by_file = {}, {}, {}
     # for row in geometry_paths:
     #     wt_options = sch.load_geometry_yaml(row['File Path'])
     #     airfoils[row['Label']] = wt_options['airfoils']
@@ -1184,9 +1184,10 @@ def load_geometry_data(geometry_paths):
         wt_options = sch.load_geometry_yaml(filepath)
         airfoils[filelabel] = wt_options['airfoils']
         geom_comps[filelabel] = wt_options['components']
+        wt_options_by_file[filelabel] = wt_options
 
 
-    return airfoils, geom_comps
+    return airfoils, geom_comps, wt_options_by_file
 
 ###################################################
 # Not needed below.. Will be deleted later

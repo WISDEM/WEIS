@@ -2,7 +2,8 @@
 
 # Import Packages
 import dash
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, DiskcacheManager, CeleryManager
+import os
 import dash_bootstrap_components as dbc
 import logging
 import argparse
@@ -38,13 +39,27 @@ parser.add_argument('--input',
 args = parser.parse_args()
 
 
+if 'REDIS_URL' in os.environ:
+    # Use Redis & Celery if REDIS_URL set as an env variable
+    from celery import Celery
+    celery_app = Celery(__name__, broker=os.environ['REDIS_URL'], backend=os.environ['REDIS_URL'])
+    background_callback_manager = CeleryManager(celery_app)
+
+else:
+    # Diskcache for non-production apps when developing locally
+    import diskcache
+    cache = diskcache.Cache("./cache")
+    background_callback_manager = DiskcacheManager(cache)
+
+
+
 # Initialize the app - Internally starts the Flask Server
 # Incorporate a Dash Mantine theme
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 # For Latex
 mathjax = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'
 APP_TITLE = "WEIS Visualization APP"
-app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True)
+app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True, background_callback_manager=background_callback_manager)
 
 # Build Navigation Bar
 # Each pages are registered on each python script under the pages directory.
@@ -73,14 +88,9 @@ navbar = dbc.NavbarSimple(
 # Wrap app with loading component
 # Whenever it needs some time for loading data, small progress bar would be appear in the middle of the screen.
 
-app.layout = dcc.Loading(
-    id = 'loading_page_content',
-    children = [
-        html.Div(
+app.layout = html.Div(
             [   # Variable Settings to share over pages
                 dcc.Store(id='input-dict', data=parse_yaml(args.input)),
-                # Optimization related Data fetched from input-dict
-                dcc.Store(id='var-opt', data={}),
                 # WindIO Input Files
                 dcc.Store(id='file-df', data={'File Path': [], 'Label': [], 'Type': []}),
                 # dcc.Store(id='sorted-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
@@ -88,14 +98,34 @@ app.layout = dcc.Loading(
                 dcc.Store(id='airfoil-by-names', data={}),
                 # Geometry components categorized by 'filelabelname:componenttype' pairs
                 dcc.Store(id='geometry-components', data={}),
+                # Geometry file (whole wind turbine contents) categorized by 'filelabelname'
+                dcc.Store(id='wt-options', data={}),
                 navbar,
                 dash.page_container
             ]
         )
-    ],
-    color = 'primary',
-    fullscreen = True
-)
+
+# app.layout = dcc.Loading(
+#     id = 'loading_page_content',
+#     children = [
+#         html.Div(
+#             [   # Variable Settings to share over pages
+#                 dcc.Store(id='input-dict', data=parse_yaml(args.input)),
+#                 # WindIO Input Files
+#                 dcc.Store(id='file-df', data={'File Path': [], 'Label': [], 'Type': []}),
+#                 # dcc.Store(id='sorted-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
+#                 # Airfoils categorized by 'filelabelname:airfoilname' pairs
+#                 dcc.Store(id='airfoil-by-names', data={}),
+#                 # Geometry components categorized by 'filelabelname:componenttype' pairs
+#                 dcc.Store(id='geometry-components', data={}),
+#                 navbar,
+#                 dash.page_container
+#             ]
+#         )
+#     ],
+#     color = 'primary',
+#     fullscreen = True
+# )
 
 
 def main():
