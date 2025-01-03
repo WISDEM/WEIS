@@ -9,13 +9,11 @@ from weis.glue_code.weis_args   import weis_args, get_max_procs, set_modopt_proc
 # Parse args
 args = weis_args()
 
-
 ## File management
-run_dir                 = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input          = run_dir + os.sep + 'IEA-15-240-RWT.yaml'
-fname_modeling_options  = run_dir + os.sep + 'modeling_options.yaml'
-fname_analysis_options  = run_dir + os.sep + 'analysis_options.yaml'
-
+run_dir = os.path.dirname( os.path.realpath(__file__) )
+fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT.yaml")
+fname_modeling_options = os.path.join(run_dir, "modeling_options.yaml")
+fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
 
 tt = time.time()
 maxnP = get_max_procs(args)

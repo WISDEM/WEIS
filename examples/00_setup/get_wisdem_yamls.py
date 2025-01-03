@@ -1,8 +1,8 @@
 import os
 import requests
-'''
+""'
 Run this script to update geometry yamls based on WISDEM yamls
-'''
+""'
 
 def main():
 
@@ -28,7 +28,7 @@ def main():
         # Download the file
         response = requests.get(raw_url)
         if response.status_code == 200:
-            with open(local_path, 'wb') as f:
+            with open(local_path, "wb") as f:
                 f.write(response.content)
             print(f"Downloaded {raw_url} to {local_path}")
         else:
