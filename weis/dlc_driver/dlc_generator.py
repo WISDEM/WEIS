@@ -407,7 +407,7 @@ class DLCGenerator(object):
 
             # AEP DLC: set constant turbulence intensity
             if dlc_options['label'] == 'AEP':
-                idlc.IECturbc = dlc_options['TI']
+                idlc.IECturbc = self.IECturb.NTM(idlc.URef) * dlc_options['TI_factor'] / idlc.URef * 100
 
             
     def apply_sea_state(self,met_options,sea_state='normal'):
@@ -591,9 +591,13 @@ class DLCGenerator(object):
         dlc_options['label'] = 'AEP'
         dlc_options['sea_state'] = 'normal'
         dlc_options['PSF'] = 1.35
-
-        if 'TI' not in dlc_options:
-            raise Exception('A TI must be set for the AEP DLC.')
+        if 'TI_factor' not in dlc_options:
+            raise Exception('A TI_factor must be set for the AEP DLC.')
+        
+        if 'turbulence_class' in dlc_options:
+            self.IECturb.Turbulence_Class = dlc_options['turbulence_class']
+            self.IECturb.setup()
+            
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -753,14 +757,41 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_2p1(self, dlc_options):
-        # Power production plus occurrence of fault
-        # Normal control system fault
+        # Power production plus loss of electrical network
 
         # Get default options
         dlc_options.update(self.default_options)   
         
         # DLC Specific options:
         dlc_options['label'] = '2.1'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
+        
+        if 'genfault_time' not in dlc_options:
+            raise Exception('genfault_time must be set for the DLC 2.1')
+
+        # azimuth starting positions
+        dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','genfault_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['azimuth_init']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_2p2(self, dlc_options):
+        # Power production plus occurrence of fault
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = '2.2'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
@@ -773,18 +804,23 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         group0 = ['total_time','transient_time','wake_mod','wave_model']
-        
+
+        AnyFault = False
         if 'pitchfault_time1' in dlc_options:
             group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
+            AnyFault = True
         if 'pitchfault_time2' in dlc_options:
             group0.extend(['pitchfault_time2','pitchfault_blade2pos'])
+            AnyFault = True
         if 'pitchfault_time3' in dlc_options:
             group0.extend(['pitchfault_time3','pitchfault_blade3pos'])
+            AnyFault = True
         if 'yawfault_time' in dlc_options:
             group0.extend(['yawfault_time','yawfault_yawpos'])
-        if 'genfault_time' in dlc_options:
-            group0.extend(['genfault_time'])
+            AnyFault = True
         
+        if not AnyFault:
+            raise Exception('yawfault or pitchfault for at least one blade must be set for dlc 2.2')
 
         generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
@@ -803,7 +839,10 @@ class DLCGenerator(object):
         dlc_options['label'] = '2.3'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'EOG'
-        dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
+        dlc_options['PSF'] = 1.1  # For fault cases, psf depends on the mean-time between faults
+        
+        if 'genfault_time' not in dlc_options:
+            raise Exception('genfault_time must be set for the DLC 2.3')
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -941,6 +980,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '6.2'
         dlc_options['sea_state'] = '50-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM50'
+        dlc_options['PSF'] = 1.1
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
@@ -1067,6 +1107,7 @@ class DLCGenerator(object):
         dlc_options['label'] = '7.1'
         dlc_options['sea_state'] = '1-year'
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM1'
+        dlc_options['PSF'] = 1.1
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
         if 'yaw_misalign' in dlc_options:

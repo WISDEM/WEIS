@@ -11,7 +11,7 @@ DOE driver settings.
 """
 
 from weis.glue_code.runWEIS     import run_weis
-from wisdem.commonse.mpi_tools  import MPI
+from openmdao.utils.mpi  import MPI
 import os, time, sys
 
 ## File management

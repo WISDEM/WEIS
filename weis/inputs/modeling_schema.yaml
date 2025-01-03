@@ -80,6 +80,14 @@ properties:
                         type: boolean
                         default: False
                         description: Write standard output to own file.  Output will not print to screen.
+                    nFD:
+                        type: integer
+                        default: 1
+                        description: Number of parallel finite differencing performed by OpenMDAO. WEIS sets this number once the preMPI keyword argument is set
+                    nOFp:
+                        type: integer
+                        default: 1
+                        description: Number of parallel OpenFAST runs performed by OpenMDAO. WEIS sets this number once the preMPI keyword argument is set
             goodman_correction:
                 type: boolean
                 default: False
@@ -1814,7 +1822,7 @@ properties:
                         description: Low cut-off frequency or lower frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]
                     WvHiCOff:
                         type: number
-                        default: 0.783827
+                        default: 1.256637  # 5 sec.
                         minimum: 0.0
                         maximum: 1e3
                         unit: rad/s
@@ -3204,10 +3212,14 @@ properties:
                         wind_file:
                             type: string
                             description: File path of custom wind file
-                        TI: 
+                        TI_factor: 
                             type: number
                             unit: Percentage
-                            description: The constant turbulence intensity used in the AEP DLC only.
+                            description: The fraction of the TI, relative to the class defined in the geometry options or by turbulence_class
+                        turbulence_class: 
+                            type: string
+                            enum: ['A+','A','B','C']
+                            description: The class of turbulence, will overwrite class defined in geometry options. Only valid in the AEP DLC.
                         turbulent_wind:
                             type: object
                             default: {}

@@ -109,28 +109,149 @@ These outputs can be used as inputs for future runs to exactly reproduce specifi
 Expected DLC Outputs in OpenFAST
 --------------------------------
 
-Coming soon.
-
-.. DLC 1.1
-.. -------
 .. For each:
 .. Short description.
 .. Defaults?
 .. Timeseries
 
-.. DLC 1.2
+Power production (1.X)
+-----------------------
+
+In all the power producing DLCs (1.X), the wind turbine should be running and connected to an electrical load.
+According to the standard, deviations from theoretical operating conditions (like yaw misalignment0 should be considered).
+``yaw_misalign`` is an available option for all these cases; the default is 0 deg. for all 1.X cases.
+DLC 1.X simulations all use a normal turbulence model.  The class and type is set in the ``assembly`` options in the geometry input.
+For DLCs 1.1--1.5, a normal sea state is used, based on the modeling options ``(DLC_driver,metocean_conditions,wave_height_NSS)``.
+These wave heights correspond to the ``wind_speed`` input in the ``(DLC_driver,metocean_conditions))`` table.  
+There is a similar option for ``wave_period_NSS``.
+
+
+DLC 1.1
+-------
+Normal turbulence and sea state, specified using the options described above, with wind speeds spanning the operational wind speeds. 
+Specific wind speeds can be selected with the ``(DLC_driver,DLCs,DLC: "1.1", wind_speed)`` input.
+The default number of seeeds ``(DLC_driver,DLCs,DLC: "1.1", n_seeds)`` is 1, but more (6 or 12) are typically used to achieve convergence.
+
+.. figure:: /images/dlcs/DLC11.png
+   :align: center
+   :width: 70%
+
+In this demonstration we show a below rated (7 m/s, weis_job_02), near rated (11 m/s, weis_job_04), and above rated (17 m/s, weis_job_07) simulation.
+
+
+DLC 1.2
+-------
+
+DLC 1.2 simulations are very similar to DLC 1.1 simulation.  More metocean combinations can be specified, along with their probabilities using the following options::
+
+  DLC_driver:
+    metocean_conditions:
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        probabilities: [0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05,0.05]
+
+Note that postprocessing using these probabilities is currently under construction, with an anticipated release in Q2 of 2025.
+
+
+DLC 1.3
+-------
+
+DLC 1.3 is used for ultimate loading with the extreme turbulence model (ETM) and a normal sea state.
+Note that the standard specifies some guidance for the scaling of this turbulence based on the extrapolation of DLC 1.1 results; this is not yet included in WEIS.
+
+.. figure:: /images/dlcs/DLC13.png
+   :align: center
+   :width: 70%
+
+Here, we compare a DLC 1.1 simulation with a DLC 1.3 simulation and note the differences in wind speed (Wind1VelX), control signals, and tower loading.
+
+DLC 1.4
+-------
+
+DLC 1.4 models an extreme coherent gust with direction change (ECD) transient event that causes ultimate loading.
+The WEIS DLC driver simulates this case across wind speeds, but the standard specifies that it only needs to be simulated near rated conditions.
+At each wind speed, both a positive and negative change in direction will be simulated.
+For each of those cases, users can specify the ``n_azimuth`` input to start the simulation at evenly spaced azimuthal positions from 0 to 120 deg. to ensure a full sampling of the blade loads when the gust occurs.
+
+.. figure:: /images/dlcs/DLC14.png
+   :align: center
+   :width: 70%
+
+DLC 1.5
+-------
+In thise case, we model an extreme wind shear (EWS) event.  Both positive and negative direciton shears are generated, along with horizontal and vertical shear.  
+
+.. figure:: /images/dlcs/DLC15.png
+   :align: center
+   :width: 70%
+
+
+DLC 1.6
+-------
+
+DLC 1.6 models a turbine operating in normal turbulence with a severe sea state.  The severe sea state is determined based on the ``metocean`` inputs of the DLC driver as follows::
+    
+    metocean_conditions:
+      wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+      wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+      wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+
+Note that ``wind_speed`` in the ``metocean_conditions`` table is shared with the ``NSS`` inputs to the table.
+
+.. figure:: /images/dlcs/DLC16.png
+   :align: center
+   :width: 70%
+
+Here, we compare a DLC 1.1 simulation with a DLC 1.6 and the extreme waves modeled in that case.
+
+
+Power production with fault (2.X)
+---------------------------------
+DLCs 2.X involves cases where faults turbine and/or loss of electrical network connection occurs while the turbine is producing power and connected to an electircal load.
+In additions to the options used to describe power production, DLC 2.X allow foroptions to descibe blade pitch, generator and yaw faults.
+The azimuth position for the rotor at the time of a fault may have significant influence on the load levels.
+Therefore, the `azimuth_init` is required for DLC 2.X.
+
+DLC 2.1 
+-------
+DLC 2.1 related to normal control system fault or loss of electrical network.
+The faults included in this DLC are: blade pitch fault, yaw position fault and, loss of electrical network.
+What is a pitch 
+'pitchfault_time1','pitchfault_blade1pos'
+This DLC is evaulated for normal sea-state and normal turbulence model.
+The partial safety factor for this DLC is assumed to be 1.35.
+The azimuth position at time of occurrence of the fault is randomly selected.
+
+
+.. DLC 2.2
+.. """""""
+.. Some genfault in 2.1 should be moved to 2.2, needs discussion
+plot of inflow, control signal, power, one load signal
+
+DLC 2.3 
+"""""""
+DLC 2.3 related to loss of electrical network under gust
+This DLC is evaulated for normal sea-state and extreme operating guest. 
+The partial safety factor for this DLC is assumed to be 1.35.
+The azimuth position at time of occurrence of the fault is randomly selected.
+
+.. DLC 2.4
 .. -------
 
-.. DLC 1.3
+.. DLC 3.1
 .. -------
 
-.. DLC 1.4
+.. DLC 3.2
 .. -------
 
-.. DLC 1.5
+.. DLC 3.3
 .. -------
 
-.. DLC 1.6
+.. DLC 4.1
+.. -------
+
+.. DLC 4.2
 .. -------
 
 .. DLC 5.1
@@ -139,11 +260,24 @@ Coming soon.
 .. DLC 6.1
 .. -------
 
+.. DLC 6.2
+.. -------
+
 .. DLC 6.3
 .. -------
 
 .. DLC 6.4
 .. -------
+
+.. DLC 7.1
+.. -------
+
+.. DLC 7.2
+.. -------
+
+.. DLC AEP (DZ)
+.. -------
+
 
 
 .. ------------------------
