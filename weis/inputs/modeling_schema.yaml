@@ -80,6 +80,14 @@ properties:
                         type: boolean
                         default: False
                         description: Write standard output to own file.  Output will not print to screen.
+                    nFD:
+                        type: integer
+                        default: 1
+                        description: Number of parallel finite differencing performed by OpenMDAO. WEIS sets this number once the preMPI keyword argument is set
+                    nOFp:
+                        type: integer
+                        default: 1
+                        description: Number of parallel OpenFAST runs performed by OpenMDAO. WEIS sets this number once the preMPI keyword argument is set
             goodman_correction:
                 type: boolean
                 default: False
