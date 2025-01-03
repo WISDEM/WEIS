@@ -33,7 +33,7 @@ def main():
     testbench_options['fname_input_modeling'] = modopt_file
     testbench_options['materials'] = {}
 
-    # Unpack inputs to openmdao_openfast
+    # Unpack testbench inputs for openmdao_openfast
     inputs = {
         'V_cutin':          testbench_options['Turbine_Info']['wind_speed_cut_in'],
         'V_cutout':         testbench_options['Turbine_Info']['wind_speed_cut_out'],
@@ -60,11 +60,12 @@ def main():
     OFmgmt['cores'] = testbench_options['Testbench_Options']['n_cores']
     OFmgmt['path2dll'] = discon_lib_path
 
-    # Set default directories, relative to testbench options
+    # Set default directories relative to testbench options
     OFmgmt['OF_run_fst'] = testbench_options['Testbench_Options']['output_filebase']
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
     testbench_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
 
+    # Make FASTLoadCases
     flc = FASTLoadCases()
     flc.options['modeling_options'] = testbench_options
     flc.n_blades = 3

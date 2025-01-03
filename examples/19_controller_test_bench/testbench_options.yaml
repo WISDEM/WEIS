@@ -2,6 +2,7 @@ Testbench_Options:
     output_directory: outputs/2_setup_input   # relative to this file
     output_filebase: testbench
     n_cores: 1
+    use_mpi: False
 
 Turbine_Info:
     # used to generate wind inputs
@@ -24,7 +25,7 @@ Turbine_Info:
 Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
     flag: True
     from_openfast: True
-    regulation_trajectory: IEA-15-240-RWT-outputs.yaml
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
