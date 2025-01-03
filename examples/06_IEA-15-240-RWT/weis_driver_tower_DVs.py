@@ -5,7 +5,7 @@ import os, time, sys
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-floating_wTMDs_tower.yaml")
+fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S_sparsetower.yaml")
 fname_modeling_options = os.path.join(run_dir, "modeling_options_tower.yaml")
 fname_analysis_options = os.path.join(run_dir, "analysis_options_tower_DVs.yaml")
 

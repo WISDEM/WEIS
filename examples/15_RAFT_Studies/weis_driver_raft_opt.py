@@ -25,7 +25,7 @@ if rank == 0:
 
 # Test that the input we are providing RAFT has not changed
 this_raft_input = load_yaml(os.path.join(run_dir,"outputs","15_RAFT_Rect","raft_designs","raft_design_0.yaml"))
-standard_raft_input = load_yaml(os.path.join(run_dir,"raft_input_weis.yaml"))
+standard_raft_input = load_yaml(os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S_raft.yaml"))
 # Disable this test because we get slightly different inputs on the linux CI
 # assert(this_raft_input != standard_raft_input)
 

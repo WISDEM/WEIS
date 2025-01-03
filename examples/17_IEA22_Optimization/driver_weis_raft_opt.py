@@ -6,7 +6,7 @@ from openmdao.utils.mpi import MPI
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-22-280-RWT-Semi.yaml")
+fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-22-280-RWT_Floater.yaml")
 fname_modeling_options = os.path.join(run_dir, "modeling_options_raft.yaml")
 fname_analysis_options = os.path.join(run_dir, "analysis_options_raft_ptfm_opt.yaml")
 

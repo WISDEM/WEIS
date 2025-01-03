@@ -24,7 +24,7 @@ if __name__ == "__main__":
     fname_modeling_options      = os.path.join(mydir, "modeling_options.yaml")
     modeling_options            = sch.load_modeling_yaml(fname_modeling_options)
 
-    fname_wt_input              = os.path.join(mydir, "..", "00_setup", "ref_turbines", "IEA-15-floating.yaml")
+    fname_wt_input              = os.path.join(mydir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S.yaml")
     wt_init                     = sch.load_geometry_yaml(fname_wt_input)
 
     fname_analysis_options      = os.path.join(mydir, "analysis_options.yaml")
