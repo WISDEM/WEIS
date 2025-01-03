@@ -199,7 +199,7 @@ class DLCGenerator(object):
         self.initial_condition_table = initial_condition_table
 
         # Add to openfast_input_map
-        if dlc_driver_options['openfast_input_map']:
+        if ('openfast_input_map' in dlc_driver_options) and dlc_driver_options['openfast_input_map']:
             for key, value in dlc_driver_options['openfast_input_map'].items():
 
                 if key in self.openfast_input_map:

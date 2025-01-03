@@ -27,7 +27,17 @@ class TestIECWind(unittest.TestCase):
         fix_wind_seeds = modeling_options['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modeling_options['DLC_driver']['fix_wave_seeds']
         metocean = modeling_options['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        dlc_generator = DLCGenerator(
+            ws_cut_in, 
+            ws_cut_out, 
+            ws_rated, 
+            wind_speed_class, 
+            wind_turbulence_class, 
+            fix_wind_seeds, 
+            fix_wave_seeds, 
+            metocean,
+            modeling_options['DLC_driver']
+            )
 
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
