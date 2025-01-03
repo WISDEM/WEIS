@@ -76,7 +76,19 @@ jobs:
         run: |
           cd weis/test
           python run_examples.py
-          
+
+      # Run parallel script calling OpenFAST
+      - name: Run parallel OpenFAST
+        run: |
+          cd examples/02_run_openfast_cases
+          mpiexec -np 2 python weis_driver_loads.py
+
+      # Run parallel script calling a simple optimization
+      - name: Run parallel OpenFAST
+        run: |
+          cd examples/03_NREL5MW_OC3_spar
+          mpiexec -np 2 python weis_driver.py
+
       # Run scripts within rotor_opt folder with MPI
       - name: Run parallel examples rotor optimization
         run: |

@@ -20,6 +20,7 @@ Using WEIS
    installation
    how_weis_works
    inputs/yaml_inputs
+   run_in_parallel
    
 
 WEIS Visualization APP

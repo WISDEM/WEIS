@@ -522,7 +522,7 @@ class ROSCO_Turbine(ExplicitComponent):
         if parameter_filename == 'none':
             raise Exception('A ROSCO tuning_yaml must be specified in the modeling_options if from_OpenFAST is True')
 
-        inps = load_rosco_yaml(parameter_filename)
+        inps = load_rosco_yaml(parameter_filename, rank_0=True)
         self.turbine_params         = inps['turbine_params']
         self.control_params         = inps['controller_params']
 
