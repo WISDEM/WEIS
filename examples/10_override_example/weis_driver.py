@@ -21,7 +21,7 @@ fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
 wt_opt, modeling_options, opt_options = weis_main(
     fname_wt_input, fname_modeling_options, fname_analysis_options
 )
-print(f"Tip deflection: {wt_opt["rotorse.rs.tip_pos.tip_deflection"][0]} meters")
+print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")
 
 
 # Construct a dict with values to override.
@@ -49,4 +49,4 @@ wt_opt, modeling_options, opt_options = weis_main(
     modeling_override=modeling_override,
     analysis_override=analysis_override,
 )
-print(f"Tip deflection: {wt_opt["rotorse.rs.tip_pos.tip_deflection"][0]} meters")
+print(f"Tip deflection: {wt_opt['rotorse.rs.tip_pos.tip_deflection'][0]} meters")
