@@ -1,4 +1,3 @@
-import numpy as np
 import os
 import weis.control.LinearModel as lin_mod
 from weis.aeroelasticse.LinearFAST import LinearFAST

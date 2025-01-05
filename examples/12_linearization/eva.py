@@ -2,8 +2,6 @@
 Eigenvalue analyses tools for mechnical system: 
    mass matrix M, stiffness matrix K and possibly damping matrix C
 """
-import pandas as pd    
-
 import numpy as np
 from scipy import linalg
 

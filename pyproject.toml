@@ -93,7 +93,7 @@ docs = ["sphinx",
 "Documentation" = "https://weis.readthedocs.io"
 
 [project.scripts]
-#wisdem = "weis.main:weis_cmd"
+weis = "weis.main:weis_cmd"
 weis_viz = "weis.visualization.appServer.app.mainApp:main"
 weis_viz_input_gen = "weis.visualization.appServer.share.vizFileGen:main"
 
