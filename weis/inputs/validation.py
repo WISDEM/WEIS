@@ -57,7 +57,6 @@ def load_modeling_yaml(finput):
 
 def write_modeling_yaml(instance, foutput):
     weis_schema = get_modeling_schema()
-    _validate(instance, weis_schema, defaults=False)
     sfx_str = ".yaml"
     if foutput[-5:] == sfx_str:
         foutput = foutput[-5:]
@@ -66,6 +65,7 @@ def write_modeling_yaml(instance, foutput):
     sfx_str = "-modeling.yaml"
     instance2 = simple_types(instance)
     instance2 = remove_numpy(instance2)
+    _validate(instance2, weis_schema, defaults=False)
     write_yaml(instance2, foutput+sfx_str)
 
 def get_analysis_schema():
