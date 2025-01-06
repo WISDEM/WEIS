@@ -57,7 +57,7 @@ The installation instructions below use the environment name, "weis-env," but an
 
 2. Add in final packages and install the software
 
-        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only)
+        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only, sometimes Windows users may need to install mpi4py)
         pip install -e .
 
 3. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:

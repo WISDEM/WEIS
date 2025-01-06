@@ -32,6 +32,9 @@ ROSCO:
     flag: True
     tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
     Kp_float: -10
+    U_pc: [12, 18, 24]
+    omega_pc: [.1, .1, .1]
+    zeta_pc: [1.,1.,1.]
 
 
 DLC_driver:
@@ -49,12 +52,12 @@ DLC_driver:
         - DLC: "6.1"
           analysis_time: 10.
           transient_time: 0.1
+          wind_speed: [46.789]
           turbulent_wind:
               HubHt: 142
               RefHt: 142
               GridHeight: 275
               GridWidth: 275
-              URef: 46.789
               PLExp: 0.14
               IECturbc: 0.12
               

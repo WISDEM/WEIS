@@ -128,19 +128,6 @@ DLC_driver:
           ws_bin_size: 10
           analysis_time: 5.
           transient_time: 5.
-        - DLC: "6.5"  
-          yaw_misalign: [-8.,8.]
-          wave_height: [12.57]
-          wave_period: [16.0]
-          transient_time: 0.0
-          wave_gamma: [1.2]
-          analysis_time: 10.
-          # turbulent_wind:
-          #     HubHt: 140
-          #     GridHeight: 220
-          #     GridWidth: 220
-          #     URef: 54.8339
-          #     PLExp: 0.12
 
         # - DLC: Custom
         #   wind_speed: [10., 12, 14]
