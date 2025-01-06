@@ -1,0 +1,76 @@
+name: CI_WEIS_VIZ
+
+on: [push, pull_request]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    name: Build (${{ matrix.os }} Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    # if: "contains(github.event.head_commit.message, 'exhaustive_CI')"  # This line could be used to have commit-specific instructions
+
+    defaults:
+        run:
+            shell: bash -l {0}
+    
+    strategy:
+      fail-fast: true
+      matrix:
+        os: ["ubuntu-latest"] #, "macOS-latest"]
+        python-version: ["3.9","3.10", "3.11", "3.12"]
+        
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install conda/mamba
+        uses: conda-incubator/setup-miniconda@v2
+        # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          # To use mamba, uncomment here, comment out the miniforge line
+          #mamba-version: "*"
+          miniforge-version: "latest"
+          auto-update-conda: true
+          python-version: ${{ matrix.python-version }}
+          environment-file: environment.yml
+          activate-environment: test
+          auto-activate-base: false
+      
+      # Install dependencies of WEIS specific to ubuntu
+      - name: Add dependencies ubuntu specific
+        if: false == contains( matrix.os, 'windows')
+        run: |
+          conda install -y petsc4py mpi4py openmpi pyoptsparse
+      
+      - name: Add test packages
+        run: |
+          conda install -y pytest pytest-cov coveralls treon 
+
+      - name: Show custom environment
+        run: |
+            conda list
+            printenv | sort
+          
+      # # Install WEIS
+      # - name: Install WEIS
+      #   run: |
+      #     python -m pip install --no-deps -e . -v
+
+      # # Test walkthrough notebook
+      # - name: Test postprocessing notebooks
+      #   run: |
+      #     cd examples/16_postprocessing
+      #     pip install gdown
+      #     gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
+      #     unzip outputs
+      #     treon plot_FAST.ipynb
+      #     treon rev_DLCs_WEIS.ipynb
+      #     treon rev_Opt.ipynb
+      #     treon rev_WEIS_CSV.ipynb
+        
+      # Run all examples
+      - name: Run tests
+        run: |
+          cd weis/visualization/appServer/tests
+          npm ci
+          npm run extract
+          
