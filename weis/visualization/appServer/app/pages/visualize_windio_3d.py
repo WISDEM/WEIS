@@ -17,7 +17,7 @@ register_page(
 
 def set_components():
     global component_types
-    component_types = ['blade', 'hub', 'nacelle', 'tower', 'monopile', 'floating_platform', 'mooring']
+    component_types = ['blade', 'hub', 'nacelle', 'tower', 'substructure']
 
 
 @callback(Output('geom-3d-names', 'options'),
@@ -31,25 +31,13 @@ def list_labels(geom_comps_by_names):
           Input('3d-viz-btn', 'n_clicks'),
           State('geom-3d-names', 'value'),
           State('geom-types', 'value'),
-          State('geometry-components', 'data'),
-          State('airfoil-by-names', 'data'),
           State('wt-options', 'data'))
-def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_by_names, wt_options_by_names):
+def visualize(nClicks, geom_3d_names, geom_types, wt_options_by_names):
     '''
     This function is for visualizing per geometry component types from selected file data
     '''
-    # if geom_3d_names is None or geom_types == []:
-    #     raise PreventUpdate
     if nClicks==0:
         raise PreventUpdate
-
-    tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
-    blade_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'blade' in k}     # where now k is 'filelabelname' and v is dict
-    hub_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'hub' in k}     
-    nacelle_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'nacelle' in k}
-
-    # need logic for different sub structure types that are to be supported
-    monopile_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'monopile' in k}
 
     geometries = []
     xMax, xMin, yMax, yMin, zMax, zMin = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
@@ -58,11 +46,12 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_
     # colors_scale = px.colors.qualitative.Plotly
     default_rgbs = plotly.colors.DEFAULT_PLOTLY_COLORS
     colors_scale = [list(map(lambda x: int(x)/255, c[4:-1].split(', '))) for c in default_rgbs]
+    colors_scale = [[1,0,0], [0,1,0], [0,0,1], [1,1,0], [0,1,1], [1,0,1], [1,1,1]]      # temporary..
 
 
     for idx, gname in enumerate(geom_3d_names):         # gname: selected geometry file (selected filelabelname)
 
-        # Set 'Coords' flag depending on the size of components
+        # Set 'local' flag depending on the size of components
         if len(geom_types) > 1:
             print('Multiple components selected', geom_types)
             local = False
@@ -75,7 +64,7 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_
             print('nothing selected..')
         
         # Render, add meshes
-        print(f"{gname} with wt_options\n {wt_options_by_names[gname]}")
+        print(f"{gname} with wt_options\n {wt_options_by_names[gname].keys()}")     # dict_keys(['name', 'assembly', 'components', 'airfoils', 'materials', 'control', 'environment', 'bos', 'costs'])
 
         # Note: Geometry Representation include only one mesh. Cannot include multiple meshes..
         if 'tower' in geom_types:
@@ -91,7 +80,8 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_
             # Add by geom data (same color over components from the turbine)
             geometries += [dash_vtk.GeometryRepresentation(
                 children=[dash_vtk.Mesh(state=tower_mesh_state)],
-                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
             )]
          
         if 'blade' in geom_types:
@@ -108,7 +98,8 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_
             # Add by geom data (same color over components from the turbine)
             geometries += [dash_vtk.GeometryRepresentation(
                 children=[dash_vtk.Mesh(state=blade_mesh_state)],
-                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
             )]
 
         if 'hub' in geom_types:
@@ -124,23 +115,32 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_
             # Add by geom data (same color over components from the turbine)
             geometries += [dash_vtk.GeometryRepresentation(
                 children=[dash_vtk.Mesh(state=hub_mesh_state)],
-                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
             )]
             
-        if 'monopile' in geom_types:
-            monopile_mesh_state, _ , monopile_points = render_monopile(wt_options_by_names[gname], local)
+        if 'substructure' in geom_types:
+            if 'monopile' in list(wt_options_by_names[gname]['components'].keys()):
+                sub_mesh_state, _ , sub_points = render_monopile(wt_options_by_names[gname], local)
+            
+            elif 'floating_platform' in list(wt_options_by_names[gname]['components'].keys()):
+                sub_mesh_state, _, sub_points = render_floatingPlatform(wt_options_by_names[gname], local)
+            
+            else:
+                continue
 
-            xMin = np.append(xMin, monopile_points[0])
-            xMax = np.append(xMax, monopile_points[1])
-            yMin = np.append(yMin, monopile_points[2])
-            yMax = np.append(yMax, monopile_points[3])
-            zMin = np.append(zMin, monopile_points[4])
-            zMax = np.append(zMax, monopile_points[5])
+            xMin = np.append(xMin, sub_points[0])
+            xMax = np.append(xMax, sub_points[1])
+            yMin = np.append(yMin, sub_points[2])
+            yMax = np.append(yMax, sub_points[3])
+            zMin = np.append(zMin, sub_points[4])
+            zMax = np.append(zMax, sub_points[5])
             
             # Add by geom data (same color over components from the turbine)
             geometries += [dash_vtk.GeometryRepresentation(
-                children=[dash_vtk.Mesh(state=monopile_mesh_state)],
-                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                children=[dash_vtk.Mesh(state=sub_mesh_state)],
+                property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
             )]
             
         if 'nacelle' in geom_types:
@@ -156,8 +156,8 @@ def visualize(nClicks, geom_3d_names, geom_types, geom_comps_by_names, airfoils_
             # Add by geom data (same color over components from the turbine)
             geometries += [dash_vtk.GeometryRepresentation(
                 children=[dash_vtk.Mesh(state=nacelle_mesh_state)],
-                property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-                # property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
+                # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
             )]
             
     # Add grid coordinates using max-sized box - a single global coordinate over geometries
@@ -190,7 +190,6 @@ def layout():
                             ])
                         ], className='card')
     
-    # type_items = dcc.Checklist(id='geom-types', options=component_types, value=[], inline=True)
     type_items = dbc.Row([
                     dbc.Col(dbc.Form(dcc.Checklist(id='geom-types', options=component_types, value=[], inline=True))),
                     dbc.Col(dbc.Button('Visualize', id='3d-viz-btn', n_clicks=0, color='primary'), width='auto')
@@ -207,33 +206,6 @@ def layout():
                     id='vtk-view',
                     style={"width": "100%", "height": "600px"},
                 )
-    
-    box = pv.Box(
-        bounds=[-1.0,1.0,-1.0,1.0,-1.0,1.0]
-    )
-    mesh_state = to_mesh_state(box)
-
-
-    vtk_view_own = html.Div(
-                        style={"width": "100%", "height": "400px"},
-                        children=[dash_vtk.View([
-                                dash_vtk.GeometryRepresentation(
-                                    mapper={'orientationArray': 'Normals'},
-                                    children=[dash_vtk.Mesh(state=mesh_state)],
-                                    property={'color': [1, 0, 0], 'opacity': 0.5}
-                                ),
-                                dash_vtk.GeometryRepresentation(
-                                    mapper={'orientationArray': 'Normals'},
-                                    children=[dash_vtk.Mesh(state=mesh_state)],
-                                    property={'color': [0, 1, 0], 'opacity': 0.5}
-                                ),
-                                dash_vtk.GeometryRepresentation(
-                                    children=[dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=[-2.0,2.0,-2.0,2.0,-2.0,2.0])))],
-                                    property={'color': [0, 0, 1], 'opacity': 0},
-                                    showCubeAxes=True
-                                )
-                            ])]
-                    )  
 
     layout = dcc.Loading(html.Div([
                 dcc.Store(id='meshes', data=[]),
@@ -241,8 +213,7 @@ def layout():
                     dbc.Col(geom_inputs, width=4),
                     dbc.Col(type_inputs, width=8)
                 ], className='g-0'),         # No gutters where horizontal spacing is added between the columns by default
-                dbc.Row(vtk_view, className='card'),
-                dbc.Row(vtk_view_own, className='card')
+                dbc.Row(vtk_view, className='card')
             ]))
 
     return layout
