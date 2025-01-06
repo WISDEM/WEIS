@@ -60,8 +60,3 @@ jobs:
         run: |
           cd weis/visualization/appServer/app
           pytest
-      - name: Extract elements
-        run: |
-          npm ci
-          npm run extract
-          
