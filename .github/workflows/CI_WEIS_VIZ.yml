@@ -70,7 +70,10 @@ jobs:
       # Run all examples
       - name: Run tests
         run: |
-          cd weis/visualization/appServer/tests
+          cd weis/visualization/tests
+          pytest
+      - name: Extract elements
+        run: |
           npm ci
           npm run extract
           
