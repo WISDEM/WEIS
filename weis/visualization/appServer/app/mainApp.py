@@ -45,7 +45,7 @@ external_stylesheets = [dbc.themes.BOOTSTRAP]
 # For Latex
 mathjax = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'
 APP_TITLE = "WEIS Visualization APP"
-app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True, background_callback_manager=background_callback_manager)
+app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True)
 
 # Build Navigation Bar
 # Each pages are registered on each python script under the pages directory.
