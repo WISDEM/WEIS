@@ -38,43 +38,50 @@ def render_blade(turbineData, local=True):
         # rotate about y-axis by the cone angle
         coneAngle = turbineData['components']['hub']['cone_angle'] * -1 * downwindScalar # in rads is about x-axis
         blade_1 = rotation_transformation(points, [0,           coneAngle,  0])
-        blade_2 = rotation_transformation(blade_1, [2*np.pi/3,   0,  0])
-        blade_3 = rotation_transformation(blade_1, [4*np.pi/3,   0,  0])
+        # blade_2 = rotation_transformation(blade_1, [2*np.pi/3,   0,  0])
+        # blade_3 = rotation_transformation(blade_1, [4*np.pi/3,   0,  0])
         # This achieves the symmetry of the rotor.
+
+        _, mesh_1 = render_our_own_delaunay(blade_1)
+        mesh_2 = mesh_1.rotate_x( 2*np.pi/3 * 180/np.pi, point=(0,0,0), inplace=False)
+        mesh_3 = mesh_1.rotate_x( 4*np.pi/3 * 180/np.pi, point=(0,0,0), inplace=False)
+
 
         # angle by the tilt of the rotor
         tiltAngle = turbineData['components']['nacelle']['drivetrain']['uptilt'] * downwindScalar # in rads is about y-axis
-        blade_1 = rotation_transformation(blade_1, [0, tiltAngle, 0])
-        blade_2 = rotation_transformation(blade_2, [0, tiltAngle, 0])
-        blade_3 = rotation_transformation(blade_3, [0, tiltAngle, 0])
+        # blade_1 = rotation_transformation(blade_1, [0, tiltAngle, 0])
+        # blade_2 = rotation_transformation(blade_2, [0, tiltAngle, 0])
+        # blade_3 = rotation_transformation(blade_3, [0, tiltAngle, 0])
+
+        mesh_1 = mesh_1.rotate_y(tiltAngle * 180/np.pi, point=(0,0,0), inplace=False)
+        mesh_2 = mesh_2.rotate_y(tiltAngle * 180/np.pi, point=(0,0,0), inplace=False)
+        mesh_3 = mesh_3.rotate_y(tiltAngle * 180/np.pi, point=(0,0,0), inplace=False)
 
         # Tanslation along the z-axis to the hub height
         zTranslation = turbineData['assembly']['hub_height']
         # Translation in the x-axis
         xTranslation = turbineData['components']['nacelle']['drivetrain']['distance_tt_hub'] * downwindScalar * np.cos(tiltAngle) * -1
 
-        blade_1 = translation_transformation(blade_1, [xTranslation, 0, zTranslation])
-        blade_2 = translation_transformation(blade_2, [xTranslation, 0, zTranslation])
-        blade_3 = translation_transformation(blade_3, [xTranslation, 0, zTranslation])
+        # blade_1 = translation_transformation(blade_1, [xTranslation, 0, zTranslation])
+        # blade_2 = translation_transformation(blade_2, [xTranslation, 0, zTranslation])
+        # blade_3 = translation_transformation(blade_3, [xTranslation, 0, zTranslation])
 
-        _, mesh_1 = render_our_own_delaunay(blade_1)
-        _, mesh_2 = render_our_own_delaunay(blade_2)
-        _, mesh_3 = render_our_own_delaunay(blade_3)
+        mesh_1 = mesh_1.translate((xTranslation, 0, zTranslation), inplace=False)
+        mesh_2 = mesh_2.translate((xTranslation, 0, zTranslation), inplace=False)
+        mesh_3 = mesh_3.translate((xTranslation, 0, zTranslation), inplace=False)
+
+        # _, mesh_1 = render_our_own_delaunay(blade_1)
+        # _, mesh_2 = render_our_own_delaunay(blade_2)
+        # _, mesh_3 = render_our_own_delaunay(blade_3)
 
         mesh = mesh_1.merge(mesh_2).merge(mesh_3)
 
         mesh_state = to_mesh_state(mesh)
 
-    extremes1 = extractExtremes(blade_1)
-    extremes2 = extractExtremes(blade_2)
-    extremes3 = extractExtremes(blade_3)
+    # extracting all the points from the 
+    rotor = mesh.points
 
-    extremes = (min(extremes1[0], extremes2[0], extremes3[0]), 
-                max(extremes1[1], extremes2[1], extremes3[1]), 
-                min(extremes1[2], extremes2[2], extremes3[2]), 
-                max(extremes1[3], extremes2[3], extremes3[3]), 
-                min(extremes1[4], extremes2[4], extremes3[4]), 
-                max(extremes1[5], extremes2[5], extremes3[5]))
+    extremes = extractExtremes(rotor)
 
     return mesh_state, mesh, extremes
 
@@ -151,7 +158,7 @@ def render_nacelle(turbineData, local=True):
         zTranslation = turbineData['assembly']['hub_height']
 
         # move the nacelle so that the -x face is touching the hub
-        xTranslation = turbineData['components']['nacelle']['drivetrain']['distance_tt_hub'] * downwindScalar  * 0.9
+        xTranslation = turbineData['components']['nacelle']['drivetrain']['overhang'] * downwindScalar * 0.5
 
         points = translation_transformation(np.array(points), [xTranslation, 0, zTranslation])
 
@@ -196,6 +203,11 @@ def extractExtremes(points):
     '''
     Extract the minimum and maximum values of the points
     '''
+    # no matter the shape, transform to 3xN
+    points = np.array(points)
+    if points.shape[0] != 3:
+        points = points.T
+
     x_min = np.min(points[0])
     x_max = np.max(points[0])
     y_min = np.min(points[1])
@@ -271,8 +283,8 @@ def bladeMesh(bladeData, airfoils):
         
         # Translate to reference axis position
         af_coordinates_3d = np.zeros((af_coordinates.shape[0], 3))
-        af_coordinates_3d[:, 0] = af_coordinates[:, 0] + ref_axis_x[i]
-        af_coordinates_3d[:, 1] = af_coordinates[:, 1] + ref_axis_y[i] 
+        af_coordinates_3d[:, 0] = af_coordinates[:, 0] + ref_axis_y[i]
+        af_coordinates_3d[:, 1] = af_coordinates[:, 1] + -ref_axis_x[i] 
         af_coordinates_3d[:, 2] = np.full(af_coordinates.shape[0], ref_axis_z[i])
 
         # Append points
@@ -389,14 +401,16 @@ def nacelleMesh(nacelleData, hubData):
 
     return points
 
-def semisubMesh(semisubData):
+def floatingPlatformMesh(semisubData):
+
+    # creating a few sub functions
+
 
     # Clear previous arrays
     x = np.array([])
     y = np.array([])
     z = np.array([]) 
     
-    # assuming the semisub follow
 
 def render_our_own_delaunay(points):
     '''
