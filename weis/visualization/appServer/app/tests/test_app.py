@@ -7,7 +7,6 @@ import dash
 from mainApp import app
 
 def test_app_creation():
-    args = ["--input", "", "--host", "0.0.0.0"]
     assert isinstance(app, dash.Dash)
 
 def test_layout_components():
