@@ -52,18 +52,18 @@ def layout():
                    ])
 
     oml_layout = dbc.Card([
-                        dbc.CardHeader('OML & Axis Properties', className='cardHeader'),
+                        dbc.CardHeader('OML & Axis Properties'),
                         dbc.CardBody([
-                            dcc.Loading(dcc.Graph(id='blade-oml', figure=empty_figure()))
+                            dcc.Graph(id='blade-oml', figure=empty_figure())
                         ])
                   ], className='card')
 
     # Define layout for elastic and mass properties
     matrix_layout = dbc.Card([
-                        dbc.CardHeader('Elastic & Mass Properties', className='cardHeader'),
+                        dbc.CardHeader('Elastic & Mass Properties'),
                         dbc.CardBody([
-                            dcc.Loading(dcc.Graph(id='blade-elastic', figure=empty_figure())),
-                            dcc.Loading(dcc.Graph(id='blade-mass', figure=empty_figure()))
+                            dcc.Graph(id='blade-elastic', figure=empty_figure()),
+                            dcc.Graph(id='blade-mass', figure=empty_figure())
                         ])
                   ], className='card')
     
@@ -73,8 +73,8 @@ def layout():
                 dbc.Row([
                     dbc.Col(oml_layout, width=6),
                     dbc.Col(matrix_layout, width=6),
-                ])
-            ], className='wrapper'))
+                ], className='g-0')         # No gutters where horizontal spacing is added between the columns by default
+            ]))
     
     return layout
 

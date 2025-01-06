@@ -46,13 +46,13 @@ def layout():
 
 
     coords_layout = dbc.Card([
-                                dbc.CardHeader("Airfoil Coordinates", className='cardHeader'),
+                                dbc.CardHeader('Airfoil Coordinates'),
                                 dbc.CardBody([
                                     coords_inputs,
                                     html.Br(),
-                                    dcc.Loading(html.P(id='airfoil-description')),
+                                    html.P(id='airfoil-description'),
                                     html.Br(),
-                                    dcc.Loading(dcc.Graph(id='airfoil-coords', figure=empty_figure())),
+                                    dcc.Graph(id='airfoil-coords', figure=empty_figure())
                                 ])
                              ], className='card')
         
@@ -76,7 +76,7 @@ def layout():
                     ])
 
     polars_layout = dbc.Card([
-                                dbc.CardHeader("Airfoil Polars", className='cardHeader'),
+                                dbc.CardHeader('Airfoil Polars'),
                                 dbc.CardBody([
                                     # Toggle switches
                                     polars_inputs,
@@ -84,14 +84,16 @@ def layout():
                                     # html.Div(id='re-table'),      # For callback: Output('re-table', 'children'),
                                     html.Br(),
                                     # Graph layout for polars
-                                    dcc.Loading(dcc.Graph(id='airfoil-polars', figure=empty_figure(), mathjax=True)),
+                                    dcc.Graph(id='airfoil-polars', figure=empty_figure(), mathjax=True)
                                 ])
                              ], className='card')
 
-    layout = dbc.Row([
-                dbc.Col(coords_layout, width=6),
-                dbc.Col(polars_layout, width=6)
-            ], className='wrapper')
+    layout = dcc.Loading(html.Div([
+                dbc.Row([
+                    dbc.Col(coords_layout, width=6),
+                    dbc.Col(polars_layout, width=6)
+                ], className='g-0')         # No gutters where horizontal spacing is added between the columns by default
+            ]))
     
     return layout
 
