@@ -4,7 +4,7 @@ from dash._utils import AttributeDict
 import dash
 
 # Import all of the names of callback functions to tests
-from mainApp import app
+from weis.visualization.appServer.app.mainApp import app
 
 def test_app_creation():
     assert isinstance(app, dash.Dash)
