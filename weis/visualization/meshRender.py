@@ -129,19 +129,6 @@ def render_Tower(turbineData, local=True):
 
     return mesh_state, mesh, extremes
 
-def render_monopile(turbineData, local=True):
-
-    points = monopileMesh(turbineData['components']['monopile'])
-
-    if local:
-        mesh_state, mesh = render_our_own_delaunay(points)
-    else:
-        # Monopile does not have any orientation or tilt or translations
-        mesh_state, mesh = render_our_own_delaunay(points)
-
-    extremes = extractExtremes(points)
-
-    return mesh_state, mesh, extremes
 
 def render_nacelle(turbineData, local=True):
 
@@ -167,6 +154,67 @@ def render_nacelle(turbineData, local=True):
     extremes = extractExtremes(points)
 
     return mesh_state, mesh, extremes
+
+def render_monopile(turbineData, local=True):
+
+    points = monopileMesh(turbineData['components']['monopile'])
+
+    if local:
+        mesh_state, mesh = render_our_own_delaunay(points)
+    else:
+        # Monopile does not have any orientation or tilt or translations
+        mesh_state, mesh = render_our_own_delaunay(points)
+
+    extremes = extractExtremes(points)
+
+    return mesh_state, mesh, extremes
+
+def render_floatingPlatform(turbineData, local=True):
+
+    mesh = floatingPlatformMesh(turbineData['components']['floating_platform'],
+                                turbineData['components']['mooring']) # this function unlike other components returns a mesh object
+
+    if local:
+        mesh_state = to_mesh_state(mesh)
+    else:
+        # Floating platform does not have any orientation or tilt or translations
+        mesh_state = to_mesh_state(mesh)
+
+    extremes = extractExtremes(mesh.points)
+
+    return mesh_state, mesh, extremes
+
+
+def render_turbine(turbineData, components):
+
+    mesh_state_all = []
+    extremes_all = []
+
+    for idx, component in enumerate(components):
+        if component == 'blade':
+            mesh_state, mesh, extreme = render_blade(turbineData, local=False)
+        elif component == 'hub':
+            mesh_state, mesh, extreme = render_hub(turbineData, local=False)
+        elif component == 'tower':
+            mesh_state, mesh, extreme = render_Tower(turbineData, local=False)
+        elif component == 'nacelle':
+            mesh_state, mesh, extreme = render_nacelle(turbineData, local=False)
+        elif component == 'monopile':
+            mesh_state, mesh, extreme = render_monopile(turbineData, local=False)
+        elif component == 'floating_platform':
+            mesh_state, mesh, extreme = render_floatingPlatform(turbineData, local=False)
+        else:
+            raise ValueError(f"Component {component} not recognized")
+        
+        mesh_state_all.append(mesh_state)
+        extremes_all.append(extreme)
+        if idx == 0:
+            mesh_all = mesh
+        else:
+            mesh_all = mesh_all.merge(mesh)
+
+    return mesh_state_all, mesh_all, extremes_all
+
 
 
 def rotation_transformation(coords, angles):
@@ -401,16 +449,117 @@ def nacelleMesh(nacelleData, hubData):
 
     return points
 
-def floatingPlatformMesh(semisubData):
+def floatingPlatformMesh(semisubData, mooringData=None):
+
+    # convert joints from array to dictionary
+    semisubData['joints'] = {joint['name']: joint for joint in semisubData['joints']}
 
     # creating a few sub functions
+    def cylind2cart(p):
+        # r, theta, z
+        x = np.array([0, 0, 0])
+        x[0] = p[0] * np.cos(p[1])
+        x[1] = p[0] * np.sin(p[1])
+        x[2] = p[2]
+        return x
+
+    def getJointPoint(jointName):
+
+        joint = semisubData['joints'][jointName]
+
+        # search if joint has cylindrical key
+        if 'cylindrical' in joint.keys():
+            if joint['cylindrical']:
+                return cylind2cart(joint['location'])
+            else:
+                return joint['location']
+        else:
+            return joint['location']
+
+    # def meshCone(joint1, joint2, grid, value):
+    #     grid = np.interp(grid, [0, 1], [joint1, joint2])
 
 
-    # Clear previous arrays
-    x = np.array([])
-    y = np.array([])
-    z = np.array([]) 
-    
+    # looping through the members
+    for idx, member in enumerate(semisubData['members']):
+        # fetch the joints
+        joint1 = np.array(getJointPoint(member['joint1']))
+        joint2 = np.array(getJointPoint(member['joint2']))
+
+        # direction vector normalized
+        direction = (joint2 - joint1) / np.linalg.norm(joint2 - joint1)
+
+
+        if member['outer_shape']['shape'] == 'circular':
+            # create a cylinder, if last and first diameters are the same, then use pv.Cylinder
+            # else use towerMesh to create a cylinder
+            if member['outer_shape']['outer_diameter']['values'][0] == member['outer_shape']['outer_diameter']['values'][-1]:
+                center = joint1 + 0.5 * (joint2 - joint1)  # Calculate midpoint
+                memberMesh = pv.Cylinder(center=center,
+                                        direction=direction, 
+                                        height=np.linalg.norm(joint2 - joint1), 
+                                        radius=member['outer_shape']['outer_diameter']['values'][0]/2)
+            else:
+                print(f'Not implemented yet')
+        else:
+            # warning that the shape is not recognized
+            print(f"Shape {member['outer_shape']['shape']} not recognized")
+            
+
+        # if the member has a key named 'axial_joints', then calculate its location in space and add it to the list of joints for future reference
+        if 'axial_joints' in member.keys():
+            for axial_joint in member['axial_joints']:
+                axial_joint_location = joint1 + axial_joint['grid'] * (joint2 - joint1)
+                semisubData['joints'][axial_joint['name']] = {'name': axial_joint['name'],'location': axial_joint_location, 'cylindrical': False}
+
+
+        if idx == 0:
+            floatingMesh = memberMesh
+        else:
+            floatingMesh = floatingMesh.merge(memberMesh)
+
+        # floatingMesh.plot(show_edges=True)
+
+
+    # if the semisub has a mooring system, then we need to add the mooring lines
+    if mooringData:
+        
+        # convert nodes from array to dictionary
+        mooringData['nodes'] = {node['name']: node for node in mooringData['nodes']}
+
+        # Looping over the mooring lines
+        for line in mooringData['lines']:
+            # fetch the nodes
+            np.array(getJointPoint(member['joint1']))
+            node1 = np.array(getJointPoint(mooringData['nodes'][line['node1']]['joint']))
+            node2 = np.array(getJointPoint(mooringData['nodes'][line['node2']]['joint']))
+
+            # check if the distance between the nodes is equal to the unstretched length of the mooring line
+            if np.linalg.norm(node2 - node1) == line['unstretched_length']:
+                mooringLineMesh = pv.Line(pointa=node1, pointb=node2)
+            else:
+                # Create catenary mooring line using parametric equations
+                num_points = 50
+                t = np.linspace(0, 1, num_points)
+                # Calculate catenary parameter (a) based on endpoints and length
+                dx = node2[0] - node1[0]
+                dy = node2[1] - node1[1]
+                dz = node2[2] - node1[2]
+                L = line['unstretched_length']
+                a = np.sqrt(L**2 - dz**2) / 2  # Approximate catenary parameter
+                
+                # Generate points along catenary
+                x = node1[0] + dx * t
+                y = node1[1] + dy * t
+                # Changed the sign before 'a' to make the catenary curve downward
+                z = node1[2] + dz * t + a * (np.cosh(t - 0.5) - np.cosh(-0.5))
+                
+                points = np.column_stack((x, y, z))
+                mooringLineMesh = pv.lines_from_points(points)
+
+            floatingMesh = floatingMesh.merge(mooringLineMesh)
+
+    return floatingMesh
 
 def render_our_own_delaunay(points):
     '''
@@ -436,43 +585,15 @@ def render_our_own_delaunay(points):
 
 def main():    
     # fetch the turbine data from the yaml file
-    # with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml') as file:
-    with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml') as file:
+    with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_VolturnUS-S.yaml') as file:
+    # with open('../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml') as file:
         turbine_data = yaml.load(file, Loader=yaml.FullLoader)
 
-    # fetch airfoil names from array of airfoils
-    airfoils_by_names = {}
-    for a in turbine_data['airfoils']:
-        airfoils_by_names[a['name']] = a
-
-    ## render the blade
-    _, meshBlade, _ = render_blade(turbine_data, local=False)
-    # meshBlade = meshBlade.merge(pv.Sphere(center=(0, 0, 0), radius=10))
-    # meshBlade.plot(show_edges=True)
-
-    # ## render the hub
-    _, meshHub, _ = render_hub(turbine_data, local=False)
-    # meshHub = meshHub.merge(pv.Sphere(center=(0, 0, 0), radius=10))
-    # meshHub.plot(show_edges=True)
-
-    # ## render the tower
-    _, meshTower, _ = render_Tower(turbine_data, local=False)
-    # meshTower = meshTower.merge(pv.Sphere(center=(0, 0, 0), radius=10))
-    # meshTower.plot(show_edges=True)
-
-    # ## render the monopile
-    _, meshMonopile, _ = render_monopile(turbine_data, local=False)
-    # meshMonopile = meshMonopile.merge(pv.Sphere(center=(0, 0, 0), radius=10))
-    # meshMonopile.plot(show_edges=True)
-
-    # # ## render the nacelle
-    _, meshNacelle, _ = render_nacelle(turbine_data, local=False)
-    # meshNacelle = meshNacelle.merge(pv.Sphere(center=(0, 0, 0), radius=10))
-    # meshNacelle.plot(show_edges=True)
-
-    meshTurbine = meshBlade.merge(meshHub).merge(meshTower).merge(meshMonopile).merge(meshNacelle).merge(pv.Sphere(center=(0, 0, 0), radius=10))
-    meshTurbine.plot(show_edges=True)
-
+    # render the turbine components
+    # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'nacelle', 'monopile'])
+    # mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['blade', 'hub', 'tower', 'nacelle','floating_platform'])
+    mesh_state, meshTurbine, extremes_all = render_turbine(turbine_data, ['floating_platform'])
+    meshTurbine.plot(show_edges=False)
 
 
 # call main if this script is run
