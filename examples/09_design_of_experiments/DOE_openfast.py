@@ -16,11 +16,9 @@ import os, time, sys
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-examples        = os.path.join(os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ), "examples")
-fname_wt_input         = os.path.join(run_dir, "..", "06_IEA-15-240-RWT", "IEA-15-240-RWT_VolturnUS-S.yaml")
+fname_wt_input         = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S.yaml")
 fname_modeling_options = os.path.join(run_dir, "..", "06_IEA-15-240-RWT", "modeling_options_umaine_semi.yaml")
-fname_analysis_options = run_dir + "analysis_options.yaml"
-
+fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
 
 tt = time.time()
 wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
@@ -30,5 +28,5 @@ if MPI:
 else:
     rank = 0
 if rank == 0:
-    print('Run time: %f'%(time.time()-tt))
+    print("Run time: %f"%(time.time()-tt))
     sys.stdout.flush()
