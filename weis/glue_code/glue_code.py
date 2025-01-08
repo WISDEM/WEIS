@@ -515,10 +515,22 @@ class WindPark(om.Group):
 
                     for k, kname in enumerate(modeling_options["floating"]["members"]["name"]):
                         idx = modeling_options["floating"]["members"]["name2idx"][kname]
-                        #self.connect(f"floating.memgrp{idx}.outer_diameter", f"floatingse.member{k}.outer_diameter_in")
                         self.connect(f"floating.memgrp{idx}.s", f"aeroelastic.member{k}:s")
-                        self.connect(f"floatingse.member{k}.outer_diameter", f"aeroelastic.member{k}:outer_diameter")
                         self.connect(f"floatingse.member{k}.wall_thickness", f"aeroelastic.member{k}:wall_thickness")
+
+                        # Member coefficients
+                        if modeling_options['floating']['members']['outer_shape'][k] == "circular":
+                            self.connect(f"floatingse.member{k}.outer_diameter", f"aeroelastic.member{k}:outer_diameter")
+                            self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"aeroelastic.member{k}:Ca")
+                            self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"aeroelastic.member{k}:Cd")
+                        elif modeling_options['floating']['members']['outer_shape'][k] == "rectangular":
+                            self.connect(f"floatingse.member{k}.side_length_a", f"aeroelastic.member{k}:side_length_a")
+                            self.connect(f"floatingse.member{k}.side_length_b", f"aeroelastic.member{k}:side_length_b")
+                            self.connect(f"floating.memgrid{idx}.ca_usr_grid", f"aeroelastic.member{k}:Ca")
+                            self.connect(f"floating.memgrid{idx}.cd_usr_grid", f"aeroelastic.member{k}:Cd")
+                            self.connect(f"floating.memgrid{idx}.cay_usr_grid", f"aeroelastic.member{k}:Cay")
+                            self.connect(f"floating.memgrid{idx}.cdy_usr_grid", f"aeroelastic.member{k}:Cdy")
+
 
                         for var in ["joint1", "joint2", "s_ghost1", "s_ghost2"]:
                             self.connect(f"floating.member_{kname}:{var}", f"aeroelastic.member{k}:{var}")

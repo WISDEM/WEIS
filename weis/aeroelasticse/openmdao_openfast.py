@@ -228,8 +228,21 @@ class FASTLoadCases(ExplicitComponent):
                     self.add_input(f"member{k}:s", np.zeros(n_height_mem))
                     self.add_input(f"member{k}:s_ghost1", 0.0)
                     self.add_input(f"member{k}:s_ghost2", 0.0)
-                    self.add_input(f"member{k}:outer_diameter", np.zeros(n_height_mem), units="m")
                     self.add_input(f"member{k}:wall_thickness", np.zeros(n_height_mem-1), units="m")
+
+                    if modopt["floating"]["members"]["outer_shape"][k] == "circular":
+                        self.add_input(f"member{k}:outer_diameter", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}:Ca", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}:Cd", val=np.zeros(n_height_mem))
+                        self.add_output(f"platform_member{k+1}_d", val=np.zeros(n_height_mem), units="m")
+                    elif modopt["floating"]["members"]["outer_shape"][k] == "rectangular":
+                        raise Exception('Rectangular members are not yet supported in OpenFAST')
+                        self.add_input(f"member{k}:side_length_a", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}:side_length_b", val=np.zeros(n_height_mem), units="m")
+                        self.add_input(f"member{k}:Ca", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}:Cd", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}:Cay", val=np.zeros(n_height_mem))
+                        self.add_input(f"member{k}:Cdy", val=np.zeros(n_height_mem))
 
             # Turbine level inputs
             self.add_discrete_input('rotor_orientation',val='upwind', desc='Rotor orientation, either upwind or downwind.')
@@ -1326,9 +1339,13 @@ class FASTLoadCases(ExplicitComponent):
             N2 = np.array([], dtype=np.int_)
             d_coarse = np.array([])
             t_coarse = np.array([])
+            Ca_coarse = np.array([])
+            Cd_coarse = np.array([])
             
             # Look over members and grab all nodes and internal connections
             n_member = modopt["floating"]["members"]["n_members"]
+
+            
             for k in range(n_member):
                 s_grid = inputs[f"member{k}:s"]
                 idiam = inputs[f"member{k}:outer_diameter"]
@@ -1348,6 +1365,25 @@ class FASTLoadCases(ExplicitComponent):
                 d_coarse = np.append(d_coarse, id_coarse)  
                 t_coarse = np.append(t_coarse, it_coarse)  
                 joints_xyz = np.append(joints_xyz, inode_xyz, axis=0)
+
+                # Collect member coefficients
+                Ca_grid_mem = inputs[f"member{k}:Ca"]
+                Cd_grid_mem = inputs[f"member{k}:Cd"]
+
+                # There's some bug/feature in WISDEM that doesn't allow 0 Ca, Cd, this fixes that
+                zero_ind = Ca_grid_mem < 0
+                Ca_grid_mem[zero_ind] = 0
+
+                zero_ind = Cd_grid_mem < 0
+                Cd_grid_mem[zero_ind] = 0
+
+                # Interpolate Ca, Cd at coarse locations, add to list
+                i_Ca_coarse = np.interp(s_coarse, s_grid, Ca_grid_mem)
+                i_Cd_coarse = np.interp(s_coarse, s_grid, Cd_grid_mem)
+
+                Ca_coarse = np.append(Ca_coarse, i_Ca_coarse)  
+                Cd_coarse = np.append(Cd_coarse, i_Cd_coarse)  
+
                 
         if modopt['flags']['offshore']:
             fst_vt['HydroDyn']['WtrDens'] = float(inputs['rho_water'])
@@ -1404,13 +1440,38 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MJointID1'] = fst_vt['HydroDyn']['MPropSetID1'] = N1
             fst_vt['HydroDyn']['MJointID2'] = fst_vt['HydroDyn']['MPropSetID2'] = N2
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
-            fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['NCoefDpth'] = 0
             fst_vt['HydroDyn']['NCoefMembers'] = 0
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
+
+            # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
+            if fst_vt['HydroDyn']['PtfmMass_Init']:
+                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
+            else:
+                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
+            
+            # Member-based coefficients
+            fst_vt['HydroDyn']['MCoefMod'] = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
+            fst_vt['HydroDyn']['NCoefMembers'] = len(imembers)
+            fst_vt['HydroDyn']['MemberID_HydC'] = imembers
+            fst_vt['HydroDyn']['MemberCd1']    = fst_vt['HydroDyn']['MemberCdMG1']   = Cd_coarse[N1-1]
+            fst_vt['HydroDyn']['MemberCa1']    = fst_vt['HydroDyn']['MemberCaMG1']   = Ca_coarse[N1-1]
+            fst_vt['HydroDyn']['MemberCd2']    = fst_vt['HydroDyn']['MemberCdMG2']   = Cd_coarse[N2-1]
+            fst_vt['HydroDyn']['MemberCa2']    = fst_vt['HydroDyn']['MemberCaMG2']   = Ca_coarse[N2-1]
+
+            # pass through Cp, Axial Coeffs later, zeros for now
+            fst_vt['HydroDyn']['MemberCp1']    = fst_vt['HydroDyn']['MemberCpMG1']   = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberCp2']    = fst_vt['HydroDyn']['MemberCpMG2']   = np.zeros(np.shape(N1))
+
+            fst_vt['HydroDyn']['MemberAxCd1']  = fst_vt['HydroDyn']['MemberAxCdMG1'] = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberAxCa1']  = fst_vt['HydroDyn']['MemberAxCaMG1'] = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberAxCd2']  = fst_vt['HydroDyn']['MemberAxCdMG2'] = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberAxCa2']  = fst_vt['HydroDyn']['MemberAxCaMG2'] = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N1))
 
             if modopt["Level1"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
