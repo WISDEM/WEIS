@@ -1485,6 +1485,31 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
                 fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
+            elif modopt["Level1"]["potential_model_override"] == 3:
+                # Potential model for inviscid forces (radiation, excitation) only
+                
+                # Avoid double counting of buoyancy force in WAMIT, using OpenFAST nonlinear buoyancy, hydrostatics.  .hst file should be zeros
+                fst_vt['HydroDyn']['PtfmVol0'] = 0  
+                
+                # Zero simple coefficients
+                fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
+                fst_vt['HydroDyn']['SimplCp'] = fst_vt['HydroDyn']['SimplCpMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCa'] = fst_vt['HydroDyn']['SimplAxCaMG'] = 0.0
+                fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
+
+                # If True, the volume will be ignored.  We want OpenFAST to compute volume at each time step
+                fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
+
+                # Member coeffs
+                fst_vt['HydroDyn']['MemberCa1']    = fst_vt['HydroDyn']['MemberCaMG1']   = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberCa2']    = fst_vt['HydroDyn']['MemberCaMG2']   = np.zeros(np.shape(N2))
+                fst_vt['HydroDyn']['MemberCp1']    = fst_vt['HydroDyn']['MemberCpMG1']   = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberCp2']    = fst_vt['HydroDyn']['MemberCpMG2']   = np.zeros(np.shape(N2))
+                fst_vt['HydroDyn']['MemberAxCa1']  = fst_vt['HydroDyn']['MemberAxCaMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCa2']  = fst_vt['HydroDyn']['MemberAxCaMG2'] = np.zeros(np.shape(N2))
+                fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N2))
+            
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                 for k in range(fst_vt['HydroDyn']['NMembers']):
@@ -1529,11 +1554,7 @@ class FASTLoadCases(ExplicitComponent):
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
 
-            # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
-            if fst_vt['HydroDyn']['PtfmMass_Init']:
-                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
-            else:
-                fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
+
 
 
         # Moordyn inputs
@@ -1768,6 +1789,8 @@ class FASTLoadCases(ExplicitComponent):
         # Floating output channels
         if modopt['flags']['floating']:
             channels_out += ["PtfmPitch", "PtfmRoll", "PtfmYaw", "PtfmSurge", "PtfmSway", "PtfmHeave"]
+            for i_line in range(modopt['mooring']['n_lines']):
+                channels_out += [f"AnchTen{i_line+1}", f"FairTen{i_line+1}"]
 
         # Structural Control Channels
         if modopt['flags']['TMDs']:
@@ -2649,8 +2672,9 @@ class FASTLoadCases(ExplicitComponent):
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 
         # Max pitch rate
-        max_pitch_rates = np.r_[sum_stats['dBldPitch1']['max'],sum_stats['dBldPitch2']['max'],sum_stats['dBldPitch3']['max']]
-        outputs['max_pitch_rate_sim'] = max(max_pitch_rates)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
+        # TODO: bug, these computed channels aren't calculated if the simulation fails, could probably calculate them with dummy vals
+        # max_pitch_rates = np.r_[sum_stats['dBldPitch1']['max'],sum_stats['dBldPitch2']['max'],sum_stats['dBldPitch3']['max']]
+        # outputs['max_pitch_rate_sim'] = max(max_pitch_rates)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
 
         # pitch travel and duty cycle
         if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
@@ -2712,7 +2736,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
         # Max platform offset        
-        outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
+        # outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
         return outputs, discrete_outputs
 

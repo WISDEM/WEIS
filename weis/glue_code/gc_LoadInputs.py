@@ -108,7 +108,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
             # Activate HAMS in Level1 if requested for Level 2 or 3
             if self.modeling_options["flags"]["offshore"] or self.modeling_options["Level3"]["from_openfast"]:
-                if self.modeling_options["Level1"]["potential_model_override"] == 2:
+                if self.modeling_options["Level1"]["potential_model_override"] in [2,3]:
                     self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
                 elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
                        (len(self.modeling_options["Level1"]["potential_bem_members"]) > 0) ):
