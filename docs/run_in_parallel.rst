@@ -1,5 +1,5 @@
-Run in parallel
---------------
+Running WEIS in parallel
+-------------------------
 
 WEIS can be run sequentially on a single processor. WEIS can also be parallelized to handle larger problems in a timely manner.
 
@@ -62,11 +62,13 @@ Let's look at an example in `02_run_openfast_cases <https://github.com/WISDEM/WE
 In a terminal, navigate to example 02 and type:
 
 .. code-block:: bash
+
   python weis_driver_loads.py --preMPI=True
 
 The terminal should return this message
 
 .. code-block:: bash
+
   Your problem has 0 design variable(s) and 7 OpenFAST run(s)
 
   You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1
@@ -85,9 +87,11 @@ The terminal should return this message
 If you have access to 8 processors, you are now ready to execute your script by typing 
 
 .. code-block:: bash
+
   mpiexec -np 8 python weis_driver_loads.py
 
 If you have access to fewer processors, say 4, adjust the -np entry accordingly
 
 .. code-block:: bash
+
   mpiexec -np 4 python weis_driver_loads.py
