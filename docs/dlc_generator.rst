@@ -285,7 +285,7 @@ User-defined mapping and groups in the modeling options
 -------------------------------------------------------
 
 WEIS uses generic input names to define DLCs, which are mapped to OpenFAST inputs with the ``openfast_input_map`` in the ``DLC_Generator`` class.
-Many inputs are hard-coded, but users can add to the mapping in the modeling options, as in the following example::
+Many commonly used inputs are included by default, but users can add to the mapping in the modeling options, as in the following example::
 
   openfast_input_map:
     final_pitch_angle:
