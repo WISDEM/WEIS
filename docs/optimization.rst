@@ -346,16 +346,16 @@ From our modeling and analysis options:
 
 Thus, the number of cores is much more than the cases per iteration, and the time to convergence is relative to the number of iterations.
 
-.. .. image:: /images/opt/Ptfm_OpenFAST_Conv.png
-..    :width: 55%
+.. image:: /images/opt/RAFT_all_iter_v_obj.png
+   :width: 55%
 
-.. |cost_of| |time_of|
+.. |cost_raft| |time_raft|
 
-.. .. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
-..    :width: 45%
+.. |cost_raft| image:: /images/opt/RAFT_all_totalcost_v_obj_convergence.png
+   :width: 45%
 
-.. .. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
-..    :width: 45%
+.. |time_raft| image:: /images/opt/RAFT_all_wallclock_v_obj_convergence.png
+   :width: 45%
 
 Optimization results with OpenFAST modeling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -368,15 +368,15 @@ From our modeling and analysis options:
 
 Thus, the number of cores is much more than the cases per iteration, and the time to convergence is relative to the number of iterations.
 
-.. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+.. image:: /images/opt/OF_all_iter_v_constr.png
    :width: 55%
 
 |cost_of| |time_of|
 
-.. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+.. |cost_of| image:: /images/opt/OF_all_totalcost_v_obj_convergence.png
    :width: 45%
 
-.. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+.. |time_of| image:: /images/opt/OF_all_wallclock_v_obj_convergence.png
    :width: 45%
 
 .. .. image:: /images/opt/Ptfm_OpenFAST_DE.png
