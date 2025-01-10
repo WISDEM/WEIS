@@ -152,7 +152,7 @@ atomic = true
 
 [tool.coverage.run]
 source = ["weis"]
-omit = ["weis/test/*"]
+omit = ["weis/test/*", "*schema2rst.py"]
 
 #[tool.cibuildwheel]
 #skip = ["cp36-*", "cp37-*", "cp38-*", "*win32*", "*arm64*", "pp*", "*i686*"]
