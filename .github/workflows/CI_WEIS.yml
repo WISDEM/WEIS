@@ -84,7 +84,7 @@ jobs:
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
         run: |
-          pytest --cov-config=.coverageac --cov=weis -p no:warnings --disable-warnings weis 
+          pytest -p no:warnings --disable-warnings --cov=weis weis
       
       # Run coveralls
       - name: Run coveralls
