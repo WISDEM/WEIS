@@ -44,7 +44,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
             # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
             if not (opt_options['driver']['design_of_experiments']['flag']) and (opt_options['driver']['optimization']['solver'] in evolutionary_methods):
-                n_DV *= 20  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
+                n_DV *= 5  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
             elif not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
                 n_DV = 1
 
