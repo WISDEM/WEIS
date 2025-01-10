@@ -4,7 +4,7 @@ import shutil
 from weis.glue_code.runWEIS import run_weis
 import wisdem.inputs as sch
 import numpy as np
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 
 
 ## File management

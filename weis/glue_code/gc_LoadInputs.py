@@ -7,7 +7,10 @@ import weis.inputs as sch
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
+from rosco.toolbox.inputs.validation import load_rosco_yaml
+from wisdem.inputs import load_yaml
+
 
 def update_options(options,override):
     for key, value in override.items():
@@ -58,6 +61,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Directory of modeling option input, if we want to use it for relative paths
         mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
+        # OpenFAST prefixes
+        if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
+            
+        if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
+                mod_opt_dir,        # If it's a relative path, will be relative to mod_opt directory
+                self.analysis_options['general']['folder_output'], 
+                'openfast_runs'
+                )
+
         # BEM dir, all levels
         base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
         if MPI:
@@ -78,15 +92,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
-            # OpenFAST prefixes
-            if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
-                
-            if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
-                    self.analysis_options['general']['folder_output'], 
-                    'openfast_runs'
-                    )
+
                 
             # User-defined control dylib (path2dll)
             path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
@@ -173,6 +179,18 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             if not osp.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
                 self.modeling_options['ROSCO']['tuning_yaml'] = osp.realpath(osp.join(
                     mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
+                
+        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
+        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
+            inps = load_rosco_yaml(self.modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
+            self.modeling_options['ROSCO'].update(inps['controller_params'])
+
+            # Apply changes in modeling options, should have already been validated
+            modopts_no_defaults = load_yaml(self.modeling_options['fname_input_modeling'])  
+            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
+            for option, value in modopts_no_defaults['ROSCO'].items():
+                if option not in skip_options:
+                    self.modeling_options['ROSCO'][option] = value
         
         # XFoil
         if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:

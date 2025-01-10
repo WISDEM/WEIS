@@ -176,7 +176,7 @@ Key
 
 
 Optimization and parallel performance
-=====================================
+-------------------------------------
 
 In general, industral use of optimization is a straightfoward two-step process:
 
@@ -203,7 +203,7 @@ these can be run multiple times for a statisically representative result, with
 the :math:`m`-th case being run :math:`N_{\mathrm{seed}}^{(m)}` times.
 
 The progression of any optimization method will require some algorithm-dependent
-number :math:`P` of evaluations to iterate in the design space, which can also be
+number :math:`P` of evaluations to sample the design space within a single iteration; this can also be
 parallelized:
 
 - :math:`P=1` for gradient-free methods
@@ -285,60 +285,148 @@ These all come together to impact the effectiveness of a given optimization
 strategy.
 
 
-Optimization case study: IEA22
-==============================
+Optimization case study: IEA22 Platform optimization
+----------------------------------------------------
 
-NEEDS REVISION!!!
 
-.. In ``WEIS/examples/17_IEA22_Optimization``, we have an optimization
-.. example which can be used to design the semisubmersible platform for the
-.. IEA 22 280m reference wind turbine. We will concentrate on the files
-.. ``analysis_options_raft_ptfm_opt.yaml`` and
-.. ``modeling_options_raft.yaml``, which specify the platform design study.
-..
-.. The study sets design variables:
-..    - ``floating.joints``
-..       - ``z_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``
-..       - ``r_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``
-..       - not sure exactly what these do, but presumably they set cylindrical coordinates of the truss system members (less an angle?)
-..    - ``floating.members``
-..       - ``groups["column1, column2, column3]:diameter``
-..       - presumably this is setting the diameters of the truss system members?
-..
-.. and constraints:
-..    - ``floating.survival_heel``: upper bound
-..       - maximum pitching heel allowable in parked conditions
-..    - ``floating.metacentric_height``: lower bound
-..       - “Ensures hydrostatic stability with a positive metacentric height”
-..       - distance between center of gravity of a marine vessel and its metacenter (point between vessel-fixed vertical line through C.o.G. and inertial-frame-fixed line through center of buoyancy)
-..       - dictates static stability in the small-heel angle limit (i.e. characterizes stability)
-..    - ``floating.pitch_period``: upper & lower bound
-..       - period of the pitching motion (bow (stern) up vs. down rotation about center of mass)
-..    - ``floating.heave_period``: upper & lower bound
-..       - period of the heave (linear vertical motion of a marine vessel)
-..    - ``floating.fixed_ballast_capacity``: on
-..       - “Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast”
-..    - ``floating.variable_ballast_capacity``: on
-..       - “Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy”
-..    - ``floating.freeboard_margin``: on
-..       - “Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset”
-..       - the deck surface should not be submerged in the worst-case conditions
-..    - ``floating.draft_margin``: on
-..       - “keep draft from raising above water line during survival_heel, largest wave”
-..       - the bottom of the hull should not rise above the water surface in the worst-case conditions
-..    - ``floating.fairlead_depth``: on
-..       - “keep the fairlead above bottom trough of largest wave”
-..       - don’t dunk the fairlead in worst-case conditions
-..    - ``control.Max_PtfmPitch``: max
-..       - “Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
-..    - ``control.Std_PtfmPitch``: max
-..       - “Maximum platform pitch standard deviation over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
-..    - ``control.nacelle_acceleration``: max
-..       - “Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
-..
-.. with a merit figure of the structural mass
-..    - ``structural_mass`` (``floatingse.system_structural_mass``)
+In ``WEIS/examples/17_IEA22_Optimization``, we have an optimization
+example which can be used to design the semisubmersible platform for the
+IEA 22 280m reference wind turbine. We will concentrate on the files
+``analysis_options_raft_ptfm_opt.yaml`` and
+``modeling_options_raft.yaml``, which specify the platform design study.
 
+The study sets design variables:
+   - ``floating.joints``
+      - ``z_coordinate[main_keel, col1_keel, col2_keel, col3_keel]``  (Changes the z-location of all these joints together, i.e., the platform draft)
+      - ``r_coordinate[col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]``  (Changes the radial location of all these joints together, i.e., the column spacing)
+   - ``floating.members``
+      - ``groups[column1, column2, column3]:diameter`` (Changes the diameter of all these members, i.e., the outer column diameter)
+
+
+and constraints:
+   - ``floating.survival_heel``: upper bound
+      - maximum pitching heel allowable in parked conditions, used to compute ``draft_`` and ``freeboard_margin``
+   - ``floating.metacentric_height``: lower bound
+      - “Ensures hydrostatic stability with a positive metacentric height”
+      - distance between center of gravity of a marine vessel and its metacenter (point between vessel-fixed vertical line through C.o.G. and inertial-frame-fixed line through center of buoyancy)
+      - dictates static stability in the small-heel angle limit (i.e. characterizes stability)
+   - ``floating.pitch_period``: upper & lower bound
+      - period of the pitching motion (fore-aft rotation about center of mass)
+   - ``floating.heave_period``: upper & lower bound
+      - period of the heave (linear vertical motion of a marine vessel)
+   - ``floating.fixed_ballast_capacity``: true/false
+      - “Ensures that there is sufficient volume to hold the specified fixed (permanent) ballast”
+   - ``floating.variable_ballast_capacity``: on
+      - “Ensures that there is sufficient volume to hold the needed water (variable) ballast to achieve neutral buoyancy”
+   - ``floating.freeboard_margin``: on
+      - “Ensures that the freeboard (top points of structure) of floating platform stays above the waterline at the survival heel offset”
+      - the deck surface should not be submerged in the worst-case conditions
+   - ``floating.draft_margin``: on
+      - “keep draft from raising above water line during survival_heel, largest wave”
+      - the bottom of the hull should not rise above the water surface in the worst-case conditions
+   - ``control.Max_PtfmPitch``: max
+      - “Maximum platform pitch displacement over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
+   - ``control.Std_PtfmPitch``: max
+      - “Maximum platform pitch standard deviation over all cases. Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
+   - ``control.nacelle_acceleration``: max
+      - “Maximum Nacelle IMU accelleration magnitude, i.e., sqrt(NcIMUTAxs^2 + NcIMUTAys^2 + NcIMUTAzs^2). Can be computed in both RAFT and OpenFAST. The higher fidelity option will be used when active.”
+
+with a merit figure of the structural mass
+   - ``structural_mass`` (``floatingse.system_structural_mass``)
+
+
+Optimization results with RAFT modeling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From our modeling and analysis options:
+   - The time to run an OpenFAST simulation, :math:`T_{solve}`, is about 30 seconds.
+   - The number of cases is :math:`\sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} = 1`.  RAFT is actually running 14 DLCs (12 DLC 1.6 and 2 DLC 6.1, seeds are not necessary for RAFT), but they are not parallelized, so for the purposes of our cost/time estimates, the number of cases is 1.
+   - The number of cores is :math:`N_{\mathrm{cores}} = 100`, and 
+   - The number of design variables is :math:`N_{\mathrm{DVs}} = 3`.  WEIS does paralleize the runs across DVs for the SLSQP and DE solvers.
+
+Thus, the number of cores is much more than the cases per iteration, and the time to convergence is relative to the number of iterations.
+
+.. .. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+..    :width: 55%
+
+.. |cost_of| |time_of|
+
+.. .. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+..    :width: 45%
+
+.. .. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+..    :width: 45%
+
+Optimization results with OpenFAST modeling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+From our modeling and analysis options:
+   - The time to run an OpenFAST simulation, :math:`T_{solve}`, is about 10 minutes.
+   - The number of cases is :math:`\sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} = 3`.
+   - The number of cores is :math:`N_{\mathrm{cores}} = 100`, and 
+   - The number of design variables is :math:`N_{\mathrm{DVs}} = 3`.
+
+Thus, the number of cores is much more than the cases per iteration, and the time to convergence is relative to the number of iterations.
+
+.. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+   :width: 55%
+
+|cost_of| |time_of|
+
+.. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+   :width: 45%
+
+.. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+   :width: 45%
+
+.. .. image:: /images/opt/Ptfm_OpenFAST_DE.png
+..    :width: 55%
+
+
+
+Optimization case study: IEA22 Controller optimization
+-------------------------------------------------------
+
+Here, the goal is to optimize the ROSCO pitch controller of the IEA-22MW RWT.
+
+We use the following design variables, constraints, and merit figure:
+
+This optimization varies the design variables:
+   - ``control.servo.pitch_control.omega``, which controls the bandwidth (speed) of the pitch response to generator speed transients.  This value can be an array.  For the IEA-22MW controller, it has a length of 3.
+   - ``control.servo.pitch_control.zeta``, sets the desired damping of the pitch response.   This value can be an array.  For the IEA-22MW controller, it has a length of 3.
+   - ``control.servo.pitch_control.Kp_float``, which determines the floating feedback gain for damping platform motion
+   - ``control.servo.pitch_control.ptfm_freq``, sets the low pass filter on the floating feedback loop
+
+The merit figure of this optimization to be minimized is ``DEL_TwrBsMyt``, or the tower base damage equivalent load.  
+
+We have two constraints:
+   -  ``control.rotor_overspeed``: (flag, min, max)
+      -  Over all load cases, the (maximum generator speed - rated generator speed) / (rated generator speed)
+      -  Sometimes, larger values are requiered for feasible floating controllers
+   -  ``user.name.aeroelastic.max_pitch_rate_sim``: (upper_bound)
+      - Over all load cases, the maximum pitch rate normalized by the maximum allowed pitch rate
+      - Unstable controllers often result in pitch commands saturated by the rate limit.  This constraint ensures solutions are stable in nonlinear simulations.
+
+
+From our modeling and analysis options:
+   - The time to run an OpenFAST simulation, :math:`T_{solve}`, is about 10 minutes.
+   - The number of cases is :math:`\sum_{m=1}^{M_{\mathrm{case}}} N_{\mathrm{seed}}^{(m)} = 3`.
+   - The number of cores is :math:`N_{\mathrm{cores}} = 100` for COBYLA, and , :math:`N_{\mathrm{cores}} = 400` for SLSQP and DE.
+   - The number of design variables is :math:`N_{\mathrm{DVs}} = 8`.  ``omega`` and ``zeta`` are 3 each.
+
+In this case, for COBYLA, the number of cores is more than the cases per iteration, so the time to convergence is relative to the number of iterations.
+For the other solvers, the number of cases per iteration is less than the number of cores, so the time to convergences is greater.
+
+.. .. image:: /images/opt/Ptfm_OpenFAST_Conv.png
+..    :width: 55%
+
+.. .. |cost_of| |time_of|
+
+.. .. |cost_of| image:: /images/opt/Ptfm_OpenFAST_Cost.png
+..    :width: 45%
+
+.. .. |time_of| image:: /images/opt/Ptfm_OpenFAST_Time.png
+..    :width: 45%
 
 
 

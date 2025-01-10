@@ -55,20 +55,6 @@ class WindPark(om.Group):
         dac_ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
         self.add_subsystem('dac_ivc',dac_ivc)
 
-        # ROSCO tuning parameters
-        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
-            inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
-            modeling_options['ROSCO'].update(inps['controller_params'])
-
-            # Apply changes in modeling options, should have already been validated
-            modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
-            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
-            for option, value in modopts_no_defaults['ROSCO'].items():
-                if option not in skip_options:
-                    modeling_options['ROSCO'][option] = value
-
-
         tune_rosco_ivc = om.IndepVarComp()
         if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
             n_PC = 1
@@ -675,8 +661,8 @@ class WindPark(om.Group):
                     self.connect('rotorse.rp.powercurve.rated_Q',      'drivese_post.rated_torque')
                     self.connect('configuration.rated_power',  'drivese_post.machine_rating')    
                     self.connect('tower.diameter',             'drivese_post.D_top', src_indices=[-1])
-                    self.connect('aeroelastic.hub_Fxyz',       'drivese_post.F_hub')
-                    self.connect('aeroelastic.hub_Mxyz',       'drivese_post.M_hub')
+                    self.connect('aeroelastic.hub_Fxyz_aero',       'drivese_post.F_aero_hub')
+                    self.connect('aeroelastic.hub_Mxyz_aero',       'drivese_post.M_aero_hub')
                     self.connect('aeroelastic.max_RootMyb',     'drivese_post.pitch_system.BRFM')
                     self.connect('blade.pa.chord_param',        'drivese_post.blade_root_diameter', src_indices=[0])
                     self.connect('rotorse.blade_mass',          'drivese_post.blade_mass')
