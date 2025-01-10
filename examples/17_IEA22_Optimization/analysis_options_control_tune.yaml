@@ -9,18 +9,18 @@ design_variables:
           omega:
             flag: True
             min: 0.025
-            max: 0.5
-          zeta:
-            flag: True
-            min: 0.1
-            max: 3.0
+            max: 0.25
+          # zeta:
+          #   flag: True
+          #   min: 0.1
+          #   max: 3.0
           Kp_float:
             flag: True
-            min: -40.0  # -0.25
+            min: -20  # -0.25
             max: 0
-          ptfm_freq:
-            flag: True
-            max: 0.5
+          # ptfm_freq:
+          #   flag: True
+          #   max: 0.5
 
 merit_figure: DEL_TwrBsMyt  # Merit figure of the optimization problem. The options are 'AEP' - 'LCOE' - 'Cp' - 'blade_mass' - 'blade_tip_deflection'
 
@@ -29,7 +29,7 @@ constraints:
     rotor_overspeed:
       flag: True
       min: 0.0
-      max: 0.2
+      max: 0.3
     # max_pitch_travel:
     #   flag: True
     #   max: 0.75
@@ -54,6 +54,8 @@ driver:
     # penalty_exponent: 1.0     # constraint penalty exponent
     # penalty_parameter: 1000.0    # constraint penalty exponent
     run_parallel: True    # DE parallelization
+    # pop_size: 0          # DE parallelization
+    pop_size: 20          # (4 DV x 5) for DE parallelization
   design_of_experiments:
     flag: False            # Flag to enable design of experiments
     run_parallel: False    # Flag to run using parallel processing

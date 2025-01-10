@@ -9,6 +9,7 @@ General:
         allow_fails: True
         fail_value: 9999
         FAST_exe: /projects/weis/cfrontin/software/openfast/build/glue-codes/openfast/openfast  # faster on kestrel
+        write_stdout: True
         # turbsim_exe: /home/dzalkind/Tools/openfast/build/modules/turbsim/turbsim      # faster on kestrel
 WISDEM:
     RotorSE:
@@ -132,8 +133,9 @@ DLC_driver:
         # - DLC: "1.1"
         #   n_seeds: 6
         - DLC: "1.1"    # local, lite
-          n_seeds: 6
+          n_seeds: 3
           # wind_speed: [12.0, 18.0, 24.0]
+          wind_speed: [8.0, 10.0, 12.0, 16.0, 20.0, 24.0]
           transient_time: 120.0  # 0.
           analysis_time: 600.0  # 10.
         # - DLC: "1.6"    # kestrel
@@ -143,8 +145,8 @@ DLC_driver:
         #   wind_speed: [12.0, 18.0, 24.0]
         #   transient_time: 120.0  # 0.
         #   analysis_time: 600.0  # 10.
-        # - DLC: "6.1"
-        #   n_seeds: 6
-        #   turbulent_wind:
-        #     # GridHeight: 400
-        #     GridWidth: 400
+        - DLC: "6.1"
+          n_seeds: 3
+          turbulent_wind:
+            # GridHeight: 400
+            GridWidth: 400
