@@ -17,52 +17,52 @@ import numpy as np
 this_dir = os.path.dirname(os.path.realpath(__file__))
 weis_dir = os.path.dirname(os.path.dirname(this_dir))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # read WEIS options:
     mydir                       = this_dir  # get path to this file
-    fname_modeling_options      = mydir + os.sep + "modeling_options.yaml"
+    fname_modeling_options      = os.path.join(mydir, "modeling_options.yaml")
     modeling_options            = sch.load_modeling_yaml(fname_modeling_options)
 
-    fname_wt_input              = mydir + os.sep + "IEA-15-floating.yaml"
+    fname_wt_input              = os.path.join(mydir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S.yaml")
     wt_init                     = sch.load_geometry_yaml(fname_wt_input)
 
-    fname_analysis_options      = mydir + os.sep + "analysis_options.yaml"
+    fname_analysis_options      = os.path.join(mydir, "analysis_options.yaml")
     analysis_options            = sch.load_analysis_yaml(fname_analysis_options)
 
     # Wind turbine inputs 
-    ws_cut_in               = wt_init['control']['supervisory']['Vin']
-    ws_cut_out              = wt_init['control']['supervisory']['Vout']
+    ws_cut_in               = wt_init["control"]["supervisory"]["Vin"]
+    ws_cut_out              = wt_init["control"]["supervisory"]["Vout"]
     ws_rated                = 11.2
-    wind_speed_class        = wt_init['assembly']['turbine_class']
-    wind_turbulence_class   = wt_init['assembly']['turbulence_class']
+    wind_speed_class        = wt_init["assembly"]["turbine_class"]
+    wind_turbulence_class   = wt_init["assembly"]["turbulence_class"]
 
     # Extract user defined list of cases
-    DLCs = modeling_options['DLC_driver']['DLCs']
+    DLCs = modeling_options["DLC_driver"]["DLCs"]
     
     # Initialize the generator
-    fix_wind_seeds = modeling_options['DLC_driver']['fix_wind_seeds']
-    fix_wave_seeds = modeling_options['DLC_driver']['fix_wave_seeds']
-    metocean = modeling_options['DLC_driver']['metocean_conditions']
+    fix_wind_seeds = modeling_options["DLC_driver"]["fix_wind_seeds"]
+    fix_wave_seeds = modeling_options["DLC_driver"]["fix_wave_seeds"]
+    metocean = modeling_options["DLC_driver"]["metocean_conditions"]
     dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class, fix_wind_seeds, fix_wave_seeds, metocean)
 
     # Generate cases from user inputs
     for i_DLC in range(len(DLCs)):
         DLCopt = DLCs[i_DLC]
-        dlc_generator.generate(DLCopt['DLC'], DLCopt)
+        dlc_generator.generate(DLCopt["DLC"], DLCopt)
 
 
     # generate wind files
-    FAST_namingOut = 'oloc'
-    wind_directory = os.path.join(this_dir,'oloc/wind')
+    FAST_namingOut = "oloc"
+    wind_directory = os.path.join(this_dir,"oloc/wind")
     if not os.path.exists(wind_directory):
         os.makedirs(wind_directory)
-    rotorD = wt_init['assembly']['rotor_diameter']
-    hub_height = wt_init['assembly']['hub_height']
+    rotorD = wt_init["assembly"]["rotor_diameter"]
+    hub_height = wt_init["assembly"]["hub_height"]
 
     # from various parts of openmdao_openfast:
     WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
-    WindFile_name = [''] * dlc_generator.n_cases
+    WindFile_name = [""] * dlc_generator.n_cases
 
     level2_disturbance = []
 
@@ -74,7 +74,7 @@ if __name__ == '__main__':
         # Compute rotor average wind speed as level2_disturbances
         ts_file     = TurbSimFile(WindFile_name[i_case])
         ts_file.compute_rot_avg(rotorD/2)
-        u_h         = ts_file['rot_avg'][0,:]
+        u_h         = ts_file["rot_avg"][0,:]
         
         
         off = max(u_h) - 25
@@ -84,8 +84,8 @@ if __name__ == '__main__':
         u_h[ind] = 25
         
         
-        tt          = ts_file['t']
-        level2_disturbance.append({'Time':tt, 'Wind': u_h})
+        tt          = ts_file["t"]
+        level2_disturbance.append({"Time":tt, "Wind": u_h})
 
 
     # Linear Model
@@ -93,8 +93,8 @@ if __name__ == '__main__':
     # number of linear wind speeds and other options below assume that you haven't changed 
     # the Level2: linearization: options from example 12_linearization
     # if the modelling input was changed, or different between 12_ and 13_, these options will produce unexpected results
-    n_lin_ws = len(modeling_options['Level2']['linearization']['wind_speeds'])
-    lin_case_name = case_naming(n_lin_ws,'lin')
+    n_lin_ws = len(modeling_options["Level2"]["linearization"]["wind_speeds"])
+    lin_case_name = case_naming(n_lin_ws,"lin")
     OutputCon_flag = False
     
     lin_pickle = mydir + os.sep + "LinearTurbine_22.pkl"
@@ -105,9 +105,9 @@ if __name__ == '__main__':
     
     else:   # load the model and run MBC3
         LinearTurbine = LinearTurbineModel(
-                    os.path.join(weis_dir,'outputs/IEA_level2_dtqp_full'),  # directory where linearizations are
+                    os.path.join(weis_dir,"outputs/IEA_level2_dtqp_full"),  # directory where linearizations are
                     lin_case_name,
-                    nlin=modeling_options['Level2']['linearization']['NLinTimes'],
+                    nlin=modeling_options["Level2"]["linearization"]["NLinTimes"],
                     reduceControls = True
                     )
 
@@ -116,8 +116,8 @@ if __name__ == '__main__':
     
     
     fst_vt = {}
-    fst_vt['DISCON_in'] = {}
-    fst_vt['DISCON_in']['PC_RefSpd'] = 0.7853192931562493
+    fst_vt["DISCON_in"] = {}
+    fst_vt["DISCON_in"]["PC_RefSpd"] = 0.7853192931562493
 
     la = LoadsAnalysis(
             outputs=[],
@@ -129,18 +129,18 @@ if __name__ == '__main__':
         "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
         }
 
-    if os.path.isabs(modeling_options['General']['openfast_configuration']['OF_run_dir']):
-        run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+    if os.path.isabs(modeling_options["General"]["openfast_configuration"]["OF_run_dir"]):
+        run_directory = modeling_options["General"]["openfast_configuration"]["OF_run_dir"]
     else:
-        run_directory = os.path.join(weis_dir,modeling_options['General']['openfast_configuration']['OF_run_dir'])
-    run_directory = modeling_options['General']['openfast_configuration']['OF_run_dir']
+        run_directory = os.path.join(weis_dir,modeling_options["General"]["openfast_configuration"]["OF_run_dir"])
+    run_directory = modeling_options["General"]["openfast_configuration"]["OF_run_dir"]
     
     if not os.path.exists(run_directory):
         os.makedirs(run_directory)
 
     # save disturbances
     for i_dist, dist in enumerate(level2_disturbance):
-        pd.DataFrame(dist).to_pickle(os.path.join(run_directory,f'dist_{i_dist}.p'))
+        pd.DataFrame(dist).to_pickle(os.path.join(run_directory,f"dist_{i_dist}.p"))
 
     summary_stats, extreme_table, DELs, Damage, chan_time = dtqp_wrapper(
         LinearTurbine, 
@@ -156,5 +156,5 @@ if __name__ == '__main__':
 
     # Save each timeseries as a pickled dataframe
     for i_ts, timeseries in enumerate(chan_time):
-        timeseries.df.to_pickle(os.path.join(run_directory,FAST_namingOut + '_' + str(i_ts) + '.p'))
+        timeseries.df.to_pickle(os.path.join(run_directory,FAST_namingOut + "_" + str(i_ts) + ".p"))
     

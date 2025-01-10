@@ -227,9 +227,9 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef +
                                 '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
+        wind_file_path_InflowWind = os.path.join("wind", turbsim_input_file_name[:-3] + '.bts')
         turbsim_input_file_path = os.path.join(wind_directory, turbsim_input_file_name)
         wind_file_name = turbsim_input_file_path[:-3] + '.bts'
-
 
         runTS = True
         if os.path.exists(wind_file_name) and os.path.exists(turbsim_input_file_path):
@@ -269,12 +269,16 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             gusts.HH = hub_height
             gusts.dt = dlc_generator.cases[i_case].TimeStep
             gusts.TStart = dlc_generator.cases[i_case].transient_time + 10.  # start gust 10 seconds after OpenFAST starts recording
-            gusts.TF = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            gusts.TF = dlc_generator.cases[i_case].total_time
             gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
             wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
+            if not os.path.isabs(wind_file_name):
+                wind_file_path_InflowWind = os.path.join("wind", os.path.basename(wind_file_name))
+            else:
+                wind_file_path_InflowWind = wind_file_name
             wind_file_type = 2
         else:
             wind_file_type = 1
-            wind_file_name = 'unused'
+            wind_file_path_InflowWind = 'unused'
 
-    return wind_file_type, wind_file_name
+    return wind_file_type, wind_file_path_InflowWind

@@ -49,7 +49,7 @@ def parametricStateSpace(parameter_ranges, *args, **kwargs):
 
     INPUTS:
      - parameter_ranges: dictionary with the parameter name as key, and as value a dictionary of the form:
-               {'min':pmin , 'max':pmax, 'ref':pref}
+               {"min":pmin , "max":pmax, "ref":pref}
     OUTPUTS:
       - ABCD0: state space at reference point 
       - dABCD: state space slopes
@@ -58,7 +58,7 @@ def parametricStateSpace(parameter_ranges, *args, **kwargs):
     # First evaluate at reference
     eval_parameters_ref={}
     for name,param in parameter_ranges.items():
-        eval_parameters_ref[name] = param['ref']
+        eval_parameters_ref[name] = param["ref"]
 
     ABCD0 = openFASTstateSpace(eval_parameters_ref, *args, **kwargs)
 
@@ -66,12 +66,12 @@ def parametricStateSpace(parameter_ranges, *args, **kwargs):
     dABCD={}
     for name,p_range in parameter_ranges.items():
         eval_parameters=eval_parameters_ref.copy()
-        deltaP = p_range['max'] - p_range['min']
+        deltaP = p_range["max"] - p_range["min"]
         # Eval at min
-        eval_parameters[name] = p_range['min']
+        eval_parameters[name] = p_range["min"]
         ABCDm = openFASTstateSpace(eval_parameters, *args, **kwargs)
         # Eval at max
-        eval_parameters[name] = p_range['max']
+        eval_parameters[name] = p_range["max"]
         ABCDp = openFASTstateSpace(eval_parameters, *args, **kwargs)
         # Compute slope
         dABCD[name] = stateSpaceSlopes(ABCDp, ABCDm, deltaP)
@@ -85,7 +85,7 @@ def evalParametericStateSpace(parameters, parameter_ranges, ABCD0, dABCD):
     """
     A,B,C,D = copy.deepcopy(ABCD0)
     for name,p in parameters.items():
-        deltaP = p - parameter_ranges[name]['ref'] 
+        deltaP = p - parameter_ranges[name]["ref"] 
         A += dABCD[name][0] * deltaP
         B += dABCD[name][1] * deltaP
         C += dABCD[name][2] * deltaP
@@ -93,14 +93,14 @@ def evalParametericStateSpace(parameters, parameter_ranges, ABCD0, dABCD):
     return A,B,C,D
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
 
     # --- Initial step
     # Define parameters to be changed in optimization
     parameter_ranges = {
-        'tower root diameter':{'min':5, 'max':10, 'ref':6},
-        'tower top diameter': {'min':2, 'max':10, 'ref':4}
+        "tower root diameter":{"min":5, "max":10, "ref":6},
+        "tower top diameter": {"min":2, "max":10, "ref":4}
     }
 
     # Evaluate state space at ref point, and all statespace slopes
@@ -109,16 +109,16 @@ if __name__ == '__main__':
     # --- Within WEIS Optimization loop
     # Optimizer requesting state space at a given point
     parameters={
-        'tower root diameter':8,
-        'tower top diameter': 4
+        "tower root diameter":8,
+        "tower top diameter": 4
     }
     # Method "2A"
     SSl = evalParametericStateSpace(parameters, parameter_ranges, SS0, dSS)
-    print('State space evaluated using linearized param')
+    print("State space evaluated using linearized param")
     print(SSl[0])
     # Method "3"
     SSd = openFASTstateSpace(parameters)
-    print('State space evaluated directly')
+    print("State space evaluated directly")
     print(SSl[0])
 
 
@@ -135,8 +135,8 @@ if __name__ == '__main__':
     for i1, p1 in enumerate(vp1):
         for i2, p2 in enumerate(vp2):
             parameters={
-                'tower root diameter':p1,
-                'tower top diameter': p2,
+                "tower root diameter":p1,
+                "tower top diameter": p2,
             }
             # Direct call
             ABCDd = openFASTstateSpace(parameters)
@@ -155,6 +155,6 @@ if __name__ == '__main__':
                 dF[i1,i2,:] = np.nan
                 dZ[i1,i2,:] = np.nan
 
-    print('relative error in first frequency')
+    print("relative error in first frequency")
     print(dF[:,:,0])
 

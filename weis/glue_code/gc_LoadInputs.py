@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import shutil
+import numpy as np
 
 from rosco import discon_lib_path
 import weis.inputs as sch
@@ -80,10 +81,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         else:
             bemDir = osp.join(base_run_dir,'BEM')
 
-        self.modeling_options["Level1"]['BEM_dir'] = bemDir
-        if MPI:
-            # If running MPI, RAFT won't be able to save designs in parallel
-            self.modeling_options["Level1"]['save_designs'] = False
 
 
         # Openfast
@@ -91,7 +88,6 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             fast = InputReader_OpenFAST()
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
-
 
                 
             # User-defined control dylib (path2dll)
@@ -157,6 +153,19 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                 self.modeling_options['Level3']['openfast_dir'] = osp.realpath(osp.join(
                     mod_opt_dir, self.modeling_options['Level3']['openfast_dir'] ))
         
+        # BEM dir, all levels
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = osp.join(base_run_dir,'BEM')
+
+        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        if MPI:
+            # If running MPI, RAFT won't be able to save designs in parallel
+            self.modeling_options["Level1"]['save_designs'] = False
+        
         # RAFT
         if self.modeling_options["flags"]["floating"]:
             bool_init = True if self.modeling_options["Level1"]["potential_model_override"]==2 else False
@@ -202,17 +211,24 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         cut_in = self.wt_init['control']['supervisory']['Vin']
         cut_out = self.wt_init['control']['supervisory']['Vout']
         metocean = self.modeling_options['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(cut_in, cut_out, metocean=metocean)
+        dlc_driver_options = self.modeling_options['DLC_driver']
+        dlc_generator = DLCGenerator(cut_in, cut_out, dlc_driver_options=dlc_driver_options, metocean=metocean)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
-        if hasattr(dlc_generator,'n_ws_dlc11'):
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = dlc_generator.n_ws_dlc11
+        
+        # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
+        DLCs = [i_dlc['DLC'] for i_dlc in self.modeling_options['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
         else:
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
+            DLC_label_for_AEP = '1.1'
+        dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
+        self.modeling_options['DLC_driver']['n_ws_aep'] = len(np.unique(dlc_aep_ws))
 
+        # TMD modeling
         self.modeling_options['flags']['TMDs'] = False
         if 'TMDs' in self.wt_init:
             if self.modeling_options['Level3']['flag']:

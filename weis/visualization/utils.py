@@ -372,12 +372,7 @@ def load_OMsql_multi(
                     collected_data[key].append(int(np.array(data[key][idx_key])))
                 elif isinstance(data[key][idx_key], float):
                     collected_data[key].append(float(np.array(data[key][idx_key])))
-                elif isinstance(data[key][idx_key], dict) or (isinstance(data[key][idx_key], np.ndarray) and data[key][idx_key].dtype == dict):
-                    print(data[key][idx_key])  # DEBUG!!!!!
-                    collected_data[key].append(None)  # DEBUG!!!!!
-                elif ((type(data[key][idx_key]) == np.ndarray) and data[key][idx_key].size == 1) or len(data[key][idx_key]) == 1:
-                    print(data[key][idx_key])  # DEBUG!!!!!
-                    print(type(data[key][idx_key]))  # DEBUG!!!!!
+                elif len(data[key][idx_key]) == 1:
                     collected_data[key].append(float(np.array(data[key][idx_key])))
                     # try:
                     #     collected_data[key].append(np.array(data[key][idx_key][0]))
