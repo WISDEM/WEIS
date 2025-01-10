@@ -37,7 +37,9 @@ all_scripts = [
     "10_override_example/weis_driver",
     #"12_linearization/doe_driver", # Soul crushingly long
     "12_linearization/weis_driver",
-    "15_RAFT_Studies/weis_driver_raft_opt"
+    "15_RAFT_Studies/weis_driver_raft_opt",
+    "17_IEA22_Optimization/driver_weis_openfast_opt",
+    "17_IEA22_Optimization/driver_weis_raft_opt",
 ]
 
 class TestExamples(unittest.TestCase):

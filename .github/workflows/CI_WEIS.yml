@@ -123,9 +123,12 @@ jobs:
           cd ../05_IEA-3.4-130-RWT
           mpiexec -np 2 python weis_driver.py
           cd ../09_design_of_experiments
+          mpiexec -n 2 python DOE_raft.py
           mpiexec -n 2 --bind-to core python DOE_openfast.py
           python postprocess_results.py
-
+          cd ../17_IEA22_Optimization
+          mpiexec -n 2 python driver_weis_raft_opt.py
+          
       # Run scripts within dac folder
       # - name: Run examples distributed aerodynamic control
       #  run: |
