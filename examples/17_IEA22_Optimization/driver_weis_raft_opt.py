@@ -8,7 +8,8 @@ fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-22
 fname_modeling_options = os.path.join(run_dir, "modeling_options_raft.yaml")
 fname_analysis_options = os.path.join(run_dir, "analysis_options_raft_ptfm_opt.yaml")
 
-wt_opt, modeling_options, analysis_options = weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options)
+wt_opt, modeling_options, opt_options = weis_main(fname_wt_input, 
+                                                  fname_modeling_options, 
+                                                  fname_analysis_options)
 
-print("Tower mass (kg) =", wt_opt["towerse.tower_mass"])
-print("Floating platform mass (kg) =", wt_opt["floatingse.platform_mass"])
+
