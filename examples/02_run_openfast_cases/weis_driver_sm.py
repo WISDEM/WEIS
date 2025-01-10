@@ -7,6 +7,11 @@ fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15
 fname_modeling_options = os.path.join(run_dir, "modeling_options_sm.yaml")
 fname_analysis_options = os.path.join(run_dir, "analysis_options_sm.yaml")
 
-wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
-                                                  fname_modeling_options,
-                                                  fname_analysis_options)
+def run():
+
+    wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
+                                                    fname_modeling_options,
+                                                    fname_analysis_options)
+    
+if __name__=="__main__":
+    run()

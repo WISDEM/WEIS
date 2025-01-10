@@ -848,7 +848,7 @@ class FASTLoadCases(ExplicitComponent):
                     for key2 in modeling_options['Level3']['outlist'][key1]:
                         fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
         
-        if 'path2dll' in modeling_options['General']['openfast_configuration']:
+        if ('openfast_configuration' in modeling_options['General']) and ('path2dll' in modeling_options['General']['openfast_configuration']):
             fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:

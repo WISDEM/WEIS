@@ -102,8 +102,18 @@ jobs:
       #    python dac_driver.py
 
       # Run scripts within design of experiments folder
-      - name: Run examples design of experiments
+      - name: Run OpenFAST design of experiments
         run: |
           cd examples/09_design_of_experiments
           mpiexec -n 2 --bind-to core python DOE_openfast.py
           python postprocess_results.py
+
+      - name: Run RAFT design of experiments
+        run: |
+          cd examples/09_design_of_experiments
+          mpiexec -n 2 python DOE_raft.py
+
+      - name: Run parallel script with RAFT
+        run: |
+          cd examples/17_IEA22_Optimization
+          mpiexec -n 2 python driver_weis_raft_opt.py
