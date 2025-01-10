@@ -1797,6 +1797,7 @@ class FASTLoadCases(ExplicitComponent):
             fix_wind_seeds, 
             fix_wave_seeds, 
             metocean, 
+            modopt['DLC_driver'],
             initial_condition_table,
             )
         # Generate cases from user inputs
