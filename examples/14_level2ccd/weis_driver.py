@@ -1,6 +1,5 @@
 import os 
-from weis.glue_code.runWEIS     import run_weis
-
+from weis import weis_main
 
 if __name__ == "__main__":
 
@@ -10,6 +9,8 @@ if __name__ == "__main__":
     fname_modeling_options = os.path.join(run_dir, "modeling_options.yaml")
     fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
     
-    wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, fname_modeling_options, fname_analysis_options)
+    wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
+                                                      fname_modeling_options,
+                                                      fname_analysis_options)
     
 

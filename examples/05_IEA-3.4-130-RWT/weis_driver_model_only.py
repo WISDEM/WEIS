@@ -1,7 +1,5 @@
 import os
-
-from weis.glue_code.runWEIS import run_weis
-#from openmdao.utils.mpi  import MPI
+from weis import weis_main
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -14,7 +12,7 @@ modeling_override["General"] = {}
 modeling_override["General"]["openfast_configuration"] = {}
 modeling_override["General"]["openfast_configuration"]["model_only"] = True
 
-wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
-                                                    fname_modeling_options, 
-                                                    fname_analysis_options,
-                                                    modeling_override=modeling_override)
+wt_opt, modeling_options, opt_options = weis_main(fname_wt_input, 
+                                                  fname_modeling_options, 
+                                                  fname_analysis_options,
+                                                  modeling_override=modeling_override)
