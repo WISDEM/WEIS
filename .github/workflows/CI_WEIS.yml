@@ -91,8 +91,8 @@ jobs:
         if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        uses: coverallsapp/github-action@v2
-        with:
-            github-token:  ${{ secrets.GITHUB_TOKEN }}
-        #run: |
-        #  coveralls --service=github
+        #uses: coverallsapp/github-action@v2
+        #with:
+        #    github-token:  ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          coveralls --service=github
