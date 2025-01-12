@@ -207,7 +207,7 @@ class runFAST_pywrapper(object):
             # Calculated channels
             calculate_channels(output_dict, self.fst_vt)
 
-            output = AeroelasticOutput(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+            output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
             os.chdir(orig_dir)
@@ -256,7 +256,7 @@ class runFAST_pywrapper(object):
                 calculate_channels(output_dict, self.fst_vt)
 
                 # Re-make output
-                output = AeroelasticOutput(output_dict, self.FAST_namingOut)
+                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut)
             
             else: # fill with -9999s
                 output_dict = {}
@@ -269,7 +269,7 @@ class runFAST_pywrapper(object):
                 # Add channel to indicate failed run
                 output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
 
-                output = AeroelasticOutput(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # clear dictionary if we're not keeping time
             if not self.keep_time: output_dict = None
@@ -283,7 +283,7 @@ class runFAST_pywrapper(object):
         case_name, sum_stats, extremes, dels, damage = self.la.process_single(output,
                                                                               return_damage=True,
                                                                               goodman_correction=self.goodman)
-
+        #breakpoint()
         return case_name, sum_stats, extremes, dels, damage, output_dict
 
 
@@ -383,7 +383,7 @@ class runFAST_pywrapper_batch(object):
             dl[_name] = _dl
             dam[_name] = _dam
             ct.append(_ct)
-            
+
         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         return summary_stats, extreme_table, DELs, Damage, ct
