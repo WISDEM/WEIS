@@ -2,23 +2,29 @@ import unittest
 from weis.test.utils import execute_script
 
 all_scripts = [
-    "01_aeroelasticse/run_general",
+    # "01_aeroelasticse/run_general", # Cannot point to the controller using old logic
     "01_aeroelasticse/run_OLAF",
-    "01_aeroelasticse/run_nodalOutputs",
     "02_run_openfast_cases/weis_driver_loads",
     "03_NREL5MW_OC3_spar/weis_driver",
-    # "03_NREL5MW_OC3_spar/weis_freq_driver", # executed in examples_skinny
-    # "04_NREL5MW_OC4_semi/weis_driver",  # skipping until we resolve multiple variable ballasts
+    "03_NREL5MW_OC3_spar/weis_freq_driver", # executed in examples_skinny
+    "04_NREL5MW_OC4_semi/weis_driver",  # skipping until we resolve multiple variable ballasts
     "04_NREL5MW_OC4_semi/weis_freq_driver",
     "05_IEA-3.4-130-RWT/weis_driver", # also executed via mpi in the gitthub workflow
-    #"06_IEA-15-240-RWT/weis_driver", # executed in the test_IEA15.py
-    # "07_te_flaps/dac_driver",
+    "06_IEA-15-240-RWT/weis_driver_monopile", # executed in the test_IEA15.py
+    "06_IEA-15-240-RWT/weis_driver_TMDs", # executed in the test_IEA15.py
+    "06_IEA-15-240-RWT/weis_driver_tower_DVs", # executed in the test_IEA15.py
+    "06_IEA-15-240-RWT/weis_driver_umaine_semi", # executed in the test_IEA15.py
+    # "07_te_flaps/dac_driver", # need xfoil
     "08_OLAF/weis_driver",
-    #"09_design_of_experiments/weis_driver", # executed in the test_DOE.py
+    "09_design_of_experiments/DOE_openfast", # executed in the test_DOE.py
     "10_override_example/weis_driver",
-    #"12_linearization/doe_driver", # Soul crushingly long
+    "11_use_bem/weis_driver",
+    # #"12_linearization/doe_driver", # Soul crushingly long
     "12_linearization/weis_driver",
-    "15_RAFT_Studies/weis_driver_raft_opt"
+    "13_DTQP/weis_driver",
+    "14_level2ccd/weis_driver",
+    "15_RAFT_Studies/weis_driver_raft_opt",
+    # "17_IEA22_Optimization/driver_weis_raft_opt",
 ]
 
 class TestExamples(unittest.TestCase):
