@@ -47,8 +47,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : False
         PtfmYDOF : False
     AeroDyn:
-        WakeMod: 3
-        AFAeroMod: 1
+        Wake_Mod: 3
+        UA_Mod: 0
         TwrShadow: 0
         TwrAero: False
         OLAF:

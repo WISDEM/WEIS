@@ -3,7 +3,7 @@ import jsonmerge
 import wisdem.inputs
 from wisdem.inputs.validation import load_yaml, write_yaml, _validate, simple_types, DefaultValidatingDraft7Validator
 import rosco.toolbox.inputs
-from weis.aeroelasticse.FileTools import remove_numpy
+from openfast_io.FileTools import remove_numpy
 
 froot_wisdem           = os.path.dirname(wisdem.inputs.__file__)
 fschema_geom_wisdem    = os.path.join(froot_wisdem, 'geometry_schema.yaml')

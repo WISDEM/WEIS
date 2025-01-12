@@ -29,7 +29,7 @@ class ServoSE_ROSCO(Group):
         if not modeling_options['Level3']['from_openfast']:        #haven't already computed
             self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
 
-        self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options, opt_options=opt_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_Ctrl', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'mu'])
+        self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options, opt_options=opt_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_UserProp', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'mu'])
 
         if not modeling_options['Level3']['from_openfast']:        #haven't already computed
             # Connect ROSCO for Rotor Performance tables
@@ -144,7 +144,7 @@ class TuneROSCO(ExplicitComponent):
         self.add_input('airfoils_cm',   val=np.zeros((n_span, n_aoa, n_Re, n_tab)),             desc='moment coefficients, spanwise')
         self.add_input('airfoils_aoa',  val=np.zeros((n_aoa)),              units='deg',        desc='angle of attack grid for polars')
         self.add_input('airfoils_Re',   val=np.zeros((n_Re)),                                   desc='Reynolds numbers of polars')
-        self.add_input('airfoils_Ctrl', val=np.zeros((n_span, n_Re, n_tab)), units='deg',       desc='Airfoil control paremeter (i.e. flap angle)')
+        self.add_input('airfoils_UserProp', val=np.zeros((n_span, n_Re, n_tab)), units='deg',       desc='Airfoil control paremeter (i.e. flap angle)')
         self.add_discrete_input('nBlades',         val=0,                                       desc='number of blades')
         self.add_input('mu',            val=1.81e-5,                        units='kg/(m*s)',   desc='dynamic viscosity of air')
         self.add_input('shearExp',      val=0.0,                                                desc='shear exponent')
@@ -290,8 +290,8 @@ class TuneROSCO(ExplicitComponent):
             for i in range(self.n_span):
                 # Check number of flap positions for each airfoil section
                 if self.n_tab > 1:
-                    if inputs['airfoils_Ctrl'][i,0,0] == inputs['airfoils_Ctrl'][i,0,1]:
-                        n_tabs = 1  # If all Ctrl angles of the flaps are identical then no flaps
+                    if inputs['airfoils_UserProp'][i,0,0] == inputs['airfoils_UserProp'][i,0,1]:
+                        n_tabs = 1  # If all UserProp angles of the flaps are identical then no flaps
                     else:
                         n_tabs = self.n_tab
                 else:
@@ -300,7 +300,7 @@ class TuneROSCO(ExplicitComponent):
                 for j in range(n_tabs):
                     WISDEM_turbine.af_data[i][j] = {}
                     WISDEM_turbine.af_data[i][j]['NumTabs'] = n_tabs
-                    WISDEM_turbine.af_data[i][j]['Ctrl']    = inputs['airfoils_Ctrl'][i,0,j]
+                    WISDEM_turbine.af_data[i][j]['UserProp']    = inputs['airfoils_UserProp'][i,0,j]
                     WISDEM_turbine.af_data[i][j]['Alpha']   = np.array(inputs['airfoils_aoa']).flatten().tolist()
                     WISDEM_turbine.af_data[i][j]['Cl']      = np.array(inputs['airfoils_cl'][i,:,0,j]).flatten().tolist()
                     WISDEM_turbine.af_data[i][j]['Cd']      = np.array(inputs['airfoils_cd'][i,:,0,j]).flatten().tolist()

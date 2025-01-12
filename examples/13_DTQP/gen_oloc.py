@@ -1,11 +1,11 @@
 
 import weis.inputs as sch
 import os
-from weis.aeroelasticse.turbsim_util    import generate_wind_files
-from weis.aeroelasticse.turbsim_file    import TurbSimFile
+from openfast_io.turbsim_util    import generate_wind_files
+from openfast_io.turbsim_file    import TurbSimFile
 from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
-from weis.aeroelasticse.CaseGen_General import case_naming
+from openfast_io.CaseGen_General import case_naming
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams

@@ -124,7 +124,7 @@ class LinearTurbineModel(object):
                     "ED Extended input: collective blade-pitch command, rad"]
                 n_controls = len(matData['DescCntrlInpt'])
                 DescCntrlInpt = matData['DescCntrlInpt']
-                ReqCtrl_Indices = np.zeros((n_controls,3),dtype = bool)
+                ReqUserProp_Indices = np.zeros((n_controls,3),dtype = bool)
 
                 Req = np.array([dc in Req_Controls for dc in DescCntrlInpt])
                 B_ops = B_ops[:,Req,:]

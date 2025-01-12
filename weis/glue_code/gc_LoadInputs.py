@@ -5,7 +5,7 @@ import numpy as np
 
 from rosco import discon_lib_path
 import weis.inputs as sch
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
+from openfast_io.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from openmdao.utils.mpi import MPI
