@@ -1,6 +1,6 @@
 general:
-    folder_output: outputs
-    fname_output: doe_output
+    folder_output: outputs/OpenFAST_DOE
+    fname_output: OpenFAST_DOE
 design_variables:
   blade:
     aero_shape:

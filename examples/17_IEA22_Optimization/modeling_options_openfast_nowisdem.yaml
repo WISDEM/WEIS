@@ -35,7 +35,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     
 ROSCO:
     flag: True
-    tuning_yaml: IEA-22-280-RWT-Semi_ROSCO.yaml
+    tuning_yaml: rosco_inputs_iea22
 
 DLC_driver:
     DLCs:
