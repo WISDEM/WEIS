@@ -30,6 +30,13 @@ openfast_input_map = {
     'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
     'azimuth_init': ("ElastoDyn","Azimuth"),
     'yaw_misalign': ("ElastoDyn","NacYaw"),
+
+    'PtfmSurge': ("ElastoDyn","PtfmSurge"),
+    'PtfmSway': ("ElastoDyn","PtfmSway"),
+    'PtfmHeave': ("ElastoDyn","PtfmHeave"),
+    'PtfmRoll': ("ElastoDyn","PtfmRoll"),
+    'PtfmPitch': ("ElastoDyn","PtfmPitch"),
+    'PtfmYaw': ("ElastoDyn","PtfmYaw"),
     
     'wave_height': ("HydroDyn","WaveHs"),
     'wave_period': ("HydroDyn","WaveTp"),
@@ -1233,6 +1240,35 @@ class DLCGenerator(object):
         generic_case_inputs = []
         generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
                                     'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_freedecay(self,dlc_options):
+        # Describe the new design load case
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = 'freedecay'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+
+        # Set dlc-specific options, like yaw_misalign, initial azimuth
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','PtfmRoll','PtfmPitch','PtfmYaw'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
