@@ -11,8 +11,8 @@ import shutil
 
 import numpy as np
 
-from openfast_io.CaseGen_General import CaseGen_General
-from openfast_io.runFAST_pywrapper import runFAST_pywrapper_batch
+from weis.aeroelasticse.CaseGen_General import CaseGen_General
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper_batch
 from weis.test.utils import compare_regression_values
 from rosco import discon_lib_path as path2dll
 

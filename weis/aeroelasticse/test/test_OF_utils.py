@@ -1,9 +1,9 @@
 import unittest
 from openfast_io.FAST_reader import InputReader_OpenFAST
 from openfast_io.FAST_writer import InputWriter_OpenFAST
-from openfast_io.FAST_wrapper import FAST_wrapper
-from openfast_io.runFAST_pywrapper import runFAST_pywrapper
-from openfast_io.LinearFAST import LinearFAST
+from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper
+from weis.aeroelasticse.LinearFAST import LinearFAST
 from rosco import discon_lib_path
 import os.path as osp
 import shutil
