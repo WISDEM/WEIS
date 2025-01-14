@@ -21,7 +21,7 @@ WISDEM:
     # BOS:
     #     flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     simulation:
         DT: 0.01
@@ -67,7 +67,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PotMod: 1
         # WaveMod: 0
 
-Level1:
+Level1: # -> RAFT, but testing backwards compatibility
     flag: True
     potential_model_override: 0
     trim_ballast: 2

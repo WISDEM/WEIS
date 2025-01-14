@@ -34,7 +34,7 @@ WISDEM:
     BOS:
         flag: True
         
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     OutFileFmt: 3
     simulation:
@@ -96,7 +96,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
 ROSCO:
     flag: True
 
-Level2:
+OpenFAST_Linear:
     flag: True
     simulation:         # could these be included in openfast options?
         TMax: 700.      # run simulations using IEC standards, could share that info
@@ -110,7 +110,7 @@ Level2:
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF','PtfmHvDOF', 'PtfmSgDOF']
         NLinTimes: 12
 
-Level1:
+RAFT:
     potential_model_override: 2
 DLC_driver:
     DLCs:

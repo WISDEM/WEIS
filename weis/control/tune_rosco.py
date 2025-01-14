@@ -26,12 +26,12 @@ class ServoSE_ROSCO(Group):
         modeling_options = self.options['modeling_options']
         opt_options      = self.options['opt_options']
 
-        if not modeling_options['Level3']['from_openfast']:        #haven't already computed
+        if not modeling_options['OpenFAST']['from_openfast']:        #haven't already computed
             self.add_subsystem('aeroperf_tables',   Cp_Ct_Cq_Tables(modeling_options   = modeling_options), promotes = ['v_min', 'v_max','r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'rho', 'mu'])
 
         self.add_subsystem('tune_rosco',        TuneROSCO(modeling_options = modeling_options, opt_options=opt_options), promotes = ['v_min', 'v_max', 'rho', 'omega_min', 'tsr_operational', 'rated_power', 'r','chord', 'theta','Rhub', 'Rtip', 'hub_height','precone', 'tilt','yaw','precurve','precurveTip','presweep','presweepTip', 'airfoils_UserProp', 'airfoils_aoa','airfoils_Re','airfoils_cl','airfoils_cd','airfoils_cm', 'nBlades', 'mu'])
 
-        if not modeling_options['Level3']['from_openfast']:        #haven't already computed
+        if not modeling_options['OpenFAST']['from_openfast']:        #haven't already computed
             # Connect ROSCO for Rotor Performance tables
             self.connect('aeroperf_tables.Cp',              'tune_rosco.Cp_table')
             self.connect('aeroperf_tables.Ct',              'tune_rosco.Ct_table')
@@ -375,7 +375,7 @@ class TuneROSCO(ExplicitComponent):
         ROSCO_input['Ct'] = WISDEM_turbine.Ct
         ROSCO_input['Cq'] = WISDEM_turbine.Cq
 
-        if (self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']):
+        if (self.modeling_options['OpenFAST_Linear']['flag'] or self.modeling_options['OpenFAST']['flag']):
             self.modeling_options['General']['openfast_configuration']['fst_vt']['DISCON_in'] = ROSCO_input
         
         # Outputs 
@@ -531,8 +531,8 @@ class ROSCO_Turbine(ExplicitComponent):
         self.turbine_params         = inps['turbine_params']
         self.control_params         = inps['controller_params']
 
-        FAST_InputFile = modeling_options['Level3']['openfast_file']    # FAST input file (ext=.fst)
-        FAST_directory = modeling_options['Level3']['openfast_dir']   # Path to fst directory files
+        FAST_InputFile = modeling_options['OpenFAST']['openfast_file']    # FAST input file (ext=.fst)
+        FAST_directory = modeling_options['OpenFAST']['openfast_dir']   # Path to fst directory files
             
 
         # Instantiate turbine, controller, and file processing classes

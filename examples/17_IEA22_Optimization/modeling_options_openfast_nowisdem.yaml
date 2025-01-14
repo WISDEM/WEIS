@@ -25,7 +25,7 @@ WISDEM:
     BOS:
         flag: False
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
     openfast_file: IEA-22-280-RWT-Semi.fst

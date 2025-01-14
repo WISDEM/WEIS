@@ -5,22 +5,22 @@ class PoseOptimizationWEIS(PoseOptimization):
 
     def __init__(self, wt_init, modeling_options, analysis_options):
         
-        self.level_flags = np.array([modeling_options[level]['flag'] for level in ['Level1','Level2','Level3']])
+        self.level_flags = np.array([modeling_options[level]['flag'] for level in ['RAFT','OpenFAST_Linear','OpenFAST']])
         # if sum(self.level_flags) > 1:
             # raise Exception('Only one level in WEIS can be enabled at the same time')
 
         super(PoseOptimizationWEIS, self).__init__(wt_init, modeling_options, analysis_options)
 
         # Set solve component for some optimization constraints, and merit figures (RAFT or openfast)
-        if modeling_options['Level3']['flag']:
+        if modeling_options['OpenFAST']['flag']:
             self.floating_solve_component = 'aeroelastic'
-        elif modeling_options['Level1']['flag']:
+        elif modeling_options['RAFT']['flag']:
             self.floating_solve_component = 'raft'
         else:
             self.floating_solve_component = 'floatingse'
 
         # aeroelastic won't compute floating period, execpt in special sims
-        if modeling_options['Level1']['flag']:
+        if modeling_options['RAFT']['flag']:
             self.floating_period_solve_component = 'raft'
         else:
             self.floating_period_solve_component = 'floatingse'
@@ -221,7 +221,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         
         # Flap control
         if control_constraints['flap_control']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize trailing edge flaps.')
             wt_opt.model.add_constraint('sse_tune.tune_rosco.flptune_coeff1',
                 lower = control_constraints['flap_control']['min'],
@@ -266,33 +266,33 @@ class PoseOptimizationWEIS(PoseOptimization):
             wt_opt.model.add_constraint(f'{self.floating_solve_component}.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
         if control_constraints['Max_TwrBsMyt']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
             wt_opt.model.add_constraint('aeroelastic.max_TwrBsMyt_ratio', 
                 upper = 1.0)
         if control_constraints['DEL_TwrBsMyt']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
             wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt_ratio', 
                 upper = 1.0)
             
         # Blade pitch travel
         if control_constraints['avg_pitch_travel']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize avg_pitch_travel constraints.')
             wt_opt.model.add_constraint('aeroelastic.avg_pitch_travel',
                 upper = control_constraints['avg_pitch_travel']['max'])
 
         # Blade pitch duty cycle (number of direction changes)
         if control_constraints['pitch_duty_cycle']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize pitch_duty_cycle constraints.')
             wt_opt.model.add_constraint('aeroelastic.pitch_duty_cycle',
                 upper = control_constraints['pitch_duty_cycle']['max'])
 
         # OpenFAST failure
         if self.opt['constraints']['openfast_failed']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with openfast_failed constraint.')
             wt_opt.model.add_constraint('aeroelastic.openfast_failed',upper = 1.)
 
@@ -308,7 +308,7 @@ class PoseOptimizationWEIS(PoseOptimization):
         # Tower constraints
         tower_opt = self.opt["design_variables"]["tower"]
         tower_constr = self.opt["constraints"]["tower"]
-        if tower_constr["global_buckling"]["flag"] and self.modeling['Level3']['flag']:
+        if tower_constr["global_buckling"]["flag"] and self.modeling['OpenFAST']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_global_buckling'
             if name in wt_opt.model._responses:
@@ -318,7 +318,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 
             wt_opt.model.add_constraint("towerse_post.constr_global_buckling", upper=1.0)
         
-        if tower_constr["shell_buckling"]["flag"] and self.modeling['Level3']['flag']:
+        if tower_constr["shell_buckling"]["flag"] and self.modeling['OpenFAST']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_shell_buckling'
             if name in wt_opt.model._responses:
@@ -328,7 +328,7 @@ class PoseOptimizationWEIS(PoseOptimization):
                 
             wt_opt.model.add_constraint("towerse_post.constr_shell_buckling", upper=1.0)
         
-        if tower_constr["stress"]["flag"] and self.modeling['Level3']['flag']:
+        if tower_constr["stress"]["flag"] and self.modeling['OpenFAST']['flag']:
             # Remove generic WISDEM one
             name = 'towerse.post.constr_stress'
             if name in wt_opt.model._responses:
@@ -340,8 +340,8 @@ class PoseOptimizationWEIS(PoseOptimization):
 
         # Damage constraints
         damage_constraints = self.opt['constraints']['damage']
-        if damage_constraints['tower_base']['flag'] and (self.modeling['Level2']['flag'] or self.modeling['Level3']['flag']):
-            if self.modeling['Level3']['flag'] != True:
+        if damage_constraints['tower_base']['flag'] and (self.modeling['OpenFAST_Linear']['flag'] or self.modeling['OpenFAST']['flag']):
+            if self.modeling['OpenFAST']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize with tower_base damage constraint.')
 
             tower_base_damage_max = damage_constraints['tower_base']['max']

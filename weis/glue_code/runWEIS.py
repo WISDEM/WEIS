@@ -78,7 +78,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
         if MPI:
-            if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
+            if modeling_options['OpenFAST']['flag'] or modeling_options['OpenFAST_Linear']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['General']['openfast_configuration']['mpi_run'] = True
                 modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down

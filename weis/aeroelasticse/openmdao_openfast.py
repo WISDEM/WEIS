@@ -77,7 +77,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
 
-        if not self.options['modeling_options']['Level3']['from_openfast']:
+        if not self.options['modeling_options']['OpenFAST']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
             self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
             self.n_U           = n_U       = rotorse_options['n_U_perf_surfaces']
@@ -476,7 +476,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('DEL_TwrBsMyt_ratio',val=0.0, desc='ratio of damage equivalent load of tower base bending moment in fore-aft direction to maximum allowable bending moment')
         
         # Tower outputs
-        if not self.options['modeling_options']['Level3']['from_openfast']:
+        if not self.options['modeling_options']['OpenFAST']['from_openfast']:
             self.add_output('tower_maxMy_Fx', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned x-direction corresponding to maximum fore-aft moment at tower base')
             self.add_output('tower_maxMy_Fy', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned y-direction corresponding to maximum fore-aft moment at tower base')
             self.add_output('tower_maxMy_Fz', val=np.zeros(n_full_tow-1), units='kN', desc='distributed force in tower-aligned z-direction corresponding to maximum fore-aft moment at tower base')
@@ -521,7 +521,7 @@ class FASTLoadCases(ExplicitComponent):
         self.of_inumber = -1
         self.sim_idx = -1
 
-        if modopt['Level2']['flag']:
+        if modopt['OpenFAST_Linear']['flag']:
             if MPI:
                 rank = MPI.COMM_WORLD.Get_rank()
                 lin_pkl_dir = os.path.join(self.options['opt_options']['general']['folder_output'], 'lin', 'rank_{}'.format(rank))
@@ -545,7 +545,7 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
         sys.stdout.flush()
 
-        if modopt['Level2']['flag']:
+        if modopt['OpenFAST_Linear']['flag']:
             self.sim_idx += 1
             ABCD = {
                 'sim_idx' : self.sim_idx,
@@ -577,12 +577,12 @@ class FASTLoadCases(ExplicitComponent):
 
         fst_vt = self.init_FAST_model()
 
-        if not modopt['Level3']['from_openfast']:
+        if not modopt['OpenFAST']['from_openfast']:
             fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         else:
             fast_reader = InputReader_OpenFAST()
-            fast_reader.FAST_InputFile  = modopt['Level3']['openfast_file']   # FAST input file (ext=.fst)
-            fast_reader.FAST_directory  = modopt['Level3']['openfast_dir']   # Path to fst directory files
+            fast_reader.FAST_InputFile  = modopt['OpenFAST']['openfast_file']   # FAST input file (ext=.fst)
+            fast_reader.FAST_directory  = modopt['OpenFAST']['openfast_dir']   # Path to fst directory files
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
@@ -614,12 +614,12 @@ class FASTLoadCases(ExplicitComponent):
             summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
             # Set up linear turbine model
-            if modopt['Level2']['flag']:
+            if modopt['OpenFAST_Linear']['flag']:
                 try: 
                     LinearTurbine = LinearTurbineModel(
                     self.FAST_runDirectory,
                     self.lin_case_name,
-                    nlin=modopt['Level2']['linearization']['NLinTimes'],
+                    nlin=modopt['OpenFAST_Linear']['linearization']['NLinTimes'],
                     reduceControls=True
                     )
                 except FileNotFoundError as e:
@@ -662,7 +662,7 @@ class FASTLoadCases(ExplicitComponent):
                     shutil.copy2(file, dest)
                 self.lin_idx += 1
 
-                # Shorten output names from linearization output to one like level3 openfast output
+                # Shorten output names from linearization output to one like OpenFAST openfast output
                 # This depends on how openfast sets up the linearization output names and may break if that is changed
                 OutList     = [out_name.split()[1][:-1] for out_name in LinearTurbine.DescOutput]
                 OutOps      = {}
@@ -675,7 +675,7 @@ class FASTLoadCases(ExplicitComponent):
                     'OutOps.yaml',OutOps)
 
                 # Set up Level 2 disturbance (simulation or DTQP)
-                if modopt['Level2']['simulation']['flag'] or modopt['Level2']['DTQP']['flag']:
+                if modopt['OpenFAST_Linear']['simulation']['flag'] or modopt['OpenFAST_Linear']['DTQP']['flag']:
                     # Extract disturbance(s)
                     level2_disturbance = []
                     for case in case_list:
@@ -688,10 +688,10 @@ class FASTLoadCases(ExplicitComponent):
                 # Run linear simulation:
 
                 # Get case list, wind inputs should have already been generated
-                if modopt['Level2']['simulation']['flag']:
+                if modopt['OpenFAST_Linear']['simulation']['flag']:
             
-                    if modopt['Level2']['DTQP']['flag']:
-                        raise Exception('Only DTQP or simulation flag can be set to true in Level2 modeling options')
+                    if modopt['OpenFAST_Linear']['DTQP']['flag']:
+                        raise Exception('Only DTQP or simulation flag can be set to true in OpenFAST_Linear modeling options')
 
                     # This is going to use the last discon_in file of the linearization set as the simulation file
                     # Currently fine because openfast is executed (or not executed if overwrite=False) after the file writing
@@ -734,7 +734,7 @@ class FASTLoadCases(ExplicitComponent):
                         # Overwrite timeseries with simulated data instead of saved linearization timeseries
                         chan_time = ct
 
-                elif modopt['Level2']['DTQP']['flag']:
+                elif modopt['OpenFAST_Linear']['DTQP']['flag']:
 
                     summary_stats, extreme_table, DELs, Damage = dtqp_wrapper(
                         LinearTurbine, 
@@ -753,7 +753,7 @@ class FASTLoadCases(ExplicitComponent):
             self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
             
             # Save AEP value to linear pickle file
-            if modopt['Level2']['flag']:
+            if modopt['OpenFAST_Linear']['flag']:
                 with open(self.lin_pkl_file_name, 'rb') as handle:
                         ABCD_list = pickle.load(handle)
 
@@ -804,54 +804,54 @@ class FASTLoadCases(ExplicitComponent):
         if not modeling_options:
             modeling_options = self.options['modeling_options']
 
-        if 'simulation' in modeling_options['Level3']:
-            for key in modeling_options['Level3']['simulation']:
-                fst_vt['Fst'][key] = modeling_options['Level3']['simulation'][key]
+        if 'simulation' in modeling_options['OpenFAST']:
+            for key in modeling_options['OpenFAST']['simulation']:
+                fst_vt['Fst'][key] = modeling_options['OpenFAST']['simulation'][key]
 
-        if 'ElastoDyn' in modeling_options['Level3']:
-            for key in modeling_options['Level3']['ElastoDyn']:
-                fst_vt['ElastoDyn'][key] = modeling_options['Level3']['ElastoDyn'][key]
+        if 'ElastoDyn' in modeling_options['OpenFAST']:
+            for key in modeling_options['OpenFAST']['ElastoDyn']:
+                fst_vt['ElastoDyn'][key] = modeling_options['OpenFAST']['ElastoDyn'][key]
         
-        if 'ElastoDynBlade' in modeling_options['Level3']:
-            for key in modeling_options['Level3']['ElastoDynBlade']:
-                fst_vt['ElastoDynBlade'][key] = modeling_options['Level3']['ElastoDynBlade'][key]
+        if 'ElastoDynBlade' in modeling_options['OpenFAST']:
+            for key in modeling_options['OpenFAST']['ElastoDynBlade']:
+                fst_vt['ElastoDynBlade'][key] = modeling_options['OpenFAST']['ElastoDynBlade'][key]
 
-        if 'ElastoDynTower' in modeling_options['Level3']:   
-            for key in modeling_options['Level3']['ElastoDynTower']:
-                fst_vt['ElastoDynTower'][key] = modeling_options['Level3']['ElastoDynTower'][key]
+        if 'ElastoDynTower' in modeling_options['OpenFAST']:   
+            for key in modeling_options['OpenFAST']['ElastoDynTower']:
+                fst_vt['ElastoDynTower'][key] = modeling_options['OpenFAST']['ElastoDynTower'][key]
 
-        if 'AeroDyn' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['AeroDyn']:
-                fst_vt['AeroDyn'][key] = copy.copy(modeling_options['Level3']['AeroDyn'][key])
+        if 'AeroDyn' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['AeroDyn']:
+                fst_vt['AeroDyn15'][key] = copy.copy(modeling_options['OpenFAST']['AeroDyn'][key])
 
-        if 'InflowWind' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['InflowWind']:
-                fst_vt['InflowWind'][key] = modeling_options['Level3']['InflowWind'][key]
+        if 'InflowWind' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['InflowWind']:
+                fst_vt['InflowWind'][key] = modeling_options['OpenFAST']['InflowWind'][key]
             
-        if 'ServoDyn' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['ServoDyn']:
-                fst_vt['ServoDyn'][key] = modeling_options['Level3']['ServoDyn'][key]
+        if 'ServoDyn' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['ServoDyn']:
+                fst_vt['ServoDyn'][key] = modeling_options['OpenFAST']['ServoDyn'][key]
 
-        if 'SubDyn' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['SubDyn']:
-                fst_vt['SubDyn'][key] = modeling_options['Level3']['SubDyn'][key]
+        if 'SubDyn' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['SubDyn']:
+                fst_vt['SubDyn'][key] = modeling_options['OpenFAST']['SubDyn'][key]
 
-        if 'SeaState' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['SeaState']:
-                fst_vt['SeaState'][key] = modeling_options['Level3']['SeaState'][key]
+        if 'SeaState' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['SeaState']:
+                fst_vt['SeaState'][key] = modeling_options['OpenFAST']['SeaState'][key]
 
-        if 'HydroDyn' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['HydroDyn']:
-                fst_vt['HydroDyn'][key] = modeling_options['Level3']['HydroDyn'][key]
+        if 'HydroDyn' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['HydroDyn']:
+                fst_vt['HydroDyn'][key] = modeling_options['OpenFAST']['HydroDyn'][key]
 
-        if 'MoorDyn' in modeling_options['Level3']:    
-            for key in modeling_options['Level3']['MoorDyn']:
-                fst_vt['MoorDyn'][key] = modeling_options['Level3']['MoorDyn'][key]
+        if 'MoorDyn' in modeling_options['OpenFAST']:    
+            for key in modeling_options['OpenFAST']['MoorDyn']:
+                fst_vt['MoorDyn'][key] = modeling_options['OpenFAST']['MoorDyn'][key]
         
-        if 'outlist' in modeling_options['Level3']:
-            for key1 in modeling_options['Level3']['outlist']:
-                    for key2 in modeling_options['Level3']['outlist'][key1]:
-                        fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
+        if 'outlist' in modeling_options['OpenFAST']:
+            for key1 in modeling_options['OpenFAST']['outlist']:
+                    for key2 in modeling_options['OpenFAST']['outlist'][key1]:
+                        fst_vt['outlist'][key1][key2] = modeling_options['OpenFAST']['outlist'][key1][key2]
         
         if ('openfast_configuration' in modeling_options['General']) and ('path2dll' in modeling_options['General']['openfast_configuration']):
             fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
@@ -1397,7 +1397,7 @@ class FASTLoadCases(ExplicitComponent):
             # Use coarse member nodes for HydroDyn
 
             # Simplify members if using potential model only
-            if modopt["Level1"]["potential_model_override"] == 2:
+            if modopt["RAFT"]["potential_model_override"] == 2:
                 joints_xyz = np.array([[0,0,0],[0,0,-1]])
                 N1 = np.array([N1[0]])
                 N2 = np.array([N2[0]])
@@ -1435,10 +1435,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NFillGroups'] = 0
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
-            if modopt["Level1"]["potential_model_override"] == 1:
+            if modopt["RAFT"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
-            elif modopt["Level1"]["potential_model_override"] == 2:
+            elif modopt["RAFT"]["potential_model_override"] == 2:
                 # BEM only, no strip theory
                 fst_vt['HydroDyn']['SimplCd'] = fst_vt['HydroDyn']['SimplCdMG'] = 0.0
                 fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
@@ -1454,7 +1454,7 @@ class FASTLoadCases(ExplicitComponent):
                     # Potential modeling of fixed substructres not supported
                     if modopt['flags']['floating']:
                         idx = modopt['floating']['members']['platform_elem_memid'][k]
-                        PropPotBool[k] = modopt["Level1"]["model_potential"][idx]    
+                        PropPotBool[k] = modopt["RAFT"]["model_potential"][idx]    
                 fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
             if fst_vt['HydroDyn']['NBody'] > 1:
@@ -1472,7 +1472,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
 
-            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['Level2']['flag'] and modopt['Level1']['runPyHAMS']:
+            if fst_vt['HydroDyn']['PotMod'] == 1 and modopt['OpenFAST_Linear']['flag'] and modopt['RAFT']['runPyHAMS']:
                 fst_vt['HydroDyn']['ExctnMod'] = 1
                 fst_vt['HydroDyn']['RdtnMod'] = 1
                 fst_vt['HydroDyn']['RdtnDT'] = "DEFAULT"
@@ -1609,7 +1609,7 @@ class FASTLoadCases(ExplicitComponent):
                     StC_i['StC_XY_M']       = inputs['TMD_mass'][i_TMD]
 
                 # Compute spring offset for each direction, initializing
-                g = modopt['Level3']['simulation']['Gravity']
+                g = modopt['OpenFAST']['simulation']['Gravity']
                 spring_offset = np.zeros(3)
                 
                 # Set Mass, Stiffness, Damping only in DOFs enabled
@@ -1713,7 +1713,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Channels for monopile-based structure
         if modopt['flags']['monopile']:
-            if modopt['Level3']['simulation']['CompSub']:
+            if modopt['OpenFAST']['simulation']['CompSub']:
                 k=1
                 for i in range(len(self.Z_out_SD_mpl)):
                     if k==9:
@@ -1952,8 +1952,8 @@ class FASTLoadCases(ExplicitComponent):
         
         # FAST wrapper setup
         # JJ->DZ: here is the first point in logic for linearization
-        if modopt['Level2']['flag']:
-            linearization_options               = modopt['Level2']['linearization']
+        if modopt['OpenFAST_Linear']['flag']:
+            linearization_options               = modopt['OpenFAST_Linear']['linearization']
 
             # Use openfast binary until library works
             fastBatch                           = LinearFAST(**linearization_options)
@@ -2000,7 +2000,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Blade fatigue: spar caps at the root (upper & lower?), TE at max chord
         # Convert ultstress and S_intercept values to kPa with 1e-3 factor
-        if not modopt['Level3']['from_openfast']:
+        if not modopt['OpenFAST']['from_openfast']:
             for u in ['U','L']:
                 blade_fatigue_root = FatigueParams(load2stress=1.0,
                                                 lifetime=inputs['lifetime'],
@@ -2138,7 +2138,7 @@ class FASTLoadCases(ExplicitComponent):
         if self.options['modeling_options']['flags']['tower']:
             outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
-        if modopt['flags']['monopile'] and modopt['Level3']['flag']:
+        if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
 
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
@@ -2148,11 +2148,11 @@ class FASTLoadCases(ExplicitComponent):
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
-        if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
+        if modopt['flags']['floating'] or (modopt['OpenFAST']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
-        if modopt['Level3']['flag']:
+        if modopt['OpenFAST']['flag']:
             if any(summary_stats['openfast_failed']['mean'] > 0):
                 outputs['openfast_failed'] = 2
 
@@ -2511,7 +2511,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
-        if not modopt['Level3']['from_openfast']:
+        if not modopt['OpenFAST']['from_openfast']:
             for k in range(1,self.n_blades+1):
                 for u in ['U','L']:
                     damage[f'BladeRootSpar{u}_Axial{k}'] = (damage[f'RootSpar{u}_Fzb{k}'] +
@@ -2535,7 +2535,7 @@ class FASTLoadCases(ExplicitComponent):
                         damage[f'LSS{sstr}'] += damage[f'LSShft{s}{k}{x}a']
                     for ix, x in enumerate(['xy','z']):
                         damage[f'TowerBase{sstr}'] += damage[f'TwrBs{s}{k}{x}t']
-                        if modopt['flags']['monopile'] and modopt['Level3']['flag']:
+                        if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
                             damage[f'MonopileBase{sstr}'] += damage[f'M1N1{s}{k}K{x}e']
 
             # Assemble damages

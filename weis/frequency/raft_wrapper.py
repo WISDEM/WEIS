@@ -19,12 +19,12 @@ class RAFT_WEIS(om.Group):
 
         raft_opt = {}
         # Level 1 options from WEIS
-        for key in weis_opt['Level1']:
-            raft_opt[key] = weis_opt['Level1'][key]
+        for key in weis_opt['RAFT']:
+            raft_opt[key] = weis_opt['RAFT'][key]
 
         # Other options needed for RAFT
-        min_freq = weis_opt['Level1']['min_freq']
-        max_freq = weis_opt['Level1']['max_freq']
+        min_freq = weis_opt['RAFT']['min_freq']
+        max_freq = weis_opt['RAFT']['max_freq']
         frequencies = np.arange(min_freq, max_freq+0.5*min_freq, min_freq)
         raft_opt['nfreq'] = len(frequencies)
         raft_opt['n_cases'] = weis_opt['DLC_driver']['n_cases']
@@ -58,7 +58,7 @@ class RAFT_WEIS(om.Group):
         members_opt['n_ballast_type'] = len(weis_opt["floating"]["members"]["ballast_types"])
 
         for k in range(members_opt['nmembers']):
-            members_opt[f"platform_member{k+1}_potMod"] = weis_opt["Level1"]["model_potential"][k]
+            members_opt[f"platform_member{k+1}_potMod"] = weis_opt["RAFT"]["model_potential"][k]
 
         mooring_opt = {}
         mooring_opt['nlines'] = weis_opt['mooring']['n_lines']

@@ -19,7 +19,7 @@ WISDEM:
     BOS:
         flag: False
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
     regulation_trajectory: IEA-15-240-RWT-outputs.yaml
