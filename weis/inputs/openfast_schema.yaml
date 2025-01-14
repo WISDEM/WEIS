@@ -77,6 +77,11 @@ properties:
                         enum: [0,1]
                         default: 1
                         description: Compute control and electrical-drive dynamics (switch) {0=None; 1=ServoDyn}
+                    CompSeaSt:
+                        type: integer
+                        enum: [0,1]
+                        default: 0
+                        description: Compute sea state information (switch) {0=None; 1=SeaState}
                     CompHydro:
                         type: integer
                         enum: [0,1]
@@ -171,6 +176,10 @@ properties:
                         type: string
                         default: none
                         description: Name of file containing control and electrical-drive input parameters (quoted string)
+                    SeaStFile:
+                        type: string
+                        default: none
+                        description: Name of file containing sea state input parameters (quoted string)
                     HydroFile:
                         type: string
                         default: none
@@ -372,7 +381,7 @@ properties:
                         maximum: 100.0
                         unit: none
                         description: Power law exponent (-)
-                    Filename_Uni:
+                    FileName_Uni:
                         type: string
                         default: none
                         description: Filename of time series data for uniform wind field [used only for WindType = 2]
@@ -394,7 +403,7 @@ properties:
                         type: string
                         default: none
                         description: Name of the Full field wind file to use (.bts) [used only for WindType = 3]
-                    FilenameRoot:
+                    FileNameRoot:
                         type: string
                         default: none
                         description: Rootname of the full-field wind file to use (.wnd, .sum) [used only for WindType = 4]
@@ -568,16 +577,16 @@ properties:
                         default: 0
                         description: Number of lidar measurement beams (0-5)(used when SensorType = 1)
                     FocalDistanceX:
-                        type: number
-                        default: 0
+                        type: array
+                        default: [0.]
                         description: Focal distance coordinates of the lidar beam in the x direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
                     FocalDistanceY:
-                        type: number
-                        default: 0.
+                        type: array
+                        default: [0.]
                         description: Focal distance coordinates of the lidar beam in the y direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
                     FocalDistanceZ:
-                        type: number
-                        default: 0.
+                        type: array
+                        default: [0.]
                         description: Focal distance coordinates of the lidar beam in the z direction (relative to hub height) (only first coordinate used for SensorType 2 and 3) (m)
                     RotorApexOffsetPos:
                         type: array
@@ -621,7 +630,7 @@ properties:
                         maximum: 10.
                         unit: s
                         description: Time interval for aerodynamic calculations. Set it to 0. for default (same as main fst)
-                    WakeMod:
+                    Wake_Mod:
                         type: integer
                         enum: [0, 1, 2, 3, 11, 12, 13]
                         default: 1
@@ -648,7 +657,7 @@ properties:
                     FrozenWake:
                         type: boolean
                         default: False
-                        description: Assume frozen wake during linearization? (flag) [used only when WakeMod=1 and when linearizing]
+                        description: Assume frozen wake during linearization? (flag) [used only when Wake_Mod=1 and when linearizing]
                     CavitCheck:
                         type: boolean
                         default: False
@@ -657,67 +666,115 @@ properties:
                         type: boolean
                         default: False
                         description: Include buoyancy effects? (flag)
+                    NacelleDrag:
+                        type: boolean
+                        default: False
+                        description: Include Nacelle Drag effects? (flag)
                     CompAA:
                         type: boolean
                         default: False
-                        description: Flag to compute AeroAcoustics calculation [only used when WakeMod=1 or 2]
+                        description: Flag to compute AeroAcoustics calculation [only used when Wake_Mod=1 or 2]
                     AA_InputFile:
                         type: string
                         default: AeroAcousticsInput.dat
                         description: Aeroacoustics input file
+                    BEM_Mod:
+                        type: integer
+                        enum: [1,2]
+                        default: 1
+                        description: BEM model {1=legacy NoSweepPitchTwist, 2=polar} (switch) [used for all Wake_Mod to determine output coordinate system]
                     SkewMod:
                         type: integer
                         enum: [1,2,3]
                         default: 2
-                        description: Type of skewed-wake correction model (switch) {1=uncoupled, 2=Pitt/Peters, 3=coupled} [used only when WakeMod=1]
+                        description: Type of skewed-wake correction model (switch) {1=uncoupled, 2=Pitt/Peters, 3=coupled} [used only when Wake_Mod=1]
+                    Skew_Mod:
+                        type: integer
+                        enum: [-1, 0 ,1]
+                        default: 1
+                        description: Skew model {0=No skew model, -1=Remove non-normal component for linearization, 1=skew model active}
+                    SkewMomCorr:
+                        type: boolean
+                        default: False
+                        description: Turn the skew momentum correction on or off [used only when Skew_Mod=1]
+                    SkewRedistr_Mod:
+                        type: integer
+                        enum: [0, 1]
+                        default: 1
+                        description: Type of skewed-wake correction model (switch) {0=no redistribution, 1=Glauert/Pitt/Peters} [used only when Skew_Mod=1]
+                    SkewRedistrFactor:
+                        type: number
+                        default: 1.4726215563702154
+                        description: Constant used in Pitt/Peters skewed wake model {or 'default' is 15/32*pi} (-) [used only when Skew_Mod=1 and SkewRedistr_Mod=1]
                     SkewModFactor:
                         type: number
                         default: 1.4726215563702154
-                        description: Constant used in Pitt/Peters skewed wake model {or 'default' is 15/32*pi} (-) [used only when SkewMod=2; unused when WakeMod=0]
+                        description: Constant used in Pitt/Peters skewed wake model {or 'default' is 15/32*pi} (-) [used only when SkewMod=2; unused when Wake_Mod=0]
                     TipLoss:
                         type: boolean
                         default: True
-                        description: Use the Prandtl tip-loss model? (flag) [used only when WakeMod=1]
+                        description: Use the Prandtl tip-loss model? (flag) [used only when Wake_Mod=1]
                     HubLoss:
                         type: boolean
                         default: True
-                        description: Use the Prandtl hub-loss model? (flag) [used only when WakeMod=1]
+                        description: Use the Prandtl hub-loss model? (flag) [used only when Wake_Mod=1]
                     TanInd:
                         type: boolean
                         default: True
-                        description: Include tangential induction in BEMT calculations? (flag) [used only when WakeMod=1]
+                        description: Include tangential induction in BEMT calculations? (flag) [used only when Wake_Mod=1]
                     AIDrag:
                         type: boolean
                         default: True
-                        description: Include the drag term in the axial-induction calculation? (flag) [used only when WakeMod=1]
+                        description: Include the drag term in the axial-induction calculation? (flag) [used only when Wake_Mod=1]
                     TIDrag:
                         type: boolean
                         default: True
-                        description: Include the drag term in the tangential-induction calculation? (flag) [used only when WakeMod=1 and TanInd=TRUE]
+                        description: Include the drag term in the tangential-induction calculation? (flag) [used only when Wake_Mod=1 and TanInd=TRUE]
                     IndToler:
                         type: number
                         default: 0.0
-                        description: Convergence tolerance for BEMT nonlinear solve residual equation {or 0.0 for default} (-) [used only when WakeMod=1]
+                        description: Convergence tolerance for BEMT nonlinear solve residual equation {or 0.0 for default} (-) [used only when Wake_Mod=1]
                     MaxIter:
                         type: integer
                         default: 500
-                        description: Maximum number of iteration steps (-) [used only when WakeMod=1]
+                        description: Maximum number of iteration steps (-) [used only when Wake_Mod=1]
+                    SectAvg:
+                        type: boolean
+                        default: False
+                        description: Use sector averaging (flag)
+                    SectAvgWeighting:
+                        type: integer
+                        enum: [1]
+                        default: 1
+                        description: Weighting function for sector average {1=Uniform, default=1} within a sector centered on the blade (switch) [used only when SectAvg=True]
+                    SectAvgNPoints:
+                        type: integer
+                        default: 5
+                        description: Number of points per sectors (-) {default=5} [used only when SectAvg=True]
+                    SectAvgPsiBwd:
+                        type: number
+                        default: -60
+                        description: Backward azimuth relative to blade where the sector starts (<=0) {default=-60} (deg) [used only when SectAvg=True]
+                    SectAvgPsiFwd:
+                        type: number
+                        default: 60
+                        description: Forward azimuth relative to blade where the sector ends (>=0) {default=60} (deg) [used only when SectAvg=True]
                     DBEMT_Mod:
                         type: integer
                         enum: [1, 2, 3]
                         default: 2
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when WakeMod=2]
+                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when Wake_Mod=2]
                     tau1_const:
                         type: number
                         unit: s
                         default: 2.0
                         minimum: 0.0
                         maximum: 1000.0
-                        description: Time constant for DBEMT (s) [used only when WakeMod=2 and DBEMT_Mod=1]
+                        description: Time constant for DBEMT (s) [used only when Wake_Mod=2 and DBEMT_Mod=1]
                     OLAFInputFileName:
                         type: string
                         default: unused
-                        description: Input file for OLAF [used only when WakeMod=3]
+                        description: Input file for OLAF [used only when Wake_Mod=3]
                     OLAF:
                         type: object
                         default: {}
@@ -870,15 +927,29 @@ properties:
                                 type: integer
                                 default: 0
                                 description: (GB DEBUG 7/8) Number of grid points for VTK output
+                    AoA34:
+                        type: boolean
+                        default: True
+                        description: Sample the angle of attack (AoA) at the 3/4 chord or the AC point {default=True} [always used]
                     UAMod:
                         type: integer
                         enum: [1,2,3,4,5,6,7]
                         default: 3
                         description: Unsteady Aero Model Switch (switch) {1=Baseline model (Original), 2=Gonzalez's variant (changes in Cn,Cc,Cm), 3=Minemma/Pierce variant (changes in Cc and Cm)} [used only when AFAeroMod=2]
+                    UA_Mod:
+                        type: integer
+                        enum: [0,1,2,3,4,5,6,7]
+                        default: 3
+                        description: Unsteady Aero Model Switch (switch) {0=Quasi-steady (no UA), 2=B-L Gonzalez, 3=B-L Minnema/Pierce, 4=B-L HGM 4-states, 5=B-L HGM+vortex 5 states, 6=Oye, 7=Boeing-Vertol}
                     FLookup:
                         type: boolean
                         default: True
                         description: Flag to indicate whether a lookup for f' will be calculated (TRUE) or whether best-fit exponential equations will be used (FALSE); if FALSE S1-S4 must be provided in airfoil input files (flag) [used only when AFAeroMod=2]
+                    IntegrationMethod:
+                        type: integer
+                        enum: [1,2,3,4]
+                        default: 3
+                        description: Switch to indicate which integration method UA uses (1=RK4, 2=AB4, 3=ABM4, 4=BDF2)
                     UAStartRad:
                         type: number
                         default: 0.
@@ -946,6 +1017,36 @@ properties:
                             maxItems: 3
                             minimum: -100.
                             maximum: 100.
+                    NacArea:                       
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Projected area of the nacelle in X, Y, Z in the nacelle coordinate system (m^2)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                            minimum: -100.
+                            maximum: 100.
+                    NacCd:                       
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Drag coefficient for the nacelle areas defined above (-)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                            minimum: 0.
+                            maximum: 10.
+                    NacDragAC:                       
+                        type: array
+                        default: [0.0, 0.0, 0.0]
+                        description: Position of aerodynamic center of nacelle drag in nacelle coordinates (m)
+                        items:
+                            type: number
+                            minItems: 3
+                            maxItems: 3
+                            minimum: -100.
+                            maximum: 100.
                     TFinAero:
                         type: boolean
                         default: False
@@ -985,10 +1086,6 @@ properties:
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
-                    IntegrationMethod:
-                        type: number
-                        default: 3
-                        description: Switch to indicate which integration method UA uses (1=RK4, 2=AB4, 3=ABM4, 4=BDF2)
             ElastoDyn: &ofelastodyn
                 type: object
                 default: {}
@@ -1302,6 +1399,74 @@ properties:
                         default: 0.0
                         unit: kg*m^2/rad/s^2
                         description: Rotor-teeter hard-stop linear-spring constant (N-m/rad) [used only for 2 blades and when TeetMod=1]
+                    YawFrctMod:
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
+                        description: 'Yaw-friction model {0: none, 1: friction independent of yaw-bearing force and bending moment, 2: friction with Coulomb terms depending on yaw-bearing force and bending moment, 3: user defined model} (switch)'
+                    M_CSmax:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 300.0
+                        unit: N*m
+                        description: Maximum static Coulomb friction torque (N-m) [M_CSmax when YawFrctMod=1; |Fz|*M_CSmax when YawFrctMod=2 and Fz<0]
+                    M_FCSmax:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: N*m
+                        description: Maximum static Coulomb friction torque proportional to yaw bearing shear force (N-m) [sqrt(Fx^2+Fy^2)*M_FCSmax; only used when YawFrctMod=2]
+                    M_MCSmax:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: N*m
+                        description: Maximum static Coulomb friction torque proportional to yaw bearing bending moment (N-m) [sqrt(Mx^2+My^2)*M_MCSmax; only used when YawFrctMod=2]
+                    M_CD:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 40.0
+                        unit: N*m
+                        description: Dynamic Coulomb friction moment (N-m) [M_CD when YawFrctMod=1; |Fz|*M_CD when YawFrctMod=2 and Fz<0]
+                    M_FCD:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: N*m
+                        description: Dynamic Coulomb friction moment proportional to yaw bearing shear force (N-m) [sqrt(Fx^2+Fy^2)*M_FCD; only used when YawFrctMod=2]
+                    M_MCD:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: N*m
+                        description: Dynamic Coulomb friction moment proportional to yaw bearing bending moment (N-m) [sqrt(Mx^2+My^2)*M_MCD; only used when YawFrctMod=2]
+                    sig_v:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: N*m/(rad/s)
+                        description: Linear viscous friction coefficient (N-m/(rad/s))
+                    sig_v2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: N*m/(rad/s)^2
+                        description: Quadratic viscous friction coefficient (N-m/(rad/s)^2)
+                    OmgCut:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e4
+                        default: 0.0
+                        unit: rad/s
+                        description: Yaw angular velocity cutoff below which viscous friction is linearized (rad/s)
                     Furling:
                         type: boolean
                         default: False
