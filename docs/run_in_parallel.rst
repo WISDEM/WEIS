@@ -1,93 +1,35 @@
-Run in parallel
+Running WEIS in parallel
 --------------
 
 WEIS can be run sequentially on a single processor. WEIS can also be parallelized to handle larger problems in a timely manner.
 
+The parallelization of WEIS leverages the [MPI library](https://mpi4py.readthedocs.io/en/stable/). To run WEIS in parallel, make sure that your WEIS environment includes the library mpi4py as discussed in the README.md at the root level of this repo, or on the `WEIS GitHub page <https://github.com/WISDEM/WEIS/>`_.
 
-Background
+When mpi4py is available, running WEIS in parallel is as simple as executing this command:
+
+.. code-block:: bash
+
+  mpiexec -np 20 python weis_driver.py
+
+Where you can adjust the number of processors available (`-np`) based on your computational resources. The lower limit for `-np` is 2, and there is no upper limit, as WEIS allocates processes according to its internal logic. In the worst case, WEIS might simply not use the full resources made available by the user.
+
+Advanced users and developers, the next paragraphs document the parallelization logic.
+
+Advanced Users and Developers
 ------------------------------------
-
-The parallelization of WEIS leverages the [MPI library](https://mpi4py.readthedocs.io/en/stable/). Before proceeding, please make sure that your WEIS environment includes the library mpi4py as discussed in the README.md at the root level of this repo, or on the `WEIS GitHub page <https://github.com/WISDEM/WEIS/>`_.
 
 Parallelization in WEIS happens at two levels: 
 * The first level is triggered when an optimization is run and a gradient-based optimizer is called. In this case, the OpenMDAO library will execute the finite differences in parallel. OpenMDAO then assembles all partial derivatives in a single Jacobian and iterations progress.
 * The second level is triggered when multiple OpenFAST runs are specified. These are executed in parallel.
 The two levels of parallelization are integrated and can co-exist as long as sufficient computational resources are available.
 
-WEIS helps you set up the right call to MPI given the available computational resources, see the sections below.
-
-
-How to run WEIS in parallel
-------------------------------------
-
-Running WEIS in parallel is slightly more elaborated than running it sequentially. A first example of a parallel call for a design optimization in WEIS is provided in example  `03_NREL5MW_OC3 <https://github.com/WISDEM/WEIS/tree/master/examples/03_NREL5MW_OC3_spar>`_. A second example runs an OpenFAST model in parallel, see example `02_run_openfast_cases <https://github.com/WISDEM/WEIS/tree/develop/examples/02_run_openfast_cases>`_. 
-
-
-Design optimization in parallel
-------------------------------------
-
-These instructions follow example 03 `03_NREL5MW_OC3 <https://github.com/WISDEM/WEIS/tree/master/examples/03_NREL5MW_OC3_spar>`_. To run the design optimization in parallel, the first step consists of a pre-processing call to WEIS. This step returns the number of finite differences that are specified given the analysis_options.yaml file. To execute this step, in a terminal window navigate to example 03 and type:
+Based on the number of processors available, WEIS allocates the processors to either handle the finite differences or the OpenFAST calls. The allocation is performed by running WEIS twice. The two calls happen in the script `main.py <https://github.com/WISDEM/WEIS/blob/develop/weis/main.py>`_. The first call to WEIS is performed by passing the keyword argument `preMPI` set to True. Here, WEIS sets up the OpenMDAO problem and returns the number of design variables and OpenFAST calls. The two integers are stored among the `modeling_options`. The second call of WEIS allocates the processors based on these two numbers. Note that advanced users can ask WEIS to return some print statements describing the problem size and the allocation of the resources given the number of processors. To do so, users need to set the `maxnP` keyword argument.
 
 .. code-block:: bash
+  _, modeling_options, _ = run_weis(fname_wt_input,
+                                    fname_modeling_options, 
+                                    fname_analysis_options, 
+                                    prepMPI=True, 
+                                    maxnP=maxnP)
 
-  python weis_driver.py --preMPI=True
-
-In the terminal the code will return the best setup for an optimal MPI call given your problem. 
-
-If you are resource constrained, you can pass the keyword argument `--maxnP` and set the maximum number of processors that you have available. If you have 20, type:
-
-.. code-block:: bash
-
-  python weis_driver.py --preMPI=True --maxnP=20
-
-These two commands will help you set up the appropriate computational resources.
-
-At this point, you are ready to launch WEIS in parallel. If you have 20 processors, your call to WEIS will look like:
-
-.. code-block:: bash
-
-  mpiexec -np 20 python weis_driver.py
-
-
-Parallelize calls to OpenFAST
-------------------------------------
-
-WEIS can be used to run OpenFAST simulations, such as design load cases.
-[More information about setting DLCs can be found here](https://github.com/WISDEM/WEIS/blob/docs/docs/dlc_generator.rst)
-
-To do so, WEIS is run with a single function evaluation that fires off a number of OpenFAST simulations.
-
-Let's look at an example in `02_run_openfast_cases <https://github.com/WISDEM/WEIS/tree/develop/examples/02_run_openfast_cases>`_.
-
-In a terminal, navigate to example 02 and type:
-
-.. code-block:: bash
-  python weis_driver_loads.py --preMPI=True
-
-The terminal should return this message
-
-.. code-block:: bash
-  Your problem has 0 design variable(s) and 7 OpenFAST run(s)
-
-  You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1
-
-  To run the code in parallel with MPI, execute one of the following commands
-
-  If you have access to (at least) 8 processors, please call WEIS as:
-  mpiexec -np 8 python weis_driver.py
-
-
-  If you do not have access to 8 processors
-  please provide your maximum available number of processors by typing:
-  python weis_driver.py --preMPI=True --maxnP=xx
-  And substitute xx with your number of processors
-
-If you have access to 8 processors, you are now ready to execute your script by typing 
-
-.. code-block:: bash
-  mpiexec -np 8 python weis_driver_loads.py
-
-If you have access to fewer processors, say 4, adjust the -np entry accordingly
-
-.. code-block:: bash
-  mpiexec -np 4 python weis_driver_loads.py
+The allocation of processors follows a color mapping scheme. Let's explain it with an example. Say the design optimization has 8 design variables and 10 OpenFAST simulations. The maximum level of parallelization will use 8+8x10=88 processors. The color mapping logic will make sure that 8 processors are passed to OpenMDAO to handle the finite differencing and build the Jacobian, whereas the other 80 processors will be sitting and waiting to receive the 80 OpenFAST simulations, 10 per design variable. If the user allocates more than 88 processors, all the extra processors will sit and do nothing, until WEIS completes its run. If the user allocates less than 88 processors, WEIS will first stack some OpenFAST runs sequentially. If less than 16 processors are available, WEIS will start allocating less than 8 processors for the Jacobian. Note that this setup is robust, but is suboptimal, as at any given time either the top 8 master processors are running and the bottom 80 OpenFAST processors are idling, or viceversa the top 8 master processors are idling and the bottom 80 OpenFAST processors are running. The suboptimality is highest for problems with many design variables and a single OpenFAST run. In this latter case, at any given time only 50% of the resources are used at any given time. The logic however works nicely for problems with several OpenFAST runs, which represent the biggest computational burden of WEIS and therefore benefit greatly from being parallelized.

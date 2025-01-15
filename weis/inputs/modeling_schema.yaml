@@ -3220,6 +3220,13 @@ properties:
                             type: string
                             enum: ['A+','A','B','C']
                             description: The class of turbulence, will overwrite class defined in geometry options. Only valid in the AEP DLC.
+                        user_group:
+                            type: [object,array]
+                            items:
+                                type: object
+                                description: Groups
+                            default: {}
+                            description: Define additional groups to alter DLCs or sweep additional paramters.  Users can input single values to change all of the simulations in a DLC, multiple values to add an additional group to sweep over, or a list of new groups in the yaml format.
                         turbulent_wind:
                             type: object
                             default: {}
@@ -3607,7 +3614,11 @@ properties:
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
-
+            openfast_input_map:
+                type: object
+                default: {}
+                description: Users can add to the openfast_input_map of the DLC driver here, with key value pairs
+                
     ROSCO:
         type: object
         default: {}

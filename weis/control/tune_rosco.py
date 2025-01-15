@@ -332,6 +332,10 @@ class TuneROSCO(ExplicitComponent):
             # Collect options
             rs_options = {}
             rs_options['linturb_options'] = rosco_init_options['linmodel_tuning']
+            rs_options['linturb_options']['linfile_path'] = os.path.join(
+                os.path.dirname(self.modeling_options['fname_input_modeling']),
+                rs_options['linturb_options']['linfile_path']
+                )   # Path relative to modeling options where it's defined in 
             rs_options['ROSCO_options'] = {}
             rs_options['ROSCO_options']['controller_params'] = rosco_init_options
             rs_options['path_options']  = {'output_dir': os.path.join(self.options['opt_options']['general']['folder_output'], 
@@ -339,6 +343,7 @@ class TuneROSCO(ExplicitComponent):
                                            'output_name': 'robust_scheduling'
                                           }
             rs_options['opt_options']   = scheduling_options
+            os.makedirs(rs_options['path_options']['output_dir'],exist_ok=True)
 
             # Add inputs to ROSCO_options to bypass need to generate turbine object in the ROSCO toolbox
             rs_options['ROSCO_options']['dict_inputs'] = inputs
