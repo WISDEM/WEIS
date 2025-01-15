@@ -92,6 +92,11 @@
                             "type": "number",
                             "default": -9999,
                             "decription": "All OpenFAST outputs will be filled with this if the simulation fails."
+                        },
+                        "write_stdout": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "Write standard output to own file.  Output will not print to screen."
                         }
                     }
                 },
@@ -186,21 +191,6 @@
                             "type": "boolean",
                             "default": true,
                             "description": "Flag to derive the regulation trajectory in region III in terms of pitch and TSR"
-                        },
-                        "peak_thrust_shaving": {
-                            "type": "boolean",
-                            "default": false,
-                            "description": "If True, apply peak thrust shaving within RotorSE."
-                        },
-                        "thrust_shaving_coeff": {
-                            "type": "number",
-                            "default": 1.0,
-                            "description": "Scalar applied to the max torque within RotorSE for peak thrust shaving. Only used if `peak_thrust_shaving` is True."
-                        },
-                        "fix_pitch_regI12": {
-                            "type": "boolean",
-                            "default": false,
-                            "description": "If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced."
                         },
                         "spar_cap_ss": {
                             "type": "string",
@@ -878,7 +868,7 @@
                 }
             }
         },
-        "Level1": {
+        "RAFT": {
             "type": "object",
             "default": {},
             "description": "Options for WEIS fidelity level 1 = frequency domain (RAFT)",
@@ -981,7 +971,7 @@
                 }
             }
         },
-        "Level3": {
+        "OpenFAST": {
             "type": "object",
             "default": {},
             "description": "Options for WEIS fidelity level 3 = nonlinear time domain",
@@ -5019,7 +5009,7 @@
                 }
             }
         },
-        "Level2": {
+        "OpenFAST_Linear": {
             "type": "object",
             "default": {},
             "description": "Options for WEIS fidelity level 2 = linearized time domain (OpenFAST)",

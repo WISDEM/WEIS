@@ -12,7 +12,7 @@ To linearize a WEIS model using OpenFAST, run
  No `analysis_options.yaml` design variable flags should be active and the analysis drivers should be disabled. 
  In `modeling_options.yaml`, a few linearization options can be set up:
 ```
-Level2:
+OpenFAST_Linear:
     flag: True          # Enable to run linearizations
     simulation:        
         flag: True

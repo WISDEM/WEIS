@@ -1,6 +1,6 @@
 import os
 import weis.control.LinearModel as lin_mod
-from weis.aeroelasticse.LinearFAST import LinearFAST
+from openfast_io.LinearFAST import LinearFAST
 
 
 def gen_level2_model(dofs=["GenDOF"]):

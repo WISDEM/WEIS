@@ -75,7 +75,16 @@
                                         "inverse": {
                                             "type": "boolean",
                                             "default": false,
-                                            "description": "Words TODO?"
+                                            "description": "This flag is only used if the flag in twist is set to False. Once turned on, the twist is set to achieve a given target for the angle of attack. The target can be a predefined margin to stall or the point of maximum airfoil efficiency, see flag inverse_target"
+                                        },
+                                        "inverse_target": {
+                                            "type": "string",
+                                            "enumerate": [
+                                                "max_efficiency",
+                                                "stall_margin"
+                                            ],
+                                            "default": "max_efficiency",
+                                            "description": "This input is only used if the flag 'inverse' is set to True. 'max_efficiency' makes sure the twist generates angles of attack corresponding to max airfoil efficiency along span. The input 'stall_margin' makes sure the angles of attack respect a predefined margin from the stall point. The actual margin is set in the input 'stall_margin' among the blade aerodynamic constraints."
                                         },
                                         "n_opt": {
                                             "type": "integer",
@@ -108,6 +117,12 @@
                                             "minimum": 0,
                                             "unit": "none",
                                             "description": "Last index of the array of design variables/constraints that is optimized/constrained"
+                                        },
+                                        "cap_twist_root": {
+                                            "type": "number",
+                                            "description": "Maximum allowable twist during an inverse design. Close to blade root, twist will be capped to this value.",
+                                            "default": 0.349,
+                                            "unit": "rad"
                                         }
                                     }
                                 },
@@ -373,6 +388,7 @@
                         "structure": {
                             "type": "array",
                             "description": "Design variables associated with the internal blade structure",
+                            "default": [],
                             "items": {
                                 "type": "object",
                                 "description": "Set the thickness of any blade layer as a design variable by scaling (multiplying) the initial value at spline control points along the span.",
@@ -2299,9 +2315,10 @@
                         }
                     }
                 },
-                "user_defined": {
+                "user": {
                     "type": "array",
                     "description": "List of user-defined design variables. These must be already listed as OpenMDAO indipendent cariable components.",
+                    "default": [],
                     "items": {
                         "type": "object",
                         "description": "OpenMDAO entries, taken from https://openmdao.org/newdocs/versions/latest/features/core_features/adding_desvars_cons_objs/adding_design_variables.html",
@@ -2336,7 +2353,7 @@
                                 "type": "array",
                                 "description": "If an input is an array, these indicate which entries are of interest for this particular design variable. These may be positive or negative integers",
                                 "items": {
-                                    "type": "number"
+                                    "type": "integer"
                                 }
                             }
                         }
@@ -2716,6 +2733,18 @@
                                 }
                             }
                         },
+                        "chord_slope": {
+                            "type": "object",
+                            "description": "Constraint to enforce monothonically decreasing chord after max chord",
+                            "default": {},
+                            "properties": {
+                                "flag": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Activates as a design variable or constraint"
+                                }
+                            }
+                        },
                         "root_circle_diameter": {
                             "type": "object",
                             "description": "Enforcing the minimum blade root circle diameter.",
@@ -2832,7 +2861,7 @@
                         },
                         "mass": {
                             "type": "object",
-                            "description": "Enforcing a target blade mass (useful for inverse design approaches)",
+                            "description": "Enforcing a target mass (useful for inverse design approaches)",
                             "default": {},
                             "properties": {
                                 "flag": {
@@ -2844,7 +2873,7 @@
                                     "type": "number",
                                     "default": 0.0,
                                     "minimum": 0.0,
-                                    "maximum": 300000.0,
+                                    "maximum": 10000000.0,
                                     "description": "Value of the target blade mass"
                                 },
                                 "acceptable_error": {
@@ -2852,6 +2881,32 @@
                                     "default": 0.0,
                                     "minimum": 0.0,
                                     "maximum": 50000.0,
+                                    "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
+                                }
+                            }
+                        },
+                        "rated_velocity": {
+                            "type": "object",
+                            "description": "Enforcing a target rated velocity (useful for inverse design approaches)",
+                            "default": {},
+                            "properties": {
+                                "flag": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Activates as a design variable or constraint"
+                                },
+                                "target": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 100.0,
+                                    "description": "Value of the target rated velocity"
+                                },
+                                "acceptable_error": {
+                                    "type": "number",
+                                    "default": 0.1,
+                                    "minimum": 0.0,
+                                    "maximum": 5.0,
                                     "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
                                 }
                             }
@@ -3137,6 +3192,32 @@
                                     "unit": "Hz"
                                 }
                             }
+                        },
+                        "mass": {
+                            "type": "object",
+                            "description": "Enforcing a target mass (useful for inverse design approaches)",
+                            "default": {},
+                            "properties": {
+                                "flag": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Activates as a design variable or constraint"
+                                },
+                                "target": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 10000000.0,
+                                    "description": "Value of the target blade mass"
+                                },
+                                "acceptable_error": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 50000.0,
+                                    "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
+                                }
+                            }
                         }
                     }
                 },
@@ -3273,6 +3354,32 @@
                                     "minimum": 0.01,
                                     "maximum": 5.0,
                                     "unit": "Hz"
+                                }
+                            }
+                        },
+                        "mass": {
+                            "type": "object",
+                            "description": "Enforcing a target mass (useful for inverse design approaches)",
+                            "default": {},
+                            "properties": {
+                                "flag": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Activates as a design variable or constraint"
+                                },
+                                "target": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 10000000.0,
+                                    "description": "Value of the target blade mass"
+                                },
+                                "acceptable_error": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 50000.0,
+                                    "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
                                 }
                             }
                         },
@@ -3442,6 +3549,32 @@
                                     "minimum": 0.01,
                                     "maximum": 5.0,
                                     "unit": "Hz"
+                                }
+                            }
+                        },
+                        "mass": {
+                            "type": "object",
+                            "description": "Enforcing a target mass (useful for inverse design approaches)",
+                            "default": {},
+                            "properties": {
+                                "flag": {
+                                    "type": "boolean",
+                                    "default": false,
+                                    "description": "Activates as a design variable or constraint"
+                                },
+                                "target": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 10000000.0,
+                                    "description": "Value of the target blade mass"
+                                },
+                                "acceptable_error": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "minimum": 0.0,
+                                    "maximum": 50000.0,
+                                    "description": "Maximum offset from target, this is used to leverage inequality constraints and define the bandwidth of feasibility."
                                 }
                             }
                         },
@@ -4124,16 +4257,25 @@
                                 "description": "User-specified constraint variable using full name in the WISDEM namespace"
                             },
                             "lower_bound": {
-                                "type": "number",
-                                "description": "Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)"
+                                "type": "array",
+                                "description": "Variable must be greater than or equal to this value (entry must have lower_bound and/or upper_bound)",
+                                "items": {
+                                    "type": "number"
+                                }
                             },
                             "upper_bound": {
-                                "type": "number",
-                                "description": "Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)"
+                                "type": "array",
+                                "description": "Variable must be less than or equal to this value (entry must have lower_bound and/or upper_bound)",
+                                "items": {
+                                    "type": "number"
+                                }
                             },
                             "indices": {
-                                "type": "string",
-                                "description": "Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])"
+                                "type": "array",
+                                "description": "Optional string of python indices in a list (i.e. [0,1,2]) or slice (i.e. [:3])",
+                                "items": {
+                                    "type": "integer"
+                                }
                             }
                         }
                     }

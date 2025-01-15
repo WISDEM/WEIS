@@ -4,7 +4,7 @@ from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 from scipy.special import modstruve, iv
 
 from rosco.toolbox.ofTools.util import spectral
-from weis.aeroelasticse.turbsim_file import TurbSimFile
+from openfast_io.turbsim_file import TurbSimFile
 
 
 def IECKaimal(f, V_ref, HH, Class, Categ, TurbMod, R):

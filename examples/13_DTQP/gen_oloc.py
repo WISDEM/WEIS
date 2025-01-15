@@ -1,11 +1,11 @@
 
 import weis.inputs as sch
 import os
-from weis.aeroelasticse.turbsim_util    import generate_wind_files
-from weis.aeroelasticse.turbsim_file    import TurbSimFile
+from openfast_io.turbsim_util    import generate_wind_files
+from openfast_io.turbsim_file    import TurbSimFile
 from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
-from weis.aeroelasticse.CaseGen_General import case_naming
+from openfast_io.CaseGen_General import case_naming
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 import pickle
 from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
@@ -91,10 +91,10 @@ if __name__ == "__main__":
     # Linear Model
     
     # number of linear wind speeds and other options below assume that you haven't changed 
-    # the Level2: linearization: options from example 12_linearization
+    # the OpenFAST_Linear: linearization: options from example 12_linearization
     # if the modelling input was changed, or different between 12_ and 13_, these options will produce unexpected results
-    n_lin_ws = len(modeling_options["Level2"]["linearization"]["wind_speeds"])
-    lin_case_name = case_naming(n_lin_ws,"lin")
+    n_lin_ws = len(modeling_options['OpenFAST_Linear']['linearization']['wind_speeds'])
+    lin_case_name = case_naming(n_lin_ws,'lin')
     OutputCon_flag = False
     
     lin_pickle = mydir + os.sep + "LinearTurbine_22.pkl"
@@ -107,7 +107,7 @@ if __name__ == "__main__":
         LinearTurbine = LinearTurbineModel(
                     os.path.join(weis_dir,"outputs/IEA_level2_dtqp_full"),  # directory where linearizations are
                     lin_case_name,
-                    nlin=modeling_options["Level2"]["linearization"]["NLinTimes"],
+                    nlin=modeling_options['OpenFAST_Linear']['linearization']['NLinTimes'],
                     reduceControls = True
                     )
 

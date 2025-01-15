@@ -124,7 +124,7 @@ class LinearTurbineModel(object):
                     "ED Extended input: collective blade-pitch command, rad"]
                 n_controls = len(matData['DescCntrlInpt'])
                 DescCntrlInpt = matData['DescCntrlInpt']
-                ReqCtrl_Indices = np.zeros((n_controls,3),dtype = bool)
+                ReqUserProp_Indices = np.zeros((n_controls,3),dtype = bool)
 
                 Req = np.array([dc in Req_Controls for dc in DescCntrlInpt])
                 B_ops = B_ops[:,Req,:]
@@ -498,7 +498,7 @@ class LinearTurbineModel(object):
                     ax[i].set_xticklabels([])
             plt.show()
 
-        # Shorten output names from linearization output to one like level3 openfast output
+        # Shorten output names from linearization output to one like OpenFAST openfast output
         # This depends on how openfast sets up the linearization output names and may break if that is changed
         OutList     = [out_name.split()[1][:-1] for out_name in P_op.OutputName]
         OutData_arr = y.T

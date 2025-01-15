@@ -45,7 +45,7 @@ WISDEM:
         gamma_fatigue: 1.755  # Safety factor for fatigue loads
     BOS:
         flag: True
-Level1:
+RAFT:
     flag: True
     potential_model_override: 0
     trim_ballast: 2

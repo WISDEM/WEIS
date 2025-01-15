@@ -39,7 +39,7 @@ WISDEM:
     # BOS:
     #     flag: True
         
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
     OutFileFmt: 3
     simulation:
@@ -103,7 +103,7 @@ ROSCO:
     zeta_pc: [1]
     omega_pc: [0.2]
 
-Level2:
+OpenFAST_Linear:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: True
@@ -118,7 +118,7 @@ Level2:
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 2
 
-Level1:
+RAFT:
     flag: True
     potential_model_override: 2
     trim_ballast: 2

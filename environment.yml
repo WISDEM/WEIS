@@ -9,7 +9,7 @@ dependencies:
   - mat4py
   - nlopt
   - numpydoc
-  - openfast=3.5.5
+  - openfast=4.0.0
   - openraft>=1.2.4
   - osqp  
   - pcrunch
@@ -23,6 +23,7 @@ dependencies:
     - dash-bootstrap-components
     - dash-mantine-components
     - dearpygui
+    - openfast_io
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]

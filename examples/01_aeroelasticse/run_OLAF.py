@@ -51,8 +51,8 @@ case_inputs[("Fst","OutFileFmt")]       = {"vals":[1], "group":0}
 case_inputs[("ElastoDyn","GenDOF")]     = {"vals":["True"], "group":0}
 case_inputs[("ServoDyn","PCMode")]      = {"vals":[5], "group":0}
 case_inputs[("ServoDyn","VSContrl")]    = {"vals":[5], "group":0}
-case_inputs[("AeroDyn15","WakeMod")]    = {"vals":[3], "group":0}
-case_inputs[("AeroDyn15","AFAeroMod")]    = {"vals":[1], "group":0}
+case_inputs[("AeroDyn","Wake_Mod")]     = {"vals":[3], "group":0}
+case_inputs[("AeroDyn","UA_Mod")]       = {"vals":[0], "group":0}
 case_inputs[("InflowWind","WindType")]  = {"vals":[1], "group":0}
 case_inputs[("InflowWind","HWindSpeed")]= {"vals": wind_speeds, "group": 1}
 case_inputs[("Fst","OutFileFmt")]       = {"vals":[0], "group":0}
@@ -73,11 +73,11 @@ dt_olaf = np.zeros_like(dt_fvw)
 dt = case_inputs[("Fst","DT")]["vals"]
 n_dt = dt_fvw / dt
 dt_olaf = dt * np.around(n_dt)
-case_inputs[("AeroDyn15","OLAF","DTfvw")] = {"vals":dt_olaf, "group":1} 
-case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {"vals":nNWPanels, "group":1} 
-case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {"vals":nNWPanelsFree, "group":1} 
-case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {"vals":nFWPanels, "group":1} 
-case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {"vals":nFWPanelsFree, "group":1} 
+case_inputs[("AeroDyn","OLAF","DTfvw")] = {"vals":dt_olaf, "group":1} 
+case_inputs[("AeroDyn","OLAF","nNWPanels")] = {"vals":nNWPanels, "group":1} 
+case_inputs[("AeroDyn","OLAF","nNWPanelsFree")] = {"vals":nNWPanelsFree, "group":1} 
+case_inputs[("AeroDyn","OLAF","nFWPanels")] = {"vals":nFWPanels, "group":1} 
+case_inputs[("AeroDyn","OLAF","nFWPanelsFree")] = {"vals":nFWPanelsFree, "group":1} 
 
 # Find the controller
 case_inputs[("ServoDyn","DLL_FileName")] = {"vals":[path2dll], "group":0}

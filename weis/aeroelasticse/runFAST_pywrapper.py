@@ -9,9 +9,9 @@ import shutil
 import platform
 import multiprocessing as mp
 
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
-from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from openfast_io.FAST_reader import InputReader_OpenFAST
+from openfast_io.FAST_writer import InputWriter_OpenFAST
+from weis.aeroelasticse.FAST_wrapper import FAST_wrapper, Turbsim_wrapper, IEC_CoherentGusts
 from weis.aeroelasticse.calculated_channels import calculate_channels
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis, FatigueParams
@@ -20,7 +20,8 @@ from weis.aeroelasticse.openfast_library import FastLibAPI
 import numpy as np
 
 # Realpath will resolve symlinks
-of_path = os.path.realpath( shutil.which('openfast') )
+# of_path = os.path.realpath( shutil.which('openfast') )
+of_path = os.path.realpath( '/Users/mchetan/Desktop/nrel/projects/2-weis/env/weis-openfast_io_dev/bin/openfast' )
 bin_dir  = os.path.dirname(of_path)
 lib_dir  = os.path.abspath( os.path.join(os.path.dirname(bin_dir), 'lib') )
 

@@ -1,6 +1,6 @@
 import unittest
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
+from openfast_io.FAST_reader import InputReader_OpenFAST
+from openfast_io.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.runFAST_pywrapper import runFAST_pywrapper
 from weis.aeroelasticse.LinearFAST import LinearFAST
@@ -66,7 +66,7 @@ class TestOFutils(unittest.TestCase):
         fast_writer.fst_vt = dict(fast_reader.fst_vt)
         fst_vt = {}
         fst_vt['Fst', 'TMax'] = 20.
-        fst_vt['AeroDyn15', 'TwrAero'] = False
+        fst_vt['AeroDyn', 'TwrAero'] = False
         fst_vt['ServoDyn', 'DLL_FileName'] = discon_lib_path
         fst_vt['Fst','CompMooring'] = 0
         fast_writer.update(fst_update=fst_vt)
