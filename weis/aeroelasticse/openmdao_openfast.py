@@ -2220,7 +2220,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
+            self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
         if modopt['Level3']['flag']:
@@ -2579,7 +2579,8 @@ class FASTLoadCases(ExplicitComponent):
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
-        outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
+        if 'constraints' in self.options['opt_options']:
+            outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         if not modopt['Level3']['from_openfast']:
@@ -2693,19 +2694,18 @@ class FASTLoadCases(ExplicitComponent):
             - sum_stats : pd.DataFrame
         '''
 
-        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
-        else:
-            # Let's just average the standard deviation of PtfmPitch for now
-            # TODO: weight based on WS distribution, or something else
-            outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
+        if 'constraints' in self.options['opt_options']:
+            if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+                outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+            else:
+                # Let's just average the standard deviation of PtfmPitch for now
+                # TODO: weight based on WS distribution, or something else
+                outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
-        outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
-        # Max platform offset        
-        outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
-
-        return outputs, discrete_outputs
+            # Max platform offset        
+            outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
     def get_OL2CL_error(self,chan_time,outputs):
         ol_case_names = [os.path.join(

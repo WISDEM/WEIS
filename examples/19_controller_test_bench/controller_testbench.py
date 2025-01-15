@@ -25,7 +25,7 @@ def load_testbench_yaml(filename):
 def main():
 
 
-    input_file = 'testbench_options.yaml'
+    input_file = 'testbench_options_lite.yaml'
     testbench_options = load_testbench_yaml(os.path.join(this_dir,input_file))
 
     #### NOTHING BELOW HERE SHOULD CHANGE FOR THE USER
@@ -113,7 +113,7 @@ def main():
         flc.options['modeling_options'] = testbench_options
         flc.options['opt_options'] = opt_options
         flc.n_blades = 3
-        flc.of_inumber = 0
+        flc.of_inumber = -1
 
         flc.setup_directories()
         fst_vt = flc.create_fst_vt(inputs, discrete_inputs)
@@ -121,6 +121,10 @@ def main():
         summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = flc.run_FAST(inputs, discrete_inputs, fst_vt)
 
         # Post-processing here
+        outputs = {}
+        discrete_outputs = {}
+        flc.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+
         print('here')
 
     # Close signal to subprocessors
