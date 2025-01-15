@@ -8,6 +8,7 @@ import glob
 import logging
 import pickle
 from pathlib import Path
+import multiprocessing as mp
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from openmdao.utils.mpi import MPI
@@ -1936,9 +1937,27 @@ class FASTLoadCases(ExplicitComponent):
                     rank_j = sub_ranks[idx]
                     WindFile_type[i_case] , WindFile_name[i_case] = comm.recv(source=rank_j, tag=1)
         else:
-            for i_case in range(dlc_generator.n_cases):
-                WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
-                    dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
+            # Use multi-procesing for wind generation
+            if self.cores > 1:
+                pool = mp.Pool(self.cores)
+                i_cases = range(dlc_generator.n_cases)
+
+                p_generate_wind = partial(generate_wind_files, dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe)
+
+                p_outputs = pool.map(p_generate_wind,i_cases)
+                pool.close()
+                pool.join()
+
+                # Unpack outputs
+                for i_case, p_output in enumerate(p_outputs):
+                    WindFile_type[i_case] = p_output[0]
+                    WindFile_name[i_case] = p_output[1]
+
+            else:
+                # Generate wind in serial
+                for i_case in range(dlc_generator.n_cases):
+                    WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
+                        dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
                 
         # Apply olaf settings, should be similar to above?
         if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
