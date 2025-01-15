@@ -24,7 +24,6 @@ from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
-from pCrunch import PowerProduction
 from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse import FileTools
@@ -32,8 +31,7 @@ from weis.aeroelasticse.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.turbsim_util import generate_wind_files
 from weis.aeroelasticse.utils import OLAFParams
 from rosco.toolbox import control_interface as ROSCO_ci
-from pCrunch.io import OpenFASTOutput
-from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+from pCrunch import AeroelasticOutput, LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
@@ -703,7 +701,7 @@ class FASTLoadCases(ExplicitComponent):
 
                         l2_out, _, P_op = LinearTurbine.solve(dist,Plot=False,controller=controller_int)
 
-                        output = OpenFASTOutput.from_dict(l2_out, sim_name, magnitude_channels=self.magnitude_channels)
+                        output = AeroelasticOutput(l2_out, dlc=sim_name, magnitude_channels=self.magnitude_channels)
 
                         _name, _ss, _et, _dl, _dam = self.la._process_output(output)
                         ss[_name] = _ss
@@ -712,7 +710,7 @@ class FASTLoadCases(ExplicitComponent):
                         dam[_name] = _dam
                         ct.append(l2_out)
 
-                        output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
+                        output.to_df().to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
                         
@@ -2719,8 +2717,8 @@ class FASTLoadCases(ExplicitComponent):
         rms_pitch_error = np.full(len(chan_time),fill_value=1000.)
         for i_ts, timeseries in enumerate(chan_time):
             # Get closed loop timeseries
-            cl_output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
-            cl_ts = cl_output.df
+            cl_output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
+            cl_ts = cl_output.to_df()
 
             # Get open loop timeseries
             ol_ts = pd.read_pickle(ol_case_names[i_ts])
@@ -2830,8 +2828,8 @@ class FASTLoadCases(ExplicitComponent):
 
         # Save each timeseries as a pickled dataframe
         for i_ts, timeseries in enumerate(chan_time):
-            output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
-            output.df.to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
+            output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
+            output.to_df().to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
 
     def save_iterations(self,summ_stats,DELs,discrete_outputs):
         '''
