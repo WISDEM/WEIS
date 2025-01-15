@@ -1,8 +1,12 @@
-import os
+import os, sys
 from weis.aeroelasticse.openmdao_openfast import FASTLoadCases
 import weis.inputs as sch
 from rosco import discon_lib_path
-from wisdem.inputs.validation import load_yaml, write_yaml, _validate, simple_types, DefaultValidatingDraft7Validator
+from openmdao.utils.mpi  import MPI
+from weis.dlc_driver.dlc_generator    import DLCGenerator
+
+if MPI:
+    from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 
 this_dir = os.path.dirname( os.path.realpath(__file__) )
@@ -65,20 +69,64 @@ def main():
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
     testbench_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
 
+
+    if MPI:
+        opt_options = {}
+        opt_options['driver'] = {}
+        opt_options['driver']['design_of_experiments'] = {}
+        opt_options['driver']['design_of_experiments']['flag'] = False
+
+        # Figure out how many cases we're running
+        dlc_generator = DLCGenerator(
+            metocean = testbench_options['DLC_driver']['metocean_conditions'], 
+            dlc_driver_options = testbench_options['DLC_driver'],
+            )
+        DLCs = testbench_options['DLC_driver']['DLCs']
+        for i_DLC in range(len(DLCs)):
+            DLCopt = DLCs[i_DLC]
+            dlc_generator.generate(DLCopt['DLC'], DLCopt)
+        n_OF_runs = dlc_generator.n_cases
+
+        available_cores = MPI.COMM_WORLD.Get_size()
+        n_parallel_OFruns = min([available_cores - 1, n_OF_runs])
+        comm_map_down, comm_map_up, _ = map_comm_heirarchical(1, n_parallel_OFruns)
+
+        OFmgmt['mpi_run'] = True
+        OFmgmt['mpi_comm_map_down'] = comm_map_down
+
+        comm = MPI.COMM_WORLD
+        rank = comm.Get_rank()
+
+        # other ranks wait for later
+        if rank in comm_map_up.keys():
+            subprocessor_loop(comm_map_up)
+
+    else:
+        opt_options = {}
+        rank = 0
+
     # Make FASTLoadCases
-    flc = FASTLoadCases()
-    flc.options['modeling_options'] = testbench_options
-    flc.n_blades = 3
-    flc.of_inumber = 0
+    if rank == 0:
+        print('Running FASTLoadCases')
+        sys.stdout.flush()
+        flc = FASTLoadCases()
+        flc.options['modeling_options'] = testbench_options
+        flc.options['opt_options'] = opt_options
+        flc.n_blades = 3
+        flc.of_inumber = 0
 
-    flc.setup_directories()
-    fst_vt = flc.create_fst_vt(inputs, discrete_inputs)
+        flc.setup_directories()
+        fst_vt = flc.create_fst_vt(inputs, discrete_inputs)
 
-    summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = flc.run_FAST(inputs, discrete_inputs, fst_vt)
+        summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = flc.run_FAST(inputs, discrete_inputs, fst_vt)
 
+        # Post-processing here
+        print('here')
 
-    # Post-processing here
-    print('here')
+    # Close signal to subprocessors
+    if rank == 0 and MPI:
+        subprocessor_stop(comm_map_down)
+    sys.stdout.flush()
 
 if __name__=='__main__':
     main()
