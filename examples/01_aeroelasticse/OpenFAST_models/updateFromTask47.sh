@@ -5,7 +5,7 @@ temp_dir=$(mktemp -d)
 echo "Created temporary directory: $temp_dir"
 
 # Clone the repository
-git clone https://github.com/mayankchetan/IEA-15-240-RWT.git "$temp_dir"
+git clone https://github.com/IEAWindTask37/IEA-15-240-RWT.git "$temp_dir"
 
 # Check if clone was successful
 if [ $? -ne 0 ]; then

@@ -1782,45 +1782,45 @@ properties:
                         enum: [0, 1, 2]
                         default: 0
                         description: Potential-flow model {0 = none=no potential flow, 1 = frequency-to-time-domain transforms based on Capytaine/NEMOH/WAMIT output, 2 = fluid-impulse theory (FIT)} (switch)
-                    PotFile:
-                        type: string
-                        default: 'unused'
-                        description: Will be automatically filled in with HAMS output unless a value here overrides it; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS]
-                    WAMITULEN:
-                        type: number
-                        minimum: 0.0
-                        maximum: 1e3
-                        default: 1.0
-                        unit: m
-                        description: Characteristic body length scale used to redimensionalize Capytaine/NEMOH/WAMIT output (meters) [only used when PotMod=1]
-                    PtfmVol0:
-                        type: number
-                        minimum: 0.0
-                        units: m^3
-                        description: Displaced volume of water when the platform is in its undisplaced position (m^3) [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
-                    PtfmMass_Init:
-                        type: number
-                        default: 0.0
-                        minimum: 0.0
-                        units: kg
-                        description: Mass of initial platform design. When PtfmMass_Init > 0, PtfmVol0 will scale with the platform mass; this is a temporary solution to enable spar simulations where the heave is very sensitive to platform mass.
-                    PtfmCOBxt:
-                        type: number
-                        default: 0.0
-                        minimum: 0.0
-                        units: m
-                        description: The xt offset of the center of buoyancy (COB) from the platform reference point (meters) [only used when PotMod=1]
-                    PtfmCOByt:
-                        type: number
-                        default: 0.0
-                        minimum: 0.0
-                        units: m
-                        description: The yt offset of the center of buoyancy (COB) from the platform reference point (meters) [only used when PotMod=1]
                     ExctnMod:
                         type: integer
                         enum: [0, 1, 2]
                         default: 0
                         description: Wave Excitation model {0 = None, 1 = DFT, 2 = state-space} (switch) [only used when PotMod=1; STATE-SPACE REQUIRES *.ssexctn INPUT FILE]
+                    ExctnDisp:
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
+                        description: 'Method of computing Wave Excitation {0: use undisplaced position, 1: use displaced position, 2: use low-pass filtered displaced position) [only used when PotMod=1 and ExctnMod>0 and SeaStates WaveMod>0]} (switch)'
+                    ExctnCutOff:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e3
+                        default: 10.0
+                        unit: Hz
+                        description: Cutoff (corner) frequency of the low-pass time-filtered displaced position (Hz) [>0.0] [used only when PotMod=1, ExctnMod>0, and ExctnDisp=2]) [only used when PotMod=1 and ExctnMod>0 and SeaState's WaveMod>0]} (switch)
+                    PtfmYMod:
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
+                        description: 'Model for large platform yaw offset {0: Static reference yaw offset based on PtfmRefY, 1: dynamic reference yaw offset based on low-pass filtering the PRP yaw motion with cutoff frequency PtfmYCutOff} (switch)'
+                    PtfmRefY:
+                        type: number
+                        default: 0.0
+                        description: Constant (if PtfmYMod=0) or initial (if PtfmYMod=1) platform reference yaw offset (deg)
+                    PtfmYCutOff:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1e3
+                        default: 0.01
+                        unit: Hz
+                        description: Cutoff frequency for the low-pass filtering of PRP yaw motion when PtfmYMod=1 [unused when PtfmYMod=0] (Hz)
+                    NExctnHdg:
+                        type: integer
+                        default: 36
+                        minimum: 1
+                        maximum: 360
+                        description: Number of evenly distributed platform yaw/heading angles over the range of [-180, 180) deg for which the wave excitation shall be computed [only used when PtfmYMod=1] (-)
                     RdtnMod:
                         type: integer
                         enum: [0, 1, 2]
@@ -1840,6 +1840,85 @@ properties:
                         default: 0.0125
                         unit: s
                         description: Time step for wave radiation kernel calculations, use 0.0 for default (sec) [only used when PotMod=1; DT<=RdtnDT<=0.1 recommended; determines RdtnOmegaMax=Pi/RdtnDT in the cosine transform]
+                    NBody:
+                        type: integer
+                        default: 1
+                        minimum: 1
+                        maximum: 100
+                        description: Number of WAMIT bodies to be used (-) [>=1; only used when PotMod=1. If NBodyMod=1, the WAMIT data contains a vector of size 6*NBody x 1 and matrices of size 6*NBody x 6*NBody; if NBodyMod>1, there are NBody sets of WAMIT data each with a vector of size 6 x 1 and matrices of size 6 x 6]
+                    NBodyMod:
+                        type: integer
+                        enum: [1, 2, 3]
+                        default: 1
+                        description: 'Body coupling model {1: include coupling terms between each body and NBody in HydroDyn equals NBODY in WAMIT, 2: neglect coupling terms between each body and NBODY=1 with XBODY=0 in WAMIT, 3: Neglect coupling terms between each body and NBODY=1 with XBODY=/0 in WAMIT} (switch) [only used when PotMod=1]'
+                    PotFile:
+                        type: string
+                        default: 'unused'
+                        description: Will be automatically filled in with HAMS output unless a value here overrides it; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS]
+                    WAMITULEN:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: Characteristic body length scale used to redimensionalize WAMIT output (meters) [1 to NBody if NBodyMod>1] [only used when PotMod=1]
+                    PtfmRefxt:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: The xt offset of the body reference point(s) from (0,0,0) (meters) [1 to NBody] [only used when PotMod=1]
+                    PtfmRefyt:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: The yt offset of the body reference point(s) from (0,0,0) (meters) [1 to NBody] [only used when PotMod=1]
+                    PtfmRefzt:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: The zt offset of the body reference point(s) from (0,0,0) (meters) [1 to NBody] [only used when PotMod=1. If NBodyMod=2,PtfmRefzt=0.0]
+                    PtfmRefztRot:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: The rotation about zt of the body reference frame(s) from xt/yt (degrees) [1 to NBody] [only used when PotMod=1]
+                    PtfmVol0:
+                        type: array
+                        default: [0.0]
+                        units: m^3
+                        items:
+                            type: number
+                            minItems: 1
+                        description: Displaced volume of water when the body is in its undisplaced position (m^3) [1 to NBody] [only used when PotMod=1; USE THE SAME VALUE COMPUTED BY WAMIT AS OUTPUT IN THE .OUT FILE!]
+                    PtfmCOBxt:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: The xt offset of the center of buoyancy (COB) from the platform reference point (meters) [only used when PotMod=1]
+                    PtfmCOByt:
+                        type: array
+                        default: [0.0]
+                        unit: m
+                        items:
+                            type: number
+                            minItems: 1
+                        description: The yt offset of the center of buoyancy (COB) from the platform reference point (meters) [only used when PotMod=1]
                     MnDrift:
                         type: integer
                         enum: [0, 7, 8, 9, 10, 11, 12]
@@ -1907,6 +1986,16 @@ properties:
                     AddBQuad4: *addbquad
                     AddBQuad5: *addbquad
                     AddBQuad6: *addbquad
+                    WaveDisp:
+                        type: integer
+                        enum: [0, 1]
+                        default: 0
+                        description: 'Method of computing Wave Kinematics {0: use undisplaced position, 1: use displaced position) } (switch)'
+                    AMMod:
+                        type: integer
+                        enum: [0, 2]
+                        default: 0
+                        description: 'Method of computing distributed added-mass force. (0: Only and always on nodes below SWL at the undisplaced position. 2: Up to the instantaneous free surface) [overwrite to 0 when WaveMod = 0 or 6 or when WaveStMod = 0 in SeaState]'
                     NMOutputs:
                         type: integer
                         minimum: 0
@@ -1947,18 +2036,6 @@ properties:
                         type: string
                         default: 'A11'
                         description: Output format for header strings (quoted string) [not checked for validity]
-                    NBody:
-                        type: integer
-                        minimum: 1
-                        maximum: 9
-                        default: 1
-                        description: Number of WAMIT bodies to be used (-) [>=1; only used when PotMod=1. If NBodyMod=1, the WAMIT data contains a vector of size 6*NBody x 1 and matrices of size 6*NBody x 6*NBody; if NBodyMod>1, there are NBody sets of WAMIT data each with a vector of size 6 x 1 and matrices of size 6 x 6]
-                    NBodyMod:
-                        type: integer
-                        minimum: 1
-                        maximum: 3
-                        default: 1
-                        description: Body coupling model {1- include coupling terms between each body and NBody in HydroDyn equals NBODY in WAMIT, 2- neglect coupling terms between each body and NBODY=1 with XBODY=0 in WAMIT, 3- Neglect coupling terms between each body and NBODY=1 with XBODY=/0 in WAMIT} (switch) [only used when PotMod=1]
                     SimplCd: &simpl
                         type: number
                         minimum: 0.0
@@ -1967,9 +2044,11 @@ properties:
                         description: Simple strip theory model coefficient, default of 1.0
                     SimplCa: *simpl
                     SimplCp: *simpl
+                    SimplCb: *simpl
                     SimplCdMG: *simpl
                     SimplCaMG: *simpl
                     SimplCpMG: *simpl
+                    SimplCbMG: *simpl
                     SimplAxCd: &simpl_0
                         type: number
                         minimum: 0.0
@@ -1981,54 +2060,6 @@ properties:
                     SimplAxCdMG: *simpl_0
                     SimplAxCaMG: *simpl
                     SimplAxCpMG: *simpl
-                    ExctnDisp:
-                        type: number
-                        description: Method of computing wave excitation {0- use undisplaced position, 1- use displaced position, 2- use low-pass filtered displaced position) [only used when PotMod=1 and ExctnMod>0} (switch)
-                        default: 0
-                    ExctnCutOff:
-                        type: number
-                        description: Cutoff (corner) frequency of the low-pass time-filtered displaced position (Hz) [>0.0] [only used when PotMod=1,    ExctnMod>0, and ExctnDisp=2]
-                        default: 100
-                    PtfmYMod:
-                        type: integer
-                        description: Model for large platform yaw offset {0- Static reference yaw offset based on PtfmRefY, 1- dynamic reference yaw offset based on low-pass filtering the PRP yaw motion with cutoff frequency PtfmYCutOff} (switch)
-                        default: 0
-                    PtfmRefY:
-                        type: number
-                        description: Constant (if PtfmYMod=0) or initial (if PtfmYMod=1) platform reference yaw offset (deg)
-                        default: 0
-                    PtfmYCutOff:
-                        type: number
-                        description: Cutoff frequency for the low-pass filtering of PRP yaw motion when PtfmYMod=1 [unused when PtfmYMod=0] (Hz)
-                        default: 0.01
-                    NExctnHdg:
-                        type: integer
-                        description: Number of evenly distributed platform yaw/heading angles over the range of [-180, 180) deg for which the wave excitation shall be computed [only used when PtfmYMod=1] (-)             
-                        default: 36
-                    PtfmRefxt:
-                        type: number
-                        description: The xt offset of the body reference point(s) from (0,0,0) (meters) [1 to NBody] [only used when PotMod=1]
-                        default: 0
-                    PtfmRefyt:
-                        type: number
-                        description: The yt offset of the body reference point(s) from (0,0,0) (meters) [1 to NBody] [only used when PotMod=1]
-                        default: 0
-                    PtfmRefzt:
-                        type: number
-                        description: The zt offset of the body reference point(s) from (0,0,0) (meters) [1 to NBody] [only used when PotMod=1. If NBodyMod=2,PtfmRefzt=0.0]
-                        default: 0
-                    PtfmRefztRot:
-                        type: number
-                        description: The rotation about zt of the body reference frame(s) from xt/yt (degrees) [1 to NBody] [only used when PotMod=1]
-                        default: 0
-                    WaveDisp:
-                        type: integer
-                        default: 1
-                        description: Method of computing wave kinematics {0- use undisplaced position, 1- use displaced position) } (switch)
-                    AMMod:
-                        type: integer
-                        default: 1
-                        description: Method of computing distributed added-mass force {0- only and always on nodes below SWL at the undisplaced position, 1- up to the instantaneous free surface with the displaced structure} (switch) [unused with WaveStMod = 0 in SeaState]
             SubDyn: &ofsubdyn
                 type: object
                 default: {}
@@ -2650,6 +2681,68 @@ properties:
                 default: {}
                 description: ServoDyn modelling options in OpenFAST
                 properties:
+                    Echo:
+                        type: boolean
+                        default: False
+                        description: Echo the input file data (flag)
+                    WtrDens:
+                        type: number
+                        default: 1025.0
+                        minimum: 0.0
+                        maximum: 1e4
+                        unit: kg/m^3
+                        description: Water density (kg/m^3)
+                    WtrDpth:
+                        type: number
+                        default: 200.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: Water depth (meters)
+                    MSL2SWL:
+                        type: number
+                        default: 0.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: Offset between still-water level and mean sea level (meters) [positive upward; unused when WaveMod = 6; must be zero if PotMod=1 or 2]
+                    X_HalfWidth:
+                        type: number
+                        default: 5.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: 'Half-width of the domain in the X direction (m) [>0, NOTE: X[nX] = nX*dX, where nX = {-NX+1,-NX+2,…,NX-1} and dX = X_HalfWidth/(NX-1)]'
+                    Y_HalfWidth:
+                        type: number
+                        default: 5.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: 'Half-width of the domain in the Y direction (m) [>0, NOTE: Y[nY] = nY*dY, where nY = {-NY+1,-NY+2,…,NY-1} and dY = Y_HalfWidth/(NY-1)]'
+                    Z_Depth:
+                        type: string
+                        default: default
+                        unit: m
+                        description: Depth of the domain the Z direction (m) relative to SWL [0 < Z_Depth <= WtrDpth+MSL2SWL;
+                    NX:
+                        type: integer
+                        default: 2
+                        minimum: 2
+                        maximum: 200
+                        description: Number of nodes in half of the X-direction domain (-) [>=2]
+                    NY:
+                        type: integer
+                        default: 2
+                        minimum: 2
+                        maximum: 200
+                        description: Number of nodes in half of the Y-direction domain (-) [>=2]
+                    NZ:
+                        type: integer
+                        default: 15
+                        minimum: 2
+                        maximum: 200
+                        description: Number of nodes in the Z direction (-) [>=2]
                     WaveMod:
                         type: integer
                         enum: [0, 1, 2, 3, 4, 5, 6]
@@ -2674,6 +2767,20 @@ properties:
                         maximum: 10.0
                         unit: s
                         description: Time step for incident wave calculations     (sec) [unused when WaveMod=0; 0.1<=WaveDT<=1.0 recommended; determines WaveOmegaMax=Pi/WaveDT in the IFFT]
+                    WaveHs:
+                        type: number
+                        default: 1.1
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: Significant wave height of incident waves (meters) [used only when WaveMod=1 or 2]
+                    WaveTp:
+                        type: number
+                        default: 8.52
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: s
+                        description: Peak spectral period of incident waves (sec) [used only when WaveMod=1 or 2]
                     WavePkShp:
                         type: number
                         default: 1.0
@@ -2690,7 +2797,7 @@ properties:
                         description: Low cut-off frequency or lower frequency limit of the wave spectrum beyond which the wave spectrum is zeroed (rad/s) [unused when WaveMod=0, 1, or 6]
                     WvHiCOff:
                         type: number
-                        default: 0.783827
+                        default: 1.256637  # 5 sec.
                         minimum: 0.0
                         maximum: 1e3
                         unit: rad/s
@@ -2732,30 +2839,6 @@ properties:
                         maximum: 2147483647
                         default: -561580799
                         description: First random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]
-                    X_HalfWidth:
-                        type: number
-                        description: Half-width of the domain in the X direction (m) [>0, NOTE- X[nX] = nX*dX, where nX = {-NX+1,-NX+2,…,NX-1} and dX = X_HalfWidth/(NX-1)]\n'))
-                        default: 100     # TODO: should we compute these in WEIS?
-                    Y_HalfWidth:
-                        type: number
-                        description: Half-width of the domain in the Y direction (m) [>0, NOTE- Y[nY] = nY*dY, where nY = {-NY+1,-NY+2,…,NY-1} and dY = Y_HalfWidth/(NY-1)]\n'))
-                        default: 75  # TODO: should we compute these in WEIS?
-                    Z_Depth:
-                        type: number
-                        description: Depth of the domain the Z direction (m) relative to SWL [0 < Z_Depth <= WtrDpth+MSL2SWL; "default"- Z_Depth = WtrDpth+MSL2SWL; Z[nZ] = ( COS( nZ*dthetaZ ) – 1 )*Z_Depth, where nZ = {0,1,…NZ-1} and dthetaZ = pi/( 2*(NZ-1) )]\n'))
-                        default: 75  # TODO: should we compute these in WEIS?
-                    NX:
-                        type: number
-                        description: Number of nodes in half of the X-direction domain (-) [>=2]\n'))
-                        default: 5
-                    NY:
-                        type: number
-                        description: Number of nodes in half of the Y-direction domain (-) [>=2]\n'))
-                        default: 2
-                    NZ:
-                        type: number
-                        description: Number of nodes in the Z direction (-) [>=2]\n'))
-                        default: 11
                     WaveSeed2:
                         default: RANLUX
                         description: Second random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]. Use RANLUX for internal FAST pseudo-random number generator
@@ -2767,54 +2850,6 @@ properties:
                         type: string
                         default: ''
                         description: Root name of externally generated wave data file(s) (quoted string) [used only when WaveMod=5 or 6]
-                    NWaveElev:
-                        type: integer
-                        default: 1
-                        minimum: 0
-                        maximum: 9
-                        description: Number of points where the incident wave elevations can be computed (-) [maximum of 9 output locations]
-                    WaveElevxi:
-                        type: array
-                        default: ['0.0']
-                        description: List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
-                        items:
-                            type: string
-                            # default: 0.0
-                            # unit: m
-                            maxItems: 9
-                    WaveElevyi:
-                        type: array
-                        default: ['0.0']
-                        description: List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
-                        items:
-                            type: string
-                            # default: 0.0
-                            # unit: m
-                            maxItems: 9
-                    NWaveKin:
-                        type: integer
-                        default: 1
-                        minimum: 0
-                        maximum: 9
-                        description: Number of points where the incident wave elevations can be computed (-) [maximum of 9 output locations]
-                    WaveKinxi:
-                        type: array
-                        default: ['0.0']
-                        description: List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
-                        items:
-                            type: string
-                            # default: 0.0
-                            # unit: m
-                            maxItems: 9
-                    WaveKinyi:
-                        type: array
-                        default: ['0.0']
-                        description: List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
-                        items:
-                            type: string
-                            # default: 0.0
-                            # unit: m
-                            maxItems: 9
                     WvDiffQTF:
                         type: boolean
                         default: False
@@ -2852,20 +2887,32 @@ properties:
                         unit: rad/s
                         description: High frequency cutoff used in the summation-frequencies  (rad/s) [Only used with a summation-frequency method]
                     ConstWaveMod:
-                        type: number
-                        description: Contrained wave model {0- no constrained wave, 1- Specified crest elevation of 0.5*CrestHmax, 2- Specified crest height with gauranteed peak-to-trough of CrestHmax}
+                        type: integer
+                        enum: [0, 1, 2]
+                        default: 0
+                        description: 'Constrained wave model: 0=none; 1=Constrained wave with specified crest elevation, alpha; 2=Constrained wave with guaranteed peak-to-trough crest height, HCrest (flag)'
                     CrestHmax:
                         type: number
-                        description: Twice the crest elevation if ConstWaveMod=1 or the crest height if ConstWaveMod=2 (m) [need CrestHmax > WaveHs; unused when ConstWaveMod=0]
+                        default: 1.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: Crest height (2*alpha for ConstWaveMod=1 or HCrest for ConstWaveMod=2), must be larger than WaveHs (m) [unused when ConstWaveMod=0]
                     CrestTime:
                         type: number
-                        description: Time of the wave crest       (sec) [unused when ConstWaveMod=0]
+                        default: 60.0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: s
+                        description: Time at which the crest appears (s) [unused when ConstWaveMod=0]
                     CrestXi:
                         type: number
-                        description: X-position of the wave crest (m)   [unused when ConstWaveMod=0]
+                        default: 0.0
+                        description: X-position of the crest (m) [unused when ConstWaveMod=0]
                     CrestYi:
                         type: number
-                        description: Y-position of the wave crest (m)   [unused when ConstWaveMod=0]
+                        default: 0.0
+                        description: Y-position of the crest (m) [unused when ConstWaveMod=0]
                     CurrMod:
                         type: integer
                         enum: [0, 1, 2]
@@ -2921,22 +2968,85 @@ properties:
                         description: Depth-independent current heading direction (radians) [used only when CurrMod=1]
                     MCFD:
                         type: number
-                        default: 0.0  # TODO: check
-                        description: Diameter of HydroDyn members to have the MacCamy-Fuchs diffraction correction (m) [Set MCFD<=0 to disable. In the HydroDyn input file, all Cp/CpMG (not AxCp/AxCpMG) coefficients of members to use the MacCamy-Fuchs diffraction model must be set to "MCF" instead of a numerical value; the members must be nearly vertical, surface piercing, with a diameter close to MCFD.]
+                        default: 0
+                        minimum: 0.0
+                        maximum: 1e5
+                        unit: m
+                        description: MacCamy-Fuchs member radius (ignored if radius <= 0) [must be 0 when WaveMod 0 or 6]
                     SeaStSum:
                         type: boolean
+                        default: False
                         description: Output a summary file [flag]
                     OutSwtch:
                         type: integer
-                        description: Output requested channels to [1=SeaState.out, 2=GlueCode.out, 3=both files]
+                        enum: [1, 2, 3]
+                        default: 2
+                        description: 'Output requested channels to: [1=SeaState.out, 2=GlueCode.out, 3=both files]'
                     OutFmt:
                         type: string
                         default: 'ES11.4e2'
-                        description: Output format for numerical results (quoted string) [not checked for validity]
+                        description: Output format for numerical results (quoted string) [not checked for validity!]
                     OutSFmt:
                         type: string
                         default: 'A11'
-                        description: Output format for header strings (quoted string) [not checked for validity]
+                        description: Output format for header strings (quoted string) [not checked for validity!]
+                    NWaveElev:
+                        type: integer
+                        default: 1
+                        minimum: 0
+                        maximum: 9
+                        description: Number of points where the incident wave elevations can be computed (-) [maximum of 9 output locations]
+                    WaveElevxi:
+                        type: array
+                        default: ['0.0']
+                        description: List of xi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
+                        items:
+                            type: string
+                            # default: 0.0
+                            # unit: m
+                            maxItems: 9
+                    WaveElevyi:
+                        type: array
+                        default: ['0.0']
+                        description: List of yi-coordinates for points where the incident wave elevations can be output (meters) [NWaveElev points, separated by commas or white space; usused if NWaveElev = 0]
+                        items:
+                            type: string
+                            # default: 0.0
+                            # unit: m
+                            maxItems: 9
+                    NWaveKin:
+                        type: integer
+                        default: 0
+                        minimum: 0
+                        maximum: 9
+                        description: Number of points where the wave kinematics can be output (-) [maximum of 9 output locations]
+                    WaveKinxi:
+                        type: array
+                        default: ['0.0']
+                        description: List of xi-coordinates for points where the wave kinematics can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
+                        items:
+                            type: string
+                            # default: 0.0
+                            # unit: m
+                            maxItems: 9
+                    WaveKinyi:
+                        type: array
+                        default: ['0.0']
+                        description: List of yi-coordinates for points where the wave kinematics can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
+                        items:
+                            type: string
+                            # default: 0.0
+                            # unit: m
+                            maxItems: 9
+                    WaveKinzi:
+                        type: array
+                        default: ['0.0']
+                        description: List of zi-coordinates for points where the wave kinematics can be output (meters) [NWaveKin points, separated by commas or white space; usused if NWaveKin = 0]
+                        items:
+                            type: string
+                            # default: 0.0
+                            # unit: m
+                            maxItems: 9
             outlist: &ofoutlist
                 type: object
                 default: {}

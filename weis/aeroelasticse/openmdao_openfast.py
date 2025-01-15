@@ -28,7 +28,6 @@ from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
 from openfast_io import FileTools
 from openfast_io.turbsim_file   import TurbSimFile
-# from openfast_io.turbsim_util import generate_wind_files
 from weis.aeroelasticse.utils import OLAFParams, generate_wind_files
 from rosco.toolbox import control_interface as ROSCO_ci
 from pCrunch.io import OpenFASTOutput
@@ -779,7 +778,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']         = {}
         fst_vt['ElastoDynBlade']    = {}
         fst_vt['ElastoDynTower']    = {}
-        fst_vt['AeroDyn']         = {}
+        fst_vt['AeroDyn']           = {}
         fst_vt['AeroDynBlade']      = {}
         fst_vt['ServoDyn']          = {}
         fst_vt['InflowWind']        = {}
@@ -822,7 +821,7 @@ class FASTLoadCases(ExplicitComponent):
 
         if 'AeroDyn' in modeling_options['OpenFAST']:    
             for key in modeling_options['OpenFAST']['AeroDyn']:
-                fst_vt['AeroDyn15'][key] = copy.copy(modeling_options['OpenFAST']['AeroDyn'][key])
+                fst_vt['AeroDyn'][key] = copy.copy(modeling_options['OpenFAST']['AeroDyn'][key])
 
         if 'InflowWind' in modeling_options['OpenFAST']:    
             for key in modeling_options['OpenFAST']['InflowWind']:
@@ -951,6 +950,11 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmRIner'] = float(inputs["platform_I_total"][0])
             fst_vt['ElastoDyn']['PtfmPIner'] = float(inputs["platform_I_total"][1])
             fst_vt['ElastoDyn']['PtfmYIner'] = float(inputs["platform_I_total"][2])
+
+            fst_vt['ElastoDyn']['PtfmXYIner'] = float(inputs["platform_I_total"][3])
+            fst_vt['ElastoDyn']['PtfmYZIner'] = float(inputs["platform_I_total"][5])
+            fst_vt['ElastoDyn']['PtfmXZIner'] = float(inputs["platform_I_total"][4])
+
             fst_vt['ElastoDyn']['PtfmCMxt'] = float(inputs["platform_total_center_of_mass"][0])
             fst_vt['ElastoDyn']['PtfmCMyt'] = float(inputs["platform_total_center_of_mass"][1])
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs["platform_total_center_of_mass"][2])
@@ -961,6 +965,10 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmMass'] = 0.
             fst_vt['ElastoDyn']['PtfmRIner'] = 0.
             fst_vt['ElastoDyn']['PtfmPIner'] = 0.
+
+            fst_vt['ElastoDyn']['PtfmXYIner'] = 0.
+            fst_vt['ElastoDyn']['PtfmYZIner'] = 0.
+            fst_vt['ElastoDyn']['PtfmXZIner'] = 0.
             # Advice from R. Bergua- Use a dummy quantity (at least 1e4) here when have fixed-bottom support
             fst_vt['ElastoDyn']['PtfmYIner'] = 1e8 if modopt['flags']['offshore'] else 0.0
             fst_vt['ElastoDyn']['PtfmCMxt'] = 0.
@@ -968,10 +976,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDyn']['PtfmCMzt'] = float(inputs['tower_base_height'])
             fst_vt['ElastoDyn']['PtfmRefzt'] = tower_base_height # Vertical distance from the ground level [onshore] or MSL [offshore] to the platform reference point (meters)
 
-        # TODO: apply the correct values here:
-        fst_vt['ElastoDyn']['PtfmXYIner'] = 0.
-        fst_vt['ElastoDyn']['PtfmYZIner'] = 0.
-        fst_vt['ElastoDyn']['PtfmXZIner'] = 0.
+
 
 
 
@@ -1241,9 +1246,19 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['NMOutputs'] = len(idx_out)
             fst_vt['SubDyn']['MemberID_out'] = [idx+1 for idx in idx_out]
             fst_vt['SubDyn']['NOutCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
-            fst_vt['SubDyn']['NodeCnt'] = np.ones_like(fst_vt['SubDyn']['MemberID_out'])
-            fst_vt['SubDyn']['NodeCnt'][-1] = 2
+            fst_vt['SubDyn']['NodeCnt'] = [np.array([1]) for _ in fst_vt['SubDyn']['MemberID_out']] # Since NodeCnt can be a list of nodes defined by NOutCnt, we cant use integers here
+            fst_vt['SubDyn']['NodeCnt'][-1] = np.array([2])
             self.Z_out_SD_mpl = [grid_joints_monopile[i] for i in idx_out]
+
+            # Add SubDyn output channels for monopile
+            for i in range(fst_vt['SubDyn']['NMOutputs']):
+                for j in fst_vt['SubDyn']['NodeCnt'][i]:
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKxe'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKye'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}FKze'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKxe'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKye'] = True
+                    fst_vt['outlist']['SubDyn'][f'M{i+1}N{j}MKze'] = True
 
         elif modopt['flags']['floating']:
             joints_xyz = inputs["platform_nodes"]
@@ -1295,10 +1310,12 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SubDyn']['MemberID'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MPropSetID1'] = fst_vt['SubDyn']['MPropSetID2'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['MType'] = np.ones( n_members, dtype=np.int_ )
+            fst_vt['SubDyn']['M_COSMID'] = np.ones( n_members, dtype=np.int_ ) * -1 #  TODO: verify based on https://openfast.readthedocs.io/en/dev/source/user/subdyn/input_files.html#members
             fst_vt['SubDyn']['NPropSets'] = n_members
             fst_vt['SubDyn']['PropSetID1'] = np.arange( n_members, dtype=np.int_ ) + 1
             fst_vt['SubDyn']['NCablePropSets'] = 0
             fst_vt['SubDyn']['NRigidPropSets'] = 0
+            fst_vt['SubDyn']['NSpringPropSets'] = 0
             fst_vt['SubDyn']['NCOSMs'] = 0
             fst_vt['SubDyn']['NXPropSets'] = 0
             fst_vt['SubDyn']['NCmass'] = 2 if mgrav > 0.0 else 1
@@ -1780,9 +1797,9 @@ class FASTLoadCases(ExplicitComponent):
         # Set initial rotor speed and pitch if the WT operates in this DLC and available,
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
-        if self.options['modeling_options']['Level3']['from_openfast']:
+        if self.options['modeling_options']['OpenFAST']['from_openfast']:
             modopt_dir = os.path.dirname(self.options['modeling_options']['fname_input_modeling'])
-            reg_traj = os.path.join(modopt_dir,self.options['modeling_options']['Level3']['regulation_trajectory'])
+            reg_traj = os.path.join(modopt_dir,self.options['modeling_options']['OpenFAST']['regulation_trajectory'])
             if os.path.isfile(reg_traj):
                 data = load_yaml(reg_traj)
                 cases = data['cases']
