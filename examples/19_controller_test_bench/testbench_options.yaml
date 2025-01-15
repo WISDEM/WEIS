@@ -1,10 +1,10 @@
 Testbench_Options:
-    output_directory: outputs/2_setup_input   # relative to this file
+    output_directory: outputs/6_setup_pp   # relative to this file
     output_filebase: testbench
-    n_cores: 1
+    n_cores: 4  # not yet set up
     use_mpi: False
 
-Turbine_Info:
+Turbine_Info:  # Can we pull this information from OpenFAST input?
     # used to generate wind inputs
     wind_speed_cut_in: 5
     wind_speed_cut_out: 25
@@ -19,7 +19,9 @@ Turbine_Info:
         offshore: True
         floating: True
         monopile: False
-        TMDs: False  
+        TMDs: False 
+        blade: False  # use to do local blade loading analysis
+        tower: False   # same
 
 
 Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
@@ -43,16 +45,14 @@ DLC_driver:
         wave_height50: 9.7
         wave_period50: 13.6
     DLCs:
+        - DLC: "1.1"
+          n_seeds: 6
+        - DLC: "1.3"
+          n_seeds: 6
+        - DLC: "1.4"
+        - DLC: "1.5"
         - DLC: "1.6"
-          wind_speed: [8,15]
-          n_seeds: 2
-          analysis_time: 10.
-          transient_time: 0.0
         - DLC: "5.1"
-          wind_speed: [12]
-          n_seeds: 1
-          n_azimuth: 3
-          analysis_time: 20.
-          shutdown_time: 10.
-          transient_time: 0.0
+        - DLC: "AEP"
+          TI_factor: 0.5
 
