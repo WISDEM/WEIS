@@ -263,12 +263,15 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         wind_file_type = 3
 
     else:
-        if dlc_generator.cases[i_case].label != '12.1':
-            gusts = IEC_CoherentGusts()
+        if dlc_generator.cases[i_case].IEC_WindType == 'Steady':
+            wind_file_type = 1
+            wind_file_path_InflowWind = 'unused'
+        else:
+            gusts = IEC_CoherentGusts() # This includes ramp wind
             gusts.D = rotorD
             gusts.HH = hub_height
             gusts.dt = dlc_generator.cases[i_case].TimeStep
-            gusts.TStart = dlc_generator.cases[i_case].transient_time + 10.  # start gust 10 seconds after OpenFAST starts recording
+            gusts.TStart = dlc_generator.cases[i_case].transient_time + dlc_generator.cases[i_case].gust_wait_time  # start gust some time after OpenFAST starts recording
             gusts.TF = dlc_generator.cases[i_case].total_time
             gusts.Vert_Slope = dlc_generator.cases[i_case].VFlowAng
             wind_file_name = gusts.execute(wind_directory, FAST_namingOut, dlc_generator.cases[i_case])
@@ -277,8 +280,4 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
             else:
                 wind_file_path_InflowWind = wind_file_name
             wind_file_type = 2
-        else:
-            wind_file_type = 1
-            wind_file_path_InflowWind = 'unused'
-
     return wind_file_type, wind_file_path_InflowWind
