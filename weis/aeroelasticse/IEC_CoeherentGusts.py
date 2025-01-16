@@ -31,6 +31,10 @@ class IEC_CoherentGusts():
             self.ECD(dlc, wind_file_name)
         elif dlc.IEC_WindType == 'EWS':
             self.EWS(dlc, wind_file_name)
+        elif dlc.IEC_WindType == 'Ramp':
+            self.Ramp(dlc, wind_file_name)
+        elif dlc.IEC_WindType == 'Step':
+            self.Step(dlc, wind_file_name)
         elif dlc.IEC_WindType == 'Custom':
             wind_file_name = dlc.wind_file
         else:
@@ -220,13 +224,54 @@ class IEC_CoherentGusts():
         for i, ti in enumerate(t):
             shear_lin[i] = k_dir * (2.5+0.2*Beta*sigma_1*(self.D/self.Lambda_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
 
-        hd1 = ['Time', 'Wind', 'Wind', 'Vertical', 'Horiz.', 'Pwr. Law', 'Lin. Vert.', 'Gust', 'Upflow']
-        hd2 = ['',     'Speed', 'Dir', 'Speed',    'Shear', 'Vert. Shr', 'Shear',     'Speed', 'Angle']
-
         data = np.column_stack((t, V, V_dir, V_vert, k_h * shear_lin, shear_vert, k_v * shear_lin, V_gust, upflow))
 
         # Header
         hd = '! EWS gust, wind speed = ' + str(dlc.URef) + ', direction ' + dlc.direction_pn + ', shear ' + dlc.shear_hv
+        self.write_wnd(wind_file_name, data, hd)
+
+    def Ramp(self, dlc, wind_file_name):
+        # Ramp
+
+        T = dlc.total_time - dlc.transient_time
+        t = np.linspace(0., dlc.ramp_duration, 2)
+
+        # Contant variables
+        V = np.linspace(dlc.wind_speed,dlc.wind_speed+dlc.ramp_speeddelta,2)
+        V_dir = np.zeros_like(t)
+        V_vert = np.zeros_like(t)
+        shear_horz = np.zeros_like(t)
+        shear_vert = np.zeros_like(t)
+        shear_vert_lin = np.zeros_like(t)
+        V_gust = np.zeros_like(t)
+        upflow = np.zeros_like(t)
+
+        
+        data = np.column_stack((t, V, V_dir, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust, upflow))
+        # Header
+        hd = f'! Ramp wind starting from wind speed = {dlc.URef} to wind speed = {dlc.wind_speed+dlc.ramp_speeddelta}\n'
+        self.write_wnd(wind_file_name, data, hd)
+
+    def Step(self, dlc, wind_file_name):
+        # Step
+
+        T = dlc.total_time - dlc.transient_time
+        t = np.linspace(0., self.dt, 2)
+
+        # Contant variables
+        V = np.linspace(dlc.wind_speed,dlc.wind_speed+dlc.step_speeddelta,2)
+        V_dir = np.zeros_like(t)
+        V_vert = np.zeros_like(t)
+        shear_horz = np.zeros_like(t)
+        shear_vert = np.zeros_like(t)
+        shear_vert_lin = np.zeros_like(t)
+        V_gust = np.zeros_like(t)
+        upflow = np.zeros_like(t)
+
+        
+        data = np.column_stack((t, V, V_dir, V_vert, shear_horz, shear_vert, shear_vert_lin, V_gust, upflow))
+        # Header
+        hd = f'! Step wind starting from wind speed = {dlc.URef} to wind speed = {dlc.wind_speed+dlc.step_speeddelta}\n'
         self.write_wnd(wind_file_name, data, hd)
 
     def write_wnd(self, fname, data, hd):
