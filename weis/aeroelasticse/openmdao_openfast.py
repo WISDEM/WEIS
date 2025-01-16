@@ -2233,7 +2233,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(chan_time)
+            self.save_timeseries(case_name, chan_time)
 
         if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(summary_stats,DELs,discrete_outputs)
@@ -2816,7 +2816,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
-    def save_timeseries(self,chan_time):
+    def save_timeseries(self,case_name, chan_time):
         '''
         Save ALL the timeseries: each iteration and openfast run thereof
         TODO: move this deeper into runFAST so we can clear chan_time
@@ -2827,9 +2827,9 @@ class FASTLoadCases(ExplicitComponent):
         os.makedirs(save_dir, exist_ok=True)
 
         # Save each timeseries as a pickled dataframe
-        for i_ts, timeseries in enumerate(chan_time):
+        for cn, timeseries in zip(case_name, chan_time):
             output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
-            output.to_df().to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
+            output.to_df().to_pickle(os.path.join(save_dir,cn + '.p'))
 
     def save_iterations(self,summ_stats,DELs,discrete_outputs):
         '''
