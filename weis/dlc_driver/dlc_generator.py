@@ -416,12 +416,6 @@ class DLCGenerator(object):
                 idlc.turbulent_wind = False
             elif dlc_options['IEC_WindType'] == 'Ramp':
                 idlc.turbulent_wind = False
-                if 'ramp_speeddelta' not in dlc_options:
-                    raise Exception('ramp_speeddelta must be set for the Ramp DLC')
-                if 'ramp_duration' not in dlc_options:
-                    raise Exception('ramp_duration must be set for the Ramp DLC')
-                if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
-                    raise Exception('ramp_duration must be smaller than analysis_time')
                 idlc.ramp_speeddelta = dlc_options['ramp_speeddelta']
                 idlc.ramp_duration = dlc_options['ramp_duration']
                 idlc.gust_wait_time = 0.0
@@ -858,6 +852,14 @@ class DLCGenerator(object):
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
         else: # default
             dlc_options['yaw_misalign'] = [0]
+
+        # Check options
+        if 'ramp_speeddelta' not in dlc_options:
+            raise Exception('ramp_speeddelta must be set for the Ramp DLC')
+        if 'ramp_duration' not in dlc_options:
+            raise Exception('ramp_duration must be set for the Ramp DLC')
+        if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
+            raise Exception('ramp_duration must be smaller than analysis_time')
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
