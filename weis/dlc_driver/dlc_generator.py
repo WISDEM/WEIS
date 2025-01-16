@@ -870,10 +870,21 @@ class DLCGenerator(object):
         else:
             dlc_options['gust_wait_time'] = 0
 
+        generic_case_inputs = []
+
+        # Add initial conditions
+        # Note that for initial conditions to not be overwritten, turbine_status should be parked (still or idling)
+        group0 = ['total_time','transient_time','wake_mod','wave_model']
+        if 'pitch_initial' in dlc_options:
+            group0.extend(['pitch_initial'])
+        if 'rot_speed_initial' in dlc_options:
+            group0.extend(['rot_speed_initial'])
+        
+        
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
