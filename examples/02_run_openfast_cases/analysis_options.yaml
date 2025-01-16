@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/02_rosco_optimization
+    folder_output: /scratch/dzalkind/WEIS-FFFilt/outputs/2_ws16
     fname_output: iea15mw
 design_variables:
   control:
@@ -33,10 +33,10 @@ constraints:
 driver:
   optimization:
     flag: True
-    tol: 1.e-2            # Optimality tolerance
+    tol: 1.e-4            # Optimality tolerance
     max_major_iter: 2     # Maximum number of major design iterations (SNOPT)
     max_minor_iter: 100   # Maximum number of minor design iterations (SNOPT)
-    max_iter: 2          # Maximum number of iterations (SLSQP)
+    max_iter: 100          # Maximum number of iterations (SLSQP)
     solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     step_size: 1.e-3      # Step size for finite differencing
     form: forward         # Finite differencing mode, either forward or central

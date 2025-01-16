@@ -2,6 +2,13 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
+        FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
+        # FAST_exe: /projects/usflowt/share/weis_setup/openfast-usflowt/build/glue-codes/openfast/openfast
+        # path2dll: /projects/usflowt/share/weis_setup/rosco-usflowt/rosco/lib/libdiscon.so
+        path2dll: /home/dzalkind/Tools/ROSCO-1/rosco/lib/libdiscon.so
+        turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+        allow_fails: True
+        write_stdout: True
 
 WISDEM:
     RotorSE:
