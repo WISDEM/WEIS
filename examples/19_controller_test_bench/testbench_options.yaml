@@ -1,5 +1,5 @@
 Testbench_Options:
-    output_directory: outputs/6_setup_pp   # relative to this file
+    output_directory: outputs/9_test_ramp   # relative to this file
     output_filebase: testbench
     n_cores: 4  # not yet set up
     use_mpi: False
@@ -56,14 +56,17 @@ DLC_driver:
         - DLC: "AEP"
           TI_factor: 0.5
           wind_speed: [12]
-        - DLC: "Ramp"
-          wind_speed: [10]
-          n_seeds: 1
-          analysis_time: 10.
-          transient_time: 5.0
-          ramp_speeddelta: -2
-          ramp_duration: 8
-        - DLC: "Steady"
-          wind_speed: [8]
-          analysis_time: 10.
-          transient_time: 5.0
+        - DLC: "Ramp"   # Up
+          wind_speed: [5]
+          analysis_time: 1000.
+          ramp_speeddelta: 20
+          ramp_duration: 1000.
+        - DLC: "Ramp"   # Down
+          wind_speed: [25]
+          analysis_time: 1000.
+          ramp_speeddelta: -20
+          ramp_duration: 1000.
+        # - DLC: "Steady"
+        #   wind_speed: [8]
+        #   analysis_time: 10.
+        #   transient_time: 5.0
