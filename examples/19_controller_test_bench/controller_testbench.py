@@ -123,7 +123,7 @@ def main():
         # Post-processing here
         outputs = {}
         discrete_outputs = {}
-        flc.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+        flc.post_process(summary_stats, extreme_table, DELs, Damage, case_list, case_name, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         print('here')
 
