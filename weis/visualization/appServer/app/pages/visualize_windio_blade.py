@@ -97,7 +97,8 @@ def draw_blade_oml(blade_names, blade_by_names):
             # LE/TE Equation
             if channel == 'pitch_axis':
                 chord_values = np.array(blade_by_names[blade_name]['outer_shape_bem']['chord']['values'])
-                leading_edge = np.array(trace['values']) * chord_values
+                pitchAxis = np.interp(blade_by_names[blade_name]['outer_shape_bem']['chord']['grid'], blade_by_names[blade_name]['outer_shape_bem']['pitch_axis']['grid'], blade_by_names[blade_name]['outer_shape_bem']['pitch_axis']['values'])
+                leading_edge = pitchAxis * chord_values
                 tailing_edge = leading_edge - chord_values
 
                 fig.append_trace(go.Scatter(
@@ -156,43 +157,45 @@ def draw_blade_matrix(blade_names, blade_by_names):
     fig_mass = make_subplots(rows=6, cols=6, shared_xaxes=True)
 
     for idx, blade_name in enumerate(blade_names):
-        stiff_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['stiff_matrix']
-        inertia_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['inertia_matrix']
+        # There are some files which doesn't contain elastic properties..
+        if 'elastic_properties_mb' in blade_by_names[blade_name].keys():
+            stiff_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['stiff_matrix']
+            inertia_matrix = blade_by_names[blade_name]['elastic_properties_mb']['six_x_six']['inertia_matrix']
 
-        stiff_grid = stiff_matrix['grid']
-        stiff_values = np.array(stiff_matrix['values'])         # n rows x 21 cols (where 21 = 6+5+4+3+2+1)
+            stiff_grid = stiff_matrix['grid']
+            stiff_values = np.array(stiff_matrix['values'])         # n rows x 21 cols (where 21 = 6+5+4+3+2+1)
 
-        inertia_grid = inertia_matrix['grid']
-        inertia_values = np.array(inertia_matrix['values'])     # n rows x 21 cols (where 21 = 6+5+4+3+2+1)
+            inertia_grid = inertia_matrix['grid']
+            inertia_values = np.array(inertia_matrix['values'])     # n rows x 21 cols (where 21 = 6+5+4+3+2+1)
 
-        counter = 0
-        for pltRow in range(6):
-            for pltCol in range(pltRow, 6):
-                # Define Stiff Matrix
-                fig_elastic.append_trace(go.Scatter(
-                                        x = stiff_grid,
-                                        y = stiff_values[:,counter],
-                                        mode = 'lines',
-                                        line = dict(color=cols[idx]),
-                                        name = blade_name,
-                                        showlegend = False),
-                                        row = pltRow+1,
-                                        col = pltCol+1)
-                fig_elastic.update_layout(title='Stiff Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
+            counter = 0
+            for pltRow in range(6):
+                for pltCol in range(pltRow, 6):
+                    # Define Stiff Matrix
+                    fig_elastic.append_trace(go.Scatter(
+                                            x = stiff_grid,
+                                            y = stiff_values[:,counter],
+                                            mode = 'lines',
+                                            line = dict(color=cols[idx]),
+                                            name = blade_name,
+                                            showlegend = False),
+                                            row = pltRow+1,
+                                            col = pltCol+1)
+                    fig_elastic.update_layout(title='Stiff Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
 
-                # Define Mass Matrix
-                fig_mass.append_trace(go.Scatter(
-                                        x = inertia_grid,
-                                        y = inertia_values[:,counter],
-                                        mode = 'lines',
-                                        line = dict(color=cols[idx]),
-                                        name = blade_name,
-                                        showlegend=False),
-                                        row = pltRow+1,
-                                        col = pltCol+1)
-                fig_mass.update_layout(title='Inertia Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
+                    # Define Mass Matrix
+                    fig_mass.append_trace(go.Scatter(
+                                            x = inertia_grid,
+                                            y = inertia_values[:,counter],
+                                            mode = 'lines',
+                                            line = dict(color=cols[idx]),
+                                            name = blade_name,
+                                            showlegend=False),
+                                            row = pltRow+1,
+                                            col = pltCol+1)
+                    fig_mass.update_layout(title='Inertia Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
 
-                counter += 1
+                    counter += 1
 
 
     return fig_elastic, fig_mass
