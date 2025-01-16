@@ -13,8 +13,7 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.calculated_channels import calculate_channels
-from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
-from pCrunch import LoadsAnalysis, FatigueParams
+from pCrunch import AeroelasticOutput, LoadsAnalysis, FatigueParams, read
 from weis.aeroelasticse.openfast_library import FastLibAPI
 
 import numpy as np
@@ -208,7 +207,7 @@ class runFAST_pywrapper(object):
             # Calculated channels
             calculate_channels(output_dict, self.fst_vt)
 
-            output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+            output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
             os.chdir(orig_dir)
@@ -244,26 +243,20 @@ class runFAST_pywrapper(object):
                 print('OpenFAST not executed: Output file "%s" already exists. To overwrite this output file, set "overwrite_outfiles = True".'%FAST_Output)
 
             if not failed:
-                if os.path.exists(FAST_Output):
-                    output_init = OpenFASTBinary(FAST_Output, magnitude_channels=self.magnitude_channels)
-                elif os.path.exists(FAST_Output_txt):
-                    output_init = OpenFASTAscii(FAST_Output_txt, magnitude_channels=self.magnitude_channels)
-                    
-                output_init.read()
+                outfile = FAST_Output if os.path.exists(FAST_Output) else FAST_Output_txt
+                output_init = read(outfile, magnitude_channels=self.magnitude_channels)
 
                 # Make output dict
-                output_dict = {}
-                for i, channel in enumerate(output_init.channels):
-                    output_dict[channel] = output_init.df[channel].to_numpy()
+                output_dict = output_init.to_dict()
 
                 # Add channel to indicate failed run
-                output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
+                output_dict['openfast_failed'] = np.zeros(output_init.data.shape[0])
 
                 # Calculated channels
                 calculate_channels(output_dict, self.fst_vt)
 
                 # Re-make output
-                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut)
+                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut)
             
             else: # fill with -9999s
                 output_dict = {}
@@ -276,7 +269,7 @@ class runFAST_pywrapper(object):
                 # Add channel to indicate failed run
                 output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
 
-                output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # clear dictionary if we're not keeping time
             if not self.keep_time: output_dict = None
@@ -286,10 +279,11 @@ class runFAST_pywrapper(object):
         # Trim Data
         if self.fst_vt['Fst']['TStart'] > 0.0:
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
-        case_name, sum_stats, extremes, dels, damage = self.la._process_output(output,
-                                                                               return_damage=True,
-                                                                               goodman_correction=self.goodman)
-
+            
+        case_name, sum_stats, extremes, dels, damage = self.la.process_single(output,
+                                                                              return_damage=True,
+                                                                              goodman_correction=self.goodman)
+        #breakpoint()
         return case_name, sum_stats, extremes, dels, damage, output_dict
 
 
@@ -389,7 +383,7 @@ class runFAST_pywrapper_batch(object):
             dl[_name] = _dl
             dam[_name] = _dam
             ct.append(_ct)
-            
+
         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
 
         return summary_stats, extreme_table, DELs, Damage, ct

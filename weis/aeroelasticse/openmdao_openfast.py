@@ -8,6 +8,7 @@ import glob
 import logging
 import pickle
 from pathlib import Path
+import multiprocessing as mp
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
 from openmdao.utils.mpi import MPI
@@ -23,7 +24,6 @@ from wisdem.floatingse.floating_frame import NULL, NNODES_MAX, NELEM_MAX
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 from functools import partial
-from pCrunch import PowerProduction
 from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
 from weis.aeroelasticse import FileTools
@@ -31,8 +31,7 @@ from weis.aeroelasticse.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.turbsim_util import generate_wind_files
 from weis.aeroelasticse.utils import OLAFParams
 from rosco.toolbox import control_interface as ROSCO_ci
-from pCrunch.io import OpenFASTOutput
-from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+from pCrunch import AeroelasticOutput, LoadsAnalysis, PowerProduction, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
@@ -702,7 +701,7 @@ class FASTLoadCases(ExplicitComponent):
 
                         l2_out, _, P_op = LinearTurbine.solve(dist,Plot=False,controller=controller_int)
 
-                        output = OpenFASTOutput.from_dict(l2_out, sim_name, magnitude_channels=self.magnitude_channels)
+                        output = AeroelasticOutput(l2_out, dlc=sim_name, magnitude_channels=self.magnitude_channels)
 
                         _name, _ss, _et, _dl, _dam = self.la._process_output(output)
                         ss[_name] = _ss
@@ -711,7 +710,7 @@ class FASTLoadCases(ExplicitComponent):
                         dam[_name] = _dam
                         ct.append(l2_out)
 
-                        output.df.to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
+                        output.to_df().to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
                         summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
                         
@@ -871,7 +870,7 @@ class FASTLoadCases(ExplicitComponent):
                     for key2 in modeling_options['Level3']['outlist'][key1]:
                         fst_vt['outlist'][key1][key2] = modeling_options['Level3']['outlist'][key1][key2]
         
-        if 'path2dll' in modeling_options['General']['openfast_configuration']:
+        if ('openfast_configuration' in modeling_options['General']) and ('path2dll' in modeling_options['General']['openfast_configuration']):
             fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn15']['IndToler'] == 0.:
@@ -1870,6 +1869,7 @@ class FASTLoadCases(ExplicitComponent):
             fix_wind_seeds, 
             fix_wave_seeds, 
             metocean, 
+            modopt['DLC_driver'],
             initial_condition_table,
             )
         # Generate cases from user inputs
@@ -1936,9 +1936,27 @@ class FASTLoadCases(ExplicitComponent):
                     rank_j = sub_ranks[idx]
                     WindFile_type[i_case] , WindFile_name[i_case] = comm.recv(source=rank_j, tag=1)
         else:
-            for i_case in range(dlc_generator.n_cases):
-                WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
-                    dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
+            # Use multi-procesing for wind generation
+            if self.cores > 1:
+                pool = mp.Pool(self.cores)
+                i_cases = range(dlc_generator.n_cases)
+
+                p_generate_wind = partial(generate_wind_files, dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe)
+
+                p_outputs = pool.map(p_generate_wind,i_cases)
+                pool.close()
+                pool.join()
+
+                # Unpack outputs
+                for i_case, p_output in enumerate(p_outputs):
+                    WindFile_type[i_case] = p_output[0]
+                    WindFile_name[i_case] = p_output[1]
+
+            else:
+                # Generate wind in serial
+                for i_case in range(dlc_generator.n_cases):
+                    WindFile_type[i_case] , WindFile_name[i_case] = generate_wind_files(
+                        dlc_generator, self.FAST_namingOut, self.wind_directory, rotorD, hub_height, self.turbsim_exe, i_case)
                 
         # Apply olaf settings, should be similar to above?
         if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
@@ -2202,7 +2220,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs, discrete_outputs = self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
+            self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
 
         # Did any OpenFAST runs fail?
         if modopt['Level3']['flag']:
@@ -2215,7 +2233,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(chan_time)
+            self.save_timeseries(case_name, chan_time)
 
         if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(summary_stats,DELs,discrete_outputs)
@@ -2561,7 +2579,8 @@ class FASTLoadCases(ExplicitComponent):
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([DELs[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = DELs['TwrBsM']
-        outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
+        if 'constraints' in self.options['opt_options']:
+            outputs['DEL_TwrBsMyt_ratio'] = DELs['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
         # Compute total fatigue damage in spar caps at blade root and trailing edge at max chord location
         if not modopt['Level3']['from_openfast']:
@@ -2675,19 +2694,18 @@ class FASTLoadCases(ExplicitComponent):
             - sum_stats : pd.DataFrame
         '''
 
-        if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
-            outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
-        else:
-            # Let's just average the standard deviation of PtfmPitch for now
-            # TODO: weight based on WS distribution, or something else
-            outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
+        if 'constraints' in self.options['opt_options']:
+            if self.options['opt_options']['constraints']['control']['Std_PtfmPitch']['flag']:
+                outputs['Std_PtfmPitch'] = np.max(sum_stats['PtfmPitch']['std'])
+            else:
+                # Let's just average the standard deviation of PtfmPitch for now
+                # TODO: weight based on WS distribution, or something else
+                outputs['Std_PtfmPitch'] = np.mean(sum_stats['PtfmPitch']['std'])
 
-        outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
+            outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
-        # Max platform offset        
-        outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
-
-        return outputs, discrete_outputs
+            # Max platform offset        
+            outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
     def get_OL2CL_error(self,chan_time,outputs):
         ol_case_names = [os.path.join(
@@ -2699,8 +2717,8 @@ class FASTLoadCases(ExplicitComponent):
         rms_pitch_error = np.full(len(chan_time),fill_value=1000.)
         for i_ts, timeseries in enumerate(chan_time):
             # Get closed loop timeseries
-            cl_output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
-            cl_ts = cl_output.df
+            cl_output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
+            cl_ts = cl_output.to_df()
 
             # Get open loop timeseries
             ol_ts = pd.read_pickle(ol_case_names[i_ts])
@@ -2798,7 +2816,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
-    def save_timeseries(self,chan_time):
+    def save_timeseries(self,case_name, chan_time):
         '''
         Save ALL the timeseries: each iteration and openfast run thereof
         TODO: move this deeper into runFAST so we can clear chan_time
@@ -2809,9 +2827,9 @@ class FASTLoadCases(ExplicitComponent):
         os.makedirs(save_dir, exist_ok=True)
 
         # Save each timeseries as a pickled dataframe
-        for i_ts, timeseries in enumerate(chan_time):
-            output = OpenFASTOutput.from_dict(timeseries, self.FAST_namingOut)
-            output.df.to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
+        for cn, timeseries in zip(case_name, chan_time):
+            output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
+            output.to_df().to_pickle(os.path.join(save_dir,cn + '.p'))
 
     def save_iterations(self,summ_stats,DELs,discrete_outputs):
         '''

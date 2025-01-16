@@ -3053,7 +3053,7 @@ properties:
                         DLC:
                             type: string
                             default: '1.1'
-                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '2.1', '2.3', '3.1', '3.2', '3.3', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '7.1', '7.2', '12.1', 'Custom','AEP']
+                            enum: ['1.1', '1.2', '1.3', '1.4', '1.5', '1.6', '2.1', '2.3', '3.1', '3.2', '3.3', '5.1', '6.1', '6.2', '6.3', '6.4', '6.5', '7.1', '7.2', '12.1', 'Custom','AEP','Ramp','Steady','Step']
                             description: IEC design load case to run. The DLCs currently supported are 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 5.1, 6.1, 6.3, and 6.4
                         wind_speed:
                             type: array
@@ -3186,7 +3186,7 @@ properties:
                         IEC_WindType:
                             type: string
                             default: NTM
-                            enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG','EWS']
+                            enum: ['NTM', '1ETM', '2ETM', '3ETM', '1EWM1', '2EWM1', '3EWM1', '1EWM50', '2EWM50', '3EWM50', 'ECD', 'EDC', 'EOG','EWS','Custom','Ramp','Steady','Step']
                             description: IEC turbulence type ('NTM'=normal, 'xETM'=extreme turbulence, 'xEWM1'=extreme 1-year wind, 'xEWM50'=extreme 50-year wind, where x=wind turbine class 1, 2, or 3), 'ECD'=extreme coherent gust with direction change, 'EDC'=extreme direction change, 'EOG'=extreme operating gust. Normally the user does not need to define this entry, 'EWS'='extreme wind shear'
                         analysis_time:
                             type: number
@@ -3220,6 +3220,13 @@ properties:
                             type: string
                             enum: ['A+','A','B','C']
                             description: The class of turbulence, will overwrite class defined in geometry options. Only valid in the AEP DLC.
+                        user_group:
+                            type: [object,array]
+                            items:
+                                type: object
+                                description: Groups
+                            default: {}
+                            description: Define additional groups to alter DLCs or sweep additional paramters.  Users can input single values to change all of the simulations in a DLC, multiple values to add an additional group to sweep over, or a list of new groups in the yaml format.
                         turbulent_wind:
                             type: object
                             default: {}
@@ -3607,7 +3614,11 @@ properties:
                             unit: s
                             minimum: 0.0
                             maximum: 1000.0
-
+            openfast_input_map:
+                type: object
+                default: {}
+                description: Users can add to the openfast_input_map of the DLC driver here, with key value pairs
+                
     ROSCO:
         type: object
         default: {}

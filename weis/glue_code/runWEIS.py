@@ -1,5 +1,5 @@
 import numpy as np
-import os, sys, time, json
+import os, sys
 import openmdao.api as om
 from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
