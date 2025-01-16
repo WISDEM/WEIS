@@ -77,6 +77,11 @@ DLC_driver:
           analysis_time: 1000.
           ramp_speeddelta: -20
           ramp_duration: 1000.
+        - DLC: "Step"   # Down
+          wind_speed: [18]
+          analysis_time: 100.
+          step_speeddelta: 2.0
+          step_time: 50.0
         # - DLC: "Steady"
         #   wind_speed: [8]
         #   analysis_time: 10.
