@@ -418,6 +418,11 @@ class DLCGenerator(object):
                 idlc.turbulent_wind = False
                 idlc.ramp_speeddelta = dlc_options['ramp_speeddelta']
                 idlc.ramp_duration = dlc_options['ramp_duration']
+                idlc.gust_wait_time = dlc_options['gust_wait_time']
+            elif dlc_options['IEC_WindType'] == 'Step':
+                idlc.turbulent_wind = False
+                idlc.step_speeddelta = dlc_options['step_speeddelta']
+                idlc.gust_wait_time = dlc_options['gust_wait_time']
             elif dlc_options['IEC_WindType'] == 'Custom':
                 idlc.turbulent_wind = False
             else:
@@ -864,6 +869,43 @@ class DLCGenerator(object):
                 raise Exception('ramp_duration+gust_wait_time must be smaller than analysis_time')
             else:
                 dlc_options['gust_wait_time'] = 0
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
+    def generate_Step(self, dlc_options):
+        # Power production Step wind
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = 'Step'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'Step'
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # Check options
+        if 'step_speeddelta' not in dlc_options:
+            raise Exception('step_speeddelta must be set for the Step DLC')
+        if 'step_time' in dlc_options:
+            if dlc_options['step_time'] > dlc_options['analysis_time']:
+                raise Exception('step_time must be less than analysis_time')
+            dlc_options['gust_wait_time'] = dlc_options['step_time']
+        else:
+            raise Exception('step_time must be set for the Step DLC')
+        
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
