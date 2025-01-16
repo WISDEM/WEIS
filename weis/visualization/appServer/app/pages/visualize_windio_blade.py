@@ -70,10 +70,9 @@ def layout():
     layout = dcc.Loading(html.Div([
                 dcc.Store(id='blade-by-names', data={}),
                 blade_inputs,
-                dbc.Row([
-                    dbc.Col(oml_layout, width=6),
-                    dbc.Col(matrix_layout, width=6),
-                ], className='g-0')         # No gutters where horizontal spacing is added between the columns by default
+                oml_layout,
+                matrix_layout
+
             ]))
     
     return layout
@@ -136,7 +135,8 @@ def draw_blade_oml(blade_names, blade_by_names):
             
                 fig.update_yaxes(title_text=channel, row=row_idx+1, col=1)
             
-    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    # fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02), height=600)
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text=f'grid', row=len(channels), col=1)
@@ -152,9 +152,11 @@ def draw_blade_matrix(blade_names, blade_by_names):
     if blade_names is None:
         raise PreventUpdate
 
-    # Initialize 6x6 matrix per blade
-    fig_elastic = make_subplots(rows=6, cols=6, shared_xaxes=True)
-    fig_mass = make_subplots(rows=6, cols=6, shared_xaxes=True)
+    # Initialize 6x6 matrices per blade
+    subplot_titles = tuple(' ' for pltRow in range(6) for pltCol in range(6))
+    # subplot_titles = tuple(f'' for _ in range(6) for _ in range(6))
+    fig_elastic = make_subplots(rows=6, cols=6, subplot_titles=subplot_titles)
+    fig_mass = make_subplots(rows=6, cols=6, subplot_titles=subplot_titles)
 
     for idx, blade_name in enumerate(blade_names):
         # There are some files which doesn't contain elastic properties..
@@ -178,10 +180,19 @@ def draw_blade_matrix(blade_names, blade_by_names):
                                             mode = 'lines',
                                             line = dict(color=cols[idx]),
                                             name = blade_name,
-                                            showlegend = False),
+                                            showlegend = True if pltRow==0 and pltCol==0 else False),
                                             row = pltRow+1,
                                             col = pltCol+1)
-                    fig_elastic.update_layout(title='Stiff Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
+                    
+                    # Add xaxis label / subplot title
+                    if pltRow == pltCol:
+                        fig_elastic.update_xaxes(title_text='grid', showticklabels=True, row=pltRow+1, col=pltCol+1)
+                    else:
+                        fig_elastic.update_xaxes(showticklabels=False, row=pltRow+1, col=pltCol+1)
+                    
+                    fig_elastic.layout.annotations[6*pltRow + pltCol].text = f'K{pltRow+1}{pltCol+1}'
+                    
+                    fig_elastic.update_layout(title='Stiff Matrix', yaxis=dict(tickformat='.1e'), margin=dict(t=100, b=50), legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02), height=1000)
 
                     # Define Mass Matrix
                     fig_mass.append_trace(go.Scatter(
@@ -190,10 +201,19 @@ def draw_blade_matrix(blade_names, blade_by_names):
                                             mode = 'lines',
                                             line = dict(color=cols[idx]),
                                             name = blade_name,
-                                            showlegend=False),
+                                            showlegend = True if pltRow==0 and pltCol==0 else False),
                                             row = pltRow+1,
                                             col = pltCol+1)
-                    fig_mass.update_layout(title='Inertia Matrix', showlegend=False, yaxis=dict(tickformat='.1e'), margin=dict(l=0, r=0, t=50, b=30))
+                    
+                    # Add xaxis label / subplot title
+                    if pltRow == pltCol:
+                        fig_mass.update_xaxes(title_text='grid', showticklabels=True, row=pltRow+1, col=pltCol+1)
+                    else:
+                        fig_mass.update_xaxes(showticklabels=False, row=pltRow+1, col=pltCol+1)
+                    
+                    fig_mass.layout.annotations[6*pltRow + pltCol].text = f'K{pltRow+1}{pltCol+1}'
+                    
+                    fig_mass.update_layout(title='Inertia Matrix', yaxis=dict(tickformat='.1e'), margin=dict(t=100, b=50), legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02), height=1000)
 
                     counter += 1
 
