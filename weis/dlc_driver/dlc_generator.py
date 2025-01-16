@@ -418,7 +418,6 @@ class DLCGenerator(object):
                 idlc.turbulent_wind = False
                 idlc.ramp_speeddelta = dlc_options['ramp_speeddelta']
                 idlc.ramp_duration = dlc_options['ramp_duration']
-                idlc.gust_wait_time = 0.0
             elif dlc_options['IEC_WindType'] == 'Custom':
                 idlc.turbulent_wind = False
             else:
@@ -811,7 +810,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_Steady(self, dlc_options):
-        # Power production normal turbulence model - severe sea state
+        # Power production steady wind
 
         # Get default options
         dlc_options.update(self.default_options)   
@@ -837,7 +836,7 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_Ramp(self, dlc_options):
-        # Power production normal turbulence model - severe sea state
+        # Power production ramp wind
 
         # Get default options
         dlc_options.update(self.default_options)   
@@ -860,6 +859,11 @@ class DLCGenerator(object):
             raise Exception('ramp_duration must be set for the Ramp DLC')
         if dlc_options['ramp_duration'] > dlc_options['analysis_time']:
             raise Exception('ramp_duration must be smaller than analysis_time')
+        if 'gust_wait_time' in dlc_options:
+            if dlc_options['gust_wait_time'] + dlc_options['ramp_duration'] > dlc_options['analysis_time']:
+                raise Exception('ramp_duration+gust_wait_time must be smaller than analysis_time')
+            else:
+                dlc_options['gust_wait_time'] = 0
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -869,7 +873,6 @@ class DLCGenerator(object):
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
         self.generate_cases(generic_case_inputs,dlc_options)
-
 
     def generate_2p1(self, dlc_options):
         # Power production plus loss of electrical network
