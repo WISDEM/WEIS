@@ -1,8 +1,18 @@
 Testbench_Options:
-    output_directory: outputs/9_test_ramp   # relative to this file
+    output_directory: /scratch/dzalkind/Controller_Testbench/outputs/7_new_cases   # relative to this file
     output_filebase: testbench
     n_cores: 4  # not yet set up
     use_mpi: False
+
+
+# TODO: simplify this, maybe move to Testbench_Options
+General:
+    openfast_configuration:
+        use_exe: True
+        FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
+        path2dll: /home/dzalkind/Tools/ROSCO-1/rosco/lib/libdiscon.so
+        turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+
 
 Turbine_Info:  # Can we pull this information from OpenFAST input?
     # used to generate wind inputs
@@ -53,6 +63,7 @@ DLC_driver:
         - DLC: "1.5"
         - DLC: "1.6"
         - DLC: "5.1"
+          n_azimuth: 4
         - DLC: "AEP"
           TI_factor: 0.5
           wind_speed: [12]
