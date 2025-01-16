@@ -300,6 +300,7 @@ class IEC_CoherentGusts():
             fid.write('  '+''.join([('%.6f' % val).center(12) for val in row]) + '\n')
 
         fid.close()
+<<<<<<< HEAD
 
     def add_turbulence(filename, u, v = None, w = None, time = None, ref_height = None, new_filename = None):
         """
@@ -365,3 +366,5 @@ class IEC_CoherentGusts():
             ts_new.write(new_filename)
         else: 
             return ts_new
+=======
+>>>>>>> 7d095caec5db66217229c1996dfe2498965a15ed

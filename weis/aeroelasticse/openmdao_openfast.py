@@ -733,7 +733,7 @@ class FASTLoadCases(ExplicitComponent):
                     # TODO: pull chan_time out of here
 
             # Post process regardless of level
-            self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+            self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, case_name, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
             
             # Save AEP value to linear pickle file
             if modopt['Level2']['flag']:
@@ -2200,7 +2200,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator
 
-    def post_process(self, summary_stats, extreme_table, DELs, damage, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
+    def post_process(self, summary_stats, extreme_table, DELs, damage, case_list, case_name, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
         # Analysis
