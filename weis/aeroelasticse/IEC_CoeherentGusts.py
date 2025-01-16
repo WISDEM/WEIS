@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from weis.aeroelasticse import turbsim_file
 
 class IEC_CoherentGusts():
 
@@ -299,3 +300,68 @@ class IEC_CoherentGusts():
             fid.write('  '+''.join([('%.6f' % val).center(12) for val in row]) + '\n')
 
         fid.close()
+
+    def add_turbulence(filename, u, v = None, w = None, time = None, ref_height = None, new_filename = None):
+        """
+        Creates a new BTS file using the turbulence of an existing BTS file,
+        combined with time-varying u (and possibly v and w) signals.
+        Superimposed the turbulence of BTS file filename on top of the provided signals.
+        Velocity signals can be 1D arrays (time), or 3D arrays that match the dimensions 
+        of the turbsim file (Nt, Ny, Nz).
+        
+        Inputs:
+            filename (str):          path to BTS file to grab turbulence from.
+            u (array):               time-varying velocity in x-direction.
+            v (array, optional):     time-varying velocity in x-direction (assumed 0).
+            u (array, optional):     time-varying velocity in x-direction (assumed 0).
+            time (array, optional):  time array, must be same size as u (and v and w).
+                                        If undefined, velocity inputs must match BTS file size.
+            ref_height (float, opt): user-defined height to take average WS at.
+                                        Assumed to be middle of grid.
+            new_filename (str, opt): filename for the new BTS file. If undefined, the function
+                                        returns the TurbSimFile object instead.
+        """
+
+        if v is None: v = np.zeros_like(u)
+        if w is None: w = np.zeros_like(u)
+
+        ## Load BTS file
+        ts = turbsim_file.TurbSimFile(filename)
+        ts_shape = ts['u'].shape
+        if ref_height: 
+            ## Find z location closest to reference height
+            ref_idx = np.argmin(abs(ts['z']-ref_height))
+            ## If ref_height not defined, assume it to be in the middle
+        elif ts_shape[3] % 2 == 1: 
+            ref_idx = int(ts_shape[3]/2-0.5)
+        else: 
+            ref_idx = [int(ts_shape[3]/2-1), int(ts_shape[3]/2)]
+
+        ## Interpolate velocity signal if size is different from BTS file
+        if ts_shape[1] != np.shape(u):
+            u = np.interp(ts['t'], time, u)
+            v = np.interp(ts['t'], time, v)
+            w = np.interp(ts['t'], time, w)
+
+        ## Calculate mean in x-direction at reference height
+        ## Note: it is assumed that  v and w are always mean 0
+        tsu_mean = np.mean(ts['u'][0,:,:,ref_idx])
+
+        ## Scaling factor for scaling turbulence
+        scaling = u / tsu_mean
+
+        ## Copy old turbsimfile object into new turbsimfile object
+        ts_new = ts
+        
+        ## Change velocity profile as defined
+        ts_new['u'][0,:,:,:] = (ts['u'][0,:,:,:] - tsu_mean) + \
+                    np.tile(u[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
+        ts_new['u'][1,:,:,:] = ts['u'][1,:,:,:] + \
+                    np.tile(v[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
+        ts_new['u'][2,:,:,:] = ts['u'][2,:,:,:] + \
+                    np.tile(w[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
+
+        if new_filename: 
+            ts_new.write(new_filename)
+        else: 
+            return ts_new

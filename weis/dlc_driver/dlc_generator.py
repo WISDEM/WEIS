@@ -867,8 +867,8 @@ class DLCGenerator(object):
         if 'gust_wait_time' in dlc_options:
             if dlc_options['gust_wait_time'] + dlc_options['ramp_duration'] > dlc_options['analysis_time']:
                 raise Exception('ramp_duration+gust_wait_time must be smaller than analysis_time')
-            else:
-                dlc_options['gust_wait_time'] = 0
+        else:
+            dlc_options['gust_wait_time'] = 0
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
