@@ -69,6 +69,9 @@ def main():
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
     testbench_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
 
+    # Postprocessing options (map to OFMgmt)
+    OFmgmt['postprocessing'] = testbench_options['PostProcessing']
+
 
     if MPI:
         opt_options = {}

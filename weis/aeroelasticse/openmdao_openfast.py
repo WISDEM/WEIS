@@ -2232,9 +2232,9 @@ class FASTLoadCases(ExplicitComponent):
             if any(summary_stats['openfast_failed']['mean'] > 0):
                 outputs['openfast_failed'] = 2
 
-        # # Did any OpenFAST runs fail?
-        # if any(summary_stats['openfast_failed']['mean'] > 0):
-        #     outputs['openfast_failed'] = 2
+        # Wind speed binning
+        if 'binning_time' in modopt['PostProcessing']:  # TODO: figure out a better flag for this
+            self.wind_speed_binning(chan_time)
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
@@ -2769,6 +2769,44 @@ class FASTLoadCases(ExplicitComponent):
         os.makedirs(save_dir, exist_ok=True)
         write_yaml(char_loads,os.path.join(save_dir,'charateristic_loads.yaml'))
 
+    def wind_speed_binning(self,chan_time):
+
+        # First bin all the data for each timeseries
+        binned_data_ts = [None] * len(chan_time)
+
+        for i_case, output in enumerate(chan_time):
+            po = AeroelasticOutput(output)
+            df_binned = po.time_binning(self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time'])
+            binned_data_ts[i_case] = df_binned
+
+        # Make save directories
+        save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Get channel list from last timeseries
+        channels = po.channels.tolist()
+
+        # Combine all the data into one binned dataset
+        binned_data_all = np.empty((0,len(channels)))
+
+        # Also combine into dlc-specific datasets
+        dlcs = self.case_df['DLC'].unique()
+        for dlc in dlcs:
+            dlc_ind = np.where(self.case_df['DLC'] == dlc)[0].tolist()
+            dlc_binned_data = [binned_data_ts[i] for i in dlc_ind]
+
+            binned_data_dlc = np.empty((0,len(channels)))
+            for df_binned in dlc_binned_data:
+
+                binned_data_df = df_binned[channels]
+                binned_data_dlc = np.concatenate((binned_data_dlc,binned_data_df.to_numpy()))
+                binned_data_all = np.concatenate((binned_data_all,binned_data_df.to_numpy()))
+
+            df_binned_dlc = pd.DataFrame(data=binned_data_dlc, columns=channels)
+            df_binned_dlc.to_pickle(os.path.join(save_dir,f'binned_dlc{dlc}.p'))
+        
+        df_binned_all = pd.DataFrame(data=binned_data_all, columns=channels)
+        df_binned_all.to_pickle(os.path.join(save_dir,f'binned_all.p'))
 
     def get_OL2CL_error(self,chan_time,outputs):
         ol_case_names = [os.path.join(

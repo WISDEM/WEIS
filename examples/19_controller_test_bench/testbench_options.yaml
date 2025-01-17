@@ -23,6 +23,9 @@ Turbine_Info:  # Can we pull this information from OpenFAST input?
         blade: False  # use to do local blade loading analysis
         tower: False   # same
 
+PostProcessing:
+    binning_time: 20
+
 
 Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
     flag: True
@@ -46,31 +49,34 @@ DLC_driver:
         wave_period50: 13.6
     DLCs:
         - DLC: "1.1"
-          n_seeds: 6
-        - DLC: "1.3"
-          n_seeds: 6
-        - DLC: "1.4"
-        - DLC: "1.5"
-        - DLC: "1.6"
-        - DLC: "5.1"
-        - DLC: "AEP"
-          TI_factor: 0.5
-          wind_speed: [12]
-        - DLC: "Ramp"   # Up
-          wind_speed: [5]
-          analysis_time: 1000.
-          ramp_speeddelta: 20
-          ramp_duration: 1000.
-        - DLC: "Ramp"   # Down
-          wind_speed: [25]
-          analysis_time: 1000.
-          ramp_speeddelta: -20
-          ramp_duration: 1000.
-        - DLC: "Step"   # Down
-          wind_speed: [18]
-          analysis_time: 100.
-          step_speeddelta: 2.0
-          step_time: 50.0
+          n_seeds: 2
+          wind_speed: [6,12]
+          transient_time: 0
+          analysis_time: 400
+        # - DLC: "1.3"
+        #   n_seeds: 6
+        # - DLC: "1.4"
+        # - DLC: "1.5"
+        # - DLC: "1.6"
+        # - DLC: "5.1"
+        # - DLC: "AEP"
+        #   TI_factor: 0.5
+        #   wind_speed: [12]
+        # - DLC: "Ramp"   # Up
+        #   wind_speed: [5]
+        #   analysis_time: 1000.
+        #   ramp_speeddelta: 20
+        #   ramp_duration: 1000.
+        # - DLC: "Ramp"   # Down
+        #   wind_speed: [25]
+        #   analysis_time: 1000.
+        #   ramp_speeddelta: -20
+        #   ramp_duration: 1000.
+        # - DLC: "Step"   # Down
+        #   wind_speed: [18]
+        #   analysis_time: 100.
+        #   step_speeddelta: 2.0
+        #   step_time: 50.0
         # - DLC: "Steady"
         #   wind_speed: [8]
         #   analysis_time: 10.
