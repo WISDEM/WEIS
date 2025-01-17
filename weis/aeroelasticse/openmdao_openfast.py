@@ -2766,6 +2766,7 @@ class FASTLoadCases(ExplicitComponent):
                 char_loads[dlc][chan]['characteristic_load'] = np.max(char_loads[dlc][chan]['load_values'])
 
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        os.makedirs(save_dir, exist_ok=True)
         write_yaml(char_loads,os.path.join(save_dir,'charateristic_loads.yaml'))
 
 
