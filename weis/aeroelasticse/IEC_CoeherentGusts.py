@@ -329,6 +329,8 @@ class IEC_CoherentGusts():
         v = -np.sin(data[:,2]*np.pi/180)
         w = -np.cos(data[:,2]*np.pi/180) * np.sin(data[:,8]*np.pi/180) * data[:,1] + \
             np.cos(data[:,8]*np.pi/180) * data[:,3]
+
+        # u = 
         ts['u'] = u
         ts['v'] = v
         ts['w'] = w
@@ -350,8 +352,8 @@ class IEC_CoherentGusts():
             u (array, optional):    time-varying velocity in x-direction (assumed 0).
             time (array, optional): time array, must be same size as u (and v and w).
                                         If undefined, velocity inputs must match BTS file size.
-            HH (float, opt):        user-defined height to take average WS at.
-                                        Assumed to be middle of grid.
+            HH (float, opt):        user-defined height to take average WS at. Assumed to be middle 
+                                        of grid. Only used if u.ndim = 1.
             new_fname (str, opt):   filename for the new BTS file. If undefined, the function
                                         returns the TurbSimFile object instead.
         """
@@ -359,27 +361,105 @@ class IEC_CoherentGusts():
         if v is None: v = np.zeros_like(u)
         if w is None: w = np.zeros_like(u)
 
+        ## Check if u, v, and w have same shape
+        if (np.shape(u) != np.shape(v)) or (np.shape(u) != np.shape(w)):
+            raise Exception('The shape of u {} must be the same as the shapes of v {} and w {}.'\
+                                .format(np.shape(u), np.shape(v), np.shape(w)))
+
         ## Load BTS file
         ts = turbsim_file.TurbSimFile(fname)
         ts_shape = ts['u'].shape
-        if HH: 
-            ## Find z location closest to reference height
-            ref_idx = np.argmin(abs(ts['z']-HH))
-            ## If ref_height not defined, assume it to be in the middle
-        elif ts_shape[3] % 2 == 1: 
-            ref_idx = int(ts_shape[3]/2-0.5)
-        else: 
-            ref_idx = [int(ts_shape[3]/2-1), int(ts_shape[3]/2)]
 
-        ## Interpolate velocity signal if size is different from BTS file
-        if ts_shape[1] != np.shape(u):
-            u = np.interp(ts['t'], time, u)
-            v = np.interp(ts['t'], time, v)
-            w = np.interp(ts['t'], time, w)
+        ## Create 3D velocity vectors based on the shape of the provided velocity vectors
+        u_ndims = len(np.shape(u))
 
-        ## Calculate mean in x-direction at reference height
-        ## Note: it is assumed that  v and w are always mean 0
-        tsu_mean = np.mean(ts['u'][0,:,:,ref_idx])
+        ## If u has one dimension, it must be the time dimension
+        if u_ndims == 1:
+            if np.shape(u) == np.shape(time):
+                # Interpolate provided time vector to bts time indices
+                u = np.interp(ts['t'], time, u)
+                v = np.interp(ts['t'], time, v)
+                w = np.interp(ts['t'], time, w)
+
+            ## TODO: We could possibly add the functionality to provide constant shear here
+            ## (without providing veer/horizontal shear), so a (tN x zN) sized u
+
+            elif np.shape(u) != ts_shape[1]:
+                # Otherwise must match bts time series length
+                raise Exception(\
+                    'The shape of u {} must be the same as either time {} or the .bts time {}.'\
+                        .format(np.shape(u), np.shape(time), ts_shape[1]))
+            
+            # Match shape
+            u = np.tile(u[:, np.newaxis, np.newaxis], (1, ts_shape[2], ts_shape[3]))
+            v = np.tile(v[:, np.newaxis, np.newaxis], (1, ts_shape[2], ts_shape[3]))
+            w = np.tile(w[:, np.newaxis, np.newaxis], (1, ts_shape[2], ts_shape[3]))
+
+            ## Determine reference height
+            if HH: 
+                ## Find z location closest to reference height
+                ref_idx = np.argmin(abs(ts['z']-HH))
+                ## If ref_height not defined, assume it to be in the middle
+            elif ts_shape[3] % 2 == 1: 
+                ref_idx = int(ts_shape[3]/2-0.5)
+            else: 
+                ref_idx = [int(ts_shape[3]/2-1), int(ts_shape[3]/2)]
+                
+            ## Calculate mean in x-direction at reference height
+            ## Note: it is assumed that v and w are always mean 0
+            ## Note 2: in this case, the shear from the bts file is retained
+            tsu_mean = np.average(ts['u'][0,:,:,ref_idx], keepdims=True)
+        
+        ## If u has two dimensions, it must be the same size as the bts grid
+        elif u_ndims == 2:
+            if np.shape(u) != ts_shape[2:]:
+                raise Exception(\
+                    'If a 2D array, the shape of u {} must be the same as the bts grid size {}.'\
+                        .format(np.shape(u), ts_shape[2:]))
+            ## TODO: We could possibly add the functionality to provide shear over time here
+            ## (without providing veer/horizontal shear)
+
+            else:
+                # Match shape
+                u = np.tile(u[np.newaxis, :, :], (ts_shape[1], 1, 1))
+                v = np.tile(v[np.newaxis, :, :], (ts_shape[1], 1, 1))
+                w = np.tile(w[np.newaxis, :, :], (ts_shape[1], 1, 1))
+            
+                ## Calculate mean in x-direction at each height
+                ## Note: it is assumed that v and w are always mean 0
+                ## Note2: in this case, all veer/shear is removed from the bts file,
+                ## as it is presumed to be provided in the u/v/w vectors
+                tsu_mean = np.average(ts['u'][0,:,:,:], axis=0, keepdims=True)
+        
+        ## If u has three dimensions, it must be (time, y, z)
+        elif u_ndims == 3:
+            
+            if np.shape(u)[0] == np.shape(time):
+                # Simple function to interpolate the grid over time
+                # TODO: replace for something more efficient
+                def interp_grid(ts, time, u, v, w):
+                    u_interp = np.empty(ts_shape[1:])
+                    v_interp = np.empty(ts_shape[1:])
+                    w_interp = np.empty(ts_shape[1:])
+                    for n in range(np.shape(u)[1]):
+                        for m in range(np.shape(u)[2]):
+                            u_interp[:,n,m] = np.interp(ts['t'], time, u[:,n,m])
+                            v_interp[:,n,m] = np.interp(ts['t'], time, v[:,n,m])
+                            w_interp[:,n,m] = np.interp(ts['t'], time, w[:,n,m])
+                    return u_interp, v_interp, w_interp
+                
+                u, v, w = interp_grid(ts, time, u, v, w)
+            
+            elif np.shape(u) != ts_shape[1:]:
+                raise Exception(\
+                'If a 3D array, the shape of u {} must be the same as the bts u vector {}, or the first dimension must match time {}.'\
+                    .format(np.shape(u), ts_shape[1:], np.shape(time)))
+
+            ## Calculate mean in x-direction at each height
+            ## Note: it is assumed that v and w are always mean 0
+            ## Note2: in this case, all veer/shear is removed from the bts file,
+            ## as it is presumed to be provided in the u/v/w vectors
+            tsu_mean = np.average(ts['u'][0,:,:,:], axis=0, keepdims=True)
 
         ## Scaling factor for scaling turbulence
         scaling = u / tsu_mean
@@ -388,12 +468,10 @@ class IEC_CoherentGusts():
         ts_new = ts
         
         ## Change velocity profile as defined
-        ts_new['u'][0,:,:,:] = (ts['u'][0,:,:,:] - tsu_mean) + \
-                    np.tile(u[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
-        ts_new['u'][1,:,:,:] = ts['u'][1,:,:,:] + \
-                    np.tile(v[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
-        ts_new['u'][2,:,:,:] = ts['u'][2,:,:,:] + \
-                    np.tile(w[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
+        ## Note that v and w are assumed zero-mean
+        ts_new['u'][0,:,:,:] = ts['u'][0,:,:,:] + u - tsu_mean
+        ts_new['u'][1,:,:,:] = ts['u'][1,:,:,:] + v
+        ts_new['u'][2,:,:,:] = ts['u'][2,:,:,:] + w
 
         if new_fname: 
             ts_new.write(new_fname)
