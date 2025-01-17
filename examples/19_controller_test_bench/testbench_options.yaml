@@ -1,3 +1,8 @@
+General:
+  openfast_configuration:
+    save_iterations: True
+    save_timeseries: True
+
 Testbench_Options:
     output_directory: outputs/9_test_ramp   # relative to this file
     output_filebase: testbench
@@ -49,35 +54,50 @@ DLC_driver:
         wave_period50: 13.6
     DLCs:
         - DLC: "1.1"
-          n_seeds: 2
-          wind_speed: [6,12]
-          transient_time: 0
-          analysis_time: 400
-        # - DLC: "1.3"
-        #   n_seeds: 6
-        # - DLC: "1.4"
-        # - DLC: "1.5"
-        # - DLC: "1.6"
-        # - DLC: "5.1"
-        # - DLC: "AEP"
-        #   TI_factor: 0.5
-        #   wind_speed: [12]
-        # - DLC: "Ramp"   # Up
-        #   wind_speed: [5]
-        #   analysis_time: 1000.
-        #   ramp_speeddelta: 20
-        #   ramp_duration: 1000.
-        # - DLC: "Ramp"   # Down
-        #   wind_speed: [25]
-        #   analysis_time: 1000.
-        #   ramp_speeddelta: -20
-        #   ramp_duration: 1000.
-        # - DLC: "Step"   # Down
-        #   wind_speed: [18]
-        #   analysis_time: 100.
-        #   step_speeddelta: 2.0
-        #   step_time: 50.0
-        # - DLC: "Steady"
-        #   wind_speed: [8]
-        #   analysis_time: 10.
-        #   transient_time: 5.0
+          n_seeds: 6
+        - DLC: "1.3"
+          n_seeds: 6
+        - DLC: "1.4"
+        - DLC: "1.5"
+        - DLC: "1.6"
+        - DLC: "5.1"
+        - DLC: "AEP"
+          TI_factor: 0.5
+          wind_speed: [12]
+        - DLC: "Ramp"   # 0 to cutin+1
+          turbine_status: parked-still
+          wind_speed: [0]
+          transient_time: 20
+          analysis_time: 200.
+          ramp_speeddelta: 6
+          ramp_duration: 200.
+          rot_speed_initial: 0
+          pitch_initial: 90
+        - DLC: "Ramp"   # Cutin-1 to cutin+1
+          turbine_status: parked-still
+          wind_speed: [4]
+          transient_time: 20
+          analysis_time: 200.
+          ramp_speeddelta: 2
+          ramp_duration: 200.
+          rot_speed_initial: 0
+          pitch_initial: 90
+        - DLC: "Ramp"   # Cutin to rated
+          wind_speed: [5]
+          transient_time: 20
+          analysis_time: 200.
+          ramp_speeddelta: 6.4
+          ramp_duration: 200.
+        - DLC: "Ramp"   # Rated-2 to rated+2
+          wind_speed: [9.4]
+          transient_time: 20
+          analysis_time: 400.
+          ramp_speeddelta: 13.4
+          ramp_duration: 400.
+        - DLC: "Ramp"   # Rated to Cutout + 2
+          wind_speed: [11.4]
+          transient_time: 20
+          analysis_time: 400.
+          ramp_speeddelta: 27
+          ramp_duration: 400.
+

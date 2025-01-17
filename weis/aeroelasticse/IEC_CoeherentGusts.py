@@ -284,7 +284,7 @@ class IEC_CoherentGusts():
 
         # Headers
         hd1 = ['Time', 'Wind', 'Wind', 'Vertical', 'Horiz.', 'Pwr. Law', 'Lin. Vert.', 'Gust', 'Upflow']
-        hd2 = ['', 'Speed', 'Dir', 'Speed', 'Shear', 'Vert. Shr', 'Shear', 'Speed', 'Angle']
+        hd2 = ['',     'Speed', 'Dir', 'Speed',    'Shear',  'Vert. Shr', 'Shear',     'Speed', 'Angle']
         hd3 = ['(s)', '(m/s)', '(deg)', '(m/s)', '(-)', '(-)', '(-)', '(m/s)', '(deg)']
 
         fid = open(fname, 'w')
@@ -301,7 +301,41 @@ class IEC_CoherentGusts():
 
         fid.close()
 
-    def add_turbulence(filename, u, v = None, w = None, time = None, ref_height = None, new_filename = None):
+    def write_bts(self, bts_fname, wnd_fname, new_fname = None):
+
+        data = np.loadtxt(wnd_fname, skiprows=6)
+
+        ## TODO: more advanced function to convert wnd to bts
+        ts = self.wnd2bts(data, 0, self.HH)
+        if new_fname: self.add_turbulence(bts_fname, ts['u'], ts['v'], ts['w'], data[:,0], self.HH, new_fname)
+        else: return self.add_turbulence(bts_fname, ts['u'], ts['v'], ts['w'], data[:,0], self.HH, new_fname)
+
+    def wnd2bts(self, data, y, z):
+        """
+        Converts wnd-style data to bts-style data
+        0: Time
+        1: Wind speed
+        2: Wind dir
+        3: Vertical speed
+        4: Horizontal shear
+        5: Pwr law vert shear
+        6: Linear vertical shear
+        7: Gust speed
+        8: Upflow angle
+        """
+        ts = {}
+        u = np.cos(data[:,2]*np.pi/180) * np.cos(data[:,8]*np.pi/180) * data[:,1] + \
+            np.sin(data[:,8]*np.pi/180) * data[:,3]
+        v = -np.sin(data[:,2]*np.pi/180)
+        w = -np.cos(data[:,2]*np.pi/180) * np.sin(data[:,8]*np.pi/180) * data[:,1] + \
+            np.cos(data[:,8]*np.pi/180) * data[:,3]
+        ts['u'] = u
+        ts['v'] = v
+        ts['w'] = w
+
+        return ts
+
+    def add_turbulence(fname, u, v = None, w = None, time = None, HH = None, new_fname = None):
         """
         Creates a new BTS file using the turbulence of an existing BTS file,
         combined with time-varying u (and possibly v and w) signals.
@@ -310,15 +344,15 @@ class IEC_CoherentGusts():
         of the turbsim file (Nt, Ny, Nz).
         
         Inputs:
-            filename (str):          path to BTS file to grab turbulence from.
-            u (array):               time-varying velocity in x-direction.
-            v (array, optional):     time-varying velocity in x-direction (assumed 0).
-            u (array, optional):     time-varying velocity in x-direction (assumed 0).
-            time (array, optional):  time array, must be same size as u (and v and w).
+            fname (str):            path to BTS file to grab turbulence from.
+            u (array):              time-varying velocity in x-direction.
+            v (array, optional):    time-varying velocity in x-direction (assumed 0).
+            u (array, optional):    time-varying velocity in x-direction (assumed 0).
+            time (array, optional): time array, must be same size as u (and v and w).
                                         If undefined, velocity inputs must match BTS file size.
-            ref_height (float, opt): user-defined height to take average WS at.
+            HH (float, opt):        user-defined height to take average WS at.
                                         Assumed to be middle of grid.
-            new_filename (str, opt): filename for the new BTS file. If undefined, the function
+            new_fname (str, opt):   filename for the new BTS file. If undefined, the function
                                         returns the TurbSimFile object instead.
         """
 
@@ -326,11 +360,11 @@ class IEC_CoherentGusts():
         if w is None: w = np.zeros_like(u)
 
         ## Load BTS file
-        ts = turbsim_file.TurbSimFile(filename)
+        ts = turbsim_file.TurbSimFile(fname)
         ts_shape = ts['u'].shape
-        if ref_height: 
+        if HH: 
             ## Find z location closest to reference height
-            ref_idx = np.argmin(abs(ts['z']-ref_height))
+            ref_idx = np.argmin(abs(ts['z']-HH))
             ## If ref_height not defined, assume it to be in the middle
         elif ts_shape[3] % 2 == 1: 
             ref_idx = int(ts_shape[3]/2-0.5)
@@ -361,7 +395,9 @@ class IEC_CoherentGusts():
         ts_new['u'][2,:,:,:] = ts['u'][2,:,:,:] + \
                     np.tile(w[:, np.newaxis, np.newaxis],(1, ts_shape[2], ts_shape[3]))
 
-        if new_filename: 
-            ts_new.write(new_filename)
+        if new_fname: 
+            ts_new.write(new_fname)
         else: 
             return ts_new
+
+    
