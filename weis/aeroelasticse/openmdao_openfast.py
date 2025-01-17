@@ -1996,6 +1996,9 @@ class FASTLoadCases(ExplicitComponent):
         case_df.insert(0,'case_name',case_name)
         text_table = case_df.to_string(index=False)
 
+        # Save case_df
+        self.case_df = case_df
+
         # Write the text table to a yaml, text file
         write_yaml(case_df.to_dict(),os.path.join(self.FAST_runDirectory,'case_matrix_combined.yaml'))
         with open(os.path.join(self.FAST_runDirectory,'case_matrix_combined.txt'), 'w') as file:
@@ -2218,6 +2221,8 @@ class FASTLoadCases(ExplicitComponent):
         outputs, discrete_outputs = self.get_weighted_DELs(dlc_generator, DELs, damage, discrete_inputs, outputs, discrete_outputs)
         
         outputs, discrete_outputs = self.get_control_measures(summary_stats, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+
+        self.get_charateristic_loads(summary_stats,inputs,outputs)
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
@@ -2706,6 +2711,63 @@ class FASTLoadCases(ExplicitComponent):
 
             # Max platform offset        
             outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
+
+    def get_charateristic_loads(self,sum_stats,inputs,outputs):
+        # Characteristic loads are described in IEC 61400-1:2019, Section 7.6.2.2
+        
+        cm = self.case_df
+        
+        # Get all unique channel names
+        channel_names = sum_stats.columns.get_level_values(0).unique().to_list()
+        channel_names = [str(cn) for cn in channel_names]   # Convert to non-numpy strings
+
+        # Get all DLCs
+        dlcs = cm['DLC'].unique()
+
+        char_loads = {}
+
+        for dlc in dlcs:
+
+            # Filter for only stats of this dlc
+            dlc_ind = cm['DLC'] == dlc
+            ss_dlc = sum_stats[dlc_ind]
+            cm_dlc = cm[dlc_ind]
+
+            # Init this dlc char_load dict
+            char_loads[dlc] = {}
+            
+            mean_wind_speed = cm_dlc[('InflowWind', 'HWindSpeed')]
+            unique_mws = mean_wind_speed.unique()
+            
+            # For each channel in sum_stats
+            for chan in channel_names:
+                char_loads[dlc][chan] = {}
+                char_loads[dlc][chan]['wind_speed'] = unique_mws
+                char_loads[dlc][chan]['load_values'] = np.zeros_like(unique_mws)
+            
+                # Over each wind speed simulated
+                for i, mws in enumerate(unique_mws):
+                    mws_ind = cm_dlc[('InflowWind', 'HWindSpeed')] == mws
+                    ss_mws = ss_dlc[mws_ind]
+            
+                    # average maximums (absolute value), most cases
+                    char_loads[dlc][chan]['load_values'][i] = ss_mws[chan]['abs'].mean()
+
+                    # average top-half (DLC 5.1, 2.1, 2.2)
+                    if dlc in ['2.1','2.2','5.1']:
+                        n_cases = len(ss_mws[chan]['abs'])
+                        n_top_half = int(np.ceil(n_cases/2))
+                        ss_top_half = ss_mws[chan].sort_values('abs',ascending=False)[:n_top_half]
+                        char_loads[dlc][chan]['load_values'][i] = ss_top_half['abs'].mean()
+                        
+            
+            
+                # The characteristic load is the max of all the means
+                char_loads[dlc][chan]['characteristic_load'] = np.max(char_loads[dlc][chan]['load_values'])
+
+        save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        write_yaml(char_loads,os.path.join(save_dir,'charateristic_loads.yaml'))
+
 
     def get_OL2CL_error(self,chan_time,outputs):
         ol_case_names = [os.path.join(
