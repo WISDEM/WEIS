@@ -23,17 +23,17 @@ class IEC_CoherentGusts():
 
         wind_file_name = os.path.join(dir, base_name + '_' + dlc.IEC_WindType + '_U%1.6f'%dlc.URef +  '_D%s'%dlc.direction_pn + '_S%s'%dlc.shear_hv + '.wnd')
 
-        if dlc.IEC_WindType == 'EOG':
+        if dlc.IEC_WindType.split('-')[-1] == 'EOG':
             self.EOG(dlc, wind_file_name)
-        elif dlc.IEC_WindType == 'EDC':
+        elif dlc.IEC_WindType.split('-')[-1] == 'EDC':
             self.EDC(dlc, wind_file_name)
-        elif dlc.IEC_WindType == 'ECD':
+        elif dlc.IEC_WindType.split('-')[-1] == 'ECD':
             self.ECD(dlc, wind_file_name)
-        elif dlc.IEC_WindType == 'EWS':
+        elif dlc.IEC_WindType.split('-')[-1] == 'EWS':
             self.EWS(dlc, wind_file_name)
-        elif dlc.IEC_WindType == 'Ramp':
+        elif dlc.IEC_WindType.split('-')[-1] == 'Ramp':
             self.Ramp(dlc, wind_file_name)
-        elif dlc.IEC_WindType == 'Step':
+        elif dlc.IEC_WindType.split('-')[-1] == 'Step':
             self.Step(dlc, wind_file_name)
         elif dlc.IEC_WindType == 'Custom':
             wind_file_name = dlc.wind_file
@@ -337,7 +337,7 @@ class IEC_CoherentGusts():
 
         return ts
 
-    def add_turbulence(fname, u, v = None, w = None, time = None, HH = None, new_fname = None):
+    def add_turbulence(self,fname, u, v = None, w = None, time = None, HH = None, new_fname = None):
         """
         Creates a new BTS file using the turbulence of an existing BTS file,
         combined with time-varying u (and possibly v and w) signals.

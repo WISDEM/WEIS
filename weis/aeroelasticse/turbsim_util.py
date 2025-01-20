@@ -224,6 +224,14 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
 
     if dlc_generator.cases[i_case].turbulent_wind:
         # Write out turbsim input file
+        
+        # If IEC_WindType is Turbulent-<Gust>, create a temporary NTM turbulent file to be used to add turbulence to gust later
+        Turbulent_Gust = False
+        if dlc_generator.cases[i_case].IEC_WindType.split('-')[0] == 'Turbulent':
+                Turbulent_Gust = True
+                actualwindtype = dlc_generator.cases[i_case].IEC_WindType
+                dlc_generator.cases[i_case].IEC_WindType = 'NTM'
+
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef +
                                 '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.in'
@@ -261,8 +269,12 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
 
         # Pass data to CaseGen_General to call OpenFAST
         wind_file_type = 3
+        
+        # If IEC_WindType is Turbulent-<Gust>, switch IEC_WindType variable back to original wind type
+        if Turbulent_Gust:
+                dlc_generator.cases[i_case].IEC_WindType = actualwindtype
 
-    else:
+    if not dlc_generator.cases[i_case].turbulent_wind or dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
         if dlc_generator.cases[i_case].IEC_WindType == 'Steady':
             wind_file_type = 1
             wind_file_path_InflowWind = 'unused'
@@ -279,5 +291,17 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
                 wind_file_path_InflowWind = os.path.join("wind", os.path.basename(wind_file_name))
             else:
                 wind_file_path_InflowWind = wind_file_name
-            wind_file_type = 2
+            
+            if dlc_generator.cases[i_case].IEC_WindType.split('-')[0]=='Turbulent':
+                turbulent_NTM_file = os.path.join(wind_directory, FAST_namingOut + '_NTM' +
+                                    ('_U%1.6f'%dlc_generator.cases[i_case].URef +
+                                    '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.bts')
+                wind_file_path_InflowWind = os.path.join(wind_directory, FAST_namingOut + '_' + 
+                                dlc_generator.cases[i_case].IEC_WindType + ('_U%1.6f'%dlc_generator.cases[i_case].URef +
+                                '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.bts')
+                gusts.write_bts(bts_fname = turbulent_NTM_file, wnd_fname = wind_file_name, new_fname = wind_file_path_InflowWind)
+                wind_file_type = 3
+            else:
+                wind_file_type = 2
+
     return wind_file_type, wind_file_path_InflowWind

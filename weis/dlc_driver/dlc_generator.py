@@ -401,33 +401,35 @@ class DLCGenerator(object):
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
         for _, case in enumerate(generic_case_list):
             idlc = DLCInstance(options=dlc_options)
-            if dlc_options['IEC_WindType'] == 'ECD':
-                idlc.turbulent_wind = False
+            idlc.turbulent_wind = False
+            
+            if dlc_options['IEC_WindType'].split('-')[-1] == 'ECD':
                 idlc.direction_pn = case['direction']
-            elif dlc_options['IEC_WindType'] == 'EOG':
-                idlc.turbulent_wind = False
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'EOG':
                 idlc.sigma1,idlc.V_e1 = self.IECturb.EOG(case['wind_speed'])
-            elif dlc_options['IEC_WindType'] == 'EWS':
-                idlc.turbulent_wind = False
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'EWS':
                 idlc.direction_pn = case['direction']
                 idlc.shear_hv = case['shear']
                 idlc.sigma1 = self.IECturb.NTM(case['wind_speed'])
-            elif dlc_options['IEC_WindType'] == 'Steady':
-                idlc.turbulent_wind = False
-            elif dlc_options['IEC_WindType'] == 'Ramp':
-                idlc.turbulent_wind = False
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'Ramp':
                 idlc.ramp_speeddelta = dlc_options['ramp_speeddelta']
                 idlc.ramp_duration = dlc_options['ramp_duration']
                 idlc.gust_wait_time = dlc_options['gust_wait_time']
-            elif dlc_options['IEC_WindType'] == 'Step':
-                idlc.turbulent_wind = False
+            elif dlc_options['IEC_WindType'].split('-')[-1] == 'Step':
                 idlc.step_speeddelta = dlc_options['step_speeddelta']
                 idlc.gust_wait_time = dlc_options['gust_wait_time']
+            elif dlc_options['IEC_WindType'] == 'Steady':
+                pass
             elif dlc_options['IEC_WindType'] == 'Custom':
-                idlc.turbulent_wind = False
+                pass
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
+            
+            if dlc_options['IEC_WindType'].split('-')[0] == 'Turbulent':
+                idlc.turbulent_wind = True
+                idlc.RandSeed1 = case['wind_seed']
+            
             idlc.URef = case['wind_speed']
             idlc.label = dlc_options['label']
             idlc.total_time = case['total_time']
@@ -849,7 +851,7 @@ class DLCGenerator(object):
         # DLC Specific options:
         dlc_options['label'] = 'Ramp'
         dlc_options['sea_state'] = 'normal'
-        dlc_options['IEC_WindType'] = 'Ramp'
+        dlc_options['IEC_WindType'] = 'Turbulent-Ramp'
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
@@ -1013,7 +1015,7 @@ class DLCGenerator(object):
         dlc_options['PSF'] = 1.1  # For fault cases, psf depends on the mean-time between faults
         
         if 'genfault_time' not in dlc_options:
-            raise Exception('genfault_time must be set for the DLC 2.3')
+            raise Exceptionf('genfault_time must be set for the DLC 2.3')
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
