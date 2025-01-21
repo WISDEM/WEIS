@@ -192,7 +192,7 @@ def draw_blade_matrix(blade_names, blade_by_names):
                     
                     fig_elastic.layout.annotations[6*pltRow + pltCol].text = f'K{pltRow+1}{pltCol+1}'
                     
-                    fig_elastic.update_layout(title='Stiff Matrix', yaxis=dict(tickformat='.1e'), margin=dict(t=100, b=50), legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02), height=1000)
+                    fig_elastic.update_layout(title='Stiffness Matrix', yaxis=dict(tickformat='.1e'), margin=dict(t=100, b=50), legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02), height=1000)
 
                     # Define Mass Matrix
                     fig_mass.append_trace(go.Scatter(
