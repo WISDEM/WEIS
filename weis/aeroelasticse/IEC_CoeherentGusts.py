@@ -116,7 +116,7 @@ class IEC_CoherentGusts():
         elif dlc.direction_pn == 'n':
             k=-1.
         else:
-            raise Exception('The EDC gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction_pn)
+            raise Exception('The EDC gust can only have positive (p) or negative (n) direction, whereas the script receives '+ str(dlc.direction_pn))
 
         Theta = np.zeros_like(t)
         for i, ti in enumerate(t):
@@ -164,7 +164,7 @@ class IEC_CoherentGusts():
         elif dlc.direction_pn == 'n':
             k=-1.
         else:
-            raise Exception('The ECD gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction_pn)
+            raise Exception('The ECD gust can only have positive (p) or negative (n) direction, whereas the script receives '+ str(dlc.direction_pn))
         Theta = np.zeros_like(t)
         V = np.zeros_like(t)
         for i, ti in enumerate(t):
@@ -210,7 +210,7 @@ class IEC_CoherentGusts():
         elif dlc.direction_pn == 'n':
             k_dir=-1.
         else:
-            raise Exception('The EWS gust can only have positive (p) or negative (n) direction, whereas the script receives '+ dlc.direction_pn)
+            raise Exception('The EWS gust can only have positive (p) or negative (n) direction, whereas the script receives '+ str(dlc.direction_pn))
 
         if dlc.shear_hv == 'v':
             k_v=1.
@@ -219,7 +219,7 @@ class IEC_CoherentGusts():
             k_v=0.
             k_h=1.
         else:
-            raise Exception('The EWS gust can only have vertical (v) or horizontal (h) shear, whereas the script receives '+ dlc.shear_hv)
+            raise Exception('The EWS gust can only have vertical (v) or horizontal (h) shear, whereas the script receives '+ str(dlc.shear_hv))
 
         for i, ti in enumerate(t):
             shear_lin[i] = k_dir * (2.5+0.2*Beta*sigma_1*(self.D/self.Lambda_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
@@ -301,39 +301,157 @@ class IEC_CoherentGusts():
 
         fid.close()
 
-    def write_bts(self, bts_fname, wnd_fname, new_fname = None):
+    def write_bts(self, wnd_file, bts_file = None, new_fname = None, HH = None, dt = None, y = None, z = None, include_delay=True):
+        """
+        Writes a .bts wind file based on wind data from a .wnd file.
+        Inputs:
+            wnd_file (path or TurbSimFile obj): Location of the wnd file to be loaded, 
+                                                    or TurbSimFile object from wnd2bts().
+            bts_file (path or TurbSimFile obj): Location of the wnd file to be loaded, 
+                (optional)                          or TurbSimFile object. If defined, it 
+                                                    merges both files using add_turbulence().
+            new_fname (str, optional):          Name for .bts file to be written. If not defined,
+                                                    function returns TurbSimFile object instead.
+            y (array-like):                     Grid points in y-direction (if no bts_file given).
+            z (array-like):                     Grid points in z-direction (if no bts_file given).
+        Outputs:
+            Function writes the bts file if new_fname is defined.
+            If not defined, it returns a TurbSimFile object containing the bts data.
+        """
 
-        data = np.loadtxt(wnd_fname, skiprows=6)
+        ## Load .bts file and set grid points of the new .bts file
+        if isinstance(bts_file, str): 
+            bts_data = turbsim_file.TurbSimFile(bts_file)
+        elif bts_file is not None: 
+            bts_data = bts_file
+            y = bts_data['y']
+            z = bts_data['z']
+        elif (y is None) or (z is None):
+            raise Exception("No grid positions y and z provided through inputs or bts_file.")
 
-        ## TODO: more advanced function to convert wnd to bts
-        ts = self.wnd2bts(data, 0, self.HH)
-        if new_fname: self.add_turbulence(bts_fname, ts['u'], ts['v'], ts['w'], data[:,0], self.HH, new_fname)
-        else: return self.add_turbulence(bts_fname, ts['u'], ts['v'], ts['w'], data[:,0], self.HH, new_fname)
+        ## Load .wnd file 
+        if isinstance(wnd_file, str):
+            data = np.loadtxt(wnd_file, skiprows=5)
+            wnd_data = self.wnd2bts(data, HH, dt, y, z, include_delay)
+        else:
+            wnd_data = wnd_file
 
-    def wnd2bts(self, data, y, z):
+        ## Merge .bts and .wnd files
+        if bts_file: 
+            merged_file = self.add_turbulence(bts_data, wnd_data, wnd_data['t'], self.HH, new_fname)
+        else:
+            merged_file = wnd_data
+
+        ## Write .bts file
+        if new_fname:
+            merged_file.write(new_fname)
+        else:
+            return merged_file
+
+    def wnd2bts(self, data, HH = None, dt = None, y = None, z = None, include_delay=True):
         """
         Converts wnd-style data to bts-style data
-        0: Time
-        1: Wind speed
-        2: Wind dir
-        3: Vertical speed
-        4: Horizontal shear
-        5: Pwr law vert shear
-        6: Linear vertical shear
-        7: Gust speed
-        8: Upflow angle
-        """
-        ts = {}
-        u = np.cos(data[:,2]*np.pi/180) * np.cos(data[:,8]*np.pi/180) * data[:,1] + \
-            np.sin(data[:,8]*np.pi/180) * data[:,3]
-        v = -np.sin(data[:,2]*np.pi/180)
-        w = -np.cos(data[:,2]*np.pi/180) * np.sin(data[:,8]*np.pi/180) * data[:,1] + \
-            np.cos(data[:,8]*np.pi/180) * data[:,3]
+        Inputs:
+            data (array-like or str):   2D array that contains channels from the .wnd file,
+                                            or path of .wnd file to be loaded.
+            HH (float, opt):            Hub height, default is self.HH.
+            dt (float, opt):            Desired step size of the .bts file.
+            y (array-like, opt):        Array containing y-coordinates of the .bts grid.
+            z (array-like, opt):        Array containing z-coordinates of the .bts grid.
+            include_delay (bool):       Include the delay in .bts file, default is True.
 
-        # u = 
-        ts['u'] = u
-        ts['v'] = v
-        ts['w'] = w
+        Channels in data:
+            0: Time
+            1: Wind speed
+            2: Wind dir
+            3: Vertical speed
+            4: Horizontal shear
+            5: Pwr law vert shear
+            6: Linear vertical shear
+            7: Gust speed
+            8: Upflow angle
+        """
+        ts = turbsim_file.TurbSimFile()
+
+        if isinstance(data, str):
+            data = np.loadtxt(data, skiprows=5)
+
+        if dt is not None:
+            ## Interpolate data over timesteps dt
+            data_old = data
+            ts['t'] = np.arange(0, data[-1,0]+dt, dt)
+            data = np.empty((len(ts['t']), 9))
+            data[:,0] = ts['t']
+            for n in range(8):
+                data[:,n+1] = np.interp(ts['t'], data_old[:,0], data_old[:,n+1])
+
+        if y is not None:
+            if z is None: 
+                raise Exception("If input y is provided, input z should be provided, too.")
+            else:
+                refLength = y[-1]-y[0]
+                if HH is None: HH = self.HH
+
+                ## Calculate horizontal velocity for all grid points
+                U_grid = ( np.tile(data[:,1][:,np.newaxis, np.newaxis], (1, len(y), len(z))) * 
+                        # Horizontal linear shear
+                        ( np.tile(((data[:,4] * np.outer(y, np.cos(data[:,2]*np.pi/180))).T / refLength) 
+                            [:, :, np.newaxis], (1, 1, len(z))) 
+                        # Vertical linear shear
+                        +  np.tile((np.outer(data[:,6], np.array(z)-HH) / refLength) 
+                            [:, np.newaxis, :], (1, len(y), 1)) 
+                        # Power-law wind shear
+                        + np.tile((((np.tile(np.array(z)[:,np.newaxis], (1, len(data[:,0])))/HH)**data[:,5]).T) 
+                            [:, np.newaxis, :], (1, len(y), 1)) ) 
+                        # Gust speed
+                        + np.tile(data[:,7][:,np.newaxis, np.newaxis], (1, len(y), len(z))) )
+
+                ## Apply upflow angle and wind direction
+                W_grid = np.tile(data[:,3][:, np.newaxis, np.newaxis], (1, len(y), len(z)))
+                u = ( (np.cos(data[:,8][:,np.newaxis, np.newaxis]*np.pi/180) * U_grid 
+                            - np.sin(data[:,8][:, np.newaxis, np.newaxis]*np.pi/180) * W_grid) 
+                            * np.cos(data[:,2][:, np.newaxis, np.newaxis]*np.pi/180) )
+                v = - ( (np.cos(data[:,8][:, np.newaxis, np.newaxis]*np.pi/180) * U_grid 
+                            - np.sin(data[:,8][:, np.newaxis, np.newaxis]*np.pi/180) * W_grid) 
+                            * np.sin(data[:,2][:, np.newaxis, np.newaxis]*np.pi/180) )
+                w = ( np.sin(data[:,8][:, np.newaxis, np.newaxis]*np.pi/180) * U_grid 
+                            + np.cos(data[:,8][:, np.newaxis, np.newaxis]*np.pi/180) * W_grid)
+
+                ts['y'] = y - np.mean(y)
+                ts['z'] = np.array(z)
+                ts['t'] = data[:,0]
+
+                if include_delay and (dt is not None):
+                    delay = ( int((refLength/2) / np.mean(
+                        np.sqrt(u[:, int((len(y)-1)/2), int((len(z)-1)/2)]**2 
+                        + v[:, int((len(y)-1)/2), int((len(z)-1)/2)]**2) )
+                         / dt) )
+                    u = np.concatenate((u[0]*np.ones((delay, len(y), len(z))), u))
+                    v = np.concatenate((v[0]*np.ones((delay, len(y), len(z))), v))
+                    w = np.concatenate((w[0]*np.ones((delay, len(y), len(z))), w))
+                    ts['t'] = np.concatenate((ts['t'], ts['t'][-1]+np.arange(dt, delay*dt+dt, dt)))
+
+        else:
+            if data[:,4].any():
+                print("WARNING: the .wnd dataset contains horizontal shear, but no input y is provided. "\
+                        "Therefore, the generated .bts file will not contain horizontal shear. "\
+                        "If you want to use the shear from the .wnd file, please provide y and z.")
+            elif data[:, 5:7].any():
+                print("WARNING: the .wnd dataset contains vertical shear, but no input z is provided. "\
+                            "Therefore, the generated .bts file will not contain vertical shear. "\
+                            "If you want to use the shear from the .wnd file, please provide y and z.")
+            
+            u = ( (np.cos(data[:,8]*np.pi/180) * (data[:,1] + data[:,7]) 
+                            - np.sin(data[:,8]*np.pi/180) * data[:,3]) 
+                            * np.cos(data[:,2]*np.pi/180) )
+            v = - ( (np.cos(data[:,8]*np.pi/180) * (data[:,1] + data[:,7]) 
+                            - np.sin(data[:,8]*np.pi/180) * data[:,3]) 
+                            * np.sin(data[:,2]*np.pi/180) )
+            w = ( np.sin(data[:,8]*np.pi/180) * (data[:,1] + data[:,7])  
+                            + np.cos(data[:,8]*np.pi/180) * data[:,3] )
+            ts['t'] = data[:,0]
+        
+        ts['u'] = np.stack((u, v, w))
 
         return ts
 
@@ -346,8 +464,9 @@ class IEC_CoherentGusts():
         of the turbsim file (Nt, Ny, Nz).
         
         Inputs:
-            fname (str):            path to BTS file to grab turbulence from.
-            u (array):              time-varying velocity in x-direction.
+            fname (str, TSFile):    path to BTS file to grab turbulence from, or TurbSimFile.
+            u (array, dict):        time-varying velocity in x-direction, 
+                                        or dict containing 'u', 'v' and 'w'.
             v (array, optional):    time-varying velocity in x-direction (assumed 0).
             u (array, optional):    time-varying velocity in x-direction (assumed 0).
             time (array, optional): time array, must be same size as u (and v and w).
@@ -367,8 +486,14 @@ class IEC_CoherentGusts():
                                 .format(np.shape(u), np.shape(v), np.shape(w)))
 
         ## Load BTS file
-        ts = turbsim_file.TurbSimFile(fname)
+        if isinstance(fname, str): ts = turbsim_file.TurbSimFile(fname)
+        else: ts = fname
         ts_shape = ts['u'].shape
+
+        if not isinstance(u, (tuple, list, np.ndarray)):
+            v = u['v']
+            w = u['w']
+            u = u['u']
 
         ## Create 3D velocity vectors based on the shape of the provided velocity vectors
         u_ndims = len(np.shape(u))
@@ -473,9 +598,4 @@ class IEC_CoherentGusts():
         ts_new['u'][1,:,:,:] = ts['u'][1,:,:,:] + v
         ts_new['u'][2,:,:,:] = ts['u'][2,:,:,:] + w
 
-        if new_fname: 
-            ts_new.write(new_fname)
-        else: 
-            return ts_new
-
-    
+        return ts_new
