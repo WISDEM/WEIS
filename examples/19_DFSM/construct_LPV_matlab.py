@@ -33,13 +33,13 @@ def ModelData():
     
     model_data = {}
 
-    model_data['reqd_states'] = ['PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
+    model_data['reqd_states'] = ['PtfmPitch','TTDspFA','GenSpeed','RotThrust'];ns = len(model_data['reqd_states'])
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
     model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr','RtFldCp','RtFldCt'] 
 
     model_data['datapath'] = '/home/athulsun/DFSM/data' + os.sep + 'FOWT_1p6'
 
-    scale_args = {'state_scaling_factor': np.array([1,1,1]),
+    scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1,1,1]),
                   'output_scaling_factor': np.array([1,1,1,1,1,1,1])
                   }
@@ -108,7 +108,7 @@ if __name__ == '__main__':
                    }
     
     # name of mat file that has the linearized models
-    mat_file_name = this_dir + os.sep + model_data['mat_file_name']
+    mat_file_name = None#this_dir + os.sep + model_data['mat_file_name']
     
     # instantiate class
     sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
@@ -152,13 +152,6 @@ if __name__ == '__main__':
     X_array = np.zeros((nW,n_var))
 
     model_construct_time = np.zeros((nW,))
-
-    # construct surrogate model
-    dfsm_matlab = DFSM(sim_detail,n_samples = n_samples,L_type = 'LPV',N_type = None, train_split = 0.5)
-    dfsm_matlab.construct_surrogate()
-    dfsm_matlab.simulation_time = []
-    dfsm_matlab.train_data = []
-    dfsm_matlab.test_data = []
 
     test_inds = model_data['test_inds']
 
@@ -437,7 +430,7 @@ if __name__ == '__main__':
 
     plt.show()
 
-    dfsm_python_pkl = 'dfsm_1p6_python.pkl'
+    dfsm_python_pkl = 'dfsm_1p6.pkl'
 
     with open(dfsm_python_pkl,'wb') as handle:
         pickle.dump(dfsm_python,handle)

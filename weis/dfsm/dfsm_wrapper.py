@@ -31,6 +31,7 @@ def evaluate_multi(case_data):
     case_data['param']['controller_interface'] = ROSCO_ci.ControllerInterface(case_data['param']['lib_name'],param_filename=case_data['param']['param_filename'],**case_data['param']['args'])
 
     # run simulation
+    t1 = timer.time()
     if case_data['ode_method'] == 'RK4':
 
         output = RK4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
@@ -38,7 +39,8 @@ def evaluate_multi(case_data):
     elif case_data['ode_method'] == 'ABM4':
 
         output = ABM4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
-
+    t2 = timer.time()
+    print(t2-t1)
     # shut down controller
     case_data['param']['controller_interface'].kill_discon()
 
@@ -56,12 +58,15 @@ def run_serial(case_data_all):
         
         # initialize controller interface
         case_data['param']['controller_interface'] = ROSCO_ci.ControllerInterface(case_data['param']['lib_name'],param_filename=case_data['param']['param_filename'],**case_data['param']['args'])
-        
+        t1 = timer.time()
         if case_data['ode_method'] == 'RK4':
             t,x,u,y = RK4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
 
         elif case_data['ode_method'] == 'ABM4':
             t,x,u,y = ABM4(case_data['x0'],case_data['dt'],case_data['tspan'],case_data['dfsm'],case_data['param'])
+        t2 = timer.time()
+        print(t2-t1)
+        
         # shut down controller
         case_data['param']['controller_interface'].kill_discon()
 
@@ -480,7 +485,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
     ode_method = model_options['ode_method']
 
     # setup interpolation method for LPV model
-    dfsm.setup_LPV(interp_type)
+    #dfsm.setup_LPV(interp_type)
 
     
     # If the test data is online, this implies, the DFSM will be used to run simulations
@@ -636,7 +641,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
 
 
             case_data_all.append(case_data)
-
+        
         if mpi_options['mpi_run']:
 
             # evaluate the closed loop simulations in parallel using MPI

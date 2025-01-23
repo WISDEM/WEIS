@@ -14,7 +14,7 @@ def extract_results(driver_cases,obj,const = None):
         dvs = case.get_design_vars(scaled=False)
 
         Obj.append(case.get_objectives(scaled = False)[obj][0])
-
+        
         if not(const == None):
             Con.append(case.get_constraints(scaled = False)[const][0])
 
@@ -38,21 +38,15 @@ def extract_results(driver_cases,obj,const = None):
 
 this_dir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 
-fol = 'doe_mpi_5w_6s'
-w = 5
-if w == 5:
-    name_ = 'DFSM_omega_zeta'
-    title = '5 wind speeds'
-else:
-    name_ = 'DFSM_11w'
-    title = '11 wind speeds'
+fol = 'OF_doe'
+
 
 doe_output_dir = this_dir + os.sep + 'outputs' + os.sep + fol
 doe_sql_file = doe_output_dir + os.sep + 'log_opt.sql'
 
 obj = 'aeroelastic.DEL_TwrBsMyt'
-con = 'aeroelastic.Std_PtfmPitch'
-n_samples = 10
+con = 'aeroelastic.rotor_overspeed'
+n_samples = 6
 
 # load sql file
 cr_doe = om.CaseReader(doe_sql_file)
@@ -75,28 +69,30 @@ O,Z = np.meshgrid(omega_pc,zeta_pc)
 
 fig,ax = plt.subplots(1)
 #ig.suptitle(title)
-CP = ax.contourf(O,Z,DEL,25,cmap = plt.cm.viridis)
+CP = ax.contourf(O,Z,DEL,15,cmap = plt.cm.viridis)
 ax.set_ylabel('Zeta PC')
 ax.set_xlabel('Omega PC')
+#ax.set_xlim([0.15,0.225]);ax.set_ylim([0.1,1.5])
 cbar = fig.colorbar(CP)
 cbar.ax.set_ylabel('DEL')
 
-plot_name = name_ + '_DEL.png'
+plot_name = 'DEL_of.pdf'
 
-fig.savefig(plot_name)
+#fig.savefig(plot_name)
 
 
 fig,ax = plt.subplots(1)
 #fig.suptitle(name_ + ' Rotor Overspeed')
-CP = ax.contourf(O,Z,Con,25,cmap = plt.cm.viridis)
+CP = ax.contourf(O,Z,Con,15,cmap = plt.cm.viridis)
 ax.set_ylabel('Zeta PC')
 ax.set_xlabel('Omega PC')
+#ax.set_xlim([0.15,0.225]);ax.set_ylim([0.1,1.5])
 cbar = fig.colorbar(CP)
 
-cbar.ax.set_ylabel('Std PtfmPitch')
-plot_name = name_ + '_RO.png'
+cbar.ax.set_ylabel('Max PtfmPitch')
+plot_name = 'rotor_overspeed_of.pdf'
 
-fig.savefig(plot_name)
+#fig.savefig(plot_name)
 
 # scats = []
 

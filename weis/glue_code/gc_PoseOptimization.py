@@ -284,6 +284,12 @@ class PoseOptimizationWEIS(PoseOptimization):
                 lower = control_constraints['rotor_overspeed']['min'],
                 upper = control_constraints['rotor_overspeed']['max'])
         
+        if control_constraints['Std_GenSpeed']['flag']:
+            if not any(self.level_flags):
+                raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize rotor std constraints.')
+            wt_opt.model.add_constraint(f'{self.floating_solve_component}.Std_GenSpeed',
+                upper = control_constraints['Std_GenSpeed']['max'])
+            
         # Add PI gains if overspeed is merit_figure or constraint
         if control_constraints['rotor_overspeed']['flag'] or self.opt['merit_figure'] == 'rotor_overspeed':
             wt_opt.model.add_constraint('sse_tune.tune_rosco.PC_Kp',
@@ -311,27 +317,35 @@ class PoseOptimizationWEIS(PoseOptimization):
                 raise Exception('Please turn on the call to OpenFAST or RAFT if you are trying to optimize Std_PtfmPitch constraints.')
             wt_opt.model.add_constraint(f'{self.floating_solve_component}.Std_PtfmPitch',
                 upper = control_constraints['Std_PtfmPitch']['max'])
+        
         if control_constraints['Max_TwrBsMyt']['flag']:
             if self.modeling['Level3']['flag'] != True:
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
             wt_opt.model.add_constraint('aeroelastic.max_TwrBsMyt_ratio', 
                 upper = 1.0)
+            
         if control_constraints['DEL_TwrBsMyt']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if (self.modeling['Level3']['flag'] != True) and (self.modeling['DFSM']['flag'] != True):
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize Max_TwrBsMyt constraints.')
-            wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt_ratio', 
-                upper = 1.0)
+            wt_opt.model.add_constraint('aeroelastic.DEL_TwrBsMyt', 
+                upper = 1e7)
+        
+        if control_constraints['AEP']['flag']:
+            if (self.modeling['Level3']['flag'] != True) and (self.modeling['DFSM']['flag'] != True):
+                raise Exception('Please turn on the call to OpenFAST if you are trying to optimize AEP constraints.')
+            wt_opt.model.add_constraint('aeroelastic.AEP', 
+                upper = 1e8)
             
         # Blade pitch travel
         if control_constraints['avg_pitch_travel']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if (self.modeling['Level3']['flag'] != True) and (self.modeling['DFSM']['flag'] != True):
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize avg_pitch_travel constraints.')
             wt_opt.model.add_constraint('aeroelastic.avg_pitch_travel',
                 upper = control_constraints['avg_pitch_travel']['max'])
 
         # Blade pitch duty cycle (number of direction changes)
         if control_constraints['pitch_duty_cycle']['flag']:
-            if self.modeling['Level3']['flag'] != True:
+            if (self.modeling['Level3']['flag'] != True) and (self.modeling['DFSM']['flag'] != True):
                 raise Exception('Please turn on the call to OpenFAST if you are trying to optimize pitch_duty_cycle constraints.')
             wt_opt.model.add_constraint('aeroelastic.pitch_duty_cycle',
                 upper = control_constraints['pitch_duty_cycle']['max'])

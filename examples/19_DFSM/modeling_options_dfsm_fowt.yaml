@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/doe_mpi_5w_6s
+        OF_run_dir: outputs/doe_mpi_5w_1s
         save_iterations: True
         save_timeseries: True
         use_exe: True
@@ -152,7 +152,7 @@ DLC_driver:
         # - DLC: "1.4"
         # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 6
+          n_seeds: 1
           wind_speed: [8,10,12,14,16]
           analysis_time: 600.
           transient_time: 50.

@@ -452,6 +452,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Control outputs
         self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during all OpenFAST simulations')  # is this over a set of sims?
+        self.add_output('Std_GenSpeed',val = 0.0, desc = 'Mean Std of Genspeed during all OpenFAST simulations')
         self.add_output('max_nac_accel',    val=0.0, units='m/s**2', desc='Maximum nacelle acceleration magnitude all OpenFAST simulations')  # is this over a set of sims?
         self.add_output('avg_pitch_travel',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
         self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
@@ -2593,7 +2594,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # rotor overspeed
         outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
-
+        outputs['Std_GenSpeed'] = np.mean(sum_stats['GenSpeed']['std'])
         # nacelle accelleration
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 

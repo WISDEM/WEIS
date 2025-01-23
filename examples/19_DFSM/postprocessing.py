@@ -101,7 +101,7 @@ def animate(i):
 
 # create animation and save
 savename = 'optimization3' +  '.gif'
-anim = FuncAnimation(fig,animate,frames = n_iter_opt+200,interval=500,**{'repeat' : False})
+anim = FuncAnimation(fig,animate,frames = n_iter_opt+15,interval=500,**{'repeat' : False})
 anim.save(savename, dpi=120, writer="pillow")
 
 
