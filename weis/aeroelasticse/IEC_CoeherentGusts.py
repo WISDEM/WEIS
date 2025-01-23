@@ -273,7 +273,7 @@ class IEC_CoherentGusts():
         # Header
         hd = f'! Step wind starting from wind speed = {dlc.URef} to wind speed = {dlc.wind_speed+dlc.step_speeddelta}\n'
         self.write_wnd(wind_file_name, data, hd)
-
+    
     def write_wnd(self, fname, data, hd):
 
         # Move transient event to user defined time
@@ -331,7 +331,7 @@ class IEC_CoherentGusts():
 
         ## Load .wnd file 
         if isinstance(wnd_file, str):
-            data = np.loadtxt(wnd_file, skiprows=5)
+            data = np.genfromtxt(wnd_file, comments="!")
             wnd_data = self.wnd2bts(data, HH, dt, y, z, include_delay)
         else:
             wnd_data = wnd_file
@@ -348,17 +348,18 @@ class IEC_CoherentGusts():
         else:
             return merged_file
 
-    def wnd2bts(self, data, HH = None, dt = None, y = None, z = None, include_delay=True):
+    def wnd2bts(self, data, HH = None, dt = None, y = None, z = None, propagation=True):
         """
         Converts wnd-style data to bts-style data
         Inputs:
-            data (array-like or str):   2D array that contains channels from the .wnd file,
-                                            or path of .wnd file to be loaded.
+            data (array-like or str):   2D array that contains channels from the .wnd file, or path of .wnd file 
+                                            to be loaded.
             HH (float, opt):            Hub height, default is self.HH.
             dt (float, opt):            Desired step size of the .bts file.
             y (array-like, opt):        Array containing y-coordinates of the .bts grid.
             z (array-like, opt):        Array containing z-coordinates of the .bts grid.
-            include_delay (bool):       Include the delay in .bts file, default is True.
+            propagation (bool):         Include the propagation of flow in .bts file, default: True. Note that 
+                                            the propagation can only be calculated if y and z are defined.
 
         Channels in data:
             0: Time
@@ -374,7 +375,7 @@ class IEC_CoherentGusts():
         ts = turbsim_file.TurbSimFile()
 
         if isinstance(data, str):
-            data = np.loadtxt(data, skiprows=5)
+            data = np.genfromtxt(wnd_file, comments="!")
 
         if dt is not None:
             ## Interpolate data over timesteps dt
@@ -421,15 +422,23 @@ class IEC_CoherentGusts():
                 ts['z'] = np.array(z)
                 ts['t'] = data[:,0]
 
-                if include_delay and (dt is not None):
-                    delay = ( int((refLength/2) / np.mean(
-                        np.sqrt(u[:, int((len(y)-1)/2), int((len(z)-1)/2)]**2 
-                        + v[:, int((len(y)-1)/2), int((len(z)-1)/2)]**2) )
-                         / dt) )
-                    u = np.concatenate((u[0]*np.ones((delay, len(y), len(z))), u))
-                    v = np.concatenate((v[0]*np.ones((delay, len(y), len(z))), v))
-                    w = np.concatenate((w[0]*np.ones((delay, len(y), len(z))), w))
-                    ts['t'] = np.concatenate((ts['t'], ts['t'][-1]+np.arange(dt, delay*dt+dt, dt)))
+                ## Add elements to the front of the .bts file to propagate through at t=0
+                if propagation and (dt is not None):
+                    umean = np.mean( u[:, int((len(y)-1)/2), int((len(z)-1)/2)] )
+                    vmean = np.mean( v[:, int((len(y)-1)/2), int((len(z)-1)/2)] )
+                    if dt is None:
+                        delay = (refLength/2) / (np.sqrt(umean**2 + vmean**2))
+                        u = np.concatenate((umean*np.ones((1, len(y), len(z))), u))
+                        v = np.concatenate((vmean*np.ones((1, len(y), len(z))), v))
+                        w = np.concatenate((np.zeros((1, len(y), len(z))), w))
+                        ts['t'] += delay
+                        ts['t'] = np.insert(ts['t'], 0, 0)
+                    else:
+                        delay = int((refLength/2) / (np.sqrt(umean**2 + vmean**2)) / dt)
+                        u = np.concatenate((umean*np.ones((delay, len(y), len(z))), u))
+                        v = np.concatenate((vmean*np.ones((delay, len(y), len(z))), v))
+                        w = np.concatenate((np.zeros((delay, len(y), len(z))), w))
+                        ts['t'] = np.concatenate((ts['t'], ts['t'][-1]+np.arange(dt, delay*dt+dt, dt)))
 
         else:
             if data[:,4].any():
@@ -449,6 +458,7 @@ class IEC_CoherentGusts():
                             * np.sin(data[:,2]*np.pi/180) )
             w = ( np.sin(data[:,8]*np.pi/180) * (data[:,1] + data[:,7])  
                             + np.cos(data[:,8]*np.pi/180) * data[:,3] )
+
             ts['t'] = data[:,0]
         
         ts['u'] = np.stack((u, v, w))
