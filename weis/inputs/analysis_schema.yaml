@@ -11,7 +11,7 @@ properties:
             folder_output:
                 type: string
                 default: output
-                description: Name of folder to dump output files
+                description: Name of folder to dump output files. The path can be absolute or relative. When a relative path is defined, the path starts from folder where WEIS is run.
             fname_output:
                 type: string
                 default: output
