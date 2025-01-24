@@ -32,16 +32,6 @@ geometries = [
                 ) for idx in range(5) for gtype in component_types         # We are expecting less than 10 geometry files..
             ] + [
                 dash_vtk.GeometryRepresentation(
-                    id = f'axes-{gtype}',
-                    property={'color': [0.5,0.5,0.5], 'opacity': 0}        # The axes to be shown when each component type has been clicked
-                ) for gtype in component_types
-            ] + [
-                dash_vtk.GeometryRepresentation(
-                    id = f'axes-blade-local',
-                    property={'color': [0.5,0.5,0.5], 'opacity': 0}        # The blade local axes to be shown when blade is clicked
-                )
-            ] + [
-                dash_vtk.GeometryRepresentation(
                     id = 'axes',
                     showCubeAxes=True,      # Always show origins
                     property={'color': [0,0,0], 'opacity': 0}
@@ -88,16 +78,6 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
                 ) for idx in range(5) for gtype in component_types         # We are expecting less than 10 geometry files..
             ] + [
                 dash_vtk.GeometryRepresentation(
-                    id = f'axes-{gtype}',
-                    property={'color': [0.5,0.5,0.5], 'opacity': 0}     # Make the object totally transparent.. We just need axes
-                ) for gtype in component_types
-            ] + [
-                dash_vtk.GeometryRepresentation(
-                    id = f'axes-blade-local',
-                    property={'color': [0.5,0.5,0.5], 'opacity': 0}        # The axes to be shown when each component type has been clicked
-                )
-            ] + [
-                dash_vtk.GeometryRepresentation(
                     id = 'axes',
                     showCubeAxes=True,      # Show origins
                     property={'color': [0,0,0], 'opacity': 0}     # Make the object totally transparent.. We just need axes
@@ -112,8 +92,9 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
     color_description = []
     while vtk_idx < len(geom_3d_names) * len(component_types):
         for idx, gname in enumerate(geom_3d_names):
-            # color_description += [html.P(f'{gname}', style={'color': 'rgb(255, 0, 0)'})]  # Works
-            color_description += [html.P(f'{gname}', style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})]
+            # color_description += [html.P(f'{gname}', style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})]
+            color_description += [html.Span(f'  {gname}   ', style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})]
+            # color_description += [f"<span style='color: rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'>{gname}</span>"]
             for gtype in component_types:
                 if gtype == 'blade':
                     mesh_state, _ , points = render_blade(wt_options_by_names[gname], local)
@@ -163,15 +144,15 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
         if geom_vtk.id == 'axes':
             geom_vtk.children = [dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=bounds)))]
         
-        elif geom_vtk.id == 'axes-blade-local':
-            geom_vtk.children = [dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=[xMinBlade.min(), xMaxBlade.max(), yMinBlade.min(), yMaxBlade.max(), zMinBlade.min(), zMaxBlade.max()])))]
+        # elif geom_vtk.id == 'axes-blade-local':
+        #     geom_vtk.children = [dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=[xMinBlade.min(), xMaxBlade.max(), yMinBlade.min(), yMaxBlade.max(), zMinBlade.min(), zMaxBlade.max()])))]
         
-        for gtype in component_types:
-            if geom_vtk.id == f'axes-{gtype}':
-                try:
-                    geom_vtk.children = [dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=[xMin[gtype].min(), xMax[gtype].max(), yMin[gtype].min(), yMax[gtype].max(), zMin[gtype].min(), zMax[gtype].max()])))]
-                except:
-                    continue
+        # for gtype in component_types:
+        #     if geom_vtk.id == f'axes-{gtype}':
+        #         try:
+        #             geom_vtk.children = [dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=[xMin[gtype].min(), xMax[gtype].max(), yMin[gtype].min(), yMax[gtype].max(), zMin[gtype].min(), zMax[gtype].max()])))]
+        #         except:
+        #             continue
             
 
 
@@ -179,6 +160,7 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
     # Front face - where xy-plane is on the ground and z direction upwards
     setCameraPosition = [-1, 0, 0]
     setCameraViewUp = [0, 0, 1]
+
     # Add rendered meshes to the final content at the end (at once!)    
     return dash_vtk.View(id='vtk-view', 
                          cameraPosition=setCameraPosition,
@@ -187,16 +169,19 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
                          pickingModes=['click']), color_description, local_meshes
     
 
+"""
 @callback([Output(geom_vtk.id, 'showCubeAxes') for geom_vtk in geometries],
+          Output('tooltip', 'children'),
+          Output('tooltip', 'style'),
           Input('vtk-view', 'clickInfo'))
 def update_full_scene(info):
     
     if info:
         if "representationId" not in info:
-            return [True if geom_vtk.id=='axes' else False for geom_vtk in geometries]
+            return [True if geom_vtk.id=='axes' else False for geom_vtk in geometries], dash.no_update, dash.no_update
         
         gnameIdx, gtype, _ = info["representationId"].split('-')
-        print('Clicked: ', gtype)
+        # print('Clicked: ', gtype)
         geo_viz = []
         if gtype == 'blade':
             for vtk_idx, geom_vtk in enumerate(geometries):
@@ -214,351 +199,143 @@ def update_full_scene(info):
                 else:
                     # geo_viz.append({"visibility": 0})
                     geo_viz.append(False)
+        style = {
+            "position": "absolute",
+            "bottom": info['displayPosition'][1],
+            "left": info['displayPosition'][0],
+            "zIndex": info['displayPosition'][2],
+            "color": "white"
+        }
 
-        return geo_viz
+
+        return geo_viz, [f"{info['representationId']}: {info['worldPosition']}"], style
     
-    return [True if geom_vtk.id=='axes' else False for geom_vtk in geometries]
-
-
-
-# @callback(Output('vtk-view-local-container', 'children'),
-#           Input('vtk-view', 'clickInfo'),
-#           State('local-meshes', 'data'))
-# def update_local_scene(info, local_meshes):
-    
-#     if not info:
-#         raise PreventUpdate
-
-#     if "representationId" not in info:
-#         raise PreventUpdate
-    
-#     gnameIdx, gtype, _ = info["representationId"].split('-')
-#     print('Clicked: ', gtype)
-    
-#     print('geometries\n', geometries)
-#     geometries_local = []
-#     for vtk_idx, geom_vtk in enumerate(geometries):
-#         if gtype in geom_vtk.id or geom_vtk.id == 'axes':
-#             if geom_vtk.children:
-#                 print('adding: ', geom_vtk.id, geom_vtk.children)
-#             geometries_local += [dash_vtk.GeometryRepresentation(children=geom_vtk.children)]
-
-#     return dash_vtk.View(children=geometries_local)
-
-
-
-    # for idx, gname in enumerate(geom_3d_names):         # gname: selected geometry file (selected filelabelname)
-
-    #     # Set 'local' flag depending on the size of components
-    #     local = False
-        
-    #     # Render, add meshes
-    #     # Note: Geometry Representation include only one mesh. Cannot include multiple meshes..
-
-    #     ################################################################################
-    #     # Add blade geometry representation
-    #     ################################################################################
-    #     blade_mesh_state, _ , blade_points = render_blade(wt_options_by_names[gname], local)
-    #     xMin = np.append(xMin, blade_points[0])
-    #     xMax = np.append(xMax, blade_points[1])
-    #     yMin = np.append(yMin, blade_points[2])
-    #     yMax = np.append(yMax, blade_points[3])
-    #     zMin = np.append(zMin, blade_points[4])
-    #     zMax = np.append(zMax, blade_points[5])
-
-        
-    #     # Add by geom data (same color over components from the turbine)
-    #     geometries += [dash_vtk.GeometryRepresentation(
-    #         id=f"{gname}-blade-rep",
-    #         children=[dash_vtk.Mesh(state=blade_mesh_state)],
-    #         actor={"visibility": 1} if 'blade' in geom_types else {"visibility": 0},
-    #         property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #         # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #     )]
-
-    #     ################################################################################
-    #     # Add hub geometry representation
-    #     ################################################################################
-    #     hub_mesh_state, _ , hub_points = render_hub(wt_options_by_names[gname], local)
-        
-    #     xMin = np.append(xMin, hub_points[0])
-    #     xMax = np.append(xMax, hub_points[1])
-    #     yMin = np.append(yMin, hub_points[2])
-    #     yMax = np.append(yMax, hub_points[3])
-    #     zMin = np.append(zMin, hub_points[4])
-    #     zMax = np.append(zMax, hub_points[5])
-
-    #     # Add by geom data (same color over components from the turbine)
-    #     geometries += [dash_vtk.GeometryRepresentation(
-    #         id=f"{gname}-hub-rep",
-    #         children=[dash_vtk.Mesh(state=hub_mesh_state)],
-    #         actor={"visibility": 1} if 'hub' in geom_types else {"visibility": 0},
-    #         property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #         # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #     )]
-
-    #     ################################################################################
-    #     # Add nacelle geometry representation
-    #     ################################################################################
-    #     nacelle_mesh_state, _, nacelle_points = render_nacelle(wt_options_by_names[gname], local)
-        
-    #     xMin = np.append(xMin, nacelle_points[0])
-    #     xMax = np.append(xMax, nacelle_points[1])
-    #     yMin = np.append(yMin, nacelle_points[2])
-    #     yMax = np.append(yMax, nacelle_points[3])
-    #     zMin = np.append(zMin, nacelle_points[4])
-    #     zMax = np.append(zMax, nacelle_points[5])
-        
-    #     # Add by geom data (same color over components from the turbine)
-    #     geometries += [dash_vtk.GeometryRepresentation(
-    #         id=f"{gname}-nacelle-rep",
-    #         children=[dash_vtk.Mesh(state=nacelle_mesh_state)],
-    #         actor={"visibility": 1} if 'nacelle' in geom_types else {"visibility": 0},
-    #         property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #         # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #     )]
-
-    #     ################################################################################
-    #     # Add tower geometry representation
-    #     ################################################################################
-    #     tower_mesh_state, _ , tower_points = render_Tower(wt_options_by_names[gname], local)
-    #     xMin = np.append(xMin, tower_points[0])
-    #     xMax = np.append(xMax, tower_points[1])
-    #     yMin = np.append(yMin, tower_points[2])
-    #     yMax = np.append(yMax, tower_points[3])
-    #     zMin = np.append(zMin, tower_points[4])
-    #     zMax = np.append(zMax, tower_points[5])
-        
-    #     # Add by geom data (same color over components from the turbine)
-    #     geometries += [dash_vtk.GeometryRepresentation(
-    #         id=f"{gname}-tower-rep",
-    #         children=[dash_vtk.Mesh(state=tower_mesh_state)],
-    #         actor={"visibility": 1} if 'tower' in geom_types else {"visibility": 0},
-    #         property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #         # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #     )]
-
-    #     ################################################################################
-    #     # Add substructure geometry representation
-    #     ################################################################################
-    #     if 'monopile' in list(wt_options_by_names[gname]['components'].keys()):
-    #         sub_mesh_state, _ , sub_points = render_monopile(wt_options_by_names[gname], local)
-        
-    #     elif 'floating_platform' in list(wt_options_by_names[gname]['components'].keys()):
-    #         sub_mesh_state, _, sub_points = render_floatingPlatform(wt_options_by_names[gname], local)
-        
-    #     else:
-    #         continue
-
-    #     xMin = np.append(xMin, sub_points[0])
-    #     xMax = np.append(xMax, sub_points[1])
-    #     yMin = np.append(yMin, sub_points[2])
-    #     yMax = np.append(yMax, sub_points[3])
-    #     zMin = np.append(zMin, sub_points[4])
-    #     zMax = np.append(zMax, sub_points[5])
-        
-    #     # Add by geom data (same color over components from the turbine)
-    #     geometries += [dash_vtk.GeometryRepresentation(
-    #         id=f"{gname}-substructure-rep",
-    #         children=[dash_vtk.Mesh(state=sub_mesh_state)],
-    #         actor={"visibility": 1} if 'substructure' in geom_types else {"visibility": 0},
-    #         property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #         # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-    #     )]
-            
-    # # Add grid coordinates using max-sized box - a single global coordinate over geometries
-    # bounds=[xMin.min(), xMax.max(), yMin.min(), yMax.max(), zMin.min(), zMax.max()]
-    
-    # geometries += [dash_vtk.GeometryRepresentation(
-    #     id="axes",
-    #     children=[dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=bounds)))],
-    #     showCubeAxes=True,      # Show origins
-    #     property={'color': [255, 255, 255], 'opacity': 0}     # Make the object totally transparent.. We just need axes
-    # )]
-
-    # ################################################################################
-    # # Pointer to indicate where it's clicked
-    # ################################################################################
-    # cone_pointer = dash_vtk.GeometryRepresentation(
-    #     property = {"color": [0, 0, 0]},
-    #     children = [dash_vtk.Algorithm(id="pointer", vtkClass="vtkConeSource")]
-    # )
-
-    # tooltip = html.Pre(
-    #     id = "tooltip",
-    #     style = {
-    #         "position": "absolute",
-    #         "bottom": "25px",
-    #         "left": "25px",
-    #         "zIndex": 1,
-    #         "color": "white"
-    #     }
-    # )
-
-    # # Add rendered meshes to the final content at the end (at once!)    
-    # return dash_vtk.View(id='vtk-view', 
-    #                         children=geometries + [cone_pointer, tooltip],
-    #                         pickingModes=['hover'])
-
+    return [True if geom_vtk.id=='axes' else False for geom_vtk in geometries], [""], dash.no_update
 """
-@callback(Output('vtk-view-container', 'children'),
-          Input('3d-viz-btn', 'n_clicks'),
-          State('geom-3d-names', 'value'),
-          State('geom-types', 'value'),
-          State('wt-options', 'data'))
-def visualize(nClicks, geom_3d_names, geom_types, wt_options_by_names):
-    '''
-    This function is for visualizing per geometry component types from selected file data
-    '''
-    if nClicks==0:
+
+########################
+# Handle Local VTK View
+########################
+
+@callback(Output('vtk-view-local-div', 'is_open'),
+          Input('vtk-view', 'clickInfo'),
+          State('vtk-view-local-div', 'is_open'))
+def toggle_local_scene(info, is_open):
+    if not info:
         raise PreventUpdate
 
-    geometries = []
-    xMax, xMin, yMax, yMin, zMax, zMin = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
+    if "representationId" not in info:
+        raise PreventUpdate
+    
+    return toggle(info, is_open)
 
-    # colors_scale = px.colors.sequential.Plasma
-    # colors_scale = px.colors.qualitative.Plotly
-    default_rgbs = plotly.colors.DEFAULT_PLOTLY_COLORS
-    colors_scale = [list(map(lambda x: int(x)/255, c[4:-1].split(', '))) for c in default_rgbs]
+
+@callback(Output('vtk-view-local-header', 'children'),
+          Input('vtk-view', 'clickInfo'))
+def update_local_header(info):
+
+    if (not info) or ("representationId" not in info):
+        raise PreventUpdate
+    
+    _, gtype, _ = info["representationId"].split('-')
+
+    return gtype
+
+
+@callback(Output('vtk-text-description', 'children'),
+          Input('vtk-view', 'clickInfo'),
+          State('geom-3d-names', 'value'),
+          State('wt-options', 'data'))
+def update_local_table_content(info, geom_3d_names, wt_options_by_names):
+    '''
+    Print yaml properties of each component with table format
+    '''
+    if (not info) or ("representationId" not in info):
+        raise PreventUpdate
+
+    _, gtype, _ = info["representationId"].split('-')
+
+    data = [wt_options_by_names[gname]['components'][gtype] for gname in geom_3d_names]
+    columns = list(dict.fromkeys(key for dictionary in data for key, value in dictionary.items() if not isinstance(value, list)).keys())        # Get union of dictionary keys only where its value is single value type
+
+    table_columns = [html.Th(c) for c in [""]+columns]
+    table_rows = []
+    for idx, dictionary in enumerate(data):
+        row = [html.Td(geom_3d_names[idx])]
+        row += [html.Td(dictionary[c]) if c in dictionary.keys() else html.Td("") for c in columns]
+        table_rows.append(html.Tr(row))
+
+
+    # table_header = [
+    #     html.Thead(html.Tr([html.Th("First Name"), html.Th("Last Name")]))
+    # ]
+
+    # row1 = html.Tr([html.Td("Arthur"), html.Td("Dent")])
+    # row2 = html.Tr([html.Td("Ford"), html.Td("Prefect")])
+    # row3 = html.Tr([html.Td("Zaphod"), html.Td("Beeblebrox")])
+    # row4 = html.Tr([html.Td("Trillian"), html.Td("Astra")])
+
+    # table_body = [html.Tbody([row1, row2, row3, row4])]
+
+    table_header = [html.Thead(html.Tr(table_columns))]
+    table_body = [html.Tbody(table_rows)]
+
+    table = dbc.Table(table_header + table_body, bordered=True)
+
+    return table
+
+
+@callback(Output('vtk-view-local-container', 'children'),
+          Input('vtk-view', 'clickInfo'),
+          State('geom-3d-names', 'value'),
+          State('wt-options', 'data'))
+def update_local_scene_content(info, geom_3d_names, wt_options_by_names):
+    
+    if (not info) or ("representationId" not in info):
+        raise PreventUpdate
+    
+    gnameIdx, gtype, _ = info["representationId"].split('-')
+    # print('Clicked: ', gtype)
+    
+    # print('geometries\n', geometries)
+    geometries_local = []
+    local = True
+    xMax, xMin, yMax, yMin, zMax, zMin = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
     colors_scale = [[1,0,0], [0,1,0], [0,0,1], [1,1,0], [0,1,1], [1,0,1], [1,1,1]]      # temporary..
 
-
-    for idx, gname in enumerate(geom_3d_names):         # gname: selected geometry file (selected filelabelname)
-
-        # Set 'local' flag depending on the size of components
-        local = False
+    for idx, gname in enumerate(geom_3d_names):
+        if gtype == 'blade':
+            mesh_state, _ , points = render_blade(wt_options_by_names[gname], local)
+        elif gtype == 'hub':
+            mesh_state, _ , points = render_hub(wt_options_by_names[gname], local)
+        elif gtype == 'nacelle':
+            mesh_state, _, points = render_nacelle(wt_options_by_names[gname], local)
+        elif gtype == 'tower':
+            mesh_state, _ , points = render_Tower(wt_options_by_names[gname], local)
+        elif gtype == 'substructure':
+            if 'monopile' in list(wt_options_by_names[gname]['components'].keys()):
+                mesh_state, _ , points = render_monopile(wt_options_by_names[gname], local)     
+            elif 'floating_platform' in list(wt_options_by_names[gname]['components'].keys()):
+                mesh_state, _, points = render_floatingPlatform(wt_options_by_names[gname], local)
+            else:
+                continue
         
-        # Render, add meshes
-        # Note: Geometry Representation include only one mesh. Cannot include multiple meshes..
+        xMin = np.append(xMin, points[0])
+        xMax = np.append(xMax, points[1])
+        yMin = np.append(yMin, points[2])
+        yMax = np.append(yMax, points[3])
+        zMin = np.append(zMin, points[4])
+        zMax = np.append(zMax, points[5])
 
-        ################################################################################
-        # Add blade geometry representation
-        ################################################################################
-        blade_mesh_state, _ , blade_points = render_blade(wt_options_by_names[gname], local)
-        xMin = np.append(xMin, blade_points[0])
-        xMax = np.append(xMax, blade_points[1])
-        yMin = np.append(yMin, blade_points[2])
-        yMax = np.append(yMax, blade_points[3])
-        zMin = np.append(zMin, blade_points[4])
-        zMax = np.append(zMax, blade_points[5])
+        geometries_local += [dash_vtk.GeometryRepresentation(id=gname, children=[dash_vtk.Mesh(state=mesh_state)], property={'color': colors_scale[idx], 'opacity': 0.5}, showCubeAxes=False)]
 
-        
-        # Add by geom data (same color over components from the turbine)
-        geometries += [dash_vtk.GeometryRepresentation(
-            id=f"{gname}-blade-rep",
-            children=[dash_vtk.Mesh(state=blade_mesh_state)],
-            actor={"visibility": 1} if 'blade' in geom_types else {"visibility": 0},
-            property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-            # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-        )]
-
-        ################################################################################
-        # Add hub geometry representation
-        ################################################################################
-        hub_mesh_state, _ , hub_points = render_hub(wt_options_by_names[gname], local)
-        
-        xMin = np.append(xMin, hub_points[0])
-        xMax = np.append(xMax, hub_points[1])
-        yMin = np.append(yMin, hub_points[2])
-        yMax = np.append(yMax, hub_points[3])
-        zMin = np.append(zMin, hub_points[4])
-        zMax = np.append(zMax, hub_points[5])
-
-        # Add by geom data (same color over components from the turbine)
-        geometries += [dash_vtk.GeometryRepresentation(
-            id=f"{gname}-hub-rep",
-            children=[dash_vtk.Mesh(state=hub_mesh_state)],
-            actor={"visibility": 1} if 'hub' in geom_types else {"visibility": 0},
-            property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-            # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-        )]
-
-        ################################################################################
-        # Add nacelle geometry representation
-        ################################################################################
-        nacelle_mesh_state, _, nacelle_points = render_nacelle(wt_options_by_names[gname], local)
-        
-        xMin = np.append(xMin, nacelle_points[0])
-        xMax = np.append(xMax, nacelle_points[1])
-        yMin = np.append(yMin, nacelle_points[2])
-        yMax = np.append(yMax, nacelle_points[3])
-        zMin = np.append(zMin, nacelle_points[4])
-        zMax = np.append(zMax, nacelle_points[5])
-        
-        # Add by geom data (same color over components from the turbine)
-        geometries += [dash_vtk.GeometryRepresentation(
-            id=f"{gname}-nacelle-rep",
-            children=[dash_vtk.Mesh(state=nacelle_mesh_state)],
-            actor={"visibility": 1} if 'nacelle' in geom_types else {"visibility": 0},
-            property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-            # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-        )]
-
-        ################################################################################
-        # Add tower geometry representation
-        ################################################################################
-        tower_mesh_state, _ , tower_points = render_Tower(wt_options_by_names[gname], local)
-        xMin = np.append(xMin, tower_points[0])
-        xMax = np.append(xMax, tower_points[1])
-        yMin = np.append(yMin, tower_points[2])
-        yMax = np.append(yMax, tower_points[3])
-        zMin = np.append(zMin, tower_points[4])
-        zMax = np.append(zMax, tower_points[5])
-        
-        # Add by geom data (same color over components from the turbine)
-        geometries += [dash_vtk.GeometryRepresentation(
-            id=f"{gname}-tower-rep",
-            children=[dash_vtk.Mesh(state=tower_mesh_state)],
-            actor={"visibility": 1} if 'tower' in geom_types else {"visibility": 0},
-            property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-            # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-        )]
-
-        ################################################################################
-        # Add substructure geometry representation
-        ################################################################################
-        if 'monopile' in list(wt_options_by_names[gname]['components'].keys()):
-            sub_mesh_state, _ , sub_points = render_monopile(wt_options_by_names[gname], local)
-        
-        elif 'floating_platform' in list(wt_options_by_names[gname]['components'].keys()):
-            sub_mesh_state, _, sub_points = render_floatingPlatform(wt_options_by_names[gname], local)
-        
-        else:
-            continue
-
-        xMin = np.append(xMin, sub_points[0])
-        xMax = np.append(xMax, sub_points[1])
-        yMin = np.append(yMin, sub_points[2])
-        yMax = np.append(yMax, sub_points[3])
-        zMin = np.append(zMin, sub_points[4])
-        zMax = np.append(zMax, sub_points[5])
-        
-        # Add by geom data (same color over components from the turbine)
-        geometries += [dash_vtk.GeometryRepresentation(
-            id=f"{gname}-substructure-rep",
-            children=[dash_vtk.Mesh(state=sub_mesh_state)],
-            actor={"visibility": 1} if 'substructure' in geom_types else {"visibility": 0},
-            property={'color': colors_scale[idx], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-            # property={'color': [idx+1/len(geom_3d_names), idx/len(geom_3d_names), 0], 'opacity': 0.5}     # Color: (r,g,b) with [0,1] range
-        )]
-            
     # Add grid coordinates using max-sized box - a single global coordinate over geometries
-    bounds=[xMin.min(), xMax.max(), yMin.min(), yMax.max(), zMin.min(), zMax.max()]
-    
-    geometries += [dash_vtk.GeometryRepresentation(
-        id="axes",
+    bounds = [xMin.min(), xMax.max(), yMin.min(), yMax.max(), zMin.min(), zMax.max()]
+    geometries_local += [dash_vtk.GeometryRepresentation(
         children=[dash_vtk.Mesh(state=to_mesh_state(pv.Box(bounds=bounds)))],
         showCubeAxes=True,      # Show origins
         property={'color': [255, 255, 255], 'opacity': 0}     # Make the object totally transparent.. We just need axes
     )]
-
-    ################################################################################
-    # Pointer to indicate where it's clicked
-    ################################################################################
-    cone_pointer = dash_vtk.GeometryRepresentation(
-        property = {"color": [0, 0, 0]},
-        children = [dash_vtk.Algorithm(id="pointer", vtkClass="vtkConeSource")]
-    )
 
     tooltip = html.Pre(
         id = "tooltip",
@@ -571,94 +348,38 @@ def visualize(nClicks, geom_3d_names, geom_types, wt_options_by_names):
         }
     )
 
-    # Add rendered meshes to the final content at the end (at once!)    
-    return dash_vtk.View(id='vtk-view', 
-                            children=geometries + [cone_pointer, tooltip],
-                            pickingModes=['hover'])
+    # for vtk_idx, geom_vtk in enumerate(geometries):
+    #     if gtype in geom_vtk.id:
+    #         if geom_vtk.children:
+    #             print('adding: ', geom_vtk.id)
+    #         geometries_local += [dash_vtk.GeometryRepresentation(children=geom_vtk.children, showCubeAxes=True)]
+
+    return dash_vtk.View(id='vtk-view-local', children=geometries_local+[tooltip], pickingModes=['click'])
 
 
 @callback(Output('tooltip', 'children'),
           Output('tooltip', 'style'),
-          Output('abc-tower-rep', 'showCubeAxes'),
-          Output('abc-tower-rep', 'property'),
-          Output('vtk-view', 'triggerRender'),
-          Input('vtk-view', 'hoverInfo'),
-          State('vtk-view', 'children'))
-def probe_data(hoverInfo, geometries_with_pointers):
-    '''
-    Callback structure
-    _____________________
-    displayPosition: The x,y,z coordinate with on the user's screen.
-    ray: A line between two points in 3D space (xyz1, xyz2) that represent the mouse position. It covers the full space under the 2D mouse position.
-    representationId: The ID assigned to the dash_vtk.GeometryRepresentation containing your object.
-    worldPosition: The x, y, z coordinates in the 3D environment that you are rendering where the ray hit the object. It corresponds to the 3D coordinate on the surface of the object under your mouse.
-    '''
-    cone_state = {"resolution": 12}
+          Input('vtk-view-local', 'clickInfo'))
+def click_local_view(info):
 
-    print('probe data..')
-
-    if hoverInfo:
-        print('hoverInfo\n', hoverInfo)
-        if "representationId" not in hoverInfo:
-            return dash.no_update, dash.no_update, dash.no_update, dash.no_update
+    if info:
+        if "representationId" not in info:
+            return dash.no_update, dash.no_update
         
-        gname, gtype, _ = hoverInfo["representationId"].split('-')
-
-        for geometry in geometries_with_pointers[:-2]:
-            # print('geometry\n', geometry.keys())        # dict_keys(['props', 'type', 'namespace'])
-
-            # print(geometry['props'].keys())             # dict_keys(['children', 'id', 'actor', 'property'])
-            # print(geometry['type'])                     # GeometryRepresentation
-            # print(geometry['namespace'])                # dash_vtk
-            # print(geometry['props']['id'])
-            if geometry['props']['id'] == hoverInfo["representationId"]:
-                print('clicked: ', geometry['props']['id'])
-                geometry['props']['showCubeAxes']=True
-        
+        print('Clicked: ', info["representationId"])
         style = {
             "position": "absolute",
-            "bottom": hoverInfo['displayPosition'][1],
-            "left": hoverInfo['displayPosition'][0],
-            "zIndex": hoverInfo['displayPosition'][2],
+            "bottom": info['displayPosition'][1],
+            "left": info['displayPosition'][0],
+            "zIndex": info['displayPosition'][2],
             "color": "white"
         }
 
-        return [f"{hoverInfo['representationId']}: {hoverInfo['worldPosition']}"], style, True, {'color': [0,0,1], 'opacity': 0.5}, random.random()
-
-
-    # elif clickInfo:
-    #     print('clickInfo\n', clickInfo)
-    #     if "representationId" not in clickInfo:
-    #         return dash.no_update, dash.no_update, dash.no_update
-        
-    #     gname, gtype, _ = clickInfo["representationId"].split('-')
-
-    #     for geometry in geometries_with_pointers[:-2]:
-    #         # print('geometry\n', geometry.keys())        # dict_keys(['props', 'type', 'namespace'])
-
-    #         # print(geometry['props'].keys())             # dict_keys(['children', 'id', 'actor', 'property'])
-    #         # print(geometry['type'])                     # GeometryRepresentation
-    #         # print(geometry['namespace'])                # dash_vtk
-    #         # print(geometry['props']['id'])
-    #         if geometry['props']['id'] == clickInfo["representationId"]:
-    #             print('clicked: ', geometry['props']['id'])
-    #             geometry['props']['property']={'color': [0,0,1], 'opacity': 0.5}
-
-    #     # info
-    #     # {'worldPosition': [253.33301878217912, -56.93506994027632, 227.71971074152225], 'displayPosition': [319, 451, 0.9961089494163424], 'compositeID': 16, 'representationId': 'abcde-nacelle-rep', 'ray': [[-804.434149795535, 159.10463863288712, -14.680539061758665], [666.5233190078518, -141.3255811016689, 322.4073083209296]]}
-
-    #     style = {
-    #         "position": "absolute",
-    #         "bottom": clickInfo['displayPosition'][1],
-    #         "left": clickInfo['displayPosition'][0],
-    #         "zIndex": clickInfo['displayPosition'][2],
-    #         "color": "white"
-    #     }
-
-    #     return [f"{clickInfo['representationId']}: {clickInfo['worldPosition']}"], style, random.random()
+        return [f"{info['representationId']}: {info['worldPosition']}"], style
     
-    return [""], dash.no_update, dash.no_update, dash.no_update
-"""
+    return [""], dash.no_update
+
+
 
 
 # We are using card container where we define sublayout with rows and cols.
@@ -681,56 +402,42 @@ def layout():
                             ])
                         ], className='card')
     
-    # type_items = dbc.Row([
-    #                 # dbc.Col(dbc.Form(dcc.Checklist(id='geom-types', options=component_types, value=[], inline=True))),
-    #                 # dbc.Col(dbc.Button('Visualize', id='3d-viz-btn', n_clicks=0, color='primary'), width='auto')
-    #             ])
-
-    # type_inputs = dbc.Card([
-    #                     dbc.CardHeader('Components to Visualize'),
-    #                     dbc.CardBody([
-    #                         type_items
-    #                     ])
-    #                 ], className='card')
-
-    vtk_view = html.Div([
-                        html.Div(dbc.Spinner(color="primary"),
-                                    style={
-                                        "background-color": "#ffffff",
-                                        "height": "calc(100vh - 230px)",
-                                        "width": "100%",
-                                        "text-align": "center",
-                                        "padding-top": "calc(50vh - 105px)"
-                                    })
-                    ],
-                    id='vtk-view-container',
-                    style={"height": "calc(100vh - 230px)", "width": "100%"},
-                )
+    # vtk_view = dcc.Loading(html.Div(
+    #                     id='vtk-view-container',
+    #                     style={"height": "calc(100vh - 230px)", "width": "100%"},
+    #                 ))
+    vtk_view = dbc.Card([
+                         dbc.CardHeader(html.Div(id='geometry-color', style={'text-align': 'center'})),
+                         dbc.CardBody([
+                             html.Div(
+                                id='vtk-view-container',
+                                style={"height": "calc(100vh - 230px)", "width": "100%"}
+                             ) 
+                         ])
+                    ])
     
-    # vtk_view_local = html.Div([
-    #                     html.Div(dbc.Spinner(color="primary"),
-    #                                 style={
-    #                                     "background-color": "#ffffff",
-    #                                     "height": "calc(100vh - 230px)",
-    #                                     "width": "100%",
-    #                                     "text-align": "center",
-    #                                     "padding-top": "calc(50vh - 105px)"
-    #                                 })
-    #                 ],
-    #                 id='vtk-view-local-container',
-    #                 style={"height": "calc(100vh - 230px)", "width": "100%"},
-    #             )
+    vtk_view_local = dcc.Loading(
+                            html.Div(
+                            id='vtk-view-local-container',
+                            style={"height": "calc(100vh - 230px)", "width": "100%"},
+                        ))
 
     layout = html.Div([
                 dcc.Store(id='local-meshes', data={}),
                 dcc.Loading(dbc.Row([
                     dbc.Col(geom_inputs),
-                    # dbc.Col(type_inputs, width=8)
                 ], className='g-0')),         # No gutters where horizontal spacing is added between the columns by default
-                # html.Div(id='geometry-color', style={'text-align': 'center', 'display': 'inline-flex', 'width': '100%'}),
-                html.Div(id='geometry-color', style={'text-align': 'center'}),
-                dbc.Row(vtk_view, className='card'),
-                # dbc.Row(vtk_view_local, className='card')
+                # html.Div(id='geometry-color', style={'text-align': 'center'}),
+                # dbc.Row(vtk_view, className='card'),
+                dcc.Loading(vtk_view),
+
+                # Modal Window layout for visualizing Outlier timeseries data
+                dbc.Modal([
+                    dbc.ModalHeader(dbc.ModalTitle(html.Div(id='vtk-view-local-header'))),                                 # Related function: display_outlier()
+                    dbc.ModalBody([html.Div(id='vtk-text-description', style={"overflow": "scroll"}), vtk_view_local])],                                                         # Related function: display_outlier()
+                    id='vtk-view-local-div',
+                    size='xl',
+                    is_open=False)
             ])
 
     return layout
