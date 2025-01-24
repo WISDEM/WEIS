@@ -273,7 +273,13 @@ class IEC_CoherentGusts():
         # Header
         hd = f'! Step wind starting from wind speed = {dlc.URef} to wind speed = {dlc.wind_speed+dlc.step_speeddelta}\n'
         self.write_wnd(wind_file_name, data, hd)
-    
+
+    def read_wnd(self, wnd_file):
+        """
+        Reads wnd file and returns data array of size (nt, 9).
+        """
+        return np.genfromtxt(wnd_file, comments="!")
+
     def write_wnd(self, fname, data, hd):
 
         # Move transient event to user defined time
@@ -301,7 +307,7 @@ class IEC_CoherentGusts():
 
         fid.close()
 
-    def write_bts(self, wnd_file, bts_file = None, new_fname = None, HH = None, dt = None, y = None, z = None, include_delay=True):
+    def write_bts(self, wnd_file, bts_file = None, new_fname = None, HH = None, dt = None, y = None, z = None, propagation=True):
         """
         Writes a .bts wind file based on wind data from a .wnd file.
         Inputs:
@@ -312,8 +318,13 @@ class IEC_CoherentGusts():
                                                     merges both files using add_turbulence().
             new_fname (str, optional):          Name for .bts file to be written. If not defined,
                                                     function returns TurbSimFile object instead.
-            y (array-like):                     Grid points in y-direction (if no bts_file given).
-            z (array-like):                     Grid points in z-direction (if no bts_file given).
+            HH (float, opt):                    Hub height, default is self.HH.
+            dt (float, opt):                    Desired step size of the .bts file.
+            y (array-like, opt):                Array containing y-coordinates of the .bts grid.
+            z (array-like, opt):                Array containing z-coordinates of the .bts grid.
+            propagation (bool):                 Include the propagation of flow in .bts file, default: True. 
+                                                    Note that the propagation can only be calculated if y and 
+                                                    z are defined.
         Outputs:
             Function writes the bts file if new_fname is defined.
             If not defined, it returns a TurbSimFile object containing the bts data.
@@ -322,6 +333,8 @@ class IEC_CoherentGusts():
         ## Load .bts file and set grid points of the new .bts file
         if isinstance(bts_file, str): 
             bts_data = turbsim_file.TurbSimFile(bts_file)
+            y = bts_data['y']
+            z = bts_data['z']
         elif bts_file is not None: 
             bts_data = bts_file
             y = bts_data['y']
@@ -331,21 +344,22 @@ class IEC_CoherentGusts():
 
         ## Load .wnd file 
         if isinstance(wnd_file, str):
-            data = np.genfromtxt(wnd_file, comments="!")
-            wnd_data = self.wnd2bts(data, HH, dt, y, z, include_delay)
+            data = self.read_wnd(wnd_file)
+            wnd_data = self.wnd2bts(data, HH, dt, y, z, propagation)
         else:
             wnd_data = wnd_file
 
         ## Merge .bts and .wnd files
         if bts_file: 
-            merged_file = self.add_turbulence(bts_data, wnd_data, wnd_data['t'], self.HH, new_fname)
+            merged_file = self.add_turbulence(bts_data, wnd_data, HH = HH, new_fname = new_fname)
         else:
             merged_file = wnd_data
 
-        ## Write .bts file
+        ## Write .bts file or return TurbSimFile object
         if new_fname:
             merged_file.write(new_fname)
         else:
+            merged_file['ID'] = 7
             return merged_file
 
     def wnd2bts(self, data, HH = None, dt = None, y = None, z = None, propagation=True):
@@ -355,7 +369,9 @@ class IEC_CoherentGusts():
             data (array-like or str):   2D array that contains channels from the .wnd file, or path of .wnd file 
                                             to be loaded.
             HH (float, opt):            Hub height, default is self.HH.
-            dt (float, opt):            Desired step size of the .bts file.
+            dt (float, opt):            Desired step size of the .bts file. Note that if you want to create a 
+                                            functional .bts file, dt is a necessary input unless the .wnd file 
+                                            already contains data for a constant step size dt.
             y (array-like, opt):        Array containing y-coordinates of the .bts grid.
             z (array-like, opt):        Array containing z-coordinates of the .bts grid.
             propagation (bool):         Include the propagation of flow in .bts file, default: True. Note that 
@@ -375,7 +391,7 @@ class IEC_CoherentGusts():
         ts = turbsim_file.TurbSimFile()
 
         if isinstance(data, str):
-            data = np.genfromtxt(wnd_file, comments="!")
+            data = self.read_wnd(data)
 
         if dt is not None:
             ## Interpolate data over timesteps dt
@@ -465,7 +481,7 @@ class IEC_CoherentGusts():
 
         return ts
 
-    def add_turbulence(self,fname, u, v = None, w = None, time = None, HH = None, new_fname = None):
+    def add_turbulence(self, fname, u, v = None, w = None, time = None, HH = None, new_fname = None):
         """
         Creates a new BTS file using the turbulence of an existing BTS file,
         combined with time-varying u (and possibly v and w) signals.
@@ -476,16 +492,24 @@ class IEC_CoherentGusts():
         Inputs:
             fname (str, TSFile):    path to BTS file to grab turbulence from, or TurbSimFile.
             u (array, dict):        time-varying velocity in x-direction, 
-                                        or dict containing 'u', 'v' and 'w'.
+                                        or dict containing 'u', 'v' and 'w' (and optionally, 't').
             v (array, optional):    time-varying velocity in x-direction (assumed 0).
             u (array, optional):    time-varying velocity in x-direction (assumed 0).
             time (array, optional): time array, must be same size as u (and v and w).
-                                        If undefined, velocity inputs must match BTS file size.
+                                        If undefined, velocity inputs must match .bts file size.
             HH (float, opt):        user-defined height to take average WS at. Assumed to be middle 
                                         of grid. Only used if u.ndim = 1.
             new_fname (str, opt):   filename for the new BTS file. If undefined, the function
                                         returns the TurbSimFile object instead.
         """
+
+        if not isinstance(u, (tuple, list, np.ndarray)):
+            v = u['u'][1,:,:,:]
+            w = u['u'][2,:,:,:]
+            if time is None:
+                try: time = u['t']
+                except: pass
+            u = u['u'][0,:,:,:]
 
         if v is None: v = np.zeros_like(u)
         if w is None: w = np.zeros_like(u)
@@ -498,12 +522,17 @@ class IEC_CoherentGusts():
         ## Load BTS file
         if isinstance(fname, str): ts = turbsim_file.TurbSimFile(fname)
         else: ts = fname
-        ts_shape = ts['u'].shape
 
-        if not isinstance(u, (tuple, list, np.ndarray)):
-            v = u['v']
-            w = u['w']
-            u = u['u']
+        # Cut bts file to length of wnd file
+        if ts['t'][-1] < time[-1]:
+            raise Exception("End time of bts file ({}) must be greater or equal to that of wnd file ({})."\
+                                .format(ts['t'][-1], time[-1]) )
+        elif ts['t'][-1] > time[-1]:
+            tend = np.where(ts['t'] >= time[-1])[0][0]+1
+            ts['t'] = ts['t'][:tend]
+            ts['u'] = ts['u'][:,:tend,:,:]
+
+        ts_shape = ts['u'].shape
 
         ## Create 3D velocity vectors based on the shape of the provided velocity vectors
         u_ndims = len(np.shape(u))
@@ -564,12 +593,12 @@ class IEC_CoherentGusts():
                 ## Note: it is assumed that v and w are always mean 0
                 ## Note2: in this case, all veer/shear is removed from the bts file,
                 ## as it is presumed to be provided in the u/v/w vectors
-                tsu_mean = np.average(ts['u'][0,:,:,:], axis=0, keepdims=True)
+                tsu_mean = np.average(np.sqrt(ts['u'][0,:,:,:]**2 + ts['u'][1,:,:,:]**2), 
+                                        axis=0, keepdims=True)
         
         ## If u has three dimensions, it must be (time, y, z)
         elif u_ndims == 3:
-            
-            if np.shape(u)[0] == np.shape(time):
+            if np.shape(u)[0] == np.size(time):
                 # Simple function to interpolate the grid over time
                 # TODO: replace for something more efficient
                 def interp_grid(ts, time, u, v, w):
