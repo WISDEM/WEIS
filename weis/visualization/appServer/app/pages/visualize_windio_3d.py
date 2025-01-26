@@ -38,6 +38,8 @@ geometries = [
                 )
             ]
 
+colors_scale = [[1,0,0], [0,1,0], [0,0,1], [1,1,0], [0,1,1], [1,0,1], [1,1,1]]      # temporary..
+
 
 @callback(Output('geom-3d-names', 'options'),
           Input('geometry-components', 'data'))
@@ -47,7 +49,6 @@ def list_labels(geom_comps_by_names):
 
 @callback(Output('vtk-view-container', 'children'),
           Output('geometry-color', 'children'),
-          Output('local-meshes', 'data'),
           Input('3d-viz-btn', 'n_clicks'),
           State('geom-3d-names', 'value'),
           State('wt-options', 'data'))
@@ -59,7 +60,7 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
         raise PreventUpdate
 
     global geometries
-    xMax, xMin, yMax, yMin, zMax, zMin, local_meshes = {}, {}, {}, {}, {}, {}, {}
+    xMax, xMin, yMax, yMin, zMax, zMin = {}, {}, {}, {}, {}, {}
     xMaxBlade, xMinBlade, yMaxBlade, yMinBlade, zMaxBlade, zMinBlade = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
 
     for gtype in component_types:
@@ -69,8 +70,6 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
         yMin[gtype] = np.array([])
         zMax[gtype] = np.array([])
         zMin[gtype] = np.array([])
-
-    colors_scale = [[1,0,0], [0,1,0], [0,0,1], [1,1,0], [0,1,1], [1,0,1], [1,1,1]]      # temporary..
 
     geometries = [
                 dash_vtk.GeometryRepresentation(
@@ -166,7 +165,7 @@ def initial_loading(nClicks, geom_3d_names, wt_options_by_names):
                          cameraPosition=setCameraPosition,
                          cameraViewUp=setCameraViewUp,
                          children=geometries,
-                         pickingModes=['click']), color_description, local_meshes
+                         pickingModes=['click']), color_description
     
 
 """
@@ -255,15 +254,43 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
 
     _, gtype, _ = info["representationId"].split('-')
 
-    data = [wt_options_by_names[gname]['components'][gtype] for gname in geom_3d_names]
-    columns = list(dict.fromkeys(key for dictionary in data for key, value in dictionary.items() if not isinstance(value, list)).keys())        # Get union of dictionary keys only where its value is single value type
+    if gtype == 'tower':
+        return dcc.Link(dbc.Button("Tower Properties"), href='/windio_tower')
+    
+    elif gtype == 'blade':
+        return dcc.Link(dbc.Button("Blade Properties"), href='/windio_blade')
 
-    table_columns = [html.Th(c) for c in [""]+columns]
-    table_rows = []
-    for idx, dictionary in enumerate(data):
-        row = [html.Td(geom_3d_names[idx])]
-        row += [html.Td(dictionary[c]) if c in dictionary.keys() else html.Td("") for c in columns]
-        table_rows.append(html.Tr(row))
+    elif gtype == 'hub':
+        data = [wt_options_by_names[gname]['components'][gtype] for gname in geom_3d_names]
+        columns = list(dict.fromkeys(key for dictionary in data for key, value in dictionary.items() if not isinstance(value, list) and not isinstance(value, dict)).keys())        # Get union of dictionary keys only where its value is single value type
+
+        # style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'}
+        table_columns = [html.Th(c) for c in ["Label"]+columns]
+        table_rows = []
+        for idx, dictionary in enumerate(data):
+            row = [html.Td(html.P(geom_3d_names[idx], style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'}))]
+            row += [html.Td(html.Code(dictionary[c], style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})) if c in dictionary.keys() else html.Td("-") for c in columns]
+            table_rows.append(html.Tr(row))
+        
+        table_header = [html.Thead(html.Tr(table_columns))]
+        table_body = [html.Tbody(table_rows)]
+
+        table = dbc.Table(table_header + table_body, bordered=True)
+    
+    elif gtype == 'nacelle':
+        multiindex_df = {}
+        for field in ['drivetrain', 'generator']:
+            data = [wt_options_by_names[gname]['components'][gtype][field] if field in wt_options_by_names[gname]['components'][gtype] else {} for gname in geom_3d_names]
+            columns = list(dict.fromkeys(key for dictionary in data for key, value in dictionary.items() if not isinstance(value, list) and not isinstance(value, dict)).keys())
+
+            for c in columns:
+                multiindex_df[(field, c)] = {geom_3d_names[idx] : (html.Code(dictionary[c], style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'}) if c in dictionary else html.Code("-", style={'color': f'rgb({colors_scale[idx][0]*255}, {colors_scale[idx][1]*255}, {colors_scale[idx][2]*255})'})) for idx, dictionary in enumerate(data)}
+
+        
+        df = pd.DataFrame(multiindex_df)
+        df.index.set_names("Label", inplace=True)
+        # TODO: Freeze first column with fixed_columns={'headers': True, 'data': 1} => Doesn't work..
+        table = dbc.Table.from_dataframe(df, bordered=True, index=True)
 
 
     # table_header = [
@@ -277,10 +304,6 @@ def update_local_table_content(info, geom_3d_names, wt_options_by_names):
 
     # table_body = [html.Tbody([row1, row2, row3, row4])]
 
-    table_header = [html.Thead(html.Tr(table_columns))]
-    table_body = [html.Tbody(table_rows)]
-
-    table = dbc.Table(table_header + table_body, bordered=True)
 
     return table
 
@@ -301,7 +324,6 @@ def update_local_scene_content(info, geom_3d_names, wt_options_by_names):
     geometries_local = []
     local = True
     xMax, xMin, yMax, yMin, zMax, zMin = np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([])
-    colors_scale = [[1,0,0], [0,1,0], [0,0,1], [1,1,0], [0,1,1], [1,0,1], [1,1,1]]      # temporary..
 
     for idx, gname in enumerate(geom_3d_names):
         if gtype == 'blade':
@@ -423,10 +445,9 @@ def layout():
                         ))
 
     layout = html.Div([
-                dcc.Store(id='local-meshes', data={}),
-                dcc.Loading(dbc.Row([
+                dbc.Row([
                     dbc.Col(geom_inputs),
-                ], className='g-0')),         # No gutters where horizontal spacing is added between the columns by default
+                ], className='g-0'),         # No gutters where horizontal spacing is added between the columns by default
                 # html.Div(id='geometry-color', style={'text-align': 'center'}),
                 # dbc.Row(vtk_view, className='card'),
                 dcc.Loading(vtk_view),
