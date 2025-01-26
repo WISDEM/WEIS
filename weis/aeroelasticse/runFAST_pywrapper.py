@@ -13,7 +13,7 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
 from weis.aeroelasticse.calculated_channels import calculate_channels
-from pCrunch import AeroelasticOutput, LoadsAnalysis, FatigueParams, read
+from pCrunch import AeroelasticOutput, Crunch, FatigueParams, read
 from weis.aeroelasticse.openfast_library import FastLibAPI
 
 import numpy as np
@@ -128,7 +128,7 @@ class runFAST_pywrapper(object):
         self.goodman            = False
         self.magnitude_channels = magnitude_channels_default
         self.fatigue_channels   = fatigue_channels_default
-        self.la                 = None # Will be initialized on first run through
+        self.cruncher                 = None # Will be initialized on first run through
         self.allow_fails        = False
         self.fail_value         = 9999
         self.write_stdout       = False
@@ -145,8 +145,8 @@ class runFAST_pywrapper(object):
         super(runFAST_pywrapper, self).__init__()
 
     def init_crunch(self):
-        if self.la is None:
-            self.la = LoadsAnalysis(
+        if self.cruncher is None:
+            self.cruncher = Crunch(
                 outputs=[],
                 magnitude_channels=self.magnitude_channels,
                 fatigue_channels=self.fatigue_channels,
@@ -280,10 +280,10 @@ class runFAST_pywrapper(object):
         if self.fst_vt['Fst']['TStart'] > 0.0:
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
             
-        case_name, sum_stats, extremes, dels, damage = self.la.process_single(output,
+        case_name, sum_stats, extremes, dels, damage = self.cruncher.process_single(output,
                                                                               return_damage=True,
                                                                               goodman_correction=self.goodman)
-        #breakpoint()
+
         return case_name, sum_stats, extremes, dels, damage, output_dict
 
 
@@ -312,7 +312,7 @@ class runFAST_pywrapper_batch(object):
         self.goodman            = False
         self.magnitude_channels = magnitude_channels_default
         self.fatigue_channels   = fatigue_channels_default
-        self.la                 = None
+        self.cruncher           = None
         self.use_exe            = False
         self.allow_fails        = False
         self.fail_value         = 9999
@@ -321,8 +321,8 @@ class runFAST_pywrapper_batch(object):
         self.post               = None
 
     def init_crunch(self):
-        if self.la is None:
-            self.la = LoadsAnalysis(
+        if self.cruncher is None:
+            self.cruncher = Crunch(
                 outputs=[],
                 magnitude_channels=self.magnitude_channels,
                 fatigue_channels=self.fatigue_channels,
@@ -370,23 +370,14 @@ class runFAST_pywrapper_batch(object):
         self.init_crunch()
             
         case_data_all = self.create_case_data()
-            
-        ss = {}
-        et = {}
-        dl = {}
-        dam = {}
+
         ct = []
         for c in case_data_all:
             _name, _ss, _et, _dl, _dam, _ct = evaluate(c)
-            ss[_name] = _ss
-            et[_name] = _et
-            dl[_name] = _dl
-            dam[_name] = _dam
+            self.cruncher.add_output_stats(_name, _ss, _et, _dl, _dam)
             ct.append(_ct)
 
-        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
-
-        return summary_stats, extreme_table, DELs, Damage, ct
+        return self.cruncher, ct
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
@@ -406,21 +397,12 @@ class runFAST_pywrapper_batch(object):
         pool.close()
         pool.join()
 
-        ss = {}
-        et = {}
-        dl = {}
-        dam = {}
         ct = []
         for _name, _ss, _et, _dl, _dam, _ct in output:
-            ss[_name] = _ss
-            et[_name] = _et
-            dl[_name] = _dl
-            dam[_name] = _dam
+            self.cruncher.add_output_stats(_name, _ss, _et, _dl, _dam)
             ct.append(_ct)
             
-        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
-
-        return summary_stats, extreme_table, DELs, Damage, ct
+        return self.cruncher, ct
 
     def run_mpi(self, mpi_comm_map_down):
 
@@ -460,21 +442,12 @@ class runFAST_pywrapper_batch(object):
                 data_out = comm.recv(source=rank_j, tag=1)
                 output.append(data_out)
 
-        ss = {}
-        et = {}
-        dl = {}
-        dam = {}
         ct = []
         for _name, _ss, _et, _dl, _dam, _ct in output:
-            ss[_name] = _ss
-            et[_name] = _et
-            dl[_name] = _dl
-            dam[_name] = _dam
+            self.cruncher.add_output_stats(_name, _ss, _et, _dl, _dam)
             ct.append(_ct)
 
-        summary_stats, extreme_table, DELs, Damage = self.la.post_process(ss, et, dl, dam)
-        
-        return summary_stats, extreme_table, DELs, Damage, ct
+        return self.cruncher, ct
 
 
 
