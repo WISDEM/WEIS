@@ -568,11 +568,6 @@ class IEC_CoherentGusts():
                 ref_idx = int(ts_shape[3]/2-0.5)
             else: 
                 ref_idx = [int(ts_shape[3]/2-1), int(ts_shape[3]/2)]
-                
-            ## Calculate mean in x-direction at reference height
-            ## Note: it is assumed that v and w are always mean 0
-            ## Note 2: in this case, the shear from the bts file is retained
-            tsu_mean = np.average(ts['u'][0,:,:,ref_idx], keepdims=True)
         
         ## If u has two dimensions, it must be the same size as the bts grid
         elif u_ndims == 2:
@@ -588,13 +583,6 @@ class IEC_CoherentGusts():
                 u = np.tile(u[np.newaxis, :, :], (ts_shape[1], 1, 1))
                 v = np.tile(v[np.newaxis, :, :], (ts_shape[1], 1, 1))
                 w = np.tile(w[np.newaxis, :, :], (ts_shape[1], 1, 1))
-            
-                ## Calculate mean in x-direction at each height
-                ## Note: it is assumed that v and w are always mean 0
-                ## Note2: in this case, all veer/shear is removed from the bts file,
-                ## as it is presumed to be provided in the u/v/w vectors
-                tsu_mean = np.average(np.sqrt(ts['u'][0,:,:,:]**2 + ts['u'][1,:,:,:]**2), 
-                                        axis=0, keepdims=True)
         
         ## If u has three dimensions, it must be (time, y, z)
         elif u_ndims == 3:
@@ -619,22 +607,27 @@ class IEC_CoherentGusts():
                 'If a 3D array, the shape of u {} must be the same as the bts u vector {}, or the first dimension must match time {}.'\
                     .format(np.shape(u), ts_shape[1:], np.shape(time)))
 
-            ## Calculate mean in x-direction at each height
-            ## Note: it is assumed that v and w are always mean 0
-            ## Note2: in this case, all veer/shear is removed from the bts file,
-            ## as it is presumed to be provided in the u/v/w vectors
-            tsu_mean = np.average(ts['u'][0,:,:,:], axis=0, keepdims=True)
+        ## Calculate mean wind speed at each time instance
+        ## Note: in this case, all veer/shear is removed from the bts file,
+        ## as it is presumed to be provided in the u/v/w vectors
+        U_abs = np.sqrt(u**2 + v**2)[np.newaxis,:,:,:]
+        Umean_wnd = np.average(np.average(U_abs, axis=2, keepdims=True), axis=3, keepdims=True)
 
-        ## Scaling factor for scaling turbulence
-        scaling = u / tsu_mean
+        ## Calculate mean WS of .bts file and subsequent scaling factor
+        Umean_bts = np.mean(np.sqrt(ts['u'][0,:,:,:]**2 + ts['u'][1,:,:,:]**2))
+        Umean_grid = np.mean(ts['u'], axis=1, keepdims=True)
+        if Umean_bts == 0: 
+            scaling = 1
+            print("WARNING: mean wind speed of bts file is zero. No scaling applied.")
+        else: 
+            scaling = Umean_wnd / Umean_bts
+        print(scaling.shape)
 
         ## Copy old turbsimfile object into new turbsimfile object
         ts_new = ts
         
         ## Change velocity profile as defined
         ## Note that v and w are assumed zero-mean
-        ts_new['u'][0,:,:,:] = ts['u'][0,:,:,:] + u - tsu_mean
-        ts_new['u'][1,:,:,:] = ts['u'][1,:,:,:] + v
-        ts_new['u'][2,:,:,:] = ts['u'][2,:,:,:] + w
+        ts_new['u'] = ((ts_new['u'] - Umean_grid) * scaling) + np.stack((u, v, w))
 
         return ts_new
