@@ -580,8 +580,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         else:
             fast_reader = InputReader_OpenFAST()
+            modopt_dir = os.path.dirname(self.options['modeling_options']['fname_input_modeling'])
             fast_reader.FAST_InputFile  = modopt['OpenFAST']['openfast_file']   # FAST input file (ext=.fst)
-            fast_reader.FAST_directory  = modopt['OpenFAST']['openfast_dir']   # Path to fst directory files
+            fast_reader.FAST_directory  = os.path.join(modopt_dir,modopt['OpenFAST']['openfast_dir'])   # Path to fst directory files
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
