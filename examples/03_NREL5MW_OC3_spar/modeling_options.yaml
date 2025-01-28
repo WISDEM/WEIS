@@ -21,12 +21,9 @@ WISDEM:
         flag: True
 
 RAFT:
+    # Using strip theory only
     flag: False
-    potential_model_override: 0
-    potential_bem_members: [spar]
-    min_freq_BEM: 0.1
-    min_freq: 0.1
-    max_freq: 1.0
+    potential_model_override: 1
     
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
@@ -53,9 +50,9 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : False
+        TwFADOF2 : False    # second tower mode is problematic
         TwSSDOF1 : True
-        TwSSDOF2 : False
+        TwSSDOF2 : False    # second tower mode is problematic
         PtfmSgDOF: True
         PtfmSwDOF: True
         PtfmHvDOF: True
@@ -67,19 +64,6 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         WaveTMax: 800
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
-        WaveSeed1: 123456789
-        WaveSeed2: 1011121314
-        AddBLin1: [100000, 0.0, 0.0, 0.0, 0.0, 0.0]
-        AddBLin2: [0.0, 100000.0, 0.0, 0.0, 0.0, 0.0]
-        AddBLin3: [0.0, 0.0, 130000.0, 0.0, 0.0, 0.0]
-        AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 13000000]
-        AddCLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 98340000]
-        PotMod: 1
-        ExctnMod: 1
-        RdtnMod: 1
-        RdtnDT: 0.0125
-        # PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar
-        # PtfmMass_Init: 7.462e6
 
 ROSCO:
     flag: True
