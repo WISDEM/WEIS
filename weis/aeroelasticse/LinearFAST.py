@@ -170,7 +170,7 @@ class LinearFAST(runFAST_pywrapper_batch):
 
         # Hydrodyn Inputs, these need to be state-space (2), but they should work if 0
         # Need to be this for linearization
-        case_inputs[("HydroDyn","WaveMod")]     = {'vals':[0], 'group':0}
+        case_inputs[("SeaState","WaveMod")]     = {'vals':[0], 'group':0}
         case_inputs[("HydroDyn","ExctnMod")]    = {'vals':[2], 'group':0}
         case_inputs[("HydroDyn","RdtnMod")]     = {'vals':[2], 'group':0}
         case_inputs[("HydroDyn","DiffQTF")]     = {'vals':[0], 'group':0}
