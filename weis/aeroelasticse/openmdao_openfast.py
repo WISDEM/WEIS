@@ -804,6 +804,12 @@ class FASTLoadCases(ExplicitComponent):
         if not modeling_options:
             modeling_options = self.options['modeling_options']
 
+        # Backwards compatibility with Level3
+        if 'Level3' in modeling_options:
+            if 'OpenFAST' not in modeling_options:
+                modeling_options['OpenFAST'] = {}
+            modeling_options['OpenFAST'].update(modeling_options['Level3'])
+
         if 'simulation' in modeling_options['OpenFAST']:
             for key in modeling_options['OpenFAST']['simulation']:
                 fst_vt['Fst'][key] = modeling_options['OpenFAST']['simulation'][key]
