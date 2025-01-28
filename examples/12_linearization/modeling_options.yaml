@@ -81,13 +81,12 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     ServoDyn:
         YawSpr: 4.6273E+10
         YawDamp: 3.9088E+07
-    HydroDyn:
-        WaveTMax: 1 #3630
+        SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WvLowCOffD: 0.0
         WvHiCOffD: 3.04292
-        WaveSeed1: 123456789
+    HydroDyn:
         AddBQuad1: [923000.0,   0.0,        0.0,        0.0,            -8920000.0,     0.0]
         AddBQuad2: [0.0,        923000.0,   0.0,        8920000.0,      0.0,            0.0]
         AddBQuad3: [0.0,        0.0,        2300000.0,  0.0,            0.0,            0.0]
@@ -96,6 +95,8 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad6: [0.0,        0.0,        0.0,        0.0,            0.0,            48000000000.0]
         PotMod: 1
         PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi        # relative to WEIS
+        SimpMembers: True
+        
 ROSCO:
     flag: True
     zeta_vs: 1
