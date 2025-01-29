@@ -60,7 +60,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : True
         PtfmYDOF : False
         SumPrint: True
-    HydroDyn:
+    SeaState:
         WaveTMax: 800
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
