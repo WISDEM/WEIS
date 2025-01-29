@@ -62,6 +62,8 @@ class FASTLoadCases(ExplicitComponent):
         rotorse_options  = modopt['WISDEM']['RotorSE']
         mat_init_options = modopt['materials']
 
+        self.modopt_dir = os.path.dirname(self.options['modeling_options']['fname_input_modeling'])
+
         self.n_blades      = modopt['assembly']['number_of_blades']
         self.n_span        = n_span    = rotorse_options['n_span']
         self.n_pc          = n_pc      = rotorse_options['n_pc']
@@ -580,9 +582,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt = self.update_FAST_model(fst_vt, inputs, discrete_inputs)
         else:
             fast_reader = InputReader_OpenFAST()
-            modopt_dir = os.path.dirname(self.options['modeling_options']['fname_input_modeling'])
             fast_reader.FAST_InputFile  = modopt['OpenFAST']['openfast_file']   # FAST input file (ext=.fst)
-            fast_reader.FAST_directory  = os.path.join(modopt_dir,modopt['OpenFAST']['openfast_dir'])   # Path to fst directory files
+            fast_reader.FAST_directory  = os.path.join(self.modopt_dir,modopt['OpenFAST']['openfast_dir'])   # Path to fst directory files
             fast_reader.path2dll            = modopt['General']['openfast_configuration']['path2dll']   # Path to dll file
             fast_reader.execute()
             fst_vt = fast_reader.fst_vt
@@ -603,6 +604,13 @@ class FASTLoadCases(ExplicitComponent):
         #  Allow user-defined OpenFAST options to override WISDEM-generated ones
         #  Re-load modeling options without defaults to learn only what needs to change, has already been validated when first loaded
         modopts_no_defaults = load_yaml(self.options['modeling_options']['fname_input_modeling'])
+
+        # Backwards compatibility with Level3
+        if 'Level3' in modopts_no_defaults:
+            if 'OpenFAST' not in modopts_no_defaults:
+                modopts_no_defaults['OpenFAST'] = {}
+            modopts_no_defaults['OpenFAST'].update(modopts_no_defaults['Level3'])
+
         fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
                 
                 
@@ -803,14 +811,10 @@ class FASTLoadCases(ExplicitComponent):
 
     def load_FAST_model_opts(self,fst_vt,modeling_options={}):
         # Can provide own modeling options, used when we don't want to use default OpenFAST options
+        ititializing = False
         if not modeling_options:
             modeling_options = self.options['modeling_options']
-
-        # Backwards compatibility with Level3
-        if 'Level3' in modeling_options:
-            if 'OpenFAST' not in modeling_options:
-                modeling_options['OpenFAST'] = {}
-            modeling_options['OpenFAST'].update(modeling_options['Level3'])
+            ititializing = True
 
         if 'simulation' in modeling_options['OpenFAST']:
             for key in modeling_options['OpenFAST']['simulation']:
@@ -850,6 +854,15 @@ class FASTLoadCases(ExplicitComponent):
 
         if 'HydroDyn' in modeling_options['OpenFAST']:    
             for key in modeling_options['OpenFAST']['HydroDyn']:
+                # PotFile is an edge case where it is either specified by the user, and has already been made into an absolute path in gc_LoadInputs, 
+                # then when we update it again here, it's made relative because that's how it's spec'd in the input
+                if key == 'PotFile':
+                    # When first setting up fst_vt, we need to transfer PotFile from modopts to fst_vt
+                    if ititializing:
+                        pass
+                    # When updating PotFile, we don't want exact (relative) value from modeling option inputs
+                    else:
+                        continue
                 fst_vt['HydroDyn'][key] = modeling_options['OpenFAST']['HydroDyn'][key]
 
         if 'MoorDyn' in modeling_options['OpenFAST']:    
@@ -1807,8 +1820,7 @@ class FASTLoadCases(ExplicitComponent):
         # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
         # set rotor speed to rated and pitch to 15 deg if operating
         if self.options['modeling_options']['OpenFAST']['from_openfast']:
-            modopt_dir = os.path.dirname(self.options['modeling_options']['fname_input_modeling'])
-            reg_traj = os.path.join(modopt_dir,self.options['modeling_options']['OpenFAST']['regulation_trajectory'])
+            reg_traj = os.path.join(self.modopt_dir,self.options['modeling_options']['OpenFAST']['regulation_trajectory'])
             if os.path.isfile(reg_traj):
                 data = load_yaml(reg_traj)
                 cases = data['cases']
