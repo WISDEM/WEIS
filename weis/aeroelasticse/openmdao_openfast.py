@@ -832,8 +832,16 @@ class FASTLoadCases(ExplicitComponent):
             for key in modeling_options['OpenFAST']['ElastoDynTower']:
                 fst_vt['ElastoDynTower'][key] = modeling_options['OpenFAST']['ElastoDynTower'][key]
 
-        if 'AeroDyn' in modeling_options['OpenFAST']:    
+        if 'AeroDyn' in modeling_options['OpenFAST']: 
             for key in modeling_options['OpenFAST']['AeroDyn']:
+                if key == 'OLAF':
+                    if 'OLAF' not in fst_vt['AeroDyn']:
+                        fst_vt['AeroDyn']['OLAF'] = {}
+                    for o_key in modeling_options['OpenFAST']['AeroDyn']['OLAF']:
+                        fst_vt['AeroDyn']['OLAF'][o_key] = modeling_options['OpenFAST']['AeroDyn']['OLAF'][o_key]
+                    if not ititializing:
+                        continue
+
                 fst_vt['AeroDyn'][key] = copy.copy(modeling_options['OpenFAST']['AeroDyn'][key])
 
         if 'InflowWind' in modeling_options['OpenFAST']:    
@@ -881,7 +889,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['AeroDyn']['IndToler'] = 'Default'
         if fst_vt['AeroDyn']['DTAero'] == 0.:
             fst_vt['AeroDyn']['DTAero'] = 'Default'
-        if 'OLAF' in fst_vt['AeroDyn']:
+        if 'OLAF' in fst_vt['AeroDyn'] and 'DTfvw' in fst_vt['AeroDyn']['OLAF']:
             if fst_vt['AeroDyn']['OLAF']['DTfvw'] == 0.:
                 fst_vt['AeroDyn']['OLAF']['DTfvw'] = 'Default'
         else:
