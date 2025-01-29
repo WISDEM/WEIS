@@ -1019,9 +1019,9 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['InflowWind']['RefHt_Uni'] = float(inputs['hub_height'])
         fst_vt['InflowWind']['PLexp'] = float(inputs['shearExp'])
         if fst_vt['InflowWind']['NWindVel'] == 1:
-            fst_vt['InflowWind']['WindVxiList'] = [0.]
-            fst_vt['InflowWind']['WindVyiList'] = [0.]
-            fst_vt['InflowWind']['WindVziList'] = [float(inputs['hub_height'])]
+            fst_vt['InflowWind']['WindVxiList'] = ['0.']
+            fst_vt['InflowWind']['WindVyiList'] = ['0.']
+            fst_vt['InflowWind']['WindVziList'] = [str(float(inputs['hub_height']))]
         else:
             raise Exception('The code only supports InflowWind NWindVel == 1')
 
