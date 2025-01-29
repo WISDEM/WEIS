@@ -16,7 +16,7 @@ dependencies:
   - pip
   - pyhams>=1.3
   #- pyoptsparse
-  - rosco=2.9.5
+  - rosco=2.9.6
   - smt
   - wisdem=3.18.1
   - pip:
