@@ -33,8 +33,8 @@ openfast_input_map = {
     
     'wave_height': ("HydroDyn","WaveHs"),
     'wave_period': ("HydroDyn","WaveTp"),
-    'WaveHd': ("HydroDyn","WaveDir"),
-    'WaveGamma': ("HydroDyn","WavePkShp"),
+    'wave_direction': ("HydroDyn","WaveDir"),
+    'wave_gamma': ("HydroDyn","WavePkShp"),
     'wave_seed': ("HydroDyn","WaveSeed1"),
 
     'wave_model': ("HydroDyn","WaveMod"),

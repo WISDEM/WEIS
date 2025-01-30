@@ -2773,21 +2773,21 @@ properties:
                         minimum: 0.0
                         maximum: 1e5
                         unit: m
-                        description: Significant wave height of incident waves (meters) [used only when WaveMod=1 or 2]
+                        description: Significant wave height of incident waves (meters) [used only when WaveMod=1 or 2].  These inputs will be determined by the DLC_Driver options (wave_height).
                     WaveTp:
                         type: number
                         default: 8.52
                         minimum: 0.0
                         maximum: 1e5
                         unit: s
-                        description: Peak spectral period of incident waves (sec) [used only when WaveMod=1 or 2]
+                        description: Peak spectral period of incident waves (sec) [used only when WaveMod=1 or 2].  These inputs will be determined by the DLC_Driver options (wave_period).
                     WavePkShp:
                         type: number
                         default: 1.0
                         minimum: 1
                         maximum: 7
                         unit: none
-                        description: Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]
+                        description: Peak-shape parameter of incident wave spectrum (-) or DEFAULT (string) [used only when WaveMod=2; use 1.0 for Pierson-Moskowitz]. These inputs will be determined by the DLC_Driver options (wave_gamma).
                     WvLowCOff:
                         type: number
                         default: 0.111527
@@ -2808,7 +2808,7 @@ properties:
                         minimum: 0.0
                         maximum: 6.283185307179586
                         unit: rad
-                        description: Incident wave propagation heading direction [unused when WaveMod=0 or 6]
+                        description: Incident wave propagation heading direction [unused when WaveMod=0 or 6]. These inputs will be determined by the DLC_Driver options (wave_direction).
                     WaveDirMod:
                         type: integer
                         enum: [0, 1]
@@ -2838,7 +2838,7 @@ properties:
                         minimum: -2147483648
                         maximum: 2147483647
                         default: -561580799
-                        description: First random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]
+                        description: First random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]. These inputs will be determined by the DLC_Driver options (wave_seed).
                     WaveSeed2:
                         default: RANLUX
                         description: Second random seed of incident waves [-2147483648 to 2147483647] [unused when WaveMod=0, 5, or 6]. Use RANLUX for internal FAST pseudo-random number generator
