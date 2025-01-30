@@ -798,6 +798,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['HydroDyn']          = {}
         fst_vt['MoorDyn']           = {}
         fst_vt['MAP']               = {}
+        fst_vt['BeamDyn']           = {}
         
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
@@ -1237,7 +1238,7 @@ class FASTLoadCases(ExplicitComponent):
         idx_out = [np.argmin(abs(twr_fract-ri)) for ri in r_out_target]
         fst_vt['ElastoDyn']['TwrGagNd'] = [idx+1 for idx in idx_out]
         fst_vt['AeroDyn']['NTwOuts'] = 0
-        fst_vt['AeroDyn']['TwOutNd'] = [0]
+        fst_vt['AeroDyn']['TwOutNd'] = ['0']
         self.Z_out_ED_twr = np.hstack((0., [twr_fract[i] for i in idx_out], 1.))
         if len(np.unique(self.Z_out_ED_twr)) < len(self.Z_out_ED_twr):
             raise Exception('The minimum number of tower nodes for WEIS to compute forces along the tower height is 11.')
