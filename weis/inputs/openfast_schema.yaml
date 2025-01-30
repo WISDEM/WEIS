@@ -1857,7 +1857,7 @@ properties:
                         description: Will be automatically filled in with HAMS output unless a value here overrides it; WAMIT output files containing the linear, nondimensionalized, hydrostatic restoring matrix (.hst), frequency-dependent hydrodynamic added mass matrix and damping matrix (.1), and frequency- and direction-dependent wave excitation force vector per unit wave amplitude (.3) (quoted string) [MAKE SURE THE FREQUENCIES INHERENT IN THESE WAMIT FILES SPAN THE PHYSICALLY-SIGNIFICANT RANGE OF FREQUENCIES FOR THE GIVEN PLATFORM; THEY MUST CONTAIN THE ZERO- AND INFINITE-FREQUENCY LIMITS]
                     WAMITULEN:
                         type: array
-                        default: [0.0]
+                        default: [1.0]
                         unit: m
                         items:
                             type: number
