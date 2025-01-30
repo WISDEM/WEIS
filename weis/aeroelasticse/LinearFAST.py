@@ -125,7 +125,8 @@ class LinearFAST(runFAST_pywrapper_batch):
         case_inputs[("InflowWind","HWindSpeed")] = {'vals':self.wind_speeds, 'group':1}  # modelling input
 
         # AeroDyn Inputs
-        case_inputs[("AeroDyn","AFAeroMod")] = {'vals':[1], 'group':0}
+        case_inputs[("AeroDyn","DBEMT_Mod")] = {'vals':[-1], 'group':0}
+        case_inputs[("AeroDyn","UA_Mod")] = {'vals':[0], 'group':0}
 
         # Servodyn Inputs
         case_inputs[("ServoDyn","PCMode")] = {'vals':[0], 'group':0}

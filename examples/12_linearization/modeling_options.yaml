@@ -119,12 +119,12 @@ OpenFAST_Linear:
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
         NLinTimes: 2
 
-RAFT:
-    flag: True
-    potential_model_override: 2
-    trim_ballast: 2
-    heave_tol: 1
-    save_designs: True
+# RAFT:
+#     flag: True
+#     potential_model_override: 2
+#     trim_ballast: 2
+#     heave_tol: 1
+#     save_designs: True
     # min_freq: 0.0080001
     # min_freq_BEM: 0.008
     # max_freq: 0.7958
