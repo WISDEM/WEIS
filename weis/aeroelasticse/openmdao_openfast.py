@@ -1420,7 +1420,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['SeaState']['MSL2SWL'] = 0.0
             fst_vt['SeaState']['WaveHs'] = float(inputs['Hsig_wave'])
             fst_vt['SeaState']['WaveTp'] = float(inputs['Tsig_wave'])
-            if fst_vt['SeaState']['WavePkShp']<=-999.0: fst_vt['SeaState']['WavePkShp'] = "DEFAULT"
             fst_vt['SeaState']['WaveDir'] = float(inputs['beta_wave'])
             fst_vt['SeaState']['WaveDirRange'] = fst_vt['SeaState']['WaveDirRange'] / np.rad2deg(1)
             fst_vt['SeaState']['WaveElevxi'] = [str(m) for m in fst_vt['SeaState']['WaveElevxi']]
