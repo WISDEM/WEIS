@@ -1474,7 +1474,6 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MDivSize'] = 0.5*np.ones( fst_vt['HydroDyn']['NMembers'] )
             fst_vt['HydroDyn']['MCoefMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['MHstLMod'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
-            fst_vt['HydroDyn']['PropPot'] = np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)
             fst_vt['HydroDyn']['JointAxID'] = np.ones( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['JointOvrlp'] = np.zeros( fst_vt['HydroDyn']['NJoints'], dtype=np.int_)
             fst_vt['HydroDyn']['NCoefDpth'] = 0
