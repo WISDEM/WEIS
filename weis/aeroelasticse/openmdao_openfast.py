@@ -1538,14 +1538,8 @@ class FASTLoadCases(ExplicitComponent):
 
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
-
-            # # scale PtfmVol0 based on platform mass, temporary solution to buoyancy issue where spar's heave is very sensitive to platform mass
-            # if fst_vt['HydroDyn']['PtfmMass_Init']:
-            #     fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement']) * (1 + ((fst_vt['ElastoDyn']['PtfmMass'] / fst_vt['HydroDyn']['PtfmMass_Init']) - 1) * .9 )  #* 1.04 # 8029.21
-            # else:
-            #     fst_vt['HydroDyn']['PtfmVol0'] = float(inputs['platform_displacement'])
             
-            fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] #TODO: PtfmMass_Init taken out of HydroDyn, need to check if this is ok
+            fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
 
 
         # Moordyn inputs
