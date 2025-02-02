@@ -9,7 +9,7 @@ from openmdao.utils.mpi import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
-from weis.aeroelasticse.FileTools     import save_yaml
+from openfast_io.FileTools     import save_yaml
 from wisdem.inputs.validation         import simple_types
 from weis.glue_code.mpi_tools import compute_optimal_nP
 
@@ -78,7 +78,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
     if color_i == 0: # the top layer of cores enters, the others sit and wait to run openfast simulations
         # if MPI and opt_options['driver']['optimization']['flag']:
         if MPI:
-            if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
+            if modeling_options['OpenFAST']['flag'] or modeling_options['OpenFAST_Linear']['flag']:
                 # Parallel settings for OpenFAST
                 modeling_options['General']['openfast_configuration']['mpi_run'] = True
                 modeling_options['General']['openfast_configuration']['mpi_comm_map_down'] = comm_map_down
@@ -191,7 +191,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
                 froot_out = os.path.join(folder_output, opt_options['general']['fname_output'])
                 # Remove the fst_vt key from the dictionary and write out the modeling options
                 modeling_options['General']['openfast_configuration']['fst_vt'] = {}
-                if not modeling_options['Level3']['from_openfast']:
+                if not modeling_options['OpenFAST']['from_openfast']:
                     wt_initial.write_ontology(wt_opt, froot_out)
                 wt_initial.write_options(froot_out)
 

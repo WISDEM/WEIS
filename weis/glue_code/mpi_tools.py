@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from openmdao.utils.mpi import MPI
-from weis.aeroelasticse.FileTools import print_yaml
+# from openfast_io.FileTools import print_yaml
 
 
 def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
@@ -92,7 +92,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     modeling_updates['General']['openfast_configuration']['nOFp'] = nOFp
 
     print('The following changes should be made to the modeling options:')
-    print_yaml(modeling_updates)
+    # print_yaml(modeling_updates)
 
     # Apply updates
     modeling_options['General']['openfast_configuration'].update(modeling_updates['General']['openfast_configuration'])

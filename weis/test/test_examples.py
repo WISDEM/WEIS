@@ -17,7 +17,6 @@ skinny_scripts = [
 all_scripts = [
     "01_aeroelasticse/run_general",
     "01_aeroelasticse/run_OLAF",
-    "01_aeroelasticse/run_nodalOutputs",
     #"02_run_openfast_cases/weis_driver_rosco_opt",  # executed in examples_skinny
     #"02_run_openfast_cases/weis_driver_sm", # executed in examples_skinny
     "02_run_openfast_cases/weis_driver_loads",
