@@ -9,16 +9,16 @@ dependencies:
   - mat4py
   - nlopt
   - numpydoc
-  - openfast=4.0.0
+  - openfast>=4.0.1
   - openraft>=1.2.4
   - osqp  
   - pcrunch
   - pip
   - pyhams>=1.3
   #- pyoptsparse
-  - rosco=2.9.6
+  - rosco>=2.9.7
   - smt
-  - wisdem=3.18.1
+  - wisdem>=3.18.1
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
