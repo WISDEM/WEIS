@@ -12,7 +12,7 @@ import multiprocessing as mp
 from openfast_io.FAST_reader import InputReader_OpenFAST
 from openfast_io.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper, Turbsim_wrapper, IEC_CoherentGusts
-from weis.aeroelasticse.calculated_channels import calculate_channels
+#from weis.aeroelasticse.calculated_channels import calculate_channels
 from pCrunch import AeroelasticOutput, Crunch, FatigueParams, read
 from weis.aeroelasticse.openfast_library import FastLibAPI
 
@@ -57,6 +57,7 @@ magnitude_channels_default = {
     'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
     'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'],
     'TwrBsM': ['TwrBsMxt', 'TwrBsMyt', 'TwrBsMzt'],
+    'PtfmOffset': ['PtfmSurge', 'PtfmSway'],
 }
 
 fatigue_channels_default = {
@@ -205,7 +206,7 @@ class runFAST_pywrapper(object):
             output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
             # Calculated channels
-            calculate_channels(output_dict, self.fst_vt)
+            #calculate_channels(output_dict, self.fst_vt)
 
             output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
@@ -253,10 +254,10 @@ class runFAST_pywrapper(object):
                 output_dict['openfast_failed'] = np.zeros(output_init.data.shape[0])
 
                 # Calculated channels
-                calculate_channels(output_dict, self.fst_vt)
+                #calculate_channels(output_dict, self.fst_vt)
 
                 # Re-make output
-                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut)
+                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
             
             else: # fill with -9999s
                 output_dict = {}
@@ -274,6 +275,10 @@ class runFAST_pywrapper(object):
             # clear dictionary if we're not keeping time
             if not self.keep_time: output_dict = None
 
+        # Add blade pitch rate channel
+        for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+            idata = np.r_[0.0, np.diff(output[f'BldPitch{i_blade+1}'])] / self.fst_vt['Fst']['DT']
+            output.add_channel(idata, f'dBldPitch{i_blade+1}') 
 
 
         # Trim Data

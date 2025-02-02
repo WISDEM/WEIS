@@ -143,7 +143,7 @@ class TestGeneral(unittest.TestCase):
         fastBatch.case_name_list = case_name_list
 
         # Run OpenFAST, either serially or sequentially
-        _,_,_,_,out = fastBatch.run_serial()
+        _,out = fastBatch.run_serial()
 
         # Update pkl file
         # with open('./general_regression_values.pkl', 'wb') as file:

@@ -2589,8 +2589,6 @@ class FASTLoadCases(ExplicitComponent):
             for i_ts, ts in enumerate(chan_time):
                 t_span = self.TMax[i_ts] - self.TStart[i_ts]
                 for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
-                    ts[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(ts['BldPitch1'])] / self.fst_vt['Fst']['DT']
-
                     time_ind = ts['Time'] >= self.TStart[i_ts]
 
                     # total time

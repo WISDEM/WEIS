@@ -10,6 +10,6 @@ def calculate_channels(openfast_dict,fst_vt):
     for i_blade in range(fst_vt['ElastoDyn']['NumBl']):
         openfast_dict[f'dBldPitch{i_blade+1}'] = np.r_[0,np.diff(openfast_dict['BldPitch1'])] / fst_vt['Fst']['DT']
 
-
+    # ADDED TO MAGNITUDE CHANNELS
     # Platform offset
-    openfast_dict['PtfmOffset'] = np.sqrt(openfast_dict['PtfmSurge']**2 + openfast_dict['PtfmSway']**2)
+    #openfast_dict['PtfmOffset'] = np.sqrt(openfast_dict['PtfmSurge']**2 + openfast_dict['PtfmSway']**2)
