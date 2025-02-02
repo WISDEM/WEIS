@@ -34,7 +34,7 @@ WISDEM:
     BOS:
         flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
@@ -74,13 +74,13 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     ServoDyn:
         YawSpr: 4.6273E+10
         YawDamp: 3.9088E+07
-    HydroDyn:
         WaveTMax: 1 #3630
+    SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WvLowCOffD: 0.0
         WvHiCOffD: 3.04292
-        WaveSeed1: 123456789
+    HydroDyn:
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
 
 ROSCO:

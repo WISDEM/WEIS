@@ -17,7 +17,7 @@ WISDEM:
     BOS:
         flag: True
 
-Level1: # Options for WEIS fidelity level 3 = nonlinear time domain
+RAFT: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     potential_model_override: 1 #strip theory only
     min_freq: 0.1

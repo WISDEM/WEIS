@@ -146,7 +146,7 @@ class TestGeneral(unittest.TestCase):
         _,_,_,_,out = fastBatch.run_serial()
 
         # Update pkl file
-        # with open('/Users/pbortolo/work/1_wisdem/WEIS/weis/test/general_regression_values.pkl', 'wb') as file:
+        # with open('./general_regression_values.pkl', 'wb') as file:
         #     pickle.dump(out, file)
         compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=5e-1, train=False)
 
