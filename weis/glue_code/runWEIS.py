@@ -5,16 +5,18 @@ from weis.glue_code.gc_LoadInputs     import WindTurbineOntologyPythonWEIS
 from wisdem.glue_code.gc_WT_InitModel import yaml2openmdao
 from weis.glue_code.gc_PoseOptimization  import PoseOptimizationWEIS
 from weis.glue_code.glue_code         import WindPark
-from wisdem.commonse.mpi_tools        import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse                  import fileIO
 from weis.glue_code.gc_ROSCOInputs    import assign_ROSCO_values
 from weis.control.tmd                 import assign_TMD_values
+from weis.aeroelasticse.FileTools     import save_yaml
+from wisdem.inputs.validation         import simple_types
 
 fd_methods = ['SLSQP','SNOPT', 'LD_MMA']
-crawling_methods = ['DE', 'NSGA2']
+evolutionary_methods = ['DE', 'NSGA2']
 
 if MPI:
-    from wisdem.commonse.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
+    from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)
@@ -41,8 +43,11 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
         if modeling_options['Level3']['flag']:
 
             # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
-            if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
+            if not (opt_options['driver']['design_of_experiments']['flag']) and (opt_options['driver']['optimization']['solver'] in evolutionary_methods):
+                n_DV *= 5  # targeting 10*n_DV population size... this is what the equivalent FD coloring would take
+            elif not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
                 n_DV = 1
+
 
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of cores available that doubles the number of DVs,
             # otherwise it is half of the number of DV (rounded to the lower integer).
@@ -77,7 +82,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
             n_FD = min([max_cores, n_DV])
             n_OF_runs_parallel = 1
             # if we're doing a GA or such, "FD" means "entities in epoch"
-            if opt_options['driver']['optimization']['solver'] in crawling_methods:
+            if opt_options['driver']['optimization']['solver'] in evolutionary_methods:
                 n_FD = max_cores
 
         # Define the color map for the cores (how these are distributed between finite differencing and openfast runs)
@@ -221,28 +226,12 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
                 wt_initial.write_ontology(wt_opt, froot_out)
             wt_initial.write_options(froot_out)
 
-            # output the problem variables as a dictionary in the output dir
-            fname_pv_json = os.path.join(folder_output, "problem_vars.json")
-            pvfile = open(fname_pv_json, 'w')
             # openMDAO doesn't save constraint values, so we get them from this construction
             problem_var_dict = wt_opt.list_driver_vars(
                 desvar_opts=["lower", "upper",],
                 cons_opts=["lower", "upper", "equals",],
-                out_stream=pvfile,
             )
-            pvfile.close()
-            
-            # clean up the problem_var_dict that we extracted for output
-            for k in problem_var_dict.keys():
-                if not problem_var_dict.get(k): continue
-                for idx in range(len(problem_var_dict[k])):
-                    for kk in problem_var_dict[k][idx][1].keys():
-                        if isinstance(problem_var_dict[k][idx][1][kk], np.ndarray):
-                            problem_var_dict[k][idx][1][kk] = problem_var_dict[k][idx][1][kk].tolist()
-                        if isinstance(problem_var_dict[k][idx][1][kk], np.int32):
-                            problem_var_dict[k][idx][1][kk] = int(problem_var_dict[k][idx][1][kk])
-            #with open(fname_pv_json, 'w') as pvfile:
-            #    json.dump(problem_var_dict, pvfile, indent=4)
+            save_yaml(folder_output, "problem_vars.yaml", simple_types(problem_var_dict))
 
             # Save data to numpy and matlab arrays
             fileIO.save_data(froot_out, wt_opt)

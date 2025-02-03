@@ -27,6 +27,7 @@ import vtk
 import dash_vtk
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
+from weis.dtqpy import objective
 
 try:
     import ruamel_yaml as ry
@@ -35,11 +36,6 @@ except Exception:
         import ruamel.yaml as ry
     except Exception:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
-
-try:
-    from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
-except:
-    from vtk.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 
 
 def checkPort(port, host="0.0.0.0"):
@@ -176,9 +172,16 @@ def load_vars_file(fn_vars):
         a dictionary of dictionaries holding the problem_vars from WEIS
     """
 
-    with open(fn_vars, "r") as fjson:
-        # unpack in a useful form
-        vars = {k: dict(v) for k, v in json.load(fjson).items()}
+    rawvars = load_yaml(fn_vars)
+    vars = {}
+    for k, v in rawvars.items():
+        for (_, v2) in v:
+            for k3, v3 in v2.items():
+                if k3 in ["lower", "upper"]:
+                    v2[k3] = float(v3)
+                if k3 == "val":
+                    v2[k3] = np.array(v3)
+        vars[k] = dict(v)
     return vars
 
 
@@ -236,24 +239,7 @@ def compare_om_data(
 
     return keys_all, diff_keys_12, diff_keys_21
 
-def load_OMsql(log):
-    """
-    Function from :
-    https://github.com/WISDEM/WEIS/blob/main/examples/09_design_of_experiments/postprocess_results.py
-    """
-    # logging.info("loading ", log)
-    cr = om.CaseReader(log)
-    rec_data = {}
-    cases = cr.get_cases('driver')
-    for case in cases:
-        for key in case.outputs.keys():
-            if key not in rec_data:
-                rec_data[key] = []
-            rec_data[key].append(case[key])
-    
-    return rec_data
-
-def load_OMsql_temp(
+def load_OMsql(
     log,
     parse_multi=False,
     meta=None,
@@ -302,14 +288,10 @@ def load_OMsql_temp(
             if key not in rec_data:
                 # if this key isn't present, create a new list
                 rec_data[key] = []
-            
-            if hasattr(case[key], '__len__'):
-                if len(case[key]) == 1:
-                    # otherwise coerce to float if possible and add the data to the list
-                    rec_data[key].append(float(case[key]))
-                else:
-                    # otherwise a numpy array if possible and add the data to the list
-                    rec_data[key].append(np.array(case[key]))
+
+            if hasattr(case[key], '__len__') and len(case[key]) != 1:
+                # convert to a numpy array if possible and add the data to the list
+                rec_data[key].append(np.array(case[key]))
             else:
                 rec_data[key].append(case[key])
 
@@ -443,6 +425,7 @@ def consolidate_multi(
         dataOMbest_DE : dict
             dictionary of the per-iteration best-feasible simulations
     """
+    objective_name = list(vars_dict["objectives"].values())[0]["name"]
 
     dfOMmulti = pd.DataFrame(dataOMmulti)
     tfeas, cfeas = get_feasible_iterations(dataOMmulti, vars_dict, feas_tol=feas_tol)
@@ -450,7 +433,7 @@ def consolidate_multi(
     dfOMmulti = dfOMmulti[tfeas].reset_index()
 
     dataOMbest_DE = dfOMmulti.groupby("iter").apply(
-        lambda grp : grp.loc[grp["floatingse.system_structural_mass"].idxmin()],
+        lambda grp : grp.loc[grp[objective_name].idxmin()],
         include_groups=False,
     ).to_dict()
 

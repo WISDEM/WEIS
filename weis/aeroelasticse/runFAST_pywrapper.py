@@ -12,6 +12,7 @@ import multiprocessing as mp
 from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from weis.aeroelasticse.calculated_channels import calculate_channels
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis, FatigueParams
 from weis.aeroelasticse.openfast_library import FastLibAPI
@@ -131,6 +132,7 @@ class runFAST_pywrapper(object):
         self.la                 = None # Will be initialized on first run through
         self.allow_fails        = False
         self.fail_value         = 9999
+        self.write_stdout       = False
         
         self.overwrite_outfiles = True   # True: existing output files will be overwritten, False: if output file with the same name already exists, OpenFAST WILL NOT RUN; This is primarily included for code debugging with OpenFAST in the loop or for specific Optimization Workflows where OpenFAST is to be run periodically instead of for every objective function anaylsis
 
@@ -203,6 +205,9 @@ class runFAST_pywrapper(object):
             # Add channel to indicate failed run
             output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
+            # Calculated channels
+            calculate_channels(output_dict, self.fst_vt)
+
             output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
 
             # if save_file: write_fast
@@ -220,6 +225,7 @@ class runFAST_pywrapper(object):
 
             wrapper.allow_fails = self.allow_fails
             wrapper.fail_value  = self.fail_value
+            wrapper.write_stdout = self.write_stdout
 
             FAST_Output     = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'outb')
             FAST_Output_txt = os.path.join(wrapper.FAST_directory, wrapper.FAST_InputFile[:-3]+'out')
@@ -253,6 +259,9 @@ class runFAST_pywrapper(object):
                 # Add channel to indicate failed run
                 output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
+                # Calculated channels
+                calculate_channels(output_dict, self.fst_vt)
+
                 # Re-make output
                 output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut)
             
@@ -268,6 +277,9 @@ class runFAST_pywrapper(object):
                 output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
 
                 output = OpenFASTOutput.from_dict(output_dict, self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+
+            # clear dictionary if we're not keeping time
+            if not self.keep_time: output_dict = None
 
 
 
@@ -310,6 +322,7 @@ class runFAST_pywrapper_batch(object):
         self.use_exe            = False
         self.allow_fails        = False
         self.fail_value         = 9999
+        self.write_stdout       = False
         
         self.post               = None
 
@@ -344,6 +357,7 @@ class runFAST_pywrapper_batch(object):
             case_data['use_exe']            = self.use_exe
             case_data['allow_fails']        = self.allow_fails
             case_data['fail_value']         = self.fail_value
+            case_data['write_stdout']       = self.write_stdout
             case_data['keep_time']          = self.keep_time
             case_data['goodman']            = self.goodman
             case_data['magnitude_channels'] = self.magnitude_channels
@@ -417,7 +431,7 @@ class runFAST_pywrapper_batch(object):
     def run_mpi(self, mpi_comm_map_down):
 
         # Run in parallel with mpi
-        from mpi4py import MPI
+        from openmdao.utils.mpi import MPI
 
         # mpi comm management
         comm = MPI.COMM_WORLD
@@ -477,7 +491,7 @@ def evaluate(indict):
     known_keys = ['case', 'case_name', 'FAST_exe', 'FAST_lib', 'FAST_runDirectory',
                   'FAST_InputFile', 'FAST_directory', 'read_yaml', 'FAST_yamlfile_in', 'fst_vt',
                   'write_yaml', 'FAST_yamlfile_out', 'channels', 'overwrite_outfiles', 'keep_time',
-                  'goodman','magnitude_channels','fatigue_channels','post','use_exe','allow_fails','fail_value']
+                  'goodman','magnitude_channels','fatigue_channels','post','use_exe','allow_fails','fail_value', 'write_stdout']
     
     fast = runFAST_pywrapper()
     for k in indict:

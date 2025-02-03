@@ -1,8 +1,8 @@
 import textwrap
 import validation
-import os, shutil
+import os
 import weis.inputs.validation as sch
-from wisdem.inputs import write_yaml
+import json, copy
 
 mywidth  = 70
 myindent = ' '*4
@@ -128,37 +128,28 @@ if __name__ == '__main__':
     docs_dir = os.path.realpath(os.path.join(this_dir,'../../docs/inputs'))
 
     # Merge schemas, write combined schema yamls here
+    # Following https://github.com/WISDEM/WISDEM/blob/master/docs/schema/README
 
-    # modeling
     modeling_schema = sch.get_modeling_schema()
-    combined_modeling_yaml = os.path.join(this_dir,'weis_modeling_schema.yaml')
-    write_yaml(modeling_schema,combined_modeling_yaml)
-    myobj = Schema2RST(combined_modeling_yaml)
-    myobj.write_rst()
+    modeling_schema['definitions'] = copy.deepcopy(modeling_schema['properties'])
+    modeling_schema.pop('properties')
+    with open(os.path.join(docs_dir,'modeling_schema.json'),'w', encoding='utf-8') as f:
+        json.dump(modeling_schema,f, ensure_ascii=False, indent=4)
 
-    # copy file to docs
-    doc_file = os.path.join(docs_dir,os.path.split(combined_modeling_yaml)[-1].split('.')[0] + '.rst')
-    shutil.copyfile(myobj.fout,doc_file)
-
-    # geometry
     geometry_schema = sch.get_geometry_schema()
-    combined_geometry_yaml = os.path.join(this_dir,'weis_geometry_schema.yaml')
-    write_yaml(geometry_schema,combined_geometry_yaml)
-    myobj = Schema2RST(combined_geometry_yaml)
-    myobj.write_rst()
+    temp_defs = copy.deepcopy(geometry_schema['definitions'])
+    geometry_schema['definitions'] = copy.deepcopy(geometry_schema['properties'])
+    geometry_schema['definitions'].update(temp_defs)
+    geometry_schema.pop('properties')
+    with open(os.path.join(docs_dir,'geometry_schema.json'),'w', encoding='utf-8') as f:
+        json.dump(geometry_schema,f, ensure_ascii=False, indent=4)
 
-    doc_file = os.path.join(docs_dir,os.path.split(combined_geometry_yaml)[-1].split('.')[0] + '.rst')
-    shutil.copyfile(myobj.fout,doc_file)
-
-    # analysis
     analysis_schema = sch.get_analysis_schema()
-    combined_analysis_yaml = os.path.join(this_dir,'weis_analysis_schema.yaml')
-    write_yaml(analysis_schema,combined_analysis_yaml)
-    myobj = Schema2RST(combined_analysis_yaml)
-    myobj.write_rst()
+    analysis_schema['definitions'] = copy.deepcopy(analysis_schema['properties'])
+    analysis_schema.pop('properties')
+    with open(os.path.join(docs_dir,'analysis_schema.json'),'w', encoding='utf-8') as f:
+        json.dump(analysis_schema,f, ensure_ascii=False, indent=4)
 
-    doc_file = os.path.join(docs_dir,os.path.split(combined_analysis_yaml)[-1].split('.')[0] + '.rst')
-    shutil.copyfile(myobj.fout,doc_file)
 
 
 

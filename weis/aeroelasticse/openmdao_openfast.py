@@ -10,7 +10,7 @@ import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
 from openmdao.api                           import ExplicitComponent
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
 from wisdem.commonse import NFREQ
 from wisdem.commonse.cylinder_member import get_nfull
 import wisdem.commonse.utilities              as util
@@ -37,9 +37,6 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from weis.aeroelasticse.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml
-
-if MPI:
-    from mpi4py   import MPI
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -218,7 +215,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input("platform_elem_rho", NULL * np.ones(NELEM_MAX), units="kg/m**3")
             self.add_input("platform_elem_E", NULL * np.ones(NELEM_MAX), units="Pa")
             self.add_input("platform_elem_G", NULL * np.ones(NELEM_MAX), units="Pa")
-            self.add_discrete_input("platform_elem_memid", [0]*NELEM_MAX)
             self.add_input("platform_total_center_of_mass", np.zeros(3), units="m")
             self.add_input("platform_mass", 0.0, units="kg")
             self.add_input("platform_I_total", np.zeros(6), units="kg*m**2")
@@ -365,9 +361,9 @@ class FASTLoadCases(ExplicitComponent):
         OFmgmt = modopt['General']['openfast_configuration']
         self.model_only = OFmgmt['model_only']
         FAST_directory_base = OFmgmt['OF_run_dir']
-        # If the path is relative, make it an absolute path to current working directory
+        # If the path is relative, make it an absolute path to modeling options file
         if not os.path.isabs(FAST_directory_base):
-            FAST_directory_base = os.path.join(os.getcwd(), FAST_directory_base)
+            FAST_directory_base = os.path.join(os.path.dirname(modopt['fname_input_modeling']), FAST_directory_base)
         # Flag to clear OpenFAST run folder. Use it only if disk space is an issue
         self.clean_FAST_directory = False
         self.FAST_InputFile = OFmgmt['OF_run_fst']
@@ -453,7 +449,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('rotor_overspeed',  val=0.0, desc='Maximum percent overspeed of the rotor during all OpenFAST simulations')  # is this over a set of sims?
         self.add_output('max_nac_accel',    val=0.0, units='m/s**2', desc='Maximum nacelle acceleration magnitude all OpenFAST simulations')  # is this over a set of sims?
         self.add_output('avg_pitch_travel',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
-        self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Average pitch travel')  # is this over a set of sims?
+        self.add_output('pitch_duty_cycle',    val=0.0, units='deg/s', desc='Number of pitch direction changes')  # is this over a set of sims?
+        self.add_output('max_pitch_rate_sim',    val=0.0, units='deg/s', desc='Maximum pitch command rate over all simulations')  # is this over a set of sims?
 
         # Blade outputs
         self.add_output('max_TipDxc', val=0.0, units='m', desc='Maximum of channel TipDxc, i.e. out of plane tip deflection. For upwind rotors, the max value is tower the tower')
@@ -472,6 +469,8 @@ class FASTLoadCases(ExplicitComponent):
         # Hub outputs
         self.add_output('hub_Fxyz', val=np.zeros(3), units='kN', desc = 'Maximum hub forces in the non rotating frame')
         self.add_output('hub_Mxyz', val=np.zeros(3), units='kN*m', desc = 'Maximum hub moments in the non rotating frame')
+        self.add_output('hub_Fxyz_aero', val=np.zeros(3), units='N', desc = 'Aero-only maximum hub forces in the non rotating frame')
+        self.add_output('hub_Mxyz_aero', val=np.zeros(3), units='N*m', desc = 'Aero-only maximum hub moments in the non rotating frame')
 
         self.add_output('max_TwrBsMyt',val=0.0, units='kN*m', desc='maximum of tower base bending moment in fore-aft direction')
         self.add_output('max_TwrBsMyt_ratio',val=0.0,  desc='ratio of maximum of tower base bending moment in fore-aft direction to maximum allowable bending moment')
@@ -1428,8 +1427,10 @@ class FASTLoadCases(ExplicitComponent):
             else:
                 PropPotBool = [False] * fst_vt['HydroDyn']['NMembers']
                 for k in range(fst_vt['HydroDyn']['NMembers']):
-                    idx = discrete_inputs['platform_elem_memid'][k]
-                    PropPotBool[k] = modopt["Level1"]["model_potential"][idx]
+                    # Potential modeling of fixed substructres not supported
+                    if modopt['flags']['floating']:
+                        idx = modopt['floating']['members']['platform_elem_memid'][k]
+                        PropPotBool[k] = modopt["Level1"]["model_potential"][idx]    
                 fst_vt['HydroDyn']['PropPot'] = PropPotBool
 
             if fst_vt['HydroDyn']['NBody'] > 1:
@@ -1651,6 +1652,7 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["Spn1MLxb3", "Spn2MLxb3", "Spn3MLxb3", "Spn4MLxb3", "Spn5MLxb3", "Spn6MLxb3", "Spn7MLxb3", "Spn8MLxb3", "Spn9MLxb3"]
         channels_out += ["Spn1MLyb3", "Spn2MLyb3", "Spn3MLyb3", "Spn4MLyb3", "Spn5MLyb3", "Spn6MLyb3", "Spn7MLyb3", "Spn8MLyb3", "Spn9MLyb3"]
         channels_out += ["RtFldCp", "RtFldCt"]
+        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh", "RtFldMxh", "RtFldMyh", "RtFldMzh"]
         channels_out += ["RotSpeed", "GenSpeed", "NacYaw", "Azimuth"]
         channels_out += ["GenPwr", "GenTq", "BldPitch1", "BldPitch2", "BldPitch3"]
         channels_out += ["Wind1VelX", "Wind1VelY", "Wind1VelZ"]
@@ -1663,7 +1665,6 @@ class FASTLoadCases(ExplicitComponent):
         channels_out += ["TwHt1MLxt", "TwHt2MLxt", "TwHt3MLxt", "TwHt4MLxt", "TwHt5MLxt", "TwHt6MLxt", "TwHt7MLxt", "TwHt8MLxt", "TwHt9MLxt"]
         channels_out += ["TwHt1MLyt", "TwHt2MLyt", "TwHt3MLyt", "TwHt4MLyt", "TwHt5MLyt", "TwHt6MLyt", "TwHt7MLyt", "TwHt8MLyt", "TwHt9MLyt"]
         channels_out += ["TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt"]
-        channels_out += ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
         channels_out += ["RotThrust", "LSShftFxs", "LSShftFys", "LSShftFzs", "LSShftFxa", "LSShftFya", "LSShftFza"]
         channels_out += ["RotTorq", "LSSTipMxs", "LSSTipMys", "LSSTipMzs", "LSSTipMxa", "LSSTipMya", "LSSTipMza"]
         channels_out += ["B1N1Alpha", "B1N2Alpha", "B1N3Alpha", "B1N4Alpha", "B1N5Alpha", "B1N6Alpha", "B1N7Alpha", "B1N8Alpha", "B1N9Alpha", "B2N1Alpha", "B2N2Alpha", "B2N3Alpha", "B2N4Alpha", "B2N5Alpha", "B2N6Alpha", "B2N7Alpha", "B2N8Alpha","B2N9Alpha"]
@@ -1805,14 +1806,6 @@ class FASTLoadCases(ExplicitComponent):
 
                 if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
                     dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
-                # Height of wind grid, it stops 1 mm above the ground
-                # dlc_generator.cases[i_case].GridHeight = 2. * hub_height - 1.e-3
-                # If OLAF is called, make wind grid 3x higher, taller, and wider
-                if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                    dlc_generator.cases[i_case].HubHt *= 3.
-                    dlc_generator.cases[i_case].GridHeight *= 3.
-                    # This is to go around a bug in TurbSim, which won't run if GridWidth is smaller than GridHeight
-                    dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
 
                 # Power law exponent of wind shear
                 if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
@@ -2016,6 +2009,7 @@ class FASTLoadCases(ExplicitComponent):
         fastBatch.post              = FAST_IO_timeseries
         fastBatch.allow_fails       = modopt['General']['openfast_configuration']['allow_fails']
         fastBatch.fail_value        = modopt['General']['openfast_configuration']['fail_value']
+        fastBatch.write_stdout      = modopt['General']['openfast_configuration']['write_stdout']
         if self.FAST_exe_user is not None:
             fastBatch.FAST_exe      = self.FAST_exe_user
         if self.FAST_lib_user is not None:
@@ -2096,6 +2090,10 @@ class FASTLoadCases(ExplicitComponent):
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['RotThrust'] if ik==0 else ['RotTorq']
                         else:
                             magnitude_channels[f'LSShft{s}{k}{x}a'] = ['LSShftFya', 'LSShftFza'] if ik==0 else ['LSSTipMya', 'LSSTipMza']
+
+            # Aero-only hub loads
+            magnitude_channels["RtFldF"] = ["RtFldFxh", "RtFldFyh", "RtFldFzh"]
+            magnitude_channels["RtFldM"] = ["RtFldMxh", "RtFldMyh", "RtFldMzh"]
 
             # Fatigue at the tower base
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
@@ -2279,6 +2277,14 @@ class FASTLoadCases(ExplicitComponent):
         outputs['hub_Mxyz'] = np.array([extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['RotTorq'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMys'],
                                     extreme_table['LSShftM'][np.argmax(sum_stats['LSShftM']['max'])]['LSSTipMzs']])*1.e3
+        
+        # Aero-only for WISDEM (outputs are in N and N-m)
+        outputs['hub_Fxyz_aero'] = np.array([extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFxh'],
+                                    extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFyh'],
+                                    extreme_table['RtFldF'][np.argmax(sum_stats['RtFldF']['max'])]['RtFldFzh']])
+        outputs['hub_Mxyz_aero'] = np.array([extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMxh'],
+                                    extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMyh'],
+                                    extreme_table['RtFldM'][np.argmax(sum_stats['RtFldM']['max'])]['RtFldMzh']])
 
         ## Post process aerodynamic data
         # Angles of attack - max, std, mean
@@ -2581,11 +2587,16 @@ class FASTLoadCases(ExplicitComponent):
         # nacelle accelleration
         outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
 
+        # Max pitch rate
+        max_pitch_rates = np.r_[sum_stats['dBldPitch1']['max'],sum_stats['dBldPitch2']['max'],sum_stats['dBldPitch3']['max']]
+        outputs['max_pitch_rate_sim'] = max(max_pitch_rates)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
+
         # pitch travel and duty cycle
         if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
             tot_time = 0
             tot_travel = 0
             num_dir_changes = 0
+            max_pitch_rate = [0,0,0]
             for i_ts, ts in enumerate(chan_time):
                 t_span = self.TMax[i_ts] - self.TStart[i_ts]
                 for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
@@ -2602,12 +2613,17 @@ class FASTLoadCases(ExplicitComponent):
                     # number of direction changes on each blade
                     num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
 
+                    # max operational pitch rate
+                    max_pitch_rate[i_blade] = max(np.max(np.abs(ts[f'dBldPitch{i_blade+1}'])),max_pitch_rate[i_blade])
+
             # Normalize by number of blades, total time
             avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['avg_pitch_travel'] = avg_travel_per_sec
 
             dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
             outputs['pitch_duty_cycle'] = dir_change_per_sec
+            # TODO: figure out aggregated calculated channels
+
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
@@ -2635,9 +2651,7 @@ class FASTLoadCases(ExplicitComponent):
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
         # Max platform offset        
-        for timeseries in chan_time:
-            max_offset_ts = np.sqrt(timeseries['PtfmSurge']**2 + timeseries['PtfmSway']**2).max()
-            outputs['Max_Offset'] = np.r_[outputs['Max_Offset'],max_offset_ts].max()
+        outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
         return outputs, discrete_outputs
 
@@ -2753,6 +2767,7 @@ class FASTLoadCases(ExplicitComponent):
     def save_timeseries(self,chan_time):
         '''
         Save ALL the timeseries: each iteration and openfast run thereof
+        TODO: move this deeper into runFAST so we can clear chan_time
         '''
 
         # Make iteration directory
