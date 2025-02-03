@@ -4,7 +4,7 @@ from dash._utils import AttributeDict
 
 # Import all of the names of callback functions to tests
 from weis.visualization.appServer.app.mainApp import app
-from weis.visualization.appServer.app.pages.visualize_windio_3d import list_labels, visualize
+from weis.visualization.appServer.app.pages.visualize_windio_3d import list_labels
 from weis.visualization.utils import load_geometry_data
 
 # File paths are relative to app/
