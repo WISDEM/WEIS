@@ -619,7 +619,7 @@ class FASTLoadCases(ExplicitComponent):
             self.write_FAST(fst_vt)
         else:
             # Write OF model and run
-            case_list, case_name, chan_time, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
+            case_list, case_name, dlc_generator  = self.run_FAST(inputs, discrete_inputs, fst_vt)
 
             # Set up linear turbine model
             if modopt['OpenFAST_Linear']['flag']:
@@ -728,9 +728,6 @@ class FASTLoadCases(ExplicitComponent):
 
                         output.to_df().to_pickle(os.path.join(self.FAST_runDirectory,sim_name+'.p'))
 
-                        # Overwrite timeseries with simulated data instead of saved linearization timeseries
-                        chan_time = ct
-
                 elif modopt['OpenFAST_Linear']['DTQP']['flag']:
 
                     dtqp_wrapper(
@@ -744,10 +741,8 @@ class FASTLoadCases(ExplicitComponent):
                         self.FAST_runDirectory
                     )
 
-                    # TODO: pull chan_time out of here
-
             # Post process regardless of level
-            self.post_process(case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+            self.post_process(case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
             
             # Save AEP value to linear pickle file
             if modopt['OpenFAST_Linear']['flag']:
@@ -2136,21 +2131,20 @@ class FASTLoadCases(ExplicitComponent):
 
         # Run FAST
         if self.mpi_run and not self.options['opt_options']['driver']['design_of_experiments']['flag']:
-            cruncher, chan_time = fastBatch.run_mpi(self.mpi_comm_map_down)
+            self.cruncher = fastBatch.run_mpi(self.mpi_comm_map_down)
         else:
             if self.cores == 1:
-                cruncher, chan_time = fastBatch.run_serial()
+                self.cruncher = fastBatch.run_serial()
             else:
-                cruncher, chan_time = fastBatch.run_multi(self.cores)
+                self.cruncher = fastBatch.run_multi(self.cores)
 
         self.fst_vt = fst_vt
         self.of_inumber = self.of_inumber + 1
-        self.cruncher = cruncher
         sys.stdout.flush()
 
-        return case_list, case_name, chan_time, dlc_generator
+        return case_list, case_name, dlc_generator
 
-    def post_process(self, case_list, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
+    def post_process(self, case_list, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
         # Analysis
@@ -2169,10 +2163,10 @@ class FASTLoadCases(ExplicitComponent):
 
         outputs = self.get_weighted_DELs(dlc_generator, discrete_inputs, outputs)
         
-        outputs = self.get_control_measures(chan_time, inputs, outputs)
+        outputs = self.get_control_measures(inputs, outputs)
 
         if modopt['flags']['floating'] or (modopt['OpenFAST']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            outputs = self.get_floating_measures(chan_time, inputs, outputs)
+            outputs = self.get_floating_measures(inputs, outputs)
 
         # Did any OpenFAST runs fail?
         if modopt['OpenFAST']['flag']:
@@ -2185,14 +2179,14 @@ class FASTLoadCases(ExplicitComponent):
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(chan_time)
+            self.save_timeseries()
 
         if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(discrete_outputs)
 
         # Open loop to closed loop error, move this to before save_timeseries when finished
         if modopt['OL2CL']['flag']:
-            outputs = self.get_OL2CL_error(chan_time,outputs)
+            outputs = self.get_OL2CL_error(outputs)
 
     def get_blade_loading(self, inputs, outputs):
         """
@@ -2335,17 +2329,18 @@ class FASTLoadCases(ExplicitComponent):
         tower_chans_Mz = ["TwrBsMzt", "TwHt1MLzt", "TwHt2MLzt", "TwHt3MLzt", "TwHt4MLzt", "TwHt5MLzt", "TwHt6MLzt", "TwHt7MLzt", "TwHt8MLzt", "TwHt9MLzt", "YawBrMzp"]
 
         fatb_max_chan   = "TwrBsMyt"
-
+        fatb_max = np.max(sum_stats[fatb_max_chan]['max'])
+        idx      = np.argmax(sum_stats[fatb_max_chan]['max'])
         # Get the maximum fore-aft moment at tower base
-        outputs["max_TwrBsMyt"] = np.max(sum_stats[fatb_max_chan]['max'])
-        outputs["max_TwrBsMyt_ratio"] = np.max(sum_stats[fatb_max_chan]['max'])/self.options['opt_options']['constraints']['control']['Max_TwrBsMyt']['max']
+        outputs["max_TwrBsMyt"] = fatb_max
+        outputs["max_TwrBsMyt_ratio"] = fatb_max / self.options['opt_options']['constraints']['control']['Max_TwrBsMyt']['max']
         # Return forces and moments along tower height at instance of largest fore-aft tower base moment
-        Fx = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fx]
-        Fy = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fy]
-        Fz = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Fz]
-        Mx = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Mx]
-        My = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_My]
-        Mz = [extreme_table[fatb_max_chan][np.argmax(sum_stats[fatb_max_chan]['max'])][var] for var in tower_chans_Mz]
+        Fx = [extreme_table[fatb_max_chan][idx][var] for var in tower_chans_Fx]
+        Fy = [extreme_table[fatb_max_chan][idx][var] for var in tower_chans_Fy]
+        Fz = [extreme_table[fatb_max_chan][idx][var] for var in tower_chans_Fz]
+        Mx = [extreme_table[fatb_max_chan][idx][var] for var in tower_chans_Mx]
+        My = [extreme_table[fatb_max_chan][idx][var] for var in tower_chans_My]
+        Mz = [extreme_table[fatb_max_chan][idx][var] for var in tower_chans_Mz]
 
         # Spline results on tower basic grid
         spline_Fx      = PchipInterpolator(self.Z_out_ED_twr, Fx)
@@ -2386,31 +2381,26 @@ class FASTLoadCases(ExplicitComponent):
         monopile_chans_Mx = []
         monopile_chans_My = []
         monopile_chans_Mz = []
-        k=1
-        for i in range(len(self.Z_out_SD_mpl)):
-            if k==9:
-                Node=2
-            else:
-                Node=1
+        for k in range(1,len(self.Z_out_SD_mpl)+1):
+            Node = 2 if k==9 else 1
             monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FKxe"]
             monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FKye"]
             monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FKze"]
             monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MKxe"]
             monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MKye"]
             monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MKze"]
-            k+=1
-
-        max_chan   = "M1N1MKye"
 
         # # Get the maximum of signal M1N1MKye
+        max_chan = "M1N1MKye"
         outputs["max_M1N1MKye"] = np.max(sum_stats[max_chan]['max'])
+        idx = np.argmax(sum_stats[max_chan]['max'])
         # # Return forces and moments along monopile at instance of largest fore-aft tower base moment
-        Fx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fx]
-        Fy = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fy]
-        Fz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Fz]
-        Mx = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mx]
-        My = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_My]
-        Mz = [extreme_table[max_chan][np.argmax(sum_stats[max_chan]['max'])][var] for var in monopile_chans_Mz]
+        Fx = [extreme_table[max_chan][idx][var] for var in monopile_chans_Fx]
+        Fy = [extreme_table[max_chan][idx][var] for var in monopile_chans_Fy]
+        Fz = [extreme_table[max_chan][idx][var] for var in monopile_chans_Fz]
+        Mx = [extreme_table[max_chan][idx][var] for var in monopile_chans_Mx]
+        My = [extreme_table[max_chan][idx][var] for var in monopile_chans_My]
+        Mz = [extreme_table[max_chan][idx][var] for var in monopile_chans_Mz]
 
         # # Spline results on grid of channel locations along the monopile
         spline_Fx      = PchipInterpolator(self.Z_out_SD_mpl, Fx)
@@ -2464,7 +2454,9 @@ class FASTLoadCases(ExplicitComponent):
                 idx_pwrcrv.append(i_case)
                 U.append(dlc_generator.cases[i_case].URef)
 
-        self.cruncher.set_probability_turbine_class(U, discrete_inputs['turbine_class'], idx=idx_pwrcrv)
+        if len(U) > 0:
+            self.cruncher.set_probability_turbine_class(U, discrete_inputs['turbine_class'], idx=idx_pwrcrv)
+            
         AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
         outputs['AEP'] = AEP
 
@@ -2550,6 +2542,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs['damage_blade_root_sparL'] = np.max([damage_total[f'BladeRootSparL_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_maxc_teU'] = np.max([damage_total[f'BladeMaxcTEU_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_maxc_teL'] = np.max([damage_total[f'BladeMaxcTEL_Axial{k+1}'] for k in range(self.n_blades)])
+            # Hmm- not sure this is kosher to combine damage in this way
             outputs['damage_lss'] = np.sqrt( damage_total['LSSAxial']**2 + damage_total['LSSShear']**2 )
             outputs['damage_tower_base'] = np.sqrt( damage_total['TowerBaseAxial']**2 + damage_total['TowerBaseShear']**2 )
             outputs['damage_monopile_base'] = np.sqrt( damage_total['MonopileBaseAxial']**2 + damage_total['MonopileBaseShear']**2 )
@@ -2560,7 +2553,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs
 
-    def get_control_measures(self, chan_time, inputs, outputs):
+    def get_control_measures(self, inputs, outputs):
         '''
         calculate control measures:
             - rotor_overspeed
@@ -2568,57 +2561,51 @@ class FASTLoadCases(ExplicitComponent):
         given:
             - sum_stats : pd.DataFrame
         '''
-        sum_stats = self.cruncher.summary_stats
+        nblades = self.fst_vt['ElastoDyn']['NumBl']
+        chanmax = [f'dBldPitch{k+1}' for k in range(nblades)]
+        chanmax += ['GenSpeed','NcIMUTA']
+        maxes   = self.cruncher.get_load_rankings(chanmax, ['abs'])
         
         # rotor overspeed
-        outputs['rotor_overspeed'] = ( np.max(sum_stats['GenSpeed']['max']) * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+        outputs['rotor_overspeed'] = (maxes['val'].iloc[nblades] * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
 
         # nacelle accelleration
-        outputs['max_nac_accel'] = sum_stats['NcIMUTA']['max'].max()
+        outputs['max_nac_accel'] = maxes['val'].iloc[nblades+1]
 
-        # Max pitch rate
-        max_pitch_rates = np.r_[sum_stats['dBldPitch1']['max'],sum_stats['dBldPitch2']['max'],sum_stats['dBldPitch3']['max']]
-        outputs['max_pitch_rate_sim'] = max(max_pitch_rates)  / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
-
+        # Pitch rates
+        max_pitch_rates = maxes['val'].to_numpy()[:nblades]
+        outputs['max_pitch_rate_sim'] = max_pitch_rates.max() / np.rad2deg(self.fst_vt['DISCON_in']['PC_MaxRat'])        # normalize by ROSCO pitch rate
+        
         # pitch travel and duty cycle
         if self.options['modeling_options']['General']['openfast_configuration']['keep_time']:
             tot_time = 0
             tot_travel = 0
             num_dir_changes = 0
-            max_pitch_rate = [0,0,0]
-            for i_ts, ts in enumerate(chan_time):
-                t_span = self.TMax[i_ts] - self.TStart[i_ts]
-                for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
-                    time_ind = ts['Time'] >= self.TStart[i_ts]
-
-                    # total time
-                    tot_time += t_span
-
+            max_pitch_rates = [0,0,0]
+            for i_ts in range(self.cruncher.noutputs):
+                iout = self.cruncher.outputs[i_ts].copy()
+                iout.trim_data(self.TStart[i_ts], self.TMax[i_ts])
+                
+                # total time
+                tot_time += iout.elapsed_time
+                
+                for i_blade in range(nblades):
                     # total pitch travel (\int |\dot{\frac{d\theta}{dt}| dt)
-                    tot_travel += np.trapz(np.abs(ts[f'dBldPitch{i_blade+1}'])[time_ind], x=ts['Time'][time_ind])
+                    tot_travel += iout.total_travel(f'BldPitch{i_blade+1}')
 
                     # number of direction changes on each blade
-                    num_dir_changes += np.sum(np.abs(np.diff(np.sign(ts[f'dBldPitch{i_blade+1}'][time_ind])))) / 2
-
-                    # max operational pitch rate
-                    max_pitch_rate[i_blade] = max(np.max(np.abs(ts[f'dBldPitch{i_blade+1}'])),max_pitch_rate[i_blade])
+                    num_dir_changes += 0.5 * np.sum(np.abs(np.diff(np.sign(iout[f'dBldPitch{i_blade+1}']))))
 
             # Normalize by number of blades, total time
-            avg_travel_per_sec = tot_travel / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
-            outputs['avg_pitch_travel'] = avg_travel_per_sec
-
-            dir_change_per_sec = num_dir_changes / self.fst_vt['ElastoDyn']['NumBl'] / tot_time
-            outputs['pitch_duty_cycle'] = dir_change_per_sec
-            # TODO: figure out aggregated calculated channels
+            outputs['avg_pitch_travel'] = tot_travel / nblades / tot_time
+            outputs['pitch_duty_cycle'] = num_dir_changes / nblades / tot_time
 
         else:
             logger.warning('openmdao_openfast warning: avg_pitch_travel, and pitch_duty_cycle require keep_time = True')
 
-
-
         return outputs
 
-    def get_floating_measures(self, chan_time, inputs, outputs):
+    def get_floating_measures(self, inputs, outputs):
         '''
         calculate floating measures:
             - Std_PtfmPitch (max over all dlcs if constraint, mean otheriwse)
@@ -2639,28 +2626,27 @@ class FASTLoadCases(ExplicitComponent):
         outputs['Max_PtfmPitch']  = np.max(sum_stats['PtfmPitch']['max'])
 
         # Max platform offset        
-        outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
+        outputs['Max_Offset'] = np.max(sum_stats['PtfmOffset']['max'])
 
         return outputs
 
-    def get_OL2CL_error(self, chan_time, outputs):
+    def get_OL2CL_error(self, outputs):
         ol_case_names = [os.path.join(
             weis_dir,
             self.options['modeling_options']['OL2CL']['trajectory_dir'],
             case_name + '.p'
         ) for case_name in case_naming(self.options['modeling_options']['DLC_driver']['n_cases'],'oloc')]
 
-        rms_pitch_error = np.full(len(chan_time),fill_value=1000.)
-        for i_ts, timeseries in enumerate(chan_time):
+        rms_pitch_error = np.full(self.cruncher.noutputs, fill_value=1000.)
+        for i_ts in range(self.cruncher.noutputs):
             # Get closed loop timeseries
-            cl_output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
-            cl_ts = cl_output.to_df()
+            cl_ts = self.cruncher.outputs[i_ts]
 
             # Get open loop timeseries
             ol_ts = pd.read_pickle(ol_case_names[i_ts])
 
             # resample OL timeseries to match closed loop timeseries
-            ol_resample = np.interp(cl_ts['Time'],ol_ts['Time'],ol_ts['BldPitch1'])
+            ol_resample = np.interp(cl_ts['Time'], ol_ts['Time'], ol_ts['BldPitch1'])
 
             # difference between open loop and closed loop (deg.)
             pitch_error = cl_ts['BldPitch1'] - ol_resample
@@ -2752,10 +2738,9 @@ class FASTLoadCases(ExplicitComponent):
 
         return file_name
 
-    def save_timeseries(self, chan_time):
+    def save_timeseries(self):
         '''
         Save ALL the timeseries: each iteration and openfast run thereof
-        TODO: move this deeper into runFAST so we can clear chan_time
         '''
 
         # Make iteration directory
@@ -2763,9 +2748,8 @@ class FASTLoadCases(ExplicitComponent):
         os.makedirs(save_dir, exist_ok=True)
 
         # Save each timeseries as a pickled dataframe
-        for i_ts, timeseries in enumerate(chan_time):
-            output = AeroelasticOutput(timeseries, dlc=self.FAST_namingOut)
-            output.to_df().to_pickle(os.path.join(save_dir,self.FAST_namingOut + '_' + str(i_ts) + '.p'))
+        for i_ts in range(self.cruncher.noutputs):
+            self.cruncher.outputs[i_ts].save( os.path.join(save_dir,f'{self.FAST_namingOut}_{i_ts}.p'))
 
     def save_iterations(self, discrete_outputs):
         '''

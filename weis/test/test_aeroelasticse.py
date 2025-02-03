@@ -143,12 +143,14 @@ class TestGeneral(unittest.TestCase):
         fastBatch.case_name_list = case_name_list
 
         # Run OpenFAST, either serially or sequentially
-        _,out = fastBatch.run_serial()
+        cruncher = fastBatch.run_serial()
 
         # Update pkl file
         # with open('./general_regression_values.pkl', 'wb') as file:
         #     pickle.dump(out, file)
-        compare_regression_values(out, 'general_regression_values.pkl', directory=this_file_dir, tol=5e-1, train=False)
+        compare_regression_values([m.to_dict() for m in cruncher.outputs],
+                                  'general_regression_values.pkl',
+                                  directory=this_file_dir, tol=5e-1, train=False)
 
 if __name__ == "__main__":
     unittest.main()

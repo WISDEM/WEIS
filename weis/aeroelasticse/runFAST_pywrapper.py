@@ -12,7 +12,6 @@ import multiprocessing as mp
 from openfast_io.FAST_reader import InputReader_OpenFAST
 from openfast_io.FAST_writer import InputWriter_OpenFAST
 from weis.aeroelasticse.FAST_wrapper import FAST_wrapper, Turbsim_wrapper, IEC_CoherentGusts
-#from weis.aeroelasticse.calculated_channels import calculate_channels
 from pCrunch import AeroelasticOutput, Crunch, FatigueParams, read
 from weis.aeroelasticse.openfast_library import FastLibAPI
 
@@ -129,7 +128,7 @@ class runFAST_pywrapper(object):
         self.goodman            = False
         self.magnitude_channels = magnitude_channels_default
         self.fatigue_channels   = fatigue_channels_default
-        self.cruncher                 = None # Will be initialized on first run through
+        self.cruncher           = None # Will be initialized on first run through
         self.allow_fails        = False
         self.fail_value         = 9999
         self.write_stdout       = False
@@ -144,15 +143,6 @@ class runFAST_pywrapper(object):
                 pass
 
         super(runFAST_pywrapper, self).__init__()
-
-    def init_crunch(self):
-        if self.cruncher is None:
-            self.cruncher = Crunch(
-                outputs=[],
-                magnitude_channels=self.magnitude_channels,
-                fatigue_channels=self.fatigue_channels,
-                #extreme_channels=channel_extremes_default,
-            )
         
     def execute(self):
 
@@ -184,9 +174,6 @@ class runFAST_pywrapper(object):
             writer.FAST_yamlfile = self.FAST_yamlfile_out
             writer.write_yaml()
 
-        # Make sure pCrunch is ready
-        self.init_crunch()
-            
         if not self.use_exe: # Use library
 
             FAST_directory = os.path.split(writer.FAST_InputFileOut)[0]
@@ -205,15 +192,11 @@ class runFAST_pywrapper(object):
             # Add channel to indicate failed run
             output_dict['openfast_failed'] = np.zeros(len(output_dict[channel]))
 
-            # Calculated channels
-            #calculate_channels(output_dict, self.fst_vt)
-
-            output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
+            output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, name=self.FAST_InputFile,
+                                       magnitude_channels=self.magnitude_channels, fatigue_channels=self.fatigue_channels)
 
             # if save_file: write_fast
             os.chdir(orig_dir)
-
-            if not self.keep_time: output_dict = None
 
         else: # use executable
             wrapper = FAST_wrapper()
@@ -245,20 +228,10 @@ class runFAST_pywrapper(object):
 
             if not failed:
                 outfile = FAST_Output if os.path.exists(FAST_Output) else FAST_Output_txt
-                output_init = read(outfile, magnitude_channels=self.magnitude_channels)
-
-                # Make output dict
-                output_dict = output_init.to_dict()
-
-                # Add channel to indicate failed run
-                output_dict['openfast_failed'] = np.zeros(output_init.data.shape[0])
-
-                # Calculated channels
-                #calculate_channels(output_dict, self.fst_vt)
-
-                # Re-make output
-                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
-            
+                output = read(outfile, magnitude_channels=self.magnitude_channels)
+                output.add_channel( np.zeros(output.time.shape), 'openfast_failed')
+                output.fc = self.fatigue_channels
+                
             else: # fill with -9999s
                 output_dict = {}
                 output_dict['Time'] = np.arange(self.fst_vt['Fst']['TStart'],self.fst_vt['Fst']['TMax'],self.fst_vt['Fst']['DT'])
@@ -270,26 +243,23 @@ class runFAST_pywrapper(object):
                 # Add channel to indicate failed run
                 output_dict['openfast_failed'] = np.ones(len(output_dict['Time']), dtype=np.uint8)
 
-                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, magnitude_channels=self.magnitude_channels)
-
-            # clear dictionary if we're not keeping time
-            if not self.keep_time: output_dict = None
-
-        # Add blade pitch rate channel
-        for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
-            idata = np.r_[0.0, np.diff(output[f'BldPitch{i_blade+1}'])] / self.fst_vt['Fst']['DT']
-            output.add_channel(idata, f'dBldPitch{i_blade+1}') 
-
+                output = AeroelasticOutput(output_dict, dlc=self.FAST_namingOut, name=self.FAST_InputFile,
+                                           magnitude_channels=self.magnitude_channels, fatigue_channels=self.fatigue_channels)
 
         # Trim Data
         if self.fst_vt['Fst']['TStart'] > 0.0:
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
-            
-        case_name, sum_stats, extremes, dels, damage = self.cruncher.process_single(output,
-                                                                              return_damage=True,
-                                                                              goodman_correction=self.goodman)
 
-        return case_name, sum_stats, extremes, dels, damage, output_dict
+        # For analysis later
+        for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+            output.add_gradient_channel(f'BldPitch{i_blade+1}', f'dBldPitch{i_blade+1}')
+                    
+        if not self.keep_time:
+            output.process(return_damage=True, goodman_correction=self.goodman)
+            output_dict = None
+            output.data = None
+
+        return output
 
 
 class runFAST_pywrapper_batch(object):
@@ -332,6 +302,7 @@ class runFAST_pywrapper_batch(object):
                 magnitude_channels=self.magnitude_channels,
                 fatigue_channels=self.fatigue_channels,
                 #extreme_channels=channel_extremes_default,
+                lean=(not self.keep_time),
             )
 
     def create_case_data(self):
@@ -376,13 +347,11 @@ class runFAST_pywrapper_batch(object):
             
         case_data_all = self.create_case_data()
 
-        ct = []
         for c in case_data_all:
-            _name, _ss, _et, _dl, _dam, _ct = evaluate(c)
-            self.cruncher.add_output_stats(_name, _ss, _et, _dl, _dam)
-            ct.append(_ct)
+            iout = evaluate(c)
+            self.cruncher.add_output(iout)
 
-        return self.cruncher, ct
+        return self.cruncher
 
     def run_multi(self, cores=None):
         # Run cases in parallel, threaded with multiprocessing module
@@ -402,12 +371,10 @@ class runFAST_pywrapper_batch(object):
         pool.close()
         pool.join()
 
-        ct = []
-        for _name, _ss, _et, _dl, _dam, _ct in output:
-            self.cruncher.add_output_stats(_name, _ss, _et, _dl, _dam)
-            ct.append(_ct)
+        for iout in output:
+            self.cruncher.add_output(iout)
             
-        return self.cruncher, ct
+        return self.cruncher
 
     def run_mpi(self, mpi_comm_map_down):
 
@@ -447,12 +414,10 @@ class runFAST_pywrapper_batch(object):
                 data_out = comm.recv(source=rank_j, tag=1)
                 output.append(data_out)
 
-        ct = []
-        for _name, _ss, _et, _dl, _dam, _ct in output:
-            self.cruncher.add_output_stats(_name, _ss, _et, _dl, _dam)
-            ct.append(_ct)
+        for iout in output:
+            self.cruncher.add_output(iout)
 
-        return self.cruncher, ct
+        return self.cruncher
 
 
 
