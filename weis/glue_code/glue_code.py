@@ -55,20 +55,6 @@ class WindPark(om.Group):
         dac_ivc.add_output('delta_max_neg', val=np.zeros(n_te_flaps), units='rad',  desc='1D array of the min angle of the trailing edge flaps.')
         self.add_subsystem('dac_ivc',dac_ivc)
 
-        # ROSCO tuning parameters
-        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
-        if os.path.split(modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
-            inps = load_rosco_yaml(modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
-            modeling_options['ROSCO'].update(inps['controller_params'])
-
-            # Apply changes in modeling options, should have already been validated
-            modopts_no_defaults = load_yaml(modeling_options['fname_input_modeling'])  
-            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
-            for option, value in modopts_no_defaults['ROSCO'].items():
-                if option not in skip_options:
-                    modeling_options['ROSCO'][option] = value
-
-
         tune_rosco_ivc = om.IndepVarComp()
         if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
             n_PC = 1
@@ -108,7 +94,7 @@ class WindPark(om.Group):
         # XFOIL
         self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         # Connections to run xfoil for te flaps
-        if not modeling_options['Level3']['from_openfast']:
+        if not modeling_options['OpenFAST']['from_openfast']:
             self.connect('blade.pa.chord_param',                  'xf.chord')
             self.connect('blade.outer_shape_bem.s',               'xf.s')
             self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')
@@ -131,12 +117,12 @@ class WindPark(om.Group):
 
         # ROSCO can be used at all levels
         if modeling_options['ROSCO']['flag']:
-            if modeling_options['Level3']['from_openfast']:  # not using WISDEM turbine info
+            if modeling_options['OpenFAST']['from_openfast']:  # not using WISDEM turbine info
                 self.add_subsystem('rosco_turbine',          ROSCO_Turbine(modeling_options = modeling_options)) # ROSCO tuning
 
             self.add_subsystem('sse_tune',          ServoSE_ROSCO(modeling_options = modeling_options, opt_options = opt_options)) # ROSCO tuning
 
-            if not modeling_options['Level3']['from_openfast']:     #from WISDEM models
+            if not modeling_options['OpenFAST']['from_openfast']:     #from WISDEM models
                 self.connect('rotorse.rp.powercurve.rated_V',         ['sse_tune.tune_rosco.v_rated'])
                 #self.connect('rotorse.rp.gust.V_gust',                ['freq_rotor.aero_gust.V_load', 'freq_rotor.aero_hub_loads.V_load'])
                 self.connect('rotorse.rp.powercurve.rated_Omega',     'sse_tune.tune_rosco.rated_rotor_speed')
@@ -166,7 +152,7 @@ class WindPark(om.Group):
                 self.connect("blade.high_level_blade_props.prebendTip", 'sse_tune.precurveTip')
                 self.connect("blade.high_level_blade_props.presweep", 'sse_tune.presweep')
                 self.connect("blade.high_level_blade_props.presweepTip", 'sse_tune.presweepTip')
-                self.connect('xf.flap_angles',                  'sse_tune.airfoils_Ctrl')
+                self.connect('xf.flap_angles',                  'sse_tune.airfoils_UserProp')
                 self.connect('control.minOmega',                'sse_tune.omega_min')
                 self.connect('control.rated_TSR',               'sse_tune.tsr_operational')
                 self.connect('configuration.rated_power',       'sse_tune.rated_power')
@@ -239,7 +225,7 @@ class WindPark(om.Group):
                 self.connect('tune_rosco_ivc.flp_kp_norm',    'sse_tune.tune_rosco.flp_kp_norm')
                 self.connect('tune_rosco_ivc.flp_tau',     'sse_tune.tune_rosco.flp_tau')
 
-        if modeling_options['Level1']['flag']:
+        if modeling_options['RAFT']['flag']:
             self.add_subsystem('raft', RAFT_WEIS(modeling_options = modeling_options, analysis_options=opt_options))
 
             n_span = modeling_options["WISDEM"]["RotorSE"]["n_span"]
@@ -358,7 +344,7 @@ class WindPark(om.Group):
             self.connect('TMDs.stiffness',          'aeroelastic.TMD_stiffness')
             self.connect('TMDs.damping',            'aeroelastic.TMD_damping')
 
-        if modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']:
+        if modeling_options['OpenFAST']['flag'] or modeling_options['OpenFAST_Linear']['flag']:
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
             self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
             
@@ -397,7 +383,7 @@ class WindPark(om.Group):
                 
                 self.add_subsystem('fixedse_post',   CylinderPostFrame(modeling_options=modeling_options["WISDEM"]["FixedBottomSE"], n_dlc=1, n_full = n_full))
                 
-            if not modeling_options['Level3']['from_openfast']:
+            if not modeling_options['OpenFAST']['from_openfast']:
                 self.add_subsystem('tcons_post',     TurbineConstraints(modeling_options = modeling_options))
                 self.add_subsystem('financese_post', PlantFinance(verbosity=modeling_options['General']['verbosity']))
             
@@ -425,7 +411,7 @@ class WindPark(om.Group):
             self.connect('configuration.turb_class',        'aeroelastic.turbulence_class')
             self.connect('configuration.ws_class' ,         'aeroelastic.turbine_class')
 
-            if not modeling_options['Level3']['from_openfast']:
+            if not modeling_options['OpenFAST']['from_openfast']:
                 self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
                 self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
                 self.connect("blade.high_level_blade_props.r_blade",  "aeroelastic.r")
@@ -517,8 +503,7 @@ class WindPark(om.Group):
                     self.connect("floatingse.platform_elem_rho", "aeroelastic.platform_elem_rho")
                     self.connect("floatingse.platform_elem_E", "aeroelastic.platform_elem_E")
                     self.connect("floatingse.platform_elem_G", "aeroelastic.platform_elem_G")
-                    self.connect("floatingse.platform_elem_memid", "aeroelastic.platform_elem_memid")
-                    if modeling_options['Level1']['flag']:
+                    if modeling_options['RAFT']['flag']:
                         ptfm_data_source = 'raft'
                     else:
                         ptfm_data_source = 'floatingse'
@@ -573,7 +558,7 @@ class WindPark(om.Group):
                 self.connect('sse_tune.aeroperf_tables.Cp',     'aeroelastic.Cp_aero_table')
                 self.connect('sse_tune.aeroperf_tables.Ct',     'aeroelastic.Ct_aero_table')
                 self.connect('sse_tune.aeroperf_tables.Cq',     'aeroelastic.Cq_aero_table')
-                self.connect('xf.flap_angles',                  'aeroelastic.airfoils_Ctrl')
+                self.connect('xf.flap_angles',                  'aeroelastic.airfoils_UserProp')
 
                 if modeling_options['flags']['mooring']:
                     self.connect("mooring.line_diameter", "aeroelastic.line_diameter")
@@ -676,8 +661,8 @@ class WindPark(om.Group):
                     self.connect('rotorse.rp.powercurve.rated_Q',      'drivese_post.rated_torque')
                     self.connect('configuration.rated_power',  'drivese_post.machine_rating')    
                     self.connect('tower.diameter',             'drivese_post.D_top', src_indices=[-1])
-                    self.connect('aeroelastic.hub_Fxyz',       'drivese_post.F_hub')
-                    self.connect('aeroelastic.hub_Mxyz',       'drivese_post.M_hub')
+                    self.connect('aeroelastic.hub_Fxyz_aero',       'drivese_post.F_aero_hub')
+                    self.connect('aeroelastic.hub_Mxyz_aero',       'drivese_post.M_aero_hub')
                     self.connect('aeroelastic.max_RootMyb',     'drivese_post.pitch_system.BRFM')
                     self.connect('blade.pa.chord_param',        'drivese_post.blade_root_diameter', src_indices=[0])
                     self.connect('rotorse.blade_mass',          'drivese_post.blade_mass')
@@ -893,10 +878,10 @@ class WindPark(om.Group):
                 self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq')
             
             # Inputs to plantfinancese from wt group
-            if not modeling_options['Level3']['from_openfast']:
+            if not modeling_options['OpenFAST']['from_openfast']:
 
-                # Connect computed AEP only if DLC 1.1 is used, otherwise use rotorse
-                if modeling_options['DLC_driver']['n_ws_dlc11'] > 0:
+                # Connect computed AEP only if DLC 1.1 or AEP is used, otherwise use rotorse
+                if modeling_options['DLC_driver']['n_ws_aep'] > 0:
                     self.connect('aeroelastic.AEP', 'financese_post.turbine_aep')
                 else:
                     self.connect('rotorse.rp.AEP', 'financese_post.turbine_aep')
@@ -911,21 +896,21 @@ class WindPark(om.Group):
                     self.connect("costs.bos_per_kW", "financese_post.bos_per_kW")
 
             # Inputs to plantfinancese from input yaml
-            if modeling_options['flags']['control'] and not modeling_options['Level3']['from_openfast']:
+            if modeling_options['flags']['control'] and not modeling_options['OpenFAST']['from_openfast']:
                 self.connect('configuration.rated_power',     'financese_post.machine_rating')
 
-            if not modeling_options['Level3']['from_openfast']:    
+            if not modeling_options['OpenFAST']['from_openfast']:    
                 self.connect('costs.turbine_number',    'financese_post.turbine_number')
                 self.connect('costs.opex_per_kW',       'financese_post.opex_per_kW')
                 self.connect('costs.offset_tcc_per_kW', 'financese_post.offset_tcc_per_kW')
                 self.connect('costs.wake_loss_factor',  'financese_post.wake_loss_factor')
                 self.connect('costs.fixed_charge_rate', 'financese_post.fixed_charge_rate')
 
-            if modeling_options['DLC_driver']['n_ws_dlc11'] > 0:
+            if modeling_options['DLC_driver']['n_ws_aep'] > 0:
                 self.connect('aeroelastic.AEP',     'outputs_2_screen_weis.aep')
 
             # Connections to outputs to screen
-            if not modeling_options['Level3']['from_openfast']:
+            if not modeling_options['OpenFAST']['from_openfast']:
                 self.connect('financese_post.lcoe',          'outputs_2_screen_weis.lcoe')
 
                 self.connect('rotorse.blade_mass',  'outputs_2_screen_weis.blade_mass')

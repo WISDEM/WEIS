@@ -17,60 +17,14 @@ WISDEM:
     BOS:
         flag: False
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
     regulation_trajectory: IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
-    simulation:
-        DT: 0.0125
-        CompElast: 1
-        CompInflow: 1
-        CompAero: 2
-        CompServo: 1
-        CompHydro: 1
-        CompSub: 0
-        CompMooring: 3
-        CompIce: 0
-        OutFileFmt: 3
-    linearization:
-        Linearize: False
-    ElastoDyn:
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
-        TeetDOF: False
-        DrTrDOF: False 
-        GenDOF: True
-        YawDOF: False  
-        TwFADOF1 : True
-        TwFADOF2 : True
-        TwSSDOF1 : True
-        TwSSDOF2 : True
-        PtfmSgDOF: True
-        PtfmSwDOF: True
-        PtfmHvDOF: True
-        PtfmRDOF : True
-        PtfmPDOF : True
-        PtfmYDOF : False
-        TwrNodes: 50
-    HydroDyn:
-        WaveSeed1: 123456789
-        WaveSeed2: 1011121314
-        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
-        WaveMod: 2
-        WaveTMax: 850
-        WvLowCOff: 0.111527
-        WvHiCOff: 0.783827
-        WvSumQTF: True
-        RdtnMod: 1
-        PotMod: 1
-        DiffQTF: 0
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
-
-    InflowWind:
-        RefHt: 150.0
+    AeroDyn:
+        WakeMod: 2
     
 ROSCO:
     flag: True
@@ -80,7 +34,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 1 
-    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
     zeta_pc: 1.2
     omega_pc: 0.2
     U_pc: [12]
@@ -91,7 +45,7 @@ ROSCO:
     Kp_float: -10
     linmodel_tuning:
         type: robust #'robust or simulation'
-        linfile_path: ../../ROSCO/Test_Cases/IEA-15-240-RWT-UMaineSemi/linearizations
+        linfile_path: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/linearizations
         lintune_outpath: rs_outfiles
         load_parallel: True
         stability_margin: 0.1
@@ -108,8 +62,3 @@ DLC_driver:
           n_seeds: 1
           analysis_time: 1.0
           transient_time: 1.0
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 220
-              GridWidth: 220
-            #   AnalysisTime: 5.

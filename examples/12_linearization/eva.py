@@ -2,8 +2,6 @@
 Eigenvalue analyses tools for mechnical system: 
    mass matrix M, stiffness matrix K and possibly damping matrix C
 """
-import pandas as pd    
-
 import numpy as np
 from scipy import linalg
 
@@ -22,12 +20,12 @@ def polyeig(*A):
 
     """
     if len(A)<=0:
-        raise Exception('Provide at least one matrix')
+        raise Exception("Provide at least one matrix")
     for Ai in A:
         if Ai.shape[0] != Ai.shape[1]:
-            raise Exception('Matrices must be square')
+            raise Exception("Matrices must be square")
         if Ai.shape != A[0].shape:
-            raise Exception('All matrices must have the same shapes');
+            raise Exception("All matrices must have the same shapes");
 
     n = A[0].shape[0]
     l = len(A)-1 
@@ -105,7 +103,7 @@ def eigA(A, nq=None, nq1=None, full=False):
     n,m = A.shape
 
     if m!=n:
-        raise Exception('Matrix needs to be squared')
+        raise Exception("Matrix needs to be squared")
     if nq is None:
         if nq1 is None:
             nq1=0
@@ -113,7 +111,7 @@ def eigA(A, nq=None, nq1=None, full=False):
     else:
         nq1 = n-2*nq
     if n!=2*nq+nq1 or nq1<0:
-        raise Exception('Number of 1st and second order dofs should match the matrix shape (n= 2*nq + nq1')
+        raise Exception("Number of 1st and second order dofs should match the matrix shape (n= 2*nq + nq1")
     Q, Lambda = eig(A, sort=False)
     v = np.diag(Lambda)
 
@@ -140,9 +138,9 @@ def eigA(A, nq=None, nq1=None, full=False):
     return freq_d, zeta, Q, freq_0 
 
 
-def eigMCK(M, C, K, method='diag_beta'): 
+def eigMCK(M, C, K, method="diag_beta"): 
     """ """
-    if method.lower()=='diag_beta':
+    if method.lower()=="diag_beta":
         ## using K, M and damping assuming diagonal beta matrix (Rayleigh Damping)
         Q, Lambda   = eig(K,M, sort=False) # provide scaled EV, important, no sorting here!
         freq        = np.sqrt(np.diag(Lambda))/(2*np.pi)
@@ -160,7 +158,7 @@ def eigMCK(M, C, K, method='diag_beta'):
         Q      = Q[:,I]
 
     #    return Q, Lambda,freq, betaMat,xi,zeta
-    elif method.lower()=='full_matrix':
+    elif method.lower()=="full_matrix":
         ## Method 2 - Damping based on K, M and full D matrix
         Q,e = polyeig(K,C,M)
         #omega0 = np.abs(e)
@@ -185,7 +183,7 @@ def eigMCK(M, C, K, method='diag_beta'):
     return freq_d,zeta,Q,freq,xi
 
 
-if __name__=='__main__':
+if __name__=="__main__":
     np.set_printoptions(linewidth=300, precision=4)
     nDOF   = 2
     M      = np.zeros((nDOF,nDOF))
@@ -209,8 +207,8 @@ if __name__=='__main__':
     K = np.array([[-7  , 2 , 4    , 0] , [2 , -4 , 2 , 0] , [4    , 2 , -9  , 3    ] , [ 0 , 0 , 3    , -3]])
 
     X,e = polyeig(K,C,M)
-    print('X:\n',X)
-    print('e:\n',e)
+    print("X:\n",X)
+    print("e:\n",e)
     # Test taht first eigenvector and valur satisfy eigenvalue problem:
     s = e[0];
     x = X[:,0];

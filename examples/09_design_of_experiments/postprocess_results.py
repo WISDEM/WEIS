@@ -5,22 +5,19 @@ postprocess or plot further.
 
 import glob
 import os
-import sys
-import time
 
 import numpy as np
 import pandas as pd 
 import multiprocessing as mp 
 
 import openmdao.api as om
-from weis.aeroelasticse import FileTools
 
 def load_OMsql(log):
-    print('loading {}'.format(log))
+    print("loading {}".format(log))
     cr = om.CaseReader(log)
     rec_data = {}
-    driver_cases = cr.list_cases('driver')
-    cases = cr.get_cases('driver')
+    #driver_cases = cr.list_cases("driver")
+    cases = cr.get_cases("driver")
     for case in cases:
         for key in case.outputs.keys():
             if key not in rec_data:
@@ -30,21 +27,21 @@ def load_OMsql(log):
     return rec_data
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     
     # Multiprocssing?
     post_multi = True
 
     # sql outfile directory
     run_dir = os.path.dirname(os.path.realpath(__file__))   
-    output_dir = os.path.join(run_dir, "outputs")
-    doe_logs = glob.glob(os.path.join(output_dir,'log_opt.sql*'))
+    output_dir = os.path.join(run_dir, "outputs/OpenFAST_DOE")
+    doe_logs = glob.glob(os.path.join(output_dir,"log_opt.sql*"))
     if len(doe_logs) < 1:
-        raise FileExistsError('No output logs to post process!')
+        raise FileExistsError("No output logs to post process!")
         
-    # Remove the 'meta' log
+    # Remove the "meta" log
     for idx, log in enumerate(doe_logs):
-        if 'meta' in log:
+        if "meta" in log:
             doe_logs.pop(idx)
 
     # run multiprocessing
@@ -80,9 +77,9 @@ if __name__ == '__main__':
     df = pd.DataFrame.from_dict(collected_data)
     
     # write to file
-    outdata_fname = 'doe_outdata'
+    outdata_fname = "doe_outdata"
     outdata_fpath = os.path.join(output_dir,outdata_fname) 
-    df.to_csv(outdata_fpath + '.csv', index=False)
-    print('Saved {}'.format(outdata_fpath + '.csv'))
-    # FileTools.save_yaml(output_dir, outdata_fname + '.yaml', collected_data, package=2)   
+    df.to_csv(outdata_fpath + ".csv", index=False)
+    print("Saved {}".format(outdata_fpath + ".csv"))
+    # FileTools.save_yaml(output_dir, outdata_fname + ".yaml", collected_data, package=2)   
 
