@@ -22,7 +22,12 @@ dependencies:
     - dash-bootstrap-components
     - dash-mantine-components
     - dash-vtk
+    - dash[dev, testing]
     - pyvista
+    - pytest
+    - pytest-mock
+    - mock
+    - requests-mock
     - dearpygui
     - marmot-agents
 # Needs to be done outside of environment file:
