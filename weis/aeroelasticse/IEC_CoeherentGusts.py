@@ -621,7 +621,6 @@ class IEC_CoherentGusts():
             print("WARNING: mean wind speed of bts file is zero. No scaling applied.")
         else: 
             scaling = Umean_wnd / Umean_bts
-        print(scaling.shape)
 
         ## Copy old turbsimfile object into new turbsimfile object
         ts_new = ts
