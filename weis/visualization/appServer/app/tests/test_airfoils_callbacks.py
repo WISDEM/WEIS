@@ -2,10 +2,12 @@ from dash import html
 from bs4 import BeautifulSoup
 
 # Import all of the names of callback functions to tests
+from weis.visualization.appServer.app.mainApp import app        # Needed to prevent dash.exceptions.PageError: `dash.register_page()` must be called after app instantiation
 from weis.visualization.appServer.app.pages.visualize_windio_airfoils import list_airfoils, draw_airfoil_shape, draw_airfoil_polar
 from weis.visualization.utils import load_geometry_data
 
 # File paths are relative to app/
+# This is okay for pytest, but change it into absolute paths if you want to debug
 file_table = {'File Path': ['../../../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml', '../../../../examples/05_IEA-3.4-130-RWT/IEA-3p4-130-RWT.yaml'], 'Label': ['15MW', '3.4MW'], 'Type': ['geometry', 'geometry']}
 
 airfoils, _, _ = load_geometry_data(file_table)
