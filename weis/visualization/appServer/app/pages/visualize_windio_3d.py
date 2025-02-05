@@ -1,12 +1,9 @@
-'''This is the page for visualize the WEIS inputs in 3D simulation model'''
+'''This is the page for visualize the WEIS inputs in 3D VTK model'''
 
-import random
 import dash
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, State, dcc
 from dash.exceptions import PreventUpdate
-import plotly.express as px
-import plotly
 from weis.visualization.utils import *
 from weis.visualization.meshRender import *
 
@@ -26,7 +23,7 @@ component_types = ['blade', 'hub', 'nacelle', 'tower', 'substructure']
 geometries = [
                 dash_vtk.GeometryRepresentation(
                     id = f'{idx}-{gtype}-rep',
-                ) for idx in range(5) for gtype in component_types         # We are expecting less than 10 geometry files..
+                ) for idx in range(10) for gtype in component_types         # We are expecting less than 10 geometry files..
             ] + [
                 dash_vtk.GeometryRepresentation(
                     id = 'axes',
