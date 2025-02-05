@@ -352,9 +352,11 @@ class WindPark(om.Group):
                 self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options))
 
                 # Connections from blade struct parametrization to rotor load anlysis
-                spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
-                self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
-                self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
+                # When not using user defined blade elastic properties
+                if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                    spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
+                    self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
+                    self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
 
 
                 # Connections to the stall check 
@@ -631,13 +633,15 @@ class WindPark(om.Group):
                 self.connect('rotorse.xl_te', 'rlds_post.strains.xl_te')
                 self.connect('rotorse.yu_te', 'rlds_post.strains.yu_te')
                 self.connect('rotorse.yl_te', 'rlds_post.strains.yl_te')
-                self.connect('blade.outer_shape_bem.s','rlds_post.constr.s')
-                self.connect("blade.internal_structure_2d_fem.d_f", "rlds_post.brs.d_f")
-                self.connect("blade.internal_structure_2d_fem.sigma_max", "rlds_post.brs.sigma_max")
-                self.connect("blade.pa.chord_param", "rlds_post.brs.rootD", src_indices=[0])
-                self.connect("blade.ps.layer_thickness_param", "rlds_post.brs.layer_thickness")
-                self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rlds_post.brs.layer_start_nd")
-                self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rlds_post.brs.layer_end_nd")
+                
+                if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                    self.connect('blade.outer_shape_bem.s','rlds_post.constr.s')
+                    self.connect("blade.internal_structure_2d_fem.d_f", "rlds_post.brs.d_f")
+                    self.connect("blade.internal_structure_2d_fem.sigma_max", "rlds_post.brs.sigma_max")
+                    self.connect("blade.pa.chord_param", "rlds_post.brs.rootD", src_indices=[0])
+                    self.connect("blade.ps.layer_thickness_param", "rlds_post.brs.layer_thickness")
+                    self.connect("blade.internal_structure_2d_fem.layer_start_nd", "rlds_post.brs.layer_start_nd")
+                    self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rlds_post.brs.layer_end_nd")
 
                 # Connections to DriveSE
                 if modeling_options['WISDEM']['DriveSE']['flag']:
