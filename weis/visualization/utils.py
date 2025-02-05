@@ -27,6 +27,7 @@ import vtk
 import dash_vtk
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
+import plotly
 from weis.dtqpy import objective
 
 try:
@@ -715,6 +716,10 @@ def remove_duplicated_legends(fig):
     
     return fig
 
+
+def set_colors():
+    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
+    return cols
 
 ############################
 # Viz Utils for WindIO
