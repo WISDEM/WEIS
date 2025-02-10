@@ -1756,7 +1756,7 @@ class FASTLoadCases(ExplicitComponent):
             if modopt['OpenFAST']['simulation']['CompSub']:
                 k=1
                 for i in range(len(self.Z_out_SD_mpl)):
-                    if k==9:
+                    if k==len(fst_vt['SubDyn']['NodeCnt']):
                         Node=2
                     else:
                         Node=1
@@ -1766,8 +1766,8 @@ class FASTLoadCases(ExplicitComponent):
                     channels_out += ["M" + str(k) + "N" + str(Node) + "MKxe"]
                     channels_out += ["M" + str(k) + "N" + str(Node) + "MKye"]
                     channels_out += ["M" + str(k) + "N" + str(Node) + "MKze"]
-                    channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
                     k+=1
+                channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
             else:
                 raise Exception('CompSub must be 1 in the modeling options to run SubDyn and compute monopile loads')
 
@@ -2398,7 +2398,7 @@ class FASTLoadCases(ExplicitComponent):
         monopile_chans_Mz = []
         k=1
         for i in range(len(self.Z_out_SD_mpl)):
-            if k==9:
+            if k==len(self.fst_vt['SubDyn']['NodeCnt']):
                 Node=2
             else:
                 Node=1
