@@ -107,7 +107,7 @@ jobs:
         env:
             RUN_EXHAUSTIVE: 1
         run: |
-            pytest  -p -s no:warnings --disable-warnings  weis
+            pytest  -p no:warnings -s --disable-warnings  weis
 
       # Run parallel script calling OpenFAST
       - name: Run parallel cases
