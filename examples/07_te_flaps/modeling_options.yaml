@@ -91,7 +91,7 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [12]
           n_seeds: 1
-          analysis_time: 10.
+          analysis_time: 1.
           transient_time: 0.
           turbulent_wind:
               HubHt: 140
