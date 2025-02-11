@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     # User settings
     n_cores     = 1     # Number of available cores
-    TMax        = 200.  # Length of wind grids and OpenFAST simulations, suggested 720 s
+    TMax        = 1.    # Length of wind grids and OpenFAST simulations, suggested 720 s
     cut_in      = 3.    # Cut in wind speed
     cut_out     = 25.   # Cut out wind speed
     wind_speeds = np.arange(cut_in, cut_out+1, 4) #np.linspace(cut_in, cut_out, int(n_ws)) # Wind speeds to run OpenFAST at
