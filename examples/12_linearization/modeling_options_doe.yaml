@@ -99,10 +99,10 @@ ROSCO:
 OpenFAST_Linear:
     flag: True
     simulation:         # could these be included in openfast options?
-        TMax: 700.      # run simulations using IEC standards, could share that info
+        TMax: 1.      # run simulations using IEC standards, could share that info
         CompMooring: 1
     linearization:
-        TMax: 60.
+        TMax: 1.
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-2
