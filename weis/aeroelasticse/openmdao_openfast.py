@@ -1830,7 +1830,7 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
                 Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
             else:
-                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.",
                         " This file does not exist. Check WEIS example 02 for a template file")
                 U_interp = np.arange(cut_in, cut_out)
                 pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
@@ -2176,8 +2176,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
         if self.options['modeling_options']['flags']['tower']:
             outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
-        # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
-        if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
+        if modopt['flags']['monopile']:
             outputs = self.get_monopile_loading(summary_stats, extreme_table, inputs, outputs)
 
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
