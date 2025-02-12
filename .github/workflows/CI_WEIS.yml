@@ -43,7 +43,7 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py=3.22.2 mpi4py mpich pyoptsparse
+          conda install -y petsc4py=3.22.2 mpi4py openmpi pyoptsparse
       
       - name: Add test packages
         run: |
