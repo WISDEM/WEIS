@@ -36,8 +36,8 @@ DLC_driver:
           wave_height: [7., 8.]
           wave_period: [1., 2.]
           n_seeds: 1
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 90.0
               GridHeight: 178.0
