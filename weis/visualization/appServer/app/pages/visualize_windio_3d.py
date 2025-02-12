@@ -315,7 +315,7 @@ def click_local_view(info):
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-    # Define layout for tower structures
+    # Define layout
     geom_items = dcc.Dropdown(id='geom-3d-names', options=[], value=None, multi=True)
 
     geom_inputs = dbc.Card([
@@ -348,12 +348,12 @@ def layout():
                 dbc.Row([
                     dbc.Col(geom_inputs),
                 ], className='g-0'),         # No gutters where horizontal spacing is added between the columns by default
-                dcc.Loading(vtk_view),
+                dcc.Loading(vtk_view),       # Global View
 
-                # Modal Window layout for visualizing Outlier timeseries data
+                # Modal Window layout for visualizing Local View
                 dbc.Modal([
-                    dbc.ModalHeader(dbc.ModalTitle(html.Div(id='vtk-view-local-header'))),                                 # Related function: display_outlier()
-                    dbc.ModalBody([html.Div(id='vtk-text-description', style={"overflow": "scroll"}), vtk_view_local])],                                                         # Related function: display_outlier()
+                    dbc.ModalHeader(dbc.ModalTitle(html.Div(id='vtk-view-local-header'))),
+                    dbc.ModalBody([html.Div(id='vtk-text-description', style={"overflow": "scroll"}), vtk_view_local])],
                     id='vtk-view-local-div',
                     size='xl',
                     is_open=False)
