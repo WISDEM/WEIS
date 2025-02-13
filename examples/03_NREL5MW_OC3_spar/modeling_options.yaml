@@ -20,15 +20,12 @@ WISDEM:
     BOS:
         flag: True
 
-Level1:
+RAFT:
+    # Using strip theory only
     flag: False
-    potential_model_override: 0
-    potential_bem_members: [spar]
-    min_freq_BEM: 0.1
-    min_freq: 0.1
-    max_freq: 1.0
+    potential_model_override: 1
     
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.0125
@@ -53,9 +50,9 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : False
+        TwFADOF2 : False    # second tower mode is problematic
         TwSSDOF1 : True
-        TwSSDOF2 : False
+        TwSSDOF2 : False    # second tower mode is problematic
         PtfmSgDOF: True
         PtfmSwDOF: True
         PtfmHvDOF: True
@@ -63,23 +60,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : True
         PtfmYDOF : False
         SumPrint: True
-    HydroDyn:
+    SeaState:
         WaveTMax: 800
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
-        WaveSeed1: 123456789
-        WaveSeed2: 1011121314
-        AddBLin1: [100000, 0.0, 0.0, 0.0, 0.0, 0.0]
-        AddBLin2: [0.0, 100000.0, 0.0, 0.0, 0.0, 0.0]
-        AddBLin3: [0.0, 0.0, 130000.0, 0.0, 0.0, 0.0]
-        AddBLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 13000000]
-        AddCLin6: [0.0, 0.0, 0.0, 0.0, 0.0, 98340000]
-        PotMod: 1
-        ExctnMod: 1
-        RdtnMod: 1
-        RdtnDT: 0.0125
-        # PotFile: examples/03_NREL5MW_OC3_spar/HydroData/Spar
-        # PtfmMass_Init: 7.462e6
 
 ROSCO:
     flag: True
@@ -101,7 +85,7 @@ DLC_driver:
           wave_height: [7.]
           wave_period: [1.]
           n_seeds: 1
-          analysis_time: 10.
+          analysis_time: 1.
           transient_time: 0.
           turbulent_wind:
               HubHt: 90.0

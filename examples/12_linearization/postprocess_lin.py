@@ -1,7 +1,5 @@
-import numpy as np
 import openmdao.api as om
 import pickle
-
 
 with open("tower_doe/ABCD_matrices.pkl", "rb") as handle:
     ABCD_list = pickle.load(handle)

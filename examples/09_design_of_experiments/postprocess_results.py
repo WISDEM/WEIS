@@ -5,21 +5,18 @@ postprocess or plot further.
 
 import glob
 import os
-import sys
-import time
 
 import numpy as np
 import pandas as pd 
 import multiprocessing as mp 
 
 import openmdao.api as om
-from weis.aeroelasticse import FileTools
 
 def load_OMsql(log):
     print("loading {}".format(log))
     cr = om.CaseReader(log)
     rec_data = {}
-    driver_cases = cr.list_cases("driver")
+    #driver_cases = cr.list_cases("driver")
     cases = cr.get_cases("driver")
     for case in cases:
         for key in case.outputs.keys():
@@ -37,7 +34,7 @@ if __name__ == "__main__":
 
     # sql outfile directory
     run_dir = os.path.dirname(os.path.realpath(__file__))   
-    output_dir = os.path.join(run_dir, "outputs")
+    output_dir = os.path.join(run_dir, "outputs/OpenFAST_DOE")
     doe_logs = glob.glob(os.path.join(output_dir,"log_opt.sql*"))
     if len(doe_logs) < 1:
         raise FileExistsError("No output logs to post process!")

@@ -280,9 +280,55 @@ The azimuth position at time of occurrence of the fault is randomly selected.
 
 
 
-.. ------------------------
-.. User-defined DLC Example
-.. ------------------------
+-------------------------------------------------------
+User-defined mapping and groups in the modeling options
+-------------------------------------------------------
+
+WEIS uses generic input names to define DLCs, which are mapped to OpenFAST inputs with the ``openfast_input_map`` in the ``DLC_Generator`` class.
+Many commonly used inputs are included by default, but users can add to the mapping in the modeling options, as in the following example::
+
+  openfast_input_map:
+    final_pitch_angle:
+        - [ServoDyn,BlPitchF(1)]
+        - [ServoDyn,BlPitchF(2)]
+        - [ServoDyn,BlPitchF(3)]
+    mean_sea_level: [Fst,MSL2SWL]
+    wave_dir: [HydroDyn,WaveDir]
+    current_model: [HydroDyn,CurrMod]
+    current_speed: [HydroDyn,CurrDIV]
+
+Users can map generic inputs, like ``mean_sea_level`` to a specific OpenFAST input specified by the ``[module,input]``.
+Users can also map generic inputs to multiple OpenFAST inputs, like ``final_pitch_angle`` which is mapped to ``BlPitchF(1)``, ``BlPitchF(2)``, and ``BlPitchF(3)`` in ServoDyn.
+
+This mapping is helpful for users to define additional groups that will alter individual DLCs or sweep additional parameters.
+Let's consider the following example::
+  
+  DLCs:
+    - DLC: "1.6"
+      wind_speed: [8,15]
+      n_seeds: 2
+      analysis_time: 1.
+      transient_time: 0.0
+      user_group:
+        - mean_sea_level: [1.0, 2.0]
+          current_speed: [.25, .5]
+        - current_model: 1
+    - DLC: "5.1"
+      wind_speed: [12]
+      n_seeds: 1
+      n_azimuth: 1
+      analysis_time: 20.
+      shutdown_time: 10.
+      transient_time: 0.0
+      user_group:
+        final_blade_pitch: [70,80,90]
+
+In DLC 5.1, the user is sweeping the ``final_blade_pitch`` (defined earlier) over 3 different angles.
+
+In DLC 1.6, the users has defined multiple groups over which to alter only that load case.
+For each DLC 1.6 simulation, a simulation will be generated with a ``mean_sea_level`` of 1.0 and 2.0 m. 
+The ``current_speed`` will change along with the ``mean_sea_level`` because it is in the same group.
+The ``current_model``, because it is a single value, will alter all of the simulations in DLC 1.6 to hold the value of 1.
 
 
 ------------------------------------
