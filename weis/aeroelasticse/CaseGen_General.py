@@ -1,8 +1,8 @@
 import os, itertools
 import numpy as np
-from weis.aeroelasticse.FileTools import save_yaml
+from openfast_io.FileTools import save_yaml
 
-def save_case_matrix(matrix_out, change_vars, dir_matrix):
+def save_case_matrix(matrix_out, change_vars, dir_matrix, filename_ext=''):
     # save matrix file
     if type(change_vars[0]) is tuple:
         n_header_lines = len(change_vars[0])
@@ -32,12 +32,12 @@ def save_case_matrix(matrix_out, change_vars, dir_matrix):
 
     if not os.path.exists(dir_matrix):
         os.makedirs(dir_matrix)
-    ofh = open(os.path.join(dir_matrix,'case_matrix.txt'),'w')
+    ofh = open(os.path.join(dir_matrix,f'case_matrix{filename_ext}.txt'),'w')
     for row in text_out:
         ofh.write(row)
     ofh.close()
 
-def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_names):
+def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_names, filename_ext=''):
 
     matrix_out_yaml = {}
     for var in change_vars:
@@ -67,7 +67,7 @@ def save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_names):
     if not os.path.exists(dir_matrix):
         os.makedirs(dir_matrix)
 
-    save_yaml(dir_matrix, 'case_matrix.yaml', matrix_out_yaml)
+    save_yaml(dir_matrix, f'case_matrix{filename_ext}.yaml', matrix_out_yaml)
 
 def case_naming(n_cases, namebase=None):
     # case naming
@@ -100,12 +100,14 @@ def convert_str(val):
         return True
     elif val=='False':
         return False
+    elif try_type(val,str):
+        return str(val)
     # elif type(val)!=str and try_list(val):
     #     return ", ".join(['{:}'.format(i) for i in val])
     else:
         return val
 
-def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
+def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True, filename_ext=''):
     """ Cartesian product to enumerate over all combinations of set of variables that are changed together"""
 
     # put case dict into lists
@@ -146,10 +148,10 @@ def CaseGen_General(case_inputs, dir_matrix='', namebase='', save_matrix=True):
         if not dir_matrix:
             dir_matrix = os.getcwd()
         try:
-            save_case_matrix(matrix_out, change_vars, dir_matrix)
-            save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
+            save_case_matrix(matrix_out, change_vars, dir_matrix, filename_ext=filename_ext)
+            save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name, filename_ext=filename_ext)
         except: 
-            save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name)
+            save_case_matrix_yaml(matrix_out, change_vars, dir_matrix, case_name, filename_ext=filename_ext)
 
     case_list = []
     for i in range(n_cases):

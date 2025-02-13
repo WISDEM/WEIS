@@ -1,0 +1,56 @@
+# 01_aeroelasticse
+01_aeroelasticse/olaf
+01_aeroelasticse/steady_state
+
+# 02_run_openfast_cases
+02_run_openfast_cases/outputs
+
+# 03_NREL5MW_OC3_spar
+03_NREL5MW_OC3_spar/outputs
+
+# 04_NREL5MW_OC4_semi
+04_NREL5MW_OC4_semi/outputs
+
+# 05_IEA-3.4-130-RWT
+05_IEA-3.4-130-RWT/outputs
+
+# 06_IEA-15-240-RWT
+06_IEA-15-240-RWT/outputs
+
+# 07_te_flaps
+07_te_flaps/dac_outputs
+
+# 08_OLAF
+08_OLAF/newOF1
+08_OLAF/temp
+
+# 09_design_of_experiments
+09_design_of_experiments/outputs
+
+# 10_override_example
+10_override_example/outputs
+10_override_example/override_output
+
+# 11_use_bem
+11_use_bem/outputs
+11_use_bem/temp
+
+# 12_linearization
+12_linearization/outputs
+
+# 13_DTQP
+13_DTQP/outputs
+
+# 14_level2ccd
+14_level2ccd/outputs
+
+# 15_RAFT_Studies
+15_RAFT_Studies/outputs
+
+# 16_postprocessing
+
+# 17_IEA22_Optimization
+17_IEA22_Optimization/outputs
+
+# 18_user_custom_setup
+

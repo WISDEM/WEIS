@@ -16,9 +16,9 @@ class IEC_CoherentGusts():
     def execute(self, dir, base_name, dlc):
 
         if self.HH > 60:
-            self.Sigma_1 = 42
+            self.Lambda_1 = 42
         else:
-            self.Sigma_1 = 0.7*self.HH
+            self.Lambda_1 = 0.7*self.HH
 
         wind_file_name = os.path.join(dir, base_name + '_' + dlc.IEC_WindType + '_U%1.6f'%dlc.URef +  '_D%s'%dlc.direction_pn + '_S%s'%dlc.shear_hv + '.wnd')
 
@@ -63,7 +63,7 @@ class IEC_CoherentGusts():
         V_gust = np.zeros_like(t)
         upflow = np.zeros_like(t)
 
-        V_gust = min([ 1.35*(V_e1 - V_hub), 3.3*(sigma_1/(1+0.1*(self.D/self.Sigma_1))) ])
+        V_gust = min([ 1.35*(V_e1 - V_hub), 3.3*(sigma_1/(1+0.1*(self.D/self.Lambda_1))) ])
 
         V_gust_t = np.zeros_like(t)
         for i, ti in enumerate(t):
@@ -102,7 +102,7 @@ class IEC_CoherentGusts():
         upflow = np.zeros_like(t)
 
         # Transient
-        Theta_e = 4.*np.arctan(sigma_1/(V_hub*(1.+0.01*(self.D/self.Sigma_1))))*180./np.pi
+        Theta_e = 4.*np.arctan(sigma_1/(V_hub*(1.+0.01*(self.D/self.Lambda_1))))*180./np.pi
         if Theta_e > 180.:
             Theta_e = 180.
 
@@ -217,7 +217,7 @@ class IEC_CoherentGusts():
             raise Exception('The EWS gust can only have vertical (v) or horizontal (h) shear, whereas the script receives '+ dlc.shear_hv)
 
         for i, ti in enumerate(t):
-            shear_lin[i] = k_dir * (2.5+0.2*Beta*sigma_1*(self.D/self.Sigma_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
+            shear_lin[i] = k_dir * (2.5+0.2*Beta*sigma_1*(self.D/self.Lambda_1)**(1/4))*(1-np.cos(2*np.pi*ti/T))/V_hub
 
         hd1 = ['Time', 'Wind', 'Wind', 'Vertical', 'Horiz.', 'Pwr. Law', 'Lin. Vert.', 'Gust', 'Upflow']
         hd2 = ['',     'Speed', 'Dir', 'Speed',    'Shear', 'Vert. Shr', 'Shear',     'Speed', 'Angle']
