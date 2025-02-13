@@ -1,6 +1,3 @@
-from contextvars import copy_context
-from dash._callback_context import context_value
-from dash._utils import AttributeDict
 import dash_bootstrap_components as dbc
 from dash import dcc
 import pandas as pd
@@ -73,5 +70,28 @@ def test_update_local_table_content():
     assert hub_df.loc[geom_3d_names.index('22MW'), 'pitch_system_scaling_factor'] == wt_options_by_names['22MW']['components']['hub']['pitch_system_scaling_factor']
 
     # Convert multi-index dbc.Table to pd.DataFrame to query
-    answer_nacelle = None
+    html_nacelle_headers = [th.children for th in output_nacelle.children[0].children]
+    nacelle_field = [tuple(th.children for th in row for _ in range(th.colSpan)) for row in html_nacelle_headers]
+    nacelle_headers = list(zip(nacelle_field[0], nacelle_field[1]))
+    index = pd.MultiIndex.from_tuples(nacelle_headers)
+    nacelle_data = [[td.children if isinstance(td.children, str) else td.children.children for td in tr.children] for tr in output_nacelle.children[1].children]
+    nacelle_df = pd.DataFrame(nacelle_data, columns=index)
+    assert set(nacelle_df.loc[:, 'Label']) == set(geom_3d_names)
+    assert nacelle_df.loc[geom_3d_names.index('15MW'), ('drivetrain', 'uptilt')] == wt_options_by_names['15MW']['components']['nacelle']['drivetrain']['uptilt']
+    assert nacelle_df.loc[geom_3d_names.index('3.4MW'), ('generator', 'rated_rpm')] == wt_options_by_names['3.4MW']['components']['nacelle']['generator']['rated_rpm']
+
+
+def test_update_local_scene_content():
+    info_tower = {'worldPosition': [165.9507745273005, -1.0578314024123374, 76.31877503078084], 'displayPosition': [815, 473, 0.9961089494163424], 'compositeID': 18, 'representationId': '1-tower-rep', 'ray': [[-717.3180998465665, 5.85103711285667, 27.765942056770616], [510.9722279695685, -4.2303597941686375, 95.28527787531458]]}
+    geom_3d_names = ['15MW', '3.4MW', '22MW']
+    tower_view = update_local_scene_content(info_tower, geom_3d_names, wt_options_by_names)
+
+    assert set([geom.id for geom in tower_view.children[:-2]]) == set(geom_3d_names)        # Last two geometries: Axes and tooltip
+
+
+def test_click_local_view():
+    info_tower = {'worldPosition': [165.9507745273005, -1.0578314024123374, 76.31877503078084], 'displayPosition': [815, 473, 0.9961089494163424], 'compositeID': 18, 'representationId': '1-tower-rep', 'ray': [[-717.3180998465665, 5.85103711285667, 27.765942056770616], [510.9722279695685, -4.2303597941686375, 95.28527787531458]]}
+    tooltip_children, _ = click_local_view(info_tower)
+    
+    assert tooltip_children == [f"{info_tower['representationId']}: {info_tower['worldPosition']}"]
 
