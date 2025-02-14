@@ -101,7 +101,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
         dtqp_input['case_name']             = case_names[i_oloc]
         dtqp_input['run_dir']               = run_dir
         dtqp_input['magnitude_channels']    = magnitude_channels
-        dtqp_input['dtqp_options']          = modeling_options['Level2']['DTQP']
+        dtqp_input['dtqp_options']          = modeling_options['OpenFAST_Linear']['DTQP']
 
         dtqp_input_list.append(dtqp_input)
 
@@ -168,7 +168,7 @@ def run_dtqp(dtqp_input):
             dtqp_input['dtqp_options'],
             plot=dtqp_input['plot'])
    
-    # Shorten output names from linearization output to one like level3 openfast output
+    # Shorten output names from linearization output to one like openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed
     OutList     = [out_name.split()[1][:-1] for out_name in dtqp_input['LinearTurbine'].DescOutput]
 

@@ -2,7 +2,7 @@
 
 # Import Packages
 import dash
-from dash import Dash, dcc, html, DiskcacheManager, CeleryManager
+from dash import Dash, dcc, html
 import os
 import dash_bootstrap_components as dbc
 import logging
@@ -32,25 +32,11 @@ parser.add_argument('--debug',
 
 parser.add_argument('--input', 
                     type=str, 
-                    default='test.yaml', # lets point to an example where viz input could potentially exist.
+                    default='tests/input/test.yaml', # lets point to an example where viz input could potentially exist.
                     help='Path to the WEIS visualization input yaml file'
                     )
 
 args = parser.parse_args()
-
-
-if 'REDIS_URL' in os.environ:
-    # Use Redis & Celery if REDIS_URL set as an env variable
-    from celery import Celery
-    celery_app = Celery(__name__, broker=os.environ['REDIS_URL'], backend=os.environ['REDIS_URL'])
-    background_callback_manager = CeleryManager(celery_app)
-
-else:
-    # Diskcache for non-production apps when developing locally
-    import diskcache
-    cache = diskcache.Cache("./cache")
-    background_callback_manager = DiskcacheManager(cache)
-
 
 
 # Initialize the app - Internally starts the Flask Server
@@ -59,7 +45,7 @@ external_stylesheets = [dbc.themes.BOOTSTRAP]
 # For Latex
 mathjax = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'
 APP_TITLE = "WEIS Visualization APP"
-app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True, background_callback_manager=background_callback_manager)
+app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True)
 
 # Build Navigation Bar
 # Each pages are registered on each python script under the pages directory.
@@ -104,28 +90,6 @@ app.layout = html.Div(
                 dash.page_container
             ]
         )
-
-# app.layout = dcc.Loading(
-#     id = 'loading_page_content',
-#     children = [
-#         html.Div(
-#             [   # Variable Settings to share over pages
-#                 dcc.Store(id='input-dict', data=parse_yaml(args.input)),
-#                 # WindIO Input Files
-#                 dcc.Store(id='file-df', data={'File Path': [], 'Label': [], 'Type': []}),
-#                 # dcc.Store(id='sorted-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
-#                 # Airfoils categorized by 'filelabelname:airfoilname' pairs
-#                 dcc.Store(id='airfoil-by-names', data={}),
-#                 # Geometry components categorized by 'filelabelname:componenttype' pairs
-#                 dcc.Store(id='geometry-components', data={}),
-#                 navbar,
-#                 dash.page_container
-#             ]
-#         )
-#     ],
-#     color = 'primary',
-#     fullscreen = True
-# )
 
 
 def main():

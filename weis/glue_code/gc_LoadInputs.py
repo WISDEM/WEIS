@@ -1,13 +1,18 @@
 import os
 import os.path as osp
-import shutil
+import copy, logging
+import numpy as np
 
 from rosco import discon_lib_path
 import weis.inputs as sch
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
+from openfast_io.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from wisdem.commonse.mpi_tools              import MPI
+from openmdao.utils.mpi import MPI
+from rosco.toolbox.inputs.validation import load_rosco_yaml
+from wisdem.inputs import load_yaml
+
+logger = logging.getLogger("wisdem/weis")
 
 def update_options(options,override):
     for key, value in override.items():
@@ -38,6 +43,9 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         self.analysis_options = sch.load_analysis_yaml(fname_input_analysis)
         self.analysis_options['fname_input_analysis'] = fname_input_analysis
 
+        # Update options to maintain some backwards compatibility
+        self.backwards_compatibility()
+
         if modeling_override:
             update_options(self.modeling_options, modeling_override)
             sch.re_validate_modeling(self.modeling_options)
@@ -58,6 +66,17 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Directory of modeling option input, if we want to use it for relative paths
         mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
 
+        # OpenFAST prefixes
+        if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
+            
+        if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
+            self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
+                mod_opt_dir,        # If it's a relative path, will be relative to mod_opt directory
+                self.analysis_options['general']['folder_output'], 
+                'openfast_runs'
+                )
+
         # BEM dir, all levels
         base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
         if MPI:
@@ -66,27 +85,18 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         else:
             bemDir = osp.join(base_run_dir,'BEM')
 
-        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        self.modeling_options["RAFT"]['BEM_dir'] = bemDir
         if MPI:
             # If running MPI, RAFT won't be able to save designs in parallel
-            self.modeling_options["Level1"]['save_designs'] = False
+            self.modeling_options["RAFT"]['save_designs'] = False
 
 
         # Openfast
-        if self.modeling_options['Level2']['flag'] or self.modeling_options['Level3']['flag']:
+        if self.modeling_options['OpenFAST_Linear']['flag'] or self.modeling_options['OpenFAST']['flag']:
             fast = InputReader_OpenFAST()
             self.modeling_options['General']['openfast_configuration']['fst_vt'] = {}
             self.modeling_options['General']['openfast_configuration']['fst_vt']['outlist'] = fast.fst_vt['outlist']
 
-            # OpenFAST prefixes
-            if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_fst'] = 'weis_job'
-                
-            if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
-                self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
-                    self.analysis_options['general']['folder_output'], 
-                    'openfast_runs'
-                    )
                 
             # User-defined control dylib (path2dll)
             path2dll = self.modeling_options['General']['openfast_configuration']['path2dll']
@@ -100,82 +110,107 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             if not osp.exists( path2dll ):
                 raise NameError("Cannot find DISCON library: "+path2dll)
 
-            # Activate HAMS in Level1 if requested for Level 2 or 3
-            if self.modeling_options["flags"]["offshore"] or self.modeling_options["Level3"]["from_openfast"]:
-                if self.modeling_options["Level1"]["potential_model_override"] == 2:
-                    self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
-                elif ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
-                       (len(self.modeling_options["Level1"]["potential_bem_members"]) > 0) ):
-                    self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 1
-                elif self.modeling_options["Level1"]["potential_model_override"] == 1:
-                    self.modeling_options["Level3"]["HydroDyn"]["PotMod"] = 0
+            # Activate HAMS in RAFT if requested for OpenFAST
+            if self.modeling_options["flags"]["offshore"] or self.modeling_options["OpenFAST"]["from_openfast"]:
+                if self.modeling_options["RAFT"]["potential_model_override"] == 2:
+                    self.modeling_options["OpenFAST"]["HydroDyn"]["PotMod"] = 1
+                elif ( (self.modeling_options["RAFT"]["potential_model_override"] == 0) and
+                       (len(self.modeling_options["RAFT"]["potential_bem_members"]) > 0) ):
+                    self.modeling_options["OpenFAST"]["HydroDyn"]["PotMod"] = 1
+                elif self.modeling_options["RAFT"]["potential_model_override"] == 1:
+                    self.modeling_options["OpenFAST"]["HydroDyn"]["PotMod"] = 0
                 else:
                     # Keep user defined value of PotMod
                     pass
 
-                if self.modeling_options["Level3"]["HydroDyn"]["PotMod"] == 1:
+                if self.modeling_options["OpenFAST"]["HydroDyn"]["PotMod"] == 1:
 
                     # If user requested PotMod but didn't specify any override or members, just run everything
-                    if ( (self.modeling_options["Level1"]["potential_model_override"] == 0) and
-                       (len(self.modeling_options["Level1"]["potential_bem_members"]) == 0) ):
-                        self.modeling_options["Level1"]["potential_model_override"] == 2
+                    if ( (self.modeling_options["RAFT"]["potential_model_override"] == 0) and
+                       (len(self.modeling_options["RAFT"]["potential_bem_members"]) == 0) ):
+                        self.modeling_options["RAFT"]["potential_model_override"] == 2
                         
                     cwd = os.getcwd()
                     weis_dir = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
-                    potpath = self.modeling_options["Level3"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
+                    potpath = self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"].replace('.hst','').replace('.12','').replace('.3','').replace('.1','')
                     if ( (len(potpath) == 0) or (potpath.lower() in ['unused','default','none']) ):
                         
-                        self.modeling_options['Level1']['flag'] = True
-                        self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.join(bemDir,'Output','Wamit_format','Buoy')
+                        self.modeling_options['RAFT']['flag'] = True
+                        self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"] = osp.join(bemDir,'Output','Wamit_format','Buoy')
                         
 
                     else:
-                        if self.modeling_options['Level1']['runPyHAMS']:
+                        if self.modeling_options['RAFT']['runPyHAMS']:
                             print('Found existing potential model: {}\n    - Trying to use this instead of running PyHAMS.'.format(potpath))
-                            self.modeling_options['Level1']['runPyHAMS'] = False
+                            self.modeling_options['RAFT']['runPyHAMS'] = False
                         if osp.exists( potpath+'.1' ):
-                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath(potpath)
+                            self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"] = osp.realpath(potpath)
                         elif osp.exists( osp.join(cwd, potpath+'.1') ):
-                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(cwd, potpath) )
+                            self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(cwd, potpath) )
                         elif osp.exists( osp.join(weis_dir, potpath+'.1') ):
-                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(weis_dir, potpath) )
+                            self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(weis_dir, potpath) )
                         elif osp.exists( osp.join(mod_opt_dir, potpath+'.1') ):
-                            self.modeling_options["Level3"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(mod_opt_dir, potpath) )
+                            self.modeling_options["OpenFAST"]["HydroDyn"]["PotFile"] = osp.realpath( osp.join(mod_opt_dir, potpath) )
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
         # OpenFAST dir
-        if self.modeling_options["Level3"]["from_openfast"]:
-            if not osp.isabs(self.modeling_options['Level3']['openfast_dir']):
+        if self.modeling_options["OpenFAST"]["from_openfast"]:
+            if not osp.isabs(self.modeling_options['OpenFAST']['openfast_dir']):
                 # Make relative to modeling options input
-                self.modeling_options['Level3']['openfast_dir'] = osp.realpath(osp.join(
-                    mod_opt_dir, self.modeling_options['Level3']['openfast_dir'] ))
+                self.modeling_options['OpenFAST']['openfast_dir'] = osp.realpath(osp.join(
+                    mod_opt_dir, self.modeling_options['OpenFAST']['openfast_dir'] ))
+        
+        # BEM dir, all levels
+        base_run_dir = os.path.join(mod_opt_dir,self.modeling_options['General']['openfast_configuration']['OF_run_dir'])
+        if MPI:
+            rank    = MPI.COMM_WORLD.Get_rank()
+            bemDir = osp.join(base_run_dir,'rank_%000d'%int(rank),'BEM')
+        else:
+            bemDir = osp.join(base_run_dir,'BEM')
+
+        self.modeling_options["Level1"]['BEM_dir'] = bemDir
+        if MPI:
+            # If running MPI, RAFT won't be able to save designs in parallel
+            self.modeling_options["Level1"]['save_designs'] = False
         
         # RAFT
         if self.modeling_options["flags"]["floating"]:
-            bool_init = True if self.modeling_options["Level1"]["potential_model_override"]==2 else False
-            self.modeling_options["Level1"]["model_potential"] = [bool_init] * self.modeling_options["floating"]["members"]["n_members"]
+            bool_init = True if self.modeling_options["RAFT"]["potential_model_override"]==2 else False
+            self.modeling_options["RAFT"]["model_potential"] = [bool_init] * self.modeling_options["floating"]["members"]["n_members"]
 
-            if self.modeling_options["Level1"]["potential_model_override"] == 0:
-                for k in self.modeling_options["Level1"]["potential_bem_members"]:
+            if self.modeling_options["RAFT"]["potential_model_override"] == 0:
+                for k in self.modeling_options["RAFT"]["potential_bem_members"]:
                     idx = self.modeling_options["floating"]["members"]["name"].index(k)
-                    self.modeling_options["Level1"]["model_potential"][idx] = True
+                    self.modeling_options["RAFT"]["model_potential"][idx] = True
         elif self.modeling_options["flags"]["offshore"]:
-            self.modeling_options["Level1"]["model_potential"] = [False]*1000
+            self.modeling_options["RAFT"]["model_potential"] = [False]*1000
             
         # ROSCO
-        self.modeling_options['ROSCO']['flag'] = (self.modeling_options['Level1']['flag'] or
-                                                  self.modeling_options['Level2']['flag'] or
-                                                  self.modeling_options['Level3']['flag'])
+        self.modeling_options['ROSCO']['flag'] = (self.modeling_options['RAFT']['flag'] or
+                                                  self.modeling_options['OpenFAST_Linear']['flag'] or
+                                                  self.modeling_options['OpenFAST']['flag'])
         
         if self.modeling_options['ROSCO']['tuning_yaml'] != 'none':  # default is empty
             # Make path absolute if not, relative to modeling options input
             if not osp.isabs(self.modeling_options['ROSCO']['tuning_yaml']):
                 self.modeling_options['ROSCO']['tuning_yaml'] = osp.realpath(osp.join(
                     mod_opt_dir, self.modeling_options['ROSCO']['tuning_yaml'] ))
+                
+        # Apply tuning yaml input if available, this needs to be here for sizing tune_rosco_ivc
+        if os.path.split(self.modeling_options['ROSCO']['tuning_yaml'])[1] != 'none':  # default is none
+            inps = load_rosco_yaml(self.modeling_options['ROSCO']['tuning_yaml'])  # tuning yaml validated in here
+            self.modeling_options['ROSCO'].update(inps['controller_params'])
+
+            # Apply changes in modeling options, should have already been validated
+            modopts_no_defaults = load_yaml(self.modeling_options['fname_input_modeling'])  
+            skip_options = ['tuning_yaml']  # Options to skip loading, tuning_yaml path has been updated, don't overwrite
+            for option, value in modopts_no_defaults['ROSCO'].items():
+                if option not in skip_options:
+                    self.modeling_options['ROSCO'][option] = value
         
         # XFoil
-        if not osp.isfile(self.modeling_options['Level3']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
+        if not osp.isfile(self.modeling_options['OpenFAST']["xfoil"]["path"]) and self.modeling_options['ROSCO']['Flp_Mode']:
             raise Exception("A distributed aerodynamic control device is defined in the geometry yaml, but the path to XFoil in the modeling options is not defined correctly")
 
         # Compute the number of DLCs that will be run
@@ -184,20 +219,27 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         cut_in = self.wt_init['control']['supervisory']['Vin']
         cut_out = self.wt_init['control']['supervisory']['Vout']
         metocean = self.modeling_options['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(cut_in, cut_out, metocean=metocean)
+        dlc_driver_options = self.modeling_options['DLC_driver']
+        dlc_generator = DLCGenerator(cut_in, cut_out, dlc_driver_options=dlc_driver_options, metocean=metocean)
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
         self.modeling_options['DLC_driver']['n_cases'] = dlc_generator.n_cases
-        if hasattr(dlc_generator,'n_ws_dlc11'):
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = dlc_generator.n_ws_dlc11
+        
+        # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
+        DLCs = [i_dlc['DLC'] for i_dlc in self.modeling_options['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
         else:
-            self.modeling_options['DLC_driver']['n_ws_dlc11'] = 0
+            DLC_label_for_AEP = '1.1'
+        dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
+        self.modeling_options['DLC_driver']['n_ws_aep'] = len(np.unique(dlc_aep_ws))
 
+        # TMD modeling
         self.modeling_options['flags']['TMDs'] = False
         if 'TMDs' in self.wt_init:
-            if self.modeling_options['Level3']['flag']:
+            if self.modeling_options['OpenFAST']['flag']:
                 self.modeling_options['flags']['TMDs'] = True
             else:
                 raise Exception("TMDs in Levels 1 and 2 are not supported yet")
@@ -277,3 +319,22 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
         # Override the WISDEM version to ensure that the WEIS options files are written instead
         sch.write_modeling_yaml(self.modeling_options, fname_output)
         sch.write_analysis_yaml(self.analysis_options, fname_output)
+
+
+    def backwards_compatibility(self):
+
+        modopts_no_defaults = load_yaml(self.modeling_options['fname_input_modeling'])
+
+        if 'Level1' in modopts_no_defaults:
+            self.modeling_options['RAFT'] = copy.deepcopy(self.modeling_options['Level1'])
+            logger.warning('Level1 is no longer a WEIS modeling option.  Please use RAFT instead.  Level1 will be depreciated in a future release.')
+
+        if 'Level2' in modopts_no_defaults:
+            self.modeling_options['OpenFAST_Linear'] = copy.deepcopy(self.modeling_options['Level2'])
+            logger.warning('Level2 is no longer a WEIS modeling option.  Please use OpenFAST_Linear instead.  Level2 will be depreciated in a future release.')
+
+        if 'Level3' in modopts_no_defaults:
+            self.modeling_options['OpenFAST'] = copy.deepcopy(self.modeling_options['Level3'])
+            logger.warning('Level3 is no longer a WEIS modeling option.  Please use OpenFAST instead.  Level3 will be depreciated in a future release.')
+
+

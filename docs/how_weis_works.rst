@@ -22,6 +22,7 @@ WEIS works best by running `examples <https://github.com/WISDEM/WEIS/tree/master
  * `05_IEA-3.4-130-RWT <https://github.com/WISDEM/WEIS/tree/master/examples/05_IEA-3.4-130-RWT>`_ runs the design load cases (DLCs) for the fixed-bottom IEA-3.4 turbine
  * `06_IEA-15-240-RWT <https://github.com/WISDEM/WEIS/tree/master/examples/06_IEA-15-240-RWT>`_ contains several examples for running the IEA-15MW with the VolturnUS platform, including tower and structural controller optimization routines
  * `15_RAFT_Studies <https://github.com/WISDEM/WEIS/tree/master/examples/15_RAFT_Studies>`_ contains an example for optimizing a the IEA-15MW with the VolturnUS platform in RAFT
+
 More documentation specific to these examples can be found there, with more to follow.
 
 This documentation only covers a summary of WEIS's functionality.  WEIS can be adapted to solve a wide variety of problems.  If you have questions or would like to discuss WEIS's functionality further, please email dzalkind (at) nrel (dot) gov. 

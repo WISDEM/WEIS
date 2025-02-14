@@ -10,7 +10,7 @@ python weis_driver.py
 
 The `modeling_options.yaml` are configured to linearize across the relevant wind speeds: 
 ```
-Level2:
+OpenFAST_Linear:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: False

@@ -49,12 +49,12 @@ def layout():
                                 dbc.Form(tower_items)
                             ])
                         ])
-                   ])
+                    ])
 
     struct_layout = dbc.Card([
-                        dbc.CardHeader('Structural Properties', className='cardHeader'),
+                        dbc.CardHeader('Structural Properties'),
                         dbc.CardBody([
-                            dcc.Loading(dcc.Graph(id='tower-graph', figure=empty_figure()))
+                            dcc.Graph(id='tower-graph', figure=empty_figure())
                         ])
                   ], className='card')
     
@@ -62,7 +62,7 @@ def layout():
                 dcc.Store(id='tower-by-names', data={}),
                 tower_inputs,
                 struct_layout
-            ], className='wrapper'))
+            ]))
     
     return layout
 

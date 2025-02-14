@@ -27,16 +27,37 @@ class TestIECWind(unittest.TestCase):
         fix_wind_seeds = modeling_options['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modeling_options['DLC_driver']['fix_wave_seeds']
         metocean = modeling_options['DLC_driver']['metocean_conditions']
-        dlc_generator = DLCGenerator(ws_cut_in, ws_cut_out, ws_rated, wind_speed_class, wind_turbulence_class, fix_wind_seeds, fix_wave_seeds, metocean)
+        dlc_generator = DLCGenerator(
+            ws_cut_in, 
+            ws_cut_out, 
+            ws_rated, 
+            wind_speed_class, 
+            wind_turbulence_class, 
+            fix_wind_seeds, 
+            fix_wave_seeds, 
+            metocean,
+            modeling_options['DLC_driver']
+            )
 
         # Generate cases from user inputs
         for i_DLC in range(len(DLCs)):
             DLCopt = DLCs[i_DLC]
             dlc_generator.generate(DLCopt['DLC'], DLCopt)
+            
 
         np.testing.assert_equal(dlc_generator.cases[11].URef, ws_cut_out)
-        np.testing.assert_equal(dlc_generator.n_ws_dlc11, 6)
-        np.testing.assert_equal(dlc_generator.n_cases, 62)
+        np.testing.assert_equal(dlc_generator.n_cases, 60)
 
+        # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
+        DLCs = [i_dlc['DLC'] for i_dlc in modeling_options['DLC_driver']['DLCs']]
+        if 'AEP' in DLCs:
+            DLC_label_for_AEP = 'AEP'
+        else:
+            DLC_label_for_AEP = '1.1'
+        dlc_aep_ws = [c.URef for c in dlc_generator.cases if c.label == DLC_label_for_AEP]
+        n_ws_aep = len(np.unique(dlc_aep_ws))
+
+        np.testing.assert_equal(n_ws_aep, 6)
+        
 if __name__ == "__main__":
     unittest.main()

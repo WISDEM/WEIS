@@ -1,5 +1,5 @@
 general:
-    folder_output: 17_IEA22_Opt_Result
+    folder_output: 17_IEA22_OptStudies/raft
     fname_output: IEA-22-280-RWT
 
 design_variables:
@@ -24,7 +24,7 @@ design_variables:
                 #   upper_bound: 20.0
             r_coordinate:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
-                  lower_bound: 35.0
+                  lower_bound: 50.0
                   upper_bound: 70.0
         members:
             flag: True
@@ -121,10 +121,11 @@ driver:
     optimization:
         flag: True         # Flag to enable optimization
         tol: 1.e-6         # Optimality tolerance
-        # max_iter: 1000         # Maximum number of iterations (SLSQP)
-        maxiter: 1000         # Maximum number of iterations (NLopt)
-        maxtime: 3420
-        solver: LN_COBYLA   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        max_iter: 2      # Maximum number of iterations (SLSQP)
+        maxiter: 2       # Maximum number of iterations (NLopt)
+        maxgen: 2        # Maximum number of generations (DE)
+        # maxtime: 3420
+        solver: SLSQP   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder
