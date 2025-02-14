@@ -22,6 +22,8 @@ dependencies:
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
+    - dash-vtk
+    - pyvista
     - dearpygui
     - openfast_io
     - marmot-agents

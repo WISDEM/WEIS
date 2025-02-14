@@ -50,36 +50,37 @@ def layout():
 
     description_layout = dbc.Card(
                             [
-                                dbc.CardHeader("Blade channels description", className='cardHeader'),
+                                dbc.CardHeader('Blade channels description'),
                                 dbc.CardBody([
-                                    dcc.Loading(html.P(id='description'))
+                                    html.P(id='description')
                                 ])
                             ], className='card')
     
     plots1_layout = dbc.Card(
                         [
-                            dbc.CardHeader('Blade Shape Properties', className='cardHeader'),
+                            dbc.CardHeader('Blade Shape Properties'),
                             dbc.CardBody([
-                                dcc.Loading(dcc.Graph(id='blade-shape', figure=empty_figure())),
+                                dcc.Graph(id='blade-shape', figure=empty_figure())
                             ])
                         ], className='card')
     plots2_layout = dbc.Card(
                         [
-                            dbc.CardHeader('Blade Structure Properties', className='cardHeader'),
+                            dbc.CardHeader('Blade Structure Properties'),
                             dbc.CardBody([
-                                dcc.Loading(dcc.Graph(id='blade-structure', figure=empty_figure())),
+                                dcc.Graph(id='blade-structure', figure=empty_figure())
                             ])
                         ], className='card')
 
-    layout = dbc.Row([
-                # dcc.Location(id='url', refresh=False),
+    layout = dcc.Loading(html.Div([
                 dcc.Store(id='var-wisdem-blade', data={}),
-                dbc.Col(description_layout, width=3),
-                dbc.Col([
-                    dbc.Row(plots1_layout),
-                    dbc.Row(plots2_layout)
-                ], width=8)
-            ], className='wrapper')
+                dbc.Row([
+                    dbc.Col(description_layout, width=4),
+                    dbc.Col([
+                        plots1_layout,
+                        plots2_layout
+                    ], width=8)
+                ], className='g-0')         # No gutters where horizontal spacing is added between the columns by default
+            ]))
     
 
     return layout
@@ -109,7 +110,7 @@ def get_description(blade_options):
         else:
             des += ' : '+value['description']
 
-        des_list.append(html.P(des))
+        des_list.append(dcc.Markdown(des, mathjax=False))
 
     return des_list
 
@@ -144,7 +145,7 @@ def draw_blade_shape(blade_options):
                 col = 1)
         
     
-    fig.update_layout(plot_bgcolor='white')
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02))
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_xaxes(title_text=f'rotorse.rc.s', row=2, col=1)
@@ -181,7 +182,7 @@ def draw_blade_structure(blade_options):
             row = 1,
             col = 1)
 
-    fig.update_layout(plot_bgcolor='white')
+    fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02))
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(type="log", secondary_y=True)

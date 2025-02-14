@@ -1,7 +1,7 @@
 '''This is the page for visualize the WISDEM outputs specialized in calculating costs'''
 
 import dash_bootstrap_components as dbc
-from dash import register_page, callback, Input, Output, dcc
+from dash import register_page, callback, Input, Output, dcc, html
 import pandas as pd
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -46,28 +46,29 @@ def layout():
 
     description_layout = dbc.Card(
                             [
-                                dbc.CardHeader('Cost Description', className='cardHeader'),
+                                dbc.CardHeader('Cost Description'),
                                 dbc.CardBody([
-                                    dcc.Loading(dcc.Graph(id='description-cost', figure=empty_figure()))
+                                    dcc.Graph(id='description-cost', figure=empty_figure())
                                 ])
                             ], className='card')
     
     chart_layout = dbc.Card(
                         [
-                            dbc.CardHeader('Cost Breakdown', className='cardHeader'),
+                            dbc.CardHeader('Cost Breakdown'),
                             dbc.CardBody([
-                                dcc.Loading(dcc.Graph(id='cost-chart', figure=empty_figure())),
+                                dcc.Graph(id='cost-chart', figure=empty_figure())
                             ])
                         ], className='card')
 
-    layout = dbc.Row([
-                # dcc.Location(id='url', refresh=False),
+    layout = dcc.Loading(html.Div([
                 dcc.Store(id='var-wisdem-cost', data={}),
-                dbc.Col(description_layout, width=5),
-                dbc.Col([
-                    dbc.Row(chart_layout, justify='center')
-                ], width=6)
-            ], className='wrapper')
+                dbc.Row([
+                    dbc.Col(description_layout, width=4),
+                    dbc.Col([
+                        chart_layout
+                    ], width=8)
+                ], className='g-0')         # No gutters where horizontal spacing is added between the columns by default
+            ]))
     
 
     return layout
