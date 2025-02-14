@@ -3,8 +3,6 @@ import numpy as np
 import os
 import pickle
 
-from scipy.interpolate import CubicSpline,interp1d
-
 
 import time as timer
 
@@ -13,19 +11,12 @@ from weis.dfsm.simulation_details import SimulationDetails
 from weis.dfsm.dfsm_utilities import valid_extension
 from weis.dfsm.test_dfsm import test_dfsm
 from weis.dfsm.construct_dfsm import DFSM
-from weis.dfsm.evaluate_dfsm import evaluate_dfsm
 from weis.dfsm.dfsm_sample_data import sample_data
 from weis.dfsm.wrapper_LTI import wrapper_LTI
 
-
-from mat4py import loadmat
 from numpy.linalg import lstsq
 
 from weis.dfsm.dfsm_rosco_simulation import run_sim_ROSCO
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-
-import argparse
-
 
 import matlab.engine
 
@@ -33,37 +24,50 @@ def ModelData():
     
     model_data = {}
 
+    datapath = '/home/athulsun/DFSM/data'
+
+    # path to openfast simulation
+    model_data['datapath'] = datapath + os.sep + 'RM1_train'
+
+    # states as part of the model
     model_data['reqd_states'] = ['PtfmPitch','PtfmHeave','GenSpeed'];ns = len(model_data['reqd_states'])
+
+    # controls/inputs
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
+
+    # outputs used as part of the model
     model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr','RtFldCp','RtFldCt'] 
 
-    model_data['datapath'] = '/home/athulsun/DFSM/data' + os.sep + 'MHK_1p1_full'
 
-    scale_args = {'state_scaling_factor': np.array([1,1,1]),
+    # scaling arguments
+    scale_args = {'state_scaling_factor': np.array([1,1,100]),
                   'control_scaling_factor': np.array([1,1,1,1]),
                   'output_scaling_factor': np.array([1,1,1,1,1,1,1])
                   }
     
     model_data['scale_args'] = scale_args
 
-    model_data['W'] =  np.array([0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0])
-
+    # calculate number of model parameters that need to be evaluated
     n_var = ns*(nc+2*ns)
 
+    # number of model parameters to be estimated
     model_data['n_var'] = n_var
-    model_data['lb'] = [-np.inf]*n_var
-    model_data['ub'] = [np.inf]*n_var
 
+    # indices to be used for training and testing
+    model_data['test_inds'] = np.arange(5,59+6,6)
+    
+    
+    # current speed to start the optimization
+    model_data['w_start'] = 2.4
+    model_data['buff'] = 0.0
+    model_data['train_inds'] = np.arange(0,5)
 
-    model_data['gaopt'] = {'UseParallel':1,'Display':'iter','MaxGenerations':n_var*2}
-    model_data['fminconopt'] = {'Display':'iter','Algorithm':'interior-point','MaxIterations':500,'MaxFunctionEvaluations':20000,
-                                'UseParallel':1,"EnableFeasibilityMode":1,'StepTolerance':1e-8,'ConstraintTolerance':1e-4}
+    # pickle file to save the DFSM to
+    model_data['dfsm_file_name'] = 'dfsm_mhk_all.pkl'
 
-    model_data['nseeds'] = 7
+    # Use simulations from tmin seconds
+    model_data['tmin'] = 100
 
-    model_data['test_inds'] = np.array([56,66,76])
-
-    model_data['w_start'] = 2.0
      
     return model_data
 
@@ -77,17 +81,17 @@ if __name__ == '__main__':
     region = 'LPV'
 
     model_data = ModelData()
-    datapath =  model_data['datapath'] #this_dir + os.sep + 'outputs' + os.sep + 'FOWT_1p6' #+ os.sep + 'openfast_runs/rank_0'
+    datapath =  model_data['datapath'] 
     
     # get the path to all .outb files in the directory
     outfiles = [os.path.join(datapath,f) for f in os.listdir(datapath) if valid_extension(f)]
     outfiles = sorted(outfiles)
 
-    # required states
-    reqd_states = model_data['reqd_states'] 
+    # required states, controls and outputs
+    reqd_states = model_data['reqd_states']
     reqd_controls = model_data['reqd_controls']
     reqd_outputs = model_data['reqd_outputs']
-
+    
     ns = len(reqd_states)
     nc = len(reqd_controls)
     ny = len(reqd_outputs)
@@ -100,41 +104,53 @@ if __name__ == '__main__':
     filter_args = {'state_filter_flag': [True]*ns,
                    'state_filter_type': [['filtfilt']]*ns,
                    'state_filter_tf': [[0.1]]*ns,
-                   'control_filter_flag': [False]*nc,
-                   'control_filter_tf': [0]*nc,
-                   'output_filter_flag': []
                    }
     
-    # name of mat file that has the linearized models
-    mat_file_name = None #this_dir + os.sep + model_data['mat_file_name']
-    
     # instantiate class
-    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
-                                   ,add_dx2 = True,linear_model_file = mat_file_name,region = region)
+    tmin = model_data['tmin']
+    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=tmin
+                                   ,add_dx2 = True,linear_model_file = None,region = region)
     
     # load and process data
     sim_detail.load_openfast_sim()
     
-    
     # extract data
     FAST_sim = sim_detail.FAST_sim
 
-
-    nseeds = model_data['nseeds']
-    W = model_data['W']
-    n_var = model_data['n_var']
-   
-    nW = len(W)
-
-
-    FAST_sim_array = np.array(FAST_sim)
-    FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
-
-
-    train_inds = np.arange(0,5)
     
 
-    n_samples = 1
+    n_var = model_data['n_var']
+   
+
+    FAST_sim_array = np.array(FAST_sim)
+
+    state_names = FAST_sim_array[0]['state_names']
+
+    # get index of nacelle rotational and translational accelerations
+    ncimu_ind = reqd_outputs.index('NcIMURAys')
+    yawbr_ind = reqd_outputs.index('YawBrTAxp')
+
+    dptfmpitch_ind = state_names.index('dPtfmPitch')
+    
+
+
+    w_array = []
+
+    for sim_det in FAST_sim_array:
+        w_array.append(sim_det['w_mean'])
+
+    w_array = np.round(np.array(w_array),1)
+    W = np.unique(w_array)
+    
+    nW = len(W)
+    nseeds = int(len(w_array)/nW)
+    
+    FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
+    w_array = np.reshape(w_array,[nseeds,nW],order = 'F')
+
+    sort_ind = np.argsort(w_array[0,:])
+    FAST_sim = FAST_sim[:,sort_ind]
+
 
     w_start = model_data['w_start']
 
@@ -142,6 +158,7 @@ if __name__ == '__main__':
     ind_forward_pass = np.where(W >= w_start)[0]
     ind_backward_pass = np.flip(np.where(W < w_start))[0]
 
+    # initialize storage array
     A_array = np.zeros((nW,ns*2,ns*2))
     B_array = np.zeros((nW,2*ns,nc))
     C_array = np.zeros((nW,ny,2*ns))
@@ -151,12 +168,12 @@ if __name__ == '__main__':
 
     model_construct_time = np.zeros((nW,))
 
+    train_inds = model_data['train_inds']
     test_inds = model_data['test_inds']
 
     # Start the MATLAB Engine
     eng = matlab.engine.start_matlab()
 
-    X_matlab = np.array((nW),dtype = object)
     X_cd_array = np.zeros((nW),dtype = object)
 
     LTI = wrapper_LTI(nstates = int(2*ns),ncontrols = int(nc))
@@ -179,10 +196,11 @@ if __name__ == '__main__':
         C_ = CD[:,nc:]
         D_ = CD[:,:nc]
 
-        
-        inputs_ = matlab.double(inputs)
-        state_dx_ = matlab.double(state_dx)
-        outputs_ = matlab.double(outputs)
+
+        # convert arryas to matlab double
+        inputs_md = matlab.double(inputs)
+        state_dx_md = matlab.double(state_dx)
+        outputs_md = matlab.double(outputs)
 
         n_var = matlab.double(n_var)
         ns2 = matlab.double(2*ns)
@@ -195,33 +213,31 @@ if __name__ == '__main__':
             x0 = matlab.double([])
             
             t1 = timer.time()
-            A,B,C,D,x,x_cd = eng.construct_LPV(x0,x0,n_var,ns2,nc_,ny_,inputs_,state_dx_,outputs_,model_data['gaopt'],model_data['fminconopt'],nargout = 6)
+            A,B,C,D,x = eng.construct_DFSM_matlab(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,model_data['buff'],nargout = 5)
             t2 = timer.time()
                 
         else:
 
             x0 = matlab.double(X_array[iw-1])
-            x0_cd = matlab.double(X_cd_array[iw-1])
 
             t1 = timer.time()
-            A,B,C,D,x,x_cd = eng.construct_LPV(x0,x0_cd,n_var,ns2,nc_,ny_,inputs_,state_dx_,outputs_,model_data['gaopt'],model_data['fminconopt'],nargout = 6)
+            A,B,C,D,x = eng.construct_DFSM_matlab(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,model_data['buff'],nargout = 5)
             t2 = timer.time()
 
             
         # stop timer
         model_construct_time[iw] = t2-t1
 
-        # store soultion
-        X_array[iw,:] = np.squeeze(np.array(x))
-        X_cd_array[iw] = x_cd
+        # store model parameters
+        X_array[iw,:] = np.array(x)
 
         # convert the A,B,C,D matrices to np arrays
         A = np.array(A);B = np.array(B)
         C = np.array(C); D = np.array(D)
-
-
-        C[3,:] = A[3,:];#C[2,:] = A[4,:]
-        D[3,:] = B[3,:];#D[2,:] = B[4,:]
+        
+        #if not(ptfmpitch_ind == None):
+        C[ncimu_ind,:] = A[dptfmpitch_ind,:]
+        D[ncimu_ind,:] = B[dptfmpitch_ind,:]
 
         # store linear models
         A_array[iw,:,:] = A
@@ -236,9 +252,9 @@ if __name__ == '__main__':
 
         _,_,_,inputs,state_dx,outputs = sample_data(FAST_sim[train_inds,iw],'KM',n_samples = 1)
 
-        inputs_ = matlab.double(inputs)
-        state_dx_ = matlab.double(state_dx)
-        outputs_ = matlab.double(outputs)
+        inputs_md = matlab.double(inputs)
+        state_dx_md = matlab.double(state_dx)
+        outputs_md = matlab.double(outputs)
 
 
         # calculate the C and D matrices
@@ -254,25 +270,25 @@ if __name__ == '__main__':
         D_array[iw,:,:] = D
 
         x0 = matlab.double(X_array[iw+1])
-        x0_cd = X_cd_array[iw+1]
         
-
         t1 = timer.time()
-        A,B,C,D,x,x_cd = eng.construct_LPV(x0,x0_cd,n_var,ns2,nc_,ny_,inputs_,state_dx_,outputs_,model_data['gaopt'],model_data['fminconopt'],nargout = 6)
+        A,B,C,D,x = eng.construct_DFSM_matlab(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,model_data['buff'],nargout = 5)
         t2 = timer.time()
 
         model_construct_time[iw] = t2-t1
 
-        # store soultion
-        X_array[iw,:] = np.squeeze(np.array(x))
-        X_cd_array[iw] = x_cd
+        # store model parameters
+        X_array[iw,:] = np.array(x)
+
 
         A = np.array(A);B = np.array(B)
         C = np.array(C); D = np.array(D);
 
-        C[3,:] = A[3,:];#C[2,:] = A[4,:]
-        D[3,:] = B[3,:];#D[2,:] = B[4,:]
+        
+        C[ncimu_ind,:] = A[dptfmpitch_ind,:]
+        D[ncimu_ind,:] = B[dptfmpitch_ind,:]
 
+    
         # store linear models
         A_array[iw,:,:] = A
         B_array[iw,:,:] = B
@@ -282,54 +298,44 @@ if __name__ == '__main__':
     print('shutting matlab down')
     eng.quit()
 
-    A0 = np.squeeze(A_array[0,:,:]);A1 = np.squeeze(A_array[-1,:,:])
-    B0 = np.squeeze(B_array[0,:,:]);B1 = np.squeeze(B_array[-1,:,:])
-    C0 = np.squeeze(C_array[0,:,:]);C1 = np.squeeze(C_array[-1,:,:])
-    D0 = np.squeeze(D_array[0,:,:]);D1 = np.squeeze(D_array[-1,:,:])
-
     interp_type = 'nearest'
 
-    # A_fun = interp1d(W,A_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (A0,A1))
-    # B_fun = interp1d(W,B_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (B0,B1))
-    # C_fun = interp1d(W,C_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (C0,C1))
-    # D_fun = interp1d(W,D_array,kind = interp_type,axis = 0,bounds_error=False,fill_value = (D0,D1))
-
     # construct surrogate model
-    dfsm_python = DFSM(sim_detail,n_samples = n_samples,L_type = 'LPV',N_type = None, train_split = 0.5)
+    dfsm = DFSM(sim_detail,n_samples = 1,L_type = 'LPV',N_type = None, train_split = 0.5)
 
-    dfsm_python.A_array = A_array
-    dfsm_python.B_array = B_array
-    dfsm_python.C_array = C_array
-    dfsm_python.D_array = D_array
-    dfsm_python.W = W
+    dfsm.A_array = A_array
+    dfsm.B_array = B_array
+    dfsm.C_array = C_array
+    dfsm.D_array = D_array
+    dfsm.W = W
 
-    dfsm_python.setup_LPV(interp_type)
+    dfsm.setup_LPV(interp_type)
 
-    dfsm_python.AB = []
-    dfsm_python.CD = []
+    dfsm.AB = []
+    dfsm.CD = []
 
-    dfsm_python.error_ind_deriv = []
-    dfsm_python.error_ind_outputs = []
+    dfsm.error_ind_deriv = []
+    dfsm.error_ind_outputs = []
 
-    dfsm_python.dx_error = []
-    dfsm_python.test_data = []
-    dfsm_python.train_data =[]
+    dfsm.dx_error = []
+    dfsm.test_data = []
+    dfsm.train_data =[]
 
-    dfsm_python.nonlin_deriv = []
-    dfsm_python.nonlin_outputs = []
-    dfsm_python.nonlin_output = False
+    dfsm.nonlin_deriv = []
+    dfsm.nonlin_outputs = []
+    dfsm.nonlin_output = False
     
     
-    dfsm_python.scaler_dx = None
-    dfsm_python.scaler_outputs = None
-    dfsm_python.nonlin_deriv = np.array([None])
-    dfsm_python.nonlin_outputs = np.array([None])
+    dfsm.scaler_dx = None
+    dfsm.scaler_outputs = None
+    dfsm.nonlin_deriv = np.array([None])
+    dfsm.nonlin_outputs = np.array([None])
 
 
 
     # load results from matlab
     save_flag = True;save_dict_flag = True;plot_flag = False
-    plot_path = 'LPV_results_comp'
+    plot_path = 'outputs/open_loop_validation'
 
     
     # test dfsm
@@ -337,8 +343,8 @@ if __name__ == '__main__':
     simulation_flag = True 
     outputs_flag = (len(reqd_outputs) > 0)
     plot_flag = True
-    #dfsm,U_list,X_list_matlab,dx_list,Y_list_matlab = test_dfsm(dfsm_matlab,FAST_sim_array,test_inds,simulation_flag,plot_flag)
-    dfsm,U_list,X_list_python,dx_list,Y_list_python = test_dfsm(dfsm_python,FAST_sim_array,test_inds,simulation_flag,plot_flag)
+    
+    dfsm,U_list,X_list_python,dx_list,Y_list_python = test_dfsm(dfsm,FAST_sim_array,test_inds,simulation_flag,plot_flag)
     dfsm.train_data = [];dfsm.test_data = []
     print(dfsm.simulation_time)
 
@@ -428,17 +434,11 @@ if __name__ == '__main__':
                 plt.close(fig)
 
 
+    dfsm_pkl = model_data['dfsm_file_name']
 
+    with open(dfsm_pkl,'wb') as handle:
+        pickle.dump(dfsm,handle)
 
-
-    plt.show()
-
-    dfsm_python_pkl = 'dfsm_mhk.pkl'
-
-    with open(dfsm_python_pkl,'wb') as handle:
-        pickle.dump(dfsm_python,handle)
-
-    results_dict = {'U_list':U_list,'X_list':X_list_python,'dx_list':dx_list,'Y_list':Y_list_python,'DFSM':dfsm,'current_speed':current_speed}
 
 
 

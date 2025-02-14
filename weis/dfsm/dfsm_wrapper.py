@@ -586,8 +586,8 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
             wind_fun = CubicSpline(time, wind_speed)
 
             x0 = np.zeros((dfsm.n_deriv,))
-            #x0[0] = 20
-            #x0[dfsm.gen_speed_ind] = 600
+            # x0[0] = 20
+            # x0[dfsm.gen_speed_ind] = 600
 
             t0 = time[0]; 
             tf = time[-1]
@@ -739,35 +739,6 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                     fig.savefig(dfsm_save_folder +os.sep+ output_+ '_'+str(icase) + '_comp.pdf')
 
                 plt.close(fig)
-
-            # fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
-
-            # # wind
-            # ax1.plot(T_dfsm,controls_dfsm[:,0])
-            # ax1.set_title('Wind Speed [m/s]')
-            # ax1.set_xlim([t0,tf])
-
-            # # torue
-            # ax2.plot(T_dfsm,controls_dfsm[:,1])
-            # #ax2.set_ylim([1.8,2])
-            # ax2.set_title('Gen Torque [KWm]')
-            # ax2.set_xlim([t0,tf])
-
-            # # blade pitch
-            # ax3.plot(T_dfsm,controls_dfsm[:,2])
-            # #ax3.set_ylim([0.2, 0.3])
-            # ax3.set_title('Bld Pitch [deg]')
-            # ax3.set_xlim([t0,tf])
-
-            # fig.subplots_adjust(hspace = 0.65)
-
-            # if general_options['save_results']:
-            #     # save results
-            #     if not os.path.exists(dfsm_save_folder):
-            #         os.makedirs(dfsm_save_folder)
-                
-            #     fig.savefig(dfsm_save_folder +os.sep+ 'Controls' +str(idx) + '.pdf')
-
 
             # post processing
             case_name = case_names[icase]

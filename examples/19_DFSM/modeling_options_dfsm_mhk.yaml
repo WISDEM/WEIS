@@ -65,7 +65,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         TwFADOF2 : False
         TwSSDOF1 : False
         TwSSDOF2 : False
-        PtfmSgDOF: True
+        PtfmSgDOF: False
         PtfmSwDOF: False
         PtfmHvDOF: True
         PtfmRDOF : False

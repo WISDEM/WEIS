@@ -17,7 +17,7 @@ def valid_extension_pickle(fp):
     return any([fnmatch.fnmatch(fp,ext) for ext in ['*.p']])
 
 
-def calculate_MSE(x1,x2):
+def calculate_MSE(x1,x2,scaled = False):
     
     '''
     Function to calculate the mean square error between two signals
@@ -25,6 +25,11 @@ def calculate_MSE(x1,x2):
     
     # number of samples
     nt = len(x1)
+
+    if scaled:
+        scaler = np.max(x1)
+        x1 = x1/scaler 
+        x2 = x2/scaler
     
     # MSE
     MSE = np.sum((x1-x2)**2)/nt

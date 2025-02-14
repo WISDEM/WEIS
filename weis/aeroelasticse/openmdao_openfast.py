@@ -769,6 +769,7 @@ class FASTLoadCases(ExplicitComponent):
                 # Call DFSM wrapper
                 summary_stats, extreme_table, DELs, Damage,case_list,case_name, chan_time,dlc_generator,TMax,TStart = dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs,self.FAST_runDirectory,self.FAST_namingOut,mpi_options)
                 self.fst_vt = fst_vt
+                self.of_inumber = self.of_inumber + 1
                 self.TMax = TMax;self.TStart = TStart
 
             # Post process regardless of level
@@ -2328,7 +2329,7 @@ class FASTLoadCases(ExplicitComponent):
         # Analysis
         if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
             outputs, discrete_outputs = self.get_blade_loading(summary_stats, extreme_table, inputs, discrete_inputs, outputs, discrete_outputs)
-        if self.options['modeling_options']['flags']['tower']:
+        if self.options['modeling_options']['flags']['tower'] and not(self.options['modeling_options']['DFSM']['flag']):
             outputs = self.get_tower_loading(summary_stats, extreme_table, inputs, outputs)
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
         if modopt['flags']['monopile'] and modopt['Level3']['flag']:

@@ -38,45 +38,76 @@ def extract_results(driver_cases,obj,const = None):
 
 this_dir = os.path.dirname(os.path.realpath(__file__))  # get path to this file
 
-fol = 'RM1_test'
+fols = ['RM1_test_3']
 
 
-doe_output_dir = this_dir + os.sep + 'outputs' + os.sep + fol
-doe_sql_file = doe_output_dir + os.sep + 'log_opt.sql'
+n_tests = len(fols)
 
-obj = 'aeroelastic.DEL_TwrBsMyt'
-con = None
-n_samples = 10
+fig,axs = plt.subplots(n_tests,1, constrained_layout=True)
+fig2,axs2 = plt.subplots(n_tests,1, constrained_layout=True)
+levels = np.arange(500,5500,500)
 
-# load sql file
-cr_doe = om.CaseReader(doe_sql_file)
-doe_driver_cases = cr_doe.get_cases('driver')
+for ifol,fol in enumerate(fols):
 
+    ax = axs
+    ax2 = axs2
 
-# load design variables
-DEL,DV,Con,n_iter,n_var = extract_results(doe_driver_cases,obj,con)
+    doe_output_dir = this_dir + os.sep + 'outputs' + os.sep + fol
+    doe_sql_file = doe_output_dir + os.sep + 'log_opt.sql'
 
+    obj = 'aeroelastic.DEL_TwrBsMyt'
+    con = 'aeroelastic.rotor_overspeed'
+    n_samples = 6
 
-DEL = np.reshape(DEL,[n_samples,n_samples])
-DV = np.reshape(DV,[n_iter,n_var],order = 'C')
-
-omega_pc = np.unique(DV[:,0])
-zeta_pc = np.unique(DV[:,1])
-
-O,Z = np.meshgrid(omega_pc,zeta_pc)
+    # load sql file
+    cr_doe = om.CaseReader(doe_sql_file)
+    doe_driver_cases = cr_doe.get_cases('driver')
 
 
-fig,ax = plt.subplots(1)
-#ig.suptitle(title)
-CP = ax.contourf(O,Z,DEL,25,cmap = plt.cm.viridis)
-ax.set_ylabel('Zeta PC')
-ax.set_xlabel('Omega PC')
+    # load design variables
+    DEL,DV,Con,n_iter,n_var = extract_results(doe_driver_cases,obj,con)
+    DEL_low = np.argmin(DEL)
+
+    DEL = np.reshape(DEL,[n_samples,n_samples])
+    Con = np.reshape(Con,[n_samples,n_samples])
+    DV = np.reshape(DV,[n_iter,n_var],order = 'C')
+    DV_opt = DV[DEL_low,:]
+    
+    
+    omega_pc = np.unique(DV[:,0])
+    zeta_pc = np.unique(DV[:,1])
+
+    O,Z = np.meshgrid(omega_pc,zeta_pc)
+
+    #ig.suptitle(title)
+    CP = ax.contourf(O,Z,DEL,25,cmap = plt.cm.viridis)
+    #ax.set_title(title[ifol])
+    ax.set_xlabel('Omega PC')
+    ax.plot(DV_opt[0],DV_opt[1],'.',color = 'r',markersize = 10)
+    #ax.set_xlim([0.1,1])
+    
+
+    CP2 = ax2.contourf(O,Z,Con,25,cmap = plt.cm.viridis)
+    ax2.contour(O,Z,Con,levels = [0.25],colors = 'r',linewidth = 2)
+    #ax2.set_title(title[ifol])
+    ax2.set_xlabel('Omega PC')
+    
+    #ax2.set_xlim([0.1,1])
+
+
+
+fig2.suptitle('RO <= 0.22')
+axs.set_ylabel('Zeta PC')
+axs2.set_ylabel('Zeta PC')
 cbar = fig.colorbar(CP)
 cbar.ax.set_ylabel('DEL')
 
-plot_name = 'DEL.png'
+cbar2 = fig.colorbar(CP2)
+cbar2.ax.set_ylabel('Rotor Overspeed')
 
-fig.savefig(plot_name)
+# plot_name = 'Kp_omg_6.png'
+
+# fig.savefig(plot_name)
 
 
 

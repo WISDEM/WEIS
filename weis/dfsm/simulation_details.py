@@ -168,6 +168,7 @@ class SimulationDetails:
             
             # extract time
             time = FAST_out['Time']
+            w_mean = np.mean(FAST_out['Wind1VelX'])
             time = time - np.min(time)
             
             tmin = self.tmin
@@ -323,7 +324,8 @@ class SimulationDetails:
                         'state_derivatives': state_derivatives,
                         'dx_names':dx_names,
                         'nt': len(time),
-                        'time': time
+                        'time': time,
+                        'w_mean':w_mean
                       }
             
             FAST_sim.append(sim_detail)

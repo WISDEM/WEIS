@@ -269,7 +269,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry
 
     if MPI and \
             (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag'] or modeling_options['DFSM']['flag']) and \
-            (opt_options['driver']['design_of_experiments']['flag']) and \
+            (not opt_options['driver']['design_of_experiments']['flag']) and \
             color_i < 1000000:
         # subprocessor ranks spin, waiting for FAST simulations to run.
         # Only true for cores actually in use, not the ones supporting openfast openmp (marked as color_i = 1000000)
