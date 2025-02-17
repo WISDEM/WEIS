@@ -8,6 +8,8 @@ from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
 from wisdem.glue_code.gc_LoadInputs import WindTurbineOntologyPython
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 from openmdao.utils.mpi import MPI
+from rosco.toolbox.inputs.validation import load_rosco_yaml
+from wisdem.inputs import load_yaml
 
 def update_options(options,override):
     for key, value in override.items():

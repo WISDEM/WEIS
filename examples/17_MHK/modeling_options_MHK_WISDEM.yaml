@@ -6,9 +6,7 @@ General:
         save_timeseries: True
         save_iterations: True
         use_exe: True
-        # FAST_exe: /home/dzalkind/.conda-envs/rosco-env/bin/openfast
-        # FAST_exe: /Users/dzalkind/opt/anaconda3/envs/rosco-env/bin/openfast
-        #FAST_exe: /Users/dzalkind/opt/anaconda3/envs/weis-env4/bin/openfast
+        
         
 
 WISDEM:
@@ -194,11 +192,11 @@ DLC_driver:
             speed: [0,1,2,3,4]
             probability: [0.2,0.2,0.3,0.15,0.15]
     DLCs:
-        - DLC: "1.1"        # Eagle, full
-          n_seeds: 2
-          transient_time: 60.
-          current_speed: [2.5]
-          analysis_time: 100.
+         DLC: "1.1"        # Eagle, full
+        #   n_seeds: 1
+          transient_time: 0.
+          current_speed: [1.0,2.0]
+          analysis_time: 1.
           ws_bin_size: 0.25
           turbsim_inputs:
             PLExp: 0

@@ -18,7 +18,6 @@ evolutionary_methods = ['DE', 'NSGA2']
 if MPI:
     from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
     
-
 def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options, geometry_override=None, modeling_override=None, analysis_override=None):
     # Load all yaml inputs and validate (also fills in defaults)
     wt_initial = WindTurbineOntologyPythonWEIS(

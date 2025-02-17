@@ -38,14 +38,10 @@ from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml
 from weis.dfsm.dfsm_wrapper import dfsm_wrapper
 
-if MPI:
-    from mpi4py   import MPI
-
 logger = logging.getLogger("wisdem/weis")
 
 weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
-weis_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 def make_coarse_grid(s_grid, diam):
 
