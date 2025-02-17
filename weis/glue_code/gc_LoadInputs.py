@@ -1,6 +1,7 @@
 import os
 import os.path as osp
 import shutil
+import numpy as np
 
 from rosco import discon_lib_path
 import weis.inputs as sch
