@@ -299,7 +299,7 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
                 wind_file_path_InflowWind = os.path.join(wind_directory, FAST_namingOut + '_' + 
                                 dlc_generator.cases[i_case].IEC_WindType + ('_U%1.6f'%dlc_generator.cases[i_case].URef +
                                 '_Seed%1.1f'%dlc_generator.cases[i_case].RandSeed1) + '.bts')
-                gusts.write_bts(bts_fname = turbulent_NTM_file, wnd_fname = wind_file_name, new_fname = wind_file_path_InflowWind)
+                gusts.write_bts(bts_file = turbulent_NTM_file, wnd_file = wind_file_name, new_fname = wind_file_path_InflowWind)
                 wind_file_type = 3
             else:
                 wind_file_type = 2

@@ -524,7 +524,8 @@ class IEC_CoherentGusts():
         else: ts = fname
 
         # Cut bts file to length of wnd file
-        if ts['t'][-1] < time[-1]:
+        dt_ts = ts['t'][-1] - ts['t'][-2]
+        if ts['t'][-1] + dt_ts < time[-1]:
             raise Exception("End time of bts file ({}) must be greater or equal to that of wnd file ({})."\
                                 .format(ts['t'][-1], time[-1]) )
         elif ts['t'][-1] > time[-1]:
