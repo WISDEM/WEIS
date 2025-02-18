@@ -851,7 +851,10 @@ class DLCGenerator(object):
         # DLC Specific options:
         dlc_options['label'] = 'Ramp'
         dlc_options['sea_state'] = 'normal'
-        dlc_options['IEC_WindType'] = 'Turbulent-Ramp'
+        if dlc_options['turbulent_wind']['flag']:
+            dlc_options['IEC_WindType'] = 'Turbulent-Ramp'
+        else:
+            dlc_options['IEC_WindType'] = 'Ramp'
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:

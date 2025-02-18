@@ -1,5 +1,5 @@
 Testbench_Options:
-    output_directory: outputs/11_local_runs_for_pp   # relative to this file
+    output_directory: outputs/12_new_pcrunch   # relative to this file
     output_filebase: testbench
     n_cores: 8  # not yet set up
     use_mpi: False
@@ -58,7 +58,7 @@ DLC_driver:
         - DLC: "1.1"
           n_seeds: 3
           wind_speed: [8,15]
-          analysis_time: 300.
+          analysis_time: 10.
           transient_time: 0.0
         # - DLC: "1.3"
         #   n_seeds: 2
@@ -85,14 +85,18 @@ DLC_driver:
           wind_speed: [10]
           n_seeds: 1
           analysis_time: 10.
-          transient_time: 5.0
+          transient_time: 15.0
           ramp_speeddelta: 2
           ramp_duration: 8
+          turbulent_wind:
+            flag: True
         - DLC: "Ramp"  # Down
           wind_speed: [10]
           n_seeds: 1
           analysis_time: 10.
-          transient_time: 5.0
+          transient_time: 15.0
           ramp_speeddelta: -2
           ramp_duration: 8
+          turbulent_wind:
+            flag: True
 
