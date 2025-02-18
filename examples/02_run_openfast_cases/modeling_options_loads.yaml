@@ -72,8 +72,8 @@ DLC_driver:
           wind_speed: [12]
           n_seeds: 1
           n_azimuth: 1
-          analysis_time: 10.
-          shutdown_time: 5.
+          analysis_time: 1.
+          shutdown_time: 0.5
           transient_time: 0.0
           user_group:
             final_blade_pitch12: [70,80,90]

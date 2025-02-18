@@ -135,7 +135,7 @@ DLC_driver:
           ws_bin_size: 2
           wind_speed: [15,18,21]
           n_seeds: 1
-          analysis_time: 600.
+          analysis_time: 1.
           transient_time: 0.
           turbulent_wind:
               HubHt: 150.0

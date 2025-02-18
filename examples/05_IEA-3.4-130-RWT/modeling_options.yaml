@@ -64,8 +64,8 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 5
           n_seeds: 2
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
           #wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
           #Seeds: [568, 728]
           # turbulent_wind:
@@ -74,26 +74,26 @@ DLC_driver:
           #     GridWidth: 160
         - DLC: "1.2"
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
         #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
         #   Seeds: [568, 728]
         - DLC: "1.3"
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
         #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
         #   Seeds: [1]
         - DLC: "1.4"
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
           n_azimuth: 3
           wind_speed: [9., 11.]
         - DLC: "1.5"
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
         #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
         # - DLC: "1.6" #severe sea state
         # - DLC: "5.1"
@@ -108,26 +108,26 @@ DLC_driver:
           wind_speed: [12]
           n_seeds: 1
           n_azimuth: 3
-          analysis_time: 20.
-          shutdown_time: 10.
+          analysis_time: 1.
+          shutdown_time: 0.
           transient_time: 0.0
         - DLC: "6.1"
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
         #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
         #   Seeds: [12, 4312]
         # - DLC: "6.2"
         - DLC: "6.3"
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
         #   wind_speed: [3., 5., 7., 9., 11., 13., 15., 17., 19., 21., 23., 25.]
         #   Seeds: [22, 87, 65]
         - DLC: "6.4" #idling 
           ws_bin_size: 10
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
 
         # - DLC: Custom
         #   wind_speed: [10., 12, 14]
