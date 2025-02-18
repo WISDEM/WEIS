@@ -4,6 +4,7 @@ import weis.inputs as sch
 from rosco import discon_lib_path
 from openmdao.utils.mpi  import MPI
 from weis.dlc_driver.dlc_generator    import DLCGenerator
+import numpy as np
 
 if MPI:
     from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
@@ -46,6 +47,7 @@ def main():
         'Rtip':             testbench_options['Turbine_Info']['rotor_radius'],
         'shearExp': 0.14,   # Not used, hard code
     }
+    inputs= {key: np.array([value]) for key, value in inputs.items()}   # make all
 
     discrete_inputs = {
         'turbine_class': testbench_options['Turbine_Info']['turbine_class'],
@@ -67,7 +69,7 @@ def main():
     # Set default directories relative to testbench options
     OFmgmt['OF_run_fst'] = testbench_options['Testbench_Options']['output_filebase']
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
-    testbench_options['Level3']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['Level3']['openfast_dir'])
+    testbench_options['OpenFAST']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['OpenFAST']['openfast_dir'])
 
     # Postprocessing options (map to OFMgmt)
     OFmgmt['postprocessing'] = testbench_options['PostProcessing']
@@ -119,14 +121,16 @@ def main():
         flc.of_inumber = -1
 
         flc.setup_directories()
+        flc.modopt_dir = os.path.dirname(flc.options['modeling_options']['fname_input_modeling'])
+
         fst_vt = flc.create_fst_vt(inputs, discrete_inputs)
 
-        summary_stats, extreme_table, DELs, Damage, case_list, case_name, chan_time, dlc_generator  = flc.run_FAST(inputs, discrete_inputs, fst_vt)
+        case_list, case_name, dlc_generator  = flc.run_FAST(inputs, discrete_inputs, fst_vt)
 
         # Post-processing here
         outputs = {}
         discrete_outputs = {}
-        flc.post_process(summary_stats, extreme_table, DELs, Damage, case_list, case_name, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+        flc.post_process(case_list, case_name, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
 
         print('here')
 

@@ -28,7 +28,8 @@ from weis.aeroelasticse.LinearFAST import LinearFAST
 from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
 from openfast_io import FileTools
 from openfast_io.turbsim_file   import TurbSimFile
-from weis.aeroelasticse.utils import OLAFParams, generate_wind_files
+from weis.aeroelasticse.utils import OLAFParams
+from weis.aeroelasticse.turbsim_util import generate_wind_files
 from rosco.toolbox import control_interface as ROSCO_ci
 from pCrunch import AeroelasticOutput, Crunch, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
@@ -883,7 +884,9 @@ class FASTLoadCases(ExplicitComponent):
                     for key2 in modeling_options['OpenFAST']['outlist'][key1]:
                         fst_vt['outlist'][key1][key2] = modeling_options['OpenFAST']['outlist'][key1][key2]
         
-        if ('openfast_configuration' in modeling_options['General']) and ('path2dll' in modeling_options['General']['openfast_configuration']):
+        if 'General' in modeling_options and \
+            ('openfast_configuration' in modeling_options['General']) and \
+                ('path2dll' in modeling_options['General']['openfast_configuration']):
             fst_vt['ServoDyn']['DLL_FileName'] = modeling_options['General']['openfast_configuration']['path2dll']
 
         if fst_vt['AeroDyn']['IndToler'] == 0.:
@@ -2242,7 +2245,7 @@ class FASTLoadCases(ExplicitComponent):
 
         return case_list, case_name, dlc_generator
 
-    def post_process(self, summary_stats, extreme_table, DELs, damage, case_list, case_name, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs):
+    def post_process(self, case_list, case_name, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
         # Analysis
@@ -2263,10 +2266,10 @@ class FASTLoadCases(ExplicitComponent):
         
         outputs = self.get_control_measures(inputs, outputs)
 
-        self.get_charateristic_loads(summary_stats,inputs,outputs)
+        self.get_charateristic_loads()
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
-            self.get_floating_measures(summary_stats, chan_time, inputs, discrete_inputs,outputs, discrete_outputs)
+            self.get_floating_measures(inputs, outputs)
 
         # Did any OpenFAST runs fail?
         if modopt['OpenFAST']['flag']:
@@ -2275,11 +2278,11 @@ class FASTLoadCases(ExplicitComponent):
 
         # Wind speed binning
         if 'binning_time' in modopt['PostProcessing']:  # TODO: figure out a better flag for this
-            self.wind_speed_binning(chan_time)
+            self.save_time_binning()
 
         # Save Data
         if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(case_name, chan_time)
+            self.save_timeseries(case_name)
 
         if modopt['General']['openfast_configuration']['save_iterations']:
             self.save_iterations(discrete_outputs)
@@ -2607,7 +2610,6 @@ class FASTLoadCases(ExplicitComponent):
         # Standard DELs for blade root and tower base
         outputs['DEL_RootMyb'] = np.max([dels_total[f'RootMyb{k+1}'] for k in range(self.n_blades)])
         outputs['DEL_TwrBsMyt'] = dels_total['TwrBsM']
-        outputs['DEL_TwrBsMyt_ratio'] = dels_total['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
         if 'constraints' in self.options['opt_options']:
             outputs['DEL_TwrBsMyt_ratio'] = dels_total['TwrBsM']/self.options['opt_options']['constraints']['control']['DEL_TwrBsMyt']['max']
             
@@ -2731,10 +2733,12 @@ class FASTLoadCases(ExplicitComponent):
             # Max platform offset        
             outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
-    def get_charateristic_loads(self,sum_stats,inputs,outputs):
+    def get_charateristic_loads(self):
         # Characteristic loads are described in IEC 61400-1:2019, Section 7.6.2.2
         
         cm = self.case_df
+
+        sum_stats = self.cruncher.summary_stats
         
         # Get all unique channel names
         channel_names = sum_stats.columns.get_level_values(0).unique().to_list()
@@ -2788,44 +2792,34 @@ class FASTLoadCases(ExplicitComponent):
         os.makedirs(save_dir, exist_ok=True)
         write_yaml(char_loads,os.path.join(save_dir,'charateristic_loads.yaml'))
 
-    def wind_speed_binning(self,chan_time):
+    def save_time_binning(self):
 
-        # First bin all the data for each timeseries
-        binned_data_ts = [None] * len(chan_time)
+        # Average the data in time bins and plot against wind speed
 
-        for i_case, output in enumerate(chan_time):
-            po = AeroelasticOutput(output)
-            df_binned = po.time_binning(self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time'])
-            binned_data_ts[i_case] = df_binned
+        bin_time = self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time']
 
-        # Make save directories
+        binned_cruncher = copy.copy(self.cruncher)
+        binned_cruncher.time_binning(bin_time)
+        binned_cruncher.outputs[0].df
+
+
+        # Make save directories, if necessary
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
         os.makedirs(save_dir, exist_ok=True)
 
-        # Get channel list from last timeseries
-        channels = po.channels.tolist()
 
-        # Combine all the data into one binned dataset
-        binned_data_all = np.empty((0,len(channels)))
+        binned_data_all = pd.concat([binned_cruncher.outputs[ind].df for ind in range(binned_cruncher.noutputs)])
+        binned_data_all.to_pickle(os.path.join(save_dir,f'binned_all.p'))
 
         # Also combine into dlc-specific datasets
         dlcs = self.case_df['DLC'].unique()
         for dlc in dlcs:
             dlc_ind = np.where(self.case_df['DLC'] == dlc)[0].tolist()
-            dlc_binned_data = [binned_data_ts[i] for i in dlc_ind]
 
-            binned_data_dlc = np.empty((0,len(channels)))
-            for df_binned in dlc_binned_data:
+            binned_data_dlc = pd.concat([binned_cruncher.outputs[ind].df for ind in dlc_ind])
+            binned_data_dlc.to_pickle(os.path.join(save_dir,f'binned_dlc{dlc}.p'))
 
-                binned_data_df = df_binned[channels]
-                binned_data_dlc = np.concatenate((binned_data_dlc,binned_data_df.to_numpy()))
-                binned_data_all = np.concatenate((binned_data_all,binned_data_df.to_numpy()))
 
-            df_binned_dlc = pd.DataFrame(data=binned_data_dlc, columns=channels)
-            df_binned_dlc.to_pickle(os.path.join(save_dir,f'binned_dlc{dlc}.p'))
-        
-        df_binned_all = pd.DataFrame(data=binned_data_all, columns=channels)
-        df_binned_all.to_pickle(os.path.join(save_dir,f'binned_all.p'))
 
     def get_OL2CL_error(self, outputs):
         ol_case_names = [os.path.join(
@@ -2946,7 +2940,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Save each timeseries as a pickled dataframe
         for cn, output in zip(case_name, self.cruncher.outputs):
-            output.save( os.path.join(save_dir,f'{self.FAST_namingOut}_{i_ts}.p'))
+            output.save( os.path.join(save_dir,f'{cn}.p'))
 
     def save_iterations(self, discrete_outputs):
         '''

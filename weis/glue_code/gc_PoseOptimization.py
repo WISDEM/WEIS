@@ -25,10 +25,10 @@ class PoseOptimizationWEIS(PoseOptimization):
         else:
             self.floating_period_solve_component = 'floatingse'
         
-        if modeling_options['Level3']['flag']:
+        if modeling_options['OpenFAST']['flag']:
             self.n_OF_runs = modeling_options['DLC_driver']['n_cases']
-        elif modeling_options['Level2']['flag']:
-            self.n_OF_runs = modeling_options['Level2']['linearization']['NLinTimes']
+        elif modeling_options['OpenFAST_Linear']['flag']:
+            self.n_OF_runs = modeling_options['OpenFAST_Linear']['linearization']['NLinTimes']
         else:
             self.n_OF_runs = 0
     

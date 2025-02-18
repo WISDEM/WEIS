@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from weis.aeroelasticse import turbsim_file
+from openfast_io import turbsim_file
 
 class IEC_CoherentGusts():
 

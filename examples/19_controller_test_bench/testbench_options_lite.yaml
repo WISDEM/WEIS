@@ -34,7 +34,7 @@ Turbine_Info:  # Can we pull this information from OpenFAST input?
         tower: False   # same
 
 
-Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
     flag: True
     from_openfast: True
     regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml

@@ -32,7 +32,7 @@ PostProcessing:
     binning_time: 20
 
 
-Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+OpenFAST: 
     flag: True
     from_openfast: True
     regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml

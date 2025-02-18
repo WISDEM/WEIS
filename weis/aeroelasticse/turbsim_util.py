@@ -1,7 +1,7 @@
 import os
 import shutil
 import subprocess
-from openfast_io.IEC_CoeherentGusts import IEC_CoherentGusts
+from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
 
 class TurbsimReader(object):
 
@@ -228,9 +228,9 @@ def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, h
         # If IEC_WindType is Turbulent-<Gust>, create a temporary NTM turbulent file to be used to add turbulence to gust later
         Turbulent_Gust = False
         if dlc_generator.cases[i_case].IEC_WindType.split('-')[0] == 'Turbulent':
-                Turbulent_Gust = True
-                actualwindtype = dlc_generator.cases[i_case].IEC_WindType
-                dlc_generator.cases[i_case].IEC_WindType = 'NTM'
+            Turbulent_Gust = True
+            actualwindtype = dlc_generator.cases[i_case].IEC_WindType
+            dlc_generator.cases[i_case].IEC_WindType = 'NTM'
 
         turbsim_input_file_name = FAST_namingOut + '_' + dlc_generator.cases[i_case].IEC_WindType + (
                                 '_U%1.6f'%dlc_generator.cases[i_case].URef +

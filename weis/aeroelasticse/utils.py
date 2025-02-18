@@ -514,6 +514,8 @@ class ModesElastoDyn(ExplicitComponent):
 '''
 
 def generate_wind_files(dlc_generator, FAST_namingOut, wind_directory, rotorD, hub_height, turbsim_exe, i_case):
+    ### THIS FUNCTION IS DUPLICATED IN turbsim_util.py
+    ### TODO: REMOVE ONE BEFORE MERGING
 
     if dlc_generator.cases[i_case].turbulent_wind:
         # Write out turbsim input file
