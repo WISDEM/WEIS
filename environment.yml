@@ -19,13 +19,13 @@ dependencies:
   - rosco>=2.9.7
   - smt
   - wisdem>=3.18.1
+  - openfast-io
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
     - dash-vtk
     - pyvista
     - dearpygui
-    - openfast_io
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
