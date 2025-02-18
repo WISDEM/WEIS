@@ -50,7 +50,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         print('Tip Defl.:   {:<8.10f} m'.format(inputs['tip_deflection'][0]))
         
         # OpenFAST simulation summary
-        if self.options['modeling_options']['Level3']['flag']: 
+        if self.options['modeling_options']['OpenFAST']['flag']: 
             # Print optimization variables
             
             # Pitch control params

@@ -22,7 +22,7 @@ WISDEM:
     # BOS:
     #     flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
@@ -55,10 +55,10 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
-    HydroDyn:
+    SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
-        WaveSeed1: 123456789
+    HydroDyn:
         AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
         AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
         AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
@@ -69,7 +69,7 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         # WaveMod: 0
         # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
-Level1:
+RAFT:
     flag: False
     potential_model_override: 2
     trim_ballast: 2
