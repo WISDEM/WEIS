@@ -129,4 +129,3 @@ def draw_tower(tower_names, tower_by_names):
     fig.update_xaxes(title_text=f'Grid', row=2, col=2)
 
     return fig
-

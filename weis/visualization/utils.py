@@ -26,6 +26,7 @@ import vtk
 import dash_vtk
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
+import plotly
 
 try:
     import ruamel_yaml as ry
@@ -285,7 +286,7 @@ def load_OMsql(
                 # if this key isn't present, create a new list
                 rec_data[key] = []
 
-            if hasattr(case[key], '__len__') and len(case[key]) != 1:
+            if hasattr(case[key], 'len') and len(case[key]) != 1:
                 # convert to a numpy array if possible and add the data to the list
                 rec_data[key].append(np.array(case[key]))
             else:
