@@ -20,6 +20,7 @@ Using WEIS
    installation
    how_weis_works
    inputs/yaml_inputs
+   run_in_parallel
    
 
 WEIS Visualization APP
@@ -30,9 +31,15 @@ WEIS Visualization APP
 
    how_weis_viz_works
 
+DLC Generator
+=============
 
-<<<<<<< HEAD
-=======
+.. toctree::
+   :maxdepth: 2
+
+   dlc_generator
+
+
 Optimization in WEIS
 ====================
 
@@ -42,7 +49,6 @@ Optimization in WEIS
    optimization
 
 
->>>>>>> upstream/main
 Other Useful Docs
 =================
 

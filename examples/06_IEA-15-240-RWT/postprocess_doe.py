@@ -34,5 +34,5 @@ for key in all_data.keys():
     
 n_cases = len(optimization_logs)
 
-tower_mass = all_data['floatingse.tower_mass']
+tower_mass = all_data["floatingse.tower_mass"]
 print(tower_mass)

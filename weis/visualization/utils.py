@@ -1,9 +1,8 @@
 '''
 Various functions for help visualizing WEIS outputs
 '''
-from weis.aeroelasticse.FileTools import load_yaml
+from openfast_io.FileTools import load_yaml
 import weis.inputs as sch
-
 import pandas as pd
 import numpy as np
 import openmdao.api as om
@@ -27,8 +26,6 @@ import vtk
 import dash_vtk
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
-import plotly
-from weis.dtqpy import objective
 
 try:
     import ruamel_yaml as ry
@@ -37,6 +34,11 @@ except Exception:
         import ruamel.yaml as ry
     except Exception:
         raise ImportError('No module named ruamel.yaml or ruamel_yaml')
+
+try:
+    from vtkmodules.util.numpy_support import numpy_to_vtk, vtk_to_numpy
+except:
+    from vtk.util.numpy_support import numpy_to_vtk, vtk_to_numpy
 
 
 def checkPort(port, host="0.0.0.0"):
@@ -173,16 +175,9 @@ def load_vars_file(fn_vars):
         a dictionary of dictionaries holding the problem_vars from WEIS
     """
 
-    rawvars = load_yaml(fn_vars)
-    vars = {}
-    for k, v in rawvars.items():
-        for (_, v2) in v:
-            for k3, v3 in v2.items():
-                if k3 in ["lower", "upper"]:
-                    v2[k3] = float(v3)
-                if k3 == "val":
-                    v2[k3] = np.array(v3)
-        vars[k] = dict(v)
+    with open(fn_vars, "r") as fjson:
+        # unpack in a useful form
+        vars = {k: dict(v) for k, v in json.load(fjson).items()}
     return vars
 
 
@@ -426,7 +421,6 @@ def consolidate_multi(
         dataOMbest_DE : dict
             dictionary of the per-iteration best-feasible simulations
     """
-    objective_name = list(vars_dict["objectives"].values())[0]["name"]
 
     dfOMmulti = pd.DataFrame(dataOMmulti)
     tfeas, cfeas = get_feasible_iterations(dataOMmulti, vars_dict, feas_tol=feas_tol)
@@ -434,7 +428,7 @@ def consolidate_multi(
     dfOMmulti = dfOMmulti[tfeas].reset_index()
 
     dataOMbest_DE = dfOMmulti.groupby("iter").apply(
-        lambda grp : grp.loc[grp[objective_name].idxmin()],
+        lambda grp : grp.loc[grp["floatingse.system_structural_mass"].idxmin()],
         include_groups=False,
     ).to_dict()
 
