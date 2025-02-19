@@ -8,9 +8,7 @@ from weis.visualization.appServer.app.mainApp import app        # Needed to prev
 from weis.visualization.appServer.app.pages.visualize_windio_3d import list_labels, initial_loading, toggle_local_scene, update_local_header, update_local_table_content, update_local_scene_content, click_local_view
 from weis.visualization.utils import load_geometry_data
 
-# File paths are relative to app/
-# This is okay for pytest, but change it into absolute paths if you want to debug
-file_table = {'File Path': ['../../../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml', '../../../../examples/05_IEA-3.4-130-RWT/IEA-3p4-130-RWT.yaml', '../../../../examples/17_IEA22_Optimization/IEA-22-280-RWT-Semi.yaml'], 'Label': ['15MW', '3.4MW', '22MW'], 'Type': ['geometry', 'geometry', 'geometry']}
+file_table = {'File Path': ['examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml', 'examples/00_setup/ref_turbines/IEA-3p4-130-RWT.yaml', 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml'], 'Label': ['15MW', '3.4MW', '22MW'], 'Type': ['geometry', 'geometry', 'geometry']}
 _, geom_comps, wt_options_by_names = load_geometry_data(file_table)
 geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
 

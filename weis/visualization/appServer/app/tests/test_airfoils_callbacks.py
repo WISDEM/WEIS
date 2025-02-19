@@ -6,9 +6,7 @@ from weis.visualization.appServer.app.mainApp import app        # Needed to prev
 from weis.visualization.appServer.app.pages.visualize_windio_airfoils import list_airfoils, draw_airfoil_shape, draw_airfoil_polar
 from weis.visualization.utils import load_geometry_data
 
-# File paths are relative to app/
-# This is okay for pytest, but change it into absolute paths if you want to debug
-file_table = {'File Path': ['../../../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml', '../../../../examples/05_IEA-3.4-130-RWT/IEA-3p4-130-RWT.yaml'], 'Label': ['15MW', '3.4MW'], 'Type': ['geometry', 'geometry']}
+file_table = {'File Path': ['examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml', 'examples/00_setup/ref_turbines/IEA-3p4-130-RWT.yaml'], 'Label': ['15MW', '3.4MW'], 'Type': ['geometry', 'geometry']}
 
 airfoils, _, _ = load_geometry_data(file_table)
 airfoil_by_names = {label+': '+airfoil['name']: dict(list(airfoil.items())[1:]) for label, airfoils_per_file in airfoils.items() for airfoil in airfoils_per_file}      # {'file1: FB90': {'coordinates': {'x': [1.0, 0.9921, 0.5], 'y': [1.0, 2.0, 3.0]}}, ... }

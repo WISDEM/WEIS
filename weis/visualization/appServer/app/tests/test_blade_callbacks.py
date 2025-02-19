@@ -3,9 +3,8 @@ from weis.visualization.appServer.app.mainApp import app        # Needed to prev
 from weis.visualization.appServer.app.pages.visualize_windio_blade import load_blade_comps, draw_blade_oml, draw_blade_matrix
 from weis.visualization.utils import load_geometry_data
 
-# File paths are relative to app/
-# This is okay for pytest, but change it into absolute paths if you want to debug
-file_table = {'File Path': ['../../../../examples/06_IEA-15-240-RWT/IEA-15-240-RWT_Monopile.yaml', '../../../../examples/05_IEA-3.4-130-RWT/IEA-3p4-130-RWT.yaml'], 'Label': ['15MW', '3.4MW'], 'Type': ['geometry', 'geometry']}
+# File paths are relative to root_dir WEIS
+file_table = {'File Path': ['examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml', 'examples/00_setup/ref_turbines/IEA-3p4-130-RWT.yaml'], 'Label': ['15MW', '3.4MW'], 'Type': ['geometry', 'geometry']}
 
 _, geom_comps, _ = load_geometry_data(file_table)
 geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
