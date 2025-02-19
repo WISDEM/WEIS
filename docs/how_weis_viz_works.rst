@@ -119,7 +119,7 @@ Note that you can use the modeling and analysis options generated within the out
    (.weis-env) $ python mainApp.py --input [path_to_viz_input] --host [host_number] --port [port_number]
 
 Now, you are able to see the hosting url with defined port number where your app server is running. Open a web browser, preferably Safari or Chrome, and enter the hosting url to start.
-
+If you are having issues seeing the host and port returned, try ``unset HOST``.
 
 
 Results

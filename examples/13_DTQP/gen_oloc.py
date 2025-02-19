@@ -1,7 +1,7 @@
 
 import weis.inputs as sch
 import os
-from openfast_io.turbsim_util    import generate_wind_files
+from weis.aeroelasticse.utils import generate_wind_files
 from openfast_io.turbsim_file    import TurbSimFile
 from weis.dlc_driver.dlc_generator      import DLCGenerator
 from weis.control.LinearModel           import LinearTurbineModel, LinearControlModel
