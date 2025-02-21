@@ -2476,6 +2476,7 @@ class FASTLoadCases(ExplicitComponent):
 
         # Calculate AEP and Performance Data
 
+        # Skip if we're not running with aerodynamics
         if not self.fst_vt['Fst']['CompAero']:
             return outputs, discrete_outputs
 
@@ -2492,7 +2493,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs['AEP'] = AEP
         else:
             # If DLC 1.1 was run
-            if 'RtFldCp' in stats_pwrcrv and len(stats_pwrcrv['RtFldCp']['mean']): 
+            if len(stats_pwrcrv['RtFldCp']['mean']): 
                 outputs['Cp_out'] = stats_pwrcrv['RtFldCp']['mean']
                 outputs['Ct_out'] = stats_pwrcrv['RtFldCt']['mean']
                 outputs['Omega_out'] = stats_pwrcrv['RotSpeed']['mean']
