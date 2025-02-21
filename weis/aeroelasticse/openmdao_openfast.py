@@ -2475,6 +2475,10 @@ class FASTLoadCases(ExplicitComponent):
         stats_pwrcrv = sum_stats.iloc[idx_pwrcrv].copy()
 
         # Calculate AEP and Performance Data
+
+        if not self.fst_vt['Fst']['CompAero']:
+            return outputs, discrete_outputs
+
         if len(U) > 1 and self.fst_vt['Fst']['CompServo'] == 1:
             pp = PowerProduction(discrete_inputs['turbine_class'])
             pwr_curve_vars   = ["GenPwr", "RtFldCp", "RtFldCt", "RotSpeed", "BldPitch1"]
@@ -2488,7 +2492,7 @@ class FASTLoadCases(ExplicitComponent):
             outputs['AEP'] = AEP
         else:
             # If DLC 1.1 was run
-            if len(stats_pwrcrv['RtFldCp']['mean']): 
+            if 'RtFldCp' in stats_pwrcrv and len(stats_pwrcrv['RtFldCp']['mean']): 
                 outputs['Cp_out'] = stats_pwrcrv['RtFldCp']['mean']
                 outputs['Ct_out'] = stats_pwrcrv['RtFldCt']['mean']
                 outputs['Omega_out'] = stats_pwrcrv['RotSpeed']['mean']
