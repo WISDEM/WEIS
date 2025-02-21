@@ -1286,8 +1286,6 @@ class DLCGenerator(object):
             if ptfm_ic not in dlc_options:
                 dlc_options[ptfm_ic] = 0
 
-        # TODO: are waves off?
-
         # DLC-specific: define groups
         # Groups are dependent variables, the cases are a cross product of the independent groups
         # The options in each group should have the same length
@@ -1312,7 +1310,6 @@ class DLCGenerator(object):
         
         # Don't need wind/waves/yaw
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        # generic_case_inputs.append(['yaw_misalign']) # group 2
 
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
