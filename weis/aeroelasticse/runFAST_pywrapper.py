@@ -9,9 +9,9 @@ import shutil
 import platform
 import multiprocessing as mp
 
-from weis.aeroelasticse.FAST_reader import InputReader_OpenFAST
-from weis.aeroelasticse.FAST_writer import InputWriter_OpenFAST
-from weis.aeroelasticse.FAST_wrapper import FAST_wrapper
+from openfast_io.FAST_reader import InputReader_OpenFAST
+from openfast_io.FAST_writer import InputWriter_OpenFAST
+from weis.aeroelasticse.FAST_wrapper import FAST_wrapper, Turbsim_wrapper, IEC_CoherentGusts
 from weis.aeroelasticse.calculated_channels import calculate_channels
 from pCrunch.io import OpenFASTOutput, OpenFASTBinary, OpenFASTAscii
 from pCrunch import LoadsAnalysis, FatigueParams

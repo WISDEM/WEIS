@@ -25,13 +25,13 @@ WISDEM:
     BOS:
         flag: False
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: True
     openfast_file: IEA-22-280-RWT-Semi.fst
     openfast_dir: ../IEA-22-280-RWT/OpenFAST/IEA-22-280-RWT-Semi/   # This should point to IEA repo
     # AeroDyn:
-    #     WakeMod: 2
+    #     Wake_Mod: 2
     
 ROSCO:
     flag: True
@@ -42,8 +42,8 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [16]
           n_seeds: 1
-          analysis_time: 600.
-          transient_time: 0.0
+          analysis_time: 1.
+          transient_time: 0.
         #   turbulent_wind:
         #       HubHt: 142
         #       RefHt: 142

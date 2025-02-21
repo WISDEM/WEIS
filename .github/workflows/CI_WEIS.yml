@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macOS-13", "macOS-latest", "windows-latest"] # mac13 is intel, mac-14 arm
-        python-version: ["3.9","3.10","3.11","3.12"]
+        python-version: ["3.10","3.11","3.12"]
         
     steps:
       - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py openmpi pyoptsparse
+          conda install -y petsc4py=3.22.2 mpi4py pyoptsparse
       
       - name: Add test packages
         run: |
@@ -107,7 +107,7 @@ jobs:
         env:
             RUN_EXHAUSTIVE: 1
         run: |
-            pytest  -p no:warnings --disable-warnings  weis
+            pytest  -p no:warnings -s --disable-warnings  weis
 
       # Run parallel script calling OpenFAST
       - name: Run parallel cases

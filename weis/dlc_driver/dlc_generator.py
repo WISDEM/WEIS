@@ -5,7 +5,7 @@ import copy
 import weis.inputs as sch
 from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from weis.aeroelasticse.FileTools import remove_numpy
+from openfast_io.FileTools import remove_numpy
 from weis.aeroelasticse.utils import OLAFParams
 
 logger = logging.getLogger("wisdem/weis")
@@ -21,7 +21,7 @@ openfast_input_map = {
     'WindFile_type': ("InflowWind","WindType"),
     'wind_speed': ("InflowWind","HWindSpeed"),
     'WindFile_name': ("InflowWind","FileName_BTS"),
-    'WindFile_name': ("InflowWind","Filename_Uni"),
+    'WindFile_name': ("InflowWind","FileName_Uni"),
     'rotorD': ("InflowWind","RefLength"),
     'WindHd': ("InflowWind","PropagationDir"),
     'hub_height': ("InflowWind","RefHt_Uni"),
@@ -42,8 +42,8 @@ openfast_input_map = {
     
     'wave_height': ("HydroDyn","WaveHs"),
     'wave_period': ("HydroDyn","WaveTp"),
-    'WaveHd': ("HydroDyn","WaveDir"),
-    'WaveGamma': ("HydroDyn","WavePkShp"),
+    'wave_direction': ("HydroDyn","WaveDir"),
+    'wave_gamma': ("HydroDyn","WavePkShp"),
     'wave_seed': ("HydroDyn","WaveSeed1"),
 
     'wave_model': ("HydroDyn","WaveMod"),
@@ -77,9 +77,9 @@ openfast_input_map = {
     'yawfault_time': ("ServoDyn","TYawManS"),
     'yawfault_yawpos': ("ServoDyn","NacYawF"),
     
-    'aero_mod': ("AeroDyn15","AFAeroMod"),
-    'wake_mod': ("AeroDyn15","WakeMod"),
-    'tau1_const': ("AeroDyn15","tau1_const"),
+    'aero_mod': ("AeroDyn","AFAeroMod"),
+    'wake_mod': ("AeroDyn","Wake_Mod"),
+    'tau1_const': ("AeroDyn","tau1_const"),
 
 
     # 'dlc_label': ("DLC","Label"),
