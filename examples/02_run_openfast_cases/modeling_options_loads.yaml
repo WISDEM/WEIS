@@ -27,6 +27,13 @@ Level3: # -> OpenFAST, but testing backwards compatibility
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     AeroDyn:
         Wake_Mod: 2
+    # These are big speed improvements
+    MoorDyn:
+        TmaxIC: 1.0
+    SeaState:
+        WvDiffQTF: False
+        WvSumQTF: False
+
     
 ROSCO:
     flag: True
@@ -61,20 +68,20 @@ DLC_driver:
     DLCs:
         - DLC: "1.6"
           wind_speed: [8,15]
-          n_seeds: 2
+          n_seeds: 1
           analysis_time: 1.
           transient_time: 0.0
           user_group:
             - mean_sea_level: [1.0, 2.0]
               current_speed: [.25, .5]
             - current_model: 1
-        - DLC: "5.1"
-          wind_speed: [12]
-          n_seeds: 1
-          n_azimuth: 1
-          analysis_time: 1.
-          shutdown_time: 0.5
-          transient_time: 0.0
-          user_group:
-            final_blade_pitch12: [70,80,90]
+        # - DLC: "5.1"  
+        #   wind_speed: [12]
+        #   n_seeds: 1
+        #   n_azimuth: 1
+        #   analysis_time: 1.
+        #   shutdown_time: 0.5
+        #   transient_time: 0.0
+        #   user_group:
+        #     final_blade_pitch12: [70,80,90]
 
