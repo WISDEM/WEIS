@@ -29,7 +29,7 @@ from openfast_io import FileTools
 from openfast_io.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.utils import OLAFParams, generate_wind_files
 from rosco.toolbox import control_interface as ROSCO_ci
-from pCrunch import AeroelasticOutput, Crunch, FatigueParams
+from pCrunch import AeroelasticOutput, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
@@ -2024,15 +2024,13 @@ class FASTLoadCases(ExplicitComponent):
         if not modopt['OpenFAST']['from_openfast']:
             for u in ['U','L']:
                 blade_fatigue_root = FatigueParams(load2stress=1.0,
-                                                lifetime=inputs['lifetime'],
-                                                slope=inputs[f'blade_spar{u}_wohlerexp'],
-                                                ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
-                                                S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
+                                                   slope=inputs[f'blade_spar{u}_wohlerexp'],
+                                                   ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
+                                                   S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
                 blade_fatigue_te = FatigueParams(load2stress=1.0,
-                                                lifetime=inputs['lifetime'],
-                                                slope=inputs[f'blade_te{u}_wohlerexp'],
-                                                ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
-                                                S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
+                                                 slope=inputs[f'blade_te{u}_wohlerexp'],
+                                                 ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
+                                                 S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
                 
                 for k in range(1,self.n_blades+1):
                     blade_root_Fz = blade_fatigue_root.copy()
@@ -2067,11 +2065,12 @@ class FASTLoadCases(ExplicitComponent):
 
             # Low speed shaft fatigue
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
+            # Use DNV RP C203 Fatigue steel B1 in air
             lss_fatigue = FatigueParams(load2stress=1.0,
-                                        lifetime=inputs['lifetime'],
-                                        slope=inputs['lss_wohlerexp'],
+                                        dnv_name='B1',
+                                        dnv_type='air',
                                         ult_stress=1e-3*inputs['lss_ultstress'],
-                                        S_intercept=1e-3*inputs['lss_wohlerA'])        
+                                        S_intercept=1e-3*inputs['lss_wohlerA'])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -2091,9 +2090,10 @@ class FASTLoadCases(ExplicitComponent):
 
             # Fatigue at the tower base
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
+            # Use DNV RP C203 Fatigue steel D in air
             tower_fatigue_base = FatigueParams(load2stress=1.0,
-                                               lifetime=inputs['lifetime'],
-                                               slope=inputs['tower_wohlerexp'][0],
+                                               dnv_name='D',
+                                               dnv_type='air',
                                                ult_stress=1e-3*inputs['tower_ultstress'][0],
                                                S_intercept=1e-3*inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
@@ -2108,10 +2108,11 @@ class FASTLoadCases(ExplicitComponent):
 
             # Fatigue at monopile base (mudline)
             # No need to convert to kPa here since SubDyn reports in N already
+            # Use DNV RP C203 Fatigue steel D in seawater
             if modopt['flags']['monopile']:
                 monopile_fatigue_base = FatigueParams(load2stress=1.0,
-                                                      lifetime=inputs['lifetime'],
-                                                      slope=inputs['monopile_wohlerexp'][0],
+                                                      dnv_name='D',
+                                                      dnv_type='sea',
                                                       ult_stress=inputs['monopile_ultstress'][0],
                                                       S_intercept=inputs['monopile_wohlerA'][0])
                 for s in ['Ax','Sh']:
@@ -2161,7 +2162,7 @@ class FASTLoadCases(ExplicitComponent):
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
         outputs = self.calculate_AEP(case_list, dlc_generator, discrete_inputs, outputs)
 
-        outputs = self.get_weighted_DELs(dlc_generator, discrete_inputs, outputs)
+        outputs = self.get_weighted_DELs(dlc_generator, inputs, discrete_inputs, outputs)
         
         outputs = self.get_control_measures(inputs, outputs)
 
@@ -2480,17 +2481,30 @@ class FASTLoadCases(ExplicitComponent):
 
         return outputs
 
-    def get_weighted_DELs(self, dlc_generator, discrete_inputs, outputs):
+    def get_weighted_DELs(self, dlc_generator, inputs, discrete_inputs, outputs):
         modopt = self.options['modeling_options']
+        fatigue_dlc_operation = ['1.2', '3.1', '4.1']
+        fatigue_dlc_parked = ['6.4']
+        fatigue_dlc_fault = ['2.4', '7.2']
+        fatigue_dlcs = fatigue_dlc_operation + fatigue_dlc_parked + fatigue_dlc_fault
         
         # See if we have fatigue DLCs
         U = np.zeros(dlc_generator.n_cases)
         ifat = []
+        iop = []
+        inonop = []
+        ifault = []
         for k in range(dlc_generator.n_cases):
             U[k] = dlc_generator.cases[k].URef
             
-            if dlc_generator.cases[k].label in ['1.2', '6.4', '7.2']:
+            if str(dlc_generator.cases[k].label) in fatigue_dlcs:
                 ifat.append( k )
+                if str(dlc_generator.cases[k].label) in fatigue_dlc_operation:
+                    iop.append( k )
+                elif str(dlc_generator.cases[k].label) in fatigue_dlc_parked:
+                    inonop.append( k )
+                elif str(dlc_generator.cases[k].label) in fatigue_dlc_fault:
+                    ifault.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
         if len(ifat) > 0:
@@ -2500,7 +2514,8 @@ class FASTLoadCases(ExplicitComponent):
         self.cruncher.set_probability_turbine_class(U, discrete_inputs['turbine_class'], idx=ifat)
 
         # Scale all DELs and damage by probability and collapse over the various DLCs (inner dot product)
-        dels_total, damage_total = self.cruncher.compute_total_fatigue(idx=ifat)
+        dels_total, damage_total = self.cruncher.compute_total_fatigue(lifetime=inputs['lifetime'],
+                                                                       idx=iop, idx_park=inonop, idx_fault=ifault, n_fault=10)
         dels_total = dels_total.loc['Weighted']
         damage_total = damage_total.loc['Weighted']
         
