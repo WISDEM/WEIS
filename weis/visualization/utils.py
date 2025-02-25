@@ -18,6 +18,7 @@ import socket
 from dash import html
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
+import matplotlib
 import pickle
 import raft
 from raft.helpers import *
@@ -560,13 +561,18 @@ def read_per_iteration(iteration, stats_paths):
 def get_timeseries_data(run_num, stats, iteration_path):
     
     stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
-    filename = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
-    if filename.split('_')[-1].startswith('0'):
-        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1][1:]+'.p').strip()
-    else:
-        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
+    filename_from_stats = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
     
-    # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
+    # TODO: Need to clean up later with unified format..
+    if filename_from_stats.split('_')[-1].startswith('0'):
+        filename = ('_'.join(filename_from_stats.split('_')[:-1])+'_0_'+filename_from_stats.split('_')[-1][1:]+'.p').strip()
+    else:
+        filename = ('_'.join(filename_from_stats.split('_')[:-1])+'_0_'+filename_from_stats.split('_')[-1]+'.p').strip()
+    
+    if not os.path.exists('/'.join([iteration_path, 'timeseries', filename])):
+        # examples/17_IEA22_Optimization/17_IEA22_OptStudies/of_COBYLA/openfast_runs/iteration_0/timeseries/IEA_22_Semi_0.p
+        filename = ('_'.join(filename_from_stats.split('_')[2:-1])+'_'+str(int(filename_from_stats.split('_')[-1]))+'.p').strip()
+    
     timeseries_path = '/'.join([iteration_path, 'timeseries', filename])
     timeseries_data = pd.read_pickle(timeseries_path)
 
@@ -660,13 +666,14 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
     Temporary function to visualize raft 3d plot using matplotlib.
     TODO: to build interactive 3d plot using plotly
     '''
-    n_plots = len(os.listdir(raft_design_dir))
-    print('n_plots: ', n_plots)
     os.makedirs(plot_dir,exist_ok=True)
 
     opt_outs = {}
     opt_outs['max_pitch'] = np.squeeze(np.array(log_data['raft.Max_PtfmPitch']))
+    n_plots = len(opt_outs['max_pitch'])
+    print('n_plots: ', n_plots)
 
+    matplotlib.use('agg')
     for i_plot in range(n_plots):
         # Set up subplots
         fig = plt.figure()
@@ -700,6 +707,7 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
         image_filename = os.path.join(plot_dir,f'ptfm_{i_plot}.png')
         plt.savefig(image_filename, bbox_inches='tight')
         print('saved ', image_filename)
+        plt.close()
 
 
 def remove_duplicated_legends(fig):
