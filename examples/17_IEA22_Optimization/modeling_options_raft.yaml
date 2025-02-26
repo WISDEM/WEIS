@@ -11,8 +11,8 @@ General:
 WISDEM:
     RotorSE:
         flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
+        n_pitch_perf_surfaces: 10
+        n_tsr_perf_surfaces: 10
         spar_cap_ss: spar_cap_ss
         spar_cap_ps: spar_cap_ps
         # te_ss: TE_reinforcement_SS
@@ -81,12 +81,13 @@ DLC_driver:
         wave_period_50: 14.2
     DLCs:
         - DLC: "1.6"
+          wind_speed: [12]
           analysis_time: 1.
           transient_time: 0.
         #   turbulent_wind:
         #       HubHt: 160
         #       GridHeight: 300
         #       GridWidth: 300
-        - DLC: "6.1"
-          analysis_time: 1.
-          transient_time: 0.
+        # - DLC: "6.1"
+        #   analysis_time: 1.
+        #   transient_time: 0.
