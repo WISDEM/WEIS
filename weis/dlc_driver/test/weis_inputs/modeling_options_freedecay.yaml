@@ -49,6 +49,7 @@ DLC_driver:
         wave_period1: 11.2
         wave_height50: 9.7
         wave_period50: 13.6
+    # These aren't necessarily needed here, but I'll leave in as we transition to a driver-based DLC generator test
     openfast_input_map:
         final_blade_pitch12:
             - [ServoDyn,BlPitchF(1)]
