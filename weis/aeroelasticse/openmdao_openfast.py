@@ -2536,31 +2536,26 @@ class FASTLoadCases(ExplicitComponent):
                                                                 damage_total[f'Spn2te{u}_MLyb{k}'])
 
             # Compute total fatigue damage in low speed shaft, tower base, monopile base
-            damage_total['LSSAxial'] = 0.0
-            damage_total['LSSShear'] = 0.0
-            damage_total['TowerBaseAxial'] = 0.0
-            damage_total['TowerBaseShear'] = 0.0
-            damage_total['MonopileBaseAxial'] = 0.0
-            damage_total['MonopileBaseShear'] = 0.0
-            for s in ['Ax','Sh']:
-                sstr = 'Axial' if s=='Ax' else 'Shear'
-                for ik, k in enumerate(['F','M']):
-                    for ix, x in enumerate(['x','yz']):
-                        damage_total[f'LSS{sstr}'] += damage_total[f'LSShft{s}{k}{x}a']
-                    for ix, x in enumerate(['xy','z']):
-                        damage_total[f'TowerBase{sstr}'] += damage_total[f'TwrBs{s}{k}{x}t']
-                        if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
-                            damage_total[f'MonopileBase{sstr}'] += damage_total[f'M1N1{s}{k}K{x}e']
+            # (Really these channel components should be added to togther to compute stress before rainflow counting,
+            # but haven't figured out how to do that via 'calculate_channel' in streaming mode in pcrunch)
+            damage_total['LSSAxial'] = damage_total['LSShftAxFxa'] + damage_total['LSShftAxMyza']
+            damage_total['LSSShear'] = damage_total['LSShftAxFyza'] + damage_total['LSShftAxMxa']
+            damage_total['TowerBaseAxial'] = damage_total['TwrBsAxFzt'] + damage_total['TwrBsAxMxyt']
+            damage_total['TowerBaseShear'] = damage_total['TwrBsAxFxyt'] + damage_total['TwrBsAxMzt']
+            if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
+                damage_total['MonopileBaseAxial'] = damage_total['M1N1AxFKze'] + damage_total['M1N1AxMKxye']
+                damage_total['MonopileBaseShear'] = damage_total['M1N1AxFKxye'] + damage_total['M1N1AxMKxe']
+            else:
+                damage_total['MonopileBaseAxial'] = damage_total['MonopileBaseShear'] = 0.0
 
             # Assemble damages
             outputs['damage_blade_root_sparU'] = np.max([damage_total[f'BladeRootSparU_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_root_sparL'] = np.max([damage_total[f'BladeRootSparL_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_maxc_teU'] = np.max([damage_total[f'BladeMaxcTEU_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_maxc_teL'] = np.max([damage_total[f'BladeMaxcTEL_Axial{k+1}'] for k in range(self.n_blades)])
-            # Hmm- not sure this is kosher to combine damage in this way
-            outputs['damage_lss'] = np.sqrt( damage_total['LSSAxial']**2 + damage_total['LSSShear']**2 )
-            outputs['damage_tower_base'] = np.sqrt( damage_total['TowerBaseAxial']**2 + damage_total['TowerBaseShear']**2 )
-            outputs['damage_monopile_base'] = np.sqrt( damage_total['MonopileBaseAxial']**2 + damage_total['MonopileBaseShear']**2 )
+            outputs['damage_lss'] = np.max( [damage_total['LSSAxial'], damage_total['LSSShear']] )
+            outputs['damage_tower_base'] = np.max( [damage_total['TowerBaseAxial'], damage_total['TowerBaseShear']] )
+            outputs['damage_monopile_base'] = np.max( [damage_total['MonopileBaseAxial'], damage_total['MonopileBaseShear']] )
 
             # Log damages
             if self.options['opt_options']['constraints']['damage']['tower_base']['log']:
