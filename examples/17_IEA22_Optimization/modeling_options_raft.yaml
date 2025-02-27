@@ -81,10 +81,12 @@ DLC_driver:
         wave_period_50: 14.2
     DLCs:
         - DLC: "1.6"
-          analysis_time: 600.
-          transient_time: 120.
+          analysis_time: 1.
+          transient_time: 0.
         #   turbulent_wind:
         #       HubHt: 160
         #       GridHeight: 300
         #       GridWidth: 300
         - DLC: "6.1"
+          analysis_time: 1.
+          transient_time: 0.

@@ -168,7 +168,7 @@ def run_dtqp(dtqp_input):
             dtqp_input['dtqp_options'],
             plot=dtqp_input['plot'])
    
-    # Shorten output names from linearization output to one like level3 openfast output
+    # Shorten output names from linearization output to one like openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed
     OutList     = [out_name.split()[1][:-1] for out_name in dtqp_input['LinearTurbine'].DescOutput]
 

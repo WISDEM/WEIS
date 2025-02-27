@@ -255,7 +255,7 @@ class runFAST_pywrapper(object):
             output.add_gradient_channel(f'BldPitch{i_blade+1}', f'dBldPitch{i_blade+1}')
                     
         if not self.keep_time:
-            output.process(return_damage=True, goodman_correction=self.goodman)
+            output.process(goodman_correction=self.goodman)
             output_dict = None
             output.data = None
 

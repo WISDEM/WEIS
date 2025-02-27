@@ -61,4 +61,4 @@ DLC_driver:
           wind_speed: [16]
           n_seeds: 1
           analysis_time: 1.0
-          transient_time: 1.0
+          transient_time: 0.0

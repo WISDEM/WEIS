@@ -31,7 +31,7 @@ from openfast_io.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.utils import OLAFParams
 from weis.aeroelasticse.turbsim_util import generate_wind_files
 from rosco.toolbox import control_interface as ROSCO_ci
-from pCrunch import AeroelasticOutput, Crunch, FatigueParams
+from pCrunch import AeroelasticOutput, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
@@ -77,6 +77,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+        self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
 
         if not self.options['modeling_options']['OpenFAST']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
@@ -312,7 +313,6 @@ class FASTLoadCases(ExplicitComponent):
                 self.add_discrete_input("node_names", val=[""] * n_nodes)
 
             # Inputs required for fatigue processing
-            self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
             self.add_input('blade_sparU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
             self.add_input('blade_sparU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
             self.add_input('blade_sparU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
@@ -1759,7 +1759,7 @@ class FASTLoadCases(ExplicitComponent):
             if modopt['OpenFAST']['simulation']['CompSub']:
                 k=1
                 for i in range(len(self.Z_out_SD_mpl)):
-                    if k==9:
+                    if k==len(fst_vt['SubDyn']['NodeCnt']):
                         Node=2
                     else:
                         Node=1
@@ -1769,8 +1769,8 @@ class FASTLoadCases(ExplicitComponent):
                     channels_out += ["M" + str(k) + "N" + str(Node) + "MKxe"]
                     channels_out += ["M" + str(k) + "N" + str(Node) + "MKye"]
                     channels_out += ["M" + str(k) + "N" + str(Node) + "MKze"]
-                    channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
                     k+=1
+                channels_out += ['ReactFXss', 'ReactFYss', 'ReactFZss', 'ReactMXss', 'ReactMYss', 'ReactMZss']
             else:
                 raise Exception('CompSub must be 1 in the modeling options to run SubDyn and compute monopile loads')
 
@@ -1882,7 +1882,7 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
                 Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
             else:
-                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->Level3->regulation_trajectory.",
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.",
                         " This file does not exist. Check WEIS example 02 for a template file")
                 U_interp = np.arange(cut_in, cut_out)
                 pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
@@ -2125,15 +2125,13 @@ class FASTLoadCases(ExplicitComponent):
         if not modopt['OpenFAST']['from_openfast']:
             for u in ['U','L']:
                 blade_fatigue_root = FatigueParams(load2stress=1.0,
-                                                lifetime=inputs['lifetime'],
-                                                slope=inputs[f'blade_spar{u}_wohlerexp'],
-                                                ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
-                                                S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
+                                                   slope=inputs[f'blade_spar{u}_wohlerexp'],
+                                                   ult_stress=1e-3*inputs[f'blade_spar{u}_ultstress'],
+                                                   S_intercept=1e-3*inputs[f'blade_spar{u}_wohlerA'])
                 blade_fatigue_te = FatigueParams(load2stress=1.0,
-                                                lifetime=inputs['lifetime'],
-                                                slope=inputs[f'blade_te{u}_wohlerexp'],
-                                                ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
-                                                S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
+                                                 slope=inputs[f'blade_te{u}_wohlerexp'],
+                                                 ult_stress=1e-3*inputs[f'blade_te{u}_ultstress'],
+                                                 S_intercept=1e-3*inputs[f'blade_te{u}_wohlerA'])
                 
                 for k in range(1,self.n_blades+1):
                     blade_root_Fz = blade_fatigue_root.copy()
@@ -2168,11 +2166,12 @@ class FASTLoadCases(ExplicitComponent):
 
             # Low speed shaft fatigue
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
+            # Use DNV RP C203 Fatigue steel B1 in air
             lss_fatigue = FatigueParams(load2stress=1.0,
-                                        lifetime=inputs['lifetime'],
-                                        slope=inputs['lss_wohlerexp'],
+                                        dnv_name='B1',
+                                        dnv_type='air',
                                         ult_stress=1e-3*inputs['lss_ultstress'],
-                                        S_intercept=1e-3*inputs['lss_wohlerA'])        
+                                        S_intercept=1e-3*inputs['lss_wohlerA'])
             for s in ['Ax','Sh']:
                 sstr = 'axial' if s=='Ax' else 'shear'
                 for ik, k in enumerate(['F','M']):
@@ -2192,9 +2191,10 @@ class FASTLoadCases(ExplicitComponent):
 
             # Fatigue at the tower base
             # Convert ultstress and S_intercept values to kPa with 1e-3 factor
+            # Use DNV RP C203 Fatigue steel D in air
             tower_fatigue_base = FatigueParams(load2stress=1.0,
-                                               lifetime=inputs['lifetime'],
-                                               slope=inputs['tower_wohlerexp'][0],
+                                               dnv_name='D',
+                                               dnv_type='air',
                                                ult_stress=1e-3*inputs['tower_ultstress'][0],
                                                S_intercept=1e-3*inputs['tower_wohlerA'][0])
             for s in ['Ax','Sh']:
@@ -2209,10 +2209,11 @@ class FASTLoadCases(ExplicitComponent):
 
             # Fatigue at monopile base (mudline)
             # No need to convert to kPa here since SubDyn reports in N already
+            # Use DNV RP C203 Fatigue steel D in seawater
             if modopt['flags']['monopile']:
                 monopile_fatigue_base = FatigueParams(load2stress=1.0,
-                                                      lifetime=inputs['lifetime'],
-                                                      slope=inputs['monopile_wohlerexp'][0],
+                                                      dnv_name='D',
+                                                      dnv_type='sea',
                                                       ult_stress=inputs['monopile_ultstress'][0],
                                                       S_intercept=inputs['monopile_wohlerA'][0])
                 for s in ['Ax','Sh']:
@@ -2256,13 +2257,13 @@ class FASTLoadCases(ExplicitComponent):
             outputs = self.get_tower_loading(inputs, outputs)
             
         # SubDyn is only supported in Level3: linearization in OpenFAST will be available in 3.0.0
-        if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
+        if modopt['flags']['monopile']:
             outputs = self.get_monopile_loading(inputs, outputs)
 
         # If DLC 1.1 not used, calculate_AEP will just compute average power of simulations
         outputs = self.calculate_AEP(case_list, dlc_generator, discrete_inputs, outputs)
 
-        outputs = self.get_weighted_DELs(dlc_generator, discrete_inputs, outputs)
+        outputs = self.get_weighted_DELs(dlc_generator, inputs, discrete_inputs, outputs)
         
         outputs = self.get_control_measures(inputs, outputs)
 
@@ -2484,14 +2485,19 @@ class FASTLoadCases(ExplicitComponent):
         monopile_chans_Mx = []
         monopile_chans_My = []
         monopile_chans_Mz = []
-        for k in range(1,len(self.Z_out_SD_mpl)+1):
-            Node = 2 if k==9 else 1
-            monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FKxe"]
-            monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FKye"]
-            monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FKze"]
-            monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MKxe"]
-            monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MKye"]
-            monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MKze"]
+        k=1
+        for i in range(len(self.Z_out_SD_mpl)):
+            if k==len(self.fst_vt['SubDyn']['NodeCnt']):
+                Node=2
+            else:
+                Node=1
+            monopile_chans_Fx += [f"M{k}N{Node}FKxe"]
+            monopile_chans_Fy += [f"M{k}N{Node}FKye"]
+            monopile_chans_Fz += [f"M{k}N{Node}FKze"]
+            monopile_chans_Mx += [f"M{k}N{Node}MKxe"]
+            monopile_chans_My += [f"M{k}N{Node}MKye"]
+            monopile_chans_Mz += [f"M{k}N{Node}MKze"]
+            k+=1
 
         # # Get the maximum of signal M1N1MKye
         max_chan = "M1N1MKye"
@@ -2566,34 +2572,49 @@ class FASTLoadCases(ExplicitComponent):
         if len(idx_pwrcrv) > 0:
             sum_stats = sum_stats.iloc[idx_pwrcrv]
             outputs['V_out'] = np.unique(U)
+            prob = self.cruncher.prob[idx_pwrcrv]
         else:
             outputs['V_out'] = dlc_generator.cases[0].URef
+            prob = self.cruncher.prob
             logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
 
         if len(U) == 1:
             logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             
         # Calculate AEP and Performance Data
-        outputs['Cp_out'] = sum_stats['RtFldCp']['mean']
-        outputs['Ct_out'] = sum_stats['RtFldCt']['mean']
-        outputs['Omega_out'] = sum_stats['RotSpeed']['mean']
-        outputs['pitch_out'] = sum_stats['BldPitch1']['mean']
+        outputs['Cp_out'] = np.sum(prob * sum_stats['RtFldCp']['mean'])
+        outputs['Ct_out'] = np.sum(prob * sum_stats['RtFldCt']['mean'])
+        outputs['Omega_out'] = np.sum(prob * sum_stats['RotSpeed']['mean'])
+        outputs['pitch_out'] = np.sum(prob * sum_stats['BldPitch1']['mean'])
         if self.fst_vt['Fst']['CompServo'] == 1:
-            outputs['P_out'] = sum_stats['GenPwr']['mean'] * 1e3
+            outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
 
         return outputs
 
-    def get_weighted_DELs(self, dlc_generator, discrete_inputs, outputs):
+    def get_weighted_DELs(self, dlc_generator, inputs, discrete_inputs, outputs):
         modopt = self.options['modeling_options']
+        fatigue_dlc_operation = ['1.2', '3.1', '4.1']
+        fatigue_dlc_parked = ['6.4']
+        fatigue_dlc_fault = ['2.4', '7.2']
+        fatigue_dlcs = fatigue_dlc_operation + fatigue_dlc_parked + fatigue_dlc_fault
         
         # See if we have fatigue DLCs
         U = np.zeros(dlc_generator.n_cases)
         ifat = []
+        iop = []
+        inonop = []
+        ifault = []
         for k in range(dlc_generator.n_cases):
             U[k] = dlc_generator.cases[k].URef
             
-            if dlc_generator.cases[k].label in ['1.2', '6.4', '7.2']:
+            if str(dlc_generator.cases[k].label) in fatigue_dlcs:
                 ifat.append( k )
+                if str(dlc_generator.cases[k].label) in fatigue_dlc_operation:
+                    iop.append( k )
+                elif str(dlc_generator.cases[k].label) in fatigue_dlc_parked:
+                    inonop.append( k )
+                elif str(dlc_generator.cases[k].label) in fatigue_dlc_fault:
+                    ifault.append( k )
 
         # If fatigue DLCs are present, then limit analysis to those only
         if len(ifat) > 0:
@@ -2603,7 +2624,8 @@ class FASTLoadCases(ExplicitComponent):
         self.cruncher.set_probability_turbine_class(U, discrete_inputs['turbine_class'], idx=ifat)
 
         # Scale all DELs and damage by probability and collapse over the various DLCs (inner dot product)
-        dels_total, damage_total = self.cruncher.compute_total_fatigue(idx=ifat)
+        dels_total, damage_total = self.cruncher.compute_total_fatigue(lifetime=inputs['lifetime'],
+                                                                       idx=iop, idx_park=inonop, idx_fault=ifault, n_fault=10)
         dels_total = dels_total.loc['Weighted']
         damage_total = damage_total.loc['Weighted']
         
@@ -2625,31 +2647,26 @@ class FASTLoadCases(ExplicitComponent):
                                                                 damage_total[f'Spn2te{u}_MLyb{k}'])
 
             # Compute total fatigue damage in low speed shaft, tower base, monopile base
-            damage_total['LSSAxial'] = 0.0
-            damage_total['LSSShear'] = 0.0
-            damage_total['TowerBaseAxial'] = 0.0
-            damage_total['TowerBaseShear'] = 0.0
-            damage_total['MonopileBaseAxial'] = 0.0
-            damage_total['MonopileBaseShear'] = 0.0
-            for s in ['Ax','Sh']:
-                sstr = 'Axial' if s=='Ax' else 'Shear'
-                for ik, k in enumerate(['F','M']):
-                    for ix, x in enumerate(['x','yz']):
-                        damage_total[f'LSS{sstr}'] += damage_total[f'LSShft{s}{k}{x}a']
-                    for ix, x in enumerate(['xy','z']):
-                        damage_total[f'TowerBase{sstr}'] += damage_total[f'TwrBs{s}{k}{x}t']
-                        if modopt['flags']['monopile'] and modopt['OpenFAST']['flag']:
-                            damage_total[f'MonopileBase{sstr}'] += damage_total[f'M1N1{s}{k}K{x}e']
+            # (Really these channel components should be added to togther to compute stress before rainflow counting,
+            # but haven't figured out how to do that via 'calculate_channel' in streaming mode in pcrunch)
+            damage_total['LSSAxial'] = damage_total['LSShftAxFxa'] + damage_total['LSShftAxMyza']
+            damage_total['LSSShear'] = damage_total['LSShftAxFyza'] + damage_total['LSShftAxMxa']
+            damage_total['TowerBaseAxial'] = damage_total['TwrBsAxFzt'] + damage_total['TwrBsAxMxyt']
+            damage_total['TowerBaseShear'] = damage_total['TwrBsAxFxyt'] + damage_total['TwrBsAxMzt']
+            if modopt['flags']['monopile']:
+                damage_total['MonopileBaseAxial'] = damage_total['M1N1AxFKze'] + damage_total['M1N1AxMKxye']
+                damage_total['MonopileBaseShear'] = damage_total['M1N1AxFKxye'] + damage_total['M1N1AxMKze']
+            else:
+                damage_total['MonopileBaseAxial'] = damage_total['MonopileBaseShear'] = 0.0
 
             # Assemble damages
             outputs['damage_blade_root_sparU'] = np.max([damage_total[f'BladeRootSparU_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_root_sparL'] = np.max([damage_total[f'BladeRootSparL_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_maxc_teU'] = np.max([damage_total[f'BladeMaxcTEU_Axial{k+1}'] for k in range(self.n_blades)])
             outputs['damage_blade_maxc_teL'] = np.max([damage_total[f'BladeMaxcTEL_Axial{k+1}'] for k in range(self.n_blades)])
-            # Hmm- not sure this is kosher to combine damage in this way
-            outputs['damage_lss'] = np.sqrt( damage_total['LSSAxial']**2 + damage_total['LSSShear']**2 )
-            outputs['damage_tower_base'] = np.sqrt( damage_total['TowerBaseAxial']**2 + damage_total['TowerBaseShear']**2 )
-            outputs['damage_monopile_base'] = np.sqrt( damage_total['MonopileBaseAxial']**2 + damage_total['MonopileBaseShear']**2 )
+            outputs['damage_lss'] = np.max( [damage_total['LSSAxial'], damage_total['LSSShear']] )
+            outputs['damage_tower_base'] = np.max( [damage_total['TowerBaseAxial'], damage_total['TowerBaseShear']] )
+            outputs['damage_monopile_base'] = np.max( [damage_total['MonopileBaseAxial'], damage_total['MonopileBaseShear']] )
 
             # Log damages
             if self.options['opt_options']['constraints']['damage']['tower_base']['log']:

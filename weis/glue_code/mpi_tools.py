@@ -99,36 +99,6 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
 
     return modeling_options
 
-def under_mpirun():
-    """Return True if we're being executed under mpirun."""
-    # this is a bit of a hack, but there appears to be
-    # no consistent set of environment vars between MPI
-    # implementations.
-    for name in os.environ.keys():
-        if (
-            name == "OMPI_COMM_WORLD_RANK"
-            or name == "MPIEXEC_HOSTNAME"
-            or name.startswith("MPIR_")
-            or name.startswith("MPICH_")
-            or name.startswith("INTEL_ONEAPI_MPI_")
-            or name.startswith("I_MPI_")
-        ):
-            return True
-    return False
-
-
-if under_mpirun():
-
-    def debug(*msg):  # pragma: no cover
-        newmsg = ["%d: " % MPI.COMM_WORLD.rank] + list(msg)
-        for m in newmsg:
-            sys.stdout.write("%s " % m)
-        sys.stdout.write("\n")
-        sys.stdout.flush()
-
-else:
-    MPI = None
-
 
 def map_comm_heirarchical(nFD, n_OF):
     """
@@ -167,6 +137,8 @@ def subprocessor_loop(comm_map_up):
     data[0] = False
     """
     # comm        = impl.world_comm()
+    from openmdao.utils.mpi import MPI
+
     rank = MPI.COMM_WORLD.Get_rank()
     rank_target = comm_map_up[rank]
 
@@ -186,7 +158,7 @@ def subprocessor_stop(comm_map_down):
     """
     Send stop signal to subprocessors
     """
-    # comm = MPI.COMM_WORLD
+    from openmdao.utils.mpi import MPI
     for rank in comm_map_down.keys():
         subranks = comm_map_down[rank]
         for subrank_i in subranks:

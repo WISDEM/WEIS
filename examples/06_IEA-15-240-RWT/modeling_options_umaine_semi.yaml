@@ -122,8 +122,8 @@ DLC_driver:
         # - DLC: "1.5"
         - DLC: "1.6"
           wind_speed: [12]
+          analysis_time: 1.
           transient_time: 0.
-          analysis_time: 10.
         # - DLC: "6.1"
         #   n_seeds: 6
         # - DLC: "6.3"

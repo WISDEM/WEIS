@@ -31,13 +31,13 @@ openfast_input_map = {
     'azimuth_init': ("ElastoDyn","Azimuth"),
     'yaw_misalign': ("ElastoDyn","NacYaw"),
     
-    'wave_height': ("HydroDyn","WaveHs"),
-    'wave_period': ("HydroDyn","WaveTp"),
-    'wave_direction': ("HydroDyn","WaveDir"),
-    'wave_gamma': ("HydroDyn","WavePkShp"),
-    'wave_seed': ("HydroDyn","WaveSeed1"),
+    'wave_height': ("SeaState","WaveHs"),
+    'wave_period': ("SeaState","WaveTp"),
+    'wave_direction': ("SeaState","WaveDir"),
+    'wave_gamma': ("SeaState","WavePkShp"),
+    'wave_seed': ("SeaState","WaveSeed1"),
 
-    'wave_model': ("HydroDyn","WaveMod"),
+    'wave_model': ("SeaState","WaveMod"),
     
     'shutdown_time': [
         ("ServoDyn","TPitManS1"),
