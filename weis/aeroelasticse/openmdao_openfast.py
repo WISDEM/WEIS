@@ -29,7 +29,7 @@ from weis.control.LinearModel import LinearTurbineModel, LinearControlModel
 from openfast_io import FileTools
 from openfast_io.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.utils import OLAFParams
-from weis.aeroelasticse.turbsim_util import generate_wind_files
+from weis.aeroelasticse.utils import generate_wind_files
 from rosco.toolbox import control_interface as ROSCO_ci
 from pCrunch import AeroelasticOutput, FatigueParams
 from weis.control.dtqp_wrapper          import dtqp_wrapper
@@ -719,7 +719,7 @@ class FASTLoadCases(ExplicitComponent):
                     )
 
             # Post process regardless of level
-            self.post_process(summary_stats, extreme_table, DELs, Damage, case_list, case_name, dlc_generator, chan_time, inputs, discrete_inputs, outputs, discrete_outputs)
+            self.post_process(case_list, case_name, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
             
             # Save AEP value to linear pickle file
             if modopt['OpenFAST_Linear']['flag']:
