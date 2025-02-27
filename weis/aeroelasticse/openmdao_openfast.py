@@ -2580,14 +2580,15 @@ class FASTLoadCases(ExplicitComponent):
         '''
         nblades = self.fst_vt['ElastoDyn']['NumBl']
         chanmax = [f'dBldPitch{k+1}' for k in range(nblades)]
-        chanmax += ['GenSpeed','NcIMUTA']
+        chanmax += ['GenSpeed','NcIMUTA']   # Note: this order needs to be maintained for the indexing below to work
         maxes   = self.cruncher.get_load_rankings(chanmax, ['abs'])
         
         # rotor overspeed
-        outputs['rotor_overspeed'] = (maxes['val'].iloc[nblades] * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0
+        max_gen_speed = maxes['val'].loc[maxes['channel'] == 'GenSpeed'].values[0]
+        outputs['rotor_overspeed'] = (max_gen_speed * np.pi/30. / self.fst_vt['DISCON_in']['PC_RefSpd'] ) - 1.0     # Convert to rad/s (like DISCON) and normalize
 
         # nacelle accelleration
-        outputs['max_nac_accel'] = maxes['val'].iloc[nblades+1]
+        outputs['max_nac_accel'] = maxes['val'].loc[maxes['channel'] == 'NcIMUTA'].values[0]
 
         # Pitch rates
         max_pitch_rates = maxes['val'].to_numpy()[:nblades]
