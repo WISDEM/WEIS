@@ -2549,7 +2549,7 @@ class FASTLoadCases(ExplicitComponent):
             damage_total['TowerBaseShear'] = damage_total['TwrBsAxFxyt'] + damage_total['TwrBsAxMzt']
             if modopt['flags']['monopile']:
                 damage_total['MonopileBaseAxial'] = damage_total['M1N1AxFKze'] + damage_total['M1N1AxMKxye']
-                damage_total['MonopileBaseShear'] = damage_total['M1N1AxFKxye'] + damage_total['M1N1AxMKxe']
+                damage_total['MonopileBaseShear'] = damage_total['M1N1AxFKxye'] + damage_total['M1N1AxMKze']
             else:
                 damage_total['MonopileBaseAxial'] = damage_total['MonopileBaseShear'] = 0.0
 
