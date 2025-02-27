@@ -75,6 +75,7 @@ class FASTLoadCases(ExplicitComponent):
         self.add_discrete_input('turbine_class',    val='I', desc='IEC turbine class')
         self.add_input('Rtip',              val=0.0, units='m', desc='dimensional radius of tip')
         self.add_input('shearExp',    val=0.0,                   desc='shear exponent')
+        self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
 
         if not self.options['modeling_options']['OpenFAST']['from_openfast']:
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
@@ -310,7 +311,6 @@ class FASTLoadCases(ExplicitComponent):
                 self.add_discrete_input("node_names", val=[""] * n_nodes)
 
             # Inputs required for fatigue processing
-            self.add_input('lifetime', val=25.0, units='yr', desc='Turbine design lifetime')
             self.add_input('blade_sparU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
             self.add_input('blade_sparU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
             self.add_input('blade_sparU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
