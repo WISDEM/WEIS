@@ -2382,23 +2382,19 @@ class FASTLoadCases(ExplicitComponent):
         monopile_chans_Mx = []
         monopile_chans_My = []
         monopile_chans_Mz = []
-<<<<<<< HEAD
-        for k in range(1,len(self.Z_out_SD_mpl)+1):
-            Node = 2 if k==9 else 1
-=======
         k=1
         for i in range(len(self.Z_out_SD_mpl)):
             if k==len(self.fst_vt['SubDyn']['NodeCnt']):
                 Node=2
             else:
                 Node=1
->>>>>>> develop
-            monopile_chans_Fx += ["M" + str(k) + "N" + str(Node) + "FKxe"]
-            monopile_chans_Fy += ["M" + str(k) + "N" + str(Node) + "FKye"]
-            monopile_chans_Fz += ["M" + str(k) + "N" + str(Node) + "FKze"]
-            monopile_chans_Mx += ["M" + str(k) + "N" + str(Node) + "MKxe"]
-            monopile_chans_My += ["M" + str(k) + "N" + str(Node) + "MKye"]
-            monopile_chans_Mz += ["M" + str(k) + "N" + str(Node) + "MKze"]
+            monopile_chans_Fx += [f"M{k}N{Node}FKxe"]
+            monopile_chans_Fy += [f"M{k}N{Node}FKye"]
+            monopile_chans_Fz += [f"M{k}N{Node}FKze"]
+            monopile_chans_Mx += [f"M{k}N{Node}MKxe"]
+            monopile_chans_My += [f"M{k}N{Node}MKye"]
+            monopile_chans_Mz += [f"M{k}N{Node}MKze"]
+            k+=1
 
         # # Get the maximum of signal M1N1MKye
         max_chan = "M1N1MKye"
