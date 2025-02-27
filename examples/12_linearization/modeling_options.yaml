@@ -108,9 +108,9 @@ OpenFAST_Linear:
     flag: True
     simulation:         # could these be included in openfast options?
         flag: True
-        TMax: 600.      # run simulations using IEC standards, could share that info
+        TMax: 1.      # run simulations using IEC standards, could share that info
     linearization:
-        TMax: 700.
+        TMax: 1.
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
@@ -138,8 +138,8 @@ DLC_driver:
           wave_period: [2.]
           wind_seeds: [1]
           n_seeds: 1
-          analysis_time: 600.
-          transient_time: 100.
+          analysis_time: 1.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 150.0
               Clockwise: True

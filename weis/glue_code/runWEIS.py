@@ -145,7 +145,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
                 wt_opt = assign_TMD_values(wt_opt, wt_init, opt_options)
 
             wt_opt = myopt.set_initial(wt_opt, wt_init)
-            if modeling_options['Level3']['flag']:
+            if modeling_options['OpenFAST']['flag']:
                 wt_opt = myopt.set_initial_weis(wt_opt)
 
             # If the user provides values in geometry_override, they overwrite
@@ -206,7 +206,7 @@ def run_weis(fname_wt_input, fname_modeling_options, fname_opt_options,
                 fileIO.save_data(froot_out, wt_opt)
 
     if MPI and \
-            (modeling_options['Level3']['flag'] or modeling_options['Level2']['flag']) and \
+            (modeling_options['OpenFAST']['flag'] or modeling_options['OpenFAST_Linear']['flag']) and \
             (not opt_options['driver']['design_of_experiments']['flag']):
         # subprocessor ranks spin, waiting for FAST simulations to run.
         sys.stdout.flush()
