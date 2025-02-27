@@ -2469,20 +2469,22 @@ class FASTLoadCases(ExplicitComponent):
         if len(idx_pwrcrv) > 0:
             sum_stats = sum_stats.iloc[idx_pwrcrv]
             outputs['V_out'] = np.unique(U)
+            prob = self.cruncher.prob[idx_pwrcrv]
         else:
             outputs['V_out'] = dlc_generator.cases[0].URef
+            prob = self.cruncher.prob
             logger.warning('WARNING: OpenFAST is not run using DLC AEP, 1.1, or 1.2. AEP cannot be estimated well. Using average power instead.')
 
         if len(U) == 1:
             logger.warning('WARNING: OpenFAST is run at a single wind speed. AEP cannot be estimated. Using average power instead.')
             
         # Calculate AEP and Performance Data
-        outputs['Cp_out'] = sum_stats['RtFldCp']['mean']
-        outputs['Ct_out'] = sum_stats['RtFldCt']['mean']
-        outputs['Omega_out'] = sum_stats['RotSpeed']['mean']
-        outputs['pitch_out'] = sum_stats['BldPitch1']['mean']
+        outputs['Cp_out'] = np.sum(prob * sum_stats['RtFldCp']['mean'])
+        outputs['Ct_out'] = np.sum(prob * sum_stats['RtFldCt']['mean'])
+        outputs['Omega_out'] = np.sum(prob * sum_stats['RotSpeed']['mean'])
+        outputs['pitch_out'] = np.sum(prob * sum_stats['BldPitch1']['mean'])
         if self.fst_vt['Fst']['CompServo'] == 1:
-            outputs['P_out'] = sum_stats['GenPwr']['mean'] * 1e3
+            outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
 
         return outputs
 
