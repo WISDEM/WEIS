@@ -68,9 +68,7 @@ class WEISVizInputFileGenerator:
         self.vizInput['userPreferences'] = {}
         self.vizInput['userPreferences']['openfast'] = {}
         self.vizInput['userPreferences']['openfast']['file_path'] = {}
-        self.vizInput['userPreferences']['openfast']['file_path']['file1'] = 'examples/03_NREL5MW_OC3_spar/outputs/03_NREL5MW_OC3_spar/NREL5MW_OC3_spar_0.out'
-        self.vizInput['userPreferences']['openfast']['file_path']['file2'] = 'examples/06_IEA-15-240-RWT/outputs/06_IEA15_TMD_optimization/openfast_runs/DLC1.6_0_weis_job_0.out'
-        self.vizInput['userPreferences']['openfast']['file_path']['file3'] = 'examples/06_IEA-15-240-RWT/outputs/OpenFAST_DOE/openfast_runs/DLC1.6_0_weis_job_0.out'
+        self.vizInput['userPreferences']['openfast']['file_path']['file1'] = 'None'
 
         self.vizInput['userPreferences']['openfast']['graph'] = {}
         self.vizInput['userPreferences']['openfast']['graph']['xaxis'] = 'Time'
