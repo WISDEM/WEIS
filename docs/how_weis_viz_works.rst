@@ -362,7 +362,7 @@ WEIS Inputs
 ------------
 
 To proceed input visualization, WEIS input files need to be first imported from the home page. 
-Please enter file path, label name, file type and click ``add`` button, then confirm if the file has been successfully loaded under ``Result`` table.
+Please enter file path, label name, file type and click ``Add`` button, then confirm if the file has been successfully loaded under ``Result`` table.
 Three types of inputs - modeling, analysis, and geometry - exist, but we only support geometry yaml files for now. For better understanding, please refer to :doc:`WEIS Inputs <inputs/yaml_inputs>`.
 The app has been tested with three sample geometry yaml files - ``3.4MW``, ``15MW``, ``22MW`` from `examples/00_setup/ref_turbines <https://github.com/WISDEM/WEIS/tree/main/examples/00_setup/ref_turbines>`_ .
 
@@ -372,6 +372,8 @@ The app has been tested with three sample geometry yaml files - ``3.4MW``, ``15M
 3D Visualization
 ~~~~~~~~~~~~~~~~~
 
+Dash-VTK based 3D model engine renders 3D geometries from WindIO format. The app provides interactive interface where users can compare multiple wind turbines with pan, rotate, zoom, etc. 
+If user clicks specific turbine component (blade, tower, hub, nacelle), local-view of each component across multiple turbines is provided with detailed information.
 
 .. image:: images/viz/WEIS_Inputs/3d.pdf
 
