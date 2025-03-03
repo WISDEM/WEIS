@@ -27,6 +27,11 @@ All of the graphical objects has been generated via Plotly library, which is eas
         │        │      └── tests/
         │        │              ├── test_app.py
         │        │              ├── test_3d_callbacks.py
+        │        │              ├── test_airfoils_callbacks.py
+        │        │              ├── test_blade_callbacks.py
+        │        │              ├── test_tower_callbacks.py
+        │        │              └── test_raft_opt.py
+        │        │                
         │        └── share/
         │            ├── auto_launch_DashApp.sh
         │            ├── sbatch_DashApp.sh                
@@ -397,17 +402,17 @@ If user clicks specific turbine component (blade, tower, hub, nacelle), local-vi
    :width: 48%
 
 
-Airfoils
-~~~~~~~~~
+Airfoils Properties
+~~~~~~~~~~~~~~~~~~~
 
 .. image:: images/viz/WEIS_Inputs/airfoils.png
 
-Blade
-~~~~~~~~~
+Blade Properties
+~~~~~~~~~~~~~~~~
 
 .. image:: images/viz/WEIS_Inputs/blade.pdf
 
-Tower
-~~~~~~~~~
+Tower Properties
+~~~~~~~~~~~~~~~~
 
 .. image:: images/viz/WEIS_Inputs/tower.png
