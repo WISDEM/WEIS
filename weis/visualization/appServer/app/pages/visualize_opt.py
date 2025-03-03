@@ -506,7 +506,6 @@ def update_raft_outputs(opt_options):
     # Read from matplotlib image
     # Create figure
     fig = go.Figure()
-    print('---------current path----------\n', os.cwd())
     png_per_iteration = Image.open(f'{opt_options["raft_design_dir"]}/../raft_plots/ptfm_{iteration}.png')
     img_width, img_height = png_per_iteration.size
 

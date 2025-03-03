@@ -660,7 +660,9 @@ def read_cost_variables(labels, refturb_variables):
     
     return cost_matrix
 
-
+def convert_dict_values_to_list(input_dict):
+    return {k: [v.tolist()] if isinstance(v, np.ndarray) else v for k, v in input_dict.items()}
+    
 def generate_raft_img(raft_design_dir, plot_dir, log_data):
     '''
     Temporary function to visualize raft 3d plot using matplotlib.
@@ -668,11 +670,14 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
     '''
     os.makedirs(plot_dir,exist_ok=True)
 
+    if isinstance(log_data, list):
+        log_data = convert_dict_values_to_list(log_data[0])
+
     opt_outs = {}
     opt_outs['max_pitch'] = np.squeeze(np.array(log_data['raft.Max_PtfmPitch']))
-    n_plots = len(opt_outs['max_pitch'])
+    n_plots = opt_outs['max_pitch'].size     # Change from len(opt_outs['max_pitch']) to solve single element np.array values
     print('n_plots: ', n_plots)
-
+    
     matplotlib.use('agg')
     for i_plot in range(n_plots):
         # Set up subplots
