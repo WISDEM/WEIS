@@ -2,7 +2,9 @@
 # Use pytest-order to customize the order in which tests are run.
 # Input vizFile Generation => Run the app with Input yaml file => Test WEIS Output Viz => Test WEIS Input Viz
 
+import pytest
 import os
+import subprocess
 import numpy as np
 from contextvars import copy_context
 from dash._callback_context import context_value
@@ -21,11 +23,12 @@ analysis_options = 'examples/17_IEA22_Optimization/analysis_options_raft_ptfm_op
 wt_input = 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml'
 vizFilepath = 'weis/visualization/appServer/app/tests/input/testIEA22RAFT.yaml'
 
-os.system(f"python weis/visualization/appServer/share/vizFileGen.py \
-          --modeling_options {modeling_options} \
-          --analysis_options {analysis_options} \
-          --wt_input {wt_input} \
-          --output {vizFilepath}")
+
+def test_vizFile_generation(request):
+    root_dir = request.config.rootdir
+    print(f'Moving back to root directory..{root_dir}\n')
+    os.chdir(root_dir)
+    subprocess.run(['python', 'weis/visualization/appServer/share/vizFileGen.py', '--modeling_options', modeling_options, '--analysis_options', analysis_options, '--wt_input', wt_input, '--output', vizFilepath], cwd=root_dir)
 
 
 # Optimization Visualization Test
