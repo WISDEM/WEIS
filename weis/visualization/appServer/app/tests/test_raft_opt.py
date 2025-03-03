@@ -88,7 +88,11 @@ def test_update_graphs():
     assert len(fig['data']) == len(signaly)
 
 
-def test_toggle_iteration_with_dlc_layout():
+def test_toggle_iteration_with_dlc_layout(request):
+    root_dir = request.config.rootdir
+    print(f'Moving back to root directory..{root_dir}\n')
+    os.chdir(root_dir)
+    
     clickData_iteration_1 = {'points': [{'curveNumber': 0, 'pointNumber': 1, 'pointIndex': 1, 'x': 1, 'y': -25, 'bbox': {'x0': 284.5, 'x1': 290.5, 'y0': 379.89, 'y1': 385.89}}]}
 
     output = toggle_iteration_with_dlc_layout(clickData=clickData_iteration_1,
