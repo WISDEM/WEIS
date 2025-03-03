@@ -39,7 +39,7 @@ On laptop and personal computers, installation with [Anaconda](https://www.anaco
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable. For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 
-0.  If you are NOT installing WEIS on DOE's HPC system Kestrel, skip step 0 and run step 1 and 2 (skip step 3). If you are on Kestrel, follow run steps 0, 1, and 3. Skip step 2. On Kestrel, start by purging existing modules and load conda
+0.  If you are NOT installing WEIS on DOE's HPC system Kestrel, skip step 0 and run step 1 and 2 (skip step 3). If you are on Kestrel, follow steps 0, 1, and 3, and skip step 2. On Kestrel, start by purging existing modules and load conda
 
         module purge
         module load conda        
