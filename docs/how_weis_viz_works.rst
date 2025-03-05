@@ -7,46 +7,12 @@ The application can also visualizae the WEIS geometry (WindIO) input, including 
 
 All of the graphical objects has been generated via Plotly library, which is easy to interact, zoom, and download the plots.
 
-::
-
-   visualization/
-        ├── appServer/
-        │        ├── app/
-        │        │      ├── assets/
-        │        │      ├── mainApp.py              
-        │        │      ├── pages/
-        │        │      │     ├── home.py
-        │        │      │     ├── visualize_openfast.py
-        │        │      │     ├── visualize_opt.py
-        │        │      │     ├── visualize_wisdem_blade.py
-        │        │      │     ├── visualize_wisdem_cost.py
-        │        │      │     ├── visualize_windio_3d.py
-        │        │      │     ├── visualize_windio_airfoils.py
-        │        │      │     ├── visualize_windio_blade.py
-        │        │      │     └── visaulize_windio_tower.py
-        │        │      └── tests/
-        │        │              ├── test_app.py
-        │        │              ├── test_3d_callbacks.py
-        │        │              ├── test_airfoils_callbacks.py
-        │        │              ├── test_blade_callbacks.py
-        │        │              ├── test_tower_callbacks.py
-        │        │              └── test_raft_opt.py
-        │        │                
-        │        └── share/
-        │            ├── auto_launch_DashApp.sh
-        │            ├── sbatch_DashApp.sh                
-        │            └── vizFileGen.py
-        ├── meshRender.py
-        └── utils.py
-
 
 Installation
 ------------
 
 We offer two types of installation: (1) for users who wants to leverage HPC and (2) for users working on their local machines. The HPC set up is in steps 1--3.  Users on local machines can skip to step 4. From our preliminary study, the app was able to successfully visualize the example optimization case which has around 430GB of information included.
 
-.. Set up on HPC
-.. ~~~~~~~~~~~~~
 1. Get an interactive node
 
 .. code-block:: console
@@ -190,123 +156,6 @@ After finishing the set up from the hpc, open a new terminal from your local mac
 Open a web browser, preferably Safari or Chrome, and go to the hosting url that shows from step \#5.
 
 
-.. Set up on Local Machine
-.. ~~~~~~~~~~~~~~~~~~~~~~~
-
-.. 1. Go to preferred directory
-
-.. .. code-block:: console
-
-..    cd WEIS-Demo
-
-.. 2. Install WEIS and dependencies
-
-.. Please use the installation instructions here: https://github.com/WISDEM/WEIS
-
-.. 3. Generate visualization input yaml file
-
-.. .. code-block:: console
-
-..    module load conda
-..    conda activate env/weis-env
-..    (.weis-env) $ cd weis/weis/visualization/appServer/share/
-..    (.weis-env) $ python vizFileGen.py --modeling_options [path_to_modeling_options] --analysis_options [path_to_analysis_options] --wt_input [path_to_final_wind_io] --output vizInput.yaml
-
-.. Note that you can use the modeling and analysis options generated within the output folder of the WEIS run.
-
-.. Please make sure the file generation is successful. The file should include correct output directory structure. 
-.. OpenFAST output file paths can be added as you wish, either with absolute path or with the relative path from ``WEIS``. An example is shown as below.
-
-.. ::
-
-..    outputDirStructure:
-..       dirs:
-..          of_COBYLA:
-..             dirs:
-..             openfast_runs:
-..                dirs:
-..                   Airfoils: ...
-..                   iteration_0: ...
-..                   iteration_1: ...
-..                   iteration_2: ...
-..                   wind:
-..    userOptions:
-..       deisgn_of_experiments: false
-..       inverse_design: false
-..       optimization:
-..          status: true
-..          type: 3
-..       output_fileName: IEA-22-280-RWT
-..       output_folder: examples/17_IEA22_Optimization/17_IEA22_OptStudies/of_COBYLA
-..       sql_recorder: true
-..       sql_recorder_file: log_opt.sql
-..    userPreferences:
-..       openfast:
-..          file_path:
-..             file1: examples/03_NREL5MW_OC3_spar/outputs/03_NREL5MW_OC3_spar/NREL5MW_OC3_spar_0.out
-..             file2: examples/06_IEA-15-240-RWT/outputs/06_IEA15_TMD_optimization/openfast_runs/DLC1.6_0_weis_job_0.out
-..             file3: examples/06_IEA-15-240-RWT/outputs/OpenFAST_DOE/openfast_runs/DLC1.6_0_weis_job_0.out
-..          graph:
-..             xaxis: Time
-..             yaxis:
-..             - Wind1VelX
-..             - GenPwr
-..             - BldPitch1
-..             - GenSpeed
-..             - PtfmPitch
-..       optimization:
-..          convergence:
-..             channels:
-..             - floating.jointdv_0
-..             - floating.jointdv_1
-..             - floating.memgrp1.outer_diameter_in
-..             - floatingse.system_structural_mass
-..          dlc:
-..             xaxis: Wind1VelX
-..             xaxis_stat: mean
-..             yaxis:
-..             - Wind1VelY
-..             - GenSpeed
-..             - PtfmPitch
-..             yaxis_stat: max
-..          timeseries:
-..             channels:
-..             - Wind1VelX
-..             - GenPwr
-..             - BldPitch1
-..             - GenSpeed
-..             - PtfmPitch
-..       wisdem:
-..          blade:
-..             shape_yaxis:
-..             - rotorse.rc.chord_m
-..             - rotorse.re.pitch_axis
-..             - rotorse.theta_deg
-..             struct_yaxis:
-..             - rotorse.rhoA_kg/m
-..             struct_yaxis_log:
-..             - rotorse.EA_N
-..             - rotorse.EIxx_N*m**2
-..             - rotorse.EIyy_N*m**2
-..             - rotorse.GJ_N*m**2
-..             xaxis: rotorse.rc.s
-..       output_path: examples/17_IEA22_Optimization/17_IEA22_OptStudies/of_COBYLA
-..    yamlPath: weis/visualization/appServer/app/tests/testIEA22OF.yaml
-
-
-.. The selected channels from the app should be saved between runs, which help users to resume their previous work. 
-
-
-.. 4. Run the server
-
-.. .. code-block:: console
-   
-..    cd ../app
-..    (.weis-env) $ python mainApp.py --input [path_to_viz_input] --host [host_number] --port [port_number]
-
-.. Now, you are able to see the hosting url with defined port number where your app server is running. Open a web browser, preferably Safari or Chrome, and enter the hosting url to start.
-.. If you are having issues seeing the host and port returned, try ``unset HOST``.
-
 
 WEIS Outputs
 ------------
@@ -382,12 +231,12 @@ The app has been tested with three sample geometry yaml files - ``3.4MW``, ``15M
 ~~~~~~~~~~~~~~~~~
 
 The Dash-VTK library is used to render 3D geometries from WindIO format. The app provides an interactive interface where users can compare multiple wind turbines with pan, rotate, zoom, etc. 
-If user clicks specific turbine component (blade, tower, hub, nacelle), local-view of each component across multiple turbines is provided with detailed information.
+If user clicks a specific turbine component (blade, tower, hub, nacelle), the local-view of each component across multiple turbines is provided with detailed information.
 
 .. image:: images/viz/WEIS_Inputs/3d.pdf
 
 .. video:: images/viz/WEIS_Inputs/interactive.mp4
-   :width: 100%
+   :width: 900
    :autoplay:
 
 .. image:: images/viz/WEIS_Inputs/blade1.png
@@ -419,3 +268,37 @@ Tower Properties
 ~~~~~~~~~~~~~~~~
 
 .. image:: images/viz/WEIS_Inputs/tower.png
+
+Application File Structure
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
+::
+
+   visualization/
+        ├── appServer/
+        │        ├── app/
+        │        │      ├── assets/
+        │        │      ├── mainApp.py              
+        │        │      ├── pages/
+        │        │      │     ├── home.py
+        │        │      │     ├── visualize_openfast.py
+        │        │      │     ├── visualize_opt.py
+        │        │      │     ├── visualize_wisdem_blade.py
+        │        │      │     ├── visualize_wisdem_cost.py
+        │        │      │     ├── visualize_windio_3d.py
+        │        │      │     ├── visualize_windio_airfoils.py
+        │        │      │     ├── visualize_windio_blade.py
+        │        │      │     └── visaulize_windio_tower.py
+        │        │      └── tests/
+        │        │              ├── test_app.py
+        │        │              ├── test_3d_callbacks.py
+        │        │              ├── test_airfoils_callbacks.py
+        │        │              ├── test_blade_callbacks.py
+        │        │              ├── test_tower_callbacks.py
+        │        │              └── test_raft_opt.py
+        │        │                
+        │        └── share/
+        │            ├── auto_launch_DashApp.sh
+        │            ├── sbatch_DashApp.sh                
+        │            └── vizFileGen.py
+        ├── meshRender.py
+        └── utils.py
