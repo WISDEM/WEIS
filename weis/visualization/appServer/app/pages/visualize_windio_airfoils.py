@@ -1,10 +1,9 @@
-'''This is the page for visualize the WEIS inputs in 3D simulation model'''
+'''This is the page for visualize the WEIS inputs specialized in Airfoil properties.'''
 
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, State, dcc
 import numpy as np
 from plotly.subplots import make_subplots
-import plotly
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 from weis.visualization.utils import *
@@ -15,11 +14,6 @@ register_page(
     top_nav=True,
     path='/windio_airfoils'
 )
-
-def set_colors():
-    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
-    return cols
-
 
 @callback(Output('airfoil-names', 'options'),
           Input('airfoil-by-names', 'data'))
@@ -74,8 +68,6 @@ def layout():
                                 dbc.CardBody([
                                     # Toggle switches
                                     polars_inputs,
-                                    # Table for Re
-                                    # html.Div(id='re-table'),      # For callback: Output('re-table', 'children'),
                                     html.Br(),
                                     # Graph layout for polars
                                     dcc.Graph(id='airfoil-polars', figure=empty_figure(), mathjax=True)
@@ -121,8 +113,6 @@ def draw_airfoil_shape(airfoil_names, airfoil_by_names):
                     row = 1,
                     col = 1)
     
-    # fig.update_layout(plot_bgcolor='white', legend={'x':0.0, 'y':-0.75})      # Relocate legend position
-    # fig.update_layout(plot_bgcolor='white', legend=dict(yanchor='bottom', y=-0.75, xanchor='left', x=0.01))
     fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey', scaleanchor='x')      # Make it 1:1 xy-ratio
@@ -150,8 +140,6 @@ def draw_airfoil_polar(airfoil_names, airfoil_by_names, switches_value):
     for row_idx, value in enumerate(switches_value):
         for idx, airfoil_name in enumerate(airfoil_names):
             polars_dict = airfoil_by_names[airfoil_name]['polars'][0]
-            # re_data.append(html.Tr([html.Td(airfoil_name), html.Td(polars_dict['re'])]))            # For 1)
-            # re_data.append({'airfoil': airfoil_name, 'Re': polars_dict['re']})                      # For 2)
 
             if value == 1:
                 fig.append_trace(go.Scatter(

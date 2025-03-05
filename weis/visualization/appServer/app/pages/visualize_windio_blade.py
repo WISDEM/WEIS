@@ -4,7 +4,6 @@ import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, dcc
 import numpy as np
 from plotly.subplots import make_subplots
-import plotly
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 from weis.visualization.utils import *
@@ -15,10 +14,6 @@ register_page(
     top_nav=True,
     path='/windio_blade'
 )
-
-def set_colors():
-    global cols
-    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
 
 
 @callback(Output('blade-names', 'options'),
@@ -35,9 +30,6 @@ def load_blade_comps(geom_comps_by_names):
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-
-    # Set color panel
-    set_colors()
 
     # Define layout for blade oml properties
     blade_items = dcc.Dropdown(id='blade-names', options=[], value=None, multi=True)
@@ -87,6 +79,7 @@ def draw_blade_oml(blade_names, blade_by_names):
         raise PreventUpdate
     
     channels = ['chord', 'twist', 'pitch_axis']
+    cols = set_colors()            # Set color panel
     fig = make_subplots(rows=len(channels), cols=1, shared_xaxes=True)  # 3 subplots where chord, twist, LE/TE are each plotted
 
     for idx, blade_name in enumerate(blade_names):
@@ -134,8 +127,7 @@ def draw_blade_oml(blade_names, blade_by_names):
                                     col = 1)
             
                 fig.update_yaxes(title_text=channel, row=row_idx+1, col=1)
-            
-    # fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', xanchor='center', x=0.5, y=-0.3), margin={"l": 0, "r": 0, "t": 0, "b": 0})
+    
     fig.update_layout(plot_bgcolor='white', legend=dict(orientation='h', yanchor='bottom', xanchor='right', x=1, y=1.02), height=600)
     fig.update_xaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
     fig.update_yaxes(mirror = True, ticks='outside', showline=True, linecolor='black', gridcolor='lightgrey')
@@ -153,8 +145,8 @@ def draw_blade_matrix(blade_names, blade_by_names):
         raise PreventUpdate
 
     # Initialize 6x6 matrices per blade
-    subplot_titles = tuple(' ' for pltRow in range(6) for pltCol in range(6))
-    # subplot_titles = tuple(f'' for _ in range(6) for _ in range(6))
+    subplot_titles = tuple(' ' for _ in range(6) for _ in range(6))
+    cols = set_colors()            # Set color panel
     fig_elastic = make_subplots(rows=6, cols=6, subplot_titles=subplot_titles)
     fig_mass = make_subplots(rows=6, cols=6, subplot_titles=subplot_titles)
 
