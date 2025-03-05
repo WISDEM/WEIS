@@ -60,7 +60,8 @@ def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
         rank = 0
         
     if rank == 0:
-        print("Run time: %f"%(time.time()-tt))
+        output_name = os.path.split(opt_options['general']['folder_output'])[-1]  # maybe temporary hack to profile examples/tests
+        print(f"Run time ({output_name}): {time.time()-tt}")
         sys.stdout.flush()
     
     return wt_opt, modeling_options, opt_options

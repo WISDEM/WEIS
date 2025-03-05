@@ -2462,6 +2462,10 @@ class FASTLoadCases(ExplicitComponent):
 
         if len(U) > 0:
             self.cruncher.set_probability_turbine_class(U, discrete_inputs['turbine_class'], idx=idx_pwrcrv)
+
+        # Skip if we're not running with aerodynamics or controls/generator
+        if not self.fst_vt['Fst']['CompAero'] or not self.fst_vt['Fst']['CompServo']:
+            return outputs
             
         AEP, _ = self.cruncher.compute_aep("GenPwr", idx=idx_pwrcrv)
         outputs['AEP'] = AEP
