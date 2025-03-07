@@ -119,7 +119,7 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('beam:EIxy', val=np.zeros(n_span), units='N*m**2', desc='cross-term flap-edge stiffness')
             self.add_input('beam:GJ', val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
             self.add_input('beam:rhoA', val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
-            self.add_input('beam:rhoJ', val=np.zeros(n_span), units='kg/m', desc='polar mass moment of inertia per unit length')
+            self.add_input('beam:rhoJ', val=np.zeros(n_span), units='kg*m', desc='polar mass moment of inertia per unit length')
             self.add_input('beam:x_cg', val=np.zeros(n_span), units='m', desc='x coordinate of the center-of-mass offset with respect to the local coordinate system')
             self.add_input('beam:y_cg', val=np.zeros(n_span), units='m', desc='y coordinate of the center-of-mass offset with respect to the local coordinate system')
             self.add_input('beam:edge_iner', val=np.zeros(n_span), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
