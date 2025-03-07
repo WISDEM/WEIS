@@ -130,7 +130,7 @@ class WindPark(om.Group):
                 self.connect('rotorse.rp.powercurve.rated_Q',          'sse_tune.tune_rosco.rated_torque')
                 
                 self.connect("blade.high_level_blade_props.r_blade",  "sse_tune.r")
-                self.connect("blade.high_level_blade_props.rotor_radius", "sse_tune.Rtip")
+                self.connect("blade.high_level_blade_props.Rtip", "sse_tune.Rtip")
                 self.connect('hub.radius',                     'sse_tune.Rhub')
                 self.connect("high_level_tower_props.hub_height", "sse_tune.hub_height")
                 self.connect('hub.cone',                       'sse_tune.precone')
@@ -158,7 +158,7 @@ class WindPark(om.Group):
                 self.connect('configuration.rated_power',       'sse_tune.rated_power')
 
                 self.connect('nacelle.gear_ratio',              'sse_tune.tune_rosco.gear_ratio')
-                self.connect("blade.high_level_blade_props.rotor_radius", "sse_tune.tune_rosco.R")
+                self.connect("blade.high_level_blade_props.Rtip", "sse_tune.tune_rosco.R")
                 self.connect('rotorse.I_all_blades',            'sse_tune.tune_rosco.rotor_inertia', src_indices=[0])
                 self.connect('rotorse.rs.frame.flap_mode_freqs','sse_tune.tune_rosco.flap_freq', src_indices=[0])
                 self.connect('rotorse.rs.frame.edge_mode_freqs','sse_tune.tune_rosco.edge_freq', src_indices=[0])
@@ -264,7 +264,7 @@ class WindPark(om.Group):
                 self.connect("nacelle.uptilt", "raft.tilt")
                 self.connect("nacelle.gear_ratio", "raft.gear_ratio")
                 self.connect("blade.high_level_blade_props.r_blade",  "raft.blade_r")
-                self.connect("blade.high_level_blade_props.rotor_radius", "raft.blade_Rtip")
+                self.connect("blade.high_level_blade_props.Rtip", "raft.blade_Rtip")
                 self.connect("hub.radius", "raft.hub_radius")
                 self.connect("blade.pa.chord_param", "raft.blade_chord")
                 self.connect("blade.pa.twist_param", "raft.blade_theta")
@@ -429,7 +429,7 @@ class WindPark(om.Group):
                 self.connect('env.Hsig_wave',                    'aeroelastic.Hsig_wave')     # TODO: these depend on wind speed
                 self.connect('env.Tsig_wave',                    'aeroelastic.Tsig_wave')
                 #self.connect('env.beta_wave',                    'aeroelastic.beta_wave') # TODO: NEED ONTOLOGY INPUT HERE
-                self.connect("blade.high_level_blade_props.rotor_radius", "aeroelastic.Rtip")
+                self.connect("blade.high_level_blade_props.Rtip", "aeroelastic.Rtip")
                 self.connect('hub.radius',                      'aeroelastic.Rhub')
                 self.connect('hub.cone',                        'aeroelastic.cone')
                 self.connect('drivese.hub_system_mass',         'aeroelastic.hub_system_mass')
@@ -541,11 +541,11 @@ class WindPark(om.Group):
                 self.connect('rotorse.EIxy', 'aeroelastic.beam:EIxy')
                 self.connect('rotorse.GJ', 'aeroelastic.beam:GJ')
                 self.connect('rotorse.rhoA', 'aeroelastic.beam:rhoA')
+                self.connect('rotorse.rhoJ', 'aeroelastic.beam:rhoJ')
                 self.connect('rotorse.re.x_cg', 'aeroelastic.beam:x_cg')
                 self.connect('rotorse.re.y_cg', 'aeroelastic.beam:y_cg')
                 self.connect('rotorse.re.precomp.edge_iner', 'aeroelastic.beam:edge_iner')
                 self.connect('rotorse.re.precomp.flap_iner', 'aeroelastic.beam:flap_iner')
-                self.connect('rotorse.re.precomp.rhoJ', 'aeroelastic.beam:rhoJ')
                 self.connect('rotorse.rs.frame.flap_mode_shapes', 'aeroelastic.flap_mode_shapes')
                 self.connect('rotorse.rs.frame.edge_mode_shapes', 'aeroelastic.edge_mode_shapes')
                 self.connect('rotorse.rp.powercurve.V', 'aeroelastic.U')
@@ -871,7 +871,7 @@ class WindPark(om.Group):
                 # Connections to turbine constraints
                 self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
                 self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
-                self.connect("blade.high_level_blade_props.rotor_radius", "tcons_post.Rtip")
+                self.connect("blade.high_level_blade_props.Rtip", "tcons_post.Rtip")
                 self.connect('blade.outer_shape_bem.ref_axis',  'tcons_post.ref_axis_blade')
                 self.connect('hub.cone',                        'tcons_post.precone')
                 self.connect('nacelle.uptilt',                  'tcons_post.tilt')
