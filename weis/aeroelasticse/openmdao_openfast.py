@@ -109,20 +109,26 @@ class FASTLoadCases(ExplicitComponent):
 
             # ElastoDyn Inputs
             # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-            self.add_input('r',                     val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
+            self.add_input('r', val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
                 while r[-1] should be the blade tip. Any number \
                 of locations can be specified between these in ascending order.')
-            self.add_input('le_location',           val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-            self.add_input('beam:rhoA',             val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
-            self.add_input('beam:EIyy',             val=np.zeros(n_span), units='N*m**2', desc='flatwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:EIxx',             val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-            self.add_input('x_tc',                  val=np.zeros(n_span), units='m',      desc='x-distance to the neutral axis (torsion center)')
-            self.add_input('y_tc',                  val=np.zeros(n_span), units='m',      desc='y-distance to the neutral axis (torsion center)')
-            self.add_input('flap_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
-            self.add_input('edge_mode_shapes',      val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
-            self.add_input('gearbox_efficiency',    val=1.0,               desc='Gearbox efficiency')
-            self.add_input('gearbox_ratio',         val=1.0,               desc='Gearbox ratio')
-            self.add_input('platform_displacement', val=1.0,               desc='Volumetric platform displacement', units='m**3')
+            self.add_input('le_location', val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
+            self.add_input('beam:EA', val=np.zeros(n_span), units='N', desc='axial stiffness (along z-direction of airfoil aligned coordinate system)')
+            self.add_input('beam:EIxx', val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
+            self.add_input('beam:EIyy', val=np.zeros(n_span), units='N*m**2', desc='flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
+            self.add_input('beam:EIxy', val=np.zeros(n_span), units='N*m**2', desc='cross-term flap-edge stiffness')
+            self.add_input('beam:GJ', val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
+            self.add_input('beam:rhoA', val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
+            self.add_input('beam:rhoJ', val=np.zeros(n_span), units='kg/m', desc='polar mass moment of inertia per unit length')
+            self.add_input('beam:x_cg', val=np.zeros(n_span), units='m', desc='x coordinate of the center-of-mass offset with respect to the local coordinate system')
+            self.add_input('beam:y_cg', val=np.zeros(n_span), units='m', desc='y coordinate of the center-of-mass offset with respect to the local coordinate system')
+            self.add_input('beam:edge_iner', val=np.zeros(n_span), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
+            self.add_input('beam:flap_iner', val=np.zeros(n_span), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
+            self.add_input('flap_mode_shapes', val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
+            self.add_input('edge_mode_shapes', val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+            self.add_input('gearbox_efficiency', val=1.0, desc='Gearbox efficiency')
+            self.add_input('gearbox_ratio', val=1.0, desc='Gearbox ratio')
+            self.add_input('platform_displacement', val=1.0, desc='Volumetric platform displacement', units='m**3')
 
             # ServoDyn Inputs
             self.add_input('generator_efficiency',   val=1.0,              desc='Generator efficiency')
@@ -810,6 +816,14 @@ class FASTLoadCases(ExplicitComponent):
         if 'ElastoDynBlade' in modeling_options['OpenFAST']:
             for key in modeling_options['OpenFAST']['ElastoDynBlade']:
                 fst_vt['ElastoDynBlade'][key] = modeling_options['OpenFAST']['ElastoDynBlade'][key]
+        
+        if 'BeamDyn' in modeling_options['OpenFAST']:
+            for key in modeling_options['OpenFAST']['BeamDyn']:
+                fst_vt['BeamDyn'][key] = modeling_options['OpenFAST']['BeamDyn'][key]
+        
+        if 'BeamDynBlade' in modeling_options['OpenFAST']:
+            for key in modeling_options['OpenFAST']['BeamDynBlade']:
+                fst_vt['BeamDynBlade'][key] = modeling_options['OpenFAST']['BeamDynBlade'][key]
 
         if 'ElastoDynTower' in modeling_options['OpenFAST']:   
             for key in modeling_options['OpenFAST']['ElastoDynTower']:
@@ -1039,8 +1053,7 @@ class FASTLoadCases(ExplicitComponent):
         # Calculate yaw stiffness of tower (springs in series) and use in servodyn as yaw spring constant
         k_tow_tor = inputs['tor_stff'] / np.diff(inputs['tower_z'])
         k_tow_tor = 1.0/np.sum(1.0/k_tow_tor)
-        # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the
-        # damping to the frequency of the first tower torsional mode- easier than getting the yaw inertia right
+        # R. Bergua's suggestion to set the stiffness to the tower torsional stiffness and the damping to the frequency of the first tower torsional mode- easier than getting the yaw inertia right
         damp_ratio = 0.01
         f_torsion = float(inputs['tor_freq'])
         fst_vt['ServoDyn']['YawSpr'] = k_tow_tor
@@ -1066,6 +1079,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
             fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
             fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
+
+        # Update BeamDyn
+        pass
 
         # Update AeroDyn
         fst_vt['AeroDyn']['AirDens']   = float(inputs['rho'])
