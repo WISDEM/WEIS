@@ -34,6 +34,7 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml, write_yaml
+from weis.aeroelasticse.precomp_to_beamdyn import pc2bd_K, pc2bd_I
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -247,6 +248,12 @@ class FASTLoadCases(ExplicitComponent):
                 val=np.zeros(n_span),
                 units="kg/m",
                 desc="Section lag inertia about the X_G axis per unit length",
+            )
+            self.add_input(
+                "blade:A",
+                val=np.zeros(n_span), 
+                units="m**2", 
+                desc="cross sectional area of the blade"
             )
             self.add_input(
                 'blade:flap_mode_shapes', 
@@ -1235,35 +1242,65 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['BeamDynBlade']['mu6'] = 1.e-3
         fst_vt['BeamDynBlade']['radial_stations'] = s
 
-        # # Construct K in elastic center using scripts from E. Branlard's pyFast
-        # K_BD = np.zeros((len(s),6,6))
-        # EA = inputs['blade:EA']
-        # EIxx = inputs['blade:EIxx']
-        # EIyy = inputs['blade:EIyy']
-        # GKt = inputs['blade:GJ']
-        # theta_p = np.deg2rad(np.array(data_json['Bladeprops']['strtwist']))
-        # G_estimated = GKt / inputs['blade:rhoJ']
-        # H_xx = EIxx*np.cos(theta_p)**2 + EIyy*np.sin(theta_p)**2 
-        # E_estimated = H_xx / np.array(data_json['Bladeprops']['rhoIxx'])
-        # A_estimated = EA / E_estimated
-        # GA = G_estimated * A_estimated
-        # kxs =  1.0 * np.ones_like(EA) # flap
-        # kys =  0.6 * np.ones_like(EA) # edge
-        # x_S = np.array(data_json['Bladeprops']['shearx']) - np.array(data_json['Bladeprops']['EAx'])
-        # y_S = np.array(data_json['Bladeprops']['sheary']) - np.array(data_json['Bladeprops']['EAy'])
+        # Initialize empty 6x6 K and I matrices
+        K_BD = np.zeros((len(s),6,6))
+        I_BD = np.zeros((len(s),6,6))
+        EA = inputs["blade:EA"]
+        EIxx = inputs["blade:EIxx"]
+        EIyy = inputs["blade:EIyy"]
+        EIxy = inputs["blade:EIxy"]
+        GJ = inputs["blade:GJ"]
+        EA_EIxx = inputs["blade:EA_EIxx"]
+        EA_EIyy = inputs["blade:EA_EIyy"]
+        EIxx_GJ = inputs["blade:EIxx_GJ"]
+        EIyy_GJ = inputs["blade:EIyy_GJ"]
+        EA_GJ = inputs["blade:EA_GJ"]
+        rhoA = inputs["blade:rhoA"]
+        rhoJ = inputs["blade:rhoJ"]
+        Tw_iner = np.deg2rad(inputs["blade:Tw_iner"])
+        x_cg = inputs["blade:x_cg"]
+        y_cg = inputs["blade:y_cg"]
+        # x_tc = inputs["blade:x_tc"]
+        # y_tc = inputs["blade:y_tc"]
+        x_sc = inputs["blade:x_sc"]
+        y_sc = inputs["blade:y_sc"]
+        edge_iner = inputs["blade:edge_iner"]
+        flap_iner = inputs["blade:flap_iner"]
+        A = inputs["blade:A"]
+        aero_twist =  np.deg2rad(inputs["theta"])
 
-        # for i in range(len(s)):
-        # K_BD[i,:,:] = KK(EA[i], EI_x[i], EI_y[i], GKt[i], GA[i], kxs[i], kys[i], x_C=0, y_C=0, theta_p=theta_p[i], x_S=x_S[i], y_S=y_S[i], theta_s=theta_p[i])
+        for i in range(len(s)):
+            # Build stiffness matrix at the reference axis
+            K_BD[i,:,:] = pc2bd_K(
+                EA[i],
+                EIxx[i],
+                EIyy[i],
+                EIxy[i],
+                EA_EIxx[i],
+                EA_EIyy[i],
+                EIxx_GJ[i],
+                EIyy_GJ[i],
+                EA_GJ[i],
+                GJ[i],
+                rhoJ[i],
+                A[i],
+                x_sc[i],
+                y_sc[i],
+                )
+            # Build inertia matrix at the reference axis
+            I_BD[i,:,:] = pc2bd_I(
+                rhoA[i],
+                edge_iner[i],
+                flap_iner[i],
+                rhoJ[i],
+                x_cg[i],
+                y_cg[i],
+                Tw_iner[i],
+                aero_twist[i],
+                )
 
-
-
-
-        # fst_vt['BeamDynBlade']['beam_stiff'] = np.zeros((6,6,len(s)))
-        # fst_vt['BeamDynBlade']['beam_inertia'] = np.zeros((6,6,len(s)))
-        # fst_vt['BeamDynBlade']['beam_stiff'][2,2,:] = inputs['blade:EA']
-        # fst_vt['BeamDynBlade']['beam_stiff'][3,3,:] = inputs['blade:EIxx']
-        # fst_vt['BeamDynBlade']['beam_stiff'][4,4,:] = inputs['blade:EIyy']
-        # fst_vt['BeamDynBlade']['beam_stiff'][5,5,:] = inputs['blade:GJ']
+        fst_vt['BeamDynBlade']['beam_stiff'] = K_BD
+        fst_vt['BeamDynBlade']['beam_inertia'] = I_BD
 
         # Update AeroDyn
         fst_vt['AeroDyn']['AirDens']   = float(inputs['rho'])
@@ -3062,35 +3099,4 @@ def K_sheartorsion(GKt, GA, kxs, kys, x_S=0, y_S=0, theta_s=0):
         [K_xx                 , -K_xy               , -K_xx*y_S - K_xy*x_S                             ] ,
         [-K_xy                , K_yy                , K_xy*y_S + K_yy*x_S                              ] ,
         [-K_xx*y_S - K_xy*x_S , K_xy*y_S + K_yy*x_S , GKt + K_xx*y_S**2 + 2*K_xy*x_S*y_S + K_yy*x_S**2 ]
-        ])
-
-
-# --------------------------------------------------------------------------------}
-# --- Beam stiffness and mass matrix as function of "beam" properties
-# --------------------------------------------------------------------------------{
-def KK(EA, EI_x, EI_y, GKt, GA, kxs, kys, x_C=0, y_C=0, theta_p=0, x_S=0, y_S=0, theta_s=0):
-    """ 
-    Returns 6x6 stiffness matrix at the cross section origin O, based on inputs at centroid and shear center.
-    INPUTS:
-        - EA, EI_x, EI_y: diagonal terms for the axial bending expressed at the centroid and in the principal axis frame
-        - GKt, GA*kxs, GA*kys: diagonal terms for the shear/torsion expressed at the shear center and in the princial shear direction frame
-        - kxs, kys: dimensionless shear parameters
-        - x_C, y_C: coordinates of the centroid (elastic center/ neutral axis), expressed FROM the origin of the cross section O
-        - x_S, y_S:       "            shear center            "                  "                                             
-        - theta_p : angle (around z) FROM the reference axes to the principal axes [rad]
-        - theta_s :       "            "             "              principal shear axes [rad]
-    """
-    H_xx = EI_x*np.cos(theta_p)**2 + EI_y*np.sin(theta_p)**2 
-    H_yy = EI_x*np.sin(theta_p)**2 + EI_y*np.cos(theta_p)**2
-    H_xy = (EI_y-EI_x)*np.sin(theta_p)*np.cos(theta_p)
-    K_xx = GA * ( kxs*np.cos(theta_s)**2 + kys*np.sin(theta_s)**2   ) 
-    K_yy = GA * ( kxs*np.sin(theta_s)**2 + kys*np.cos(theta_s)**2   )
-    K_xy = GA * ( (kys-kxs)*np.sin(theta_s)*np.cos(theta_s)         )
-    return np.array([
-        [K_xx                 , -K_xy               , 0*EA    , 0*EA               , 0*EA               , -K_xx*y_S - K_xy*x_S                             ]    , 
-        [-K_xy                , K_yy                , 0*EA    , 0*EA               , 0*EA               , K_xy*y_S + K_yy*x_S                              ]    , 
-        [0*EA                 , 0*EA                , EA      , EA*y_C             , -EA*x_C            , 0*EA                                                ] , 
-        [0*EA                 , 0*EA                , EA*y_C  , H_xx + EA*y_C**2   , -H_xy - EA*x_C*y_C , 0*EA                                                ] , 
-        [0*EA                 , 0*EA                , -EA*x_C , -H_xy - EA*x_C*y_C , H_yy + EA*x_C**2   , 0*EA                                                ] , 
-        [-K_xx*y_S - K_xy*x_S , K_xy*y_S + K_yy*x_S , 0*EA    , 0*EA               , 0*EA               , GKt + K_xx*y_S**2 + 2*K_xy*x_S*y_S + K_yy*x_S**2 ]
         ])
