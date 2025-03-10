@@ -1199,6 +1199,9 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['rna_I_TT'][2])
 
         # Update ElastoDyn Blade Input File
+        fst_vt['ElastoDyn']['BldFile1'] = ''
+        fst_vt['ElastoDyn']['BldFile2'] = ''
+        fst_vt['ElastoDyn']['BldFile3'] = ''
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
         fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
         fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
@@ -1223,6 +1226,7 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['BeamDyn']['members'][0]['kp_xr'] = inputs['ref_axis_blade'][:,0]
         fst_vt['BeamDyn']['members'][0]['kp_yr'] = inputs['ref_axis_blade'][:,1]
         fst_vt['BeamDyn']['members'][0]['kp_zr'] = inputs['ref_axis_blade'][:,2]
+        fst_vt['BeamDyn']['members'][0]['initial_twist'] = inputs['theta']
 
         # Compute dimensional and nondimensional coordinate along blade span
         r = (inputs['r']-inputs['Rhub'])
@@ -3060,11 +3064,6 @@ def apply_olaf_parameters(dlc_generator,fst_vt):
             # Check that runs are long enough
             if tMin[i_case] > min_TMax:
                 logger.warning("OLAF runs are too short in time, the wake is not at convergence")
-
-            # TODO: skipping timestep setting because they're big timesteps
-            # # Set timestep
-            # if fst_vt['Fst']['CompElast'] == 1:
-            #     DT[i_case] = dt_fvw[i_case]
             
             case_input[("AeroDyn","OLAF","DTfvw")] = {'vals': dt_fvw, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nNWPanels")] = {'vals': nNWPanels, 'group': wind_group}

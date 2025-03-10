@@ -196,7 +196,7 @@ properties:
                         type: string
                         default: none
                         description: Name of file containing ice input parameters (quoted string)
-                    SumPrint:
+                    SumPrint: &sumprint
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
@@ -227,7 +227,7 @@ properties:
                         type: boolean
                         default: True
                         description: Use tab delimiters in text tabular output file? (flag) (currently unused)
-                    OutFmt:
+                    OutFmt: &outfmt
                         type: string
                         default: 'ES10.3E2'
                         description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
@@ -554,10 +554,7 @@ properties:
                         maximum: 1000.
                         unit: m
                         description: Initial offset in +x direction (shift of wind box)
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
                     SensorType:
                         type: integer
                         enum: [0,1,2,3]
@@ -1082,10 +1079,7 @@ properties:
                         # minimum: 0.
                         # maximum: 10.
                         description: Turbulence buoyancy coefficient
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
             ElastoDyn: &ofelastodyn
                 type: object
                 default: {}
@@ -1482,10 +1476,7 @@ properties:
                         default: 20
                         unit: none
                         description: Number of tower nodes used for analysis (-)
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
                     OutFile:
                         type: integer
                         default: 1
@@ -1494,10 +1485,7 @@ properties:
                         type: boolean
                         default: True
                         description: Use tab delimiters in text tabular output file? (flag) (currently unused)
-                    OutFmt:
-                        type: string
-                        default: 'ES10.3E2'
-                        description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
+                    OutFmt: *outfmt
                     DecFact:
                         type: integer
                         default: 1
@@ -1661,6 +1649,7 @@ properties:
                 type: object
                 default: {}
                 properties:
+                    Echo: *echo
                     QuasiStaticInit:
                         type: boolean
                         default: True
@@ -1673,9 +1662,9 @@ properties:
                         unit: none
                         description: Numerical damping parameter for generalized-alpha integrator
                     quadrature:
-                        type: string
-                        enum: ['1', '2', gaussian, Gaussian, GAUSSIAN, trapezoidal, Trapezoidal, TRAPEZOIDAL]
-                        default: '2'
+                        type: integer
+                        enum: [1, 2]
+                        default: 2
                         description: 'Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)'
                     refine:
                         type: integer
@@ -1772,6 +1761,18 @@ properties:
                         default: 5e5
                         unit: kg*m^2/s
                         description: Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]
+                    SumPrint: *sumprint
+                    OutFmt: *outfmt
+                    NNodeOuts:
+                        type: integer
+                        minimum: 0
+                        maximum: 9
+                        default: 0
+                        description: Number of nodes to output to file [0 - 9] (-)
+                    OutNd:
+                        type: array
+                        default: ['0']
+                        description: Nodes whose values will be output  (-)
             HydroDyn: &ofhydrodyn
                 type: object
                 default: {}
@@ -2028,10 +2029,7 @@ properties:
                         enum: [1, 2, 3]
                         default: 2
                         description: Output requested channels to [1=Hydrodyn.out, 2=GlueCode.out, 3=both files]
-                    OutFmt:
-                        type: string
-                        default: 'ES11.4e2'
-                        description: Output format for numerical results (quoted string) [not checked for validity]
+                    OutFmt: *outfmt
                     OutSFmt:
                         type: string
                         default: 'A11'
@@ -2144,10 +2142,7 @@ properties:
                     GuyanDamp4: *guyan_damp
                     GuyanDamp5: *guyan_damp
                     GuyanDamp6: *guyan_damp
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
+                    SumPrint: *sumprint
                     OutCBModes:
                         type: integer
                         enum: [0, 1]
@@ -2180,10 +2175,7 @@ properties:
                         default: 1
                         description: Decimation of output in the <rootname>.SD.out file
                         minimum: 0
-                    OutFmt:
-                        type: string
-                        default: 'ES11.4e2'
-                        description: Output format for numerical results in the <rootname>.SD.out file (quoted string) [not checked for validity]
+                    OutFmt: *outfmt
                     OutSFmt:
                         type: string
                         default: 'A11'
@@ -2653,10 +2645,7 @@ properties:
                         type: integer
                         default: 0
                         description: Record 26 No. of points in torque-speed look-up table {0 = none and use the optimal mode parameters; nonzero = ignore the optimal mode PARAMETERs by setting Record 16 to 0.0} (-) [used only with Bladed Interface]
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
                     OutFile:
                         type: integer
                         default: 1
@@ -2665,10 +2654,7 @@ properties:
                         type: boolean
                         default: True
                         description: Use tab delimiters in text tabular output file? (flag) (currently unused)
-                    OutFmt:
-                        type: string
-                        default: 'ES10.3E2'
-                        description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
+                    OutFmt: *outfmt
                     TStart:
                         type: number
                         default: 0.0
@@ -2982,10 +2968,7 @@ properties:
                         enum: [1, 2, 3]
                         default: 2
                         description: 'Output requested channels to: [1=SeaState.out, 2=GlueCode.out, 3=both files]'
-                    OutFmt:
-                        type: string
-                        default: 'ES11.4e2'
-                        description: Output format for numerical results (quoted string) [not checked for validity!]
+                    OutFmt: *outfmt
                     OutSFmt:
                         type: string
                         default: 'A11'
