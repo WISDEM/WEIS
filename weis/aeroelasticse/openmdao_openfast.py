@@ -107,25 +107,158 @@ class FASTLoadCases(ExplicitComponent):
             self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
             self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
 
-            # ElastoDyn Inputs
-            # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-            self.add_input('r', val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
+            # ElastoDyn and BeamDyn Inputs
+            self.add_input(
+                'r', 
+                val=np.zeros(n_span), 
+                units='m', 
+                desc='radial positions. r[0] should be the hub location \
                 while r[-1] should be the blade tip. Any number \
-                of locations can be specified between these in ascending order.')
-            self.add_input('le_location', val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-            self.add_input('beam:EA', val=np.zeros(n_span), units='N', desc='axial stiffness (along z-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:EIxx', val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-            self.add_input('beam:EIyy', val=np.zeros(n_span), units='N*m**2', desc='flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:EIxy', val=np.zeros(n_span), units='N*m**2', desc='cross-term flap-edge stiffness')
-            self.add_input('beam:GJ', val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:rhoA', val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
-            self.add_input('beam:rhoJ', val=np.zeros(n_span), units='kg*m', desc='polar mass moment of inertia per unit length')
-            self.add_input('beam:x_cg', val=np.zeros(n_span), units='m', desc='x coordinate of the center-of-mass offset with respect to the local coordinate system')
-            self.add_input('beam:y_cg', val=np.zeros(n_span), units='m', desc='y coordinate of the center-of-mass offset with respect to the local coordinate system')
-            self.add_input('beam:edge_iner', val=np.zeros(n_span), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
-            self.add_input('beam:flap_iner', val=np.zeros(n_span), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
-            self.add_input('flap_mode_shapes', val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
-            self.add_input('edge_mode_shapes', val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+                of locations can be specified between these in ascending order.',
+            )
+            self.add_input(
+                'le_location', 
+                val=np.zeros(n_span), 
+                desc='Leading-edge positions from a reference blade axis \
+                usually blade pitch axis). Locations are normalized by the \
+                local chord length. Positive in -x direction for airfoil-aligned coordinate system',
+            )
+            self.add_input(
+                "blade:EA", 
+                val=np.zeros(n_span), 
+                units="N", 
+                desc="axial stiffness",
+            )
+            self.add_input(
+                "blade:EIxx",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="Section lag (edgewise) bending stiffness about the XE axis",
+            )
+            self.add_input("blade:EIyy",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="Section flap bending stiffness about the YE axis",
+            )
+            self.add_input(
+                "blade:EIxy", 
+                val=np.zeros(n_span), 
+                units="N*m**2", 
+                desc="Coupled flap-lag stiffness with respect to the XE-YE frame",
+            )
+            self.add_input(
+                "blade:EA_EIxx", 
+                val=np.zeros(n_span), 
+                units="N*m", 
+                desc="Coupled axial-lag stiffness with respect to the XE-YE frame",
+            )
+            self.add_input(
+                "blade:EA_EIyy", 
+                val=np.zeros(n_span), 
+                units="N*m", 
+                desc="Coupled axial-flap stiffness with respect to the XE-YE frame",
+            )
+            self.add_input(
+                "blade:EIxx_GJ", 
+                val=np.zeros(n_span), 
+                units="N*m**2", 
+                desc="Coupled lag-torsion stiffness with respect to the XE-YE frame",
+            )
+            self.add_input(
+                "blade:EIyy_GJ", 
+                val=np.zeros(n_span), 
+                units="N*m**2", 
+                desc="Coupled flap-torsion stiffness with respect to the XE-YE frame ",
+            )
+            self.add_input(
+                "blade:EA_GJ", 
+                val=np.zeros(n_span), 
+                units="N*m", 
+                desc="Coupled axial-torsion stiffness",
+            )
+            self.add_input(
+                "blade:GJ",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="Section torsion stiffness",
+            )
+            self.add_input(
+                "blade:rhoA", 
+                val=np.zeros(n_span), 
+                units="kg/m", 
+                desc="Section mass per unit length",
+            )
+            self.add_input(
+                "blade:rhoJ", 
+                val=np.zeros(n_span), 
+                units="kg*m", 
+                desc="polar mass moment of inertia per unit length",
+            )
+            self.add_input(
+                "blade:Tw_iner",
+                val=np.zeros(n_span),
+                units="deg",
+                desc="Orientation of the section principal inertia axes with respect the blade reference plane",
+            )
+            self.add_input(
+                "blade:x_tc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="X-coordinate of the tension-center offset with respect to the XR-YR axes",
+            )
+            self.add_input(
+                "blade:y_tc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="Chordwise offset of the section tension-center with respect to the XR-YR axes",
+            )
+            self.add_input(
+                "blade:x_sc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="X-coordinate of the shear-center offset with respect to the XR-YR axes",
+            )
+            self.add_input(
+                "blade:y_sc",
+                val=np.zeros(n_span),
+                units="m",
+                desc="Chordwise offset of the section shear-center with respect to the reference frame, XR-YR",
+            )
+            self.add_input(
+                "blade:x_cg",
+                val=np.zeros(n_span),
+                units="m",
+                desc="X-coordinate of the center-of-mass offset with respect to the XR-YR axes",
+            )
+            self.add_input(
+                "blade:y_cg",
+                val=np.zeros(n_span),
+                units="m",
+                desc="Chordwise offset of the section center of mass with respect to the XR-YR axes",
+            )
+            self.add_input(
+                "blade:flap_iner",
+                val=np.zeros(n_span),
+                units="kg/m",
+                desc="Section flap inertia about the Y_G axis per unit length.",
+            )
+            self.add_input(
+                "blade:edge_iner",
+                val=np.zeros(n_span),
+                units="kg/m",
+                desc="Section lag inertia about the X_G axis per unit length",
+            )
+            self.add_input(
+                'blade:flap_mode_shapes', 
+                val=np.zeros((n_freq_blade,5)), 
+                desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)',
+            )
+            self.add_input(
+                'blade:edge_mode_shapes', 
+                val=np.zeros((n_freq_blade,5)), 
+                desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)',
+            )
+            
             self.add_input('gearbox_efficiency', val=1.0, desc='Gearbox efficiency')
             self.add_input('gearbox_ratio', val=1.0, desc='Gearbox ratio')
             self.add_input('platform_displacement', val=1.0, desc='Volumetric platform displacement', units='m**3')
@@ -821,10 +954,6 @@ class FASTLoadCases(ExplicitComponent):
             for key in modeling_options['OpenFAST']['BeamDyn']:
                 fst_vt['BeamDyn'][key] = modeling_options['OpenFAST']['BeamDyn'][key]
         
-        if 'BeamDynBlade' in modeling_options['OpenFAST']:
-            for key in modeling_options['OpenFAST']['BeamDynBlade']:
-                fst_vt['BeamDynBlade'][key] = modeling_options['OpenFAST']['BeamDynBlade'][key]
-
         if 'ElastoDynTower' in modeling_options['OpenFAST']:   
             for key in modeling_options['OpenFAST']['ElastoDynTower']:
                 fst_vt['ElastoDynTower'][key] = modeling_options['OpenFAST']['ElastoDynTower'][key]
@@ -1069,19 +1198,72 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
         fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist
-        fst_vt['ElastoDynBlade']['BMassDen']   = inputs['beam:rhoA']
-        fst_vt['ElastoDynBlade']['FlpStff']    = inputs['beam:EIyy']
-        fst_vt['ElastoDynBlade']['EdgStff']    = inputs['beam:EIxx']
+        fst_vt['ElastoDynBlade']['BMassDen']   = inputs['blade:rhoA']
+        fst_vt['ElastoDynBlade']['FlpStff']    = inputs['blade:EIyy']
+        fst_vt['ElastoDynBlade']['EdgStff']    = inputs['blade:EIxx']
         fst_vt['ElastoDynBlade']['BldFl1Sh']   = np.zeros(5)
         fst_vt['ElastoDynBlade']['BldFl2Sh']   = np.zeros(5)
         fst_vt['ElastoDynBlade']['BldEdgSh']   = np.zeros(5)
         for i in range(5):
-            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
-            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
-            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['blade:flap_mode_shapes'][0,i] / sum(inputs['blade:flap_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['blade:flap_mode_shapes'][1,i] / sum(inputs['blade:flap_mode_shapes'][1,:])
+            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['blade:edge_mode_shapes'][0,i] / sum(inputs['blade:edge_mode_shapes'][0,:])
 
-        # Update BeamDyn
-        pass
+        # Update BeamDyn Main
+        fst_vt['BeamDyn']['member_total'] = 1
+        fst_vt['BeamDyn']['kp_total'] = len(inputs['ref_axis_blade'][:,0])
+        fst_vt['BeamDyn']['members'] = [{}]
+        fst_vt['BeamDyn']['members'][0]['kp_xr'] = inputs['ref_axis_blade'][:,0]
+        fst_vt['BeamDyn']['members'][0]['kp_yr'] = inputs['ref_axis_blade'][:,1]
+        fst_vt['BeamDyn']['members'][0]['kp_zr'] = inputs['ref_axis_blade'][:,2]
+
+        # Compute dimensional and nondimensional coordinate along blade span
+        r = (inputs['r']-inputs['Rhub'])
+        r[0]  = 0.
+        r[-1] = inputs['Rtip']-inputs['Rhub']
+        s = r/r[-1]
+
+        # Update BeamDyn Blade
+        fst_vt['BeamDynBlade'] = {}
+        fst_vt['BeamDynBlade']['station_total'] = len(inputs['r'])
+        fst_vt['BeamDynBlade']['damp_type'] = 1
+        fst_vt['BeamDynBlade']['mu1'] = 1.e-3
+        fst_vt['BeamDynBlade']['mu2'] = 1.e-3
+        fst_vt['BeamDynBlade']['mu3'] = 1.e-3
+        fst_vt['BeamDynBlade']['mu4'] = 1.e-3
+        fst_vt['BeamDynBlade']['mu5'] = 1.e-3
+        fst_vt['BeamDynBlade']['mu6'] = 1.e-3
+        fst_vt['BeamDynBlade']['radial_stations'] = s
+
+        # # Construct K in elastic center using scripts from E. Branlard's pyFast
+        # K_BD = np.zeros((len(s),6,6))
+        # EA = inputs['blade:EA']
+        # EIxx = inputs['blade:EIxx']
+        # EIyy = inputs['blade:EIyy']
+        # GKt = inputs['blade:GJ']
+        # theta_p = np.deg2rad(np.array(data_json['Bladeprops']['strtwist']))
+        # G_estimated = GKt / inputs['blade:rhoJ']
+        # H_xx = EIxx*np.cos(theta_p)**2 + EIyy*np.sin(theta_p)**2 
+        # E_estimated = H_xx / np.array(data_json['Bladeprops']['rhoIxx'])
+        # A_estimated = EA / E_estimated
+        # GA = G_estimated * A_estimated
+        # kxs =  1.0 * np.ones_like(EA) # flap
+        # kys =  0.6 * np.ones_like(EA) # edge
+        # x_S = np.array(data_json['Bladeprops']['shearx']) - np.array(data_json['Bladeprops']['EAx'])
+        # y_S = np.array(data_json['Bladeprops']['sheary']) - np.array(data_json['Bladeprops']['EAy'])
+
+        # for i in range(len(s)):
+        # K_BD[i,:,:] = KK(EA[i], EI_x[i], EI_y[i], GKt[i], GA[i], kxs[i], kys[i], x_C=0, y_C=0, theta_p=theta_p[i], x_S=x_S[i], y_S=y_S[i], theta_s=theta_p[i])
+
+
+
+
+        # fst_vt['BeamDynBlade']['beam_stiff'] = np.zeros((6,6,len(s)))
+        # fst_vt['BeamDynBlade']['beam_inertia'] = np.zeros((6,6,len(s)))
+        # fst_vt['BeamDynBlade']['beam_stiff'][2,2,:] = inputs['blade:EA']
+        # fst_vt['BeamDynBlade']['beam_stiff'][3,3,:] = inputs['blade:EIxx']
+        # fst_vt['BeamDynBlade']['beam_stiff'][4,4,:] = inputs['blade:EIyy']
+        # fst_vt['BeamDynBlade']['beam_stiff'][5,5,:] = inputs['blade:GJ']
 
         # Update AeroDyn
         fst_vt['AeroDyn']['AirDens']   = float(inputs['rho'])
@@ -1089,9 +1271,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn']['SpdSound']  = float(inputs['speed_sound_air'])
 
         # Update AeroDyn Blade Input File
-        r = (inputs['r']-inputs['Rhub'])
-        r[0]  = 0.
-        r[-1] = inputs['Rtip']-inputs['Rhub']
         fst_vt['AeroDynBlade']['NumBlNds'] = self.n_span
         fst_vt['AeroDynBlade']['BlSpn']    = r
         BlCrvAC, BlSwpAC = self.get_ac_axis(inputs)
@@ -2856,3 +3035,62 @@ def apply_olaf_parameters(dlc_generator,fst_vt):
             case_input[("AeroDyn","OLAF","nFWPanels")] = {'vals': nFWPanels, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nFWPanelsFree")] = {'vals': nFWPanelsFree, 'group': wind_group}
 
+# --------------------------------------------------------------------------------}
+# --- BeamDyn 
+# --------------------------------------------------------------------------------{
+def K_axialbending(EA, EI_x, EI_y, x_C=0, y_C=0, theta_p=0):
+    """
+    Axial bending problem. See KK for notations.
+    """
+    H_xx = EI_x*cos(theta_p)**2 + EI_y*sin(theta_p)**2 
+    H_yy = EI_x*sin(theta_p)**2 + EI_y*cos(theta_p)**2
+    H_xy = (EI_y-EI_x)*sin(theta_p)*cos(theta_p)
+    return np.array([
+        [EA      , EA*y_C             , -EA*x_C            ] ,
+        [EA*y_C  , H_xx + EA*y_C**2   , -H_xy - EA*x_C*y_C ] ,
+        [-EA*x_C , -H_xy - EA*x_C*y_C , H_yy + EA*x_C**2   ] 
+        ])
+
+def K_sheartorsion(GKt, GA, kxs, kys, x_S=0, y_S=0, theta_s=0):
+    """
+    Shear torsion problem. See KK for notations.
+    """
+    K_xx = GA * ( kxs*cos(theta_s)**2 + kys*sin(theta_s)**2   ) 
+    K_yy = GA * ( kxs*sin(theta_s)**2 + kys*cos(theta_s)**2   )
+    K_xy = GA * ( (kys-kxs)*sin(theta_s)*cos(theta_s)         )
+    return np.array([
+        [K_xx                 , -K_xy               , -K_xx*y_S - K_xy*x_S                             ] ,
+        [-K_xy                , K_yy                , K_xy*y_S + K_yy*x_S                              ] ,
+        [-K_xx*y_S - K_xy*x_S , K_xy*y_S + K_yy*x_S , GKt + K_xx*y_S**2 + 2*K_xy*x_S*y_S + K_yy*x_S**2 ]
+        ])
+
+
+# --------------------------------------------------------------------------------}
+# --- Beam stiffness and mass matrix as function of "beam" properties
+# --------------------------------------------------------------------------------{
+def KK(EA, EI_x, EI_y, GKt, GA, kxs, kys, x_C=0, y_C=0, theta_p=0, x_S=0, y_S=0, theta_s=0):
+    """ 
+    Returns 6x6 stiffness matrix at the cross section origin O, based on inputs at centroid and shear center.
+    INPUTS:
+        - EA, EI_x, EI_y: diagonal terms for the axial bending expressed at the centroid and in the principal axis frame
+        - GKt, GA*kxs, GA*kys: diagonal terms for the shear/torsion expressed at the shear center and in the princial shear direction frame
+        - kxs, kys: dimensionless shear parameters
+        - x_C, y_C: coordinates of the centroid (elastic center/ neutral axis), expressed FROM the origin of the cross section O
+        - x_S, y_S:       "            shear center            "                  "                                             
+        - theta_p : angle (around z) FROM the reference axes to the principal axes [rad]
+        - theta_s :       "            "             "              principal shear axes [rad]
+    """
+    H_xx = EI_x*np.cos(theta_p)**2 + EI_y*np.sin(theta_p)**2 
+    H_yy = EI_x*np.sin(theta_p)**2 + EI_y*np.cos(theta_p)**2
+    H_xy = (EI_y-EI_x)*np.sin(theta_p)*np.cos(theta_p)
+    K_xx = GA * ( kxs*np.cos(theta_s)**2 + kys*np.sin(theta_s)**2   ) 
+    K_yy = GA * ( kxs*np.sin(theta_s)**2 + kys*np.cos(theta_s)**2   )
+    K_xy = GA * ( (kys-kxs)*np.sin(theta_s)*np.cos(theta_s)         )
+    return np.array([
+        [K_xx                 , -K_xy               , 0*EA    , 0*EA               , 0*EA               , -K_xx*y_S - K_xy*x_S                             ]    , 
+        [-K_xy                , K_yy                , 0*EA    , 0*EA               , 0*EA               , K_xy*y_S + K_yy*x_S                              ]    , 
+        [0*EA                 , 0*EA                , EA      , EA*y_C             , -EA*x_C            , 0*EA                                                ] , 
+        [0*EA                 , 0*EA                , EA*y_C  , H_xx + EA*y_C**2   , -H_xy - EA*x_C*y_C , 0*EA                                                ] , 
+        [0*EA                 , 0*EA                , -EA*x_C , -H_xy - EA*x_C*y_C , H_yy + EA*x_C**2   , 0*EA                                                ] , 
+        [-K_xx*y_S - K_xy*x_S , K_xy*y_S + K_yy*x_S , 0*EA    , 0*EA               , 0*EA               , GKt + K_xx*y_S**2 + 2*K_xy*x_S*y_S + K_yy*x_S**2 ]
+        ])
