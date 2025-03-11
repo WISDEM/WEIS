@@ -758,9 +758,9 @@ properties:
                         description: Forward azimuth relative to blade where the sector ends (>=0) {default=60} (deg) [used only when SectAvg=True]
                     DBEMT_Mod:
                         type: integer
-                        enum: [1, 2, 3]
+                        enum: [-1, 0, 1, 2, 3]
                         default: 2
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when Wake_Mod=2]
+                        description: Type of dynamic BEMT (DBEMT) model {0=No Dynamic Wake, -1=Frozen Wake for linearization, 1:constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-)
                     tau1_const:
                         type: number
                         unit: s
