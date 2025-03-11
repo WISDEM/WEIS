@@ -1287,7 +1287,8 @@ class FASTLoadCases(ExplicitComponent):
                 EA_GJ[i],
                 GJ[i],
                 rhoJ[i],
-                A[i],
+                edge_iner[i],
+                flap_iner[i],
                 x_sc[i],
                 y_sc[i],
                 )

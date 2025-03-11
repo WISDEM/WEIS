@@ -32,7 +32,7 @@ class TransformCrossSectionMatrix(object):
         M3 = R @ M2 @ R.T
         return M3
 
-def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ, rhoJ, A, x_sc, y_sc, kxs = 1., kys = 0.6):
+def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ, rhoJ, edge_iner, flap_iner, x_sc, y_sc, kxs = 1., kys = 0.6):
     """
     Given PreComp cross-sectional stiffness inputs, 
     returns 6x6 stiffness matrix at the x=0 y=0
@@ -66,15 +66,19 @@ def pc2bd_K(EA, EIxx, EIyy, EIxy, EA_EIxx, EA_EIyy, EIxx_GJ, EIyy_GJ, EA_GJ, GJ,
         - kys: stiffness shear along y (default = 0.6)
     """
     G_est = GJ / rhoJ
+    E_est_xx = EIxx / edge_iner
+    E_est_yy = EIyy / flap_iner
+    A_est_xx = EA / E_est_xx
+    A_est_yy = EA / E_est_yy
     
     # Stiffness matrix built at the elastic center by PreComp
     K_sc = np.array([
-        [G_est*A*kxs  , 0.           , 0.      , 0.      , 0.      , 0.     ],
-        [0.           , G_est*A*kys  , 0.      , 0.      , 0.      , 0.     ],
-        [0.           , 0.           , EA      , EA_EIxx , EA_EIyy , EA_GJ  ],
-        [0.           , 0.           , EA_EIxx , EIxx    , EIxy    , EIxx_GJ],
-        [0.           , 0.           , EA_EIyy , EIxy    , EIyy    , EIyy_GJ],
-        [0.           , 0.           , EA_GJ   , EIxx_GJ , EIyy_GJ , GJ     ],
+        [G_est*A_est_yy  , 0.          , 0.      , 0.      , 0.      , 0.     ],
+        [0.           , G_est*A_est_xx , 0.      , 0.      , 0.      , 0.     ],
+        [0.           , 0.              , EA      , EA_EIxx , EA_EIyy , EA_GJ  ],
+        [0.           , 0.              , EA_EIxx , EIxx    , EIxy    , EIxx_GJ],
+        [0.           , 0.              , EA_EIyy , EIxy    , EIyy    , EIyy_GJ],
+        [0.           , 0.              , EA_GJ   , EIxx_GJ , EIyy_GJ , GJ     ],
     ])
     
     # Translate matrix back to origin
@@ -123,5 +127,13 @@ def pc2bd_I(rhoA, edge_iner, flap_iner, rhoJ, x_cg, y_cg, Tw_iner, aero_twist):
         -y_cg, 
         Tw_iner - aero_twist,
         )
+    
+    # Zero out some terms that must be exactly zero in BeamDyn
+    I_ref[0,1] = 0.
+    I_ref[0,2] = 0.
+    I_ref[1,0] = 0.
+    I_ref[1,2] = 0.
+    I_ref[2,0] = 0.
+    I_ref[2,1] = 0.
 
     return I_ref
