@@ -3071,32 +3071,3 @@ def apply_olaf_parameters(dlc_generator,fst_vt):
             case_input[("AeroDyn","OLAF","nNWPanelsFree")] = {'vals': nNWPanelsFree, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nFWPanels")] = {'vals': nFWPanels, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nFWPanelsFree")] = {'vals': nFWPanelsFree, 'group': wind_group}
-
-# --------------------------------------------------------------------------------}
-# --- BeamDyn 
-# --------------------------------------------------------------------------------{
-def K_axialbending(EA, EI_x, EI_y, x_C=0, y_C=0, theta_p=0):
-    """
-    Axial bending problem. See KK for notations.
-    """
-    H_xx = EI_x*cos(theta_p)**2 + EI_y*sin(theta_p)**2 
-    H_yy = EI_x*sin(theta_p)**2 + EI_y*cos(theta_p)**2
-    H_xy = (EI_y-EI_x)*sin(theta_p)*cos(theta_p)
-    return np.array([
-        [EA      , EA*y_C             , -EA*x_C            ] ,
-        [EA*y_C  , H_xx + EA*y_C**2   , -H_xy - EA*x_C*y_C ] ,
-        [-EA*x_C , -H_xy - EA*x_C*y_C , H_yy + EA*x_C**2   ] 
-        ])
-
-def K_sheartorsion(GKt, GA, kxs, kys, x_S=0, y_S=0, theta_s=0):
-    """
-    Shear torsion problem. See KK for notations.
-    """
-    K_xx = GA * ( kxs*cos(theta_s)**2 + kys*sin(theta_s)**2   ) 
-    K_yy = GA * ( kxs*sin(theta_s)**2 + kys*cos(theta_s)**2   )
-    K_xy = GA * ( (kys-kxs)*sin(theta_s)*cos(theta_s)         )
-    return np.array([
-        [K_xx                 , -K_xy               , -K_xx*y_S - K_xy*x_S                             ] ,
-        [-K_xy                , K_yy                , K_xy*y_S + K_yy*x_S                              ] ,
-        [-K_xx*y_S - K_xy*x_S , K_xy*y_S + K_yy*x_S , GKt + K_xx*y_S**2 + 2*K_xy*x_S*y_S + K_yy*x_S**2 ]
-        ])

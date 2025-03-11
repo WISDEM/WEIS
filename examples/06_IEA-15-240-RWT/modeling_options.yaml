@@ -37,8 +37,8 @@ WISDEM:
 OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        DT: 0.01
-        CompElast: 1
+        DT: 0.0002
+        CompElast: 2
         CompInflow: 1
         CompAero: 2
         CompServo: 1
@@ -67,6 +67,8 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
+    AeroDyn:
+        DBEMT_Mod: 0
     ElastoDynBlade:
         BldFlDmp1: 3.0
         BldFlDmp2: 3.0
@@ -95,5 +97,5 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 10
           n_seeds: 1
-          analysis_time: 1.
+          analysis_time: 0.1
           transient_time: 0.
