@@ -34,7 +34,7 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml, write_yaml
-from weis.aeroelasticse.precomp_to_beamdyn import pc2bd_K, pc2bd_I
+from wisdem.precomp.precomp_to_beamdyn import pc2bd_K, pc2bd_I
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -913,20 +913,21 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt = modopt['General']['openfast_configuration']['fst_vt']
 
         # Main .fst file`
-        fst_vt['Fst']               = {}
-        fst_vt['ElastoDyn']         = {}
-        fst_vt['ElastoDynBlade']    = {}
-        fst_vt['ElastoDynTower']    = {}
-        fst_vt['AeroDyn']           = {}
-        fst_vt['AeroDynBlade']      = {}
-        fst_vt['ServoDyn']          = {}
-        fst_vt['InflowWind']        = {}
-        fst_vt['SubDyn']            = {}
-        fst_vt['SeaState']          = {}
-        fst_vt['HydroDyn']          = {}
-        fst_vt['MoorDyn']           = {}
-        fst_vt['MAP']               = {}
-        fst_vt['BeamDyn']           = {}
+        fst_vt['Fst'] = {}
+        fst_vt['ElastoDyn'] = {}
+        fst_vt['ElastoDynBlade'] = {}
+        fst_vt['ElastoDynTower'] = {}
+        fst_vt['AeroDyn'] = {}
+        fst_vt['AeroDynBlade'] = {}
+        fst_vt['ServoDyn'] = {}
+        fst_vt['InflowWind'] = {}
+        fst_vt['SubDyn'] = {}
+        fst_vt['SeaState'] = {}
+        fst_vt['HydroDyn'] = {}
+        fst_vt['MoorDyn'] = {}
+        fst_vt['MAP'] = {}
+        fst_vt['BeamDyn'] = {}
+        fst_vt['BeamDynBlade'] = {}
         
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
@@ -960,6 +961,10 @@ class FASTLoadCases(ExplicitComponent):
         if 'BeamDyn' in modeling_options['OpenFAST']:
             for key in modeling_options['OpenFAST']['BeamDyn']:
                 fst_vt['BeamDyn'][key] = modeling_options['OpenFAST']['BeamDyn'][key]
+        
+        if 'BeamDynBlade' in modeling_options['OpenFAST']:
+            for key in modeling_options['OpenFAST']['BeamDynBlade']:
+                fst_vt['BeamDynBlade'][key] = modeling_options['OpenFAST']['BeamDynBlade'][key]
         
         if 'ElastoDynTower' in modeling_options['OpenFAST']:   
             for key in modeling_options['OpenFAST']['ElastoDynTower']:
@@ -1235,15 +1240,7 @@ class FASTLoadCases(ExplicitComponent):
         s = r/r[-1]
 
         # Update BeamDyn Blade
-        fst_vt['BeamDynBlade'] = {}
         fst_vt['BeamDynBlade']['station_total'] = len(inputs['r'])
-        fst_vt['BeamDynBlade']['damp_type'] = 1
-        fst_vt['BeamDynBlade']['mu1'] = 1.e-3
-        fst_vt['BeamDynBlade']['mu2'] = 1.e-3
-        fst_vt['BeamDynBlade']['mu3'] = 1.e-3
-        fst_vt['BeamDynBlade']['mu4'] = 1.e-3
-        fst_vt['BeamDynBlade']['mu5'] = 1.e-3
-        fst_vt['BeamDynBlade']['mu6'] = 1.e-3
         fst_vt['BeamDynBlade']['radial_stations'] = s
 
         # Initialize empty 6x6 K and I matrices

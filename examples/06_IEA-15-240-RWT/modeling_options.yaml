@@ -67,6 +67,13 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
+    BeamDynBlade:
+        mu1: 0.00299005 
+        mu2: 0.00218775 
+        mu3: 0.00084171 
+        mu4: 0.00218775 
+        mu5: 0.00299005 
+        mu6: 0.00084171
     AeroDyn:
         DBEMT_Mod: 0
     ElastoDynBlade:

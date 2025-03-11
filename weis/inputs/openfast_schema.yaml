@@ -1773,6 +1773,51 @@ properties:
                         type: array
                         default: ['0']
                         description: Nodes whose values will be output  (-)
+            BeamDynBlade: &ofbeamdynblade
+                type: object
+                default: {}
+                properties:
+                    damp_type:
+                        type: integer
+                        enum: [0, 1]
+                        default: 1
+                        description: Damping type, 0 no damping; 1 damped
+                    mu1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in shear x direction.
+                    mu2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in shear y direction.
+                    mu3:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-4
+                        description: Stiffness proportional damping coefficient in axial z direction.
+                    mu4:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in edgewise bending (around x). mu4 is often assumed equal to mu2.
+                    mu5:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in flapwise bending (around y). mu5 is often assumed equal to mu1.
+                    mu6:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-4
+                        description: Stiffness proportional damping coefficient in torsional direction (around z). mu6 is often assumed equal to mu3.
             HydroDyn: &ofhydrodyn
                 type: object
                 default: {}
