@@ -413,7 +413,7 @@ class WindPark(om.Group):
             self.connect('configuration.lifetime',          'aeroelastic.lifetime')
 
             if not modeling_options['OpenFAST']['from_openfast']:
-                self.connect('blade.outer_shape_bem.ref_axis',  'aeroelastic.ref_axis_blade')
+                self.connect('blade.high_level_blade_props.blade_ref_axis', 'aeroelastic.ref_axis_blade')
                 self.connect('configuration.rotor_orientation', 'aeroelastic.rotor_orientation')
                 self.connect("blade.high_level_blade_props.r_blade",  "aeroelastic.r")
                 self.connect('blade.outer_shape_bem.pitch_axis','aeroelastic.le_location')
@@ -881,20 +881,20 @@ class WindPark(om.Group):
 					
                 # Connections to turbine constraints
                 self.connect('configuration.rotor_orientation', 'tcons_post.rotor_orientation')
-                self.connect('aeroelastic.max_TipDxc',          'tcons_post.tip_deflection')
+                self.connect('aeroelastic.max_TipDxc', 'tcons_post.tip_deflection')
                 self.connect("blade.high_level_blade_props.Rtip", "tcons_post.Rtip")
-                self.connect('blade.outer_shape_bem.ref_axis',  'tcons_post.ref_axis_blade')
-                self.connect('hub.cone',                        'tcons_post.precone')
-                self.connect('nacelle.uptilt',                  'tcons_post.tilt')
-                self.connect('nacelle.overhang',                'tcons_post.overhang')
-                self.connect('tower.ref_axis',                  'tcons_post.ref_axis_tower')
-                self.connect('tower.diameter',                  'tcons_post.outer_diameter_full')
+                self.connect('blade.high_level_blade_props.blade_ref_axis',  'tcons_post.ref_axis_blade')
+                self.connect('hub.cone', 'tcons_post.precone')
+                self.connect('nacelle.uptilt', 'tcons_post.tilt')
+                self.connect('nacelle.overhang', 'tcons_post.overhang')
+                self.connect('tower.ref_axis', 'tcons_post.ref_axis_tower')
+                self.connect('tower.diameter', 'tcons_post.outer_diameter_full')
                 
             else:  # connections from outside WISDEM
-                self.connect('rosco_turbine.v_rated',               'aeroelastic.Vrated')
-                self.connect('rosco_turbine.R',                     'aeroelastic.Rtip')
-                self.connect('rosco_turbine.hub_height',            'aeroelastic.hub_height')
-                self.connect('rosco_turbine.twr_freq',              'sse_tune.tune_rosco.twr_freq')
+                self.connect('rosco_turbine.v_rated', 'aeroelastic.Vrated')
+                self.connect('rosco_turbine.R', 'aeroelastic.Rtip')
+                self.connect('rosco_turbine.hub_height', 'aeroelastic.hub_height')
+                self.connect('rosco_turbine.twr_freq', 'sse_tune.tune_rosco.twr_freq')
             
             # Inputs to plantfinancese from wt group
             if not modeling_options['OpenFAST']['from_openfast']:

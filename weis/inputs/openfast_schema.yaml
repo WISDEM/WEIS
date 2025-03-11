@@ -1699,11 +1699,11 @@ properties:
                         description: Max number of iterations in Newton-Ralphson algorithm (-). DEFAULT = 10
                     stop_tol:
                         type: number
-                        default: 0.0
-                        minimum: 0.0
+                        default: 1.e-5
+                        minimum: 1e-16
                         maximum: 1e16
                         unit: none
-                        description: Tolerance for stopping criterion (-)
+                        description: Tolerance for stopping criterion (-) [DEFAULT = 1E-5]
                     tngt_stf_fd:
                         type: boolean
                         default: False
@@ -1716,14 +1716,14 @@ properties:
                         type: number
                         minimum: 0.0
                         maximum: 1e1
-                        default: 0.0
+                        default: 1.e-6
                         unit: none
                         description: perturbation size for finite differencing (-).  Use 0.0 for DEFAULT
                     tngt_stf_difftol:
                         type: number
                         minimum: 0.0
                         maximum: 1e2
-                        default: 0.0
+                        default: 0.1
                         unit: none
                         description: Maximum allowable relative difference between analytical and fd tangent stiffness (-)
                     RotStates:
