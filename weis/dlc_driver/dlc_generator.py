@@ -30,14 +30,26 @@ openfast_input_map = {
     'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
     'azimuth_init': ("ElastoDyn","Azimuth"),
     'yaw_misalign': ("ElastoDyn","NacYaw"),
-    
-    'wave_height': ("HydroDyn","WaveHs"),
-    'wave_period': ("HydroDyn","WaveTp"),
-    'wave_direction': ("HydroDyn","WaveDir"),
-    'wave_gamma': ("HydroDyn","WavePkShp"),
-    'wave_seed': ("HydroDyn","WaveSeed1"),
 
-    'wave_model': ("HydroDyn","WaveMod"),
+    'compute_aerodynamics': ("Fst", "CompAero"),
+    'compute_inflow': ("Fst", "CompInflow"),
+    'compute_control': ("Fst", "CompServo"),
+    
+    'generator_dof':            ("ElastoDyn","GenDOF"),
+    'initial_platform_surge':   ("ElastoDyn","PtfmSurge"),
+    'initial_platform_sway':    ("ElastoDyn","PtfmSway"),
+    'initial_platform_heave':   ("ElastoDyn","PtfmHeave"),
+    'initial_platform_roll':    ("ElastoDyn","PtfmRoll"),
+    'initial_platform_pitch':   ("ElastoDyn","PtfmPitch"),
+    'initial_platform_yaw':     ("ElastoDyn","PtfmYaw"),
+    
+    'wave_height': ("SeaState","WaveHs"),
+    'wave_period': ("SeaState","WaveTp"),
+    'wave_direction': ("SeaState","WaveDir"),
+    'wave_gamma': ("SeaState","WavePkShp"),
+    'wave_seed': ("SeaState","WaveSeed1"),
+
+    'wave_model': ("SeaState","WaveMod"),
     
     'shutdown_time': [
         ("ServoDyn","TPitManS1"),
@@ -1235,6 +1247,69 @@ class DLCGenerator(object):
                                     'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_freedecay(self,dlc_options):
+        # Describe the new design load case
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = 'freedecay'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'EOG'  # let's make a dummy EOG until we have steady wind input (cheaper than NTM, inflow should be disabled)
+        dlc_options['wind_speed'] = [0]
+        dlc_options['turbine_status'] = 'parked-still'
+
+        # Disable generator, inflow, and aerodynamics by default
+        dlc_options['generator_dof'] = False
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['compute_aerodynamics'] = dlc_options.get('compute_aerodynamics',0)     # Use user input, otherwise disabled
+        dlc_options['compute_inflow'] = dlc_options.get('compute_inflow',0) # Use user input, otherwise disabled
+        dlc_options['compute_control'] = dlc_options.get('compute_control',0) # Use user input, otherwise disabled
+        dlc_options['wave_model'] = 0       
+
+        # Zero platform ICs by default
+        platform_ics = [
+            'initial_platform_surge',
+            'initial_platform_sway',
+            'initial_platform_heave',
+            'initial_platform_roll',
+            'initial_platform_pitch',
+            'initial_platform_yaw',
+        ]
+        for ptfm_ic in platform_ics:
+            if ptfm_ic not in dlc_options:
+                dlc_options[ptfm_ic] = 0
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append([
+            'total_time',
+            'transient_time',
+            'wake_mod',
+            'wave_model',
+            'generator_dof',
+            'rot_speed_initial',
+            'initial_platform_surge',
+            'initial_platform_sway',
+            'initial_platform_heave',
+            'initial_platform_roll',
+            'initial_platform_pitch',
+            'initial_platform_yaw',
+            'compute_aerodynamics',
+            'compute_inflow',
+            'compute_control',
+            ])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        
+        # Don't need wind/waves/yaw
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
 
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
