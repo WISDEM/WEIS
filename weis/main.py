@@ -15,18 +15,20 @@ warnings.simplefilter("ignore", RuntimeWarning, lineno=177)
 def get_max_procs():
     return MPI.COMM_WORLD.Get_size() if MPI else 1
 
-def set_modopt_procs(modeling_options):
-    print('Applying the modeling option updates as overrides.')
-    modeling_override = {}
-    modeling_override['General'] = {}
-    modeling_override['General']['openfast_configuration'] = {}
-    modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
-    modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
-    return modeling_override
+def set_modopt_procs(modeling_options,modeling_override):
+    print('Applying the modeling option updates as additional overrides.')
+    mpi_modeling_override = {}
+    mpi_modeling_override['General'] = {}
+    mpi_modeling_override['General']['openfast_configuration'] = {}
+    mpi_modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
+    mpi_modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
+
+    modeling_override.update(mpi_modeling_override)
+    return mpi_modeling_override
 
 
 def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
-              geometry_override=None, modeling_override=None, analysis_override=None):
+              geometry_override={}, modeling_override={}, analysis_override={}):
 
     tt = time.time()
     maxnP = get_max_procs()
