@@ -18,6 +18,7 @@ import socket
 from dash import html
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
+import matplotlib
 import pickle
 import raft
 from raft.helpers import *
@@ -26,6 +27,7 @@ import vtk
 import dash_vtk
 from dash_vtk.utils import to_mesh_state
 import pyvista as pv
+import plotly
 
 try:
     import ruamel_yaml as ry
@@ -235,24 +237,7 @@ def compare_om_data(
 
     return keys_all, diff_keys_12, diff_keys_21
 
-def load_OMsql(log):
-    """
-    Function from :
-    https://github.com/WISDEM/WEIS/blob/main/examples/09_design_of_experiments/postprocess_results.py
-    """
-    # logging.info("loading ", log)
-    cr = om.CaseReader(log)
-    rec_data = {}
-    cases = cr.get_cases('driver')
-    for case in cases:
-        for key in case.outputs.keys():
-            if key not in rec_data:
-                rec_data[key] = []
-            rec_data[key].append(case[key])
-    
-    return rec_data
-
-def load_OMsql_temp(
+def load_OMsql(
     log,
     parse_multi=False,
     meta=None,
@@ -301,14 +286,10 @@ def load_OMsql_temp(
             if key not in rec_data:
                 # if this key isn't present, create a new list
                 rec_data[key] = []
-            
-            if hasattr(case[key], '__len__'):
-                if len(case[key]) == 1:
-                    # otherwise coerce to float if possible and add the data to the list
-                    rec_data[key].append(float(case[key]))
-                else:
-                    # otherwise a numpy array if possible and add the data to the list
-                    rec_data[key].append(np.array(case[key]))
+
+            if hasattr(case[key], 'len') and len(case[key]) != 1:
+                # convert to a numpy array if possible and add the data to the list
+                rec_data[key].append(np.array(case[key]))
             else:
                 rec_data[key].append(case[key])
 
@@ -580,13 +561,18 @@ def read_per_iteration(iteration, stats_paths):
 def get_timeseries_data(run_num, stats, iteration_path):
     
     stats = stats.reset_index()     # make 'index' column that has elements of 'IEA_22_Semi_00, ...'
-    filename = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
-    if filename.split('_')[-1].startswith('0'):
-        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1][1:]+'.p').strip()
-    else:
-        filename = ('_'.join(filename.split('_')[:-1])+'_0_'+filename.split('_')[-1]+'.p').strip()
+    filename_from_stats = stats.loc[run_num, 'index'].to_string()      # filenames are not same - stats: IEA_22_Semi_83 / timeseries/: IEA_22_Semi_0_83.p
     
-    # visualization_demo/openfast_runs/rank_0/iteration_0/timeseries/IEA_22_Semi_0_0.p
+    # TODO: Need to clean up later with unified format..
+    if filename_from_stats.split('_')[-1].startswith('0'):
+        filename = ('_'.join(filename_from_stats.split('_')[:-1])+'_0_'+filename_from_stats.split('_')[-1][1:]+'.p').strip()
+    else:
+        filename = ('_'.join(filename_from_stats.split('_')[:-1])+'_0_'+filename_from_stats.split('_')[-1]+'.p').strip()
+    
+    if not os.path.exists('/'.join([iteration_path, 'timeseries', filename])):
+        # examples/17_IEA22_Optimization/17_IEA22_OptStudies/of_COBYLA/openfast_runs/iteration_0/timeseries/IEA_22_Semi_0.p
+        filename = ('_'.join(filename_from_stats.split('_')[2:-1])+'_'+str(int(filename_from_stats.split('_')[-1]))+'.p').strip()
+    
     timeseries_path = '/'.join([iteration_path, 'timeseries', filename])
     timeseries_data = pd.read_pickle(timeseries_path)
 
@@ -674,19 +660,25 @@ def read_cost_variables(labels, refturb_variables):
     
     return cost_matrix
 
-
+def convert_dict_values_to_list(input_dict):
+    return {k: [v.tolist()] if isinstance(v, np.ndarray) else v for k, v in input_dict.items()}
+    
 def generate_raft_img(raft_design_dir, plot_dir, log_data):
     '''
     Temporary function to visualize raft 3d plot using matplotlib.
     TODO: to build interactive 3d plot using plotly
     '''
-    n_plots = len(os.listdir(raft_design_dir))
-    print('n_plots: ', n_plots)
     os.makedirs(plot_dir,exist_ok=True)
+
+    if isinstance(log_data, list):
+        log_data = convert_dict_values_to_list(log_data[0])
 
     opt_outs = {}
     opt_outs['max_pitch'] = np.squeeze(np.array(log_data['raft.Max_PtfmPitch']))
-
+    n_plots = opt_outs['max_pitch'].size     # Change from len(opt_outs['max_pitch']) to solve single element np.array values
+    print('n_plots: ', n_plots)
+    
+    matplotlib.use('agg')
     for i_plot in range(n_plots):
         # Set up subplots
         fig = plt.figure()
@@ -720,6 +712,7 @@ def generate_raft_img(raft_design_dir, plot_dir, log_data):
         image_filename = os.path.join(plot_dir,f'ptfm_{i_plot}.png')
         plt.savefig(image_filename, bbox_inches='tight')
         print('saved ', image_filename)
+        plt.close()
 
 
 def remove_duplicated_legends(fig):
@@ -731,6 +724,10 @@ def remove_duplicated_legends(fig):
     
     return fig
 
+
+def set_colors():
+    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
+    return cols
 
 ############################
 # Viz Utils for WindIO
