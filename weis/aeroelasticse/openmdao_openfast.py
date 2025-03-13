@@ -128,132 +128,132 @@ class FASTLoadCases(ExplicitComponent):
                 "blade:EA", 
                 val=np.zeros(n_span), 
                 units="N", 
-                desc="axial stiffness",
+                desc="Axial stiffness at the elastic center, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EIxx",
                 val=np.zeros(n_span),
                 units="N*m**2",
-                desc="Section lag (edgewise) bending stiffness about the XE axis",
+                desc="Section lag (edgewise) bending stiffness about the XE axis, using the convention of WISDEM solver PreComp.",
             )
             self.add_input("blade:EIyy",
                 val=np.zeros(n_span),
                 units="N*m**2",
-                desc="Section flap bending stiffness about the YE axis",
+                desc="Section flap bending stiffness about the YE axis, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EIxy", 
                 val=np.zeros(n_span), 
                 units="N*m**2", 
-                desc="Coupled flap-lag stiffness with respect to the XE-YE frame",
+                desc="Coupled flap-lag stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EA_EIxx", 
                 val=np.zeros(n_span), 
                 units="N*m", 
-                desc="Coupled axial-lag stiffness with respect to the XE-YE frame",
+                desc="Coupled axial-lag stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EA_EIyy", 
                 val=np.zeros(n_span), 
                 units="N*m", 
-                desc="Coupled axial-flap stiffness with respect to the XE-YE frame",
+                desc="Coupled axial-flap stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EIxx_GJ", 
                 val=np.zeros(n_span), 
                 units="N*m**2", 
-                desc="Coupled lag-torsion stiffness with respect to the XE-YE frame",
+                desc="Coupled lag-torsion stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EIyy_GJ", 
                 val=np.zeros(n_span), 
                 units="N*m**2", 
-                desc="Coupled flap-torsion stiffness with respect to the XE-YE frame ",
+                desc="Coupled flap-torsion stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:EA_GJ", 
                 val=np.zeros(n_span), 
                 units="N*m", 
-                desc="Coupled axial-torsion stiffness",
+                desc="Coupled axial-torsion stiffness with respect to the XE-YE frame, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:GJ",
                 val=np.zeros(n_span),
                 units="N*m**2",
-                desc="Section torsion stiffness",
+                desc="Section torsion stiffness at the elastic center, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:rhoA", 
                 val=np.zeros(n_span), 
                 units="kg/m", 
-                desc="Section mass per unit length",
+                desc="Section mass per unit length, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:rhoJ", 
                 val=np.zeros(n_span), 
                 units="kg*m", 
-                desc="polar mass moment of inertia per unit length",
+                desc="polar mass moment of inertia per unit length, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:Tw_iner",
                 val=np.zeros(n_span),
                 units="deg",
-                desc="Orientation of the section principal inertia axes with respect the blade reference plane",
+                desc="Orientation of the section principal inertia axes with respect the blade reference plane, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:x_tc",
                 val=np.zeros(n_span),
                 units="m",
-                desc="X-coordinate of the tension-center offset with respect to the XR-YR axes",
+                desc="X-coordinate of the tension-center offset with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:y_tc",
                 val=np.zeros(n_span),
                 units="m",
-                desc="Chordwise offset of the section tension-center with respect to the XR-YR axes",
+                desc="Chordwise offset of the section tension-center with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:x_sc",
                 val=np.zeros(n_span),
                 units="m",
-                desc="X-coordinate of the shear-center offset with respect to the XR-YR axes",
+                desc="X-coordinate of the shear-center offset with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:y_sc",
                 val=np.zeros(n_span),
                 units="m",
-                desc="Chordwise offset of the section shear-center with respect to the reference frame, XR-YR",
+                desc="Chordwise offset of the section shear-center with respect to the reference frame, XR-YR, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:x_cg",
                 val=np.zeros(n_span),
                 units="m",
-                desc="X-coordinate of the center-of-mass offset with respect to the XR-YR axes",
+                desc="X-coordinate of the center-of-mass offset with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:y_cg",
                 val=np.zeros(n_span),
                 units="m",
-                desc="Chordwise offset of the section center of mass with respect to the XR-YR axes",
+                desc="Chordwise offset of the section center of mass with respect to the XR-YR axes, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:flap_iner",
                 val=np.zeros(n_span),
                 units="kg/m",
-                desc="Section flap inertia about the Y_G axis per unit length.",
+                desc="Section flap inertia about the Y_G axis per unit length, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:edge_iner",
                 val=np.zeros(n_span),
                 units="kg/m",
-                desc="Section lag inertia about the X_G axis per unit length",
+                desc="Section lag inertia about the X_G axis per unit length, using the convention of WISDEM solver PreComp.",
             )
             self.add_input(
                 "blade:A",
                 val=np.zeros(n_span), 
                 units="m**2", 
-                desc="cross sectional area of the blade"
+                desc="cross sectional area of the blade, using the convention of WISDEM solver PreComp."
             )
             self.add_input(
                 'blade:flap_mode_shapes', 
