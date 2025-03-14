@@ -251,8 +251,9 @@ class runFAST_pywrapper(object):
             output.trim_data(tmin=self.fst_vt['Fst']['TStart'], tmax=self.fst_vt['Fst']['TMax'])
 
         # For analysis later
-        for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
-            output.add_gradient_channel(f'BldPitch{i_blade+1}', f'dBldPitch{i_blade+1}')
+        if len(output.time) > 1:
+            for i_blade in range(self.fst_vt['ElastoDyn']['NumBl']):
+                output.add_gradient_channel(f'BldPitch{i_blade+1}', f'dBldPitch{i_blade+1}')
                     
         if not self.keep_time:
             output.process(goodman_correction=self.goodman)
