@@ -107,25 +107,60 @@ class FASTLoadCases(ExplicitComponent):
             self.spar_cap_ss_var = rotorse_options['spar_cap_ss']
             self.spar_cap_ps_var = rotorse_options['spar_cap_ps']
 
-            # ElastoDyn Inputs
-            # Assuming the blade modal damping to be unchanged. Cannot directly solve from the Rayleigh Damping without making assumptions. J.Jonkman recommends 2-3% https://wind.nrel.gov/forum/wind/viewtopic.php?t=522
-            self.add_input('r', val=np.zeros(n_span), units='m', desc='radial positions. r[0] should be the hub location \
+            # ElastoDyn and BeamDyn Inputs
+            self.add_input(
+                'r', 
+                val=np.zeros(n_span), 
+                units='m', 
+                desc='radial positions. r[0] should be the hub location \
                 while r[-1] should be the blade tip. Any number \
-                of locations can be specified between these in ascending order.')
-            self.add_input('le_location', val=np.zeros(n_span), desc='Leading-edge positions from a reference blade axis (usually blade pitch axis). Locations are normalized by the local chord length. Positive in -x direction for airfoil-aligned coordinate system')
-            self.add_input('beam:EA', val=np.zeros(n_span), units='N', desc='axial stiffness (along z-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:EIxx', val=np.zeros(n_span), units='N*m**2', desc='edgewise stiffness (bending about :ref:`x-direction of airfoil aligned coordinate system <blade_airfoil_coord>`)')
-            self.add_input('beam:EIyy', val=np.zeros(n_span), units='N*m**2', desc='flapwise stiffness (bending about y-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:EIxy', val=np.zeros(n_span), units='N*m**2', desc='cross-term flap-edge stiffness')
-            self.add_input('beam:GJ', val=np.zeros(n_span), units='N*m**2', desc='torsional stiffness (about axial z-direction of airfoil aligned coordinate system)')
-            self.add_input('beam:rhoA', val=np.zeros(n_span), units='kg/m', desc='mass per unit length')
-            self.add_input('beam:rhoJ', val=np.zeros(n_span), units='kg*m', desc='polar mass moment of inertia per unit length')
-            self.add_input('beam:x_cg', val=np.zeros(n_span), units='m', desc='x coordinate of the center-of-mass offset with respect to the local coordinate system')
-            self.add_input('beam:y_cg', val=np.zeros(n_span), units='m', desc='y coordinate of the center-of-mass offset with respect to the local coordinate system')
-            self.add_input('beam:edge_iner', val=np.zeros(n_span), units='kg/m', desc='Section lag inertia about the X_G axis per unit length')
-            self.add_input('beam:flap_iner', val=np.zeros(n_span), units='kg/m', desc='Section flap inertia about the Y_G axis per unit length.')
-            self.add_input('flap_mode_shapes', val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)')
-            self.add_input('edge_mode_shapes', val=np.zeros((n_freq_blade,5)), desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)')
+                of locations can be specified between these in ascending order.',
+            )
+            self.add_input(
+                'le_location', 
+                val=np.zeros(n_span), 
+                desc='Leading-edge positions from a reference blade axis \
+                usually blade pitch axis). Locations are normalized by the \
+                local chord length. Positive in -x direction for airfoil-aligned coordinate system',
+            )
+            self.add_input(
+                "blade:EIxx",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="Section lag (edgewise) bending stiffness about the XE axis, using the convention of WISDEM solver PreComp.",
+            )
+            self.add_input("blade:EIyy",
+                val=np.zeros(n_span),
+                units="N*m**2",
+                desc="Section flap bending stiffness about the YE axis, using the convention of WISDEM solver PreComp.",
+            )
+            self.add_input(
+                "blade:rhoA", 
+                val=np.zeros(n_span), 
+                units="kg/m", 
+                desc="Section mass per unit length, using the convention of WISDEM solver PreComp.",
+            )
+            self.add_input(
+                "blade:K",
+                val=np.zeros((n_span,6,6)), 
+                desc="Stiffness matrix at the center of the windIO reference axes."
+            )
+            self.add_input(
+                "blade:I",
+                val=np.zeros((n_span,6,6)), 
+                desc="Inertia matrix at the center of the windIO reference axes."
+            )
+            self.add_input(
+                'blade:flap_mode_shapes', 
+                val=np.zeros((n_freq_blade,5)), 
+                desc='6-degree polynomial coefficients of mode shapes in the flap direction (x^2..x^6, no linear or constant term)',
+            )
+            self.add_input(
+                'blade:edge_mode_shapes', 
+                val=np.zeros((n_freq_blade,5)), 
+                desc='6-degree polynomial coefficients of mode shapes in the edge direction (x^2..x^6, no linear or constant term)',
+            )
+            
             self.add_input('gearbox_efficiency', val=1.0, desc='Gearbox efficiency')
             self.add_input('gearbox_ratio', val=1.0, desc='Gearbox ratio')
             self.add_input('platform_displacement', val=1.0, desc='Volumetric platform displacement', units='m**3')
@@ -773,20 +808,21 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt = modopt['General']['openfast_configuration']['fst_vt']
 
         # Main .fst file`
-        fst_vt['Fst']               = {}
-        fst_vt['ElastoDyn']         = {}
-        fst_vt['ElastoDynBlade']    = {}
-        fst_vt['ElastoDynTower']    = {}
-        fst_vt['AeroDyn']           = {}
-        fst_vt['AeroDynBlade']      = {}
-        fst_vt['ServoDyn']          = {}
-        fst_vt['InflowWind']        = {}
-        fst_vt['SubDyn']            = {}
-        fst_vt['SeaState']          = {}
-        fst_vt['HydroDyn']          = {}
-        fst_vt['MoorDyn']           = {}
-        fst_vt['MAP']               = {}
-        fst_vt['BeamDyn']           = {}
+        fst_vt['Fst'] = {}
+        fst_vt['ElastoDyn'] = {}
+        fst_vt['ElastoDynBlade'] = {}
+        fst_vt['ElastoDynTower'] = {}
+        fst_vt['AeroDyn'] = {}
+        fst_vt['AeroDynBlade'] = {}
+        fst_vt['ServoDyn'] = {}
+        fst_vt['InflowWind'] = {}
+        fst_vt['SubDyn'] = {}
+        fst_vt['SeaState'] = {}
+        fst_vt['HydroDyn'] = {}
+        fst_vt['MoorDyn'] = {}
+        fst_vt['MAP'] = {}
+        fst_vt['BeamDyn'] = {}
+        fst_vt['BeamDynBlade'] = {}
         
         # List of structural controllers
         fst_vt['TStC'] = {}; fst_vt['TStC'] = []
@@ -824,7 +860,7 @@ class FASTLoadCases(ExplicitComponent):
         if 'BeamDynBlade' in modeling_options['OpenFAST']:
             for key in modeling_options['OpenFAST']['BeamDynBlade']:
                 fst_vt['BeamDynBlade'][key] = modeling_options['OpenFAST']['BeamDynBlade'][key]
-
+        
         if 'ElastoDynTower' in modeling_options['OpenFAST']:   
             for key in modeling_options['OpenFAST']['ElastoDynTower']:
                 fst_vt['ElastoDynTower'][key] = modeling_options['OpenFAST']['ElastoDynTower'][key]
@@ -1063,25 +1099,48 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['rna_I_TT'][2])
 
         # Update ElastoDyn Blade Input File
+        fst_vt['ElastoDyn']['BldFile1'] = ''
+        fst_vt['ElastoDyn']['BldFile2'] = ''
+        fst_vt['ElastoDyn']['BldFile3'] = ''
         fst_vt['ElastoDynBlade']['NBlInpSt']   = len(inputs['r'])
         fst_vt['ElastoDynBlade']['BlFract']    = (inputs['r']-inputs['Rhub'])/(inputs['Rtip']-inputs['Rhub'])
         fst_vt['ElastoDynBlade']['BlFract'][0] = 0.
         fst_vt['ElastoDynBlade']['BlFract'][-1]= 1.
         fst_vt['ElastoDynBlade']['PitchAxis']  = inputs['le_location']
         fst_vt['ElastoDynBlade']['StrcTwst']   = inputs['theta'] # to do: structural twist is not nessessarily (nor likely to be) the same as aero twist
-        fst_vt['ElastoDynBlade']['BMassDen']   = inputs['beam:rhoA']
-        fst_vt['ElastoDynBlade']['FlpStff']    = inputs['beam:EIyy']
-        fst_vt['ElastoDynBlade']['EdgStff']    = inputs['beam:EIxx']
+        fst_vt['ElastoDynBlade']['BMassDen']   = inputs['blade:rhoA']
+        fst_vt['ElastoDynBlade']['FlpStff']    = inputs['blade:EIyy']
+        fst_vt['ElastoDynBlade']['EdgStff']    = inputs['blade:EIxx']
         fst_vt['ElastoDynBlade']['BldFl1Sh']   = np.zeros(5)
         fst_vt['ElastoDynBlade']['BldFl2Sh']   = np.zeros(5)
         fst_vt['ElastoDynBlade']['BldEdgSh']   = np.zeros(5)
         for i in range(5):
-            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['flap_mode_shapes'][0,i] / sum(inputs['flap_mode_shapes'][0,:])
-            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['flap_mode_shapes'][1,i] / sum(inputs['flap_mode_shapes'][1,:])
-            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['edge_mode_shapes'][0,i] / sum(inputs['edge_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl1Sh'][i] = inputs['blade:flap_mode_shapes'][0,i] / sum(inputs['blade:flap_mode_shapes'][0,:])
+            fst_vt['ElastoDynBlade']['BldFl2Sh'][i] = inputs['blade:flap_mode_shapes'][1,i] / sum(inputs['blade:flap_mode_shapes'][1,:])
+            fst_vt['ElastoDynBlade']['BldEdgSh'][i] = inputs['blade:edge_mode_shapes'][0,i] / sum(inputs['blade:edge_mode_shapes'][0,:])
 
-        # Update BeamDyn
-        pass
+        # Update BeamDyn Main
+        fst_vt['BeamDyn']['member_total'] = 1
+        fst_vt['BeamDyn']['kp_total'] = len(inputs['ref_axis_blade'][:,0])
+        fst_vt['BeamDyn']['members'] = [{}]
+        fst_vt['BeamDyn']['members'][0]['kp_xr'] = inputs['ref_axis_blade'][:,0]
+        fst_vt['BeamDyn']['members'][0]['kp_yr'] = inputs['ref_axis_blade'][:,1]
+        fst_vt['BeamDyn']['members'][0]['kp_zr'] = inputs['ref_axis_blade'][:,2]
+        fst_vt['BeamDyn']['members'][0]['initial_twist'] = inputs['theta']
+
+        # Compute dimensional and nondimensional coordinate along blade span
+        r = (inputs['r']-inputs['Rhub'])
+        r[0]  = 0.
+        r[-1] = inputs['Rtip']-inputs['Rhub']
+        s = r/r[-1]
+
+        # Update BeamDyn Blade
+        K_BD = inputs["blade:K"]
+        I_BD = inputs["blade:I"]
+        fst_vt['BeamDynBlade']['station_total'] = len(inputs['r'])
+        fst_vt['BeamDynBlade']['radial_stations'] = s
+        fst_vt['BeamDynBlade']['beam_stiff'] = K_BD
+        fst_vt['BeamDynBlade']['beam_inertia'] = I_BD
 
         # Update AeroDyn
         fst_vt['AeroDyn']['AirDens']   = float(inputs['rho'])
@@ -1089,9 +1148,6 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['AeroDyn']['SpdSound']  = float(inputs['speed_sound_air'])
 
         # Update AeroDyn Blade Input File
-        r = (inputs['r']-inputs['Rhub'])
-        r[0]  = 0.
-        r[-1] = inputs['Rtip']-inputs['Rhub']
         fst_vt['AeroDynBlade']['NumBlNds'] = self.n_span
         fst_vt['AeroDynBlade']['BlSpn']    = r
         BlCrvAC, BlSwpAC = self.get_ac_axis(inputs)
@@ -2844,15 +2900,9 @@ def apply_olaf_parameters(dlc_generator,fst_vt):
             # Check that runs are long enough
             if tMin[i_case] > min_TMax:
                 logger.warning("OLAF runs are too short in time, the wake is not at convergence")
-
-            # TODO: skipping timestep setting because they're big timesteps
-            # # Set timestep
-            # if fst_vt['Fst']['CompElast'] == 1:
-            #     DT[i_case] = dt_fvw[i_case]
             
             case_input[("AeroDyn","OLAF","DTfvw")] = {'vals': dt_fvw, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nNWPanels")] = {'vals': nNWPanels, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nNWPanelsFree")] = {'vals': nNWPanelsFree, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nFWPanels")] = {'vals': nFWPanels, 'group': wind_group}
             case_input[("AeroDyn","OLAF","nFWPanelsFree")] = {'vals': nFWPanelsFree, 'group': wind_group}
-

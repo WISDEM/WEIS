@@ -196,7 +196,7 @@ properties:
                         type: string
                         default: none
                         description: Name of file containing ice input parameters (quoted string)
-                    SumPrint:
+                    SumPrint: &sumprint
                         type: boolean
                         default: False
                         description: Print summary data to '<RootName>.sum' (flag)
@@ -227,7 +227,7 @@ properties:
                         type: boolean
                         default: True
                         description: Use tab delimiters in text tabular output file? (flag) (currently unused)
-                    OutFmt:
+                    OutFmt: &outfmt
                         type: string
                         default: 'ES10.3E2'
                         description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
@@ -554,10 +554,7 @@ properties:
                         maximum: 1000.
                         unit: m
                         description: Initial offset in +x direction (shift of wind box)
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
                     SensorType:
                         type: integer
                         enum: [0,1,2,3]
@@ -761,9 +758,9 @@ properties:
                         description: Forward azimuth relative to blade where the sector ends (>=0) {default=60} (deg) [used only when SectAvg=True]
                     DBEMT_Mod:
                         type: integer
-                        enum: [1, 2, 3]
+                        enum: [-1, 0, 1, 2, 3]
                         default: 2
-                        description: Type of dynamic BEMT (DBEMT) model {1=constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-) [used only when Wake_Mod=2]
+                        description: Type of dynamic BEMT (DBEMT) model {0=No Dynamic Wake, -1=Frozen Wake for linearization, 1:constant tau1, 2=time-dependent tau1, 3=constant tau1 with continuous formulation} (-)
                     tau1_const:
                         type: number
                         unit: s
@@ -1082,10 +1079,7 @@ properties:
                         # minimum: 0.
                         # maximum: 10.
                         description: Turbulence buoyancy coefficient
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
             ElastoDyn: &ofelastodyn
                 type: object
                 default: {}
@@ -1482,10 +1476,7 @@ properties:
                         default: 20
                         unit: none
                         description: Number of tower nodes used for analysis (-)
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
                     OutFile:
                         type: integer
                         default: 1
@@ -1494,10 +1485,7 @@ properties:
                         type: boolean
                         default: True
                         description: Use tab delimiters in text tabular output file? (flag) (currently unused)
-                    OutFmt:
-                        type: string
-                        default: 'ES10.3E2'
-                        description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
+                    OutFmt: *outfmt
                     DecFact:
                         type: integer
                         default: 1
@@ -1661,6 +1649,7 @@ properties:
                 type: object
                 default: {}
                 properties:
+                    Echo: *echo
                     QuasiStaticInit:
                         type: boolean
                         default: True
@@ -1673,9 +1662,9 @@ properties:
                         unit: none
                         description: Numerical damping parameter for generalized-alpha integrator
                     quadrature:
-                        type: string
-                        enum: ['1', '2', gaussian, Gaussian, GAUSSIAN, trapezoidal, Trapezoidal, TRAPEZOIDAL]
-                        default: '2'
+                        type: integer
+                        enum: [1, 2]
+                        default: 2
                         description: 'Quadrature method: 1=Gaussian; 2=Trapezoidal (switch)'
                     refine:
                         type: integer
@@ -1710,11 +1699,11 @@ properties:
                         description: Max number of iterations in Newton-Ralphson algorithm (-). DEFAULT = 10
                     stop_tol:
                         type: number
-                        default: 0.0
-                        minimum: 0.0
+                        default: 1.e-5
+                        minimum: 1e-16
                         maximum: 1e16
                         unit: none
-                        description: Tolerance for stopping criterion (-)
+                        description: Tolerance for stopping criterion (-) [DEFAULT = 1E-5]
                     tngt_stf_fd:
                         type: boolean
                         default: False
@@ -1727,14 +1716,14 @@ properties:
                         type: number
                         minimum: 0.0
                         maximum: 1e1
-                        default: 0.0
+                        default: 1.e-6
                         unit: none
                         description: perturbation size for finite differencing (-).  Use 0.0 for DEFAULT
                     tngt_stf_difftol:
                         type: number
                         minimum: 0.0
                         maximum: 1e2
-                        default: 0.0
+                        default: 0.1
                         unit: none
                         description: Maximum allowable relative difference between analytical and fd tangent stiffness (-)
                     RotStates:
@@ -1772,6 +1761,63 @@ properties:
                         default: 5e5
                         unit: kg*m^2/s
                         description: Pitch actuator damping (kg-m^2/s) [used only when UsePitchAct is true]
+                    SumPrint: *sumprint
+                    OutFmt: *outfmt
+                    NNodeOuts:
+                        type: integer
+                        minimum: 0
+                        maximum: 9
+                        default: 0
+                        description: Number of nodes to output to file [0 - 9] (-)
+                    OutNd:
+                        type: array
+                        default: ['0']
+                        description: Nodes whose values will be output  (-)
+            BeamDynBlade: &ofbeamdynblade
+                type: object
+                default: {}
+                properties:
+                    damp_type:
+                        type: integer
+                        enum: [0, 1]
+                        default: 1
+                        description: Damping type, 0 no damping; 1 damped
+                    mu1:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in shear x direction.
+                    mu2:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in shear y direction.
+                    mu3:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-4
+                        description: Stiffness proportional damping coefficient in axial z direction.
+                    mu4:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in edgewise bending (around x). mu4 is often assumed equal to mu2.
+                    mu5:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-3
+                        description: Stiffness proportional damping coefficient in flapwise bending (around y). mu5 is often assumed equal to mu1.
+                    mu6:
+                        type: number
+                        minimum: 0.0
+                        maximum: 1.
+                        default: 1.e-4
+                        description: Stiffness proportional damping coefficient in torsional direction (around z). mu6 is often assumed equal to mu3.
             HydroDyn: &ofhydrodyn
                 type: object
                 default: {}
@@ -2028,10 +2074,7 @@ properties:
                         enum: [1, 2, 3]
                         default: 2
                         description: Output requested channels to [1=Hydrodyn.out, 2=GlueCode.out, 3=both files]
-                    OutFmt:
-                        type: string
-                        default: 'ES11.4e2'
-                        description: Output format for numerical results (quoted string) [not checked for validity]
+                    OutFmt: *outfmt
                     OutSFmt:
                         type: string
                         default: 'A11'
@@ -2144,10 +2187,7 @@ properties:
                     GuyanDamp4: *guyan_damp
                     GuyanDamp5: *guyan_damp
                     GuyanDamp6: *guyan_damp
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Output a Summary File (flag) that contains matrices K,M  and C-B reduced M_BB, M-BM, K_BB, K_MM(OMG^2), PHI_R, PHI_L. It can also contain COSMs if requested.
+                    SumPrint: *sumprint
                     OutCBModes:
                         type: integer
                         enum: [0, 1]
@@ -2180,10 +2220,7 @@ properties:
                         default: 1
                         description: Decimation of output in the <rootname>.SD.out file
                         minimum: 0
-                    OutFmt:
-                        type: string
-                        default: 'ES11.4e2'
-                        description: Output format for numerical results in the <rootname>.SD.out file (quoted string) [not checked for validity]
+                    OutFmt: *outfmt
                     OutSFmt:
                         type: string
                         default: 'A11'
@@ -2653,10 +2690,7 @@ properties:
                         type: integer
                         default: 0
                         description: Record 26 No. of points in torque-speed look-up table {0 = none and use the optimal mode parameters; nonzero = ignore the optimal mode PARAMETERs by setting Record 16 to 0.0} (-) [used only with Bladed Interface]
-                    SumPrint:
-                        type: boolean
-                        default: False
-                        description: Print summary data to '<RootName>.sum' (flag)
+                    SumPrint: *sumprint
                     OutFile:
                         type: integer
                         default: 1
@@ -2665,10 +2699,7 @@ properties:
                         type: boolean
                         default: True
                         description: Use tab delimiters in text tabular output file? (flag) (currently unused)
-                    OutFmt:
-                        type: string
-                        default: 'ES10.3E2'
-                        description: Format used for text tabular output (except time).  Resulting field should be 10 characters. (quoted string (currently unused)
+                    OutFmt: *outfmt
                     TStart:
                         type: number
                         default: 0.0
@@ -2982,10 +3013,7 @@ properties:
                         enum: [1, 2, 3]
                         default: 2
                         description: 'Output requested channels to: [1=SeaState.out, 2=GlueCode.out, 3=both files]'
-                    OutFmt:
-                        type: string
-                        default: 'ES11.4e2'
-                        description: Output format for numerical results (quoted string) [not checked for validity!]
+                    OutFmt: *outfmt
                     OutSFmt:
                         type: string
                         default: 'A11'
