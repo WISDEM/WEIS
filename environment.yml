@@ -18,7 +18,7 @@ dependencies:
   #- pyoptsparse
   - rosco>=2.9.7
   - smt
-  - wisdem>=3.18.1
+  - wisdem==3.19.0
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
