@@ -19,7 +19,7 @@ WISDEM:
     BOS:
         flag: False
 
-Level3: # -> OpenFAST, but testing backwards compatibility
+OpenFAST: 
     flag: True
     from_openfast: True
     regulation_trajectory: IEA-15-240-RWT-outputs.yaml
@@ -27,12 +27,6 @@ Level3: # -> OpenFAST, but testing backwards compatibility
     openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     AeroDyn:
         Wake_Mod: 2
-    # These are big speed improvements
-    MoorDyn:
-        TmaxIC: 1.0
-    SeaState:
-        WvDiffQTF: False
-        WvSumQTF: False
 
     
 ROSCO:
