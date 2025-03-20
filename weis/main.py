@@ -6,6 +6,7 @@ import numpy as np
 
 from weis.inputs.gui import run as guirun
 from weis.glue_code.runWEIS import run_weis
+import wisdem.inputs as sch
 from openmdao.utils.mpi  import MPI
 
 warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
@@ -26,12 +27,30 @@ def set_modopt_procs(modeling_options,modeling_override):
     modeling_override.update(mpi_modeling_override)
     return mpi_modeling_override
 
+def set_modopt_test_runs(fname_input_modeling, modeling_override):
+    # Load modeling options
+    modeling_options = sch.load_modeling_yaml(fname_input_modeling)
+
+    # Options to speed up tests:
+    
+    # Shorten all DLC runs
+    for dlc_option in modeling_options['DLC_driver']['DLCs']:
+        dlc_option['transient_time'] = 0
+        dlc_option['analysis_time'] = 0.5
+        dlc_option['n_seeds'] = 1
+        dlc_option['wind_speed'] = [10]
+
+    modeling_override.update(modeling_options)  # not sure whether to return all options as overrides
+
 
 def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
-              geometry_override={}, modeling_override={}, analysis_override={}):
+              geometry_override={}, modeling_override={}, analysis_override={}, test_run = False):
 
     tt = time.time()
     maxnP = get_max_procs()
+
+    if test_run:
+        set_modopt_test_runs(fname_modeling_options, modeling_override)
 
     # If running in parallel, pre-compute number of cores needed in this run
     if MPI:
