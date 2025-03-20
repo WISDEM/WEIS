@@ -1,0 +1,64 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+
+WISDEM:
+    RotorSE:
+        flag: False
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+    BOS:
+        flag: False
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    from_openfast: True
+    regulation_trajectory: ../../../../examples/02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../../../../examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    MoorDyn:
+      TmaxIC: 1.0
+    SeaState:
+      WvDiffQTF: False
+      WvSumQTF: False
+
+ROSCO:
+    flag: True
+    zeta_pc:    [1.0]
+    omega_pc:   [0.2]
+    zeta_vs: 1.0
+    omega_vs: 0.2
+    tuning_yaml: ../../../../examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+
+
+    
+DLC_driver:
+    DLCs: # Currently supported IEC 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3, or define a Custom one
+        - DLC: "1.1"
+        - DLC: "1.2"
+        - DLC: "1.3"
+        - DLC: "1.4"
+          n_azimuth: 3
+          wind_speed: [9., 11.]
+        - DLC: "1.5"
+        - DLC: "5.1"
+          n_seeds: 1
+          n_azimuth: 3
+          shutdown_time: 0.
+          transient_time: 0.0
+        - DLC: "6.1"
+        - DLC: "6.3"
+        - DLC: "6.4" #idling 
+          ws_bin_size: 10
+        - DLC: "freedecay"
+          transient_time: 0.0
+          initial_platform_roll: 5.0
+              
+              
