@@ -44,6 +44,10 @@ def set_modopt_test_runs(fname_input_modeling, modeling_override, fname_input_an
     # OpenFAST modeling_overrides are not honored if an OpenFAST model is read, but we can set options in openmdao_openfast for now if this flag is enabled
     modeling_options['General']['test_mode'] = True
 
+    # Cp surface generation: default is 20, ROSCO can struggle with fewer than 10
+    modeling_options['WISDEM']['RotorSE']['n_pitch_perf_surfaces'] = 10
+    modeling_options['WISDEM']['RotorSE']['n_tsr_perf_surfaces'] = 10
+
     # Solver, max iterations
     analysis_options['driver']['optimization']['max_iter'] = 1
     analysis_options['driver']['optimization']['solver'] = 'LN_COBYLA'   # Gradient free
