@@ -610,6 +610,12 @@ class FASTLoadCases(ExplicitComponent):
             modopts_no_defaults['OpenFAST'].update(modopts_no_defaults['Level3'])
 
         fst_vt = self.load_FAST_model_opts(fst_vt,modopts_no_defaults)
+
+        # Apply modeling overrides for faster testing
+        if modopt['General']['test_mode']:
+            fst_vt['MoorDyn']['TmaxIC'] = 1.0
+            fst_vt['SeaState']['WvDiffQTF'] = False
+            fst_vt['SeaState']['WvSumQTF'] = False
                 
                 
         if self.model_only == True:

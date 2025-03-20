@@ -6,7 +6,7 @@ import numpy as np
 
 from weis.inputs.gui import run as guirun
 from weis.glue_code.runWEIS import run_weis
-import wisdem.inputs as sch
+import weis.inputs as sch
 from openmdao.utils.mpi  import MPI
 
 warnings.filterwarnings("ignore", category=np.exceptions.VisibleDeprecationWarning)
@@ -27,12 +27,13 @@ def set_modopt_procs(modeling_options,modeling_override):
     modeling_override.update(mpi_modeling_override)
     return mpi_modeling_override
 
-def set_modopt_test_runs(fname_input_modeling, modeling_override):
+def set_modopt_test_runs(fname_input_modeling, modeling_override, fname_input_analysis, analysis_override):
     # Load modeling options
     modeling_options = sch.load_modeling_yaml(fname_input_modeling)
+    analysis_options = sch.load_analysis_yaml(fname_input_analysis)
 
     # Options to speed up tests:
-    
+
     # Shorten all DLC runs
     for dlc_option in modeling_options['DLC_driver']['DLCs']:
         dlc_option['transient_time'] = 0
@@ -40,7 +41,15 @@ def set_modopt_test_runs(fname_input_modeling, modeling_override):
         dlc_option['n_seeds'] = 1
         dlc_option['wind_speed'] = [10]
 
+    # OpenFAST modeling_overrides are not honored if an OpenFAST model is read, but we can set options in openmdao_openfast for now if this flag is enabled
+    modeling_options['General']['test_mode'] = True
+
+    # Solver, max iterations
+    analysis_options['driver']['optimization']['max_iter'] = 1
+    analysis_options['driver']['optimization']['solver'] = 'LN_COBYLA'   # Gradient free
+
     modeling_override.update(modeling_options)  # not sure whether to return all options as overrides
+    analysis_override.update(analysis_options) 
 
 
 def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
@@ -50,7 +59,11 @@ def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
     maxnP = get_max_procs()
 
     if test_run:
-        set_modopt_test_runs(fname_modeling_options, modeling_override)
+        set_modopt_test_runs(fname_modeling_options, 
+                            modeling_override,
+                            fname_analysis_options,
+                            analysis_override
+                            )
 
     # If running in parallel, pre-compute number of cores needed in this run
     if MPI:

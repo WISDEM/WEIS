@@ -92,6 +92,10 @@ properties:
                 type: boolean
                 default: False
                 description: Flag whether to apply the Goodman correction for mean stress value to the stress amplitude value in fatigue calculations
+            test_mode:
+                type: boolean
+                default: False
+                description: Flag for using streamlined models in the WEIS simulation.
     WISDEM:
         type: object
         default: {}
