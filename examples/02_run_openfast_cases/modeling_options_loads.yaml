@@ -56,32 +56,8 @@ DLC_driver:
         wave_period1: 11.2
         wave_height50: 9.7
         wave_period50: 13.6
-    openfast_input_map:
-        final_blade_pitch12:
-            - [ServoDyn,BlPitchF(1)]
-            - [ServoDyn,BlPitchF(2)]
-        mean_sea_level: [Fst,MSL2SWL]
-        wave_dir: [HydroDyn,WaveDir]
-        current_model: [HydroDyn,CurrMod]
-        current_speed: [HydroDyn,CurrDIV]
 
     DLCs:
         - DLC: "1.6"
           wind_speed: [8,15]
-          n_seeds: 1
-          analysis_time: 1.
-          transient_time: 0.0
-          user_group:
-            - mean_sea_level: [1.0, 2.0]
-              current_speed: [.25, .5]
-            - current_model: 1
-        # - DLC: "5.1"  
-        #   wind_speed: [12]
-        #   n_seeds: 1
-        #   n_azimuth: 1
-        #   analysis_time: 1.
-        #   shutdown_time: 0.5
-        #   transient_time: 0.0
-        #   user_group:
-        #     final_blade_pitch12: [70,80,90]
 
