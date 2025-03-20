@@ -16,8 +16,8 @@ class TestIECWind(unittest.TestCase):
         wind_turbulence_class = 'B'
 
         # Load modeling options file
-        weis_dir                = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) ) + os.sep
-        fname_modeling_options = os.path.join(weis_dir , "examples", "05_IEA-3.4-130-RWT", "modeling_options.yaml")
+        this_dir               = os.path.dirname( (__file__) )
+        fname_modeling_options = os.path.join(this_dir , "weis_inputs", "modeling_options_all_dlcs.yaml")
         modeling_options = sch.load_modeling_yaml(fname_modeling_options)
         
         # Extract user defined list of cases
@@ -46,7 +46,7 @@ class TestIECWind(unittest.TestCase):
             
 
         np.testing.assert_equal(dlc_generator.cases[11].URef, ws_cut_out)
-        np.testing.assert_equal(dlc_generator.n_cases, 60)
+        np.testing.assert_equal(dlc_generator.n_cases, 61)
 
         # Determine wind speeds that will be used to calculate AEP (using DLC AEP or 1.1)
         DLCs = [i_dlc['DLC'] for i_dlc in modeling_options['DLC_driver']['DLCs']]
