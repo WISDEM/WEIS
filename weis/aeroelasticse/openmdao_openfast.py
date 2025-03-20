@@ -614,6 +614,7 @@ class FASTLoadCases(ExplicitComponent):
         # Apply modeling overrides for faster testing
         if modopt['General']['test_mode']:
             fst_vt['MoorDyn']['TmaxIC'] = 1.0
+            fst_vt['SeaState']['WaveTMax'] = 1.0
             fst_vt['SeaState']['WvDiffQTF'] = False
             fst_vt['SeaState']['WvSumQTF'] = False
                 
