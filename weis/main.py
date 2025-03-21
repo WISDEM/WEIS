@@ -34,12 +34,16 @@ def set_modopt_test_runs(fname_input_modeling, modeling_override, fname_input_an
 
     # Options to speed up tests:
 
-    # Shorten all DLC runs
+    # Shorten all DLC runs to single metocean condition
     for dlc_option in modeling_options['DLC_driver']['DLCs']:
         dlc_option['transient_time'] = 0
         dlc_option['analysis_time'] = 0.5
         dlc_option['n_seeds'] = 1
         dlc_option['wind_speed'] = [10]
+        if dlc_option['wave_period']: # if user specified array is used
+            dlc_option['wave_period'] = [8]
+        if dlc_option['wave_height']: # if user specified array is used
+            dlc_option['wave_height'] = [2]
 
     # OpenFAST modeling_overrides are not honored if an OpenFAST model is read, but we can set options in openmdao_openfast for now if this flag is enabled
     modeling_options['General']['test_mode'] = True
