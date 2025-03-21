@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import copy
 import warnings
 import numpy as np
 
@@ -24,18 +25,33 @@ def set_modopt_procs(modeling_options,modeling_override):
     mpi_modeling_override['General']['openfast_configuration']['nFD'] = modeling_options['General']['openfast_configuration']['nFD']
     mpi_modeling_override['General']['openfast_configuration']['nOFp'] = modeling_options['General']['openfast_configuration']['nOFp']
 
-    modeling_override.update(mpi_modeling_override)
+    modeling_override = recursive_merge(modeling_override, mpi_modeling_override)
     return mpi_modeling_override
 
-def set_modopt_test_runs(fname_input_modeling, modeling_override, fname_input_analysis, analysis_override):
+def recursive_merge(dict1, dict2):
+    for key, value in dict2.items():
+        if key in dict1 and isinstance(dict1[key], dict) and isinstance(value, dict):
+            # Recursively merge nested dictionaries
+            dict1[key] = recursive_merge(dict1[key], value)
+        else:
+            # Merge non-dictionary values
+            dict1[key] = value
+    return dict1
+
+def set_modopt_test_runs(fname_input_modeling, modeling_override, analysis_override):
     # Load modeling options
     modeling_options = sch.load_modeling_yaml(fname_input_modeling)
-    analysis_options = sch.load_analysis_yaml(fname_input_analysis)
+
+    test_modeling_overrides = {}
+    test_analysis_overrides = {}
 
     # Options to speed up tests:
 
     # Shorten all DLC runs to single metocean condition
-    for dlc_option in modeling_options['DLC_driver']['DLCs']:
+    test_modeling_overrides['DLC_driver'] = {}
+    test_modeling_overrides['DLC_driver']['DLCs'] = copy.deepcopy(modeling_options['DLC_driver']['DLCs'])
+
+    for dlc_option in test_modeling_overrides['DLC_driver']['DLCs']:
         dlc_option['transient_time'] = 0
         dlc_option['analysis_time'] = 0.5
         dlc_option['n_seeds'] = 1
@@ -46,18 +62,23 @@ def set_modopt_test_runs(fname_input_modeling, modeling_override, fname_input_an
             dlc_option['wave_height'] = [2]
 
     # OpenFAST modeling_overrides are not honored if an OpenFAST model is read, but we can set options in openmdao_openfast for now if this flag is enabled
-    modeling_options['General']['test_mode'] = True
+    test_modeling_overrides['General'] = {}
+    test_modeling_overrides['General']['test_mode'] = True
 
     # Cp surface generation: default is 20, ROSCO can struggle with fewer than 10
-    modeling_options['WISDEM']['RotorSE']['n_pitch_perf_surfaces'] = 10
-    modeling_options['WISDEM']['RotorSE']['n_tsr_perf_surfaces'] = 10
+    test_modeling_overrides['WISDEM'] = {}
+    test_modeling_overrides['WISDEM']['RotorSE'] = {}
+    test_modeling_overrides['WISDEM']['RotorSE']['n_pitch_perf_surfaces'] = 10
+    test_modeling_overrides['WISDEM']['RotorSE']['n_tsr_perf_surfaces'] = 10
 
     # Solver, max iterations
-    analysis_options['driver']['optimization']['max_iter'] = 1
-    analysis_options['driver']['optimization']['solver'] = 'LN_COBYLA'   # Gradient free
+    test_analysis_overrides['driver'] = {}
+    test_analysis_overrides['driver']['optimization'] = {}
+    test_analysis_overrides['driver']['optimization']['max_iter'] = 1
+    test_analysis_overrides['driver']['optimization']['solver'] = 'LN_COBYLA'   # Gradient free
 
-    modeling_override.update(modeling_options)  # not sure whether to return all options as overrides
-    analysis_override.update(analysis_options) 
+    modeling_override = recursive_merge(modeling_override, test_modeling_overrides)
+    analysis_override = recursive_merge(analysis_override, test_analysis_overrides)
 
 
 def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
@@ -69,7 +90,6 @@ def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
     if test_run:
         set_modopt_test_runs(fname_modeling_options, 
                             modeling_override,
-                            fname_analysis_options,
                             analysis_override
                             )
 
