@@ -58,7 +58,11 @@ def read_opt_vars_per_type(input_dict):
 
         opt_options['stats_path'] = stats_paths
         opt_options['iterations'] = iterations
-        opt_options['case_matrix'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files']))
+        # Case Matrix could be named either 'case_matrix.yaml' or 'case_matrix_combined.yaml'
+        try:
+            opt_options['case_matrix'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix.yaml')) if k not in ['dirs', 'files']))
+        except:
+            opt_options['case_matrix'] = os.path.join(opt_options['root_file_path'], '/'.join(k for k in next(find_file_path_from_tree(input_dict['outputDirStructure'], 'case_matrix_combined.yaml')) if k not in ['dirs', 'files']))
         opt_options['x_stat'] = var_opt['dlc']['xaxis_stat']
         opt_options['y_stat'] = var_opt['dlc']['yaxis_stat']
         opt_options['x'] = var_opt['dlc']['xaxis']
@@ -296,7 +300,6 @@ def layout():
                 # Layout
                 html.Div(id='data-layout'),
                 dbc.Row([
-                    # dbc.Col(id='conv-layout', width=6),
                     dbc.Col(define_convergence_layout(), width=6),
                     dbc.Col(define_iteration_with_dlc_layout(), width=6)
                 ], className='g-0'),         # No gutters where horizontal spacing is added between the columns by default
@@ -446,8 +449,6 @@ def initialize_panel_values(opt_options):
 
     stats, _ = read_per_iteration(0, opt_options['stats_path'])     # Arbitrary index 0 (as it starts with zero)
     multi_indices = sorted(stats.reset_index().keys())
-
-    # channel_options = sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])]))
     channel_options = sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices)]))
 
     return opt_options['x_stat'], opt_options['y_stat'], channel_options, opt_options['x'], channel_options, opt_options['y']
@@ -460,10 +461,10 @@ def initialize_panel_values(opt_options):
           Input('conv-trend', 'clickData'),
           State('prep-data', 'data'),
           State('var-opt', 'data'),
-          State('x-stat-option', 'value'),
-          State('y-stat-option', 'value'),
-          State('x-channel', 'value'),
-          State('y-channel', 'value'))
+          Input('x-stat-option', 'value'),
+          Input('y-stat-option', 'value'),
+          Input('x-channel', 'value'),
+          Input('y-channel', 'value'))
 def toggle_iteration_with_dlc_layout(clickData, prep_data, opt_options, x_chan_option, y_chan_option, x_channel, y_channel):
     '''
     If iteration has been clicked, open the card layout on right side.
@@ -493,91 +494,7 @@ def toggle_iteration_with_dlc_layout(clickData, prep_data, opt_options, x_chan_o
         return True, {'display': 'block'}, title_phrase, fig
 
 
-# @callback(Output('dlc-output-iteration', 'children'),
-#           Output('dlc-iteration-data', 'children'),
-#           Input('conv-trend', 'clickData'),
-#           Input('var-opt', 'data'))
-# def update_dlc_outputs(clickData, opt_options):
-#     '''
-#     Once iteration has been clicked from the left convergence graph, analyze:
-#     1) What # of iteration has been clicked
-#     2) Corresponding iteration related optimization output files
-#     '''
-#     if clickData is None or opt_options is None:
-#         raise PreventUpdate
-    
-#     global iteration, stats, iteration_path, cm
-#     iteration = clickData['points'][0]['x']
-#     title_phrase = f'{opt_options["opt_type"]} Optimization Iteration {iteration}'
-
-
-#     # 1) RAFT
-#     if opt_options['opt_type'] == 'RAFT':
-#         sublayout = html.Div([
-#             dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
-#         ])
-
-#     # 2) OpenFAST DLC
-#     elif opt_options['opt_type'] == 'OpenFAST':
-#         stats, iteration_path = read_per_iteration(iteration, opt_options['stats_path'])
-#         case_matrix_path = opt_options['case_matrix']
-#         cm = read_cm(case_matrix_path)
-#         multi_indices = sorted(stats.reset_index().keys()),
-
-#         # Define sublayout that includes user customized panel for visualizing DLC analysis
-#         sublayout = html.Div([
-#             html.H5("X Channel Statistics"),
-#             html.Div([dbc.RadioItems(
-#                 id='x-stat-option',
-#                 className="btn-group",
-#                 inputClassName="btn-check",
-#                 labelClassName="btn btn-outline-primary",
-#                 labelCheckedClassName="active",
-#                 options=[
-#                     {'label': 'min', 'value': 'min'},
-#                     {'label': 'max', 'value': 'max'},
-#                     {'label': 'std', 'value': 'std'},
-#                     {'label':  'mean', 'value': 'mean'},
-#                     {'label': 'median', 'value': 'median'},
-#                     {'label': 'abs', 'value': 'abs'},
-#                     {'label': 'integrated', 'value': 'integrated'}],
-#                 value=opt_options['x_stat']
-#             )], className='radio-group'),
-#             html.H5("Y Channel Statistics"),
-#             html.Div([dbc.RadioItems(
-#                 id='y-stat-option',
-#                 className="btn-group",
-#                 inputClassName="btn-check",
-#                 labelClassName="btn btn-outline-primary",
-#                 labelCheckedClassName="active",
-#                 options=[
-#                     {'label': 'min', 'value': 'min'},
-#                     {'label': 'max', 'value': 'max'},
-#                     {'label': 'std', 'value': 'std'},
-#                     {'label':  'mean', 'value': 'mean'},
-#                     {'label': 'median', 'value': 'median'},
-#                     {'label': 'abs', 'value': 'abs'},
-#                     {'label': 'integrated', 'value': 'integrated'}],
-#                 value=opt_options['y_stat']
-#             )], className='radio-group'),
-#             html.H5("X Channel"),
-#             dcc.Dropdown(id='x-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['x']),
-#             html.H5("Y Channel"),
-#             dcc.Dropdown(id='y-channel', options=sorted(set([multi_key[0] for idx, multi_key in enumerate(multi_indices[0])])), value=opt_options['y'], multi=True),
-#             dcc.Graph(id='dlc-output', figure=empty_figure()),                          # Related functions: update_dlc_plot()
-#         ])
-
-#     return title_phrase, sublayout
-
-
-# @callback(Output('dlc-output', 'figure', allow_duplicate=True),
-#           Input('dlc-output-iteration', 'children'),
-#           Input('var-opt', 'data'),
-#           prevent_initial_call=True)
 def update_raft_outputs(opt_options):
-
-    # if opt_options['opt_type'] != 'RAFT':
-    #     raise PreventUpdate
 
     # TODO: Make it animation? Reference that works
     # import plotly.express as px
@@ -646,12 +563,6 @@ def update_raft_outputs(opt_options):
     return fig
 
 
-
-# @callback(Output('dlc-output', 'figure'),
-#           Input('x-stat-option', 'value'),
-#           Input('y-stat-option', 'value'),
-#           Input('x-channel', 'value'),
-#           Input('y-channel', 'value'))
 def update_dlc_plot(x_chan_option, y_chan_option, x_channel, y_channel):
     '''
     Once required channels and stats options have been selected, draw figures that demonstrate DLC analysis.
@@ -671,9 +582,15 @@ def plot_dlc(cm, stats, x_chan_option, y_chan_option, x_channel, y_channels):
     '''
     dlc_inds = {}
 
-    dlcs = cm[('DLC', 'Label')].unique()
-    for dlc in dlcs:
-        dlc_inds[dlc] = cm[('DLC', 'Label')] == dlc     # dlcs- key: dlc / value: boolean array
+    # TODO: The format of case matrix has been updated..
+    try:
+        dlcs = cm[('DLC', 'Label')].unique()
+        for dlc in dlcs:
+            dlc_inds[dlc] = cm[('DLC', 'Label')] == dlc     # dlcs- key: dlc / value: boolean array
+    except:
+        dlcs = cm['DLC'].unique()
+        for dlc in dlcs:
+            dlc_inds[dlc] = cm['DLC'] == dlc     # dlcs- key: dlc / value: boolean array
     
     # Add subplots for multiple y-channels vertically
     fig = make_subplots(
@@ -736,12 +653,6 @@ def display_outlier(clickData, opt_options):
     global filename, timeseries_data
     filename, timeseries_data = get_timeseries_data(of_run_num, stats, iteration_path)
     print(timeseries_data)
-
-    # sublayout = dcc.Loading(html.Div([
-    #     html.H5("Channel to visualize timeseries data"),
-    #     dcc.Dropdown(id='time-signaly', options=sorted(timeseries_data.keys()), value=opt_options['y_time'], multi=True),
-    #     dcc.Graph(id='time-graph', figure=empty_figure())
-    # ]))
 
     return filename, sorted(timeseries_data.keys()), opt_options['y_time']
 
