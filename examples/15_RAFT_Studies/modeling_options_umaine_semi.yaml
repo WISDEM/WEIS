@@ -106,22 +106,21 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           n_seeds: 1
-          wind_speed: [12]  # comment out for a full run
           analysis_time: 1.
           transient_time: 0.
-        # - DLC: "1.4"
-        #   analysis_time: 1.
-        #   transient_time: 0.
-        # - DLC: "1.5"
-        #   analysis_time: 1.
-        #   transient_time: 0.
-        # - DLC: "1.6"
-        #   n_seeds: 1
-        #   analysis_time: 1.
-        #   transient_time: 0.
-        # - DLC: "6.1"
-        #   n_seeds: 1
-        #   analysis_time: 1.
-        #   transient_time: 0.
+        - DLC: "1.4"
+          analysis_time: 1.
+          transient_time: 0.
+        - DLC: "1.5"
+          analysis_time: 1.
+          transient_time: 0.
+        - DLC: "1.6"
+          n_seeds: 1
+          analysis_time: 1.
+          transient_time: 0.
+        - DLC: "6.1"
+          n_seeds: 1
+          analysis_time: 1.
+          transient_time: 0.
 
 

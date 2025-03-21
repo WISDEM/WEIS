@@ -121,7 +121,7 @@ driver:
     optimization:
         flag: True         # Flag to enable optimization
         tol: 1.e-3         # Optimality tolerance
-        max_iter: 1         # Maximum number of iterations
+        max_iter: 50         # Maximum number of iterations
         solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         penalty_exponent: 2.0     # constraint penalty exponent
         # penalty_parameter: 2.0    # constraint penalty exponent
