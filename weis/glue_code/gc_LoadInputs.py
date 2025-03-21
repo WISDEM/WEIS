@@ -150,6 +150,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
                         else:
                             raise Exception(f'No valid Wamit-style output found for specified PotFile option, {potpath}.1')
 
+                        
+                        # Update BEM dir
+                        self.modeling_options["Level1"]['BEM_dir'] = self.modeling_options["Level3"]["HydroDyn"]["PotFile"]
+        
         # OpenFAST dir
         if self.modeling_options["Level3"]["from_openfast"]:
             if not osp.isabs(self.modeling_options['Level3']['openfast_dir']):
