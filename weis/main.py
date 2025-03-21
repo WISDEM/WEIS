@@ -104,7 +104,7 @@ def weis_main(fname_wt_input, fname_modeling_options, fname_analysis_options,
                                           prepMPI=True, 
                                           maxnP=maxnP)
 
-        modeling_override = set_modopt_procs(modeling_options)
+        modeling_override = set_modopt_procs(modeling_options, modeling_override)
 
     # Run WEIS for real now
     wt_opt, modeling_options, opt_options = run_weis(fname_wt_input, 
