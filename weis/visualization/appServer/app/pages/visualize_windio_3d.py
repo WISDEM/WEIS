@@ -1,12 +1,9 @@
-'''This is the page for visualize the WEIS inputs in 3D simulation model'''
+'''This is the page for visualize the WEIS inputs in 3D VTK model'''
 
-import random
 import dash
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, State, dcc
 from dash.exceptions import PreventUpdate
-import plotly.express as px
-import plotly
 from weis.visualization.utils import *
 from weis.visualization.meshRender import *
 
@@ -26,7 +23,7 @@ component_types = ['blade', 'hub', 'nacelle', 'tower', 'substructure']
 geometries = [
                 dash_vtk.GeometryRepresentation(
                     id = f'{idx}-{gtype}-rep',
-                ) for idx in range(5) for gtype in component_types         # We are expecting less than 10 geometry files..
+                ) for idx in range(10) for gtype in component_types         # We are expecting less than 10 geometry files..
             ] + [
                 dash_vtk.GeometryRepresentation(
                     id = 'axes',
@@ -318,7 +315,7 @@ def click_local_view(info):
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-    # Define layout for tower structures
+    # Define layout
     geom_items = dcc.Dropdown(id='geom-3d-names', options=[], value=None, multi=True)
 
     geom_inputs = dbc.Card([
@@ -351,12 +348,12 @@ def layout():
                 dbc.Row([
                     dbc.Col(geom_inputs),
                 ], className='g-0'),         # No gutters where horizontal spacing is added between the columns by default
-                dcc.Loading(vtk_view),
+                dcc.Loading(vtk_view),       # Global View
 
-                # Modal Window layout for visualizing Outlier timeseries data
+                # Modal Window layout for visualizing Local View
                 dbc.Modal([
-                    dbc.ModalHeader(dbc.ModalTitle(html.Div(id='vtk-view-local-header'))),                                 # Related function: display_outlier()
-                    dbc.ModalBody([html.Div(id='vtk-text-description', style={"overflow": "scroll"}), vtk_view_local])],                                                         # Related function: display_outlier()
+                    dbc.ModalHeader(dbc.ModalTitle(html.Div(id='vtk-view-local-header'))),
+                    dbc.ModalBody([html.Div(id='vtk-text-description', style={"overflow": "scroll"}), vtk_view_local])],
                     id='vtk-view-local-div',
                     size='xl',
                     is_open=False)

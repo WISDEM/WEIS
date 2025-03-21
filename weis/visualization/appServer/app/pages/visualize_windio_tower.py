@@ -1,10 +1,9 @@
-'''This is the page for visualize the WEIS inputs specialized in Blade OML, Axis, Elastic & Mass properties.'''
+'''This is the page for visualize the WEIS inputs specialized in Tower properties.'''
 
 import dash_bootstrap_components as dbc
 from dash import html, register_page, callback, Input, Output, dcc
 import numpy as np
 from plotly.subplots import make_subplots
-import plotly
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 from weis.visualization.utils import *
@@ -16,17 +15,12 @@ register_page(
     path='/windio_tower'
 )
 
-def set_colors():
-    global cols
-    cols = plotly.colors.DEFAULT_PLOTLY_COLORS
-
-
 @callback(Output('tower-names', 'options'),
           Output('tower-by-names', 'data'),
           Input('geometry-components', 'data'))
 def load_tower_comps(geom_comps_by_names):
     '''
-    This function is for loading blade related components
+    This function is for loading tower related components
     '''
     tower_by_names = {k.split(':')[0]: v for k, v in geom_comps_by_names.items() if 'tower' in k}     # where now k is 'filelabelname' and v is dict
     
@@ -35,9 +29,6 @@ def load_tower_comps(geom_comps_by_names):
 
 # We are using card container where we define sublayout with rows and cols.
 def layout():
-
-    # Set color panel
-    set_colors()
 
     # Define layout for tower structures
     tower_items = dcc.Dropdown(id='tower-names', options=[], value=None, multi=True)
@@ -75,6 +66,7 @@ def draw_tower(tower_names, tower_by_names):
     if tower_names is None:
         raise PreventUpdate
     
+    cols = set_colors()            # Set color panel
     fig = make_subplots(rows=2, cols=2, shared_xaxes=True, specs=[[{'rowspan': 2}, {}], [None, {}]])
     
     for idx, tower_name in enumerate(tower_names):
@@ -137,4 +129,3 @@ def draw_tower(tower_names, tower_by_names):
     fig.update_xaxes(title_text=f'Grid', row=2, col=2)
 
     return fig
-

@@ -58,6 +58,8 @@ class WEISVizInputFileGenerator:
 
         # Outputs context
         self.vizInput['userOptions']['output_folder'] = os.path.join(os.path.split(self.fname_opt_options)[0], self.opt_options['general']['folder_output']) 
+        if self.vizInput['userOptions']['output_folder'].endswith(os.sep):      # To get proper basename, it shouldn't be ended with '/'
+            self.vizInput['userOptions']['output_folder'] = self.vizInput['userOptions']['output_folder'].rstrip(os.sep)
         self.vizInput['userOptions']['output_fileName'] = self.opt_options['general']['fname_output']
 
     def setDefaultUserPreferencs(self):
@@ -67,10 +69,6 @@ class WEISVizInputFileGenerator:
         self.vizInput['userPreferences']['openfast'] = {}
         self.vizInput['userPreferences']['openfast']['file_path'] = {}
         self.vizInput['userPreferences']['openfast']['file_path']['file1'] = 'None'
-        self.vizInput['userPreferences']['openfast']['file_path']['file2'] = 'None'
-        self.vizInput['userPreferences']['openfast']['file_path']['file3'] = 'None'
-        self.vizInput['userPreferences']['openfast']['file_path']['file4'] = 'None'
-        self.vizInput['userPreferences']['openfast']['file_path']['file5'] = 'None'
 
         self.vizInput['userPreferences']['openfast']['graph'] = {}
         self.vizInput['userPreferences']['openfast']['graph']['xaxis'] = 'Time'
@@ -96,26 +94,15 @@ class WEISVizInputFileGenerator:
         self.vizInput['userPreferences']['wisdem']['blade']['struct_yaxis'] = ['rotorse.rhoA_kg/m']
         self.vizInput['userPreferences']['wisdem']['blade']['struct_yaxis_log'] = ['rotorse.EA_N', 'rotorse.EIxx_N*m**2', 'rotorse.EIyy_N*m**2', 'rotorse.GJ_N*m**2']
         self.vizInput['userPreferences']['wisdem']['blade']['xaxis'] = 'rotorse.rc.s'
-        self.vizInput['userPreferences']['wisdem']['output_path'] = os.path.join(os.path.split(self.fname_opt_options)[0], self.opt_options['general']['folder_output'])
+        self.vizInput['userPreferences']['wisdem']['output_path'] = self.vizInput['userOptions']['output_folder']
 
     def getOutputDirStructure(self):
-        # self.vizInput['outputDirStructure'] = path_to_dict(self.vizInput['userOptions']['output_folder'])
         self.vizInput['outputDirStructure'] = path_to_dict(self.vizInput['userOptions']['output_folder'],d = {'dirs':{},'files':[]})
-        # print(self.vizInput['outputDirStructure'])
 
     def writeVizInputFile(self, fname_output):
         with open(fname_output, 'w') as f:
             yaml.dump(self.vizInput, f, default_flow_style=False)
 
-
-# def path_to_dict(path):
-#     d = {'name': os.path.basename(path)}
-#     if os.path.isdir(path):
-#         d['type'] = "folder"
-#         d['content'] = [path_to_dict(os.path.join(path, x)) for x in os.listdir(path)]
-#     else:
-#         d['type'] = "file"
-#     return d
 
 def path_to_dict(path, d):
 
@@ -128,6 +115,7 @@ def path_to_dict(path, d):
             path_to_dict(os.path.join(path,x), d['dirs'][name])
     else:
         d['files'].append(name)
+    
     return d
 
 def main():
@@ -159,7 +147,7 @@ def main():
 
     args = parser.parse_args()
 
-    # generate the viz input file
+    # Generate the viz input file
     viz = WEISVizInputFileGenerator(args.modeling_options, args.analysis_options, args.wt_input)
     viz.fetchWEISinputs()
 
