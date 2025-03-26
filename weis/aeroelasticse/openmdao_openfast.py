@@ -1576,26 +1576,27 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['NMGDepths'] = 0
 
             # Member-based coefficients
-            fst_vt['HydroDyn']['MCoefMod'] = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
-            fst_vt['HydroDyn']['NCoefMembers'] = len(imembers)
-            fst_vt['HydroDyn']['MemberID_HydC'] = imembers
-            fst_vt['HydroDyn']['MemberCd1']    = fst_vt['HydroDyn']['MemberCdMG1']   = Cd_coarse[N1-1]
-            fst_vt['HydroDyn']['MemberCa1']    = fst_vt['HydroDyn']['MemberCaMG1']   = Ca_coarse[N1-1]
-            fst_vt['HydroDyn']['MemberCd2']    = fst_vt['HydroDyn']['MemberCdMG2']   = Cd_coarse[N2-1]
-            fst_vt['HydroDyn']['MemberCa2']    = fst_vt['HydroDyn']['MemberCaMG2']   = Ca_coarse[N2-1]
-            fst_vt['HydroDyn']['MemberCb1']    = fst_vt['HydroDyn']['MemberCbMG1']   = np.ones(np.shape(N1))
-            fst_vt['HydroDyn']['MemberCb2']    = fst_vt['HydroDyn']['MemberCbMG2']   = np.ones(np.shape(N1))
+            if modopt['flags']['floating']:
+                fst_vt['HydroDyn']['MCoefMod'] = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
+                fst_vt['HydroDyn']['NCoefMembers'] = len(imembers)
+                fst_vt['HydroDyn']['MemberID_HydC'] = imembers
+                fst_vt['HydroDyn']['MemberCd1']    = fst_vt['HydroDyn']['MemberCdMG1']   = Cd_coarse[N1-1]
+                fst_vt['HydroDyn']['MemberCa1']    = fst_vt['HydroDyn']['MemberCaMG1']   = Ca_coarse[N1-1]
+                fst_vt['HydroDyn']['MemberCd2']    = fst_vt['HydroDyn']['MemberCdMG2']   = Cd_coarse[N2-1]
+                fst_vt['HydroDyn']['MemberCa2']    = fst_vt['HydroDyn']['MemberCaMG2']   = Ca_coarse[N2-1]
+                fst_vt['HydroDyn']['MemberCb1']    = fst_vt['HydroDyn']['MemberCbMG1']   = np.ones(np.shape(N1))
+                fst_vt['HydroDyn']['MemberCb2']    = fst_vt['HydroDyn']['MemberCbMG2']   = np.ones(np.shape(N1))
 
-            # pass through Cp, Axial Coeffs later, zeros for now
-            fst_vt['HydroDyn']['MemberCp1']    = fst_vt['HydroDyn']['MemberCpMG1']   = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberCp2']    = fst_vt['HydroDyn']['MemberCpMG2']   = np.zeros(np.shape(N1))
+                # pass through Cp, Axial Coeffs later, zeros for now
+                fst_vt['HydroDyn']['MemberCp1']    = fst_vt['HydroDyn']['MemberCpMG1']   = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberCp2']    = fst_vt['HydroDyn']['MemberCpMG2']   = np.zeros(np.shape(N1))
 
-            fst_vt['HydroDyn']['MemberAxCd1']  = fst_vt['HydroDyn']['MemberAxCdMG1'] = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberAxCa1']  = fst_vt['HydroDyn']['MemberAxCaMG1'] = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberAxCd2']  = fst_vt['HydroDyn']['MemberAxCdMG2'] = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberAxCa2']  = fst_vt['HydroDyn']['MemberAxCaMG2'] = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCd1']  = fst_vt['HydroDyn']['MemberAxCdMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCa1']  = fst_vt['HydroDyn']['MemberAxCaMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCd2']  = fst_vt['HydroDyn']['MemberAxCdMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCa2']  = fst_vt['HydroDyn']['MemberAxCaMG2'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
+                fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N1))
 
             if modopt["Level1"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
