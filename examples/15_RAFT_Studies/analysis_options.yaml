@@ -70,8 +70,8 @@ merit_figure: platform_mass  # Merit figure of the optimization problem. The opt
 
 driver:
   optimization:
-    flag: False           # Flag to enable optimization
-    solver: LN_COBYLA         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+    flag: True           # Flag to enable optimization
+    solver: LD_SLSQP         # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
     tol: 1.e-2            # Optimality tolerance
     max_iter: 2          # Maximum number of iterations (SLSQP)
   # design_of_experiments:

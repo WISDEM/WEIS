@@ -10,22 +10,24 @@ import numpy as np
 import os
 import platform
 import shutil
+from rosco import discon_lib_path
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     # Paths calling the standard modules of WEIS
     fastBatch = runFAST_pywrapper_batch()
     run_dir1                    = os.path.dirname( os.path.dirname( os.path.realpath(weis.__file__) ) )
-    fastBatch.FAST_exe          = shutil.which( 'openfast' )   # Path to executable
+    fastBatch.FAST_exe          = shutil.which( "openfast" )   # Path to executable
     run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-    fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-Monopile')   # Path to fst directory files
-    fastBatch.FAST_InputFile    = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-    fastBatch.FAST_runDirectory = 'steady_state/iea15mw'
+    fastBatch.FAST_directory    = os.path.join(run_dir2, "OpenFAST_models","IEA-15-240-RWT","IEA-15-240-RWT-Monopile")   # Path to fst directory files
+    fastBatch.FAST_InputFile    = "IEA-15-240-RWT-Monopile.fst"   # FAST input file (ext=.fst)
+    fastBatch.FAST_runDirectory = "steady_state/iea15mw"
     fastBatch.debug_level       = 2
+    fastBatch.use_exe = True
 
     # User settings
     n_cores     = 1     # Number of available cores
-    TMax        = 200.  # Length of wind grids and OpenFAST simulations, suggested 720 s
+    TMax        = 1.    # Length of wind grids and OpenFAST simulations, suggested 720 s
     cut_in      = 3.    # Cut in wind speed
     cut_out     = 25.   # Cut out wind speed
     wind_speeds = np.arange(cut_in, cut_out+1, 4) #np.linspace(cut_in, cut_out, int(n_ws)) # Wind speeds to run OpenFAST at
@@ -41,36 +43,36 @@ if __name__ == '__main__':
 
     # Settings passed to OpenFAST
     case_inputs = {}
-    case_inputs[("Fst","TMax")]             = {'vals':[TMax], 'group':0}
-    case_inputs[("Fst","DT")]               = {'vals':[0.01], 'group':0}
-    case_inputs[("Fst","CompInflow")]       = {'vals':[1], 'group':0}
-    case_inputs[("Fst","CompServo")]        = {'vals':[1], 'group':0}
-    case_inputs[("Fst","OutFileFmt")]       = {'vals':[1], 'group':0}
-    case_inputs[("Fst","DT_Out")]           = {'vals':[0.02], 'group':0}
-    case_inputs[("ElastoDyn","GenDOF")]     = {'vals':['True'], 'group':0}
-    case_inputs[("ServoDyn","PCMode")]      = {'vals':[5], 'group':0}
-    case_inputs[("ServoDyn","VSContrl")]    = {'vals':[5], 'group':0}
-    case_inputs[("InflowWind","WindType")]  = {'vals':[1], 'group':0}
-    case_inputs[("InflowWind","HWindSpeed")]= {'vals': wind_speeds, 'group': 1}
-    case_inputs[("Fst","OutFileFmt")]       = {'vals':[0], 'group':0}
-    case_inputs[("ElastoDyn","RotSpeed")]   = {'vals': omega_init, 'group': 1}
-    case_inputs[("ElastoDyn","BlPitch1")]   = {'vals': pitch_init, 'group': 1}
+    case_inputs[("Fst","TMax")]             = {"vals":[TMax], "group":0}
+    case_inputs[("Fst","DT")]               = {"vals":[0.01], "group":0}
+    case_inputs[("Fst","CompInflow")]       = {"vals":[1], "group":0}
+    case_inputs[("Fst","CompServo")]        = {"vals":[1], "group":0}
+    case_inputs[("Fst","OutFileFmt")]       = {"vals":[1], "group":0}
+    case_inputs[("Fst","DT_Out")]           = {"vals":[0.02], "group":0}
+    case_inputs[("ElastoDyn","GenDOF")]     = {"vals":["True"], "group":0}
+    case_inputs[("ServoDyn","PCMode")]      = {"vals":[5], "group":0}
+    case_inputs[("ServoDyn","VSContrl")]    = {"vals":[5], "group":0}
+    case_inputs[("InflowWind","WindType")]  = {"vals":[1], "group":0}
+    case_inputs[("InflowWind","HWindSpeed")]= {"vals": wind_speeds, "group": 1}
+    case_inputs[("Fst","OutFileFmt")]       = {"vals":[0], "group":0}
+    case_inputs[("ElastoDyn","RotSpeed")]   = {"vals": omega_init, "group": 1}
+    case_inputs[("ElastoDyn","BlPitch1")]   = {"vals": pitch_init, "group": 1}
     case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
     case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
 
     # Find the controller
-    if platform.system() == 'Windows':
-        sfx = 'dll'
-    elif platform.system() == 'Darwin':
-        sfx = 'dylib'
+    if platform.system() == "Windows":
+        sfx = "dll"
+    elif platform.system() == "Darwin":
+        sfx = "dylib"
     else:
-        sfx = 'so'
-    path2dll = os.path.join(run_dir1, 'local','lib','libdiscon.'+sfx)
+        sfx = "so"
+    path2dll = os.path.join(run_dir1, "local","lib","libdiscon."+sfx)
 
-    case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
+    case_inputs[("ServoDyn","DLL_FileName")] = {"vals":[discon_lib_path], "group":0}
 
     # Generate the matrix of cases
-    case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='iea15mw')
+    case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase="iea15mw")
 
     fastBatch.case_list = case_list
     fastBatch.case_name_list = case_name_list

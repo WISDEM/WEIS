@@ -179,10 +179,10 @@
                                     ],
                                     "properties": {
                                         "grid": {
-                                            "$ref": "#/distributed_data/grid_nd"
+                                            "$ref": "#/definitions/distributed_data/grid_nd"
                                         },
                                         "labels": {
-                                            "$ref": "#/distributed_data/strings"
+                                            "$ref": "#/definitions/distributed_data/strings"
                                         }
                                     }
                                 },
@@ -670,6 +670,27 @@
                             "type": "string",
                             "description": "Material of the spinner"
                         },
+                        "hub_shell_mass_user": {
+                            "type": "number",
+                            "description": "User input override of hub shell mass calculation",
+                            "unit": "kg",
+                            "minimum": 0.0,
+                            "default": 0.0
+                        },
+                        "spinner_mass_user": {
+                            "type": "number",
+                            "description": "User input override of hub shell mass calculation",
+                            "unit": "kg",
+                            "minimum": 0.0,
+                            "default": 0.0
+                        },
+                        "pitch_system_mass_user": {
+                            "type": "number",
+                            "default": 0.0,
+                            "units": "kg",
+                            "description": "Override regular regression-based calculation of pitch system mass with this value",
+                            "minimum": 0.0
+                        },
                         "elastic_properties_mb": {
                             "type": "object",
                             "default": {},
@@ -1015,6 +1036,13 @@
                                     "maximum": 1.0,
                                     "default": 0.05
                                 },
+                                "bedplate_mass_user": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "units": "kg",
+                                    "description": "Override regular calculation of bedplate mass with this value",
+                                    "minimum": 0.0
+                                },
                                 "brake_mass_user": {
                                     "type": "number",
                                     "default": 0.0,
@@ -1069,6 +1097,20 @@
                                         "SRB",
                                         "TRB"
                                     ]
+                                },
+                                "mb1_mass_user": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "units": "kg",
+                                    "description": "Override regular regression-based calculation of first main bearing mass with this value",
+                                    "minimum": 0.0
+                                },
+                                "mb2_mass_user": {
+                                    "type": "number",
+                                    "default": 0.0,
+                                    "units": "kg",
+                                    "description": "Override regular regression-based calculation of second main bearing mass with this value",
+                                    "minimum": 0.0
                                 },
                                 "uptower": {
                                     "type": "boolean",
@@ -1606,6 +1648,10 @@
                         "outer_shape_bem",
                         "internal_structure_2d_fem"
                     ],
+                    "optional": [
+                        "tower_mass_user",
+                        "elastic_properties_mb"
+                    ],
                     "properties": {
                         "outer_shape_bem": {
                             "type": "object",
@@ -1663,6 +1709,13 @@
                                     "$ref": "#/definitions/beam/six_x_six"
                                 }
                             }
+                        },
+                        "tower_mass_user": {
+                            "type": "number",
+                            "default": 0.0,
+                            "units": "kg",
+                            "description": "Override bottom-up calculation of total tower mass with this value",
+                            "minimum": 0.0
                         },
                         "internal_structure_2d_fem": {
                             "type": "object",
@@ -1736,7 +1789,8 @@
                     "optional": [
                         "transition_piece_mass",
                         "transition_piece_cost",
-                        "gravity_foundation_mass"
+                        "gravity_foundation_mass",
+                        "monopile_mass_user"
                     ],
                     "properties": {
                         "transition_piece_mass": {
@@ -1759,6 +1813,13 @@
                             "unit": "kg",
                             "minimum": 0.0,
                             "default": 0.0
+                        },
+                        "monopile_mass_user": {
+                            "type": "number",
+                            "default": 0.0,
+                            "units": "kg",
+                            "description": "Override bottom-up calculation of total monopile mass with this value",
+                            "minimum": 0.0
                         },
                         "outer_shape": {
                             "type": "object",
@@ -1897,7 +1958,8 @@
                         "material",
                         "transition_piece_mass",
                         "transition_piece_cost",
-                        "gravity_foundation_mass"
+                        "gravity_foundation_mass",
+                        "jacket_mass_user"
                     ],
                     "properties": {
                         "transition_piece_mass": {
@@ -1920,6 +1982,13 @@
                             "unit": "kg",
                             "minimum": 0.0,
                             "default": 0.0
+                        },
+                        "jacket_mass_user": {
+                            "type": "number",
+                            "default": 0.0,
+                            "units": "kg",
+                            "description": "Override bottom-up calculation of total jacket mass with this value",
+                            "minimum": 0.0
                         },
                         "material": {
                             "type": "string",
@@ -2093,7 +2162,8 @@
                                     "Cay",
                                     "Cp",
                                     "Cd",
-                                    "Cdy"
+                                    "Cdy",
+                                    "member_mass_user"
                                 ],
                                 "properties": {
                                     "name": {
@@ -2107,6 +2177,13 @@
                                     "joint2": {
                                         "type": "string",
                                         "description": "Name of joint/node connection"
+                                    },
+                                    "member_mass_user": {
+                                        "type": "number",
+                                        "default": 0.0,
+                                        "units": "kg",
+                                        "description": "Override bottom-up calculation of total member mass with this value",
+                                        "minimum": 0.0
                                     },
                                     "outer_shape": {
                                         "type": "object",
@@ -3592,6 +3669,16 @@
                             "unit": "rad/s",
                             "minimum": 0,
                             "maximum": 0.2
+                        },
+                        "ps_percent": {
+                            "type": "number",
+                            "default": 1.0,
+                            "description": "Scalar applied to the max thrust within RotorSE for peak thrust shaving"
+                        },
+                        "fix_pitch_regI12": {
+                            "type": "boolean",
+                            "default": false,
+                            "description": "If True, pitch is fixed in region I1/2, i.e. when min rpm is enforced."
                         }
                     }
                 },
@@ -3787,22 +3874,6 @@
                     "maximum": 100,
                     "default": 7
                 },
-                "commissioning_pct": {
-                    "type": "number",
-                    "description": "Fraction of total BOS cost that is due to commissioning",
-                    "unit": "none",
-                    "minimum": 0,
-                    "maximum": 1,
-                    "default": 0.01
-                },
-                "decommissioning_pct": {
-                    "type": "number",
-                    "description": "Fraction of total BOS cost that is due to decommissioning",
-                    "unit": "none",
-                    "minimum": 0,
-                    "maximum": 1,
-                    "default": 0.15
-                },
                 "distance_to_substation": {
                     "type": "number",
                     "description": "Distance from centroid of plant to substation in km",
@@ -3843,6 +3914,46 @@
                     "maximum": 1000,
                     "default": 130
                 },
+                "contingency": {
+                    "type": "number",
+                    "description": "Additional contingency cost during project construction",
+                    "unit": "USD/kW",
+                    "minimum": 0,
+                    "maximum": 10000.0,
+                    "default": 316.0
+                },
+                "construction_insurance": {
+                    "type": "number",
+                    "description": "Additional insurance cost during project construction",
+                    "unit": "USD/kW",
+                    "minimum": 0,
+                    "maximum": 10000.0,
+                    "default": 44.0
+                },
+                "construction_financing": {
+                    "type": "number",
+                    "description": "Additional financing cost during project construction",
+                    "unit": "USD/kW",
+                    "minimum": 0,
+                    "maximum": 10000.0,
+                    "default": 183.0
+                },
+                "commissioning_cost_kW": {
+                    "type": "number",
+                    "description": "Additional BOS cost to commission the turbines and wind farm",
+                    "unit": "USD/kW",
+                    "minimum": 0,
+                    "maximum": 10000.0,
+                    "default": 44.0
+                },
+                "decommissioning_cost_kW": {
+                    "type": "number",
+                    "description": "Additional BOS cost to decommission the turbines and wind farm",
+                    "unit": "USD/kW",
+                    "minimum": 0,
+                    "maximum": 10000.0,
+                    "default": 58.0
+                },
                 "port_cost_per_month": {
                     "type": "number",
                     "description": "Monthly port rental fees",
@@ -3857,31 +3968,15 @@
                     "unit": "USD",
                     "minimum": 0,
                     "maximum": 1000000000.0,
-                    "default": 0.0
-                },
-                "site_assessment_plan_cost": {
-                    "type": "number",
-                    "description": "Cost to do engineering plan for site assessment",
-                    "unit": "USD",
-                    "minimum": 0,
-                    "maximum": 1000000000.0,
-                    "default": 0.0
+                    "default": 100000000.0
                 },
                 "site_assessment_cost": {
                     "type": "number",
-                    "description": "Cost to execute site assessment",
+                    "description": "Cost to do engineering site assessment",
                     "unit": "USD",
                     "minimum": 0,
                     "maximum": 1000000000.0,
-                    "default": 0.0
-                },
-                "construction_operations_plan_cost": {
-                    "type": "number",
-                    "description": "Cost to do construction planning",
-                    "unit": "USD",
-                    "minimum": 0,
-                    "maximum": 1000000000.0,
-                    "default": 0.0
+                    "default": 50000000.0
                 },
                 "boem_review_cost": {
                     "type": "number",
@@ -3891,13 +3986,21 @@
                     "maximum": 1000000000.0,
                     "default": 0.0
                 },
-                "design_install_plan_cost": {
+                "construction_plan_cost": {
+                    "type": "number",
+                    "description": "Cost to do construction planning",
+                    "unit": "USD",
+                    "minimum": 0,
+                    "maximum": 1000000000.0,
+                    "default": 1000000.0
+                },
+                "installation_plan_cost": {
                     "type": "number",
                     "description": "Cost to do installation planning",
                     "unit": "USD",
                     "minimum": 0,
                     "maximum": 1000000000.0,
-                    "default": 0.0
+                    "default": 250000.0
                 }
             }
         },
