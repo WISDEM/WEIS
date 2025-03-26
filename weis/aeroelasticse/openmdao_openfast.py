@@ -1583,8 +1583,8 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['HydroDyn']['MemberCa1']    = fst_vt['HydroDyn']['MemberCaMG1']   = Ca_coarse[N1-1]
             fst_vt['HydroDyn']['MemberCd2']    = fst_vt['HydroDyn']['MemberCdMG2']   = Cd_coarse[N2-1]
             fst_vt['HydroDyn']['MemberCa2']    = fst_vt['HydroDyn']['MemberCaMG2']   = Ca_coarse[N2-1]
-            fst_vt['HydroDyn']['MemberCb1']    = fst_vt['HydroDyn']['MemberCbMG1']   = np.zeros(np.shape(N1))
-            fst_vt['HydroDyn']['MemberCb2']    = fst_vt['HydroDyn']['MemberCbMG2']   = np.zeros(np.shape(N1))
+            fst_vt['HydroDyn']['MemberCb1']    = fst_vt['HydroDyn']['MemberCbMG1']   = np.ones(np.shape(N1))
+            fst_vt['HydroDyn']['MemberCb2']    = fst_vt['HydroDyn']['MemberCbMG2']   = np.ones(np.shape(N1))
 
             # pass through Cp, Axial Coeffs later, zeros for now
             fst_vt['HydroDyn']['MemberCp1']    = fst_vt['HydroDyn']['MemberCpMG1']   = np.zeros(np.shape(N1))
