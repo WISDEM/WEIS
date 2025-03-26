@@ -1723,7 +1723,7 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['UnstrLen'] = inputs['unstretched_length']
             if isinstance(modopt['OpenFAST']['MoorDyn']['NumSegs'], list):
                 if len(modopt['OpenFAST']['MoorDyn']['NumSegs']) != n_lines:
-                    raise Exception(f'The NumSegs input length ({len(modopt['OpenFAST']['MoorDyn']['NumSegs'])}) does not match the number of lines defined ({n_lines})')
+                    raise Exception(f"The NumSegs input length ({len(modopt['OpenFAST']['MoorDyn']['NumSegs'])}) does not match the number of lines defined ({n_lines})")
                 fst_vt['MoorDyn']['NumSegs'] = modopt['OpenFAST']['MoorDyn']['NumSegs']   # This may be redundant if it's a user input
             else:
                 fst_vt['MoorDyn']['NumSegs'] = modopt['OpenFAST']['MoorDyn']['NumSegs']*np.ones(n_lines, dtype=np.int64) 
