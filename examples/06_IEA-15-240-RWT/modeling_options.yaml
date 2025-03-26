@@ -34,11 +34,11 @@ WISDEM:
     BOS:
         flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
-        DT: 0.01
-        CompElast: 1
+        DT: 0.0002
+        CompElast: 2
         CompInflow: 1
         CompAero: 2
         CompServo: 1
@@ -67,6 +67,15 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
+    BeamDynBlade:
+        mu1: 0.00299005 
+        mu2: 0.00218775 
+        mu3: 0.00084171 
+        mu4: 0.00218775 
+        mu5: 0.00299005 
+        mu6: 0.00084171
+    AeroDyn:
+        DBEMT_Mod: 0
     ElastoDynBlade:
         BldFlDmp1: 3.0
         BldFlDmp2: 3.0
@@ -74,13 +83,13 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
     ServoDyn:
         YawSpr: 4.6273E+10
         YawDamp: 3.9088E+07
-    HydroDyn:
         WaveTMax: 1 #3630
+    SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WvLowCOffD: 0.0
         WvHiCOffD: 3.04292
-        WaveSeed1: 123456789
+    HydroDyn:
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
 
 ROSCO:
@@ -95,5 +104,5 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 10
           n_seeds: 1
-          analysis_time: 40.
-          transient_time: 5.
+          analysis_time: 0.1
+          transient_time: 0.

@@ -3,11 +3,11 @@
 # Import Packages
 import dash
 from dash import Dash, dcc, html
+import os
 import dash_bootstrap_components as dbc
 import logging
 import argparse
 from weis.visualization.utils import checkPort, parse_yaml
-
 
 # Parse necessary arguments for running the app
 parser = argparse.ArgumentParser(description='WEIS Visualization App')
@@ -31,18 +31,20 @@ parser.add_argument('--debug',
 
 parser.add_argument('--input', 
                     type=str, 
-                    default='test.yaml', # lets point to an example where viz input could potentially exist.
+                    default='weis/visualization/appServer/app/tests/input/test.yaml',    #'tests/input/test.yaml', # From apps (while locally running..) # lets point to an example where viz input could potentially exist.
                     help='Path to the WEIS visualization input yaml file'
                     )
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 
 # Initialize the app - Internally starts the Flask Server
 # Incorporate a Dash Mantine theme
 external_stylesheets = [dbc.themes.BOOTSTRAP]
+# For Latex
+mathjax = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML'
 APP_TITLE = "WEIS Visualization APP"
-app = Dash(__name__, external_stylesheets = external_stylesheets, suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True)
+app = Dash(__name__, external_stylesheets=external_stylesheets, external_scripts=[mathjax], suppress_callback_exceptions=True, title=APP_TITLE, use_pages=True)
 
 # Build Navigation Bar
 # Each pages are registered on each python script under the pages directory.
@@ -55,6 +57,11 @@ navbar = dbc.NavbarSimple(
             [dbc.DropdownMenuItem('Blade', href='/wisdem_blade'), dbc.DropdownMenuItem('Cost', href='/wisdem_cost')],
             label="WISDEM",
             nav=True
+        ),
+        dbc.DropdownMenu(
+            [dbc.DropdownMenuItem('3D', href='/windio_3d'), dbc.DropdownMenuItem('Airfoils', href='/windio_airfoils'), dbc.DropdownMenuItem('Blade', href='/windio_blade'), dbc.DropdownMenuItem('Tower', href='/windio_tower')],
+            label="WindIO",
+            nav=True
         )
     ],
     brand = APP_TITLE,
@@ -65,31 +72,23 @@ navbar = dbc.NavbarSimple(
 
 # Wrap app with loading component
 # Whenever it needs some time for loading data, small progress bar would be appear in the middle of the screen.
-file_indices = ['file1', 'file2', 'file3', 'file4', 'file5']       # Need to define as the way defined in .yaml file
 
-app.layout = dcc.Loading(
-    id = 'loading_page_content',
-    children = [
-        html.Div(
+app.layout = html.Div(
             [   # Variable Settings to share over pages
                 dcc.Store(id='input-dict', data=parse_yaml(args.input)),
-                # OpenFAST related Data fetched from input-dict
-                dcc.Store(id='var-openfast', data={}),
-                dcc.Store(id='var-openfast-graph', data={}),
-                # Dataframe to share over functions - openfast .out file
-                 html.Div(
-                    [dcc.Store(id=f'df-{idx}', data={}) for idx in file_indices]      # dcc.Store(id='df-file1', data={}),          # {file1, df1}
-                ),
-                # Optimization related Data fetched from input-dict
-                dcc.Store(id='var-opt', data={}),
+                # WindIO Input Files
+                dcc.Store(id='file-df', data={'File Path': [], 'Label': [], 'Type': []}),
+                # dcc.Store(id='sorted-file-df', data={'model': [], 'analysis': [], 'geometry': []}),
+                # Airfoils categorized by 'filelabelname:airfoilname' pairs
+                dcc.Store(id='airfoil-by-names', data={}),
+                # Geometry components categorized by 'filelabelname:componenttype' pairs
+                dcc.Store(id='geometry-components', data={}),
+                # Geometry file (whole wind turbine contents) categorized by 'filelabelname'
+                dcc.Store(id='wt-options', data={}),
                 navbar,
                 dash.page_container
             ]
         )
-    ],
-    color = 'primary',
-    fullscreen = True
-)
 
 
 def main():

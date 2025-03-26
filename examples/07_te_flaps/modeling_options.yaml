@@ -21,7 +21,7 @@ WISDEM:
     BOS:
         flag: False
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     from_openfast: False
     simulation:
@@ -91,7 +91,7 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [12]
           n_seeds: 1
-          analysis_time: 10.
+          analysis_time: 1.
           transient_time: 0.
           turbulent_wind:
               HubHt: 140
