@@ -1,0 +1,781 @@
+name: IEA 15MW Offshore Reference Turbine, with taped chord tip design
+
+assembly:
+    turbine_class: I
+    turbulence_class: B 
+    drivetrain: ''
+    rotor_orientation: Upwind 
+    number_of_blades: 3
+    hub_height: 0
+    rotor_diameter: 0
+    rated_power: 0
+
+components:
+    blade:
+        outer_shape_bem:
+            airfoil_position:
+                grid: []
+                labels: []
+            chord:
+                grid: []
+                values: []
+            twist:
+                grid: []
+                values: []
+            pitch_axis:
+                grid: []
+                values: []
+            reference_axis:
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
+        internal_structure_2d_fem:
+            reference_axis:
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
+            webs:
+               -  name: web0
+                  rotation:
+                      fixed: twist
+                      grid: []
+                      values: []
+                  offset_y_pa:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      grid: []
+                      values: []
+               -  name: web1
+                  rotation:
+                      fixed: twist
+                      grid: []
+                      values: []
+                  offset_y_pa:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      grid: []
+                      values: []
+            layers:
+               -  name: UV_protection
+                  material: Gelcoat
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      values: []
+                      grid: []
+                  end_nd_arc:
+                      values: []
+                      grid: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: Shell_skin
+                  material: glass_triax
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      values: []
+                      grid: []
+                  end_nd_arc:
+                      values: []
+                      grid: []
+               -  name: Spar_Cap_SS
+                  material: CarbonUD
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  width:
+                      grid: []
+                      values: []
+                  offset_y_pa:
+                      grid: []
+                      values: []
+                  rotation:
+                      fixed: twist
+                      grid: []
+                      values: []
+                  side: suction
+                  start_nd_arc:
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      grid: []
+                      values: []
+               -  name: Spar_Cap_PS
+                  material: CarbonUD
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  width:
+                      grid: []
+                      values: []
+                  offset_y_pa:
+                      grid: []
+                      values: []
+                  rotation:
+                      fixed: twist
+                      grid: []
+                      values: []
+                  side: pressure
+                  start_nd_arc:
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      grid: []
+                      values: []
+               -  name: LE_reinforcement
+                  material: glass_uni
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  midpoint_nd_arc:
+                      fixed: LE
+                  width:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      grid: []
+                      values: []
+               -  name: TE_reinforcement_SS
+                  material: glass_uni
+                  side: suction
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  width:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      fixed: TE
+               -  name: TE_reinforcement_PS
+                  material: glass_uni
+                  side: pressure
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  width:
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      fixed: TE
+               -  name: TE_SS_filler
+                  material: medium_density_foam
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      fixed: TE_reinforcement_SS
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      fixed: Spar_Cap_SS
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: LE_SS_filler
+                  material: medium_density_foam
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      fixed: Spar_Cap_SS
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      fixed: LE_reinforcement
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: LE_PS_filler
+                  material: medium_density_foam
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      fixed: LE_reinforcement
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      fixed: Spar_Cap_PS
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: TE_PS_filler
+                  material: medium_density_foam
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      fixed: Spar_Cap_PS
+                      grid: []
+                      values: []
+                  end_nd_arc:
+                      fixed: TE_reinforcement_PS
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: Shell_skin_inner
+                  material: glass_triax
+                  fiber_orientation:
+                      grid: []
+                      values: []
+                  thickness:
+                      grid: []
+                      values: []
+                  start_nd_arc:
+                      values: []
+                      grid: []
+                  end_nd_arc:
+                      values: []
+                      grid: []
+               -  name: web0_skinLE
+                  material: glass_biax
+                  web: web0
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: web0_filler
+                  material: medium_density_foam
+                  web: web0
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: web0_skinTE
+                  material: glass_biax
+                  web: web0
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: web1_skinLE
+                  material: glass_biax
+                  web: web1
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: web1_filler
+                  material: medium_density_foam
+                  web: web1
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+               -  name: web1_skinTE
+                  material: glass_biax
+                  web: web1
+                  thickness:
+                      grid: []
+                      values: []
+                  fiber_orientation:
+                      values: []
+                      grid: []
+
+    hub:
+        diameter: 
+        cone_angle: 
+        drag_coefficient: 
+        flange_t2shell_t: 
+        flange_OD2hub_D: 
+        flange_ID2OD: 
+        hub_blade_spacing_margin: 
+        hub_stress_concentration: 
+        n_front_brackets: 
+        n_rear_brackets: 
+        clearance_hub_spinner: 
+        spin_hole_incr: 
+        pitch_system_scaling_factor: 
+        spinner_gust_ws: 
+        hub_material: 
+        spinner_material: 
+    nacelle:
+        drivetrain:
+            uptilt: 0
+            distance_tt_hub: 0
+            distance_hub_mb: 0
+            distance_mb_mb: 0
+            overhang: 5
+            generator_length: 2
+            generator_radius_user: 0
+            generator_mass_user: 0
+            generator_rpm_efficiency_user: 
+                grid: []
+                values: []
+            gear_ratio: 1
+            gearbox_length_user: 0
+            gearbox_radius_user: 0
+            gearbox_mass_user: 0
+            gearbox_efficiency: 1.0
+            damping_ratio: 0
+            lss_diameter: []
+            lss_wall_thickness: []
+            lss_material: ''
+            hss_length: 0
+            hss_diameter: []
+            hss_wall_thickness: []
+            hss_material: ''
+            nose_diameter: []
+            nose_wall_thickness: [] 
+            bedplate_wall_thickness:
+                grid: []
+                values: []
+            bedplate_flange_width: 0
+            bedplate_flange_thickness: 0
+            bedplate_web_thickness: 0
+            bedplate_material: ''
+            mb1Type: 'CARB'
+            mb2Type: 'CARB'
+            uptower: True
+            gear_configuration: ''
+            planet_numbers: []
+
+#            drag_coefficient: ?
+#            distance_hub2mb: no longer part of schema
+#            distance_mb2mb: no longer part of schema
+
+        generator:
+            generator_type: 'DFIG'
+            rho_Fe: 0
+            rho_Fes: 0
+            rho_Copper: 0
+            rho_PM: 0
+            B_r: 0
+            P_Fe0e: 0
+            P_Fe0h: 0
+            S_N: 0
+            alpha_p: 0 
+            b_r_tau_r: 0
+            b_ro: 0
+            b_s_tau_s: 0
+            b_so: 0
+            cofi: 0
+            freq: 1
+            h_i: 0
+            h_sy0: 0
+            h_w: 0
+            k_fes: 0
+            k_fillr: 0
+            k_fills: 0
+            k_s: 0
+            m: 0
+            mu_0: 0
+            mu_r: 0
+            phi: 0
+            q1: 0
+            q2: 0
+            ratio_mw2pp: 0
+            resist_Cu: 0
+            y_tau_pr: 0
+            y_tau_p: 0
+            rad_ag: 0
+            len_s: 0
+            tau_p: 0
+            tau_s: 0
+            h_s: 0
+            b_s: 0
+            b_t: 0
+            h_t: 0
+            h_ys: 0
+            h_yr: 0
+            h_m: 0
+            b_m: 0
+            B_g: 0
+            B_symax: 0 
+            B_rymax: 0
+            p: 0
+            R_s: 0
+            L_s: 0
+            S: 0
+            t_r: 0
+            h_sr: 0 
+            t_s: 0
+            h_ss: 0
+            E_p: 0
+            b: 0
+            c: 0
+            N_c: 0
+            B_tmax: 0
+            u_allow_pcent: 0
+            y_allow_pcent: 0
+            z_allow_deg: 0
+            sigma: 0
+            h_0: 0
+            C_Cu: 0
+            C_Fe: 0
+            C_Fes: 0
+            C_PM: 0
+
+    tower:
+        outer_shape_bem:
+            reference_axis: &ref_axis_tower
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
+            outer_diameter:
+                grid: []
+                values: []
+            drag_coefficient:
+                grid: []
+                values: []
+        internal_structure_2d_fem:
+            outfitting_factor: 1
+            reference_axis: 
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
+            layers:
+                - name: ''
+                  material: '' 
+                  thickness:
+                    grid: []
+                    values: []
+    monopile: 
+        transition_piece_mass: 0
+        outer_shape_bem:
+            reference_axis: &monopile_ref_axis
+                x:
+                    grid: []
+                    values: []
+                y:
+                    grid: []
+                    values: []
+                z:
+                    grid: []
+                    values: []
+            outer_diameter:
+                grid: []
+                values: []
+            drag_coefficient:
+                grid: []
+                values: []
+        internal_structure_2d_fem:
+            outfitting_factor: 1
+            reference_axis: *monopile_ref_axis
+            layers:
+               -  name: ''
+                  material: ''
+                  thickness:
+                      grid: []
+                      values: []
+        transition_piece_cost: 0.0
+        gravity_foundation_mass: 0.0
+    floating_platform:
+        joints:
+            - name: ''
+              location: []
+              cylindrical: false
+              #transition: false
+        members:
+            - name: ''
+              joint1: ''
+              joint2: ''
+              outer_shape:
+                shape: 'circular'
+                outer_diameter:
+                    grid: []
+                    values: []
+              internal_structure:
+                layers:
+                    - name: ''
+                      material: ''
+                      thickness:
+                        grid: [0, 0]
+                        values: [0, 0] 
+                ballasts:
+                    - #variable_flag: 
+                      #material: ''
+                      #volume: 
+                      #grid: []
+                    - #variable_flag: 
+                      #grid: []
+                bulkhead:
+                    material: ''
+                    thickness:
+                        grid:   []
+                        values: []
+                #longitudinal_stiffeners
+                #ring_stiffeners
+                #outfitting_factor
+              Ca: 0
+              Cd: 0
+              Cp: 0
+              axial_joints:
+                - name: ''
+                  grid: 0
+        transition_piece_mass: 0
+        transition_piece_cost: 0
+    mooring:
+        nodes:
+            - name: ''
+              node_type: 'fixed'
+              node_mass: 0
+              node_volume: 0
+              joint: ''
+              anchor_type: ''
+              fairlead_type: 'rigid'
+              location: [] # added by NRM, not in schema
+
+            - name: ''
+              node_type: 'vessel'
+              node_mass: 0
+              node_volume: 0
+              joint: ''
+              fairlead_type: 'rigid'
+              location: [] # added by NRM, not in schema
+
+        lines:
+            - name: ''
+              node1: ''
+              node2: ''
+              line_type: ''
+              unstretched_length: 0
+        line_types:
+            - name: ''
+              diameter: 0
+              type: 'chain'
+              damping: 0
+              transverse_added_mass: 0
+              tangential_added_mass: 0
+              transverse_drag: 0
+              tangential_drag: 0
+        anchor_types:
+            - name: ''
+              type: 'drag_embedment'
+              mass: 0
+              cost: 0
+              max_lateral_load: 0
+              max_vertical_load: 0
+
+airfoils:
+   -  name: ''
+      coordinates:
+          x: []
+          y: []
+      relative_thickness: 0
+      aerodynamic_center: 0
+      polars:
+         -  configuration: ''
+            re: 0
+            c_l:
+                grid: []
+                values: []
+            c_d:
+                grid: []
+                values: []
+            c_m:
+                grid: []
+                values: []
+ 
+materials:
+   -  name: ''
+      description: ''
+      source: ''
+      orth: 0
+      rho: 0
+      E: 0
+      G: 0
+      nu: 0
+      alpha: []
+      Xt: 0
+      Xc: 0
+      Xy: 0
+      S: 0
+      GIc: 0
+      GIIc: 0
+      alp0: 0
+      ply_t: 0
+      m: 0
+      waste: 0
+      unit_cost: 0
+      component_id: 0
+      fvf: 0
+      fwf: 0
+      fiber_density: 0
+      area_density_dry: 0
+      roll mass: 0
+
+control:
+    supervisory:
+        Vin: 0
+        Vout: 0
+        maxTS: 60
+    pitch:
+        PC_zeta: 
+        PC_omega: 
+        ps_percent: 
+        max_pitch: 
+        max_pitch_rate: 0
+        min_pitch: 0
+    torque:
+        control_type: 
+        tsr: 0
+        VS_zeta: 
+        VS_omega: 
+        max_torque_rate: 1000
+        VS_minspd: 0
+        VS_maxspd: 0
+    setpoint_smooth:
+        ss_vsgain: 
+        ss_pcgain: 
+    shutdown:
+        limit_type: 
+        limit_value: 
+
+# TMDs:
+#     - name: ''
+#       component: ''
+#       location: []
+#       mass: 0
+#       stiffness: 0
+#       damping: 0
+    
+#       natural_frequency: -1
+#       damping_ratio: -1
+#       X_DOF: False
+#       Y_DOF: False
+#       Z_DOF: False
+#       preload_spring: True
+
+environment:
+    air_density: 0
+    air_dyn_viscosity: 0
+    speed_sound: 340
+    shear_exp: 0
+
+    gravity: 0
+    weib_shape_parameter: 2
+    water_density: 1025
+    water_dyn_viscosity: 1.3351e-3
+    soil_shear_modulus: 140.e+6
+    soil_poisson: 0
+    water_depth: 0
+    air_pressure: 0
+    air_vapor_pressure: 0
+    significant_wave_height: 
+    significant_wave_period: 
+
+bos:
+    plant_turbine_spacing: 1
+    plant_row_spacing: 1
+    commissioning_pct: 0
+    decommissioning_pct: 0
+    distance_to_substation: 0
+    distance_to_interconnection: 0
+    interconnect_voltage: 0
+    distance_to_site: 0
+    distance_to_landfall: 0
+    port_cost_per_month: 0
+    site_auction_price: 0
+    site_assessment_plan_cost: 0
+    site_assessment_cost: 0
+    construction_operations_plan_cost: 0
+    boem_review_cost: 0
+    design_install_plan_cost: 0
+
+costs:
+    wake_loss_factor: 0
+    fixed_charge_rate: 0
+    bos_per_kW: 0
+    opex_per_kW: 0
+    turbine_number: 0
+    labor_rate: 0
+    painting_rate: 0
+    blade_mass_cost_coeff: 0
+    hub_mass_cost_coeff: 0
+    pitch_system_mass_cost_coeff: 0
+    spinner_mass_cost_coeff: 0
+    lss_mass_cost_coeff: 0
+    bearing_mass_cost_coeff: 0
+    gearbox_mass_cost_coeff: 0
+    hss_mass_cost_coeff: 0
+    generator_mass_cost_coeff: 0
+    bedplate_mass_cost_coeff: 0
+    yaw_mass_cost_coeff: 0
+    converter_mass_cost_coeff: 0
+    transformer_mass_cost_coeff: 0
+    hvac_mass_cost_coeff: 0
+    cover_mass_cost_coeff: 0
+    elec_connec_machine_rating_cost_coeff: 0
+    platforms_mass_cost_coeff: 0
+    tower_mass_cost_coeff: 0
+    controls_machine_rating_cost_coeff: 0
+    crane_cost: 0
+    electricity_price: 0
+    reserve_margin_price: 0
+    capacity_credit: 0
+    benchmark_price: 0
