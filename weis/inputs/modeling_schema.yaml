@@ -129,8 +129,8 @@ properties:
             potential_model_override:
                 type: integer
                 default: 0
-                enum: [0, 1, 2]
-                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory)
+                enum: [0, 1, 2, 3]
+                description: User override for potential boundary element modeling. 0 = uses the potential_bem_members list for inviscid force and computes viscous drag with strip theory (members not listed use only strip theory), 1 = no potential BEM modeling for any member (just strip theory), 2 = potential BEM modeling for all members (no strip theory), 3 = use potential BEM modeling only for inviscid forces
             xi_start:
                 type: number
                 default: 0.0

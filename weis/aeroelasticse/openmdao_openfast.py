@@ -1577,6 +1577,9 @@ class FASTLoadCases(ExplicitComponent):
 
             # Member-based coefficients
             if modopt['flags']['floating']:
+
+                fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
+
                 fst_vt['HydroDyn']['MCoefMod'] = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
                 fst_vt['HydroDyn']['NCoefMembers'] = len(imembers)
                 fst_vt['HydroDyn']['MemberID_HydC'] = imembers
@@ -1598,7 +1601,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
                 fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N1))
 
-            if modopt["Level1"]["potential_model_override"] == 1:
+            if modopt["RAFT"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
             elif modopt["RAFT"]["potential_model_override"] == 2:
@@ -1611,11 +1614,11 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
                 fst_vt['HydroDyn']['SimplCb'] = fst_vt['HydroDyn']['SimplCbMG'] = 0.0
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
-            elif modopt["Level1"]["potential_model_override"] == 3:
+            elif modopt["RAFT"]["potential_model_override"] == 3:
                 # Potential model for inviscid forces (radiation, excitation) only
                 
                 # Avoid double counting of buoyancy force in WAMIT, using OpenFAST nonlinear buoyancy, hydrostatics.  .hst file should be zeros
-                fst_vt['HydroDyn']['PtfmVol0'] = 0  
+                fst_vt['HydroDyn']['PtfmVol0'] = [0.0]  
                 
                 # Zero simple coefficients
                 fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
@@ -1679,8 +1682,6 @@ class FASTLoadCases(ExplicitComponent):
 
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
-            
-            fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
 
 
         # Moordyn inputs
