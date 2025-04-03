@@ -2,7 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: lin
-        OF_run_dir: outputs/IEA_level2
         use_exe: True
 
 WISDEM:
@@ -81,7 +80,8 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     ServoDyn:
         YawSpr: 4.6273E+10
         YawDamp: 3.9088E+07
-        SeaState:
+    SeaState:
+        WaveTMax: 1 #3630
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
         WvLowCOffD: 0.0
@@ -114,20 +114,13 @@ OpenFAST_Linear:
         DT: 0.01
         TrimGain: 1e-4
         TrimTol: 1e-3
-        wind_speeds: [14.,16.]
+        wind_speeds: [15.]
         rated_offset: 0.75
         DOFs: ['GenDOF','TwFADOF1','PtfmPDOF']
-        NLinTimes: 2
+        NLinTimes: 1
 
-# RAFT:
-#     flag: True
-#     potential_model_override: 2
-#     trim_ballast: 2
-#     heave_tol: 1
-#     save_designs: True
-    # min_freq: 0.0080001
-    # min_freq_BEM: 0.008
-    # max_freq: 0.7958
+RAFT:
+    potential_model_override: 2
 
 DLC_driver:
     DLCs:
