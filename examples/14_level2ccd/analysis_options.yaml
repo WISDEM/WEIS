@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/L2_studies
+    folder_output: outputs/14_L2_studies
     fname_output: iea15mw
     
 design_variables:

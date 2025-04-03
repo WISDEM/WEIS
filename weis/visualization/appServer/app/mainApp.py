@@ -9,7 +9,6 @@ import logging
 import argparse
 from weis.visualization.utils import checkPort, parse_yaml
 
-
 # Parse necessary arguments for running the app
 parser = argparse.ArgumentParser(description='WEIS Visualization App')
 parser.add_argument('--port', 
@@ -32,11 +31,11 @@ parser.add_argument('--debug',
 
 parser.add_argument('--input', 
                     type=str, 
-                    default='tests/input/test.yaml', # lets point to an example where viz input could potentially exist.
+                    default='weis/visualization/appServer/app/tests/input/test.yaml',    #'tests/input/test.yaml', # From apps (while locally running..) # lets point to an example where viz input could potentially exist.
                     help='Path to the WEIS visualization input yaml file'
                     )
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 
 # Initialize the app - Internally starts the Flask Server
