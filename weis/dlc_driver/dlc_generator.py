@@ -906,6 +906,13 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'Step'
 
+        if dlc_options['turbulent_wind']['flag']:
+            dlc_options['IEC_WindType'] = 'Turbulent-Step'
+        else:
+            dlc_options['IEC_WindType'] = 'Step'
+
+        
+
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
             dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
@@ -921,6 +928,8 @@ class DLCGenerator(object):
             dlc_options['gust_wait_time'] = dlc_options['step_time']
         else:
             raise Exception('step_time must be set for the Step DLC')
+        if dlc_options['ramp_duration'] >= dlc_options['analysis_time']:
+            raise Exception('Analysis_time should be greater than ramp_duration')
         
 
         # DLC-specific: define groups
