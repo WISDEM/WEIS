@@ -2269,6 +2269,8 @@ class FASTLoadCases(ExplicitComponent):
 
         self.get_charateristic_loads()
 
+        self.get_frequency_measures()
+
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             self.get_floating_measures(inputs, outputs)
 
@@ -2837,7 +2839,97 @@ class FASTLoadCases(ExplicitComponent):
             binned_data_dlc = pd.concat([binned_cruncher.outputs[ind].df for ind in dlc_ind])
             binned_data_dlc.to_pickle(os.path.join(save_dir,f'binned_dlc{dlc}.p'))
 
+    def get_frequency_measures(self):
 
+        cm = self.case_df
+
+        freq_bins = self.options['modeling_options']['PostProcessing']['frequency_bins']
+
+        freq_dict = {}
+        all_psd_dfs = []
+
+        for i_case, cn in enumerate(cm['case_name']):
+            output_init = self.cruncher.outputs[i_case]
+            # output_init.trim_data(np.min([120,output_init.time.max()/2]))
+
+            freq_obj = output_init.psd(nfft=2056)        
+
+            psd_df_i = freq_obj.df
+            psd_df_i.set_index('Freq',inplace=True)
+
+            all_psd_dfs.append(psd_df_i)
+
+            # Compute measures at certain frequencies
+            for fb in freq_bins:
+                if hasattr(fb,'__len__'):
+                    # Average over fb range
+                    df = psd_df_i.copy()
+
+                    # Add rows to dataframe at frequency of interest
+                    f_range = np.linspace(fb[0],fb[1])  # use default of 50 bins
+
+                    # Pandas interpolation works by filling in nan values, so we're going to add them at the f_range of interest
+                    new_dict = {chan: np.full(f_range.shape,np.nan) for chan in df.columns}
+                    new_row = pd.DataFrame(new_dict,index=f_range)
+
+                    df = pd.concat([df, new_row])
+                    df.sort_index(inplace=True)
+                    df.interpolate(axis=0,inplace=True,method='index',order=1)
+
+                    # filter by values in f_range
+                    mean_psd = df.loc[f_range].mean()   
+                    # Someday, we could put other stats here
+
+                    for chan, val in mean_psd.items(): 
+                        # Initialize, if necessary
+                        if chan not in freq_dict:
+                            freq_dict[chan] = {}
+                            freq_dict[chan][str(fb)] = np.zeros(len(cm))
+                        if str(fb) not in freq_dict[chan]:
+                            freq_dict[chan][str(fb)] = np.zeros(len(cm))
+
+                        freq_dict[chan][str(fb)][i_case] = val
+
+                else:
+                    # Value at frequency of interest (fb)
+                    df = psd_df_i.copy()
+
+                    # Add nan row to dataframe at fb
+                    new_dict = {chan: np.nan for chan in df.columns}
+                    new_row = pd.DataFrame(new_dict,index=[fb])
+
+                    df = pd.concat([df, new_row])
+                    df.sort_index(inplace=True)
+                    # TODO: remove duplicates?
+                    df.interpolate(axis=0,inplace=True,method='index',order=1) # Pandas interpolate()s at nan values
+
+                    for chan, val in df.loc[fb].items():    # df.loc[fb] is value of each channel at fb
+                        # Initialize, if necessary
+                        if chan not in freq_dict:
+                            freq_dict[chan] = {}
+                            freq_dict[chan][str(fb)] = np.zeros(len(cm))
+                        if str(fb) not in freq_dict[chan]:
+                            freq_dict[chan][str(fb)] = np.zeros(len(cm))
+
+                        freq_dict[chan][str(fb)][i_case] = val
+
+
+
+        # Pandas likes multi-columns in tuples: https://stackoverflow.com/questions/24988131/nested-dictionary-to-multiindex-dataframe-where-dictionary-keys-are-column-label
+        reform = {(outerKey, innerKey): values for outerKey, innerDict in freq_dict.items() for innerKey, values in innerDict.items()}
+        df_freq = pd.DataFrame(reform, index = cm['case_name'])
+
+        # Save:
+        save_dir_summ = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        save_dir_psd = os.path.join(save_dir_summ,'psds')
+        os.makedirs(save_dir_psd, exist_ok=True)
+
+        # Each PSD as a pickled dataframe
+        for cn, psd_df in zip(cm['case_name'], all_psd_dfs):
+            psd_df.to_pickle( os.path.join(save_dir_psd,f'{cn}.p'))
+
+        # Summary df
+        df_freq.to_pickle(os.path.join(save_dir_summ,'psd_summary.p'))
 
     def get_OL2CL_error(self, outputs):
         ol_case_names = [os.path.join(
