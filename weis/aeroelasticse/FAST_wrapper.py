@@ -70,7 +70,7 @@ class FAST_wrapper(object):
                 
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
-
+        sys.stdout.flush()
         os.chdir(olddir)
 
         return failed

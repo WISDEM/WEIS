@@ -2543,6 +2543,7 @@ class FASTLoadCases(ExplicitComponent):
         dlc_list : list
         """
         ## Get AEP and power curve
+        logging.info("Calculating AEP")
 
         # determine which dlc will be used for the powercurve calculations, allows using dlc 1.1 if specific power curve calculations were not run
         sum_stats = self.cruncher.summary_stats
@@ -2752,6 +2753,8 @@ class FASTLoadCases(ExplicitComponent):
 
     def get_charateristic_loads(self):
         # Characteristic loads are described in IEC 61400-1:2019, Section 7.6.2.2
+
+        logging.info("Computing characteristic loads")
         
         cm = self.case_df
 
@@ -2812,6 +2815,7 @@ class FASTLoadCases(ExplicitComponent):
     def save_time_binning(self):
 
         # Average the data in time bins and plot against wind speed
+        logging.info("Binning timeseries data")
 
         bin_time = self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time']
 
@@ -2835,6 +2839,8 @@ class FASTLoadCases(ExplicitComponent):
             binned_data_dlc.to_pickle(os.path.join(save_dir,f'binned_dlc{dlc}.p'))
 
     def get_frequency_measures(self):
+
+        logging.info("Computing frequency measures")
 
         cm = self.case_df
 
