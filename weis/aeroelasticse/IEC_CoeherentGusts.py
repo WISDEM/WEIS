@@ -284,9 +284,16 @@ class IEC_CoherentGusts():
 
         # Move transient event to user defined time
         data[:,0] += self.TStart
-        data = np.vstack((data[0,:], data, data[-1,:]))
-        data[0,0] = self.T0
-        data[-1,0] = self.TF
+        
+        # Add a line before, only if T0 is different than time in the first line of data
+        if data[0,0] != self.T0:
+            data = np.vstack((data[0,:], data))
+            data[0,0] = self.T0
+
+        # Add a line after, only if TF is different than time in the last line of data
+        if data[-1,0] != self.TF:
+            data = np.vstack((data, data[-1,:]))
+            data[-1,0] = self.TF
 
         # Headers
         hd1 = ['Time', 'Wind', 'Wind', 'Vertical', 'Horiz.', 'Pwr. Law', 'Lin. Vert.', 'Gust', 'Upflow']
