@@ -2273,8 +2273,6 @@ class FASTLoadCases(ExplicitComponent):
 
         self.get_charateristic_loads()
 
-        self.get_frequency_measures()
-
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             self.get_floating_measures(inputs, outputs)
 
@@ -2290,6 +2288,8 @@ class FASTLoadCases(ExplicitComponent):
         # Open loop to closed loop error, move this to before save_timeseries when finished
         if modopt['OL2CL']['flag']:
             outputs = self.get_OL2CL_error(outputs)
+
+        self.get_frequency_measures()
 
     def get_blade_loading(self, inputs, outputs):
         """
