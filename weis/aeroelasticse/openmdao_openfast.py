@@ -2249,6 +2249,10 @@ class FASTLoadCases(ExplicitComponent):
     def post_process(self, case_list, case_name, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
+        # Save Data
+        self.save_timeseries(case_name)
+        self.save_iterations(discrete_outputs)
+
         # Analysis
         if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
             outputs = self.get_blade_loading(inputs, outputs)
@@ -2269,8 +2273,6 @@ class FASTLoadCases(ExplicitComponent):
 
         self.get_charateristic_loads()
 
-        self.get_frequency_measures()
-
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             self.get_floating_measures(inputs, outputs)
 
@@ -2283,16 +2285,11 @@ class FASTLoadCases(ExplicitComponent):
         if 'binning_time' in modopt['PostProcessing']:  # TODO: figure out a better flag for this
             self.save_time_binning()
 
-        # Save Data
-        if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(case_name)
-
-        if modopt['General']['openfast_configuration']['save_iterations']:
-            self.save_iterations(discrete_outputs)
-
         # Open loop to closed loop error, move this to before save_timeseries when finished
         if modopt['OL2CL']['flag']:
             outputs = self.get_OL2CL_error(outputs)
+
+        self.get_frequency_measures()
 
     def get_blade_loading(self, inputs, outputs):
         """
@@ -2546,6 +2543,7 @@ class FASTLoadCases(ExplicitComponent):
         dlc_list : list
         """
         ## Get AEP and power curve
+        logging.info("Calculating AEP")
 
         # determine which dlc will be used for the powercurve calculations, allows using dlc 1.1 if specific power curve calculations were not run
         sum_stats = self.cruncher.summary_stats
@@ -2755,6 +2753,8 @@ class FASTLoadCases(ExplicitComponent):
 
     def get_charateristic_loads(self):
         # Characteristic loads are described in IEC 61400-1:2019, Section 7.6.2.2
+
+        logging.info("Computing characteristic loads")
         
         cm = self.case_df
 
@@ -2773,7 +2773,7 @@ class FASTLoadCases(ExplicitComponent):
 
             # Filter for only stats of this dlc
             dlc_ind = cm['DLC'] == dlc
-            ss_dlc = sum_stats[dlc_ind]
+            ss_dlc = sum_stats[dlc_ind.values]
             cm_dlc = cm[dlc_ind]
 
             # Init this dlc char_load dict
@@ -2791,7 +2791,7 @@ class FASTLoadCases(ExplicitComponent):
                 # Over each wind speed simulated
                 for i, mws in enumerate(unique_mws):
                     mws_ind = cm_dlc[('InflowWind', 'HWindSpeed')] == mws
-                    ss_mws = ss_dlc[mws_ind]
+                    ss_mws = ss_dlc[mws_ind.values]
             
                     # average maximums (absolute value), most cases
                     char_loads[dlc][chan]['load_values'][i] = ss_mws[chan]['abs'].mean()
@@ -2815,13 +2815,12 @@ class FASTLoadCases(ExplicitComponent):
     def save_time_binning(self):
 
         # Average the data in time bins and plot against wind speed
+        logging.info("Binning timeseries data")
 
         bin_time = self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time']
 
-        binned_cruncher = copy.copy(self.cruncher)
+        binned_cruncher = copy.deepcopy(self.cruncher)
         binned_cruncher.time_binning(bin_time)
-        binned_cruncher.outputs[0].df
-
 
         # Make save directories, if necessary
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
@@ -2841,6 +2840,8 @@ class FASTLoadCases(ExplicitComponent):
 
     def get_frequency_measures(self):
 
+        logging.info("Computing frequency measures")
+
         cm = self.case_df
 
         freq_bins = self.options['modeling_options']['PostProcessing']['frequency_bins']
@@ -2852,7 +2853,7 @@ class FASTLoadCases(ExplicitComponent):
             output_init = self.cruncher.outputs[i_case]
             # output_init.trim_data(np.min([120,output_init.time.max()/2]))
 
-            freq_obj = output_init.psd(nfft=2056)        
+            freq_obj = output_init.psd(nfft=512)        
 
             psd_df_i = freq_obj.df
             psd_df_i.set_index('Freq',inplace=True)

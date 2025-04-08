@@ -5,12 +5,15 @@ from rosco import discon_lib_path
 from openmdao.utils.mpi  import MPI
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 import numpy as np
+import logging
 
 if MPI:
     from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 
 this_dir = os.path.dirname( os.path.realpath(__file__) )
+logger = logging.getLogger("wisdem/weis")
+
 
 def load_testbench_yaml(filename):
     # TODO: add testbench schema to modeling schema
@@ -30,6 +33,11 @@ def main():
     testbench_options = load_testbench_yaml(os.path.join(this_dir,input_file))
 
     #### NOTHING BELOW HERE SHOULD CHANGE FOR THE USER
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+        )
 
 
     # Configure modeling options for FASTLoadCases 
@@ -75,23 +83,22 @@ def main():
     # Postprocessing options (map to OFMgmt)
     OFmgmt['postprocessing'] = testbench_options['PostProcessing']
 
+    # Figure out how many cases we're running
+    dlc_generator = DLCGenerator(
+        metocean = testbench_options['DLC_driver']['metocean_conditions'], 
+        dlc_driver_options = testbench_options['DLC_driver'],
+        )
+    DLCs = testbench_options['DLC_driver']['DLCs']
+    for i_DLC in range(len(DLCs)):
+        DLCopt = DLCs[i_DLC]
+        dlc_generator.generate(DLCopt['DLC'], DLCopt)
+    n_OF_runs = dlc_generator.n_cases
 
     if MPI:
         opt_options = {}
         opt_options['driver'] = {}
         opt_options['driver']['design_of_experiments'] = {}
         opt_options['driver']['design_of_experiments']['flag'] = False
-
-        # Figure out how many cases we're running
-        dlc_generator = DLCGenerator(
-            metocean = testbench_options['DLC_driver']['metocean_conditions'], 
-            dlc_driver_options = testbench_options['DLC_driver'],
-            )
-        DLCs = testbench_options['DLC_driver']['DLCs']
-        for i_DLC in range(len(DLCs)):
-            DLCopt = DLCs[i_DLC]
-            dlc_generator.generate(DLCopt['DLC'], DLCopt)
-        n_OF_runs = dlc_generator.n_cases
 
         available_cores = MPI.COMM_WORLD.Get_size()
         n_parallel_OFruns = min([available_cores - 1, n_OF_runs])

@@ -2,6 +2,7 @@ import os
 import subprocess
 import platform
 import time
+import sys
 import numpy as np
 from openfast_io import turbsim_file
 
@@ -46,6 +47,7 @@ class FAST_wrapper(object):
             try:
                 if self.write_stdout:
                     print(f'Running {" ".join(exec_str)}')
+                    sys.stdout.flush()
                     with open(self.input_file.replace('.fst','.stdOut'), "w") as f:
                         subprocess.run(exec_str,stdout=f, stderr=subprocess.STDOUT, check=True)
                 else:
@@ -68,7 +70,7 @@ class FAST_wrapper(object):
                 
         runtime = time.time() - start
         print('Runtime: \t{} = {:<6.2f}s'.format(self.FAST_InputFile, runtime))
-
+        sys.stdout.flush()
         os.chdir(olddir)
 
         return failed
