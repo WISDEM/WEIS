@@ -2853,7 +2853,7 @@ class FASTLoadCases(ExplicitComponent):
             output_init = self.cruncher.outputs[i_case]
             # output_init.trim_data(np.min([120,output_init.time.max()/2]))
 
-            freq_obj = output_init.psd(nfft=2056)        
+            freq_obj = output_init.psd(nfft=512)        
 
             psd_df_i = freq_obj.df
             psd_df_i.set_index('Freq',inplace=True)
