@@ -33,7 +33,11 @@ def main():
     testbench_options = load_testbench_yaml(os.path.join(this_dir,input_file))
 
     #### NOTHING BELOW HERE SHOULD CHANGE FOR THE USER
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+        )
 
 
     # Configure modeling options for FASTLoadCases 
