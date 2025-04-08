@@ -75,23 +75,22 @@ def main():
     # Postprocessing options (map to OFMgmt)
     OFmgmt['postprocessing'] = testbench_options['PostProcessing']
 
+    # Figure out how many cases we're running
+    dlc_generator = DLCGenerator(
+        metocean = testbench_options['DLC_driver']['metocean_conditions'], 
+        dlc_driver_options = testbench_options['DLC_driver'],
+        )
+    DLCs = testbench_options['DLC_driver']['DLCs']
+    for i_DLC in range(len(DLCs)):
+        DLCopt = DLCs[i_DLC]
+        dlc_generator.generate(DLCopt['DLC'], DLCopt)
+    n_OF_runs = dlc_generator.n_cases
 
     if MPI:
         opt_options = {}
         opt_options['driver'] = {}
         opt_options['driver']['design_of_experiments'] = {}
         opt_options['driver']['design_of_experiments']['flag'] = False
-
-        # Figure out how many cases we're running
-        dlc_generator = DLCGenerator(
-            metocean = testbench_options['DLC_driver']['metocean_conditions'], 
-            dlc_driver_options = testbench_options['DLC_driver'],
-            )
-        DLCs = testbench_options['DLC_driver']['DLCs']
-        for i_DLC in range(len(DLCs)):
-            DLCopt = DLCs[i_DLC]
-            dlc_generator.generate(DLCopt['DLC'], DLCopt)
-        n_OF_runs = dlc_generator.n_cases
 
         available_cores = MPI.COMM_WORLD.Get_size()
         n_parallel_OFruns = min([available_cores - 1, n_OF_runs])
