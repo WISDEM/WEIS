@@ -46,6 +46,7 @@ def main():
         'hub_height':       testbench_options['Turbine_Info']['hub_height'],
         'Rtip':             testbench_options['Turbine_Info']['rotor_radius'],
         'shearExp': 0.14,   # Not used, hard code
+        'lifetime': 25.,   # Not used, hard code
     }
     inputs= {key: np.array([value]) for key, value in inputs.items()}   # make all
 
