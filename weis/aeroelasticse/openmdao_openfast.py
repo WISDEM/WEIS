@@ -2249,6 +2249,13 @@ class FASTLoadCases(ExplicitComponent):
     def post_process(self, case_list, case_name, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs):
         modopt = self.options['modeling_options']
 
+        # Save Data
+        if modopt['General']['openfast_configuration']['save_timeseries']:
+            self.save_timeseries(case_name)
+
+        if modopt['General']['openfast_configuration']['save_iterations']:
+            self.save_iterations(discrete_outputs)
+
         # Analysis
         if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
             outputs = self.get_blade_loading(inputs, outputs)
@@ -2282,13 +2289,6 @@ class FASTLoadCases(ExplicitComponent):
         # Wind speed binning
         if 'binning_time' in modopt['PostProcessing']:  # TODO: figure out a better flag for this
             self.save_time_binning()
-
-        # Save Data
-        if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(case_name)
-
-        if modopt['General']['openfast_configuration']['save_iterations']:
-            self.save_iterations(discrete_outputs)
 
         # Open loop to closed loop error, move this to before save_timeseries when finished
         if modopt['OL2CL']['flag']:
