@@ -1,7 +1,8 @@
 from openmdao.api import Group, ExplicitComponent
 from wisdem.rotorse.rotor_structure import ComputeStrains, DesignConstraints, BladeRootSizing
 from openfast_io.turbsim_util import TurbsimReader, TurbsimWriter
-from weis.aeroelasticse.FAST_wrapper import Turbsim_wrapper, IEC_CoherentGusts
+from weis.aeroelasticse.FAST_wrapper import Turbsim_wrapper 
+from weis.aeroelasticse.IEC_CoeherentGusts import IEC_CoherentGusts
 import numpy as np
 import os
 
