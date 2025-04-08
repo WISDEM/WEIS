@@ -13,6 +13,9 @@ Testbench_Options:
 
 PostProcessing:
     binning_time: 20
+    frequency_bins:
+        - 1.0
+        - [2.0,3.0]
 
 Turbine_Info:  # Can we pull this information from OpenFAST input?
     # used to generate wind inputs
