@@ -5,12 +5,15 @@ from rosco import discon_lib_path
 from openmdao.utils.mpi  import MPI
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 import numpy as np
+import logging
 
 if MPI:
     from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
 
 
 this_dir = os.path.dirname( os.path.realpath(__file__) )
+logger = logging.getLogger("wisdem/weis")
+
 
 def load_testbench_yaml(filename):
     # TODO: add testbench schema to modeling schema
@@ -30,6 +33,7 @@ def main():
     testbench_options = load_testbench_yaml(os.path.join(this_dir,input_file))
 
     #### NOTHING BELOW HERE SHOULD CHANGE FOR THE USER
+    logging.basicConfig(level=logging.INFO)
 
 
     # Configure modeling options for FASTLoadCases 
