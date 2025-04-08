@@ -2250,11 +2250,8 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
         # Save Data
-        if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(case_name)
-
-        if modopt['General']['openfast_configuration']['save_iterations']:
-            self.save_iterations(discrete_outputs)
+        self.save_timeseries(case_name)
+        self.save_iterations(discrete_outputs)
 
         # Analysis
         if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
@@ -2773,7 +2770,7 @@ class FASTLoadCases(ExplicitComponent):
 
             # Filter for only stats of this dlc
             dlc_ind = cm['DLC'] == dlc
-            ss_dlc = sum_stats[dlc_ind]
+            ss_dlc = sum_stats[dlc_ind.values]
             cm_dlc = cm[dlc_ind]
 
             # Init this dlc char_load dict
@@ -2791,7 +2788,7 @@ class FASTLoadCases(ExplicitComponent):
                 # Over each wind speed simulated
                 for i, mws in enumerate(unique_mws):
                     mws_ind = cm_dlc[('InflowWind', 'HWindSpeed')] == mws
-                    ss_mws = ss_dlc[mws_ind]
+                    ss_mws = ss_dlc[mws_ind.values]
             
                     # average maximums (absolute value), most cases
                     char_loads[dlc][chan]['load_values'][i] = ss_mws[chan]['abs'].mean()
@@ -2818,10 +2815,8 @@ class FASTLoadCases(ExplicitComponent):
 
         bin_time = self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time']
 
-        binned_cruncher = copy.copy(self.cruncher)
+        binned_cruncher = copy.deepcopy(self.cruncher)
         binned_cruncher.time_binning(bin_time)
-        binned_cruncher.outputs[0].df
-
 
         # Make save directories, if necessary
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
