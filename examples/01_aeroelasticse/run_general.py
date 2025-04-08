@@ -10,6 +10,7 @@ import numpy as np
 import os
 import platform
 import shutil
+from rosco import discon_lib_path
 
 if __name__ == "__main__":
 
@@ -22,10 +23,11 @@ if __name__ == "__main__":
     fastBatch.FAST_InputFile    = "IEA-15-240-RWT-Monopile.fst"   # FAST input file (ext=.fst)
     fastBatch.FAST_runDirectory = "steady_state/iea15mw"
     fastBatch.debug_level       = 2
+    fastBatch.use_exe = True
 
     # User settings
     n_cores     = 1     # Number of available cores
-    TMax        = 200.  # Length of wind grids and OpenFAST simulations, suggested 720 s
+    TMax        = 1.    # Length of wind grids and OpenFAST simulations, suggested 720 s
     cut_in      = 3.    # Cut in wind speed
     cut_out     = 25.   # Cut out wind speed
     wind_speeds = np.arange(cut_in, cut_out+1, 4) #np.linspace(cut_in, cut_out, int(n_ws)) # Wind speeds to run OpenFAST at
@@ -67,7 +69,7 @@ if __name__ == "__main__":
         sfx = "so"
     path2dll = os.path.join(run_dir1, "local","lib","libdiscon."+sfx)
 
-    case_inputs[("ServoDyn","DLL_FileName")] = {"vals":[path2dll], "group":0}
+    case_inputs[("ServoDyn","DLL_FileName")] = {"vals":[discon_lib_path], "group":0}
 
     # Generate the matrix of cases
     case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase="iea15mw")

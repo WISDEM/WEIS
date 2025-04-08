@@ -2,6 +2,9 @@ import os
 import subprocess
 import platform
 import time
+import numpy as np
+from openfast_io import turbsim_file
+
 
 class FAST_wrapper(object):
 
@@ -69,3 +72,17 @@ class FAST_wrapper(object):
         os.chdir(olddir)
 
         return failed
+
+class Turbsim_wrapper(object):
+    def __init__(self):
+        self.turbsim_exe = 'turbsim'
+        self.turbsim_input = ""
+        self.run_dir = '.'
+
+    def execute(self):
+        exec_string = [self.turbsim_exe, self.turbsim_input]
+        olddir = os.getcwd()
+        os.chdir(self.run_dir)
+        subprocess.call(exec_string)
+        os.chdir(olddir)
+

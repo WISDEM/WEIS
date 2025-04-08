@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 from openmdao.utils.mpi import MPI
-from weis.aeroelasticse.FileTools import print_yaml
+# from openfast_io.FileTools import print_yaml
 
 
 def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
@@ -14,7 +14,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     if not MPI:
         print("\nYour problem has %d design variable(s) and %d OpenFAST run(s)\n"%(nFD, nOF))
 
-    if modeling_options['Level3']['flag']:
+    if modeling_options['OpenFAST']['flag']:
         # If we are running an optimization method that doesn't use finite differencing, set the number of DVs to 1
         if not (opt_options['driver']['design_of_experiments']['flag']) and (opt_options['driver']['optimization']['solver'] in evolutionary_methods):
             if not MPI:
@@ -24,7 +24,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
             if not MPI:
                 print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
             nFD = 1
-    elif modeling_options['Level2']['flag']:
+    elif modeling_options['OpenFAST_Linear']['flag']:
         if not (opt_options['driver']['design_of_experiments']['flag'] or opt_options['driver']['optimization']['solver'] in fd_methods):
             if not MPI:
                 print("You are not running a design optimization, a design of experiment, or your optimizer is not gradient based. The number of parallel function evaluations is set to 1\n")
@@ -41,7 +41,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
             print("You have access to %d processors. Please call WEIS as:"%maxnP)
         # Define the color map for the parallelization, determining the maximum number of parallel finite difference (FD)
         # evaluations based on the number of design variables (DV). OpenFAST on/off changes things.
-        if modeling_options['Level3']['flag']:
+        if modeling_options['OpenFAST']['flag']:
             # If openfast is called, the maximum number of FD is the number of DV, if we have the number of processors available that doubles the number of DVs,
             # otherwise it is half of the number of DV (rounded to the lower integer).
             # We need this because a top layer of processors calls a bottom set of processors where OpenFAST runs.
@@ -55,7 +55,7 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
             nFD = max([nFD, 1])
             max_parallel_OF_runs = max([int(np.floor((maxnP - nFD) / nFD)), 1])
             nOFp = min([int(nOF), max_parallel_OF_runs])
-        elif modeling_options['Level2']['flag']:
+        elif modeling_options['OpenFAST_Linear']['flag']:
             if maxnP > 2. * nFD:
                 nFD = nFD
             else:
@@ -92,42 +92,12 @@ def compute_optimal_nP(nFD, nOF, modeling_options, opt_options, maxnP=1):
     modeling_updates['General']['openfast_configuration']['nOFp'] = nOFp
 
     print('The following changes should be made to the modeling options:')
-    print_yaml(modeling_updates)
+    # print_yaml(modeling_updates)
 
     # Apply updates
     modeling_options['General']['openfast_configuration'].update(modeling_updates['General']['openfast_configuration'])
 
     return modeling_options
-
-def under_mpirun():
-    """Return True if we're being executed under mpirun."""
-    # this is a bit of a hack, but there appears to be
-    # no consistent set of environment vars between MPI
-    # implementations.
-    for name in os.environ.keys():
-        if (
-            name == "OMPI_COMM_WORLD_RANK"
-            or name == "MPIEXEC_HOSTNAME"
-            or name.startswith("MPIR_")
-            or name.startswith("MPICH_")
-            or name.startswith("INTEL_ONEAPI_MPI_")
-            or name.startswith("I_MPI_")
-        ):
-            return True
-    return False
-
-
-if under_mpirun():
-
-    def debug(*msg):  # pragma: no cover
-        newmsg = ["%d: " % MPI.COMM_WORLD.rank] + list(msg)
-        for m in newmsg:
-            sys.stdout.write("%s " % m)
-        sys.stdout.write("\n")
-        sys.stdout.flush()
-
-else:
-    MPI = None
 
 
 def map_comm_heirarchical(nFD, n_OF):
@@ -167,6 +137,8 @@ def subprocessor_loop(comm_map_up):
     data[0] = False
     """
     # comm        = impl.world_comm()
+    from openmdao.utils.mpi import MPI
+
     rank = MPI.COMM_WORLD.Get_rank()
     rank_target = comm_map_up[rank]
 
@@ -186,7 +158,7 @@ def subprocessor_stop(comm_map_down):
     """
     Send stop signal to subprocessors
     """
-    # comm = MPI.COMM_WORLD
+    from openmdao.utils.mpi import MPI
     for rank in comm_map_down.keys():
         subranks = comm_map_down[rank]
         for subrank_i in subranks:

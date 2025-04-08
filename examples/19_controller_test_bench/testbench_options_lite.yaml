@@ -1,8 +1,18 @@
 Testbench_Options:
-    output_directory: outputs/7_setup_all_cases_lite   # relative to this file
+    output_directory: outputs/12_new_pcrunch   # relative to this file
     output_filebase: testbench
     n_cores: 8  # not yet set up
     use_mpi: False
+
+# TODO: simplify this, maybe move to Testbench_Options
+# General:
+#     openfast_configuration:
+#         FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
+#         path2dll: /home/dzalkind/Tools/ROSCO-1/rosco/lib/libdiscon.so
+#         turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+
+PostProcessing:
+    binning_time: 20
 
 Turbine_Info:  # Can we pull this information from OpenFAST input?
     # used to generate wind inputs
@@ -24,7 +34,7 @@ Turbine_Info:  # Can we pull this information from OpenFAST input?
         tower: False   # same
 
 
-Level3: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
     flag: True
     from_openfast: True
     regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
@@ -46,28 +56,47 @@ DLC_driver:
         wave_period50: 13.6
     DLCs:
         - DLC: "1.1"
-          n_seeds: 6
-          analysis_time: 1.
+          n_seeds: 3
+          wind_speed: [8,15]
+          analysis_time: 10.
           transient_time: 0.0
-        - DLC: "1.3"
-          n_seeds: 6
-          analysis_time: 1.
-          transient_time: 0.0
-        - DLC: "1.4"
-          analysis_time: 1.
-          transient_time: 0.0
-        - DLC: "1.5"
-          analysis_time: 1.
-          transient_time: 0.0
-        - DLC: "1.6"
-          analysis_time: 1.
-          transient_time: 0.0
-        - DLC: "5.1"
-          analysis_time: 1.
-          transient_time: 0.0
-          shutdown_time: 0.5
-        - DLC: "AEP"
-          analysis_time: 1.
-          transient_time: 0.0
-          TI_factor: 0.5
+        # - DLC: "1.3"
+        #   n_seeds: 2
+        #   analysis_time: 1.
+        #   transient_time: 0.0
+        # - DLC: "1.4"
+        #   analysis_time: 1.
+        #   transient_time: 0.0
+        # - DLC: "1.5"
+        #   analysis_time: 1.
+        #   transient_time: 0.0
+        # - DLC: "1.6"
+        #   analysis_time: 1.
+        #   transient_time: 0.0
+        # - DLC: "5.1"
+        #   analysis_time: 1.
+        #   transient_time: 0.0
+        #   shutdown_time: 0.5
+        # - DLC: "AEP"
+        #   analysis_time: 1.
+        #   transient_time: 0.0
+        #   TI_factor: 0.5
+        - DLC: "Ramp"  # Up
+          wind_speed: [10]
+          n_seeds: 1
+          analysis_time: 10.
+          transient_time: 15.0
+          ramp_speeddelta: 2
+          ramp_duration: 8
+          turbulent_wind:
+            flag: True
+        - DLC: "Ramp"  # Down
+          wind_speed: [10]
+          n_seeds: 1
+          analysis_time: 10.
+          transient_time: 15.0
+          ramp_speeddelta: -2
+          ramp_duration: 8
+          turbulent_wind:
+            flag: True
 
