@@ -2250,11 +2250,8 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
 
         # Save Data
-        if modopt['General']['openfast_configuration']['save_timeseries']:
-            self.save_timeseries(case_name)
-
-        if modopt['General']['openfast_configuration']['save_iterations']:
-            self.save_iterations(discrete_outputs)
+        self.save_timeseries(case_name)
+        self.save_iterations(discrete_outputs)
 
         # Analysis
         if self.options['modeling_options']['flags']['blade'] and bool(self.fst_vt['Fst']['CompAero']):
