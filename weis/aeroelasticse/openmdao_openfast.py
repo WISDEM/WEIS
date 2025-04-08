@@ -2815,10 +2815,8 @@ class FASTLoadCases(ExplicitComponent):
 
         bin_time = self.options['modeling_options']['General']['openfast_configuration']['postprocessing']['binning_time']
 
-        binned_cruncher = copy.copy(self.cruncher)
+        binned_cruncher = copy.deepcopy(self.cruncher)
         binned_cruncher.time_binning(bin_time)
-        binned_cruncher.outputs[0].df
-
 
         # Make save directories, if necessary
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
