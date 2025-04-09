@@ -5,7 +5,7 @@ Significant effort has been invested to develop an _ontology_ for wind turbines 
 
 Full documentation of the WISDEM geometry input file can be found at the `WindIO documentation <https://windio.readthedocs.io/en/latest/source/turbine.html>`_
 
-
-.. jsonschema:: geometry_schema.json
-   :hide_key_if_empty: /**/default
+.. This threw a lot of errors and maybe we should use WindIO 2.0 stuff
+.. .. jsonschema:: geometry_schema.json
+..    :hide_key_if_empty: /**/default
 

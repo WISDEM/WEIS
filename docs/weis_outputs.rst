@@ -9,7 +9,4 @@ WEIS Outputs
 
 **openmdao sql logs**
 
-Future
-------
-
 **Summary stats, DELs**

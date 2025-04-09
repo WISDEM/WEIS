@@ -1,5 +1,19 @@
+Running WEIS
+=================
+
+The WEIS Driver
+----------------
+
+
+Starting optimizations from previous runs
+------------------------------------------
+
+
+
+
+
 Running WEIS in parallel
---------------
+-------------------------
 
 WEIS can be run sequentially on a single processor. WEIS can also be parallelized to handle larger problems in a timely manner.
 

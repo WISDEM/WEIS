@@ -1,5 +1,11 @@
-WEIS Installation
+Installation
 =================
+
+Pre-requisites
+------------------
+
+Python, conda, etc.
+
 
 To install WEIS, please follow the up-to-date instructions contained in the README.md at the root level of this repo, or on the `WEIS GitHub page <https://github.com/WISDEM/WEIS/>`_.
 
