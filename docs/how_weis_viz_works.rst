@@ -166,7 +166,7 @@ OpenFAST
 Plot OpenFAST timeseries from a WEIS optimization output directory. The user can select the channels they wish to plot. The outputs are from the last optmization iteration. 
 
 
-.. image:: images/viz/WEIS_Outputs/OpenFAST.pdf
+.. image:: images/viz/WEIS_Outputs/OpenFAST.png
 
 Optimization
 ~~~~~~~~~~~~
@@ -183,9 +183,9 @@ Optimization convergence trend data will be first shown on the left, from the lo
 The user can click on a specific iteration, and the corresponding DLC statistics will be shown on the right. 
 The specific OpenFAST time-series plots can be visualized as well via clicking specific data points.
 
-.. image:: images/viz/WEIS_Outputs/Optimize_OF_1.pdf
+.. image:: images/viz/WEIS_Outputs/Optimize_OF_1.png
 
-.. image:: images/viz/WEIS_Outputs/Optimize_OF_2.pdf
+.. image:: images/viz/WEIS_Outputs/Optimize_OF_2.png
 
 
 RAFT optimization
@@ -198,14 +198,14 @@ Please make sure data are loaded first by pressing ``Load`` button.
 
 By selecting a specific iteration from the convergence graph, the corresponding 3D platform design plot will appear on the right.
 
-.. image:: images/viz/WEIS_Outputs/Optimize_RAFT.pdf
+.. image:: images/viz/WEIS_Outputs/Optimize_RAFT.png
 
 
 WISDEM - Blade
 ~~~~~~~~~~~~~~
 Read blade related properties from the openmdao output channels, and visualize the following information.
 
-.. image:: images/viz/WEIS_Outputs/Wisdem-blade.pdf
+.. image:: images/viz/WEIS_Outputs/Wisdem-blade.png
 
 WISDEM - Cost
 ~~~~~~~~~~~~~
@@ -213,7 +213,7 @@ Cost-related variables are also an output of WISDEM and WEIS.
 The tool reads the openmdao outputs and visualizes the cost-breakdown. 
 Note that cost calculation is based on `NREL CSM model <https://wisdem.readthedocs.io/en/master/wisdem/nrelcsm/theory.html>`_ .
 
-.. image:: images/viz/WEIS_Outputs/Wisdem-cost.pdf
+.. image:: images/viz/WEIS_Outputs/Wisdem-cost.png
 
 
 WEIS Inputs
@@ -224,7 +224,7 @@ Enter the file path, a label name, and file type and click ``Add`` button, then 
 Three types of inputs - modeling, analysis, and geometry - exist, but we only support geometry yaml files for now. For better understanding, please refer to :doc:`WEIS Inputs <inputs/yaml_inputs>`.
 The app has been tested with three sample geometry yaml files - ``3.4MW``, ``15MW``, ``22MW`` from `examples/00_setup/ref_turbines <https://github.com/WISDEM/WEIS/tree/main/examples/00_setup/ref_turbines>`_ .
 
-.. image:: images/viz/WEIS_Inputs/home.pdf
+.. image:: images/viz/WEIS_Inputs/home.png
 
 
 3D Visualization
@@ -233,7 +233,7 @@ The app has been tested with three sample geometry yaml files - ``3.4MW``, ``15M
 The Dash-VTK library is used to render 3D geometries from WindIO format. The app provides an interactive interface where users can compare multiple wind turbines with pan, rotate, zoom, etc. 
 If user clicks a specific turbine component (blade, tower, hub, nacelle), the local-view of each component across multiple turbines is provided with detailed information.
 
-.. image:: images/viz/WEIS_Inputs/3d.pdf
+.. image:: images/viz/WEIS_Inputs/3d.png
 
 .. video:: images/viz/WEIS_Inputs/interactive.mp4
    :width: 900
@@ -262,15 +262,20 @@ Airfoils Properties
 Blade Properties
 ~~~~~~~~~~~~~~~~
 
-.. image:: images/viz/WEIS_Inputs/blade.pdf
+.. image:: images/viz/WEIS_Inputs/blade.png
 
 Tower Properties
 ~~~~~~~~~~~~~~~~
 
 .. image:: images/viz/WEIS_Inputs/tower.png
 
+
+Reference
+------------
+
 Application File Structure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 ::
 
    visualization/

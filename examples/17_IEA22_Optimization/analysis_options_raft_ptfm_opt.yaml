@@ -121,11 +121,10 @@ driver:
     optimization:
         flag: True         # Flag to enable optimization
         tol: 1.e-6         # Optimality tolerance
-        max_iter: 2      # Maximum number of iterations (SLSQP)
-        maxiter: 2       # Maximum number of iterations (NLopt)
+        max_iter: 50      # Maximum number of iterations (SLSQP)
         maxgen: 2        # Maximum number of generations (DE)
         # maxtime: 3420
-        solver: SLSQP   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        solver: LN_COBYLA   # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
 
 recorder:
     flag: True                            # Flag to activate OpenMDAO recorder
