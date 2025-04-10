@@ -2852,11 +2852,14 @@ class FASTLoadCases(ExplicitComponent):
                         initcond_channels.append(channel)
                 if len(initcond_channels) > 1:
                     logger.warning('WARNING: Freedecay DLCs have been run with more than one initial platform deflection, period calculations may be incorrect')
-               
+
+                time = self.cruncher.outputs[i].time
+                dt = time[1]-time[0]
+
                 if method == "peaks":
                     for channel in initcond_channels:
                         signalidx = self.cruncher.outputs[i].channels.index(period_channels[channel])
-                        inds = sig.find_peaks(self.cruncher.outputs[i].data[:,signalidx],height = 0.2)[0]
+                        inds = sig.find_peaks(self.cruncher.outputs[i].data[:,signalidx],height = idlc[channel]/10,distance=5/dt)[0]
                         if len(inds) < 2:
                             logger.warning('WARNING: Signal periods cannot be calculated for freedecay DLCs as there are less than two peaks')
                         else:
@@ -2864,9 +2867,6 @@ class FASTLoadCases(ExplicitComponent):
                             period = np.diff(peak_times).mean()
                             signal_periods[f"DLC_{i}_{period_channels[channel]}"] = period
                 elif method == "fft":
-                    time = self.cruncher.outputs[i].time
-                    time = time - time[0]
-                    dt = time[1]
                     for channel in initcond_channels:
                         signalidx = self.cruncher.outputs[i].channels.index(period_channels[channel])
                         signal = self.cruncher.outputs[i].data[:,signalidx]
