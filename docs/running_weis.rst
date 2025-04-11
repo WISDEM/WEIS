@@ -3,12 +3,20 @@ Running WEIS
 
 The WEIS Driver
 ----------------
+WEIS drive is the top level script that runs the WEIS code. See examples in `the examples folder <https://github.com/WISDEM/WEIS/tree/main/examples>`_ for how to set up and run WEIS. WEIS driver takes three input files, see :ref:`inputs-documentation` for more details on the input files.
+The options in the input files can be overridden by providing them as options to WEIS driver. This allows you to change the inputs and options without modifyiing the input files, which is useful for debugging and parametric studies. See example below from `10_override_example <https://github.com/WISDEM/WEIS/tree/main/examples/10_override_example>`_
+
+.. literalinclude:: ../examples/10_override_example/weis_driver.py
+   :language: python
+   :linenos:
+   :lines: 44-51
 
 
 Starting optimizations from previous runs
 ------------------------------------------
-
-
+There are several ways that you can restart your optimization from previous runs.
+1. You can take the geometry yaml outputs from a previous run and use it as the geometry input for your current run. This is more general and can be used for any type of optimization, but it requires you to have the geometry yaml outputs from the previous run. Additionally, you do not retain the optimization history.
+2. If you are using pyoptsparse driver, you can output your optimization history file. In subsequent runs, add the option of *hotstart_file* in your analysis inputs and points to the optimization history file you output previously. This will allow you to start your optimization from the previous run. Note that this is only available for pyoptsparse driver.
 
 
 

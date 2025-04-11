@@ -10,6 +10,11 @@ WISDEM <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driv
 to perform multidisciplinary and multifidelity wind turbine analyses
 including controls.
 
+General Setup
+------------------------------
+Based on your turbine configuration, prepare the geometry input or start from the geometry input from existing examples and adapt it to your needs. Go through the modeling options in modeling schema and specify the ones needed for your analysis. Set up design variables, constraints, objectives, and optimizer in analysis options. Available optimizers are listed in :ref:`optimization_solvers`. 
+
+.. _optimization_solvers:
 Available Optimization Solvers
 ------------------------------
 
@@ -209,7 +214,8 @@ parallelized:
 - :math:`P=1` for gradient-free methods
 - :math:`P=2 N_{\mathrm{DV}}` for gradient-based methods with centered finite differences approximation
   - :math:`P \sim N_{\mathrm{DV}}` for gradient-based methods with generic gradient approximation
-  - :math:`P \sim 1` for gradient-based methods with analytical or adjoint-based gradients
+  - :math:`P \sim 1` for gradient-based methods with analytical or adjoint-based gradients. For adjoint-based
+    methods, this depends on the number of adjoint equations (i.e. the number of functions of interets).
 - :math:`P=p_{\mathrm{evo}} N_{\mathrm{DV}}` for evolutionary methods
   - in practice, :math:`P` can be varied arbitrarily, but :math:`P \sim N_{\mathrm{DV}}` gives more consistent performance across problem size
   - optimal choice of :math:`p_{\mathrm{evo}}` can vary based on problem and method
@@ -429,5 +435,11 @@ For the other solvers, the number of cases per iteration is less than the number
 ..    :width: 45%
 
 
+Troubleshooting
+------------------------------------------
 
+Here are some common problems when running optimization in WEIS and how to troubleshoot them.
 
+1. **Problem**: Constraints are violated and do not seem to improve.
+
+   **Solution**: Check the design variables have proper bounds and constraints are reasonable. Starting from a feasible design point is important for the optimization to converge. Check your initial design point that it does not aggressively violate the constraints. If you are using OpenFAST, check your simulations are converging and not failing. If you have failed solutions, some outputs will be capped to the maximum or minimum values.
