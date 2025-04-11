@@ -41,9 +41,7 @@ WEIS can run OpenFAST in different modes:
 
 * **Model generation only**: Create OpenFAST input files without executing the solver
 * **From existing model**: Run OpenFAST using an existing set of input files
-* **WISDEM-generated model**: Generate OpenFAST inputs from a WISDEM model and run simulations
-* **Linearization**: Extract linearized representations of the turbine model
-* **Parallel execution**: Distribute simulations across multiple cores for computational efficiency
+* **WISDEM-generated model**: Generate OpenFAST inputs from a geometry file and run simulations
 
 Input/Output Structure
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -103,86 +101,19 @@ OpenFAST settings are defined in the modeling options YAML file, for example:
 Design Load Cases
 ^^^^^^^^^^^^^^^^^
 
-WEIS implements a system for managing Design Load Cases (DLCs) according to IEC standards through the ``DLCGenerator`` class (``weis/dlc_driver/dlc_generator.py``). This framework automatically configures appropriate wind and wave conditions based on the specified DLC numbers and is integrated with OpenFAST through the ``FASTLoadCases`` component.
+WEIS implements a framework for managing Design Load Cases (DLCs) according to IEC standards through the ``DLCGenerator`` class (``weis/dlc_driver/dlc_generator.py``). This powerful framework is tightly integrated with OpenFAST through the ``FASTLoadCases`` component.
 
-The DLC framework currently includes:
+For a detailed description of all supported DLCs and their specific configuration options, please refer to the dedicated :doc:`dlc_generator` documentation.
 
-**Power Production DLCs (1.x)**
+The framework supports standard DLCs such as:
 
-* **DLC 1.1**: Normal turbulence model (NTM) with normal sea state for ultimate loads
-* **DLC 1.2**: NTM with normal sea state for fatigue analysis
-* **DLC 1.3**: Extreme turbulence model (ETM) for ultimate loads
-* **DLC 1.4**: Extreme coherent gust with direction change (ECD)
-* **DLC 1.5**: Extreme wind shear (EWS) with horizontal/vertical profiles
-* **DLC 1.6**: NTM with severe sea state
-
-**Fault Conditions DLCs (2.x)**
-
-* **DLC 2.1**: Power production with grid loss
-* **DLC 2.2**: Power production with pitch system fault
-* **DLC 2.3**: Power production with control system fault
-* **DLC 2.4**: Fatigue load cases with faults
-
-**Startup DLCs (3.x)**
-
-* **DLC 3.1**: Turbine startup during normal wind/sea conditions
-
-**Shutdown DLCs**
-
-* **DLC 4.1**: Normal shutdown
-* **DLC 5.1**: Emergency shutdown
-
-**Parked/Standstill DLCs (6.x)**
-
-* **DLC 6.1**: Parked with extreme wind model (50-year return)
-* **DLC 6.2**: Parked with grid loss and extreme yaw misalignment
-* **DLC 6.3**: Parked with extreme wind model (1-year return)
-* **DLC 6.4**: Parked with NTM for fatigue analysis
-
-**Parked with Fault DLCs (7.x)**
-
-* **DLC 7.1**: Parked with fault in extreme conditions (1-year return)
-* **DLC 7.2**: Parked with fault in normal conditions for fatigue
-
-**Special Case DLCs**
-
-* **AEP**: Special DLC for Annual Energy Production calculation
-* **freedecay**: Platform free decay tests for floating systems
-
-DLC configuration is handled in the modeling options YAML file:
-
-.. code-block:: yaml
-
-    DLC_driver:
-        DLCs:
-            - DLC: "1.1"
-              ws_bin_size: 2
-              wind_speed: [4,6,8,10,12,14,16,18,20,22,24] 
-              wave_height: [4.0]
-              wave_period: [10.0]
-              n_seeds: 6
-              analysis_time: 600.
-              transient_time: 120.
-              turbulent_wind:
-                  HubHt: 150.0
-                  RefHt: 150.0
-                  PLExp: 0.11
-            - DLC: "6.1"
-              yaw_misalign: [-8, 8]
-              wind_speed: [50.0]  # V_e50 (Class I)
-              sea_state: "50-year"
-              analysis_time: 600.
-              transient_time: 120.
-
-For each DLC, the framework:
-
-1. Creates appropriate environmental conditions (wind/waves)
-2. Sets up proper initial conditions and control states
-3. Configures precise fault settings when applicable
-4. Manages appropriate simulation length for each analysis type
-5. Handles multi-seed simulations for statistical validity
-
-The DLC generator applies partial safety factors automatically based on the specific DLC, and handles metocean conditions according to the specified turbine class and site characteristics.
+* Power production (DLC 1.x)
+* Power production with fault (DLC 2.x) 
+* Startup conditions (DLC 3.x)
+* Normal shutdown (DLC 4.x)
+* Emergency shutdown (DLC 5.x)
+* Parked/idling (DLC 6.x)
+* Parked with fault (DLC 7.x)
 
 Post-Processing
 ^^^^^^^^^^^^^^
@@ -192,7 +123,7 @@ After simulations, WEIS processes OpenFAST outputs to provide:
 * Blade loading distributions
 * Tower/monopile load profiles
 * Fatigue damage calculations using rainflow counting
-* Damage equivalent loads (DELs)
+* Damage equivalent loads (DELs) for fatigue analysis
 * Peak loads for ultimate strength checks
 * Control performance metrics
 * Maximum values for design constraints
