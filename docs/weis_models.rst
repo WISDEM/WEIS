@@ -12,36 +12,36 @@ RAFT
 OpenFAST
 -----------
 
-OpenFAST is an open-source wind turbine simulation tool developed and maintained by the National Renewable Energy Laboratory (NREL). Within WEIS, OpenFAST serves as the high-fidelity physics-based solver for wind turbine aeroelastic simulation.
+OpenFAST is a high-fidelity physics-based tool for wind turbine time-domain aeroelastic simulation. In WEIS, OpenFAST serves as the primary dynamic analysis engine for comprehensive turbine modeling and load calculation.
 
-Key Functions in WEIS
-^^^^^^^^^^^^^^^^^^^^^
+OpenFAST is integrated into WEIS through the ``FASTLoadCases`` class in ``weis/aeroelasticse/openmdao_openfast.py`` that connects the static design models from WISDEM with OpenFAST's dynamic analysis capabilities. This integration enables the inclusion of dynamic effects, controller interactions, and transient loading in the turbine design optimization process.
 
-OpenFAST in WEIS provides:
+Within WEIS, OpenFAST receives structural, aerodynamic, and controller properties from WISDEM and translates them into full dynamic simulation models. This integration is achieved through multiple workflow paths:
 
-* Time-domain aeroelastic simulations of wind turbines.
-* Detailed loading analysis under various operating conditions
-* Fatigue and extreme load calculations
-* Linearized turbine models for controls design and optimization
-* Support for Design Load Cases (DLCs) defined by IEC standards
-* Integration with the ROSCO controller for turbine control
-* Capability to model advanced features like active trailing edge flaps and tuned mass dampers (TMDs)
+- **Direct model creation**: WEIS can generate all OpenFAST input files from WISDEM outputs, automatically configuring the structural properties, aerodynamic surfaces, control settings, and environmental conditions
+- **Existing model modification**: WEIS can modify existing OpenFAST models, adjusting specific parameters according to the design variables in the optimization process
 
-Integration and Implementation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The OpenFAST simulation process within WEIS is managed by the ``FASTLoadCases`` component, which handles:
 
-The primary integration point for OpenFAST in WEIS is through the ``FASTLoadCases`` class within the ``openmdao_openfast.py`` file. This class serves as an OpenMDAO ExplicitComponent that:
+1. Translation of design variables into OpenFAST model parameters
+2. Setup of OpenFAST's modular structure (ElastoDyn, AeroDyn, ServoDyn, HydroDyn, etc.)
+3. Parallel execution of multiple simulations across different load cases
+4. Post-processing of simulation outputs to extract design-relevant quantities
 
-1. Sets up the OpenFAST simulation environment
-2. Configures input files and directories
-3. Executes the simulations (serially or in parallel)
-4. Post-processes the results, extracting key performance metrics and loads data
+For blade modeling, WEIS configures both simple (ElastoDyn) and advanced (BeamDyn) structural formulations, with automatic conversion of WISDEM-generated beam properties to the appropriate format. Aerodynamic modeling is handled through AeroDyn, with support for both Blade Element Momentum theory and higher-fidelity options like the free vortex wake model (OLAF). Offshore applications utilize integrated hydrodynamic and mooring modules (HydroDyn, SubDyn, and MoorDyn) that receive platform and mooring properties from WISDEM.
 
-WEIS can run OpenFAST in different modes:
+WEIS uses OpenFAST's simulation capabilities through automated load analysis, extracting statistics, damage equivalent loads (DELs), and extreme values across simulations. These outputs are directly incorporated into the optimization process, enabling design constraints based on ultimate loads, operational performance, or other user defined metrics. This comprehensive analysis capability allows designers to create turbines that not only maximize energy production and minimize cost, but also maintain structural integrity.
 
-* **Model generation only**: Create OpenFAST input files without executing the solver
-* **From existing model**: Run OpenFAST using an existing set of input files
-* **WISDEM-generated model**: Generate OpenFAST inputs from a geometry file and run simulations
+For floating offshore applications, OpenFAST's HydroDyn and MoorDyn modules simulate the complex interactions between the turbine, platform, and ocean environment. WEIS can evaluate platform motion statistics and stability metrics, enabling the design of integrated floating wind systems that balance turbine performance with platform stability.
+
+In summary, OpenFAST in WEIS provides:
+
+1. High-fidelity time-domain simulations capturing the full dynamic behavior of wind turbines
+2. Modeling of various wind tubine configurations
+3. Load calculation for design verification and optimization
+5. Support for standard design load cases following IEC guidelines
+6. Capabilities for controller design and evaluation
+7. Performance metrics for optimization-based design
 
 Input/Output Structure
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -62,46 +62,15 @@ Key outputs from OpenFAST simulations include:
 
 * Power production metrics (AEP, Cp, Ct curves)
 * Blade, tower, and platform loads
-* Damage equivalent loads (DELs)
+* Fatigue damage equivalent loads (DELs)
 * Maximum deflections and stresses
 * Control performance metrics (overspeed, pitch rates, etc.)
 * Platform motions for floating systems
 
-Example Configuration
-^^^^^^^^^^^^^^^^^^^^
-
-OpenFAST settings are defined in the modeling options YAML file, for example:
-
-.. code-block:: yaml
-
-    OpenFAST:
-      flag: True
-      simulation:
-        DT: 0.01
-        CompElast: 1
-        CompInflow: 1
-        CompAero: 2
-        CompServo: 1
-        CompHydro: 1
-        CompSub: 0
-        CompMooring: 3
-        
-      # Module-specific configurations
-      AeroDyn:
-        WakeMod: 1  # Set to 3 for OLAF (free vortex wake)
-      
-      ElastoDyn:
-        # Flags for DOFs
-        FlapDOF1: True
-        FlapDOF2: True
-        EdgeDOF: True
-        
-      # ... Additional module settings
-
 Design Load Cases
 ^^^^^^^^^^^^^^^^^
 
-WEIS implements a framework for managing Design Load Cases (DLCs) according to IEC standards through the ``DLCGenerator`` class (``weis/dlc_driver/dlc_generator.py``). This powerful framework is tightly integrated with OpenFAST through the ``FASTLoadCases`` component.
+WEIS implements a comprehensive framework for managing Design Load Cases (DLCs) according to IEC standards through the ``DLCGenerator`` class (``weis/dlc_driver/dlc_generator.py``). This powerful framework is tightly integrated with OpenFAST through the ``FASTLoadCases`` component.
 
 For a detailed description of all supported DLCs and their specific configuration options, please refer to the dedicated :doc:`dlc_generator` documentation.
 
