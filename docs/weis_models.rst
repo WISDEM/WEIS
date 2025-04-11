@@ -35,7 +35,7 @@ RAFT
 OpenFAST
 -----------
 
-OpenFAST is a high-fidelity physics-based tool for wind turbine time-domain aeroelastic simulation. In WEIS, OpenFAST serves as the primary dynamic analysis engine for comprehensive turbine modeling and load calculation.
+OpenFAST is a high-fidelity physics-based tool for wind turbine aeroelastic simulation. In WEIS, OpenFAST serves as the primary time-domain dynamic analysis engine for comprehensive turbine modeling and load calculation.
 
 OpenFAST is integrated into WEIS through the ``FASTLoadCases`` class in ``weis/aeroelasticse/openmdao_openfast.py`` that connects the static design models from WISDEM with OpenFAST's dynamic analysis capabilities. This integration enables the inclusion of dynamic effects, controller interactions, and transient loading in the turbine design optimization process.
 
@@ -47,19 +47,19 @@ Within WEIS, OpenFAST receives structural, aerodynamic, and controller propertie
 The OpenFAST simulation process within WEIS is managed by the ``FASTLoadCases`` component, which handles:
 
 1. Translation of design variables into OpenFAST model parameters
-2. Setup of OpenFAST's modular structure (ElastoDyn, AeroDyn, ServoDyn, HydroDyn, etc.)
+2. Setup of OpenFAST's modular input structure (ElastoDyn, AeroDyn, ServoDyn, HydroDyn, etc.)
 3. Parallel execution of multiple simulations across different load cases
 4. Post-processing of simulation outputs to extract design-relevant quantities
 
 For blade modeling, WEIS configures both simple (ElastoDyn) and advanced (BeamDyn) structural formulations, with automatic conversion of WISDEM-generated beam properties to the appropriate format. Aerodynamic modeling is handled through AeroDyn, with support for both Blade Element Momentum theory and higher-fidelity options like the free vortex wake model (OLAF). Offshore applications utilize integrated hydrodynamic and mooring modules (HydroDyn, SubDyn, and MoorDyn) that receive platform and mooring properties from WISDEM.
 
-WEIS uses OpenFAST's simulation capabilities through automated load analysis, extracting statistics, damage equivalent loads (DELs), and extreme values across simulations. These outputs are directly incorporated into the optimization process, enabling design constraints based on ultimate loads, operational performance, or other user defined metrics. This comprehensive analysis capability allows designers to create turbines that not only maximize energy production and minimize cost, but also maintain structural integrity.
+WEIS uses pCrunch to post-process OpenFAST's simulation results, providing automated load analysis, extracting statistics, damage equivalent loads (DELs), and extreme values across simulations. These outputs are directly incorporated into the optimization process, enabling design constraints based on ultimate loads, operational performance, or other user defined metrics. This comprehensive analysis capability allows designers to create turbines that not only maximize energy production and minimize cost, but also maintain structural integrity.
 
 For floating offshore applications, OpenFAST's HydroDyn and MoorDyn modules simulate the complex interactions between the turbine, platform, and ocean environment. WEIS can evaluate platform motion statistics and stability metrics, enabling the design of integrated floating wind systems that balance turbine performance with platform stability.
 
 In summary, OpenFAST in WEIS provides:
 
-1. High-fidelity time-domain simulations capturing the full dynamic behavior of wind turbines
+1. Mid-fidelity time-domain simulations capturing the full dynamic behavior of wind turbines
 2. Modeling of various wind tubine configurations
 3. Load calculation for design verification and optimization
 5. Support for standard design load cases following IEC guidelines
@@ -110,7 +110,7 @@ The framework supports standard DLCs such as:
 Post-Processing
 ^^^^^^^^^^^^^^
 
-After simulations, WEIS processes OpenFAST outputs to provide:
+After simulations, WEIS processes OpenFAST outputs using pCrunch to provide:
 
 * Blade loading distributions
 * Tower/monopile load profiles
