@@ -1,3 +1,5 @@
+.. _section-geometry_inputs:
+
 ******************************
 Geometry Inputs
 ******************************
