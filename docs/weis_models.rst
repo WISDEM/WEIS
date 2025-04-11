@@ -30,32 +30,55 @@ The list of WISDEM examples is often a good starting point.
 
 RAFT 
 -------
+`RAFT <https://github.com/WISDEM/RAFT>`_ (Response Amplitudes of Floating Turbines) is an open-source Python code for frequency-domain analysis of floating wind turbines. The software includes quasi-static mooring reactions, strip-theory and potential-flow hydrodynamics (first and second order), blade element momentum aerodynamics, and linear turbine control in a way that avoids any time-domain preprocessing. RAFT constitutes the "Level 1" of modeling fidelity in the WEIS toolset for floating wind turbine controls co-design, providing rapid evaluation (in the order of seconds) of the coupled responses of the system.
+
+As a frequency-domain code, RAFT solves for the steady state response of the system assuming linearity. In the frequency domain, time-varying quantities (such as external loads and system responses) are modeled as a linear superposition of a mean and a Fourier series of complex amplitudes. Under these assumptions, RAFT can compute:
+
+- Mean responses (mean displacements, mean mooring line tensions, mean rotor thrust, ...) by solving the static equilibrium of the system under a given environmental condition
+- Dynamic responses by solving the linearized equations of motion of the system (around an equilibrium position corresponding to the mean response) under a given environmental condition. The dynamic response is given in the form of power spectral densities. Based on the power spectral densitiy, RAFT computes the standard deviation and estimates extreme values of the system responses
+- The eigenmodes and eigenfrequencies of the system around the equilibrium position
+- Inertial and hydrostatic properties of the system
+
+For a more detailed description of RAFT, see `https://openraft.readthedocs.io/`.
+
+Using RAFT through WEIS
+~~~~~~~~~~~~~~~~
+A RAFT model requires information about the floating platform, turbine, mooring system, site, environmental conditions, and numerical settings. For a standalone RAFT model (i.e., to be run outside of WEIS), these information are usually provided by a `yaml` file, as illustrated by the `examples <https://github.com/WISDEM/RAFT/tree/master/examples>`_ available in the RAFT GitHub repo.
+
+When used through WEIS, RAFT receives the necessary data directly from WEIS. The platform, turbine, and site information are specified in the `geometry file`, from which RAFT uses only a subset of the data. RAFT specific inputs are provided in the `RAFT` section of the `modeling file`, as described in :ref:`modeling-options`. The RAFT-specific part of the schema that describes the modeling options is given below:
+
+.. literalinclude:: ../weis/inputs/modeling_schema.yaml
+   :language: yaml
+   :lines: 103-184
+
+WEIS can output a RAFT `.yaml` input file by setting the flag `save_designs` to `True` in the `RAFT` section of the `modeling file`.
+
 
 BEM modeling
 ~~~~~~~~~~~~
 
-RAFT uses pyHAMS to solve boundary element problem to obtain potential flow solutions for floating structures. To use BEM modeling in WEIS/RAFT, there are two ways:
+RAFT uses `pyHAMS <https://github.com/WISDEM/pyHAMS>`_, a potential-flow code based on the Boundary Element Method (BEM), to obtain first-order frequency-dependent potential flow coefficients for the platform. To use BEM modeling in WEIS/RAFT, there are two ways:
 
-1. First, if you want to mesh and use BEM modeling for all members of the platform, you can just specify *potential_model_override: 2*. This will enable BEM modeling for **all** members, however, without drag force computed from strip theory. 
-2. Another approach is to specify the member names of the floating platform that are intended for BEM modeling in the *potential_bem_member* option in modeling options and use *potential_model_override: 0*. This allows using BEM modeling and computing viscous drag from strip theory for the listed members; for the members not listed, strip theory will be used to provide excitation, added mass, and drag forces. Note that RAFT uses strip theory for hydrostatics irrespective of BEM modeling options.
+1. First, if you want to mesh and use BEM modeling for all members of the platform, you can just specify *potential_model_override: 2*. This will enable BEM modeling for **all** members, overwriting the value of *potential_bem_member* specified to each member. Note that RAFT uses strip theory for hydrostatics irrespective of BEM modeling options.
+2. Another approach is to specify the member names of the floating platform that are intended for BEM modeling in the *potential_bem_member* option in modeling options and use *potential_model_override: 0*. This allows using BEM modeling for the listed members; for the members not listed, strip theory will be used to provide wave excitation and added mass. Note that RAFT uses strip theory for hydrostatics irrespective of BEM modeling options.
 
-This table below summmarized the options for potential_model_override in RAFT. Note the hydrostatics(buoyancy) are always computed using strip theory, regardless of the potential_model_override option.
+This table below summmarizes the options for *potential_model_override* in RAFT. Note that hydrostatics (buoyancy) is always computed using strip theory, regardless of the potential_model_override option.
 
-+--------------------------+---------------------+-----------------------------------------------------------------------+
-| potential_model_override | BEM modeling        | Strip theory                                                          | 
-+==========================+=====================+=======================================================================+
-| 0                        | For listed members  | Drag for listed members; all forces from the strip theory for the rest|
-+--------------------------+---------------------+-----------------------------------------------------------------------+
-| 1                        | No                  | All forces from the strip theory for all members                      |
-+--------------------------+---------------------+-----------------------------------------------------------------------+
-| 2                        | Yes                 | No                                                                    |
-+--------------------------+---------------------+-----------------------------------------------------------------------+
++--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
+| potential_model_override | BEM modeling                                        | Strip theory                                                                           | 
++==========================+=====================================================+========================================================================================+
+| 0                        | Wave excitation and added mass for selected members | Wave excitation and added mass for selected members, drag and buoyancy for all members |
++--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
+| 1                        | No for all members                                  | All forces from strip theory for all members                                           |
++--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
+| 2                        | Wave excitation and added mass for all members      | Only drag and buoyancy from strip theory for all members                               | 
++--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
 
 
 pyHAMS
 ^^^^^^
 
-pyHAMS is a python wrapper for HAMS, a boundary element method for hydrodynamic analysis of submerged structures. This is the current the default BEM solver used in WEIS/RAFT to obtain potential flow solutions for analyses and optimizations. Check out the `pyHAMS github page <https://github.com/WISDEM/pyHAMS>`_ for more details. If you set up the options correctly in WEIS/RAFT to request potential flow solutions, the BEM meshes will be generated internally and pyHAMS will be run.
+pyHAMS is a python wrapper for HAMS, a boundary element method for hydrodynamic analysis of submerged structures. This is the current default BEM solver used in WEIS/RAFT to obtain potential flow solutions for analyses and optimizations. Check out the `pyHAMS GitHub page <https://github.com/WISDEM/pyHAMS>`_ for more details. If you set up the options correctly in WEIS/RAFT to request potential flow solutions, the BEM meshes will be generated internally and pyHAMS will be run.
 
 
 OpenFAST
