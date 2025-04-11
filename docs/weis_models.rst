@@ -70,7 +70,7 @@ Key outputs from OpenFAST simulations include:
 Design Load Cases
 ^^^^^^^^^^^^^^^^^
 
-WEIS implements a comprehensive framework for managing Design Load Cases (DLCs) according to IEC standards through the ``DLCGenerator`` class (``weis/dlc_driver/dlc_generator.py``). This powerful framework is tightly integrated with OpenFAST through the ``FASTLoadCases`` component.
+WEIS implements a framework for managing Design Load Cases (DLCs) according to IEC standards through the ``DLCGenerator`` class (``weis/dlc_driver/dlc_generator.py``). This powerful framework is tightly integrated with OpenFAST through the ``FASTLoadCases`` component.
 
 For a detailed description of all supported DLCs and their specific configuration options, please refer to the dedicated :doc:`dlc_generator` documentation.
 
