@@ -36,12 +36,12 @@ Proxy servers can also be set with:
 
 
 Installation Instructions
-------------------
+-----------------------------
 
 WEIS can be installed following the instructions below. The installation process differs slightly depending on your system.
 
 Standard Installation (Linux, macOS, Windows)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. Setup and activate the Anaconda environment:
    ::
@@ -88,7 +88,7 @@ Installation on Kestrel (DOE HPC System)
       pip install --no-deps -e . -v
 
 Using WEIS After Installation
-------------------
+--------------------------------------
 
 To use WEIS after installation is complete, you will always need to activate the conda environment first:
 ::
