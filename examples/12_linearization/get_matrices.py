@@ -1,10 +1,9 @@
-import numpy as np
 import os
 import weis.control.LinearModel as lin_mod
-from weis.aeroelasticse.LinearFAST import LinearFAST
+from openfast_io.LinearFAST import LinearFAST
 
 
-def gen_level2_model(dofs=['GenDOF']):
+def gen_level2_model(dofs=["GenDOF"]):
     lin_fast = LinearFAST(dev_branch=True)
 
     # fast info
@@ -12,8 +11,8 @@ def gen_level2_model(dofs=['GenDOF']):
     
     lin_fast.FAST_InputFile           = self.FAST_InputFile   # FAST input file (ext=.fst)
     lin_fast.FAST_directory           = self.FAST_directory
-    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_lin')
-    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,'outputs','iea_semi_steady')
+    lin_fast.FAST_linearDirectory     = os.path.join(lin_fast.weis_dir,"outputs","iea_semi_lin")
+    lin_fast.FAST_steadyDirectory     = os.path.join(lin_fast.weis_dir,"outputs","iea_semi_steady")
     self.FAST_level2_Directory        = lin_fast.FAST_linearDirectory
     lin_fast.debug_level              = 2
     lin_fast.dev_branch               = True
@@ -25,7 +24,7 @@ def gen_level2_model(dofs=['GenDOF']):
     lin_fast.TMax                       = 1600   # should be 1000-2000 sec or more with hydrodynamic states
     lin_fast.NLinTimes                  = 12
 
-    # lin_fast.FAST_exe                   = '/Users/dzalkind/Tools/openfast-dev/install/bin/openfast'
+    # lin_fast.FAST_exe                   = "/Users/dzalkind/Tools/openfast-dev/install/bin/openfast"
 
     # simulation setup
     lin_fast.cores                      = self.n_cores

@@ -17,11 +17,11 @@ WISDEM:
     BOS:
         flag: True
 
-Level1:
+RAFT:
     flag: True
     min_freq: 0.1
     max_freq: 2.0
     potential_bem_members: [spar]
     
-Level3:
+OpenFAST:
     flag: False

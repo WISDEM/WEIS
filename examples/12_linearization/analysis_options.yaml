@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/IEA_level2
+    folder_output: outputs/12_linearization
     fname_output: iea15mw
     
 design_variables:

@@ -1,13 +1,101 @@
 import numpy as np
 import os
 import logging
+import copy
 import weis.inputs as sch
 from weis.dlc_driver.turbulence_models import IEC_TurbulenceModels
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
-from weis.aeroelasticse.FileTools import remove_numpy
+from openfast_io.FileTools import remove_numpy
 from weis.aeroelasticse.utils import OLAFParams
 
 logger = logging.getLogger("wisdem/weis")
+
+# TODO: not sure where this should live, so it's a global for now
+# This is a global that we copy into the DLC_Driver class as an attribute
+# Could it be an input yaml?
+openfast_input_map = {
+    # Generic name: OpenFAST input (list if necessary)
+    'total_time': ("Fst","TMax"),
+    'transient_time': ("Fst","TStart"),
+    
+    'WindFile_type': ("InflowWind","WindType"),
+    'wind_speed': ("InflowWind","HWindSpeed"),
+    'WindFile_name': ("InflowWind","FileName_BTS"),
+    'WindFile_name': ("InflowWind","FileName_Uni"),
+    'rotorD': ("InflowWind","RefLength"),
+    'WindHd': ("InflowWind","PropagationDir"),
+    'hub_height': ("InflowWind","RefHt_Uni"),
+    
+    'rot_speed_initial': ("ElastoDyn","RotSpeed"),
+    'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
+    'azimuth_init': ("ElastoDyn","Azimuth"),
+    'yaw_misalign': ("ElastoDyn","NacYaw"),
+
+    'compute_aerodynamics': ("Fst", "CompAero"),
+    'compute_inflow': ("Fst", "CompInflow"),
+    'compute_control': ("Fst", "CompServo"),
+    
+    'generator_dof':            ("ElastoDyn","GenDOF"),
+    'initial_platform_surge':   ("ElastoDyn","PtfmSurge"),
+    'initial_platform_sway':    ("ElastoDyn","PtfmSway"),
+    'initial_platform_heave':   ("ElastoDyn","PtfmHeave"),
+    'initial_platform_roll':    ("ElastoDyn","PtfmRoll"),
+    'initial_platform_pitch':   ("ElastoDyn","PtfmPitch"),
+    'initial_platform_yaw':     ("ElastoDyn","PtfmYaw"),
+    
+    'wave_height': ("SeaState","WaveHs"),
+    'wave_period': ("SeaState","WaveTp"),
+    'wave_direction': ("SeaState","WaveDir"),
+    'wave_gamma': ("SeaState","WavePkShp"),
+    'wave_seed': ("SeaState","WaveSeed1"),
+
+    'wave_model': ("SeaState","WaveMod"),
+    
+    'shutdown_time': [
+        ("ServoDyn","TPitManS1"),
+        ("ServoDyn","TPitManS2"),
+        ("ServoDyn","TPitManS3"),
+        ("ServoDyn","TimGenOf"),
+        ],
+
+    'startup_time': [
+        ("ServoDyn","TimGenOn"),
+        ("ServoDyn","TPCOn"),
+    ],
+        
+
+    'final_blade_pitch': [
+        ("ServoDyn","BlPitchF(1)"),
+        ("ServoDyn","BlPitchF(2)"),
+        ("ServoDyn","BlPitchF(3)"),
+        
+    ],
+    'pitchfault_time1': ("ServoDyn","TPitManS1"),
+    'pitchfault_time2': ("ServoDyn","TPitManS2"),
+    'pitchfault_time3': ("ServoDyn","TPitManS3"),
+    'pitchfault_blade1pos': ("ServoDyn","BlPitchF(1)"),
+    'pitchfault_blade2pos': ("ServoDyn","BlPitchF(2)"),
+    'pitchfault_blade3pos': ("ServoDyn","BlPitchF(3)"),
+    'genfault_time': ("ServoDyn","TimGenOf"),
+    'yawfault_time': ("ServoDyn","TYawManS"),
+    'yawfault_yawpos': ("ServoDyn","NacYawF"),
+    
+    'aero_mod': ("AeroDyn","AFAeroMod"),
+    'wake_mod': ("AeroDyn","Wake_Mod"),
+    'tau1_const': ("AeroDyn","tau1_const"),
+
+
+    # 'dlc_label': ("DLC","Label"),
+    # 'wind_seed': ("DLC","WindSeed"),
+    # 'wind_speed': ("DLC","MeanWS"),
+
+    # TODO: where should turbsim live?
+    # These aren't actually used to generate turbsim, the generic inputs are used
+    # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
+    'wind_seed': ("TurbSim", "RandSeed1"),
+    'direction': ("TurbSim", "direction_pn"),
+    'shear': ("TurbSim", "shear_hv")
+}
 
 class DLCInstance(object):
 
@@ -47,83 +135,7 @@ class DLCInstance(object):
 
 class DLCGenerator(object):
 
-    dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']
-
-    # TODO: not sure where this should live, so it's a global for now
-    # Could it be an input yaml?
-    openfast_input_map = {
-        # Generic name: OpenFAST input (list if necessary)
-        'total_time': ("Fst","TMax"),
-        'transient_time': ("Fst","TStart"),
-        
-        'WindFile_type': ("InflowWind","WindType"),
-        'wind_speed': ("InflowWind","HWindSpeed"),
-        'WindFile_name': ("InflowWind","FileName_BTS"),
-        'WindFile_name': ("InflowWind","Filename_Uni"),
-        'rotorD': ("InflowWind","RefLength"),
-        'WindHd': ("InflowWind","PropagationDir"),
-        'hub_height': ("InflowWind","RefHt_Uni"),
-        
-        'rot_speed_initial': ("ElastoDyn","RotSpeed"),
-        'pitch_initial': [("ElastoDyn","BlPitch1"),("ElastoDyn","BlPitch2"),("ElastoDyn","BlPitch3")],
-        'azimuth_init': ("ElastoDyn","Azimuth"),
-        'yaw_misalign': ("ElastoDyn","NacYaw"),
-        
-        'wave_height': ("HydroDyn","WaveHs"),
-        'wave_period': ("HydroDyn","WaveTp"),
-        'WaveHd': ("HydroDyn","WaveDir"),
-        'WaveGamma': ("HydroDyn","WavePkShp"),
-        'wave_seed': ("HydroDyn","WaveSeed1"),
-
-        'wave_model': ("HydroDyn","WaveMod"),
-        
-        'shutdown_time': [
-            ("ServoDyn","TPitManS1"),
-            ("ServoDyn","TPitManS2"),
-            ("ServoDyn","TPitManS3"),
-            ("ServoDyn","TimGenOf"),
-            ],
-
-        'startup_time': [
-            ("ServoDyn","TimGenOn"),
-            ("ServoDyn","TPCOn"),
-        ],
-            
-
-        'final_blade_pitch': [
-            ("ServoDyn","BlPitchF(1)"),
-            ("ServoDyn","BlPitchF(2)"),
-            ("ServoDyn","BlPitchF(3)"),
-            
-        ],
-        'pitchfault_time1': ("ServoDyn","TPitManS1"),
-        'pitchfault_time2': ("ServoDyn","TPitManS2"),
-        'pitchfault_time3': ("ServoDyn","TPitManS3"),
-        'pitchfault_blade1pos': ("ServoDyn","BlPitchF(1)"),
-        'pitchfault_blade2pos': ("ServoDyn","BlPitchF(2)"),
-        'pitchfault_blade3pos': ("ServoDyn","BlPitchF(3)"),
-        'genfault_time': ("ServoDyn","TimGenOf"),
-        'yawfault_time': ("ServoDyn","TYawManS"),
-        'yawfault_yawpos': ("ServoDyn","NacYawF"),
-        
-        'aero_mod': ("AeroDyn15","AFAeroMod"),
-        'wake_mod': ("AeroDyn15","WakeMod"),
-        'tau1_const': ("AeroDyn15","tau1_const"),
-
-
-        # 'dlc_label': ("DLC","Label"),
-        # 'wind_seed': ("DLC","WindSeed"),
-        # 'wind_speed': ("DLC","MeanWS"),
-
-        # TODO: where should turbsim live?
-        # These aren't actually used to generate turbsim, the generic inputs are used
-        # However, I think it's better to be over-thorough and check that inputs are applied than the uncertainty of not checking any
-        'wind_seed': ("TurbSim", "RandSeed1"),
-        'direction': ("TurbSim", "direction_pn"),
-        'shear': ("TurbSim", "shear_hv")
-    }
-
-    
+    dlc_schema = sch.validation.get_modeling_schema()['properties']['DLC_driver']['properties']['DLCs']['items']['properties']    
 
     def __init__(
             self, 
@@ -135,6 +147,7 @@ class DLCGenerator(object):
             fix_wind_seeds=True, 
             fix_wave_seeds=True, 
             metocean={},
+            dlc_driver_options={},      # note that with this addition, it includes metocean
             initial_condition_table = {},
             default_options = {},
             ):
@@ -154,6 +167,9 @@ class DLCGenerator(object):
             self.rng_wave = np.random.default_rng()
         self.n_cases = 0
         self.n_ws_dlc11 = 0
+
+        # OpenFAST input map
+        self.openfast_input_map = copy.deepcopy(openfast_input_map)
 
         # Set and update default_options, applied to dlc_options and first group in case_inputs
         self.default_options = {
@@ -193,6 +209,19 @@ class DLCGenerator(object):
         self.wave_period1 = np.array([metocean['wave_period1']])
 
         self.initial_condition_table = initial_condition_table
+
+        # Add to openfast_input_map
+        if ('openfast_input_map' in dlc_driver_options) and dlc_driver_options['openfast_input_map']:
+            for key, value in dlc_driver_options['openfast_input_map'].items():
+
+                if key in self.openfast_input_map:
+                    raise Exception(f'The user-defined openfast_input_map key {key} is already defined.')
+
+                # If the value is a list
+                if is_list_of_lists(value):
+                    self.openfast_input_map[key] = [tuple(v) for v in value]
+                else:
+                    self.openfast_input_map[key] = tuple(value)
 
     def IECwind(self):
         self.IECturb = IEC_TurbulenceModels()
@@ -371,7 +400,13 @@ class DLCGenerator(object):
         dlc_options.update(met_options)
         dlc_options = remove_numpy(dlc_options)
 
+        # Apply initial conditions
         self.apply_initial_conditions(generic_case_inputs,dlc_options, met_options)
+
+        # Add user defined groups
+        self.add_user_groups(generic_case_inputs, dlc_options)
+
+        # Generate case list
         generic_case_list = self.gen_case_list(dlc_options,met_options,generic_case_inputs)
 
         # DLC specific: Make idlc for other parts of WEIS (mostly turbsim generation)
@@ -533,6 +568,27 @@ class DLCGenerator(object):
                 
             # Apply new group
             generic_case_inputs[wind_group] = group
+
+    def add_user_groups(self, generic_case_inputs, dlc_options):
+        if dlc_options['user_group']:
+            # If a list of user_groups, adds multiple groups
+            if type(dlc_options['user_group']) == list:
+                for user_group in dlc_options['user_group']:
+                    # Add input to options, make new group
+                    new_group = []
+                    for key, value in user_group.items():
+                        new_group.append(key)
+                        dlc_options[key] = value
+
+                    generic_case_inputs.append(new_group)
+            else:
+                # Add input to options, make new group
+                new_group = []
+                for key, value in dlc_options['user_group'].items():
+                    new_group.append(key)
+                    dlc_options[key] = value
+                
+                generic_case_inputs.append(new_group)
             
     
     def map_generic_to_openfast(self,generic_case_inputs, comb_options):
@@ -757,14 +813,41 @@ class DLCGenerator(object):
         self.generate_cases(generic_case_inputs,dlc_options)
 
     def generate_2p1(self, dlc_options):
-        # Power production plus occurrence of fault
-        # Normal control system fault
+        # Power production plus loss of electrical network
 
         # Get default options
         dlc_options.update(self.default_options)   
         
         # DLC Specific options:
         dlc_options['label'] = '2.1'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'NTM'
+        dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
+        
+        if 'genfault_time' not in dlc_options:
+            raise Exception('genfault_time must be set for the DLC 2.1')
+
+        # azimuth starting positions
+        dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','genfault_time'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['azimuth_init']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_2p2(self, dlc_options):
+        # Power production plus occurrence of fault
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = '2.2'
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'NTM'
         dlc_options['PSF'] = 1.35  # For fault cases, psf depends on the mean-time between faults
@@ -777,18 +860,23 @@ class DLCGenerator(object):
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
         group0 = ['total_time','transient_time','wake_mod','wave_model']
-        
+
+        AnyFault = False
         if 'pitchfault_time1' in dlc_options:
             group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
+            AnyFault = True
         if 'pitchfault_time2' in dlc_options:
             group0.extend(['pitchfault_time2','pitchfault_blade2pos'])
+            AnyFault = True
         if 'pitchfault_time3' in dlc_options:
             group0.extend(['pitchfault_time3','pitchfault_blade3pos'])
+            AnyFault = True
         if 'yawfault_time' in dlc_options:
             group0.extend(['yawfault_time','yawfault_yawpos'])
-        if 'genfault_time' in dlc_options:
-            group0.extend(['genfault_time'])
+            AnyFault = True
         
+        if not AnyFault:
+            raise Exception('yawfault or pitchfault for at least one blade must be set for dlc 2.2')
 
         generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
@@ -808,6 +896,9 @@ class DLCGenerator(object):
         dlc_options['sea_state'] = 'normal'
         dlc_options['IEC_WindType'] = 'EOG'
         dlc_options['PSF'] = 1.1  # For fault cases, psf depends on the mean-time between faults
+        
+        if 'genfault_time' not in dlc_options:
+            raise Exception('genfault_time must be set for the DLC 2.3')
 
         # azimuth starting positions
         dlc_options['azimuth_init'] = np.linspace(0.,120.,dlc_options['n_azimuth'],endpoint=False)
@@ -1160,6 +1251,69 @@ class DLCGenerator(object):
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
 
+    def generate_freedecay(self,dlc_options):
+        # Describe the new design load case
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = 'freedecay'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'EOG'  # let's make a dummy EOG until we have steady wind input (cheaper than NTM, inflow should be disabled)
+        dlc_options['wind_speed'] = [0]
+        dlc_options['turbine_status'] = 'parked-still'
+
+        # Disable generator, inflow, and aerodynamics by default
+        dlc_options['generator_dof'] = False
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['compute_aerodynamics'] = dlc_options.get('compute_aerodynamics',0)     # Use user input, otherwise disabled
+        dlc_options['compute_inflow'] = dlc_options.get('compute_inflow',0) # Use user input, otherwise disabled
+        dlc_options['compute_control'] = dlc_options.get('compute_control',0) # Use user input, otherwise disabled
+        dlc_options['wave_model'] = 0       
+
+        # Zero platform ICs by default
+        platform_ics = [
+            'initial_platform_surge',
+            'initial_platform_sway',
+            'initial_platform_heave',
+            'initial_platform_roll',
+            'initial_platform_pitch',
+            'initial_platform_yaw',
+        ]
+        for ptfm_ic in platform_ics:
+            if ptfm_ic not in dlc_options:
+                dlc_options[ptfm_ic] = 0
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append([
+            'total_time',
+            'transient_time',
+            'wake_mod',
+            'wave_model',
+            'generator_dof',
+            'rot_speed_initial',
+            'initial_platform_surge',
+            'initial_platform_sway',
+            'initial_platform_heave',
+            'initial_platform_roll',
+            'initial_platform_pitch',
+            'initial_platform_yaw',
+            'compute_aerodynamics',
+            'compute_inflow',
+            'compute_control',
+            ])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        
+        # Don't need wind/waves/yaw
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+
     def generate_new_dlc(self,dlc_options):
         # Describe the new design load case
 
@@ -1232,7 +1386,17 @@ def combine_options(*dicts):
 
     return comb_options
 
+def is_list_of_lists(lst):
+    """Checks if a given object is a list of lists."""
 
+    if not isinstance(lst, list):
+        return False
+
+    for item in lst:
+        if not isinstance(item, list):
+            return False
+
+    return True
 
 if __name__ == "__main__":
 

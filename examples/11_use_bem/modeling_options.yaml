@@ -20,7 +20,7 @@ WISDEM:
     BOS:
         flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.01
@@ -53,11 +53,11 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmRDOF : True
         PtfmPDOF : True
         PtfmYDOF : True
-    HydroDyn:
+    SeaState:
         WaveTMax: 1 #3630
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
-        WaveSeed1: 123456789
+    HydroDyn:
         PotMod: 1
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
 ROSCO:
@@ -68,8 +68,8 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 5
           n_seeds: 1
-          analysis_time: 5.
-          transient_time: 5.
+          analysis_time: 1.
+          transient_time: 0.
           turbulent_wind:
               HubHt: 110
               GridHeight: 160
