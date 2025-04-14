@@ -200,9 +200,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             self.modeling_options["RAFT"]["model_potential"] = [False]*1000
             
         # ROSCO
-        self.modeling_options['ROSCO']['flag'] = (self.modeling_options['RAFT']['flag'] or
-                                                  self.modeling_options['OpenFAST_Linear']['flag'] or
-                                                  self.modeling_options['OpenFAST']['flag'])
+        if (not self.modeling_options['ROSCO']['flag']) and (not self.modeling_options["Level3"]["from_openfast"]):
+            raise Exception('ROSCO flag must be enabled if we are not providing a pre-made OpenFAST input with a ROSCO DISCON')
         
         # TODO: Some RAFT/Level1 configurations will require ROSCO, perhaps all
 
