@@ -61,35 +61,6 @@ properties:
                                         maximum: 1.0
                                         minimum: 0.0
                                         default: 0.2
-                    tsr:
-                        type: object
-                        default: {}
-                        properties:
-                            flag: *flag
-                            min_gain:  &mingain
-                                type: number
-                                default: 0.5
-                                unit: none
-                                description: Lower bound on scalar multiplier that will be applied to value at control points
-                            max_gain: &maxgain
-                                type: number
-                                default: 1.5
-                                unit: none
-                                description: Upper bound on scalar multiplier that will be applied to value at control points
-                    ps_percent:
-                        type: object
-                        default: {}
-                        description: Percent peak shaving as a design variable
-                        properties:
-                            flag: *flag
-                            lower_bound:
-                                type: number
-                                default: 0.75
-                                unit: none
-                            upper_bound:
-                                type: number
-                                default: 1.0
-                                unit: none
                     rosco_tuning:
                         type: array
                         default: []
@@ -138,68 +109,6 @@ properties:
                                 type: object
                                 default: {}
                                 properties:
-                                    omega: &control_omega
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            flag: *flag
-                                            min:
-                                                type: number
-                                                default: 0.1
-                                                minimum: 0.0
-                                                maximum: 10.0
-                                                unit: rad/s
-                                            max:
-                                                type: number
-                                                default: 0.7
-                                                minimum: 0.0
-                                                maximum: 10.0
-                                                unit: rad/s
-                                    zeta: &control_zeta
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            flag: *flag
-                                            min:
-                                                type: number
-                                                default: 0.7
-                                                minimum: 0.0
-                                                maximum: 10.0
-                                                unit: none
-                                            max:
-                                                type: number
-                                                default: 1.5
-                                                minimum: 0.0
-                                                maximum: 10.0
-                                                unit: rad/s
-                                    Kp_float:
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            flag: *flag
-                                            min:
-                                                type: number
-                                                default: -100
-                                                unit: s
-                                            max:
-                                                type: number
-                                                default: 0
-                                                unit: s
-                                    ptfm_freq:
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            flag: *flag
-                                            min:
-                                                type: number
-                                                default: 0.00001
-                                                minimum: 0.00001
-                                                unit: rad/s
-                                            max:
-                                                type: number
-                                                default: 1.5
-                                                minimum: 0.00001
-                                                unit: rad/s
                                     stability_margin:
                                         type: object
                                         default: {}
@@ -217,13 +126,6 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 1.0
                                                 unit: none
-
-                            torque_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    omega: *control_omega
-                                    zeta: *control_zeta
                             flap_control:
                                 type: object
                                 default: {}
@@ -262,50 +164,6 @@ properties:
                                                 minimum: 0.0
                                                 maximum: 100.0
                                                 unit: none
-                            ipc_control:
-                                type: object
-                                default: {}
-                                properties:
-                                    Kp: 
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            flag: *flag
-                                            min:
-                                                type: number
-                                                default: 0.0
-                                                minimum: 0.0
-                                                maximum: 1.e+3
-                                                unit: s
-                                            max:
-                                                type: number
-                                                default: 0.0
-                                                minimum: 0.0
-                                                maximum: 1.e+3
-                                                unit: s
-                                            ref: &ipc_ref
-                                                type: number 
-                                                default: 1.e-8
-                                                minimum: 1.e-10
-                                                maximum: 1.e-5
-                                    Ki: 
-                                        type: object
-                                        default: {}
-                                        properties:
-                                            flag: *flag
-                                            min:
-                                                type: number
-                                                default: 0.0
-                                                minimum: 0.0
-                                                maximum: 1.e+3
-                                                unit: none
-                                            max:
-                                                type: number
-                                                default: 1.e-7
-                                                minimum: 0.0
-                                                maximum: 1.e+3
-                                                unit: none
-                                            ref: *ipc_ref
             TMDs:
                 type: object
                 description: Design variables associated with TMDs
