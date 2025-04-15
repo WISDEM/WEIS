@@ -243,7 +243,7 @@ class TuneROSCO(ExplicitComponent):
         rosco_tuning_dvs = self.opt_options['design_variables']['control']['rosco_tuning']
         for dv in rosco_tuning_dvs:
             # TODO: support arrays, figure out casting
-            rosco_init_options[dv['name']] = inputs[dv['name']]
+            rosco_init_options[dv['name']] = inputs[dv['name']][0]
 
         # Generic DISCON Inputs
         discon_dvs = self.opt_options['design_variables']['control']['discon']
