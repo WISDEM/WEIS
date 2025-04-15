@@ -274,10 +274,6 @@ class TuneROSCO(ExplicitComponent):
         WISDEM_turbine.TowerHt          = float(inputs['TowerHt'])
         WISDEM_turbine.bld_edgewise_freq = float(inputs['edge_freq']) * 2 * np.pi
         
-        # Floating Feedback Filters
-        if self.controller_params['Fl_Mode']:
-            rosco_init_options['twr_freq'] = float(inputs['twr_freq']) * 2 * np.pi
-            rosco_init_options['ptfm_freq'] = float(inputs['ptfm_freq'])
 
         # Load Cp tables
         self.Cp_table       = WISDEM_turbine.Cp_table = np.squeeze(inputs['Cp_table'])
