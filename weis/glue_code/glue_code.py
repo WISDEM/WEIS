@@ -229,7 +229,7 @@ class WindPark(om.Group):
 
             # Connect discon ivc/dvs
             for dv in discon_dvs:
-                self.connect(f'tune_rosco_ivc.discon:{dv['name']}', f'sse_tune.tune_rosco.discon:{dv["name"]}')
+                self.connect(f'tune_rosco_ivc.discon:{dv["name"]}', f'sse_tune.tune_rosco.discon:{dv["name"]}')
 
 
         if modeling_options['RAFT']['flag']:
