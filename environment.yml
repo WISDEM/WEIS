@@ -9,7 +9,7 @@ dependencies:
   - mat4py
   - nlopt
   - numpydoc
-  - openfast>=4.0.1
+  - openfast==4.0.2
   - openraft>=1.2.4
   - osqp  
   - pcrunch>=2.0.0
