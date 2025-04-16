@@ -1,6 +1,7 @@
 import os
 from weis import weis_main
 
+# TEST_RUN will reduce the number and duration of simulations
 TEST_RUN = False
 
 ## File management
