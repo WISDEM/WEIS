@@ -10,6 +10,7 @@ dependencies:
   - nlopt
   - numpydoc
   - openfast==4.0.2
+  - openfast_io==4.0.2
   - openraft>=1.2.4
   - osqp  
   - pcrunch>=2.0.0
@@ -25,7 +26,6 @@ dependencies:
     - dash-vtk
     - pyvista
     - dearpygui
-    - openfast_io
     - marmot-agents
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
