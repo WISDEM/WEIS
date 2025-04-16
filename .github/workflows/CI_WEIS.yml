@@ -84,7 +84,7 @@ jobs:
       - name: Change examples to test mode
         run: |
           cd examples
-          find . -type f -name "*.py" -exec sed -i '' 's/TEST_RUN = False/TEST_RUN = True/g' {} +
+          find . -type f -name "*.py" -exec sed -i 's/TEST_RUN = False/TEST_RUN = True/g' {} +
           head -n 5 02_run_openfast_cases/weis_driver_rosco_opt.py   # check that the sed command worked
 
       # Test walkthrough notebook
