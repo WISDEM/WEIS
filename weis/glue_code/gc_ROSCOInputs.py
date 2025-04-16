@@ -14,11 +14,12 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     # Generic input variables
     rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
     for dv in rosco_tuning_dvs:
-        # Grab from modeling options (rosco_init_options)
-        if dv['name'] in rosco_init_options:
+        if 'start' in dv:
+            wt_opt[f"tune_rosco_ivc.{dv['name']}"] = dv['start']
+        elif dv['name'] in rosco_init_options:
             wt_opt[f"tune_rosco_ivc.{dv['name']}"] = rosco_init_options[dv['name']]
         else:
-            raise Exception(f"The rosco tuning design variable {dv['name']} is not defined in the tuning yaml or modeling options")
+            raise Exception(f"The rosco tuning design variable {dv['name']} does not have a defined start, nor is it defined in the tuning yaml or modeling options.")
         
     # DISCON inputs (ROSCO)
     discon_dvs = opt_options['design_variables']['control']['discon']

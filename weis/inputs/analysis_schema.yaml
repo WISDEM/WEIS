@@ -71,10 +71,21 @@ properties:
                                 name:
                                     type: string
                                     description: Name of rosco tuning yaml parameter.
+                                start:
+                                    type: [number,array]
+                                    items:
+                                        type: number
+                                    description: Starting point of tuning yaml input. Size/shape should match the yaml parameter.
                                 min: 
-                                    type: number
+                                    type: [number,array]
+                                    items:
+                                        type: number
+                                    description:  Lower bound of tuning yaml input. Size/shape should match the tuning yaml parameter.
                                 max:
-                                    type: number
+                                    type: [number,array]
+                                    items:
+                                        type: number
+                                    description:  Upper bound of tuning yaml input. Size/shape should match the tuning yaml parameter.
                     discon:
                         type: array
                         default: []

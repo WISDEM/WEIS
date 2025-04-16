@@ -165,7 +165,7 @@ class TuneROSCO(ExplicitComponent):
             if 'desc' in dv:
                 ivc_desc = dv['desc']
 
-            self.add_input(dv['name'], val=0.0, units=ivc_units, desc=ivc_desc)
+            self.add_input(dv['name'], val=dv['start'], units=ivc_units, desc=ivc_desc)
 
         # Generic DISCON inputs
         discon_dvs = self.opt_options['design_variables']['control']['discon']

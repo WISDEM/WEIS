@@ -32,6 +32,10 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
 ROSCO:
     flag: True
     tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+    omega_pc: [0.1,0.1,0.1]
+    zeta_pc: [1.,1.,1.]
+    U_pc: [12,16,24]
+    Kp_float: -10
 
 
 DLC_driver:

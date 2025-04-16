@@ -58,10 +58,6 @@ class WindPark(om.Group):
         self.add_subsystem('dac_ivc',dac_ivc)
 
         tune_rosco_ivc = om.IndepVarComp()
-        if modeling_options['ROSCO']['linmodel_tuning']['type'] == 'robust':
-            n_PC = 1
-        else:
-            n_PC = len(modeling_options['ROSCO']['U_pc'])
         
         # Generic DVs
         rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
@@ -75,7 +71,13 @@ class WindPark(om.Group):
             if 'description' in dv:
                 ivc_desc = dv['description']
 
-            tune_rosco_ivc.add_output(dv['name'], val=0.0, units=ivc_units, desc=ivc_desc)
+            if 'start' not in dv:
+                if dv['name'] in modeling_options['ROSCO']:
+                    dv['start'] = modeling_options['ROSCO'][dv['name']]
+                else:
+                    raise Exception(f"The rosco tuning design variable {dv['name']} does not have a defined start, nor is it defined in the modeling options.")
+                
+            tune_rosco_ivc.add_output(dv['name'], val=dv['start'], units=ivc_units, desc=ivc_desc)
 
         # DISCON DVs
         discon_dvs = opt_options['design_variables']['control']['discon']
@@ -88,6 +90,12 @@ class WindPark(om.Group):
             ivc_desc = None
             if 'description' in dv:
                 ivc_desc = dv['description']
+
+            if 'start' not in dv:
+                if dv['name'] in modeling_options['ROSCO']['DISCON']:
+                    dv['start'] = modeling_options['ROSCO'][dv['name']]
+                else:
+                    raise Exception(f"The DISCON design variable {dv['name']} does not have a defined start, nor is it defined in the modeling options.")
 
             tune_rosco_ivc.add_output(f'discon:{dv["name"]}', val=dv['start'], units=ivc_units, desc=ivc_desc)
 
