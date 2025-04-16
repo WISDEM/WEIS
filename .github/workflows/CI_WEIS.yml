@@ -91,19 +91,6 @@ jobs:
           fi
           head -n 5 02_run_openfast_cases/weis_driver_rosco_opt.py   # check that the sed command worked       
 
-      # Test walkthrough notebook
-      - name: Test postprocessing notebooks
-        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
-        env:
-            RUN_EXHAUSTIVE: 1
-        run: |
-          cd examples/16_postprocessing
-          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
-          unzip outputs
-          treon plot_FAST.ipynb
-          treon rev_DLCs_WEIS.ipynb
-          treon rev_Opt.ipynb
-          treon rev_WEIS_CSV.ipynb
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
@@ -118,6 +105,19 @@ jobs:
             RUN_EXHAUSTIVE: 1
         run: |
             pytest  -p no:warnings -s --disable-warnings  weis
+
+        # Test walkthrough notebook
+      - name: Test postprocessing notebooks
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        env:
+            RUN_EXHAUSTIVE: 1
+        run: |
+          cd examples/16_postprocessing
+          cp -r ../17_IEA22_Optimization/17_IEA22_OptStudies/of_COBYLA/ outputs/
+          treon plot_FAST.ipynb
+          treon rev_DLCs_WEIS.ipynb
+          treon rev_Opt.ipynb
+          treon rev_WEIS_CSV.ipynb
 
       # Run parallel script calling OpenFAST
       - name: Run parallel cases
