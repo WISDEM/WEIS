@@ -14,22 +14,12 @@ def assign_ROSCO_values(wt_opt, modeling_options, opt_options):
     # Generic input variables
     rosco_tuning_dvs = opt_options['design_variables']['control']['rosco_tuning']
     for dv in rosco_tuning_dvs:
-        if 'start' in dv:
-            wt_opt[f"tune_rosco_ivc.{dv['name']}"] = dv['start']
-        elif dv['name'] in rosco_init_options:
-            wt_opt[f"tune_rosco_ivc.{dv['name']}"] = rosco_init_options[dv['name']]
-        else:
-            raise Exception(f"The rosco tuning design variable {dv['name']} does not have a defined start, nor is it defined in the tuning yaml or modeling options.")
+        wt_opt[f"tune_rosco_ivc.{dv['name']}"] = dv['start']
         
     # DISCON inputs (ROSCO)
     discon_dvs = opt_options['design_variables']['control']['discon']
     for dv in discon_dvs:
-        if 'start' in dv:
-            wt_opt[f"tune_rosco_ivc.discon:{dv['name']}"] = dv['start']
-        elif dv['name'] in rosco_init_options['DISCON']:
-            wt_opt[f"tune_rosco_ivc.discon:{dv['name']}"] = rosco_init_options['DISCON'][dv['name']]
-        else:
-            raise Exception(f"The DISCON design variable {dv['name']} does not have a defined start, nor is it defined in the tuning yaml or modeling options.")
+        wt_opt[f"tune_rosco_ivc.discon:{dv['name']}"] = dv['start']
     
     # Check for proper Flp_Mode, print warning
     if modeling_options['WISDEM']['RotorSE']['n_tab'] > 1 and rosco_init_options['Flp_Mode'] == 0:
