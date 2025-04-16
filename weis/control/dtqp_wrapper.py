@@ -3,6 +3,7 @@ import numpy as np
 from weis.dtqpy.DTQPy_oloc import DTQPy_oloc
 from weis.dtqpy.DTQPy_static import DTQPy_static
 import multiprocessing as mp
+from pCrunch import Crunch
 
 radps2rpm = 30 / np.pi
 from pCrunch import AeroelasticOutput
@@ -10,7 +11,7 @@ from pCrunch import AeroelasticOutput
 from weis.aeroelasticse.CaseGen_General import case_naming
 
 
-def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_options,fst_vt,loads_analysis,magnitude_channels,run_dir,cores=1):
+def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_options,fst_vt,magnitude_channels,run_dir,cores=1):
     ''' 
     Convert weis information to DTQP and vice versa
     Catch errors to ensure we are using DTQP in a way that it is able to be used
@@ -127,22 +128,12 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
     dam = {}
     ct = []
 
+    cruncher = Crunch(outputs = [],lean = True)
+
     for output in output_list:
-        _name, _ss, _et, _dl, _dam = loads_analysis._process_output(output)
-        ss[_name] = _ss
-        et[_name] = _et
-        dl[_name] = _dl
-        dam[_name] = _dam
-        ct.append(output)
+        cruncher.add_output(output)
     
-
-
-    summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
-    
-    # Calculate AEP
-    
-
-    return summary_stats, extreme_table, DELs, Damage, ct
+    return cruncher.process_outputs(),output_list
 
         
 # Wrapper for actually running dtqp with a single input, useful for running in parallel

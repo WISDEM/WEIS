@@ -13,20 +13,20 @@ import types
 
 def DTQPy_tmultiprod(matrices,p,*args):
     
-# convert lambda function to a np array of type object
+    # convert lambda function to a np array of type object
     if type(matrices) is types.LambdaType:
             Ae = np.empty((1,1),dtype ='O')
             Ae[0,0] = matrices
             matrices = Ae
     
-            
+    
     # empty matrix
     if len(matrices)==0:
         A = np.array([])
     elif matrices[0,0] == 'prod':
         
         # remove 'prod' specifier
-        matrices = matrices[:,1:]
+        matrices = matrices[1:]
         
         # initial matrix
         A = DTQPy_tmatrix(matrices[0,0],p,*args)
@@ -45,14 +45,11 @@ def DTQPy_tmultiprod(matrices,p,*args):
             The presence of a trailing singleton dimension will chenge how np.einsum 
             is carried out and the results
             """
-            
             if sflag:
-                A = np.einsum('ij,ikl->ikl',np.squeeze(A,axis=-1),B)
+                A = np.matmul(np.squeeze(A,axis=-1),B)
             else:
-                A = np.einsum('ijk,ikl->ijl', A, B)
-        
-    
-    
+                A = np.matmul(A, B)
+
     else:
         # single matrix
         A = DTQPy_tmatrix(matrices,p,*args) 

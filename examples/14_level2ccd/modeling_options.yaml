@@ -121,12 +121,12 @@ DLC_driver:
     DLCs:
         - DLC: "1.1"
           ws_bin_size: 2
-          wind_speed: [14,15,16] #[5.8, 9.4732, 13.009,16.866,19.9968,15.6765] 
+          wind_speed: [14,15,16] 
           wave_height: [8.]
           wave_period: [2.]
           #wind_seeds: [3,4] #[1,2,3,4,5]
           n_seeds: 1
-          analysis_time: 1.
+          analysis_time: 600.
           transient_time: 0.
           turbulent_wind:
               HubHt: 150.0
