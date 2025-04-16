@@ -10,7 +10,7 @@ dependencies:
   - nlopt
   - numpydoc
   - openfast==4.0.2
-  - openfast_io==4.0.2
+  - openfast-io==4.0.2
   - openraft>=1.2.4
   - osqp  
   - pcrunch>=2.0.0
