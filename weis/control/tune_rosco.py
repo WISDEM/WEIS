@@ -230,6 +230,7 @@ class TuneROSCO(ExplicitComponent):
         rosco_init_options['max_pitch']   = float(inputs['max_pitch'])
         rosco_init_options['min_pitch']   = float(inputs['min_pitch'])
         rosco_init_options['vs_minspd']   = float(inputs['vs_minspd'])
+        rosco_init_options['twr_freq']    = float(inputs['twr_freq']) * 2 * np.pi
 
         if rosco_init_options['Flp_Mode'] > 0:
             rosco_init_options['flp_maxpit']  = float(inputs['delta_max_pos'])
