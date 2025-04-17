@@ -626,7 +626,6 @@ components:
             - name: anchor3
               location: [837.8, -1.0471976, -200.0]  #-1.0471975 = -60 deg
               cylindrical: True
-
         members:
             - name: main_column
               joint1: main_keel
@@ -656,7 +655,6 @@ components:
 
                 - name: main_lower_pontoon
                   grid: 0.1
-
             - name: column1
               joint1: col1_keel
               joint2: col1_freeboard
@@ -695,7 +693,6 @@ components:
 
                 - name: col1_fairlead
                   grid: 0.1714
-
             - name: column2
               joint1: col2_keel
               joint2: col2_freeboard
@@ -712,7 +709,6 @@ components:
 
                 - name: col2_fairlead
                   grid: 0.1714
-
             - name: column3
               joint1: col3_keel
               joint2: col3_freeboard
@@ -729,8 +725,6 @@ components:
 
                 - name: col3_fairlead
                   grid: 0.1714
-
-
             - name: Y_pontoon_upper1
               joint1: main_upper_pontoon
               joint2: col1_upper_pontoon
@@ -748,7 +742,6 @@ components:
                       thickness:
                         grid: [0.0, 1.0]
                         values: [0.02, 0.02]
-
             - name: Y_pontoon_upper2
               joint1: main_upper_pontoon
               joint2: col2_upper_pontoon
@@ -756,7 +749,6 @@ components:
               Cd: [0.8, 0.8]
               outer_shape: *pontup_out
               internal_structure: *pontup_int
-
             - name: Y_pontoon_upper3
               joint1: main_upper_pontoon
               joint2: col3_upper_pontoon
@@ -764,17 +756,12 @@ components:
               Cd: [0.8, 0.8]
               outer_shape: *pontup_out
               internal_structure: *pontup_int
-
             - name: Y_pontoon_lower1
               joint1: main_lower_pontoon
               joint2: col1_lower_pontoon
               Ca: [1.0, 1.0]
               Cd: [0.8, 0.8]
               outer_shape: &pontlow_out
-                # shape: circular
-                # outer_diameter:
-                #     grid: [0.0, 1.0]
-                #     values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
                 shape: rectangular
                 side_length_a:
                     grid: [0.0, 1.0]
@@ -782,12 +769,7 @@ components:
                 side_length_b:
                     grid: [0.0, 1.0]
                     values: [7.0, 7.0]
-                #shape: polygonal
-                #side_lengths: [12.5, 7.0, 12.5, 7.0] # rectangle dimensions
-                #angles: [1.5707963267948966, 1.5707963267948966, 1.5707963267948966, 1.5707963267948966] # rectangle angles
-                #rotation: 0.0
               internal_structure: &pontlow_int
-                  # Probably needs longitudinal stiffeners
                 layers:
                     - name: pontoon_lower_twall
                       material: steel
@@ -802,7 +784,6 @@ components:
                     thickness:
                         grid: [0.0, 1.0]
                         values: [0.05, 0.05]
-
             - name: Y_pontoon_lower2
               joint1: main_lower_pontoon
               joint2: col2_lower_pontoon
@@ -810,7 +791,6 @@ components:
               internal_structure: *pontlow_int
               Ca: [1.0, 1.0]
               Cd: [0.8, 0.8]
-
             - name: Y_pontoon_lower3
               joint1: main_lower_pontoon
               joint2: col3_lower_pontoon
