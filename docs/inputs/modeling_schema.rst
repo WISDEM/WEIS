@@ -76,6 +76,8 @@ For example::
 
 Will model the ``spar`` member in pyHAMS and use it to model the hydrodynamics using potential flow in both RAFT and OpenFAST.
 
+WEIS now includes the capability to create more complicated intersected meshes for the BEM modeling. Users can set the ``intersection_mesh`` value to 1 if wanting to use this capability. Note this capabilty relies on using external packages, `pygmsh <https://pygmsh.readthedocs.io/en/latest/>`_ and `meshmagick <https://github.com/LHEEA/meshmagick>`_, and are not part of WEIS installation. Please make sure you install these separately beforehand. If users want to plot the intermediate meshes, toggle the ``plot_designs`` and ``save_designs`` options to True while using ``intersection_mesh``. This mesh plotting relies on using `trimesh <https://trimesh.org/>`_.
+
 
 ROSCO 
 ^^^^^^^^^^^^^^^

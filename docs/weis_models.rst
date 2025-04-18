@@ -74,6 +74,7 @@ This table below summmarizes the options for *potential_model_override* in RAFT.
 | 2                        | Wave excitation and added mass for all members      | Only drag and buoyancy from strip theory for all members                               | 
 +--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
 
+WEIS now includes the capability to create intersected meshes for the BEM modeling. This capabilty relies on using external packages, `pygmsh <https://pygmsh.readthedocs.io/en/latest/>`_ and `meshmagick <https://github.com/LHEEA/meshmagick>`_. Please make sure you install these separately. 
 
 pyHAMS
 ^^^^^^
