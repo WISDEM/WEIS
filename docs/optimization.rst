@@ -17,7 +17,7 @@ Based on your turbine configuration, prepare the geometry input or start from th
 
 Design Variables, Constraints, and Merit Figures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A brief introduction would be helpufl here.
+In WEIS, the optimization problem is formulated by setting design variables, constraints, and merit figures. Design variables represent the tunable parameters of the system. Availble design variables in WEIS span across the rotor, controller, hub, drivetrain, tower, platforms, and mooring. To set constraints, users toggle the constraints in the analysis options and set the upper and lower bounds based on the problem. The merit figure determines the objective of the optimization. Several merit figures are available in WEIS, with common examples including LCOE, AEP, and turbine cost. For a complete list of supported design variables, constraints, and merit figures, refer to the ``analysis_options.yaml`` file in the WISDEM and WEIS repositories. WEIS also allows users to set design variables. constraints, and merit figures beyond those listed in the schema file. To do so, users need to be familiar with the inputs and outputs of relevant components within WEIS and WISDEM.
 
 User-defined design variables, constraints, and merit figures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
