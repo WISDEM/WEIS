@@ -24,14 +24,14 @@ OpenFAST:
     from_openfast: True
     regulation_trajectory: IEA-15-240-RWT-outputs.yaml
     openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    openfast_dir: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     AeroDyn:
         Wake_Mod: 2
 
-    
+
 ROSCO:
     flag: True
-    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
     zeta_pc: 1.23
     omega_pc: 0.198
     U_pc: [12]
