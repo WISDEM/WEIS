@@ -2,7 +2,8 @@ import os
 from weis import weis_main
 from wisdem.inputs.validation import load_yaml
 
-TEST_RUN = True
+# TEST_RUN will reduce the number and duration of simulations
+TEST_RUN = False
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
