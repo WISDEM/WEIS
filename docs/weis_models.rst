@@ -42,7 +42,7 @@ As a frequency-domain code, RAFT solves for the steady state response of the sys
 For a more detailed description of RAFT, see `https://openraft.readthedocs.io/`.
 
 Using RAFT through WEIS
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 A RAFT model requires information about the floating platform, turbine, mooring system, site, environmental conditions, and numerical settings. For a standalone RAFT model (i.e., to be run outside of WEIS), these information are usually provided by a `yaml` file, as illustrated by the `examples <https://github.com/WISDEM/RAFT/tree/master/examples>`_ available in the RAFT GitHub repo.
 
 When used through WEIS, RAFT receives the necessary data directly from WEIS. The platform, turbine, and site information are specified in the `geometry file`, from which RAFT uses only a subset of the data. RAFT specific inputs are provided in the `RAFT` section of the `modeling file`, as described in :ref:`modeling-options`. The RAFT-specific part of the schema that describes the modeling options is given below:
@@ -53,7 +53,7 @@ When used through WEIS, RAFT receives the necessary data directly from WEIS. The
 
 WEIS can output a RAFT `.yaml` input file by setting the flag `save_designs` to `True` in the `RAFT` section of the `modeling file`.
 
-
+.. _bem-modeling:
 BEM modeling
 ~~~~~~~~~~~~
 

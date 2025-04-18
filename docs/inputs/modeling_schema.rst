@@ -32,7 +32,7 @@ WISDEM
 ^^^^^^^^^^^^^^^
 The ``WISDEM`` section of the modeling options in WEIS is inhereted from the modeling options of WISDEM.
 In this section, users can toggle the ``flag`` value for the various SE (system engineering) components of WISDEM, like RotorSE.
-If a flag is false, WISDEM will pass through the elastic properties from the geomtry input, rather than generate them from component models.
+Users can also specify elastic properties for inidividual components by toggle the ``user_elastic`` option. This way, WISDEM will pass through the elastic properties from the geomtry input, rather than generate them from component models.
 Users should note:
 
 - The spar cap and trailing edge pressure and suction layers (``spar_cap_ss``, ``spar_cap_ps``, ``te_ss``, and ``te_ps``) must be defined and correspond to blade layers in the geometry option.
@@ -64,7 +64,7 @@ RAFT
 ^^^^^^^^^^^^^^^
 The ``RAFT`` section of the modeling options is primarily used for RAFT simulation settings and also potential flow modeling using pyHAMS.
 The ``potential_model_override`` input is set here and used in both RAFT and OpenFAST.
-More details about potential flow modeling and hybrid models can be found here (TODO: cross reference).
+More details about potential flow modeling and hybrid models can be found here :ref:`bem-modeling`.
 Selecting which members will be used in a potential flow solution is also specified in the ``RAFT`` modeling options.
 For example::
 

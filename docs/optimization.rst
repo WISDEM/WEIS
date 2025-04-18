@@ -443,3 +443,7 @@ Here are some common problems when running optimization in WEIS and how to troub
 1. **Problem**: Constraints are violated and do not seem to improve.
 
    **Solution**: Check the design variables have proper bounds and constraints are reasonable. Starting from a feasible design point is important for the optimization to converge. Check your initial design point that it does not aggressively violate the constraints. If you are using OpenFAST, check your simulations are converging and not failing. If you have failed solutions, some outputs will be capped to the maximum or minimum values.
+
+2. **Problem**: The optimizer takes crazy steps and does not converge.
+
+   **Solution**: Check the design variables have proper bounds. If you are using gradient-based optimization, check the gradients are correct and do a step-size study.

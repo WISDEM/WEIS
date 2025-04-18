@@ -30,7 +30,7 @@ WEIS Installation
    installation
 
 Running WEIS
-=============
+============
 
 .. toctree::
    :maxdepth: 2
