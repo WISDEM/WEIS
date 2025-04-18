@@ -12,9 +12,25 @@ WISDEM:
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
+        n_span: 60
+    DriveSE:
+        flag: True
     TowerSE:
         flag: True
-    DriveSE:
+        wind: PowerWind  # Wind used
+        gamma_f: 1.35    # Safety factor for fatigue loads
+        gamma_m: 1.3     # Safety factor for material properties
+        gamma_n: 1.0     # Safety factor for ...
+        gamma_b: 1.1     # Safety factor for ...
+        gamma_fatigue: 1.755  # Safety factor for fatigue loads
+        buckling_length: 30    # Buckling parameter
+        soil_springs: True
+        gravity_foundation: False
+        frame3dd:
+            shear: True
+            geom: True
+            tol: 1e-9
+    FixedBottomSE:
         flag: True
     FloatingSE:
         flag: True
@@ -35,6 +51,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompMooring: 3
         CompIce: 0
         OutFileFmt: 3
+        NumCrctn: 1
     linearization:
         Linearize: False
     ElastoDyn:
@@ -58,6 +75,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     SeaState:
         WvLowCOff: 0.15708
         WvHiCOff: 3.2
+        WaveSeed1: 123456789
     HydroDyn:
         AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
         AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
@@ -66,20 +84,15 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        # WaveMod: 0
-        # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 RAFT:
     flag: False
     potential_model_override: 2
-    trim_ballast: 2
-    heave_tol: 1
-    save_designs: True
 
 ROSCO:
     flag: True
-    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA15MW-UMaineSemi.yaml
-    
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
 DLC_driver:
     metocean_conditions:
         wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
@@ -92,30 +105,27 @@ DLC_driver:
         wave_height50: 10.68
         wave_period50: 14.2
     DLCs:
-        - DLC: "1.1"
-          n_seeds: 6
-          analysis_time: 1.
-          transient_time: 0.
-        - DLC: "1.3"
-          n_seeds: 6
-          analysis_time: 1.
-          transient_time: 0.
-        - DLC: "1.4"
-          analysis_time: 1.
-          transient_time: 0.
-        - DLC: "1.5"
-          analysis_time: 1.
-          transient_time: 0.
+        # - DLC: "1.1"
+        #   wind_speed: [24]
+        #   wave_height: [9]
+        #   wave_period: [14]
+        #   n_seeds: 6
+        #   analysis_time: 600
+        #   transient_time: 120
+        #   turbulent_wind:
+        #       HubHt: 140
+        #       GridHeight: 300
+        #       GridWidth: 300
+        # - DLC: "1.3"
+        #   n_seeds: 6
+        # - DLC: "1.4"
+        # - DLC: "1.5"
         - DLC: "1.6"
-          n_seeds: 6
+          wind_speed: [12]
           analysis_time: 1.
           transient_time: 0.
-        - DLC: "6.1"
-          n_seeds: 6
-          analysis_time: 1.
-          transient_time: 0.
-        - DLC: "6.3"
-          n_seeds: 6
-          analysis_time: 1.
-          transient_time: 0.
+        # - DLC: "6.1"
+        #   n_seeds: 6
+        # - DLC: "6.3"
+        #   n_seeds: 6
 
