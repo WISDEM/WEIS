@@ -121,13 +121,6 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
 
 
 
-    # Collect outputs
-    ss = {}
-    et = {}
-    dl = {}
-    dam = {}
-    ct = []
-
     cruncher = Crunch(outputs = [],lean = True)
 
     for output in output_list:
