@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/08_OLAF
+    folder_output: outputs/02_olaf
     fname_output: BAR_0_output
 design_variables:
   blade:

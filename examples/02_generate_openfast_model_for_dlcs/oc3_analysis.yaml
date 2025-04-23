@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/03_OC3_single_run
+    folder_output: outputs/02_oc3
     fname_output: refturb_output
 
 driver:
