@@ -88,7 +88,7 @@ RAFT:
 
 ROSCO:
     flag: True
-    tuning_yaml: rosco_inputs_iea22.yaml
+    tuning_yaml: iea22_rosco.yaml
 
 DLC_driver:
     metocean_conditions:

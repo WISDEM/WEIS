@@ -1,5 +1,5 @@
 general:
-    folder_output: 17_IEA22_OptStudies/of_COBYLA/
+    folder_output: outputs/03_iea22_ptfm_opt
     fname_output: IEA-22-280-RWT
 
 design_variables:

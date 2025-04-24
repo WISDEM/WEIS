@@ -83,7 +83,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
         # WaveMod: 0
-        # PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 RAFT:
     flag: False
@@ -97,7 +97,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 2 
-    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile/IEA15MW-Monopile.yaml
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile/IEA-15-240-RWT-Monopile_ROSCO.yaml
     zeta_pc: [1,1]
     omega_pc: [0.2,0.2]
     U_pc: [12,18]
@@ -116,8 +116,4 @@ DLC_driver:
           n_seeds: 1
           analysis_time: 1.
           transient_time: 0.
-          turbulent_wind:
-              HubHt: 140
-              GridHeight: 300
-              GridWidth: 300
 

@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/06_IEA15_tower_optimization
+    folder_output: outputs/03_tower_design
     fname_output: refturb_output
     
 design_variables:
@@ -20,7 +20,7 @@ constraints:
     height_constraint:
       flag: False
       lower_bound: 1.e-2
-      upper_bound: 1.e-2
+      upper_bound: 1.1e-2
     stress:
       flag: True
     global_buckling:
@@ -43,16 +43,16 @@ constraints:
 
 driver:
     optimization:
-        flag: False         # Flag to enable optimization
+        flag: True         # Flag to enable optimization
         tol: 1.e-6          # Optimality tolerance
         # max_major_iter: 10  # Maximum number of major design iterations (SNOPT)
         # max_minor_iter: 100 # Maximum number of minor design iterations (SNOPT)
         max_iter: 100         # Maximum number of iterations (SLSQP)
-        solver: SNOPT       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
+        solver: LN_COBYLA       # Optimization solver. Other options are 'SLSQP' - 'CONMIN'
         step_size: 1.e-6    # Step size for finite differencing
         form: forward       # Finite differencing mode, either forward or central
     design_of_experiments:
-        flag: True            # Flag to enable design of experiments
+        flag: False            # Flag to enable design of experiments
         run_parallel: False    # Flag to run using parallel processing
         generator: Uniform    # Type of input generator. (Uniform)
         num_samples: 100        # number of samples for (Uniform only)
