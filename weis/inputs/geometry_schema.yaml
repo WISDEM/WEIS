@@ -823,30 +823,30 @@ definitions:
                             $ref: "#/definitions/distributed_data/grid_nd"
                         values:
                             $ref: "#/definitions/distributed_data/length"
-        six_x_six:
-            type: object
-            required:
-                - reference_axis
-                - stiff_matrix
-            properties:
-                reference_axis:
-                    $ref: "#/definitions/distributed_data/axis_coordinates"
-                stiff_matrix:
-                    type: object
-                    required:
-                        - grid
-                        - values
-                    properties:
-                        grid:
-                            $ref: "#/definitions/distributed_data/grid_nd"
-                        values:
-                            type: array
-                            items:
-                                type: array
-                                description: Stiffness matrix 6x6, only upper diagonal reported line by line (21 elements), specified at each grid point
-                                minItems: 21
-                                maxItems: 21
-                                uniqueItems: false
+        # six_x_six:
+        #     type: object
+        #     required:
+        #         - reference_axis
+        #         - stiff_matrix
+        #     properties:
+        #         reference_axis:
+        #             $ref: "#/definitions/distributed_data/axis_coordinates"
+        #         stiff_matrix:
+        #             type: object
+        #             required:
+        #                 - grid
+        #                 - values
+        #             properties:
+        #                 grid:
+        #                     $ref: "#/definitions/distributed_data/grid_nd"
+        #                 values:
+        #                     type: array
+        #                     items:
+        #                         type: array
+        #                         description: Stiffness matrix 6x6, only upper diagonal reported line by line (21 elements), specified at each grid point
+        #                         minItems: 21
+        #                         maxItems: 21
+        #                         uniqueItems: false
 
     actuator:
         type: string

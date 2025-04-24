@@ -81,7 +81,7 @@ class FASTLoadCases(ExplicitComponent):
             self.n_pitch       = n_pitch   = rotorse_options['n_pitch_perf_surfaces']
             self.n_tsr         = n_tsr     = rotorse_options['n_tsr_perf_surfaces']
             self.n_U           = n_U       = rotorse_options['n_U_perf_surfaces']
-            if not modopt["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not modopt["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.n_mat         = n_mat    = mat_init_options['n_mat']
                 self.n_layers      = n_layers = rotorse_options['n_layers']
 
@@ -329,7 +329,7 @@ class FASTLoadCases(ExplicitComponent):
             # Blade composite material properties (used for fatigue analysis)
             self.add_input('gamma_f',      val=1.35,                             desc='safety factor on loads')
             self.add_input('gamma_m',      val=1.1,                              desc='safety factor on materials')
-            if not modopt["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+            if not modopt["WISDEM"]["RotorSE"]["user_elastic"]:
                 self.add_input('E',            val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Youngs moduli of the materials. Each row represents a material, the three columns represent E11, E22 and E33.')
                 self.add_input('Xt',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Tensile Strength (UTS) of the materials. Each row represents a material, the three columns represent Xt12, Xt13 and Xt23.')
                 self.add_input('Xc',           val=np.zeros([n_mat, 3]), units='Pa', desc='2D array of the Ultimate Compressive Strength (UCS) of the materials. Each row represents a material, the three columns represent Xc12, Xc13 and Xc23.')

@@ -362,7 +362,7 @@ class PoseOptimizationWEIS(PoseOptimization):
 
     def set_initial_weis(self, wt_opt):
 
-        if self.modeling["flags"]["blade"] and not self.modeling["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        if self.modeling["flags"]["blade"] and not self.modeling["WISDEM"]["RotorSE"]["user_elastic"]:
             blade_constr = self.opt["constraints"]["blade"]
             wt_opt["rlds_post.constr.max_strainU_spar"] = blade_constr["strains_spar_cap_ss"]["max"]
             wt_opt["rlds_post.constr.max_strainL_spar"] = blade_constr["strains_spar_cap_ps"]["max"]
