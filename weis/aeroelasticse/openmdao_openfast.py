@@ -2086,6 +2086,49 @@ class FASTLoadCases(ExplicitComponent):
         # Apply olaf settings, should be similar to above?
         if dlc_generator.default_options['wake_mod'] == 3:  # OLAF is used 
             apply_olaf_parameters(dlc_generator,fst_vt)
+
+        # Add initial substructure StC
+        dlc_labels = [case.label for case in dlc_generator.cases]
+        if 'force_excursion' in dlc_labels:
+            StC_init = default_StC_vt()
+            # fst_vt['SStC'].append(StC_i)
+
+        for i_case, case_inputs in enumerate(dlc_generator.openfast_case_inputs):
+            if ('SStC', 'StaticLoad') in case_inputs:
+                StC_files = []
+
+                # Write Load input
+                for i_load, load_val in enumerate(case_inputs[('SStC', 'StaticLoad')]['vals']):
+                    force_filename = os.path.join(self.FAST_runDirectory,f"static_load_{i_case}_{i_load}.dat")
+                    with open(force_filename, 'w') as f:
+                        write_load = copy.deepcopy(load_val)
+                        write_load.insert(0,0)   # add time index
+                        f.write(' '.join(map(str, write_load)) + '\n')
+
+                    StC_i = default_StC_vt()
+                    StC_i['StC_DOF_MODE'] = 4
+                    StC_i['PrescribedForcesFile'] = force_filename
+                    StC_i['PrescribedForcesCoord'] = 1
+                    StC_filename = os.path.join(self.FAST_runDirectory,f"StC_{i_case}_{i_load}.dat")
+                    StC_files.append(StC_filename)
+
+                    # Write StC Input, add filename to case_inputs
+                    stc_writer = InputWriter_OpenFAST()
+                    stc_writer.FAST_runDirectory = self.FAST_runDirectory
+
+                    stc_writer.write_StC(StC_i,StC_filename)
+
+                # Add StC file to case_inputs
+                case_inputs[('ServoDyn', 'NumSStC')] = {}
+                case_inputs[('ServoDyn', 'NumSStC')]['group'] = 0
+                case_inputs[('ServoDyn', 'NumSStC')]['vals'] = [1]
+
+                case_inputs[('ServoDyn', 'SStCfiles')] = {}
+                case_inputs[('ServoDyn', 'SStCfiles')]['group'] = 2
+                case_inputs[('ServoDyn', 'SStCfiles')]['vals'] = StC_files
+        
+                 # move to ServoDyn so we can use case_matrix to see load applied
+                case_inputs[('ServoDyn', 'StaticLoad')] = case_inputs.pop(('SStC', 'StaticLoad'), None) 
                     
         # Parameteric inputs
         case_name = []
@@ -2097,6 +2140,15 @@ class FASTLoadCases(ExplicitComponent):
             # Add DLC to case names
             case_name_i = [f'DLC{dlc_label}_{i_case}_{cni}' for cni in case_name_i]   # TODO: discuss case labeling with stakeholders
             
+
+            # Convert StaticLoad back to float aray
+            for case_i in case_list_i:
+                if ('ServoDyn', 'StaticLoad') in case_i:
+                    case_i[('ServoDyn', 'StaticLoad')] = [float(load) for load in case_i[('ServoDyn', 'StaticLoad')][1:-1].split(',')]
+                    case_i[('ServoDyn', 'SStCfiles')] = [case_i[('ServoDyn', 'SStCfiles')]]
+            
+
+
             # Extend lists of cases
             case_list.extend(case_list_i)
             case_name.extend(case_name_i)

@@ -84,6 +84,13 @@ openfast_input_map = {
     'wake_mod': ("AeroDyn","Wake_Mod"),
     'tau1_const': ("AeroDyn","tau1_const"),
 
+    'stc_number': ("ServoDyn", "NumSStC"),
+    'stc_filenames': ("ServoDyn","SStCfiles"),
+    'excursion_load': ("SStC","StaticLoad"),
+
+    'pitch_control_mode': ("ServoDyn","PCMode"),
+    'torque_control_mode': ("ServoDyn","VSContrl"),
+
 
     # 'dlc_label': ("DLC","Label"),
     # 'wind_seed': ("DLC","WindSeed"),
@@ -1314,6 +1321,86 @@ class DLCGenerator(object):
         # This function does the rest and generates the individual cases for each DLC
         self.generate_cases(generic_case_inputs,dlc_options)
 
+    
+    def generate_force_excursion(self,dlc_options):
+        # Describe the new design load case
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # Set DLC Specific options:
+        # These three are required
+        dlc_options['label'] = 'force_excursion'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'EOG'  # let's make a dummy EOG until we have steady wind input (cheaper than NTM, inflow should be disabled)
+        dlc_options['wind_speed'] = [0]
+        dlc_options['turbine_status'] = 'parked-still'
+
+        # Disable generator, inflow, and aerodynamics by default
+        dlc_options['generator_dof'] = 'False'
+        dlc_options['rot_speed_initial'] = 0.
+        dlc_options['compute_aerodynamics'] = dlc_options.get('compute_aerodynamics',0)     # Use user input, otherwise disabled
+        dlc_options['compute_inflow'] = dlc_options.get('compute_inflow',0) # Use user input, otherwise disabled
+        dlc_options['wave_model'] = 0     
+        dlc_options['pitch_control_mode'] = 0
+        dlc_options['torque_control_mode'] = 0
+          
+
+        # StC Setup
+        dlc_options['stc_number'] = 1
+
+        if 'excursion_load' not in dlc_options:
+            raise Exception('excursion_load must be set for the force excursion DLC')
+        
+        # Check that excursion_load is 2-dimensional and the second dimension is 6
+        if not isinstance(np.array(dlc_options['excursion_load']), np.ndarray) or \
+            np.array(dlc_options['excursion_load']).ndim != 2 or \
+                np.array(dlc_options['excursion_load']).shape[1] != 6:
+            raise ValueError("excursion_load must be a 2-dimensional array with the second dimension of size 6")
+
+        # Zero platform ICs by default
+        platform_ics = [
+            'initial_platform_surge',
+            'initial_platform_sway',
+            'initial_platform_heave',
+            'initial_platform_roll',
+            'initial_platform_pitch',
+            'initial_platform_yaw',
+        ]
+        for ptfm_ic in platform_ics:
+            if ptfm_ic not in dlc_options:
+                dlc_options[ptfm_ic] = 0
+
+        # DLC-specific: define groups
+        # Groups are dependent variables, the cases are a cross product of the independent groups
+        # The options in each group should have the same length
+        generic_case_inputs = []
+        generic_case_inputs.append([
+            'total_time',
+            'transient_time',
+            'wake_mod',
+            'wave_model',
+            'generator_dof',
+            'rot_speed_initial',
+            'initial_platform_surge',
+            'initial_platform_sway',
+            'initial_platform_heave',
+            'initial_platform_roll',
+            'initial_platform_pitch',
+            'initial_platform_yaw',
+            'compute_aerodynamics',
+            'compute_inflow',
+            'pitch_control_mode',
+            'torque_control_mode'
+            ])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        
+        # Don't need wind/waves/yaw
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, should be length 1 for this DLC
+        generic_case_inputs.append(['excursion_load']) # group 2, load excursions
+
+        # This function does the rest and generates the individual cases for each DLC
+        self.generate_cases(generic_case_inputs,dlc_options)
+    
     def generate_new_dlc(self,dlc_options):
         # Describe the new design load case
 
