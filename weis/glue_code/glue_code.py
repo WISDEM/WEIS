@@ -353,7 +353,7 @@ class WindPark(om.Group):
 
                 # Connections from blade struct parametrization to rotor load anlysis
                 # When not using user defined blade elastic properties
-                if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                     spars_tereinf = modeling_options["WISDEM"]["RotorSE"]["spars_tereinf"]
                     self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[0], "rotorse.rs.constr.s_opt_spar_cap_ss")
                     self.connect("blade.opt_var.s_opt_layer_%d"%spars_tereinf[1], "rotorse.rs.constr.s_opt_spar_cap_ps")
@@ -552,8 +552,8 @@ class WindPark(om.Group):
                 self.connect('rotorse.EIxx', 'aeroelastic.blade:EIxx')
                 self.connect('rotorse.EIyy', 'aeroelastic.blade:EIyy')
                 self.connect('rotorse.rhoA', 'aeroelastic.blade:rhoA')
-                self.connect('rotorse.re.generate_KI.K', 'aeroelastic.blade:K')
-                self.connect('rotorse.re.generate_KI.I', 'aeroelastic.blade:I')
+                self.connect('rotorse.re.K', 'aeroelastic.blade:K')
+                self.connect('rotorse.re.I', 'aeroelastic.blade:I')
                 self.connect('rotorse.rs.frame.flap_mode_shapes', 'aeroelastic.blade:flap_mode_shapes')
                 self.connect('rotorse.rs.frame.edge_mode_shapes', 'aeroelastic.blade:edge_mode_shapes')
                 self.connect('rotorse.rp.powercurve.V', 'aeroelastic.U')
@@ -648,7 +648,7 @@ class WindPark(om.Group):
                 self.connect('rotorse.yu_te', 'rlds_post.strains.yu_te')
                 self.connect('rotorse.yl_te', 'rlds_post.strains.yl_te')
                 
-                if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+                if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
                     self.connect('blade.outer_shape_bem.s','rlds_post.constr.s')
                     self.connect("blade.internal_structure_2d_fem.d_f", "rlds_post.brs.d_f")
                     self.connect("blade.internal_structure_2d_fem.sigma_max", "rlds_post.brs.sigma_max")

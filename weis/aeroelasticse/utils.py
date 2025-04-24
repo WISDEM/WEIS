@@ -24,7 +24,7 @@ class RotorLoadsDeflStrainsWEIS(Group):
         self.add_subsystem("m2pa", MtoPrincipalAxes(modeling_options=modeling_options), promotes=['alpha', 'M1', 'M2'])
         self.add_subsystem("strains", ComputeStrains(modeling_options=modeling_options), promotes=['alpha', 'M1', 'M2'])
         
-        if not modeling_options["WISDEM"]["RotorSE"]["user_defined_blade_elastic"]:
+        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
             self.add_subsystem("constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options))
             self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
 
