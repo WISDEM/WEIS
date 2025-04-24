@@ -9,6 +9,7 @@ import logging
 import pickle
 from pathlib import Path
 from scipy.interpolate                      import PchipInterpolator
+import scipy.signal as sig
 from openmdao.api                           import ExplicitComponent
 from openmdao.utils.mpi import MPI
 from wisdem.commonse import NFREQ
@@ -34,6 +35,7 @@ from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
 from wisdem.inputs import load_yaml, write_yaml
+
 
 logger = logging.getLogger("wisdem/weis")
 
@@ -562,6 +564,8 @@ class FASTLoadCases(ExplicitComponent):
         self.add_output('damage_lss', val=0.0, desc="Miner's rule cumulative damage to low speed shaft at hub attachment")
         self.add_output('damage_tower_base', val=0.0, desc="Miner's rule cumulative damage at tower base")
         self.add_output('damage_monopile_base', val=0.0, desc="Miner's rule cumulative damage at monopile base")
+
+        self.add_discrete_output('signal_periods', val = {}, desc = "Time period of signals (used with freedecay DLCs)")
 
         # Simulation output
         self.add_output('openfast_failed', val=0.0, desc="Numerical value for whether any openfast runs failed. 0 if false, 2 if true")
@@ -1577,6 +1581,9 @@ class FASTLoadCases(ExplicitComponent):
 
             # Member-based coefficients
             if modopt['flags']['floating']:
+
+                fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
+
                 fst_vt['HydroDyn']['MCoefMod'] = 3 * np.ones( fst_vt['HydroDyn']['NMembers'], dtype=np.int_)  # TODO: should this be the default??
                 fst_vt['HydroDyn']['NCoefMembers'] = len(imembers)
                 fst_vt['HydroDyn']['MemberID_HydC'] = imembers
@@ -1598,7 +1605,7 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['MemberAxCp1']  = fst_vt['HydroDyn']['MemberAxCpMG1'] = np.zeros(np.shape(N1))
                 fst_vt['HydroDyn']['MemberAxCp2']  = fst_vt['HydroDyn']['MemberAxCpMG2'] = np.zeros(np.shape(N1))
 
-            if modopt["Level1"]["potential_model_override"] == 1:
+            if modopt["RAFT"]["potential_model_override"] == 1:
                 # Strip theory only, no BEM
                 fst_vt['HydroDyn']['PropPot'] = [False] * fst_vt['HydroDyn']['NMembers']
             elif modopt["RAFT"]["potential_model_override"] == 2:
@@ -1611,11 +1618,11 @@ class FASTLoadCases(ExplicitComponent):
                 fst_vt['HydroDyn']['SimplAxCp'] = fst_vt['HydroDyn']['SimplAxCpMG'] = 0.0
                 fst_vt['HydroDyn']['SimplCb'] = fst_vt['HydroDyn']['SimplCbMG'] = 0.0
                 fst_vt['HydroDyn']['PropPot'] = [True] * fst_vt['HydroDyn']['NMembers']
-            elif modopt["Level1"]["potential_model_override"] == 3:
+            elif modopt["RAFT"]["potential_model_override"] == 3:
                 # Potential model for inviscid forces (radiation, excitation) only
                 
                 # Avoid double counting of buoyancy force in WAMIT, using OpenFAST nonlinear buoyancy, hydrostatics.  .hst file should be zeros
-                fst_vt['HydroDyn']['PtfmVol0'] = 0  
+                fst_vt['HydroDyn']['PtfmVol0'] = [0.0]  
                 
                 # Zero simple coefficients
                 fst_vt['HydroDyn']['SimplCa'] = fst_vt['HydroDyn']['SimplCaMG'] = 0.0
@@ -1679,8 +1686,6 @@ class FASTLoadCases(ExplicitComponent):
 
                     for i_fig, fig in enumerate(fig_list):
                         fig.savefig(os.path.join(os.path.dirname(fst_vt['HydroDyn']['PotFile']),'rad_fit',f'rad_fit_{i_fig}.png'))
-            
-            fst_vt['HydroDyn']['PtfmVol0'] = [float(inputs['platform_displacement'])] 
 
 
         # Moordyn inputs
@@ -2330,6 +2335,8 @@ class FASTLoadCases(ExplicitComponent):
         
         outputs = self.get_control_measures(inputs, outputs)
 
+        outputs, discrete_outputs = self.get_signalperiods( dlc_generator, outputs, discrete_outputs)
+
         if modopt['flags']['floating'] or (modopt['OpenFAST']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             outputs = self.get_floating_measures(inputs, outputs)
 
@@ -2815,6 +2822,64 @@ class FASTLoadCases(ExplicitComponent):
         outputs['Max_Offset'] = np.max(sum_stats['PtfmOffset']['max'])
 
         return outputs
+    
+    def get_signalperiods( self, dlc_generator, outputs, discrete_outputs, method="peaks"):
+        """
+        Calculates the period of time domian signals
+
+        given:
+            - chan_time
+            - dlc_generator
+        """
+        signal_periods = {} # Dictionary to save the periods
+
+        # Channels to calculate periods of
+        period_channels = {
+            "initial_platform_roll":"PtfmRoll",
+            "initial_platform_pitch":"PtfmPitch",
+            "initial_platform_yaw":"PtfmYaw",
+            "initial_platform_surge":"PtfmSurge",
+            "initial_platform_sway":"PtfmSway",
+            "initial_platform_heave":"PtfmHeave",
+        }
+
+        for i,idlc in enumerate(self.options['modeling_options']['DLC_driver']['DLCs']):
+            if idlc['DLC'] == 'freedecay':
+                # Find the channel used for freedecay dlc ()
+                initcond_channels = []
+                for channel in period_channels:
+                    if idlc[channel] > 0:
+                        initcond_channels.append(channel)
+                if len(initcond_channels) > 1:
+                    logger.warning('WARNING: Freedecay DLCs have been run with more than one initial platform deflection, period calculations may be incorrect')
+
+                time = self.cruncher.outputs[i].time
+                dt = time[1]-time[0]
+
+                if method == "peaks":
+                    for channel in initcond_channels:
+                        signalidx = self.cruncher.outputs[i].channels.index(period_channels[channel])
+                        inds = sig.find_peaks(self.cruncher.outputs[i].data[:,signalidx],height = idlc[channel]/10,distance=5/dt)[0]
+                        if len(inds) < 2:
+                            logger.warning('WARNING: Signal periods cannot be calculated for freedecay DLCs as there are less than two peaks')
+                        else:
+                            peak_times = self.cruncher.outputs[i].time[inds]
+                            period = np.diff(peak_times).mean()
+                            signal_periods[f"DLC_{i}_{period_channels[channel]}"] = period
+                elif method == "fft":
+                    for channel in initcond_channels:
+                        signalidx = self.cruncher.outputs[i].channels.index(period_channels[channel])
+                        signal = self.cruncher.outputs[i].data[:,signalidx]
+                        Y = np.fft.fft(signal)
+                        freq = np.fft.fftfreq(len(signal), dt)
+                        peakfftidx = np.argmax(Y)
+                        peakfftfreq = abs(freq[peakfftidx])
+                        period = 1.0 / peakfftfreq
+                        signal_periods[f"DLC_{i}_{period_channels[channel]}"] = period
+                else:
+                    raise Exception("method needs to be 'peaks' or 'fft' for get_signalperiods")
+        discrete_outputs['signal_periods'] = signal_periods
+        return outputs, discrete_outputs
 
     def get_OL2CL_error(self, outputs):
         ol_case_names = [os.path.join(
