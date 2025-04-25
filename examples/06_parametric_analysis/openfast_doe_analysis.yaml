@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/OpenFAST_DOE
+    folder_output: outputs/06_openfast_doe
     fname_output: OpenFAST_DOE
 design_variables:
   blade:
