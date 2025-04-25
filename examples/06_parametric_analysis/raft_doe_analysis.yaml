@@ -1,17 +1,9 @@
 general:
-    folder_output: outputs/RAFT_DOE
+    folder_output: outputs/06_raft_doe
     fname_output: refturb_output
 
 
 design_variables:
-  # control:
-  #   servo:
-  #     pitch_control:
-  #       omega:
-  #         flag: True
-  #         min: 0.1
-  #         max: 0.5
-
   floating:
     joints:
       flag: True
@@ -31,16 +23,6 @@ design_variables:
                 lower_bound: 9.375
                 upper_bound: 15.625
                 constant: True
-            thickness:
-                lower_bound: 0.05
-                upper_bound: 0.25
-                constant: True
-          # - names: [Y_pontoon_lower1, Y_pontoon_lower2, Y_pontoon_lower3]
-          #   diameter:
-          #     lower_bound: 7.5
-          #     upper_bound: 12.5
-          
-
 
 constraints:
   control:
