@@ -157,7 +157,7 @@ Optimization Method
 ^^^^^^^^^^^^^^^^^^^
 
 - The optimization driver **``LN_COBYLA``** is used to iterate on the design variables and satisfy all constraints while minimizing structural mass.
-- A comparison of solvers can be found on the **Optimization** page (see :doc:`section-optimization`).
+- A comparison of solvers can be found on the **Optimization** page (see :ref:`section-optimization`).
 
 Tower Design of the IEA-15MW RWT
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -300,7 +300,7 @@ This enables easy analysis of trends, constraint violations, and merit figure pe
 
 A set of **Jupyter notebooks** is provided for easy **postprocessing** and **review** of simulation and optimization results.  
 These tools streamline analysis and visualization of outputs generated during OpenFAST, RAFT, and WEIS optimization runs.
-The WEIS Visualization tool is also available for working with WEIS outputs interactively (see :ref:`_weis_viz_app`).
+The WEIS Visualization tool is also available for working with WEIS outputs interactively (see :ref:`weis_viz_app`).
 
 The postprocessing notebooks can be used to:
 
