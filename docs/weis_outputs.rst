@@ -4,129 +4,170 @@ WEIS Outputs
 File Structure & Location
 --------------------------
 
-The WEIS Outputs are determined by the way it configures ``analysis_options`` and ``modeling_options`` files.
-The name and path of WEIS Output files are determined by the variable ``general/folder_output`` and ``general/fname_output`` from the ``analysis_options`` file.
-Below is an example of file structure from WEIS Outputs with OpenFAST-based optimization.
+The WEIS outputs are determined by the way the software configures ``analysis_options`` and ``modeling_options`` files.
+The name and path of WEIS output files are determined by the variables ``general/folder_output`` and ``general/fname_output`` from the ``analysis_options`` file.
+Below is an example of file structure from WEIS outputs with OpenFAST-based optimization.
 
 ::
 
    WEIS Outputs
-        ├── problem_vars.yaml               # WEIS Output
-        ├── refturb_output-analysis.yaml    # .
-        ├── refturb_output-modeling.yaml    # .
-        ├── refturb_output.yaml             # .
-        ├── refturb_output.mat              # WISDEM Output
-        ├── refturb_output.npz              # .
-        ├── refturb_output.pkl              # .
-        ├── refturb_output.xlsx             # .
-        ├── refturb_output.csv              # .
-        ├── case_matrix_combined.txt        # DLC
-        ├── case_matrix_combined.yaml       # .
-        ├── case_matrix_DLC1.6_0.txt        # .
-        ├── case_matrix_DLC1.6_0.yaml       # .
-        ├── log_opt.sql                     # Optimization
-        └── openfast_runs/                  # OpenFAST related
-                 ├── DLC1.6_0_AeroDyn_blade.dat             # OpenFAST Inputs
-                 ├── DLC1.6_0_AeroDyn.dat                   # .
-                 ├── DLC1.6_0_ElastoDyn_tower.dat           # .
-                 ├── DLC1.6_0_ElastoDyn.dat                 # .
-                 ├── DLC1.6_0_ElastoDynBlade.dat            # .
-                 ├── DLC1.6_0_HydroDyn.dat                  # .
-                 ├── DLC1.6_0_InflowWind.dat                # .
-                 ├── DLC1.6_0_MoorDyn.dat                   # .
-                 ├── DLC1.6_0_SeaState.dat                  # .
-                 ├── DLC1.6_0_ServoDyn.dat                  # .
-                 ├── Airfoils/                              # .
-                 │      ├── DLC1.6_0_AeroDyn_Polar_00.dat
-                 │      └── DLC1.6_0_AeroDyn_Polar_01.dat
-                 ├── wind/                                  # . 
-                 ├── DLC1.6_0.fst                           # OpenFAST Outputs   
-                 ├── DLC1.6_0.out                           # .
-                 ├── DLC1.6_0.outb                          # .
-                 ├── DLC1.6_0.sum                           # .
+        ├── problem_vars.yaml               # WEIS - Design variables, constraints, and objectives
+        ├── refturb_output-analysis.yaml    # WEIS - Final analysis options
+        ├── refturb_output-modeling.yaml    # WEIS - Final modeling options
+        ├── refturb_output.yaml             # WEIS - Final turbine model
+        ├── refturb_output.mat              # WISDEM/OpenMDAO - Results in MATLAB format
+        ├── refturb_output.npz              # WISDEM/OpenMDAO - Results in NumPy archive format
+        ├── refturb_output.pkl              # WISDEM/OpenMDAO - Results in Python pickle format
+        ├── refturb_output.xlsx             # WISDEM/OpenMDAO - Results in Excel format
+        ├── refturb_output.csv              # WISDEM/OpenMDAO - Results in CSV format
+        ├── case_matrix_combined.txt        # DLC - Combined definitions (text)
+        ├── case_matrix_combined.yaml       # DLC - Combined definitions (YAML)
+        ├── case_matrix_DLC1.6_0.txt        # DLC - Specific definitions (text)
+        ├── case_matrix_DLC1.6_0.yaml       # DLC - Specific definitions (YAML)
+        ├── log_opt.sql                     # Optimization history database
+        └── openfast_runs/                  # OpenFAST simulation directory
+                 ├── DLC1.6_0_AeroDyn_blade.dat             # Blade aerodynamics
+                 ├── DLC1.6_0_AeroDyn.dat                   # General aerodynamics
+                 ├── DLC1.6_0_ElastoDyn_tower.dat           # Tower structural properties
+                 ├── DLC1.6_0_ElastoDyn.dat                 # Main structural properties
+                 ├── DLC1.6_0_ElastoDynBlade.dat            # Blade structural properties
+                 ├── DLC1.6_0_HydroDyn.dat                  # Hydrodynamic properties
+                 ├── DLC1.6_0_InflowWind.dat                # Wind conditions
+                 ├── DLC1.6_0_MoorDyn.dat                   # Mooring system properties
+                 ├── DLC1.6_0_SeaState.dat                  # Ocean conditions
+                 ├── DLC1.6_0_ServoDyn.dat                  # Controller configuration
+                 ├── Airfoils/                              # Airfoil data
+                 │      ├── DLC1.6_0_AeroDyn_Polar_00.dat   # Airfoil polar data
+                 │      └── DLC1.6_0_AeroDyn_Polar_01.dat   # Airfoil polar data
+                 ├── wind/                                  # Wind field data
+                 ├── DLC1.6_0.fst                           # Main OpenFAST input file
+                 ├── DLC1.6_0.out                           # Text output results
+                 ├── DLC1.6_0.outb                          # Binary output results
+                 ├── DLC1.6_0.sum                           # Summary results
                  │
-                 ├── iteration_0/                           # Optimization
-                 │      ├── DELs.p
-                 │      ├── fst_vt.p
-                 │      ├── summary_stats.p
+                 ├── iteration_0/                           # Optimization iteration output
+                 │      ├── DELs.p                          # Damage Equivalent Loads pickle file
+                 │      ├── fst_vt.p                        # OpenFAST variable tree pickle file
+                 │      ├── summary_stats.p                 # Summary statistics pickle file
                  │      └── timeseries/                     # OpenFAST Timeseries Output
                  │
-                 └── iteration_1/                           # Optimization
+                 └── iteration_1/                           # Optimization iteration output
                         ├── DELs.p
                         ├── fst_vt.p
                         ├── summary_stats.p
-                        └── timeseries/                     # OpenFAST Timeseries Output
+                        └── timeseries/
  
-
 
 OpenFAST-related
 -----------------
 
-The OpenFAST-related files are located under ``openfast_runs/`` folder, containing the dynamic simulation output of Aero-servo-hydro-elastic modeling.
-OpenFAST requires multiple input files to run the simulations, which will be automatically generated within WEIS.
+The OpenFAST-related files are located under the ``openfast_runs/`` folder, containing the dynamic simulation outputs from aero-servo-hydro-elastic modeling.
+OpenFAST requires multiple input files to run the simulations, which are automatically generated within WEIS.
+
+Input Files
+^^^^^^^^^^^
 
     * *.fst
-        * This is the main OpenFAST input file, which contains the references to all the other input files required for the simulation and specifies the simulation settings.
+        * This is the main OpenFAST input file that serves as the entry point for simulations. It references all other module input files and specifies general simulation settings including time step, simulation duration, and enabled modules.
     
     * *.dat
-        * These are typical data files that store specifies types of input parameters or configuration setting related to a particular subsystem of the wind turbine model.
-          These files are used to provide additional information to OpenFAST, such as input parameters for aerodynamics, hydrodynamics, structural properties, control system, and environmental conditions.
+        * These are module-specific input files that contain parameters for different subsystems of the wind turbine model, a few examples include:
+            * *_AeroDyn.dat - Aerodynamic settings and parameters
+            * *_ElastoDyn.dat - Structural properties and initial conditions
+            * *_ServoDyn.dat - Control system configuration
+            * *_HydroDyn.dat - Hydrodynamic loading parameters
+            * *_MoorDyn.dat - Mooring system configuration
+            * *_InflowWind.dat - Wind conditions specification
 
     * Airfoils/*.dat
-        * These input data files define the aerodynamic properties of the turbine blades' airfoils, which are crucial for simulating the aerodynamic forces acting on the turbine rotor in OpenFAST.
+        * These input files define the airfoil lift, drag, and moment coefficients as functions of angle of attack, Reynolds number, and other parameters. These data are crucial for accurate aerodynamic calculations.
 
     * wind/*.in
-        * The wind/ directory holds input data files for TurbSim that define the wind conditions for the simulation.
+        * Input files for TurbSim/deterministic inflow that define the wind field characteristics including mean wind speed, turbulence intensity, wind shear, and spatial coherence parameters.
 
 
-The output files generated by OpenFAST are typically time-series data and result files that contain detailed information on turbine performance, structural response, and environmental interactions.
-These output files can be also in a variety of formats.
+Output Files
+^^^^^^^^^^^
+
+OpenFAST generates several output files containing simulation results:
 
     * *.out
-        * This is the main output file that contains time-series results from the simulation. It provides detailed data on turbine performance, including rotor speed, power output, blade deflection, aerodynamic loads, etc.
+        * Text-based time-series output containing columns of data for requested output channels. These files provide detailed information on turbine states and loads throughout the simulation.
+    
+    * *.outb
+        * Binary version of the .out file with the same data but in a more compact and efficient format for large simulations.
     
     * *.sum
-        * This file contains a summary of the results at the end of the simulation. This includes key performance metrics such as total energy produced, maximum loads, and average power output over the simulation.
+        * This file contains a summary of the various modules used in the OpenFAST simulation. It serves as a quick reference for the configuration and settings of each module.
 
 
-For more information, please refer to `OpenFAST <https://openfast.readthedocs.io/en/main/>`_ .
+For more information on OpenFAST input and output files, refer to the `OpenFAST documentation <https://openfast.readthedocs.io/en/main/>`_.
 
 
 WISDEM/WEIS-related
 --------------------
 
-These are the general WEIS output files, integrated with OpenMDAO framework. These outputs provide a detailed and comprehensive view of a wind turbine's performance, including aerodynamics, structural integrity, dynamic response, and economic feasibility.
-Various types of file extensions such as csv, mat, npz, pkl, and xlsx are supported, where basically all the contents are same.
+These files contain the integrated outputs from the WEIS framework, providing comprehensive results on the wind turbine's performance, structural properties, and system characteristics.
 
-refturb_output.yaml, refturb_output-analysis.yaml, and refturb_output-modeling.yaml files are the final version updated from the WEIS Input yaml files. (refturb_output is the name determined from ``analysis_options.yaml`` file.)
+Output Files
+^^^^^^^^^^^
 
-problem_vars.yaml file includes the content of design variables, constraints, and objectives.
+    * refturb_output.yaml, refturb_output-analysis.yaml, refturb_output-modeling.yaml
+        * These are the final updated versions of the WEIS input files, reflecting any changes made during the analysis or optimization process. The base filename (refturb_output) is determined by the ``general/fname_output`` setting in the ``analysis_options.yaml`` file.
+
+    * problem_vars.yaml
+        * This file documents the optimization problem formulation, including design variables with their bounds, constraints with their values and margins, and objectives with their weights.
+
+    * refturb_output.* (mat/npz/pkl/xlsx/csv)
+        * These files contain the same output data in different formats for compatibility with various analysis tools:
+            * .mat - MATLAB format
+            * .npz - NumPy compressed archive
+            * .pkl - Python pickle format
+            * .xlsx - Excel spreadsheet
+            * .csv - Comma-separated values text file
 
 
 DLC-related
 ------------
-The case matrices for each DLC as well as combined version will be generated by WEIS. They are supported by yaml and text file formats. For more information, please refer to :doc:`Design Load Cases page <dlc_generator>`.
+
+Design Load Case (DLC) files document the simulation cases that were run:
+
+    * case_matrix_combined.txt/yaml
+        * These files contain the complete set of all DLC simulations performed, with each row describing a unique combination of wind speed, wave conditions, fault scenarios, and other environmental parameters.
+
+    * case_matrix_DLC*.txt/yaml
+        * Individual case matrix files for specific DLCs (e.g., DLC1.6_0), containing only the cases relevant to that particular design load case.
+
+For more information on how DLCs are configured and generated, please refer to the :doc:`Design Load Cases page <dlc_generator>`.
 
 
 Optimization-related
-------------------
+--------------------
 
-The following files will be generated if optimization has been performed. This can be set up by enabling the optimization flag ``recorder/flag = True`` at ``analysis_options.yaml``.
+When optimization is enabled by setting ``recorder/flag = True`` in the ``analysis_options.yaml`` file, additional outputs are generated to track the optimization process:
 
+    * log_opt.sql
+        * An SQLite database file containing the complete history of the optimization process. This file can be visualized using OpenMDAO's built-in visualization tools to show the convergence history, constraint violations, and objective improvement over iterations. The filename is configured via the ``recorder/file_name`` setting.
 
-    * OpenMDAO SQL Logs
-        * The openmdao problem will be recorded as SQL database file if it was activated as a design variable or constraint. The filename will be the one that you defined under ``recorder/file_name``. This SQL log contains the full content of optimization, so this can be better used in understanding how the optimization has been converged over iterations.
+    * iteration_*/
+        * Directories containing results from each optimization iteration:
 
+            * timeseries/
+                * Contains raw OpenFAST time series outputs for all simulations run during the specific iteration. These files capture the detailed dynamic response of the system for each design point.
 
-For each iteration, various pcrunch data will be created:
+            * summary_stats.p
+                * A Python pickle file containing statistical summaries (min, max, mean, standard deviation, median, absolute values, integrated values) of key output channels across all simulations in the iteration. This provides a quick overview of system performance without needing to process the raw time series.
 
-    * timeseries/
-        * This folder will be generated only if OpenFAST-based optimization has been performed. This contains OpenFAST time series outputs data.
-    * summary_stats
-        * This is a pcrunch data showing the statistics over channels across timeseries data. This supports ``min``, ``max``, ``std``, ``mean``, ``median``, ``abs``, and ``integrated``. This data can be coupled with case matrices to perform DLC Analysis.
-    * DELs
-        * 
-    * fst_vt
-        *
+            * DELs.p
+                * Contains Damage Equivalent Loads calculated from the fatigue analysis of time series data. These loads represent the cumulative damage effect from variable amplitude loading converted to equivalent constant amplitude loads.
 
-For RAFT-based optimization, ``raft/raft_designs/`` folder will be generated, containing RAFT time series outputs data, supported with both pickle and yaml file formats.
+            * fst_vt.p
+                * Contains the complete OpenFAST input parameter set for this iteration in a FAST variable tree format ref: `openfast_io <https://openfast.readthedocs.io/en/main/>`_.. This preserves the exact model configuration used for the simulations in this iteration.
+
+RAFT-based Optimization
+^^^^^^^^^^^^^^^^^^^^^^^
+
+For optimizations using the RAFT (Ranging And Fatigue Tool) module instead of OpenFAST:
+
+    * raft/raft_designs/
+        * This directory contains RAFT time series outputs and design information, available in both pickle (.p) and YAML (.yaml) formats. These files provide computationally efficient approximations of turbine dynamics and loads for optimization purposes.
