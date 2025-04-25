@@ -1,3 +1,5 @@
+.. _section-weis_outputs:
+
 WEIS Outputs
 ------------
 

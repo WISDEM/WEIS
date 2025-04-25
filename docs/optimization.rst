@@ -1,3 +1,5 @@
+.. _section-optimization:
+
 Optimization in WEIS
 ====================
 
