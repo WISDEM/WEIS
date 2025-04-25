@@ -84,7 +84,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
         AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+        PotFile: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
 
 RAFT:
     flag: False
@@ -92,7 +92,7 @@ RAFT:
 
 ROSCO:
     flag: True
-    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
 DLC_driver:
     metocean_conditions:
         wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
@@ -120,12 +120,12 @@ DLC_driver:
         #   n_seeds: 6
         # - DLC: "1.4"
         # - DLC: "1.5"
-        - DLC: "1.6"
-          wind_speed: [12]
-          analysis_time: 1.
-          transient_time: 0.
-        # - DLC: "6.1"
-        #   n_seeds: 6
+        # - DLC: "1.6"
+        #   wind_speed: [12]
+        #   analysis_time: 1.
+        #   transient_time: 0.
+        - DLC: "6.1"
+          n_seeds: 6
         # - DLC: "6.3"
         #   n_seeds: 6
 

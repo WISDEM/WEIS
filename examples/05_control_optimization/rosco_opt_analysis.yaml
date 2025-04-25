@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/02_rosco_optimization
+    folder_output: outputs/05_rosco_opt
     fname_output: iea15mw
 design_variables:
   control:

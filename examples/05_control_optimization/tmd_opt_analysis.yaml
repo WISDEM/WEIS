@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/06_IEA15_TMD_optimization
+    folder_output: outputs/05_tmd_opt
     fname_output: refturb_output
 
 
