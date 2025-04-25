@@ -2,7 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: NREL5MW_OC3_spar
-        OF_run_dir: temp/NREL5MW_OC3_spar
         
 WISDEM:
     RotorSE:
@@ -60,6 +59,12 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     HydroDyn:
         PotMod: 1
         AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+
+RAFT:
+    flag: True
+    min_freq: 0.1
+    max_freq: 2.0
+
 ROSCO:
     flag: True
     
