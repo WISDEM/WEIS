@@ -59,7 +59,7 @@ ROSCO:
     F_LPFType: 2
     F_NotchType: 2
     Fl_Mode: 2 
-    tuning_yaml: rosco_inputs_iea22.yaml
+    tuning_yaml: ../03_design_with_openfast/iea22_rosco.yaml
     zeta_pc: [1]
     omega_pc: [0.2]
     U_pc: [12]
@@ -81,13 +81,8 @@ DLC_driver:
         wave_period_50: 14.2
     DLCs:
         - DLC: "1.6"
-          wind_speed: [12]
           analysis_time: 1.
           transient_time: 0.
-        #   turbulent_wind:
-        #       HubHt: 160
-        #       GridHeight: 300
-        #       GridWidth: 300
-        # - DLC: "6.1"
-        #   analysis_time: 1.
-        #   transient_time: 0.
+        - DLC: "6.1"
+          analysis_time: 1.
+          transient_time: 0.

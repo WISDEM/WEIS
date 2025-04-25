@@ -1,5 +1,5 @@
 general:
-    folder_output: outputs/03_OC3_optimization
+    folder_output: outputs/04_oc3_raft
     fname_output: refturb_output
 design_variables:
   control:
