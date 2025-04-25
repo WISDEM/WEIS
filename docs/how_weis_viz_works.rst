@@ -1,3 +1,6 @@
+.. _weis_viz_app:
+
+
 WEIS Visualization APP
 =======================
 
