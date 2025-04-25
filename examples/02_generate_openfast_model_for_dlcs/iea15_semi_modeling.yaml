@@ -2,7 +2,7 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         use_exe: True
-        allow_fails: True
+        # allow_fails: True
         fail_value: 9999
 
 WISDEM:
