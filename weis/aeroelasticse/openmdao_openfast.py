@@ -217,7 +217,6 @@ class FASTLoadCases(ExplicitComponent):
             self.add_input('hub_system_mass', val=0.0,                     units='kg', desc='mass of hub system')
             self.add_input('above_yaw_mass',  val=0.0, units='kg', desc='Mass of the nacelle above the yaw system')
             self.add_input('yaw_mass',        val=0.0, units='kg', desc='Mass of yaw system')
-            self.add_input('rna_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the rna [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
             self.add_input('nacelle_cm',      val=np.zeros(3), units='m', desc='Center of mass of the component in [x,y,z] for an arbitrary coordinate system')
             self.add_input('nacelle_I_TT',       val=np.zeros(6), units='kg*m**2', desc=' moments of Inertia for the nacelle [Ixx, Iyy, Izz, Ixy, Ixz, Iyz] about the tower top')
             self.add_input('distance_tt_hub', val=0.0,         units='m',   desc='Vertical distance from tower top plane to hub flange')
@@ -333,7 +332,7 @@ class FASTLoadCases(ExplicitComponent):
 
             # MoorDyn inputs
             mooropt = modopt["mooring"]
-            if self.options["modeling_options"]["flags"]["mooring"]:
+            if modopt["flags"]["mooring"]:
                 n_nodes = mooropt["n_nodes"]
                 n_lines = mooropt["n_lines"]
                 self.add_input("line_diameter", val=np.zeros(n_lines), units="m")
@@ -352,37 +351,41 @@ class FASTLoadCases(ExplicitComponent):
                 self.add_discrete_input("node_names", val=[""] * n_nodes)
 
             # Inputs required for fatigue processing
-            self.add_input('blade_sparU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_sparU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_sparU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
-            self.add_input('blade_sparL_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_sparL_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_sparL_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
-            self.add_input('blade_teU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_teU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_teU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
-            self.add_input('blade_teL_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_teL_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('blade_teL_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
-            self.add_input('blade_root_sparU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root upper spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('blade_root_sparL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root lower spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('blade_maxc_teU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord upper trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('blade_maxc_teL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord lower trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('lss_wohlerexp',   val=1.0,   desc='Low speed shaft Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('lss_wohlerA',     val=1.0,   desc='Low speed shaft parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('lss_ultstress',   val=1.0, units="Pa",   desc='Low speed shaft Ultimate stress for material')
-            self.add_input('lss_axial_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('lss_shear_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('tower_wohlerexp',   val=np.ones(n_height_tow-1),   desc='Tower Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('tower_wohlerA',     val=np.ones(n_height_tow-1),   desc='Tower parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('tower_ultstress',   val=np.ones(n_height_tow-1), units="Pa",   desc='Tower ultimate stress for material')
-            self.add_input('tower_axial_load2stress',   val=np.ones([n_height_tow-1,6]), units="m**2",  desc='Tower coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('tower_shear_load2stress',   val=np.ones([n_height_tow-1,6]), units="m**2",  desc='Tower coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('monopile_wohlerexp',   val=np.ones(monlen),   desc='Tower Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
-            self.add_input('monopile_wohlerA',     val=np.ones(monlen),   desc='Tower parameter, A, in S/N curve S=A*N^-(1/m)')
-            self.add_input('monopile_ultstress',   val=np.ones(monlen), units="Pa",   desc='Tower ultimate stress for material')
-            self.add_input('monopile_axial_load2stress',   val=np.ones([monlen,6]), units="m**2",  desc='Tower coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
-            self.add_input('monopile_shear_load2stress',   val=np.ones([monlen,6]), units="m**2",  desc='Tower coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+            if modopt['flags']['blade']:
+                self.add_input('blade_sparU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_sparU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_sparU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+                self.add_input('blade_sparL_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_sparL_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_sparL_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+                self.add_input('blade_teU_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_teU_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_teU_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+                self.add_input('blade_teL_wohlerexp',   val=1.0,   desc='Blade root Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_teL_wohlerA',   val=1.0, units="Pa",   desc='Blade root parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('blade_teL_ultstress',   val=1.0, units="Pa",   desc='Blade root ultimate stress for material')
+                self.add_input('blade_root_sparU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root upper spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+                self.add_input('blade_root_sparL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade root lower spar cap coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+                self.add_input('blade_maxc_teU_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord upper trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+                self.add_input('blade_maxc_teL_load2stress',   val=np.ones(6), units="m**2",  desc='Blade max chord lower trailing edge coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+            if modopt['flags']['nacelle']:
+                self.add_input('lss_wohlerexp',   val=1.0,   desc='Low speed shaft Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('lss_wohlerA',     val=1.0,   desc='Low speed shaft parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('lss_ultstress',   val=1.0, units="Pa",   desc='Low speed shaft Ultimate stress for material')
+                self.add_input('lss_axial_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+                self.add_input('lss_shear_load2stress',   val=np.ones(6), units="m**2",  desc='Low speed shaft coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+            if modopt['flags']['tower']:
+                self.add_input('tower_wohlerexp',   val=np.ones(n_height_tow-1),   desc='Tower Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('tower_wohlerA',     val=np.ones(n_height_tow-1),   desc='Tower parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('tower_ultstress',   val=np.ones(n_height_tow-1), units="Pa",   desc='Tower ultimate stress for material')
+                self.add_input('tower_axial_load2stress',   val=np.ones([n_height_tow-1,6]), units="m**2",  desc='Tower coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+                self.add_input('tower_shear_load2stress',   val=np.ones([n_height_tow-1,6]), units="m**2",  desc='Tower coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
+            if modopt['flags']['monopile']:
+                self.add_input('monopile_wohlerexp',   val=np.ones(monlen),   desc='Tower Wohler exponent, m, in S/N curve S=A*N^-(1/m)')
+                self.add_input('monopile_wohlerA',     val=np.ones(monlen),   desc='Tower parameter, A, in S/N curve S=A*N^-(1/m)')
+                self.add_input('monopile_ultstress',   val=np.ones(monlen), units="Pa",   desc='Tower ultimate stress for material')
+                self.add_input('monopile_axial_load2stress',   val=np.ones([monlen,6]), units="m**2",  desc='Tower coefficient between axial load and stress S=C^T [Fx-z;Mx-z]')
+                self.add_input('monopile_shear_load2stress',   val=np.ones([monlen,6]), units="m**2",  desc='Tower coefficient between shear load and stress S=C^T [Fx-z;Mx-z]')
         
 
         # TMD params
@@ -1103,7 +1106,7 @@ class FASTLoadCases(ExplicitComponent):
         if f_torsion > 0.0:
             fst_vt['ServoDyn']['YawDamp'] = damp_ratio * k_tow_tor / np.pi / f_torsion
         else:
-            fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['rna_I_TT'][2])
+            fst_vt['ServoDyn']['YawDamp'] = 2 * damp_ratio * np.sqrt(k_tow_tor * inputs['nacelle_I_TT'][2])
 
         # Update ElastoDyn Blade Input File
         fst_vt['ElastoDyn']['BldFile1'] = ''
