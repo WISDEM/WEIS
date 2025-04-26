@@ -22,8 +22,6 @@ from wisdem.glue_code.gc_RunTools import Convergence_Trends_Opt
 from weis.glue_code.gc_RunTools import Outputs_2_Screen
 from weis.frequency.raft_wrapper import RAFT_WEIS
 from weis.control.tmd import TMD_group
-from rosco.toolbox.inputs.validation import load_rosco_yaml
-from wisdem.inputs import load_yaml
 from wisdem.commonse.cylinder_member import get_nfull
 
 
@@ -681,7 +679,7 @@ class WindPark(om.Group):
 
                     self.connect('nacelle.distance_hub_mb',           'drivese_post.L_h1')
                     self.connect('nacelle.distance_mb_mb',            'drivese_post.L_12')
-                    self.connect('nacelle.L_generator',               'drivese_post.L_generator')
+                    self.connect('generator.L_generator',             'drivese_post.L_generator')
                     self.connect('nacelle.overhang',                  'drivese_post.overhang')
                     self.connect('nacelle.distance_tt_hub',           'drivese_post.drive_height')
                     self.connect('nacelle.uptilt',                    'drivese_post.tilt')
@@ -793,7 +791,7 @@ class WindPark(om.Group):
                         self.connect('generator.C_Fes'        , 'drivese_post.generator.C_Fes')
                         self.connect('generator.C_PM'         , 'drivese_post.generator.C_PM')
 
-                        if modeling_options['WISDEM']['GeneratorSE']['type'] in ['pmsg_outer']:
+                        if modeling_options['WISDEM']['DriveSE']['generator']['type'] in ['pmsg_outer']:
                             self.connect('generator.N_c'          , 'drivese_post.generator.N_c')
                             self.connect('generator.b'            , 'drivese_post.generator.b')
                             self.connect('generator.c'            , 'drivese_post.generator.c')
@@ -811,13 +809,13 @@ class WindPark(om.Group):
                             self.connect('generator.B_tmax'       , 'drivese_post.generator.B_tmax')
                             self.connect('rotorse.rp.powercurve.rated_mech', 'drivese_post.generator.P_mech')
 
-                        if modeling_options['WISDEM']['GeneratorSE']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
+                        if modeling_options['WISDEM']['DriveSE']['generator']['type'] in ['eesg','pmsg_arms','pmsg_disc']:
                             self.connect('generator.tau_p'        , 'drivese_post.generator.tau_p')
                             self.connect('generator.h_ys'         , 'drivese_post.generator.h_ys')
                             self.connect('generator.h_yr'         , 'drivese_post.generator.h_yr')
                             self.connect('generator.b_arm'        , 'drivese_post.generator.b_arm')
 
-                        elif modeling_options['WISDEM']['GeneratorSE']['type'] in ['scig','dfig']:
+                        elif modeling_options['WISDEM']['DriveSE']['generator']['type'] in ['scig','dfig']:
                             self.connect('generator.B_symax'      , 'drivese_post.generator.B_symax')
                             self.connect('generator.S_Nmax'      , 'drivese_post.generator.S_Nmax')
 
