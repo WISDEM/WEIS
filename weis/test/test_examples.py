@@ -13,6 +13,7 @@ skinny_scripts = [
     # "13_DTQP/gen_oloc",
     "17_IEA22_Optimization/driver_weis_openfast_opt",   # Moved from all_scripts to test viz app
     "17_IEA22_Optimization/driver_weis_raft_opt",       # Moved from all_scripts to test viz app
+    "18_user_custom_setup/weis_driver_umaine_semi",
 ]
 
 
@@ -41,6 +42,7 @@ all_scripts = [
     "15_RAFT_Studies/weis_driver_raft_opt",
     # "17_IEA22_Optimization/driver_weis_openfast_opt",     # executed in examples_skinny
     # "17_IEA22_Optimization/driver_weis_raft_opt",     # executed in examples_skinny
+    #"18_user_custom_setup/weis_driver_umaine_semi",     # executed in examples_skinny
 ]
 
 class TestExamples(unittest.TestCase):
