@@ -145,9 +145,6 @@ class TestGeneral(unittest.TestCase):
         # Run OpenFAST, either serially or sequentially
         cruncher = fastBatch.run_serial()
 
-        # Update pkl file
-        # with open('./general_regression_values.pkl', 'wb') as file:
-        #     pickle.dump(out, file)
         compare_regression_values([m.to_dict() for m in cruncher.outputs],
                                   'general_regression_values.pkl',
                                   directory=this_file_dir, tol=5e-1, train=False)
