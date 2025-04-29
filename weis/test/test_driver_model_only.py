@@ -6,7 +6,7 @@ TEST_RUN = False
 
 ## File management
 run_dir = os.path.dirname( os.path.realpath(__file__) )
-fname_wt_input = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-3p4-130-RWT.yaml")
+fname_wt_input = os.path.join(run_dir, "..", "..", "examples", "00_setup", "ref_turbines", "IEA-3p4-130-RWT.yaml")
 fname_modeling_options = os.path.join(run_dir, "modeling_options.yaml")
 fname_analysis_options = os.path.join(run_dir, "analysis_options.yaml")
 
