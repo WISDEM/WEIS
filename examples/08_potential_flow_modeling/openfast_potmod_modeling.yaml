@@ -24,7 +24,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     simulation:
         DT: 0.01
         CompElast: 1
-        CompInflow: 0
+        CompInflow: 1
         CompAero: 2
         CompServo: 1
         CompHydro: 1
@@ -32,6 +32,7 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         CompMooring: 3
         CompIce: 0
         SttsTime: 1.0
+        OutFileFmt: 3
     linearization:
         Linearize: False
     ElastoDyn:
@@ -40,12 +41,12 @@ OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
         EdgeDOF: True
         TeetDOF: False
         DrTrDOF: False 
-        GenDOF: False
+        GenDOF: True
         YawDOF: False  
         TwFADOF1 : True
-        TwFADOF2 : True
+        TwFADOF2 : False
         TwSSDOF1 : True
-        TwSSDOF2 : True
+        TwSSDOF2 : False
         PtfmSgDOF: True
         PtfmSwDOF: True
         PtfmHvDOF: True
@@ -64,6 +65,7 @@ RAFT:
     flag: True
     min_freq: 0.1
     max_freq: 2.0
+    potential_bem_members: [spar]   # modeling the fairlead legs requires much smaller mesh, not yet supported
 
 ROSCO:
     flag: True
@@ -73,9 +75,5 @@ DLC_driver:
         - DLC: "1.1"
           ws_bin_size: 5
           n_seeds: 1
-          analysis_time: 1.
+          analysis_time: 150.
           transient_time: 0.
-          turbulent_wind:
-              HubHt: 110
-              GridHeight: 160
-              GridWidth: 160
