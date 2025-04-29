@@ -19,7 +19,7 @@ Based on your turbine configuration, prepare the geometry input or start from th
 
 Design Variables, Constraints, and Merit Figures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-A brief introduction would be helpufl here.
+In WEIS, the optimization problem is formulated by setting design variables, constraints, and merit figures. Design variables represent the tunable parameters of the system. Availble design variables in WEIS span across the rotor, controller, hub, drivetrain, tower, platforms, and mooring. To set constraints, users toggle the constraints in the analysis options and set the upper and lower bounds based on the problem. The merit figure determines the objective of the optimization. Several merit figures are available in WEIS, with common examples including LCOE, AEP, and turbine cost. For a complete list of supported design variables, constraints, and merit figures, refer to the ``analysis_options.yaml`` file in the WISDEM and WEIS repositories. WEIS also allows users to set design variables. constraints, and merit figures beyond those listed in the schema file. To do so, users need to be familiar with the inputs and outputs of relevant components within WEIS and WISDEM.
 
 User-defined design variables, constraints, and merit figures
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -463,3 +463,7 @@ Here are some common problems when running optimization in WEIS and how to troub
 1. **Problem**: Constraints are violated and do not seem to improve.
 
    **Solution**: Check the design variables have proper bounds and constraints are reasonable. Starting from a feasible design point is important for the optimization to converge. Check your initial design point that it does not aggressively violate the constraints. If you are using OpenFAST, check your simulations are converging and not failing. If you have failed solutions, some outputs will be capped to the maximum or minimum values.
+
+2. **Problem**: The optimizer takes crazy steps and does not converge.
+
+   **Solution**: Check the design variables have proper bounds. If you are using gradient-based optimization, check the gradients are correct and do a step-size study.

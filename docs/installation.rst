@@ -60,6 +60,13 @@ Standard Installation (Linux, macOS, Windows)
       conda install -y petsc4py=3.22.2 mpi4py pyoptsparse     # (Mac / Linux only, sometimes Windows users may need to install mpi4py)
       pip install -e .
 
+3. If you want to use the more advanced meshing capability for BEM modeling, install the following after you install WEIS:
+   ::
+
+      pip install pygmsh==7.1.17 
+      pip install https://github.com/LHEEA/meshmagick/archive/refs/tags/3.4.zip
+      pip install trimesh                              # (Only if you want to use the internal function to plot the mesh)
+
 Installation on Kestrel (DOE HPC System)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

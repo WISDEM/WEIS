@@ -54,6 +54,7 @@ When used through WEIS, RAFT receives the necessary data directly from WEIS. The
 WEIS can output a RAFT `.yaml` input file by setting the flag `save_designs` to `True` in the `RAFT` section of the `modeling file`.
 
 
+.. _section-BEM_modeling:
 BEM modeling
 ~~~~~~~~~~~~
 
@@ -74,6 +75,7 @@ This table below summmarizes the options for *potential_model_override* in RAFT.
 | 2                        | Wave excitation and added mass for all members      | Only drag and buoyancy from strip theory for all members                               | 
 +--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
 
+WEIS now includes the capability to create intersected meshes for the BEM modeling. This capabilty relies on using external packages, `pygmsh <https://pygmsh.readthedocs.io/en/latest/>`_ and `meshmagick <https://github.com/LHEEA/meshmagick>`_. Please make sure you install these separately. 
 
 pyHAMS
 ^^^^^^
@@ -172,7 +174,7 @@ After simulations, WEIS processes OpenFAST outputs using pCrunch to provide:
 These results are formatted for integration with optimization workflows and automated reporting.
 
 Further Information
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 * For detailed OpenFAST documentation, visit the `OpenFAST documentation <https://openfast.readthedocs.io/>`_
 * Examples of OpenFAST usage in WEIS can be found in the ``examples`` directory
