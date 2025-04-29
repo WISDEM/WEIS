@@ -2,7 +2,6 @@ General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
         OF_run_fst: BAR0
-        OF_run_dir: temp/BAR0
         
 WISDEM:
     RotorSE:
