@@ -463,9 +463,8 @@ components:
             spring_constant: 69737644923.0
             damping_coefficient: 49573149.0
         generator:
-            elastic_properties_mb:
-                system_mass: 69360.0
-                rotor_inertia: [1836783.0, 10862815.0, 10360761.0]
+            generator_mass_user: 69360.0
+            rotor_inertia: [1836783.0, 10862815.0, 10360761.0]
     tower:
         outer_shape_bem:
             reference_axis: &id003
