@@ -5,14 +5,14 @@ WISDEM
 -------
 
 WEIS wraps the systems engineering framework WISDEM. 
-Both WISDEM and WEIS are built on top of `OpenMDAO <https://openmdao.org>_` and therefore share much of the same architecture and syntax. 
+Both WISDEM and WEIS are built using `OpenMDAO <https://openmdao.org>`_ and therefore share much of the same architecture and syntax. 
 OpenMDAO is a generic open-source optimization framework implemented in Python by NASA. 
-WISDEM has been developed by NREL researchers on top of OpenMDAO since 2014. 
+WISDEM has been developed by NREL researchers using OpenMDAO since 2014. 
 Both WISDEM and WEIS allow users to optimize the design of single turbines. 
 The key difference between WISDEM and WEIS is that WISDEM implements steady-state models, such as the steady-state blade element momentum solver CCBlade, the cross-sectional solver PreComp, and the steady-state beam solver frame3dd, whereas WEIS includes solvers capable of capturing dynamic effects using OpenFAST and RAFT. 
 WEIS also includes the turbine controller ROSCO.
 WISDEM and WEIS share the same three input files: the geometry yaml, which describes the turbine, the modeling yaml, which lists all modeling-related options, and the analysis yaml, which builds the optimization setup and lists design variables, figure of merit, constraints, and optimization settings. 
-The only difference in inputs files between WISDEM and WEIS is that the modeling options yaml in WEIS has many more optional inputs, as it contains all the flags and settings that go into OpenFAST, RAFT, and ROSCO.
+The only difference in inputs files between WISDEM and WEIS is that the modeling options yaml in WEIS has many more optional inputs, as it contains all the flags and settings that configure OpenFAST, RAFT, and ROSCO.
 
 Within WEIS, WISDEM models the turbine and generates all those quantities that are needed by OpenFAST and RAFT. 
 For the turbine rotor, WISDEM interpolates aerodynamic quantities and builds the lifting line and associated polars. 
@@ -24,13 +24,13 @@ WISDEM finally computes the regulation trajectory for the turbine, which is used
 In simple terms, WISDEM can be seen as the first tool for the conceptual design of a wind turbine. 
 Once a first conceptual design is generated, WEIS becomes a critical tool for more sophisticated studies investigating the dynamic performance of the turbine, whether land-based or offshore.
 
-WEIS users are encouraged to familiarize themselves with WISDEM through its documentation, which is available at `https://wisdem.readthedocs.io/en/master/ <https://wisdem.readthedocs.io/en/master/>_`. 
+WEIS users are encouraged to familiarize themselves with WISDEM through its documentation, which is available at `https://wisdem.readthedocs.io/en/master/ <https://wisdem.readthedocs.io/en/master/>`_. 
 The list of WISDEM examples is often a good starting point.
 
 
 RAFT 
 -------
-`RAFT <https://github.com/WISDEM/RAFT>`_ (Response Amplitudes of Floating Turbines) is an open-source Python code for frequency-domain analysis of floating wind turbines. The software includes quasi-static mooring reactions, strip-theory and potential-flow hydrodynamics (first and second order), blade element momentum aerodynamics, and linear turbine control in a way that avoids any time-domain preprocessing. RAFT constitutes the "Level 1" of modeling fidelity in the WEIS toolset for floating wind turbine controls co-design, providing rapid evaluation (in the order of seconds) of the coupled responses of the system.
+`RAFT <https://github.com/WISDEM/RAFT>`_ (Response Amplitudes of Floating Turbines) is an open-source Python-based software for frequency-domain analysis of floating wind turbines. The software includes quasi-static mooring reactions, strip-theory and potential-flow hydrodynamics (first and second order), blade element momentum aerodynamics, and linear turbine control in a way that avoids any time-domain preprocessing. RAFT constitutes the "Level 1" of modeling fidelity in the WEIS toolset for floating wind turbine controls co-design, providing rapid evaluation (in the order of seconds) of the coupled responses of the system.
 
 As a frequency-domain code, RAFT solves for the steady state response of the system assuming linearity. In the frequency domain, time-varying quantities (such as external loads and system responses) are modeled as a linear superposition of a mean and a Fourier series of complex amplitudes. Under these assumptions, RAFT can compute:
 
@@ -39,7 +39,7 @@ As a frequency-domain code, RAFT solves for the steady state response of the sys
 - The eigenmodes and eigenfrequencies of the system around the equilibrium position
 - Inertial and hydrostatic properties of the system
 
-For a more detailed description of RAFT, see `https://openraft.readthedocs.io/`.
+For a more detailed description of RAFT, see `https://openraft.readthedocs.io/ <https://openraft.readthedocs.io/>`_.
 
 Using RAFT through WEIS
 ~~~~~~~~~~~~~~~~
@@ -60,7 +60,7 @@ BEM modeling
 
 RAFT uses `pyHAMS <https://github.com/WISDEM/pyHAMS>`_, a potential-flow code based on the Boundary Element Method (BEM), to obtain first-order frequency-dependent potential flow coefficients for the platform. To use BEM modeling in WEIS/RAFT, there are two ways:
 
-1. First, if you want to mesh and use BEM modeling for all members of the platform, you can just specify *potential_model_override: 2*. This will enable BEM modeling for **all** members, overwriting the value of *potential_bem_member* specified to each member. Note that RAFT uses strip theory for hydrostatics irrespective of BEM modeling options.
+1. First, if you want to mesh and use BEM modeling for all members of the platform, you can just specify ``potential_model_override: 2``. This will enable BEM modeling for **all** members, overwriting the value of ``potential_bem_member`` specified to each member. Note that RAFT uses strip theory for hydrostatics irrespective of BEM modeling options.
 2. Another approach is to specify the member names of the floating platform that are intended for BEM modeling in the *potential_bem_member* option in modeling options and use *potential_model_override: 0*. This allows using BEM modeling for the listed members; for the members not listed, strip theory will be used to provide wave excitation and added mass. Note that RAFT uses strip theory for hydrostatics irrespective of BEM modeling options.
 
 This table below summmarizes the options for *potential_model_override* in RAFT. Note that hydrostatics (buoyancy) is always computed using strip theory, regardless of the potential_model_override option.
@@ -102,7 +102,7 @@ The OpenFAST simulation process within WEIS is managed by the ``FASTLoadCases`` 
 3. Parallel execution of multiple simulations across different load cases
 4. Post-processing of simulation outputs to extract design-relevant quantities
 
-For blade modeling, WEIS configures both simple (ElastoDyn) and advanced (BeamDyn) structural formulations, with automatic conversion of WISDEM-generated beam properties to the appropriate format. Aerodynamic modeling is handled through AeroDyn, with support for both Blade Element Momentum theory and higher-fidelity options like the free vortex wake model (OLAF). Offshore applications utilize integrated hydrodynamic and mooring modules (HydroDyn, SubDyn, and MoorDyn) that receive platform and mooring properties from WISDEM.
+For blade modeling, WEIS configures both simple (ElastoDyn) and advanced (BeamDyn) structural formulations, with automatic conversion of WISDEM-generated beam properties to the appropriate format. Aerodynamic modeling is handled through AeroDyn, with support for both Blade Element Momentum theory and higher-fidelity options like the free vortex wake model (OLAF). Offshore applications utilize integrated hydrodynamic and mooring modules (HydroDyn, SeaState, SubDyn, and MoorDyn) that receive platform and mooring properties from WISDEM.
 
 WEIS uses pCrunch to post-process OpenFAST's simulation results, providing automated load analysis, extracting statistics, damage equivalent loads (DELs), and extreme values across simulations. These outputs are directly incorporated into the optimization process, enabling design constraints based on ultimate loads, operational performance, or other user defined metrics. This comprehensive analysis capability allows designers to create turbines that not only maximize energy production and minimize cost, but also maintain structural integrity.
 
@@ -186,8 +186,50 @@ Further Information
 
 pCrunch
 ----------
-WEIS uses pCrunch internally to process the time series data from OpenFAST to provide merit of figures and constraints in the optimization. pCrunch is IO and Post Processing for generic time series data of multibody aeroelastic wind turbine simulations. Readers are provided for OpenFAST outputs, but the analysis tools are equally applicable to HAWC2, Bladed, QBlade, ADAMS, or other tools. pCrunch attempts to capture the best of legacy tools MCrunch, MLife, and MExtremes, while also taking inspiration from other similar utilities available on Github.  Some statistics pCrunch provides are: extreme values, fatigue calculation based on rainflow cycle counting and miner’s law, AEP calculation. pCrunch is usually installed as part of WEIS. For separate installation guide and more details on pCrunch, check out the `pCrunch github page 
+WEIS uses pCrunch internally to process the time series data from OpenFAST to provide merit of figures and constraints in the optimization. pCrunch can perform post-processing for any time series data from wind turbine simulations. Readers are provided for OpenFAST outputs, but the analysis tools are equally applicable to HAWC2, Bladed, QBlade, ADAMS, or other tools. pCrunch attempts to capture the primary functions of legacy tools like MCrunch, MLife, and MExtremes, while using open source utilities.  Some statistics pCrunch provides are: extreme values, fatigue calculation based on rainflow cycle counting and miner’s law, and AEP calculation. pCrunch is usually installed as part of WEIS. For separate installation guide and more details on pCrunch, check out the `pCrunch github page 
 <https://github.com/NREL/pCrunch/tree/master>`_. pCrunch provides examples using the two primary classes AeroelasticOutputs and Crunch, see 
 `AeroelasticOutputs example <https://github.com/NREL/pCrunch/blob/master/examples/aeroelastic_output_example.ipynb>`_ and 
 `Crunch example <https://github.com/NREL/pCrunch/blob/master/examples/crunch_example.ipynb>`_.
+
+
+ROSCO
+---------
+
+WEIS contains the Reference Open Source Controller for wind turbines (`link to paper <https://wes.copernicus.org/articles/7/53/2022/>`_).
+The ROSCO dynamic library links with OpenFAST, recieving sensor signals and providing control inputs to the turbine.
+The ROSCO toolbox is used to automatically tune controllers using turbine information and a few input parameters.
+Both the ROSCO dynamic library and python toolbox are installed via ``conda`` (or ``pip``) with WEIS.
+Within WEIS, an OpenMDAO component wraps ROSCO and connects the turbine information from WISDEM (or an OpenFAST model) as inputs, and saves controller parameters that will be used in the ROSCO DISCON.IN input file.
+The DISCON.IN file contains detailed parameters, including gains, setpoints, and limits specific to a turbine model.
+Users can investigate the DISCON.IN file included in the WEIS-generated OpenFAST set when troubleshooting.
+By setting the ``LoggingLevel > 0``, users can inspect the internal signals of ROSCO.
+
+
+ROSCO controller
+^^^^^^^^^^^^^^^^^^
+The ROSCO control library uses signals like the
+
+- generator speed
+- nacelle tower top acceleration
+- blade root moments
+- nacelle wind vane and anemometer
+
+to prescribe control actions for the turbine: primarily blade pitch and generator torque.
+
+The generator torque controller is used to maintain the optimal tip speed ratio (TSR) below rated.
+The optimal TSR is determined using the Cp surface from CC-Blade in WISDEM.
+A wind speed estimate used to determine the optimal rotor speed. 
+It is recommended to use ``VS_ControlMode: 2`` to achieve this type of torque control.
+ROSCO can also set constant torque or constant power control above rated, using the ``VS_ConstPower`` input.
+
+The pitch controller in ROSCO is a gain-schedule proportional-integral controller.
+If a WISDEM turbine is used to tune the controller, the rotor speed set point is determined by the geometry inputs ``VS_maxspd`` and ``maxTS``, whichever results in a lower rotor speed.
+The pitch control gains are automatically determined using the cc-blade-generated, Cp surfaces, and the natural frequency (``omega_pc``) and damping ratio (``zeta_pc``) of the desired closed-loop generator speed response.
+
+ROSCO implements peak shaving using a look-up table from the wind speed estimate to the minimum pitch limit, which is determined using the Ct coefficients (generated in WISDEM's cc-blade).
+ROSCO can also apply floating feedback control, where a nacelle acelleration signal is used to generate a pitch offset for damping platform motion.
+
+Yaw control, control of structural elements (like TMDs or external forces), and mooring cable control are available in ROSCO and OpenFAST, but are not yet supported in WEIS.  
+Soon, start-up and shutdown control will be availalble in both ROSCO and WEIS; they will be enabled by the DLC driver.
+Shutdown control will include safety checks for high wind speed, generator overspeed, and large yaw misalignments.
 

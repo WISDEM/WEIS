@@ -3,14 +3,10 @@
 Optimization in WEIS
 ====================
 
-WEIS is platform for multidisciplinary analysis and optimization (MDAO),
-based on the OpenMDAO toolset. WEIS leverages the `optimization
-capabilities of
-OpenMDAO <https://openmdao.org/newdocs/versions/latest/features/building_blocks/drivers/index.html>`_
-and `extensions in
-WISDEM <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driver>`_
-to perform multidisciplinary and multifidelity wind turbine analyses
-including controls.
+WEIS is a platform for multidisciplinary analysis and optimization (MDAO),
+based on the OpenMDAO toolset. WEIS leverages the `optimization capabilities of OpenMDAO <https://openmdao.org/newdocs/versions/latest/features/building_blocks/drivers/index.html>`_
+and `extensions in WISDEM <https://wisdem.readthedocs.io/en/master/inputs/analysis_schema.html#driver>`_
+to perform multidisciplinary and multifidelity wind turbine analyses including controls.
 
 
 General Setup

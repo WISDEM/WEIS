@@ -17,16 +17,16 @@ Below is an example of file structure from WEIS outputs with OpenFAST-based opti
         ├── refturb_output-analysis.yaml    # WEIS - Final analysis options
         ├── refturb_output-modeling.yaml    # WEIS - Final modeling options
         ├── refturb_output.yaml             # WEIS - Final turbine model
-        ├── refturb_output.mat              # WISDEM/OpenMDAO - Results in MATLAB format
-        ├── refturb_output.npz              # WISDEM/OpenMDAO - Results in NumPy archive format
-        ├── refturb_output.pkl              # WISDEM/OpenMDAO - Results in Python pickle format
-        ├── refturb_output.xlsx             # WISDEM/OpenMDAO - Results in Excel format
-        ├── refturb_output.csv              # WISDEM/OpenMDAO - Results in CSV format
-        ├── case_matrix_combined.txt        # DLC - Combined definitions (text)
-        ├── case_matrix_combined.yaml       # DLC - Combined definitions (YAML)
-        ├── case_matrix_DLC1.6_0.txt        # DLC - Specific definitions (text)
-        ├── case_matrix_DLC1.6_0.yaml       # DLC - Specific definitions (YAML)
-        ├── log_opt.sql                     # Optimization history database
+        ├── refturb_output.mat              # Final value of OpenMDAO connections in MATLAB format
+        ├── refturb_output.npz              # Final value of OpenMDAO connections in NumPy archive format
+        ├── refturb_output.pkl              # Final value of OpenMDAO connections in Python pickle format
+        ├── refturb_output.xlsx             # Final value of OpenMDAO connections in Excel format
+        ├── refturb_output.csv              # Final value of OpenMDAO connections in CSV format
+        ├── case_matrix_combined.txt        # DLC case listing for all cases (text)
+        ├── case_matrix_combined.yaml       # DLC case listing for all cases (YAML)
+        ├── case_matrix_DLC1.6_0.txt        # DLC-specific case listing (text)
+        ├── case_matrix_DLC1.6_0.yaml       # DLC-specific case listing(YAML)
+        ├── log_opt.sql                     # Optimization history database (OpenMDAO connections for each iteration)
         └── openfast_runs/                  # OpenFAST simulation directory
                  ├── DLC1.6_0_AeroDyn_blade.dat             # Blade aerodynamics
                  ├── DLC1.6_0_AeroDyn.dat                   # General aerodynamics
@@ -37,7 +37,8 @@ Below is an example of file structure from WEIS outputs with OpenFAST-based opti
                  ├── DLC1.6_0_InflowWind.dat                # Wind conditions
                  ├── DLC1.6_0_MoorDyn.dat                   # Mooring system properties
                  ├── DLC1.6_0_SeaState.dat                  # Ocean conditions
-                 ├── DLC1.6_0_ServoDyn.dat                  # Controller configuration
+                 ├── DLC1.6_0_ServoDyn.dat                  # Controller/generator configuration
+                 ├── DLC1.6_0_DISCON.in                     # ROSCO controller input
                  ├── Airfoils/                              # Airfoil data
                  │      ├── DLC1.6_0_AeroDyn_Polar_00.dat   # Airfoil polar data
                  │      └── DLC1.6_0_AeroDyn_Polar_01.dat   # Airfoil polar data
@@ -81,6 +82,9 @@ Input Files
             * *_MoorDyn.dat - Mooring system configuration
             * *_InflowWind.dat - Wind conditions specification
 
+    * *_DISCON.in
+        * This file contains the controller settings for the wind turbine, including control gains and other parameters. It is used by the ROSCO controller to manage the turbine's operation.
+
     * Airfoils/*.dat
         * These input files define the airfoil lift, drag, and moment coefficients as functions of angle of attack, Reynolds number, and other parameters. These data are crucial for accurate aerodynamic calculations.
 
@@ -101,6 +105,9 @@ OpenFAST generates several output files containing simulation results:
     
     * *.sum
         * This file contains a summary of the various modules used in the OpenFAST simulation. It serves as a quick reference for the configuration and settings of each module.
+
+    * *.dbg*
+        * Debugging file from ROSCO with internal controller signals.  Only output when ``LoggingLevel`` is non-zero.
 
 
 For more information on OpenFAST input and output files, refer to the `OpenFAST documentation <https://openfast.readthedocs.io/en/main/>`_.
@@ -169,7 +176,7 @@ When optimization is enabled by setting ``recorder/flag = True`` in the ``analys
 RAFT-based Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-For optimizations using the RAFT (Ranging And Fatigue Tool) module instead of OpenFAST:
+For optimizations using the RAFT (Response Amplitudes of Floating Turbines) module instead of OpenFAST:
 
     * raft/raft_designs/
-        * This directory contains RAFT time series outputs and design information, available in both pickle (.p) and YAML (.yaml) formats. These files provide computationally efficient approximations of turbine dynamics and loads for optimization purposes.
+        * This directory contains RAFT design information, available in both pickle (.p) and YAML (.yaml) formats. 
