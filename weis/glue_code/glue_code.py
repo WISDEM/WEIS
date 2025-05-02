@@ -353,7 +353,7 @@ class WindPark(om.Group):
             self.add_subsystem('aeroelastic',       FASTLoadCases(modeling_options = modeling_options, opt_options = opt_options))
             self.add_subsystem('stall_check_of',    NoStallConstraint(modeling_options = modeling_options))
             
-            if modeling_options['WISDEM']['RotorSE']['flag']: 
+            if modeling_options['flags']['blade']: 
                 self.add_subsystem('rlds_post',      RotorLoadsDeflStrainsWEIS(modeling_options = modeling_options, opt_options = opt_options))
 
                 # Connections from blade struct parametrization to rotor load anlysis
@@ -370,7 +370,7 @@ class WindPark(om.Group):
                 self.connect('xf.cm_interp_flaps',             'stall_check_of.airfoils_cm')
                 self.connect('aeroelastic.max_aoa',            'stall_check_of.aoa_along_span')
         
-            if  modeling_options["flags"]["nacelle"]:
+            if modeling_options["flags"]["nacelle"]:
                 self.add_subsystem('drivese_post',   DrivetrainSE(modeling_options=modeling_options))
 
             # TODO: FIX NDLC HERE
@@ -648,7 +648,7 @@ class WindPark(om.Group):
                 self.connect("blade.internal_structure_2d_fem.layer_end_nd", "rlds_post.brs.layer_end_nd")
 
                 # Connections to DriveSE
-                if modeling_options['WISDEM']['DriveSE']['flag']:
+                if modeling_options['flags']['nacelle']:
                     self.connect('hub.diameter'                    , 'drivese_post.hub_diameter')
                     self.connect('hub.hub_in2out_circ'             , 'drivese_post.hub_in2out_circ')
                     self.connect('hub.flange_t2shell_t'            , 'drivese_post.flange_t2shell_t')
