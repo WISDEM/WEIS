@@ -100,6 +100,5 @@ Detailed modeling option descriptions
 
 The following is automatically generated from the weis modeling schema:
 
-.. jsonschema:: modeling_schema.json
-   :hide_key_if_empty: /**/default
-		
+.. raw:: html
+   :file: ../_static/modeling_doc.html

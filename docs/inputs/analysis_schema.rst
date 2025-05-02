@@ -14,17 +14,7 @@ The following inputs describe the options available in the ``analysis_options`` 
 - driver
 - recorder
 
-Of these sections, the ``design_variables`` is the most complex.  The schema guide for all other sections is:
+Of these sections, the ``design_variables`` is the most complex.  The full schema is:
 
-.. jsonschema:: analysis_schema.json
-   :hide_key_if_empty: /**/default
-   :hide_key: /**/design_variables
-
-
-Design Variables Schema
-========================
-
-The schema guide for the design variables is:
-
-.. jsonschema:: analysis_schema.json#/definitions/design_variables
-   :hide_key_if_empty: /**/default
+.. raw:: html
+   :file: ../_static/analysis_doc.html
