@@ -1,3 +1,5 @@
+.. _section-weis_examples:
+
 Capabilities and Examples
 =========================
 
@@ -32,14 +34,14 @@ This method allows users to define and vary OpenFAST inputs systematically:
 
 - **Input Specification**:
   
-  - The simulation iterates through ``case_inputs``, exploring different combinations, where a **Cartesian product** of defined ``groups`` generates a ``case_matrix`` of input changes.
+  - The simulation iterates through ``case_inputs``, exploring different combinations, where a cartesian product of defined ``groups`` generates a ``case_matrix`` of input changes.
   - The ``openfast_io`` module is used to read and parse the input files.
-  - A **variable tree** (``fst_vt``) is created to manage and organize input variables.
+  - An OpenFAST dictionary "variable tree" (``fst_vt``) is created to manage and organize input variables.
     
 - **Example Usage**:
   
-  - The script ``run_openfast_cases.py`` can simulate a set of steady-state cases.
-  - Users define which initial conditions (such as wind speed) vary within a specific ``group``.
+  - The script ``run_openfast_cases.py`` simulates a set of steady-state cases.
+  - Users define the initial conditions (correspondign to each wind speed) and wind speed in the same ``group``.
 
 Running Design Load Cases (DLCs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,22 +50,17 @@ This approach uses the WEIS driver along with a full set of inputs:
 
 - **Analysis**:
   
-  - Analysis settings are used to determine the location of the output folder.
+  - In this case, analysis options are used to determine the location of the output folder.
 
 - **Modeling Inputs**:
   
   - **OpenFAST Model**: Defines the location of the pre-existing turbine model.
-  - **ROSCO Controller Input**: Specifies the control configuration.
-  - **Design Load Cases (DLCs)**: Configures the load cases.  Users should see the :doc:`section-dlc_driver`for detailed DLC set up instructions.
+  - **ROSCO Controller Input**: Specifies the control configuration.  See the ``ROSCO`` section and the ``tuning_yaml`` for details.
+  - **Design Load Cases (DLCs)**: Configures the load cases. Users should see the :ref:`section-dlc_driver` for detailed DLC set up instructions.
 
 - **Geometry Inputs**:
   
-  - In these examples, where the turbine geometry is not used to generate the OpenFAST input, only the:
-    - **Turbine class**
-    - **Hub height**
-    - **Rotor diameter**
-
-    are required. The rest of the geometry is defined in the OpenFAST model.
+  - In these examples, where the turbine geometry is not used to generate the OpenFAST input, only the ``turbine_class``, ``hub_heigh``, and ``rotor_diameter`` are required.  The rest of the geometry is defined in the OpenFAST model.
 
 
 2. Generate an OpenFAST Model from a WISDEM Component Model
@@ -78,7 +75,7 @@ The WEIS framework enables automatic generation of OpenFAST models from WISDEM c
   
 - **Conversion**:
   
-  - The WEIS function ``openmdao_openfast`` completes the conversion, producing an OpenFAST model represented as ``fst_vt`` variable tree.
+  - The WEIS function ``openmdao_openfast`` completes the conversion, producing an OpenFAST model represented as a ``fst_vt`` variable tree.
 
 - **Simulation**:
   
@@ -94,8 +91,7 @@ Several reference models are provided and can be used as starting points for new
 - **OC3 Spar** with the NREL 5MW RWT
 - **BAR-USC Turbine** modeled using OLAF (OpenFAST AeroDyn extension)
 
-
-The input structure for generating OpenFAST models consists of minimal analysis options and detailed modeling options.
+These geometry models are available in the ``examples/00_setup`` directory.
 
 Analysis Options
 ^^^^^^^^^^^^^^^^^^
@@ -124,7 +120,7 @@ Geometry
 
 These examples demonstrate how to perform design optimizations using the OpenFAST model:
 
-- **Turbine geometry** is altered by treating specific parameters as design variables.
+- **Turbine geometry** is altered by treating geometry parameters as design variables.
 - **Automatically generated OpenFAST models** are used in each iteration.
 - **Geometry and simulation outputs** are incorporated as constraints within the design optimization, as defined in the analysis options.
 
@@ -135,9 +131,9 @@ IEA-22MW RWT Semi-Submersible Design
 Design Variables
 ^^^^^^^^^^^^^^^^
 
-- Draft
-- Column spacing
-- Column diameter
+- Draft (lowest position of the platform)
+- Column spacing (from the center of the center column to the center of the outer columns)
+- Outer column diameter
 
 Constraints
 ^^^^^^^^^^^
@@ -173,7 +169,7 @@ Constraints
 
 - Stress and buckling limits based on maximum loading scenarios
 - Diameter-to-thickness ratio
-- Frequency bounds to ensure sufficient dynamic performance
+- Frequency bounds ensure sufficient dynamic performance
 
 Merit Figure
 ^^^^^^^^^^^^
@@ -210,7 +206,7 @@ OC3 Spar Optimization
 5. Controller Optimization
 -----------------------------
 
-In these cases, the **turbine model is fixed** while optimization is focused on the **controller parameters**.  
+In these cases, the **turbine model is fixed** while optimization is focused on the **ROSCO controller parameters**.  
 This allows tuning of the control systems to improve turbine performance without changing structural or aerodynamic designs.
 
 
@@ -235,12 +231,12 @@ Constraint
 Merit Figure
 ^^^^^^^^^^^^
 
-- **Tower base damage equivalent loads** (``DEL_TwrBsMyt``) are minimized to improve structural longevity.
+- **Tower base damage equivalent loads** (``DEL_TwrBsMyt``) are minimized to improve structural longevity; it is also a good proxy for the pitch actuation.
 
 Model
 ^^^^^
 
-- The optimization is performed on the **IEA-15MW RWT** with the VolturnUS-S semisubmersible, using the direct **OpenFAST** model.
+- The optimization is performed on the **IEA-15MW RWT** with the VolturnUS-S semisubmersible, using the direct OpenFAST model (``from_openfast: True``, not generated from WISDEM).
 
 Tuned Mass Damper (TMD) Optimization
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -248,14 +244,14 @@ Tuned Mass Damper (TMD) Optimization
 Design Variables
 ^^^^^^^^^^^^^^^^
 
-- **Substructure TMD parameters** optimized via OpenFAST simulations:
+- **Substructure TMD parameters** are optimized via OpenFAST simulations:
   - Natural frequency
   - Damping ratio
 
 Merit Figure
 ^^^^^^^^^^^^
 
-- **Standard deviation of platform pitch** (``Std_PtfmPitch``) is minimized to enhance platform stability.
+- **Standard deviation of platform pitch** (``Std_PtfmPitch``) is minimized to measure platform stability.
 
 Notes
 ^^^^^
