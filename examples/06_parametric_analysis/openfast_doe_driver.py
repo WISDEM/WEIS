@@ -13,7 +13,7 @@ DOE driver settings.
 import os
 from weis import weis_main
 
-TEST_RUN = False  # Set to True to run a small number of cases for testing
+TEST_RUN = False  # Not yet compatible with MPI
 
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
@@ -24,5 +24,4 @@ fname_analysis_options = os.path.join(run_dir, "openfast_doe_analysis.yaml")
 wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
                                                   fname_modeling_options,
                                                   fname_analysis_options,
-                                                  test_run=TEST_RUN,
                                                   )

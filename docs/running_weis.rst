@@ -5,9 +5,9 @@ The WEIS Driver
 ----------------
 
 WEIS drive is the top level script that runs the WEIS code. See examples in `the examples folder <https://github.com/WISDEM/WEIS/tree/main/examples>`_ for how to set up and run WEIS. WEIS driver takes three input files, see :ref:`inputs-documentation` for more details on the input files.
-The options in the input files can be overridden by providing them as options to WEIS driver. This allows you to change the inputs and options without modifyiing the input files, which is useful for debugging and parametric studies. See example below from `10_override_example <https://github.com/WISDEM/WEIS/tree/main/examples/10_override_example>`_
+The options in the input files can be overridden by providing them as options to WEIS driver. This allows you to change the inputs and options without modifying the input files, which is useful for debugging and parametric studies. See example below:
 
-.. literalinclude:: ../examples/10_override_example/weis_driver.py
+.. literalinclude:: ../weis/test/test_overrides_driver.py
    :language: python
    :linenos:
    :lines: 44-51
