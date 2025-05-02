@@ -20,8 +20,8 @@ build:
       - pwd
       - ls
       - pip install -e .
-      - python -c 'import weis.inputs.validation as vd; vd.write_yaml(vd.get_geometry_schema(), "geom_temp.yaml")'
-      - python -c 'import weis.inputs.validation as vd; vd.write_yaml(vd.get_modeling_schema(), "model_temp.yaml")'
+      - python -c "import weis.inputs.validation as vd; vd.write_yaml(vd.get_geometry_schema(), \'geom_temp.yaml\')"
+      - python -c "import weis.inputs.validation as vd; vd.write_yaml(vd.get_modeling_schema(), \'model_temp.yaml\')"
       - generate-schema-doc --no-copy-css --no-copy-js model_temp.yaml docs/_static/modeling_doc.html
       - generate-schema-doc --no-copy-css --no-copy-js weis/inputs/analysis_schema.yaml docs/_static/analysis_doc.html
       - generate-schema-doc --no-copy-css --no-copy-js geom_temp.yaml docs/_static/geometry_doc.html
