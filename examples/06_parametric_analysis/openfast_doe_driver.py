@@ -13,6 +13,8 @@ DOE driver settings.
 import os
 from weis import weis_main
 
+TEST_RUN = False  # Set to True to run a small number of cases for testing
+
 ## File management
 run_dir                = os.path.dirname( os.path.realpath(__file__) ) + os.sep
 fname_wt_input         = os.path.join(run_dir, "..", "00_setup", "ref_turbines", "IEA-15-240-RWT_VolturnUS-S.yaml")
@@ -21,4 +23,6 @@ fname_analysis_options = os.path.join(run_dir, "openfast_doe_analysis.yaml")
 
 wt_opt, modeling_options, opt_options = weis_main(fname_wt_input,
                                                   fname_modeling_options,
-                                                  fname_analysis_options)
+                                                  fname_analysis_options,
+                                                  test_run=TEST_RUN,
+                                                  )

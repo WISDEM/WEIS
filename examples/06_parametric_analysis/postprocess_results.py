@@ -34,7 +34,7 @@ if __name__ == "__main__":
 
     # sql outfile directory
     run_dir = os.path.dirname(os.path.realpath(__file__))   
-    output_dir = os.path.join(run_dir, "outputs/OpenFAST_DOE")
+    output_dir = os.path.join(run_dir, "outputs/06_openfast_doe")
     doe_logs = glob.glob(os.path.join(output_dir,"log_opt.sql*"))
     if len(doe_logs) < 1:
         raise FileExistsError("No output logs to post process!")
