@@ -23,6 +23,9 @@ analysis_options = 'examples/04_frequency_domain_analysis_design/iea22_raft_opt_
 wt_input = 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml'
 vizFilepath = 'weis/visualization/appServer/app/tests/input/testIEA22RAFT.yaml'
 
+global opt_options
+input_dict = parse_yaml(vizFilepath)
+opt_options = read_variables(input_dict)
 
 def test_vizFile_generation(request):
     root_dir = request.config.rootdir
@@ -33,10 +36,6 @@ def test_vizFile_generation(request):
 
 # Optimization Visualization Test
 def test_read_variables():
-    global opt_options
-    input_dict = parse_yaml(vizFilepath)
-    opt_options = read_variables(input_dict)
-
     assert opt_options['opt_type'] == 'RAFT'
 
 
