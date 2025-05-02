@@ -19,7 +19,6 @@ build:
     pre_build:
       - pwd
       - ls
-      - cd WEIS
       - pip install -e .
       - python -m "import weis.inputs.validation as vd; vd.write_yaml(vd.get_geometry_schema(), 'geom_temp.yaml')"
       - python -m "import weis.inputs.validation as vd; vd.write_yaml(vd.get_modeling_schema(), 'model_temp.yaml')"
