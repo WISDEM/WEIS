@@ -18,6 +18,9 @@ build:
       - pip install json-schema-for-humans 
     pre_build:
       - pwd
+      - ls
+      - cd WEIS
+      - pip install -e .
       - python -m "import weis.inputs.validation as vd; vd.write_yaml(vd.get_geometry_schema(), 'geom_temp.yaml')"
       - python -m "import weis.inputs.validation as vd; vd.write_yaml(vd.get_modeling_schema(), 'model_temp.yaml')"
       - generate-schema-doc --no-copy-css --no-copy-js model_temp.yaml docs/_static/modeling_doc.html
