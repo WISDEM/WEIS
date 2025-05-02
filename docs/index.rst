@@ -54,7 +54,6 @@ WEIS Modules
 
    weis_models
    dlc_generator
-   weis_components
    optimization
 
 

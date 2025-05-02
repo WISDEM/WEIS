@@ -8,7 +8,7 @@ Pre-requisites
 
 Before installing WEIS, ensure you have the following prerequisites:
 
-* **Python Environment**: WEIS requires `Python >=3.9` with the `Anaconda` or `Miniforge3` distribution
+* **Python Environment**: WEIS requires `Python >=3.9` with the `Anaconda` or `Miniforge3` package managers
 * **Operating Systems**: WEIS is supported on:
    * Linux
    * macOS
