@@ -140,6 +140,18 @@ properties:
                 default: 0
                 enum: [0, 1]
                 description: Enable intersection mesh for potential BEM modeling. 0 = no intersection mesh, 1 = intersection mesh; turn on plot_design option for visualizing the mesh.
+            characteristic_length_min:
+                type: number
+                default: 1.0
+                minimum: 0.0
+                maximum: 1000.0
+                description: Minimum characteristic length of the mesh for potential BEM modeling.
+            characteristic_length_max:
+                type: number
+                default: 3.0
+                minimum: 0.0
+                maximum: 1000.0
+                description: Maximum characteristic length of the mesh for potential BEM modeling. This is the dominant length scale for the mesh.
             xi_start:
                 type: number
                 default: 0.0

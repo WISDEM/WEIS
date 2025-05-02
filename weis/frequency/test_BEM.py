@@ -16,6 +16,8 @@ modeling_override["RAFT"]["flag"] = True
 modeling_override["RAFT"]["potential_model_override"] = 0
 modeling_override["RAFT"]["potential_bem_members"] = ["main_column", "column1", "column2", "column3", "Y_pontoon_lower1", "Y_pontoon_lower2", "Y_pontoon_lower3"]
 modeling_override["RAFT"]["intersection_mesh"] = 1
+modeling_override["RAFT"]["characteristic_length_max"] = 1
+modeling_override["RAFT"]["characteristic_length_max"] = 3
 modeling_override["RAFT"]["plot_designs"] = True
 modeling_override["RAFT"]["save_designs"] = True
 
