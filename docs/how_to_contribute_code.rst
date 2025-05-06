@@ -62,7 +62,7 @@ Unit tests
 ~~~~~~~~~~ 
 
 Each discipline sub-directory should contain tests in the :code:`test` folder.
-For example, :code:`weis/multifidelity/test` hosts the tests for multifidelity optimization within WEIS.
+For example, :code:`weis/multifidelity/test` hosts the tests for multi-fidelity optimization within WEIS.
 Look at :code:`test_simple_models.py` within that folder for a simple unit test that you can mimic when you add new code.
 Another simple unit test is contained in :code:`weis/aeroelasticse/test` called :code:`test_IECWind.py`.
 

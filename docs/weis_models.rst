@@ -35,7 +35,7 @@ RAFT
 As a frequency-domain code, RAFT solves for the steady state response of the system assuming linearity. In the frequency domain, time-varying quantities (such as external loads and system responses) are modeled as a linear superposition of a mean and a Fourier series of complex amplitudes. Under these assumptions, RAFT can compute:
 
 - Mean responses (mean displacements, mean mooring line tensions, mean rotor thrust, ...) by solving the static equilibrium of the system under a given environmental condition
-- Dynamic responses by solving the linearized equations of motion of the system (around an equilibrium position corresponding to the mean response) under a given environmental condition. The dynamic response is given in the form of power spectral densities. Based on the power spectral densitiy, RAFT computes the standard deviation and estimates extreme values of the system responses
+- Dynamic responses by solving the linearized equations of motion of the system (around an equilibrium position corresponding to the mean response) under a given environmental condition. The dynamic response is given in the form of power spectral densities. Based on the power spectral density, RAFT computes the standard deviation and estimates extreme values of the system responses
 - The eigenmodes and eigenfrequencies of the system around the equilibrium position
 - Inertial and hydrostatic properties of the system
 
@@ -75,7 +75,7 @@ This table below summmarizes the options for *potential_model_override* in RAFT.
 | 2                        | Wave excitation and added mass for all members      | Only drag and buoyancy from strip theory for all members                               | 
 +--------------------------+-----------------------------------------------------+----------------------------------------------------------------------------------------+
 
-WEIS now includes the capability to create intersected meshes for the BEM modeling. This capabilty relies on using external packages, `pygmsh <https://pygmsh.readthedocs.io/en/latest/>`_ and `meshmagick <https://github.com/LHEEA/meshmagick>`_. Please make sure you install these separately. 
+WEIS now includes the capability to create intersected meshes for the BEM modeling. This capability relies on using external packages, `pygmsh <https://pygmsh.readthedocs.io/en/latest/>`_ and `meshmagick <https://github.com/LHEEA/meshmagick>`_. Please make sure you install these separately. 
 
 pyHAMS
 ^^^^^^
@@ -111,7 +111,7 @@ For floating offshore applications, OpenFAST's HydroDyn and MoorDyn modules simu
 In summary, OpenFAST in WEIS provides:
 
 1. Mid-fidelity time-domain simulations capturing the full dynamic behavior of wind turbines
-2. Modeling of various wind tubine configurations
+2. Modeling of various wind turbine configurations
 3. Load calculation for design verification and optimization
 5. Support for standard design load cases following IEC guidelines
 6. Capabilities for controller design and evaluation
@@ -138,7 +138,7 @@ Key outputs from OpenFAST simulations include:
 * Blade, tower, and platform loads
 * Fatigue damage equivalent loads (DELs)
 * Maximum deflections and stresses
-* Control performance metrics (overspeed, pitch rates, etc.)
+* Control performance metrics (over-speed, pitch rates, etc.)
 * Platform motions for floating systems
 
 Design Load Cases
@@ -196,11 +196,11 @@ ROSCO
 ---------
 
 WEIS contains the Reference Open Source Controller for wind turbines (`link to paper <https://wes.copernicus.org/articles/7/53/2022/>`_).
-The ROSCO dynamic library links with OpenFAST, recieving sensor signals and providing control inputs to the turbine.
+The ROSCO dynamic library links with OpenFAST, receiving sensor signals and providing control inputs to the turbine.
 The ROSCO toolbox is used to automatically tune controllers using turbine information and a few input parameters.
 Both the ROSCO dynamic library and python toolbox are installed via ``conda`` (or ``pip``) with WEIS.
 Within WEIS, an OpenMDAO component wraps ROSCO and connects the turbine information from WISDEM (or an OpenFAST model) as inputs, and saves controller parameters that will be used in the ROSCO DISCON.IN input file.
-The DISCON.IN file contains detailed parameters, including gains, setpoints, and limits specific to a turbine model.
+The DISCON.IN file contains detailed parameters, including gains, set points, and limits specific to a turbine model.
 Users can investigate the DISCON.IN file included in the WEIS-generated OpenFAST set when troubleshooting.
 By setting the ``LoggingLevel > 0``, users can inspect the internal signals of ROSCO.
 
@@ -227,9 +227,9 @@ If a WISDEM turbine is used to tune the controller, the rotor speed set point is
 The pitch control gains are automatically determined using the cc-blade-generated, Cp surfaces, and the natural frequency (``omega_pc``) and damping ratio (``zeta_pc``) of the desired closed-loop generator speed response.
 
 ROSCO implements peak shaving using a look-up table from the wind speed estimate to the minimum pitch limit, which is determined using the Ct coefficients (generated in WISDEM's cc-blade).
-ROSCO can also apply floating feedback control, where a nacelle acelleration signal is used to generate a pitch offset for damping platform motion.
+ROSCO can also apply floating feedback control, where a nacelle acceleration signal is used to generate a pitch offset for damping platform motion.
 
 Yaw control, control of structural elements (like TMDs or external forces), and mooring cable control are available in ROSCO and OpenFAST, but are not yet supported in WEIS.  
-Soon, start-up and shutdown control will be availalble in both ROSCO and WEIS; they will be enabled by the DLC driver.
+Soon, start-up and shutdown control will be available in both ROSCO and WEIS; they will be enabled by the DLC driver.
 Shutdown control will include safety checks for high wind speed, generator overspeed, and large yaw misalignments.
 

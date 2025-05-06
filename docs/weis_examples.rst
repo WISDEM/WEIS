@@ -34,14 +34,14 @@ This method allows users to define and vary OpenFAST inputs systematically:
 
 - **Input Specification**:
   
-  - The simulation iterates through ``case_inputs``, exploring different combinations, where a cartesian product of defined ``groups`` generates a ``case_matrix`` of input changes.
+  - The simulation iterates through ``case_inputs``, exploring different combinations, where a Cartesian product of defined ``groups`` generates a ``case_matrix`` of input changes.
   - The ``openfast_io`` module is used to read and parse the input files.
   - An OpenFAST dictionary "variable tree" (``fst_vt``) is created to manage and organize input variables.
     
 - **Example Usage**:
   
   - The script ``run_openfast_cases.py`` simulates a set of steady-state cases.
-  - Users define the initial conditions (correspondign to each wind speed) and wind speed in the same ``group``.
+  - Users define the initial conditions (corresponding to each wind speed) and wind speed in the same ``group``.
 
 Running Design Load Cases (DLCs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
