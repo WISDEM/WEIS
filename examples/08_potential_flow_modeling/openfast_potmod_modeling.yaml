@@ -1,0 +1,79 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: NREL5MW_OC3_spar
+        
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: True
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    BOS:
+        flag: True
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.01
+        CompElast: 1
+        CompInflow: 1
+        CompAero: 2
+        CompServo: 1
+        CompHydro: 1
+        CompSub: 0
+        CompMooring: 3
+        CompIce: 0
+        SttsTime: 1.0
+        OutFileFmt: 3
+    linearization:
+        Linearize: False
+    ElastoDyn:
+        FlapDOF1: True
+        FlapDOF2: True
+        EdgeDOF: True
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: True
+        YawDOF: False  
+        TwFADOF1 : True
+        TwFADOF2 : False
+        TwSSDOF1 : True
+        TwSSDOF2 : False
+        PtfmSgDOF: True
+        PtfmSwDOF: True
+        PtfmHvDOF: True
+        PtfmRDOF : True
+        PtfmPDOF : True
+        PtfmYDOF : True
+    SeaState:
+        WaveTMax: 1 #3630
+        WvLowCOff: 0.15708
+        WvHiCOff: 3.2
+    HydroDyn:
+        PotMod: 1
+        AddBLin3: [0.0, 0.0, 4389794.6, 0.0, 0.0, 0.0]
+
+RAFT:
+    flag: True
+    min_freq: 0.1
+    max_freq: 2.0
+    potential_bem_members: [spar]   # modeling the fairlead legs requires much smaller mesh, not yet supported
+
+ROSCO:
+    flag: True
+    
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          ws_bin_size: 5
+          n_seeds: 1
+          analysis_time: 150.
+          transient_time: 0.

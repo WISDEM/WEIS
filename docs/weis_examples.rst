@@ -15,7 +15,7 @@ Overview of Capabilities
 7. Perform post-processing of WEIS outputs using Jupyter notebooks
 8. Run OpenFAST and RAFT models using with potential flow models generated in pyHAMS
 
-There are also a collection of unsupported features that were previously used in WEIS but are no longer supported. 
+There are also a collection of legacy features that were previously used in WEIS but are no longer supported. 
 These features are not recommended for use in production or research applications. 
 If you choose to use them, you do so at your own risk and should be aware that they may not work as intended or may be removed in future releases; they may require additional development, dependencies, or configurations that are not documented, and they may not be compatible with the latest versions of WEIS or its dependencies.
 These features are not documented in this section, but they are available in the examples directory.
@@ -34,14 +34,14 @@ This method allows users to define and vary OpenFAST inputs systematically:
 
 - **Input Specification**:
   
-  - The simulation iterates through ``case_inputs``, exploring different combinations, where a cartesian product of defined ``groups`` generates a ``case_matrix`` of input changes.
+  - The simulation iterates through ``case_inputs``, exploring different combinations, where a Cartesian product of defined ``groups`` generates a ``case_matrix`` of input changes.
   - The ``openfast_io`` module is used to read and parse the input files.
   - An OpenFAST dictionary "variable tree" (``fst_vt``) is created to manage and organize input variables.
     
 - **Example Usage**:
   
   - The script ``run_openfast_cases.py`` simulates a set of steady-state cases.
-  - Users define the initial conditions (correspondign to each wind speed) and wind speed in the same ``group``.
+  - Users define the initial conditions (corresponding to each wind speed) and wind speed in the same ``group``.
 
 Running Design Load Cases (DLCs)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

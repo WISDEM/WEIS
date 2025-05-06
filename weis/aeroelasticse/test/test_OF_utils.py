@@ -48,7 +48,7 @@ class TestOFutils(unittest.TestCase):
         fast_wrap   = FAST_wrapper() 
         fast_obj    = runFAST_pywrapper()
         fast_reader.FAST_InputFile = fast_obj.FAST_InputFile = 'IEA-15-240-RWT-UMaineSemi.fst'   # FAST input file (ext=.fst)
-        fast_reader.FAST_directory = fast_obj.FAST_directory = osp.join(examples_dir, '01_aeroelasticse',
+        fast_reader.FAST_directory = fast_obj.FAST_directory = osp.join(examples_dir, '00_setup',
                                                                         'OpenFAST_models', 'IEA-15-240-RWT',
                                                                         'IEA-15-240-RWT-UMaineSemi')   # Path to fst directory files
         fast_writer.FAST_runDirectory = fast_wrap.FAST_directory = osp.join('temp','OpenFAST')
@@ -103,7 +103,7 @@ class TestOFutils(unittest.TestCase):
         lin_fast = LinearFAST(debug_level=2)
         lin_fast.FAST_exe = of_path
         lin_fast.FAST_InputFile           = 'IEA-15-240-RWT-Monopile.fst'   # FAST input file (ext=.fst)
-        lin_fast.FAST_directory           = osp.join(weis_dir, 'examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
+        lin_fast.FAST_directory           = osp.join(weis_dir, 'examples/00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-Monopile')   # Path to fst directory files
         lin_fast.FAST_runDirectory        = osp.join(weis_dir,'outputs','iea_mono_lin')
         
         # Read monopile input for fst_vt

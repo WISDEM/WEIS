@@ -6,7 +6,7 @@ WEIS Visualization APP
 
 This application provides a web-based graphical user interface to visualize input/output from WEIS.
 For output visualization, the app can visualize the outputs of OpenFAST, a WEIS optimization including DLC statistics, and WISDEM (blade, cost).
-The application can also visualizae the WEIS geometry (WindIO) input, including 3D Wind Turbines Geometries and component properties of the airfoils, blade, and tower.
+The application can also visualize the WEIS geometry (WindIO) input, including 3D Wind Turbines Geometries and component properties of the airfoils, blade, and tower.
 
 All of the graphical objects has been generated via Plotly library, which is easy to interact, zoom, and download the plots.
 
@@ -149,7 +149,7 @@ If you are having issues seeing the host and port returned, try ``unset HOST``.
 
 6. Connect the app with local machine
 
-After finishing the set up from the hpc, open a new terminal from your local machine and run:
+After finishing the set up from the HPC, open a new terminal from your local machine and run:
 
 .. code-block:: console
 
@@ -166,7 +166,7 @@ WEIS Outputs
 OpenFAST
 ~~~~~~~~
 
-Plot OpenFAST timeseries from a WEIS optimization output directory. The user can select the channels they wish to plot. The outputs are from the last optmization iteration. 
+Plot OpenFAST time series from a WEIS optimization output directory. The user can select the channels they wish to plot. The outputs are from the last optimization iteration. 
 
 
 .. image:: images/viz/WEIS_Outputs/OpenFAST.png

@@ -45,8 +45,8 @@ The ``metocean_conditions`` are defined using tables of ``wind_speed``, ``wave_h
 Individual DLCs use these conditions to determine specific sea conditions for each case, but they can also be overwritten in each case.
 
 Users can specify the wind speed bin size (``ws_bin_size``) or the specific wind speeds (``wind_speed``).
-The number of seeds (``n_seed``) and inputs to turbsim (``turbulent_wind``) can also be specified.
-``transient_time`` is excluded from timeseries analysis; only ``analysis_time`` is used.
+The number of seeds (``n_seed``) and inputs to TurbSim (``turbulent_wind``) can also be specified.
+``transient_time`` is excluded from time series analysis; only ``analysis_time`` is used.
 A complete listing of the DLC options can be found in the `DLC options`_ below.
 
 -------------------
@@ -56,7 +56,7 @@ Reviewing DLC Cases
 The DLC Case Matrix
 -------------------
 
-WEIS creates a case matrix for each DLC; this case matrix, is located in the same directory as the openfast runs in both yaml and txt format.
+WEIS creates a case matrix for each DLC; this case matrix, is located in the same directory as the OpenFAST runs in both yaml and txt format.
 The case matrix specifies which inputs are changed for each case.
 An example case matrix is shown next::
 
@@ -128,7 +128,7 @@ DLC 1.1
 -------
 Normal turbulence and sea state, specified using the options described above, with wind speeds spanning the operational wind speeds. 
 Specific wind speeds can be selected with the ``(DLC_driver,DLCs,DLC: "1.1", wind_speed)`` input.
-The default number of seeeds ``(DLC_driver,DLCs,DLC: "1.1", n_seeds)`` is 1, but more (6 or 12) are typically used to achieve convergence.
+The default number of seeds ``(DLC_driver,DLCs,DLC: "1.1", n_seeds)`` is 1, but more (6 or 12) are typically used to achieve convergence.
 
 .. figure:: /images/dlcs/DLC11.png
    :align: center
@@ -178,7 +178,7 @@ For each of those cases, users can specify the ``n_azimuth`` input to start the 
 
 DLC 1.5
 -------
-In thise case, we model an extreme wind shear (EWS) event.  Both positive and negative direciton shears are generated, along with horizontal and vertical shear.  
+In this case, we model an extreme wind shear (EWS) event.  Both positive and negative direction shears are generated, along with horizontal and vertical shear.  
 
 .. figure:: /images/dlcs/DLC15.png
    :align: center
@@ -206,8 +206,8 @@ Here, we compare a DLC 1.1 simulation with a DLC 1.6 and the extreme waves model
 
 Power production with fault (2.X)
 ---------------------------------
-DLCs 2.X involves cases where faults turbine and/or loss of electrical network connection occurs while the turbine is producing power and connected to an electircal load.
-In addition to the options used to describe power production, DLC 2.X allow for options to descibe blade pitch, generator and yaw faults.
+DLCs 2.X involves cases where faults turbine and/or loss of electrical network connection occurs while the turbine is producing power and connected to an electrical load.
+In addition to the options used to describe power production, DLC 2.X allow for options to describe blade pitch, generator and yaw faults.
 The azimuth position for the rotor at the time of a fault may have significant influence on the load levels.
 Therefore, the `azimuth_init` is required for DLC 2.X.
 
@@ -215,7 +215,7 @@ DLC 2.1
 -------
 DLC 2.1 related to normal control system fault or loss of electrical network.
 The faults included in this DLC are: blade pitch fault, yaw position fault and, loss of electrical network.
-This DLC is evaulated for normal sea-state and normal turbulence model.
+This DLC is evaluated for normal sea-state and normal turbulence model.
 The partial safety factor for this DLC is assumed to be 1.35.
 The azimuth position at time of occurrence of the fault is randomly selected.
 
@@ -228,7 +228,7 @@ plot of inflow, control signal, power, one load signal
 DLC 2.3 
 """""""
 DLC 2.3 related to loss of electrical network under gust
-This DLC is evaulated for normal sea-state and extreme operating guest. 
+This DLC is evaluated for normal sea-state and extreme operating guest. 
 The partial safety factor for this DLC is assumed to be 1.35.
 The azimuth position at time of occurrence of the fault is randomly selected.
 
