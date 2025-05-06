@@ -29,7 +29,7 @@ from openfast_io import FileTools
 from openfast_io.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.utils import OLAFParams, generate_wind_files
 from rosco.toolbox import control_interface as ROSCO_ci
-from pCrunch import AeroelasticOutput, FatigueParams
+from pCrunch import AeroelasticOutput, FatigueParams, Crunch
 from weis.control.dtqp_wrapper          import dtqp_wrapper
 from openfast_io.StC_defaults        import default_StC_vt
 from weis.aeroelasticse.CaseGen_General import case_naming
@@ -734,12 +734,29 @@ class FASTLoadCases(ExplicitComponent):
                 if modopt['OpenFAST_Linear']['simulation']['flag'] or modopt['OpenFAST_Linear']['DTQP']['flag']:
                     # Extract disturbance(s)
                     level2_disturbance = []
+                    
+                    HubHt = float(inputs['hub_height'])
+                    R = float(inputs['Rtip'])*2.
                     for case in case_list:
-                        ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
-                        ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
-                        u_h         = ts_file['rot_avg'][0,:]
-                        tt          = ts_file['t']
-                        level2_disturbance.append({'Time':tt, 'Wind': u_h})
+                        
+                        ts_file     = TurbSimFile(self.FAST_runDirectory+os.sep+case[('InflowWind','FileName_BTS')])
+
+                        u,y,z,t = ts_file['u'],ts_file['y'],ts_file['z'],ts_file['t']
+                        rot_avg = np.zeros((3,len(t)))
+    
+                        for i in range(3):
+                            u_      = u[i,:,:,:]
+                            yy, zz = np.meshgrid(y,z)
+                            rotor_ind = np.sqrt(yy**2 + (zz - HubHt)**2) < R
+
+                            u_rot = []
+                            for u_plane in u_:
+                                u_rot.append(u_plane[rotor_ind].mean())
+
+                            rot_avg[i,:] = u_rot
+
+                        u_h         = rot_avg[0,:]
+                        level2_disturbance.append({'Time':t, 'Wind': u_h})
 
                 # Run linear simulation:
 
@@ -778,13 +795,18 @@ class FASTLoadCases(ExplicitComponent):
 
                 elif modopt['OpenFAST_Linear']['DTQP']['flag']:
 
-                    dtqp_wrapper(
+                    self.magnitude_channels = {
+                                "RootMc1": ["RootMxc1", "RootMyc1", "RootMzc1"],
+                                "RootMc2": ["RootMxc2", "RootMyc2", "RootMzc2"],
+                                "RootMc3": ["RootMxc3", "RootMyc3", "RootMzc3"],
+                                }
+
+                    self.cruncher,_ = dtqp_wrapper(
                         LinearTurbine, 
                         level2_disturbance, 
                         self.options['opt_options'], 
                         self.options['modeling_options'], 
                         self.fst_vt, 
-                        self.cruncher, 
                         self.magnitude_channels, 
                         self.FAST_runDirectory
                     )

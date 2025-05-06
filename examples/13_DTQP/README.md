@@ -1,3 +1,7 @@
+## Disclaimer
+This example will not be maintained in the future. However, it has been tested for the following [commit](https://github.com/WISDEM/WEIS/commit/86a5df1b8792a3bf036642d1b2bd3557ace7f555). Users are encouraged to check out the version of WEIS in the commit to find a working example.
+
+
 To run these examples (and dqtpy, in general) you will need to install `pyoptsparse` using `conda`.
 
 Running DTQP and the open-loop to closed-loop control optimization is currently a two step process.

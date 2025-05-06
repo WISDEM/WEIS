@@ -11,7 +11,7 @@ design_variables:
                   lower_bound: 36.
                   upper_bound: 66.
         members:
-            flag: True
+            flag: False
             groups:
                 - names: [main_column]
                   ballast:

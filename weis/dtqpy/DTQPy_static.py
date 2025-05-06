@@ -21,7 +21,7 @@ from weis.dtqpy.classes.DTQPy_CLASS_SETUP import *
 from weis.dtqpy.DTQPy_solve import DTQPy_solve
 
 
-def DTQPy_static(LinearModels,disturbance,constraints,plot=False):
+def DTQPy_static(LinearModels,disturbance,constraints,dtqp_options,plot=False):
     
     '''
         Function to compute the open loop optimal control of a linear turbine model, given
@@ -97,9 +97,9 @@ def DTQPy_static(LinearModels,disturbance,constraints,plot=False):
     opts = options()
 
     opts.dt.nt = 1000
-    opts.solver.tolerence = 1e-6
+    opts.solver.tolerence = 1e-2
     opts.solver.maxiters = 150
-    opts.solver.function = 'ipopt'
+    opts.solver.function = 'osqp'
     
     time = np.linspace(tt[0],tt[-1],opts.dt.nt)
     W_pp = PchipInterpolator(np.squeeze(tt),np.squeeze(Wind_speed))
