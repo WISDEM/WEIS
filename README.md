@@ -35,16 +35,16 @@ The core WEIS modules are:
 
 ## Installation
 
-On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with the [Miniforge3 distribution](https://github.com/conda-forge/miniforge?tab=readme-ov-file#miniforge3), which is much more lightweight and more easily solves for the package dependencies.  Sometimes, using `mamba` in place of `conda` with this distribution speeds up the installation process. WEIS is currently supported on Linux, MAC and Windows Sub-system for Linux (WSL). Installing WEIS on native Windows is not yet supported, but planned in 2024.
+On laptop and personal computers, installation with [Anaconda](https://www.anaconda.com) is the recommended approach because of the ability to create self-contained environments suitable for testing and analysis.  WEIS requires [Anaconda 64-bit](https://www.anaconda.com/distribution/). However, the `conda` command has begun to show its age and we now recommend the one-for-one replacement with the [Miniforge3 distribution](https://github.com/conda-forge/miniforge?tab=readme-ov-file#miniforge3), which is much more lightweight and more easily solves for the package dependencies.  Sometimes, using `mamba` in place of `conda` with this distribution speeds up the installation process. WEIS is supported on Linux, MAC, Windows Sub-system for Linux (WSL), and native Windows.
 
 The installation instructions below use the environment name, "weis-env," but any name is acceptable. For those working behind company firewalls, you may have to change the conda authentication with `conda config --set ssl_verify no`.  Proxy servers can also be set with `conda config --set proxy_servers.http http://id:pw@address:port` and `conda config --set proxy_servers.https https://id:pw@address:port`.
 
-0.  On the DOE HPC system eagle, make sure to start from a clean setup and type
+0.  If you are NOT installing WEIS on DOE's HPC system Kestrel, skip step 0 and run step 1 and 2 (skip step 3). If you are on Kestrel, follow steps 0, 1, and 3, and skip step 2. On Kestrel, start by purging existing modules and load conda
 
         module purge
         module load conda        
 
-1.  Setup and activate the Anaconda environment from a prompt (WSL terminal on Windows or Terminal.app on Mac)
+1.  In a terminal, setup and activate the Anaconda environment
 
         conda config --add channels conda-forge
         conda install git
@@ -55,18 +55,18 @@ The installation instructions below use the environment name, "weis-env," but an
         conda activate weis-env                          # (if this does not work, try source activate weis-env)
 
 
-2. Add in final packages and install the software
+2. If you are NOT on Kestrel, add in final packages and install the software
 
-        conda install -y petsc4py mpi4py pyoptsparse     # (Mac / Linux only)
+        conda install -y petsc4py=3.22.2 mpi4py pyoptsparse     # (Mac / Linux only, sometimes Windows users may need to install mpi4py)
         pip install -e .
 
-3. Instructions specific for DOE HPC system Eagle.  Before executing the setup script, do:
+3. If you are on Kestrel, do:
 
         module load comp-intel intel-mpi mkl
         module unload gcc
         pip install --no-deps -e . -v
 
-**NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Eagle, make sure to reload the necessary modules
+**NOTE:** To use WEIS again after installation is complete, you will always need to activate the conda environment first with `conda activate weis-env` (or `source activate weis-env`). On Kestrel, make sure to reload the necessary modules
 
 For Windows users, we recommend installing `git` and the `m264` packages in separate environments as some of the libraries appear to conflict such that WISDEM cannot be successfully built from source.  The `git` package is best installed in the `base` environment.
 

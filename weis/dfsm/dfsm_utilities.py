@@ -105,12 +105,22 @@ def compile_dfsm_results(time,states_dfsm,controls_dfsm,outputs_dfsm,state_names
 
     if not('PtfmSway' in state_names):
         OutData['PtfmSway'] = np.zeros((nt,))
+        OutData['PtfmOffset'] = np.zeros((nt,))
+
 
     if not('RotSpeed' in output_names):
         OutData['RotSpeed'] = states_dfsm[time_ind,gs_ind]/GB_ratio
-
+    
     for i_blade in range(2):
+        OutData[f'BldPitch{i_blade+2}'] = OutData['BldPitch1']
+
+    for i_blade in range(3):
         OutData[f'dBldPitch{i_blade+1}'] = np.zeros((nt,))
+
+    for chan in ['NcIMUTAxs', 'NcIMUTAys', 'NcIMUTAzs','NcIMUTA']:
+        if chan not in output_names:
+            OutData[chan] = np.zeros((nt,))
+
 
     return OutData
 

@@ -22,7 +22,7 @@ WISDEM:
     BOS:
         flag: True
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: True
     simulation:
         DT: 0.2
@@ -47,8 +47,8 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : False
         PtfmYDOF : False
     AeroDyn:
-        WakeMod: 3
-        AFAeroMod: 1
+        Wake_Mod: 3
+        UA_Mod: 0
         TwrShadow: 0
         TwrAero: False
         OLAF:
@@ -74,5 +74,5 @@ DLC_driver:
         - DLC: "1.1"
           wind_speed: [ 8. ]
           n_seeds: 1
-          analysis_time: 1
-          transient_time: 1
+          analysis_time: .25
+          transient_time: 0.

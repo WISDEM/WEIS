@@ -6,14 +6,14 @@ import time as timer
 from mat4py import loadmat
 import pickle
 import shutil
+import pandas as pd
 
 from rosco.toolbox import control_interface as ROSCO_ci
 from weis.aeroelasticse.CaseGen_General import case_naming
-from weis.aeroelasticse.FAST_writer         import InputWriter_OpenFAST
-from pCrunch.io import OpenFASTOutput
-from pCrunch import LoadsAnalysis, PowerProduction, FatigueParams
+from openfast_io.FAST_writer          import InputWriter_OpenFAST
+from pCrunch import Crunch,FatigueParams, AeroelasticOutput
 from weis.dlc_driver.dlc_generator    import DLCGenerator
-from weis.aeroelasticse.turbsim_file   import TurbSimFile
+from openfast_io.turbsim_file   import TurbSimFile
 from weis.aeroelasticse.turbsim_util import generate_wind_files
 from weis.aeroelasticse.CaseGen_General import CaseGen_General
 
@@ -22,8 +22,29 @@ from weis.dfsm.dfsm_utilities import valid_extension,calculate_time,valid_extens
 from weis.dfsm.construct_dfsm import DFSM
 from weis.dfsm.ode_algorithms import RK4,ABM4
 from weis.dfsm.generate_wave_elev import generate_wave_elev
+from wisdem.inputs import load_yaml, write_yaml
 
 from scipy.interpolate import CubicSpline, interp1d
+
+def compute_rot_avg(u,y,z,t,R,HubHt):
+    ''' 
+    Compute rotor average wind speed, where R is the rotor radius
+    '''
+
+    rot_avg = np.zeros((3,len(t)))
+    
+    for i in range(3):
+        u_      = u[i,:,:,:]
+        yy, zz = np.meshgrid(y,z)
+        rotor_ind = np.sqrt(yy**2 + (zz - HubHt)**2) < R
+
+        u_rot = []
+        for u_plane in u_:
+            u_rot.append(u_plane[rotor_ind].mean())
+
+        rot_avg[i,:] = u_rot
+
+    return rot_avg
 
 def evaluate_multi(case_data):
 
@@ -84,7 +105,7 @@ def run_serial(case_data_all):
 
 def run_mpi(case_data_all,mpi_options):
 
-    from mpi4py import MPI
+    from openmdao.utils.mpi import MPI
 
     # mpi comm management
     comm = MPI.COMM_WORLD
@@ -143,6 +164,7 @@ def run_mpi(case_data_all,mpi_options):
 def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAST_namingOut, wind_directory):
 
     DLCs = modopt['DLC_driver']['DLCs']
+
     # Initialize the DLC generator
     cut_in = float(inputs['V_cutin'])
     cut_out = float(inputs['V_cutout'])
@@ -155,9 +177,56 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
     fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
     fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
     metocean = modopt['DLC_driver']['metocean_conditions']
+
+    if modopt['OpenFAST']['from_openfast']:
+        reg_traj = os.path.join(modopt['OpenFAST']['regulation_trajectory'])
+        if os.path.isfile(reg_traj):
+            data = load_yaml(reg_traj)
+            cases = data['cases']
+            U_interp = [case["configuration"]["wind_speed"] for case in cases]
+            pitch_interp = [case["configuration"]["pitch"] for case in cases]
+            rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
+            Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
+        else:
+            logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.",
+                    " This file does not exist. Check WEIS example 02 for a template file")
+            U_interp = np.arange(cut_in, cut_out)
+            pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
+            rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm
+            Ct_aero_interp = np.ones_like(U_interp) * 0.7 # fixed initial ct at 0.7
+    else:
+        U_interp = inputs['U']
+        pitch_interp = inputs['pitch']
+        rot_speed_interp = inputs['Omega']
+        Ct_aero_interp = inputs['Ct_aero']
+    
+    tau1_const_interp = np.zeros_like(Ct_aero_interp)
+    for i in range(len(Ct_aero_interp)):
+        a = 1. / 2. * (1. - np.sqrt(1. - np.min([Ct_aero_interp[i],1])))    # don't allow Ct_aero > 1
+        tau1_const_interp[i] = 1.1 / (1. - 1.3 * np.min([a, 0.5])) * inputs['Rtip'][0] / U_interp[i]
+
+    initial_condition_table = {}
+    initial_condition_table['U'] = U_interp
+    initial_condition_table['pitch_initial'] = pitch_interp
+    initial_condition_table['rot_speed_initial'] = rot_speed_interp
+    initial_condition_table['Ct_aero'] = Ct_aero_interp
+    initial_condition_table['tau1_const'] = tau1_const_interp
+    
+    # DLC generator
     dlc_generator = DLCGenerator(
-        metocean = metocean
+        cut_in, 
+        cut_out, 
+        rated, 
+        ws_class, 
+        wt_class, 
+        fix_wind_seeds, 
+        fix_wave_seeds, 
+        metocean, 
+        modopt['DLC_driver'],
+        initial_condition_table,
         )
+
+
     # dlc_generator = DLCGenerator(cut_in, cut_out, rated, ws_class, wt_class, fix_wind_seeds, fix_wave_seeds, metocean)
     # Generate cases from user inputs
     for i_DLC in range(len(DLCs)):
@@ -167,46 +236,9 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
     # Initialize parametric inputs
     WindFile_type = np.zeros(dlc_generator.n_cases, dtype=int)
     WindFile_name = [''] * dlc_generator.n_cases
-    rot_speed_initial = np.zeros(dlc_generator.n_cases)
-    pitch_initial = np.zeros(dlc_generator.n_cases)
-    shutdown_time = np.full(dlc_generator.n_cases, fill_value = 9999)
-    azimuth_init = np.full(dlc_generator.n_cases, fill_value = 0)
-    WindHd = np.zeros(dlc_generator.n_cases)
-    WaveHs = np.zeros(dlc_generator.n_cases)
-    WaveTp = np.zeros(dlc_generator.n_cases)
-    WaveHd = np.zeros(dlc_generator.n_cases)
-    WaveGamma = np.zeros(dlc_generator.n_cases)
-    WaveSeed1 = np.zeros(dlc_generator.n_cases, dtype=int)
+
     TMax = np.zeros(dlc_generator.n_cases)
     TStart = np.zeros(dlc_generator.n_cases)
-    dlc_label = [''] * dlc_generator.n_cases
-    wind_seed = np.zeros(dlc_generator.n_cases, dtype=int)
-    mean_wind_speed = np.zeros(dlc_generator.n_cases)
-    yaw_misalignment = np.zeros(dlc_generator.n_cases)
-    DT = np.full(dlc_generator.n_cases, fill_value = fst_vt['Fst']['DT'])
-    aero_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['AFAeroMod'])
-    wake_mod = np.full(dlc_generator.n_cases, fill_value = fst_vt['AeroDyn15']['WakeMod'])
-    dt_fvw = np.zeros(dlc_generator.n_cases)
-    tMin = np.zeros(dlc_generator.n_cases)
-    nNWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
-    nNWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
-    nFWPanels = np.zeros(dlc_generator.n_cases, dtype=int)
-    nFWPanelsFree = np.zeros(dlc_generator.n_cases, dtype=int)
-
-    # fix hub height if MHK
-    # if modopt['flags']['marine_hydro']:
-    #     # make grid span whole water depth for now, ref height will be actual hub height to get speed right
-    #     # in deeper water, will need something better than this
-    #     grid_height = 2. * np.abs(hub_height) - 1.e-3
-    #     hub_height = grid_height/ 2
-    #     ref_height = float(inputs['water_depth'] - np.abs(inputs['hub_height']))
-
-    #     # Inflow wind wants these relative to sea bed
-    #     fst_vt['InflowWind']['WindVziList'] = ref_height
-
-    #else:
-    ref_height = hub_height
-
 
     for i_case in range(dlc_generator.n_cases):
         if dlc_generator.cases[i_case].turbulent_wind:
@@ -219,22 +251,22 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
                 dlc_generator.cases[i_case].IECturbc = wt_class
             # Reference height for wind speed
             if not dlc_generator.cases[i_case].RefHt:   # default RefHt is 0, use hub_height if not set
-                dlc_generator.cases[i_case].RefHt = ref_height
+                dlc_generator.cases[i_case].RefHt = hub_height
             # Center of wind grid (TurbSim confusingly calls it HubHt)
-            dlc_generator.cases[i_case].HubHt = np.abs(hub_height)
-            # Height of wind grid, it stops 1 mm above the ground
-            dlc_generator.cases[i_case].GridHeight = 2. * np.abs(hub_height) - 1.e-3
-            # If OLAF is called, make wind grid 3x higher, taller, and wider
-            if fst_vt['AeroDyn15']['WakeMod'] == 3:
-                dlc_generator.cases[i_case].HubHt *= 3.
-                dlc_generator.cases[i_case].GridHeight *= 3.
-            # Width of wind grid, same of height
-            dlc_generator.cases[i_case].GridWidth = dlc_generator.cases[i_case].GridHeight
+            if not dlc_generator.cases[i_case].HubHt:   # default HubHt is 0, use hub_height if not set
+                dlc_generator.cases[i_case].HubHt = hub_height
+
+            if not dlc_generator.cases[i_case].GridHeight:   # default GridHeight is 0, use hub_height if not set
+                dlc_generator.cases[i_case].GridHeight =  2. * hub_height - 1.e-3
+
+            if not dlc_generator.cases[i_case].GridWidth:   # default GridWidth is 0, use hub_height if not set
+                dlc_generator.cases[i_case].GridWidth =  2. * hub_height - 1.e-3
             # Power law exponent of wind shear
             if dlc_generator.cases[i_case].PLExp < 0:    # use PLExp based on environment options (shear_exp), otherwise use custom DLC PLExp
                 dlc_generator.cases[i_case].PLExp = PLExp
             # Length of wind grids
-            dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
+            dlc_generator.cases[i_case].AnalysisTime = dlc_generator.cases[i_case].total_time
+    
     turbsim_exe = shutil.which('turbsim')
     print('generating wind files')
     for i_case in range(dlc_generator.n_cases):
@@ -244,117 +276,52 @@ def  generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_run
     # Set initial rotor speed and pitch if the WT operates in this DLC and available,
     # otherwise set pitch to 90 deg and rotor speed to 0 rpm when not operating
     # set rotor speed to rated and pitch to 15 deg if operating
-    for i_case in range(dlc_generator.n_cases):
-        if 'operating' in dlc_generator.cases[i_case].turbine_status:
-            # We have initial conditions from WISDEM
-            if ('U' in inputs) and ('Omega' in inputs) and ('pitch' in inputs):
-                rot_speed_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['Omega'])
-                pitch_initial[i_case] = np.interp(dlc_generator.cases[i_case].URef, inputs['U'], inputs['pitch'])
-            else:
-                rot_speed_initial[i_case]   = fst_vt['DISCON_in']['PC_RefSpd'] * 30 / np.pi / fst_vt['ElastoDyn']['GBRatio']
-                pitch_initial[i_case]       = 15
 
-            if dlc_generator.cases[i_case].turbine_status == 'operating-shutdown':
-                shutdown_time[i_case] = dlc_generator.cases[i_case].shutdown_time
-        else:
-            rot_speed_initial[i_case]   = 0.
-            pitch_initial[i_case]       = 90.
-            shutdown_time[i_case]      = 0
-            aero_mod[i_case]            = 1
-            wake_mod[i_case]            = 0
-
-        # Wave inputs to HydroDyn
-        WindHd[i_case] = dlc_generator.cases[i_case].wind_heading
-        WaveHs[i_case] = dlc_generator.cases[i_case].wave_height
-        WaveTp[i_case] = dlc_generator.cases[i_case].wave_period
-        WaveHd[i_case] = dlc_generator.cases[i_case].wave_heading
-        WaveGamma[i_case] = dlc_generator.cases[i_case].wave_gamma
-        WaveSeed1[i_case] = dlc_generator.cases[i_case].wave_seed1
-
-        # Other case info
-        TMax[i_case] = dlc_generator.cases[i_case].analysis_time + dlc_generator.cases[i_case].transient_time
-        TStart[i_case] = dlc_generator.cases[i_case].transient_time
-        dlc_label[i_case] = dlc_generator.cases[i_case].label
-        wind_seed[i_case] = dlc_generator.cases[i_case].RandSeed1
-        mean_wind_speed[i_case] = dlc_generator.cases[i_case].URef
-        yaw_misalignment[i_case] = dlc_generator.cases[i_case].yaw_misalign
-        azimuth_init[i_case] = dlc_generator.cases[i_case].azimuth_init
-
-        # Current
-        # CurrMod = np.zeros(dlc_generator.n_cases,dtype=int)
-        # CurrDIV = np.array([c.current for c in dlc_generator.cases])
-        # CurrMod[CurrDIV > 0] = 1
-
-        # Parameteric inputs
-        case_inputs = {}
-        # Main fst
-        case_inputs[("Fst","DT")] = {'vals':DT, 'group':1}
-        case_inputs[("Fst","TMax")] = {'vals':TMax, 'group':1}
-        case_inputs[("Fst","TStart")] = {'vals':TStart, 'group':1}
-       
-        # Inflow wind
-        case_inputs[("InflowWind","WindType")] = {'vals':WindFile_type, 'group':1}
-        case_inputs[("InflowWind","HWindSpeed")] = {'vals':mean_wind_speed, 'group':1}
-        case_inputs[("InflowWind","FileName_BTS")] = {'vals':WindFile_name, 'group':1}
-        case_inputs[("InflowWind","Filename_Uni")] = {'vals':WindFile_name, 'group':1}
-        case_inputs[("InflowWind","RefLength")] = {'vals':[rotorD], 'group':0}
-        case_inputs[("InflowWind","PropagationDir")] = {'vals':WindHd, 'group':1}
-        case_inputs[("InflowWind","RefHt_Uni")] = {'vals':[np.abs(hub_height)], 'group':0}   #TODO: check if this is the distance from sea level or bottom
-        
-        # Initial conditions for rotor speed, pitch, and azimuth
-        case_inputs[("ElastoDyn","RotSpeed")] = {'vals':rot_speed_initial, 'group':1}
-        case_inputs[("ElastoDyn","BlPitch1")] = {'vals':pitch_initial, 'group':1}
-        case_inputs[("ElastoDyn","BlPitch2")] = case_inputs[("ElastoDyn","BlPitch1")]
-        case_inputs[("ElastoDyn","BlPitch3")] = case_inputs[("ElastoDyn","BlPitch1")]
-        case_inputs[("ElastoDyn","Azimuth")] = {'vals':azimuth_init, 'group':1}
-        
-        # Yaw offset
-        case_inputs[("ElastoDyn","NacYaw")] = {'vals':yaw_misalignment, 'group':1}
-       
-        # Inputs to HydroDyn
-        case_inputs[("HydroDyn","WaveHs")] = {'vals':WaveHs, 'group':1}
-        case_inputs[("HydroDyn","WaveTp")] = {'vals':WaveTp, 'group':1}
-        case_inputs[("HydroDyn","WaveDir")] = {'vals':WaveHd, 'group':1}
-        case_inputs[("HydroDyn","WavePkShp")] = {'vals':WaveGamma, 'group':1}
-        case_inputs[("HydroDyn","WaveSeed1")] = {'vals':WaveSeed1, 'group':1}
-       
-        # Inputs to ServoDyn (parking), PitManRat and BlPitchF are ServoDyn modeling_options
-        case_inputs[("ServoDyn","TPitManS1")] = {'vals':shutdown_time, 'group':1}
-        case_inputs[("ServoDyn","TPitManS2")] = {'vals':shutdown_time, 'group':1}
-        case_inputs[("ServoDyn","TPitManS3")] = {'vals':shutdown_time, 'group':1}
-
-        # case_inputs[("HydroDyn","CurrMod")] = {'vals':CurrMod, 'group':1} 
-        # case_inputs[("HydroDyn","CurrDIV")] = {'vals':CurrDIV, 'group':1} 
-
-        # Inputs to AeroDyn (parking)
-        case_inputs[("AeroDyn15","AFAeroMod")] = {'vals':aero_mod, 'group':1}
-        case_inputs[("AeroDyn15","WakeMod")] = {'vals':wake_mod, 'group':1}
-
-        # Inputs to OLAF
-        case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_fvw, 'group':1} 
-        case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
-        case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
-        case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1}
-        case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1}
-
-        # DLC Label add these for the case matrix and delete from the case_list
-        case_inputs[("DLC","Label")] = {'vals':dlc_label, 'group':1}
-        case_inputs[("DLC","WindSeed")] = {'vals':wind_seed, 'group':1}
-        case_inputs[("DLC","MeanWS")] = {'vals':mean_wind_speed, 'group':1}
-        fst_vt['DLC'] = []
-
-        # Append current DLC to full list of cases
-        FAST_InputFile = modopt['General']['openfast_configuration']['OF_run_fst']
-        case_list, case_name = CaseGen_General(case_inputs, FAST_runDirectory, FAST_InputFile)
-
-
-        # Now delete the DLC-based case_inputs because they don't play nicely with aeroelasticse
-        for case in case_list:
-            for key in list(case):
-                if key[0] == 'DLC':
-                    del case[key]
+    # Parameteric inputs
+    case_name = []
+    case_list = []
+    FAST_InputFile = modopt['General']['openfast_configuration']['OF_run_fst']
+    for i_case, case_inputs in enumerate(dlc_generator.openfast_case_inputs):
+            # Generate case list for DLC i
+            dlc_label = DLCs[i_case]['DLC']
+            case_list_i, case_name_i = CaseGen_General(case_inputs, FAST_runDirectory, FAST_InputFile, filename_ext=f'_DLC{dlc_label}_{i_case}')
+            # Add DLC to case names
+            case_name_i = [f'DLC{dlc_label}_{i_case}_{cni}' for cni in case_name_i]   # TODO: discuss case labeling with stakeholders
             
-    return dlc_generator, case_list, case_name,TMax, TStart
+            # Extend lists of cases
+            case_list.extend(case_list_i)
+            case_name.extend(case_name_i)
+
+    # Apply wind files to case_list (this info will be in combined case matrix, but not individual DLCs)
+    for case_i, wt, wf in zip(case_list,WindFile_type,WindFile_name):
+        case_i[('InflowWind','WindType')] = wt
+        case_i[('InflowWind','FileName_Uni')] = wf
+        case_i[('InflowWind','FileName_BTS')] = wf
+
+    # Save some case info
+    TMax = [c.total_time for c in dlc_generator.cases]
+    TStart = [c.transient_time for c in dlc_generator.cases]
+    dlc_label = [c.label for c in dlc_generator.cases]
+
+    # Merge various cases into single case matrix
+    case_df = pd.DataFrame(case_list)
+    case_df.index = case_name
+    # Add case name and dlc label to front for readability
+    case_df.insert(0,'DLC',dlc_label)
+    case_df.insert(0,'case_name',case_name)
+    text_table = case_df.to_string(index=False)
+
+    # Write the text table to a yaml, text file
+    write_yaml(case_df.to_dict(),os.path.join(FAST_runDirectory,'case_matrix_combined.yaml'))
+    with open(os.path.join(FAST_runDirectory,'case_matrix_combined.txt'), 'w') as file:
+        file.write(text_table)
+
+    for case in case_list:
+        for key in list(case):
+            if key[0] in ['DLC','TurbSim']:
+                del case[key]
+            
+    return dlc_generator, case_list, case_name,TMax, TStart,rotorD,hub_height
 
 
 
@@ -466,7 +433,11 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
     reqd_states = model_options['reqd_states']
     reqd_controls = model_options['reqd_controls']
     reqd_outputs = model_options['reqd_outputs']
+
+    for chan in ['TTDspFA','TTDspSS','NcIMURAys','YawBrTAxp']:
+        fst_vt['outlist']['ElastoDyn'][chan] = True
     
+    fst_vt['outlist']['SeaState']['Wave1Elev'] = True
     # set run dir. THis is the directory where OpenFAST files are stored
     general_options['run_dir'] = modopt['General']['openfast_configuration']['OF_run_dir']
 
@@ -507,7 +478,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
 
         # generate wind files
         wind_directory = FAST_runDirectory + os.sep + 'wind'
-        dlc_generator, case_list, case_name, TMax, TStart = generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAST_namingOut, wind_directory)
+        dlc_generator, case_list, case_name, TMax, TStart,rotorD,hub_height = generate_wind_files_local(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory, FAST_namingOut, wind_directory)
         fst_vt['Fst']['TMax'] = TMax[0]
         fst_vt['Fst']['TStart'] = TStart[0]
         # Extract disturbance(s)
@@ -516,16 +487,39 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
         # initialize random number generator
         rng = np.random.default_rng(12345)
 
+        wv_files = []
+
         for i_case,case in enumerate(case_list):
             ts_file     = TurbSimFile(case[('InflowWind','FileName_BTS')])
-            ts_file.compute_rot_avg(fst_vt['ElastoDyn']['TipRad'])
-            u_h         = ts_file['rot_avg'][0,:]
-            tt          = ts_file['t']
-            dt = case[('Fst','DT')]
-            
-            eta = generate_wave_elev(tt,dlc_generator.cases[i_case].wave_height,dlc_generator.cases[i_case].wave_period,rng)
+            rot_avg = compute_rot_avg(ts_file['u'],ts_file['y'],ts_file['z'],ts_file['t'],rotorD,hub_height)
+            u_h         = rot_avg[0,:]
+            t          = ts_file['t']
+           
+            if fst_vt['SeaState']['WaveMod'] == 5:
+                DT = fst_vt['SeaState']['WaveDT']
+                tmax_ss = fst_vt['SeaState']['WaveTMax']
 
-            test_dataset.append({'time':tt, 'wind_speed': u_h,'wave_elev':eta})
+                tt = np.arange(0,tmax_ss + DT,DT)
+
+                eta = generate_wave_elev(tt,dlc_generator.cases[i_case].wave_height,dlc_generator.cases[i_case].wave_period,rng)
+                c_name = case_name[i_case]
+                wvkinfile = FAST_runDirectory + os.sep + c_name +'_Wave.Elev'
+                wvkinfile1 = FAST_runDirectory + os.sep + c_name +'_Wave'
+                wv_files.append(wvkinfile1)
+
+                with open(wvkinfile, 'w') as file:
+                    file.write('Time Wave1Elev\n')  # Write the header
+                    for t_, elev in zip(tt, eta):
+                        file.write(f'{t_:.6f} {elev:.6f}\n')
+
+                eta = CubicSpline(tt,eta)(t)
+
+            else:
+                
+                eta = generate_wave_elev(t,dlc_generator.cases[i_case].wave_height,dlc_generator.cases[i_case].wave_period,rng)
+
+            dt = fst_vt['Fst']['DT']
+            test_dataset.append({'time':t, 'wind_speed': u_h,'wave_elev':eta})
 
         # number of test cases
         test_ind = np.arange(len(case_list))
@@ -533,8 +527,18 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
         # generate OpenFAST files
         # This step generates the DISCON.IN and cp-ct-cq.txt files which are need to run closed-loop simulations
         
-        for case in case_name:
-            write_FAST_files(fst_vt, FAST_runDirectory, case)
+        for i_case,case in enumerate(case_name):
+
+            fst_vt['InflowWind']['WindType'] = case_list[i_case][('InflowWind','WindType')]
+            fst_vt['InflowWind']['FileName_BTS'] = case_list[i_case][('InflowWind','FileName_BTS')]
+            fst_vt['InflowWind']['WindType'] = case_list[i_case][('InflowWind','WindType')]
+            if fst_vt['SeaState']['WaveMod'] == 5:
+                fst_vt['SeaState']['WvKinFile'] = wv_files[i_case]
+                write_FAST_files(fst_vt, FAST_runDirectory, case)
+
+            else:
+
+                write_FAST_files(fst_vt, FAST_runDirectory, case)
         
         case_names = case_naming(len(case_name),'dfsm')
 
@@ -554,6 +558,7 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
                 'TipDc2': ['TipDxc2', 'TipDyc2', 'TipDzc2'],
                 'TipDc3': ['TipDxc3', 'TipDyc3', 'TipDzc3'], 
                 'TwrBsM': [ 'TwrBsMyt'],
+                'PtfmOffset': ['PtfmSurge', 'PtfmSway'],
                 'NcIMUTA': ['NcIMUTAxs', 'NcIMUTAys', 'NcIMUTAzs']}
 
         fatigue_channels = {
@@ -573,9 +578,6 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
 
         for idx,ind in enumerate(test_ind):
 
-            case_data = {}
-            case_data['case'] = idx
-                
             test_data = test_dataset[ind]
 
             time = test_data['time']
@@ -608,19 +610,18 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
             param['blade_pitch'] = [15]
             param['gen_torque'] = [19000]
             param['t0'] = t0
-            param['tf'] = tf
-            param['w_fun'] = wind_fun 
+            param['tf'] = tf 
             param['gen_speed_scaling'] = 1
             param['lib_name'] = fst_vt['ServoDyn']['DLL_FileName']
-            if 'Wave1Elev' in model_options['reqd_controls']:
-                param['wave_fun'] = wave_fun
-            else:
-                param['wave_fun'] = None
-
             param['num_blade'] = 3
             param['ny'] = dfsm.n_outputs
             param['args'] = args
             param['param_filename'] = DISCON_file[idx]
+            param['w_fun'] = wind_fun
+            if 'Wave1Elev' in model_options['reqd_controls']:
+                param['wave_fun'] = wave_fun
+            else:
+                param['wave_fun'] = None
 
 
 
@@ -735,35 +736,6 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
 
                 plt.close(fig)
 
-            # fig, ((ax1,ax2,ax3)) = plt.subplots(3,1,)
-
-            # # wind
-            # ax1.plot(T_dfsm,controls_dfsm[:,0])
-            # ax1.set_title('Wind Speed [m/s]')
-            # ax1.set_xlim([t0,tf])
-
-            # # torue
-            # ax2.plot(T_dfsm,controls_dfsm[:,1])
-            # #ax2.set_ylim([1.8,2])
-            # ax2.set_title('Gen Torque [KWm]')
-            # ax2.set_xlim([t0,tf])
-
-            # # blade pitch
-            # ax3.plot(T_dfsm,controls_dfsm[:,2])
-            # #ax3.set_ylim([0.2, 0.3])
-            # ax3.set_title('Bld Pitch [deg]')
-            # ax3.set_xlim([t0,tf])
-
-            # fig.subplots_adjust(hspace = 0.65)
-
-            # if general_options['save_results']:
-            #     # save results
-            #     if not os.path.exists(dfsm_save_folder):
-            #         os.makedirs(dfsm_save_folder)
-                
-            #     fig.savefig(dfsm_save_folder +os.sep+ 'Controls' +str(idx) + '.pdf')
-
-
             # post processing
             case_name = case_names[icase]
 
@@ -774,33 +746,21 @@ def dfsm_wrapper(fst_vt, modopt, inputs, discrete_inputs, FAST_runDirectory = No
             ct.append(OutData)
 
             # get output
-            output = OpenFASTOutput.from_dict(OutData,case_name,magnitude_channels = magnitude_channels)
+            output = AeroelasticOutput(OutData, dlc = FAST_namingOut, maginitude_channels = magnitude_channels, fatigue_channels = fatigue_channels )
+
+            for i_blade in range(fst_vt['ElastoDyn']['NumBl']):
+                output.add_gradient_channel(f'BldPitch{i_blade+1}', f'dBldPitch{i_blade+1}')
 
             output_list.append(output)
         
-        # Collect outputs
-        ss = {}
-        et = {}
-        dl = {}
-        dam = {}
-        
 
-        loads_analysis = LoadsAnalysis(
-            outputs = [],
-            magnitude_channels = magnitude_channels,
-            fatigue_channels = fatigue_channels
-        )   
+    cruncher = Crunch(outputs = [],lean = True)
 
-        for output in output_list:
-            _name, _ss, _et, _dl, _dam = loads_analysis._process_output(output)
-            ss[_name] = _ss
-            et[_name] = _et
-            dl[_name] = _dl
-            dam[_name] = _dam
+    for output in output_list:
+        cruncher.add_output(output)
 
-        summary_stats, extreme_table, DELs, Damage = loads_analysis.post_process(ss, et, dl, dam)
-    
-    return summary_stats,extreme_table,DELs,Damage,case_list, case_name, ct, dlc_generator, TMax, TStart
+    cruncher.outputs = output_list
+    return cruncher,case_list, case_names, ct, dlc_generator, TMax, TStart
 
 
 

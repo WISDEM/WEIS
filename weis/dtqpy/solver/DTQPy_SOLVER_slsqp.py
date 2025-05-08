@@ -7,10 +7,9 @@ Reorganize matrices and solve the problem using IPOPT from pyoptsparse
 Contributor: Athul Krishna Sundarrajan (AthulKrishnaSundarrajan on Github)
 Primary Contributor: Daniel R. Herber (danielrherber on Github)
 """
-# import pyoptsparse
 try:
     # import pyoptsparse
-    from pyoptsparse import IPOPT, Optimization
+    from pyoptsparse import OPT, Optimization
     PYOPT = True
 except ImportError:
     PYOPT = False
@@ -37,23 +36,30 @@ def DTQPy_SOLVER_slsqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
     optOptions = {'MAXIT':solver.maxiters,'ACC':solver.tolerence,'IFILE':'SLSQP.out','IPRINT':1}
     
     # obtain the number of linear equality/inequality constraints
-    n = A.shape[0]; neq = Aeq.shape[0]
+    n = A.shape[0]
+    neq = Aeq.shape[0]
     
     # define a wrapper function to pass additional arguments to pyoptsparse
     class PyOptSp_wrapper():
         def __init__(self, H = H,f = f,A = A,b = b,Aeq = Aeq,beq = beq,lb = lb,ub = ub,internal = internal):
             
             # assign
-            self.H = H; self.f = f
-            self.A = A; self.b = b; self.Aeq = Aeq; self.beq = beq;
-            self.lb = lb; self.ub = ub
+            self.H = H
+            self.f = f
+            self.A = A
+            self.b = b
+            self.Aeq = Aeq
+            self.beq = beq
+            self.lb = lb
+            self.ub = ub
             self.internal = internal
             
         # function to calculate the objective function value
         def ObjFun(self,xdict):
             
             # extract values
-            H = self.H; f = self.f
+            H = self.H
+            f = self.f
             
             # extract vector of optimization variables
             x = xdict['xvars']
@@ -74,7 +80,8 @@ def DTQPy_SOLVER_slsqp(H,f,A,b,Aeq,beq,lb,ub,internal,opts):
         def Sens(self,xdict,funcs):
             
             # extract variables
-            H = self.H; f = self.f           
+            H = self.H
+            f = self.f           
             x = xdict['xvars']
             
             # initialize

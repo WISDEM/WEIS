@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from pCrunch.io import load_FAST_out
+from pCrunch import read
 from scipy.interpolate import CubicSpline
 from scipy.signal import filtfilt
 import time as timer
@@ -160,7 +160,7 @@ class SimulationDetails:
            
             # load output file
             if self.OF_file_type == 'outb':
-                FAST_out = load_FAST_out(file_name)[0]
+                FAST_out = read(file_name)
 
             elif self.OF_file_type == 'pkl':
                 with open(file_name,'rb') as handle:

@@ -41,9 +41,11 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.viewcode',
               'numpydoc',
               'sphinx.ext.autosummary',
+              'sphinxcontrib.video',
               'sphinxcontrib.bibtex',
               'sphinx.ext.intersphinx',
               'sphinx_rtd_theme',
+              'sphinx-jsonschema',
               # 'autoapi.extension',
               # 'embed-n2',
 ]
@@ -105,4 +107,23 @@ html_sidebars = {
         'navigation.html',
         'searchbox.html'        
     ]
+}
+
+html_css_files = [
+    'https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css',
+    "custom.css",
+]
+
+html_js_files = [
+    'https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js',
+    'main.js',
+]
+
+# Bibtex configuration
+bibtex_bibfiles = ["references.bib"]
+
+jsonschema_options = {
+    'lift_title': True,
+    'lift_description': True,
+    'lift_definitions': True,
 }

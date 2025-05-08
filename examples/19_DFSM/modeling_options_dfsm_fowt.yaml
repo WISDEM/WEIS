@@ -1,51 +1,35 @@
 General:
     verbosity: False  # When set to True, the code prints to screen many infos
     openfast_configuration:
-        OF_run_fst: IEA_w_TMD
-        OF_run_dir: outputs/doe_mpi_5w_1s
-        save_iterations: True
-        save_timeseries: True
         use_exe: True
-        allow_fails: True
-        fail_value: 9999
+
 
 WISDEM:
     RotorSE:
-        flag: True
-        n_pitch_perf_surfaces: 5
-        n_tsr_perf_surfaces: 5
+        flag: False
         spar_cap_ss: Spar_Cap_SS
         spar_cap_ps: Spar_Cap_PS
         te_ss: TE_reinforcement_SS
         te_ps: TE_reinforcement_PS
     TowerSE:
-        flag: True
+        flag: False
     DriveSE:
-        flag: True
+        flag: False
     FloatingSE:
-        flag: True
-        rank_and_file: True
-    # BOS:
-    #     flag: True
+        flag: False
+    BOS:
+        flag: False
 
-Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
     flag: False
-    from_openfast: False
-    openfast_file: IEA_w_TMD.fst
-    openfast_dir: IEA_15_MW
+    from_openfast: True
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
     simulation:
         DT: 0.01
-        CompElast: 1
-        CompInflow: 1
-        CompAero: 0
-        CompServo: 1
-        CompHydro: 1
-        CompSub: 0
-        CompMooring: 3
-        CompIce: 0
         OutFileFmt: 3
-    linearization:
-        Linearize: False
+        CompElast: 1
     ElastoDyn:
         FlapDOF1: False 
         FlapDOF2: False 
@@ -65,49 +49,23 @@ Level3: # Options for WEIS fidelity level 3 = nonlinear time domain
         PtfmPDOF : True
         PtfmYDOF : False 
     HydroDyn:
-        WvLowCOff: 0.15708
-        WvHiCOff: 3.2
-        WaveSeed1: 123456789
-        AddBQuad1: [9.23e5, 0.0, 0.0, 0.0, -8.92e6, 0.0]
-        AddBQuad2: [0.0, 9.23e5, 0.0, 8.92e6, 0.0, 0.0]
-        AddBQuad3: [0.0, 0.0, 2.3e6, 0.0, 0.0, 0.0]
-        AddBQuad4: [0.0, 8.92e6, 0.0, 1.68e10, 0.0, 0.0]
-        AddBQuad5: [-8.92e6, 0.0, 0.0, 0.0, 1.68e10, 0.0]
-        AddBQuad6: [0.0, 0.0, 0.0, 0.0, 0.0, 4.8e10]
         PotMod: 1
-        WaveMod: 2
-        PotFile: examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
-
-Level1:
-    flag: False
-    potential_model_override: 2
-    trim_ballast: 2
-    heave_tol: 1
-    save_designs: True
+        WaveMod: 5
+        PotFile: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/HydroData/IEA-15-240-RWT-UMaineSemi
+    SeaState:
+        WaveMod: 5
 
 ROSCO:
     flag: True
-    SD_Mode: 0
-    PS_Mode: 1
-    ps_percent: 0.85
-    F_LPFType: 2
-    F_NotchType: 2
-    Fl_Mode: 2 
-    tuning_yaml: IEA_15_MW/IEA15MW-tuning.yaml
-    zeta_pc: [1] #[1]
-    omega_pc: [0.15] #[0.15]
+    tuning_yaml: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
     U_pc: [12]
-    zeta_vs: 0.85                     # Torque controller desired damping ratio [-]
-    omega_vs: 0.12  
-    twr_freq: 3.2
-    ptfm_freq: 0.2
-    #Kp_float: -10
+
     
     
 DFSM:
     flag: True
     general_options:
-        dfsm_file: /home/athulsun/WEIS-AKS-commit/examples/19_DFSM/dfsm_1p6_python.pkl
+        dfsm_file: dfsm_fowt_1p6.pkl
         modeling_data_path: /home/athulsun/DFSM/data/FOWT_1p6
         save_results: True
         usecase: closed-loop-simulation
@@ -125,15 +83,17 @@ DFSM:
     
 DLC_driver:
     metocean_conditions:
-        wind_speed: [4., 6., 8., 10., 12., 14., 16., 18., 20., 22., 24.]
-        wave_height_NSS: [0.83, 0.88, 0.94, 1.03, 1.16, 1.34, 1.57, 1.86, 2.22, 2.62, 3.07]
-        wave_period_NSS: [6.9, 6.96, 7.02, 7.12, 7.25, 7.43, 7.66, 7.94, 8.27, 8.63, 9.01]
-        wave_height_SSS: [6.3, 8, 8, 8.1, 8.5, 8.5, 9.8, 9.8, 9.8, 9.8, 9.9]
-        wave_period_SSS: [11.5, 12.7, 12.7, 12.8, 13.1, 13.1, 14.1, 14.1, 14.1, 14.1, 14.1]
-        wave_height1: 6.98
-        wave_period1: 11.7
-        wave_height50: 10.68
-        wave_period50: 14.2
+        wind_speed: [1.,3.,5.,7.,9.,11.,13.,15.,17.,19.,21.,23.,25.,27.,29.]
+        wave_height_NSS: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_NSS: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_fatigue: [0.84,0.84,0.87,0.99,1.15,1.34,1.58,1.82,2.08,2.34,2.66,2.98,3.28,3.77,3.94]
+        wave_period_fatigue: [8.3,8.3,8.3,7.7,7.1,6.3,6.1,6.2,6.2,6.7,7.1,7.1,7.7,7.7,7.7]
+        wave_height_SSS: [9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7,9.7]
+        wave_period_SSS: [13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6,13.6]
+        wave_height1: 5.9
+        wave_period1: 11.2
+        wave_height50: 9.7
+        wave_period50: 13.6
     DLCs:
         # - DLC: "1.1"
         #   n_seeds: 6
@@ -154,8 +114,8 @@ DLC_driver:
         - DLC: "1.6"
           n_seeds: 1
           wind_speed: [8,10,12,14,16]
-          analysis_time: 600.
-          transient_time: 50.
+          analysis_time: 700.
+          transient_time: 0.
           turbulent_wind:
             HubHt: 150.0
             RefHt: 150.0

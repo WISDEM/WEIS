@@ -5,7 +5,7 @@ from weis.dtqpy.DTQPy_static import DTQPy_static
 import multiprocessing as mp
 
 radps2rpm = 30 / np.pi
-from pCrunch.io import OpenFASTOutput
+from pCrunch import AeroelasticOutput
 
 from weis.aeroelasticse.CaseGen_General import case_naming
 
@@ -101,7 +101,7 @@ def dtqp_wrapper(LinearTurbine,level2_disturbances,analysis_options,modeling_opt
         dtqp_input['case_name']             = case_names[i_oloc]
         dtqp_input['run_dir']               = run_dir
         dtqp_input['magnitude_channels']    = magnitude_channels
-        dtqp_input['dtqp_options']          = modeling_options['Level2']['DTQP']
+        dtqp_input['dtqp_options']          = modeling_options['OpenFAST_Linear']['DTQP']
 
         dtqp_input_list.append(dtqp_input)
 
@@ -168,7 +168,7 @@ def run_dtqp(dtqp_input):
             dtqp_input['dtqp_options'],
             plot=dtqp_input['plot'])
    
-    # Shorten output names from linearization output to one like level3 openfast output
+    # Shorten output names from linearization output to one like openfast output
     # This depends on how openfast sets up the linearization output names and may break if that is changed
     OutList     = [out_name.split()[1][:-1] for out_name in dtqp_input['LinearTurbine'].DescOutput]
 
@@ -179,9 +179,10 @@ def run_dtqp(dtqp_input):
 
     # Add time to OutData
     OutData['Time'] = T.flatten()
-    breakpoint()
-    output = OpenFASTOutput.from_dict(OutData, dtqp_input['case_name'],magnitude_channels=dtqp_input['magnitude_channels'])
-    output.df.to_pickle(os.path.join(dtqp_input['run_dir'],dtqp_input['case_name']+'.p'))
+
+    output = AeroelasticOutput(OutData, dlc=dtqp_input['case_name'],
+                               magnitude_channels=dtqp_input['magnitude_channels'])
+    output.df.to_pickle(os.path.join(dtqp_input['run_dir'], dtqp_input['case_name']+'.p'))
 
     return output
 

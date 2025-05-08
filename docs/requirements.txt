@@ -11,7 +11,7 @@ marmot-agents
 # docs
 sphinx>2.0
 numpydoc
-numpydoc
 sphinxcontrib-bibtex<2.0.0
+sphinxcontrib-video
 sphinx-rtd-theme
 # sphinx-autoapi

@@ -316,6 +316,10 @@ class BaseMethod:
 
         self.approximation_functions = approximation_functions
 
+        self.outputs_low = outputs_low
+        self.outputs_high = outputs_high
+  
+
     def process_results(self):
         """
         Store results from the optimization into a dictionary and return those results.

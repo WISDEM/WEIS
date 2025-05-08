@@ -10,7 +10,7 @@ import time
 
 import multiprocessing as mp
 from functools import partial
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 
 def runXfoil(xfoil_path, x, y, Re, AoA_min=-9, AoA_max=25, AoA_inc=0.5, Ma=0.0, multi_run=False, MPI_run=False):
     #This function is used to create and run xfoil simulations for a given set of airfoil coordinates
@@ -257,7 +257,7 @@ class RunXFOIL(ExplicitComponent):
         self.n_xy          = n_xy      = rotorse_options['n_xy'] # Number of coordinate points to describe the airfoil geometry
 
         # Use openfast cores for parallelization of xfoil 
-        xfoilpref = self.options['modeling_options']['Level3']['xfoil']
+        xfoilpref = self.options['modeling_options']['OpenFAST']['xfoil']
         self.xfoil_path = xfoilpref['path']
 
         try:
@@ -268,7 +268,7 @@ class RunXFOIL(ExplicitComponent):
         except KeyError:
             self.cores = 1
         
-        if MPI and self.options['modeling_options']['Level3']['flag'] and not self.options['opt_options']['driver']['optimization']['flag']:
+        if MPI and self.options['modeling_options']['OpenFAST']['flag'] and not self.options['opt_options']['driver']['optimization']['flag']:
             self.mpi_comm_map_down = self.options['modeling_options']['General']['openfast_configuration']['mpi_comm_map_down']
 
         # Inputs blade outer shape

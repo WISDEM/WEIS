@@ -2,7 +2,7 @@ import os
 import matplotlib.pyplot as plt
 import openmdao.api as om
 import numpy as np
-from wisdem.commonse.mpi_tools import MPI
+from openmdao.utils.mpi import MPI
 
 class Outputs_2_Screen(om.ExplicitComponent):
     # Class to print outputs on screen
@@ -50,7 +50,7 @@ class Outputs_2_Screen(om.ExplicitComponent):
         print('Tip Defl.:   {:<8.10f} m'.format(inputs['tip_deflection'][0]))
         
         # OpenFAST simulation summary
-        if self.options['modeling_options']['Level3']['flag']: 
+        if self.options['modeling_options']['OpenFAST']['flag']: 
             # Print optimization variables
             
             # Pitch control params

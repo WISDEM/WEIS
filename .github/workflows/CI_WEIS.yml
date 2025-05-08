@@ -17,13 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macOS-13", "macOS-latest", "windows-latest"] # mac13 is intel, mac-14 arm
-        python-version: ["3.9","3.10","3.11","3.12"]
+        python-version: ["3.10","3.11","3.12"]
         
     steps:
       - uses: actions/checkout@v4
     
       - name: Install conda/mamba
-        uses: conda-incubator/setup-miniconda@v2
+        uses: conda-incubator/setup-miniconda@v3
         # https://github.com/marketplace/actions/setup-miniconda
         with:
           # To use mamba, uncomment here, comment out the miniforge line
@@ -43,11 +43,11 @@ jobs:
       - name: Add dependencies ubuntu specific
         if: false == contains( matrix.os, 'windows')
         run: |
-          conda install -y petsc4py mpi4py openmpi
+          conda install -y petsc4py=3.22.2 mpi4py pyoptsparse
       
       - name: Add test packages
         run: |
-          conda install -y pytest pytest-cov coveralls pyoptsparse
+          conda install -y pytest pytest-cov coveralls treon gdown
             
       - name: Show custom environment
         run: |
@@ -80,17 +80,67 @@ jobs:
       #- name: List tests
       #  run: |
       #    pytest --collect-only weis 
+
+      # Test walkthrough notebook
+      - name: Test postprocessing notebooks
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        env:
+            RUN_EXHAUSTIVE: 1
+        run: |
+          cd examples/16_postprocessing
+          gdown --no-check-certificate 1AtLjjX5xpPqlHkfwDqeUj6VBMOYWcjmV
+          unzip outputs
+          treon plot_FAST.ipynb
+          treon rev_DLCs_WEIS.ipynb
+          treon rev_Opt.ipynb
+          treon rev_WEIS_CSV.ipynb
         
       # Run all tests within WEIS, but not computationally expensive examples
       - name: Run tests within WEIS
+        if: false == contains( matrix.os, 'ubuntu') || contains( github.event_name, 'push')
         run: |
-          pytest --cov-config=.coverageac --cov=weis -p no:warnings --disable-warnings weis 
-      
+          pytest -p no:warnings --disable-warnings --cov=weis weis
+
+      # Run long tests in on pull request
+      - name: Run exhaustive
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        env:
+            RUN_EXHAUSTIVE: 1
+        run: |
+            pytest  -p no:warnings -s --disable-warnings  weis
+
+      # Run parallel script calling OpenFAST
+      - name: Run parallel cases
+        if: contains( matrix.os, 'ubuntu') && contains( github.event_name, 'pull_request')
+        env:
+            RUN_EXHAUSTIVE: 1
+        run: |
+          cd examples/02_run_openfast_cases
+          mpiexec -np 2 python weis_driver_loads.py
+          cd ../03_NREL5MW_OC3_spar
+          mpiexec -np 2 python weis_driver.py
+          cd ../05_IEA-3.4-130-RWT
+          mpiexec -np 2 python weis_driver.py
+          cd ../09_design_of_experiments
+          mpiexec -n 2 python DOE_raft.py
+          mpiexec -n 2 --bind-to core python DOE_openfast.py
+          python postprocess_results.py
+          cd ../17_IEA22_Optimization
+          mpiexec -n 2 python driver_weis_raft_opt.py
+          
+      # Run scripts within dac folder
+      # - name: Run examples distributed aerodynamic control
+      #  run: |
+      #    cd examples/dac_flaps
+      #    python dac_driver.py
+            
       # Run coveralls
       - name: Run coveralls
         if: contains( matrix.os, 'ubuntu') && contains( matrix.python-version, '3.11')
-        #uses: coverallsapp/github-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        #uses: coverallsapp/github-action@v2
+        #with:
+        #    github-token:  ${{ secrets.GITHUB_TOKEN }}
         run: |
           coveralls --service=github

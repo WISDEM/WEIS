@@ -16,9 +16,9 @@ import os
 fastBatch = runFAST_pywrapper_batch()
 run_dir1                    = os.path.dirname( os.path.dirname( os.path.dirname( os.path.realpath(__file__) ) ) ) + os.sep
 run_dir2                    = os.path.dirname( os.path.realpath(__file__) ) + os.sep
-fastBatch.FAST_directory    = os.path.join(run_dir2, 'OpenFAST_models','IEA-15-240-RWT','IEA-15-240-RWT-OLAF')   # Path to fst directory files
-fastBatch.FAST_InputFile    = 'IEA-15-240-RWT_OLAF.fst'   # FAST input file (ext=.fst)
-fastBatch.FAST_runDirectory = 'olaf' + os.sep + 'iea15mw'
+fastBatch.FAST_directory    = os.path.join(run_dir2, "OpenFAST_models","IEA-15-240-RWT","IEA-15-240-RWT-OLAF")   # Path to fst directory files
+fastBatch.FAST_InputFile    = "IEA-15-240-RWT_OLAF.fst"   # FAST input file (ext=.fst)
+fastBatch.FAST_runDirectory = "olaf" + os.sep + "iea15mw"
 fastBatch.debug_level       = 2
 
 # User settings
@@ -41,23 +41,23 @@ omega_init = np.interp(wind_speeds, u_ref, omega_ref)
 
 # Settings passed to OpenFAST
 case_inputs = {}
-case_inputs[("Fst","TMax")]             = {'vals':[TMax], 'group':0}
-case_inputs[("Fst","DT")]               = {'vals':[0.01], 'group':0}
-case_inputs[("Fst","DT_Out")]           = {'vals':[0.1], 'group':0}
-case_inputs[("ServoDyn","DLL_DT")]      = {'vals':[0.01], 'group':0}
-case_inputs[("Fst","CompInflow")]       = {'vals':[1], 'group':0}
-case_inputs[("Fst","CompServo")]        = {'vals':[1], 'group':0}
-case_inputs[("Fst","OutFileFmt")]       = {'vals':[1], 'group':0}
-case_inputs[("ElastoDyn","GenDOF")]     = {'vals':['True'], 'group':0}
-case_inputs[("ServoDyn","PCMode")]      = {'vals':[5], 'group':0}
-case_inputs[("ServoDyn","VSContrl")]    = {'vals':[5], 'group':0}
-case_inputs[("AeroDyn15","WakeMod")]    = {'vals':[3], 'group':0}
-case_inputs[("AeroDyn15","AFAeroMod")]    = {'vals':[1], 'group':0}
-case_inputs[("InflowWind","WindType")]  = {'vals':[1], 'group':0}
-case_inputs[("InflowWind","HWindSpeed")]= {'vals': wind_speeds, 'group': 1}
-case_inputs[("Fst","OutFileFmt")]       = {'vals':[0], 'group':0}
-case_inputs[("ElastoDyn","RotSpeed")]   = {'vals': omega_init, 'group': 1}
-case_inputs[("ElastoDyn","BlPitch1")]   = {'vals': pitch_init, 'group': 1}
+case_inputs[("Fst","TMax")]             = {"vals":[TMax], "group":0}
+case_inputs[("Fst","DT")]               = {"vals":[0.01], "group":0}
+case_inputs[("Fst","DT_Out")]           = {"vals":[0.1], "group":0}
+case_inputs[("ServoDyn","DLL_DT")]      = {"vals":[0.01], "group":0}
+case_inputs[("Fst","CompInflow")]       = {"vals":[1], "group":0}
+case_inputs[("Fst","CompServo")]        = {"vals":[1], "group":0}
+case_inputs[("Fst","OutFileFmt")]       = {"vals":[1], "group":0}
+case_inputs[("ElastoDyn","GenDOF")]     = {"vals":["True"], "group":0}
+case_inputs[("ServoDyn","PCMode")]      = {"vals":[5], "group":0}
+case_inputs[("ServoDyn","VSContrl")]    = {"vals":[5], "group":0}
+case_inputs[("AeroDyn","Wake_Mod")]     = {"vals":[3], "group":0}
+case_inputs[("AeroDyn","UA_Mod")]       = {"vals":[0], "group":0}
+case_inputs[("InflowWind","WindType")]  = {"vals":[1], "group":0}
+case_inputs[("InflowWind","HWindSpeed")]= {"vals": wind_speeds, "group": 1}
+case_inputs[("Fst","OutFileFmt")]       = {"vals":[0], "group":0}
+case_inputs[("ElastoDyn","RotSpeed")]   = {"vals": omega_init, "group": 1}
+case_inputs[("ElastoDyn","BlPitch1")]   = {"vals": pitch_init, "group": 1}
 case_inputs[("ElastoDyn","BlPitch2")]   = case_inputs[("ElastoDyn","BlPitch1")]
 case_inputs[("ElastoDyn","BlPitch3")]   = case_inputs[("ElastoDyn","BlPitch1")]
 
@@ -73,17 +73,17 @@ dt_olaf = np.zeros_like(dt_fvw)
 dt = case_inputs[("Fst","DT")]["vals"]
 n_dt = dt_fvw / dt
 dt_olaf = dt * np.around(n_dt)
-case_inputs[("AeroDyn15","OLAF","DTfvw")] = {'vals':dt_olaf, 'group':1} 
-case_inputs[("AeroDyn15","OLAF","nNWPanels")] = {'vals':nNWPanels, 'group':1} 
-case_inputs[("AeroDyn15","OLAF","nNWPanelsFree")] = {'vals':nNWPanelsFree, 'group':1} 
-case_inputs[("AeroDyn15","OLAF","nFWPanels")] = {'vals':nFWPanels, 'group':1} 
-case_inputs[("AeroDyn15","OLAF","nFWPanelsFree")] = {'vals':nFWPanelsFree, 'group':1} 
+case_inputs[("AeroDyn","OLAF","DTfvw")] = {"vals":dt_olaf, "group":1} 
+case_inputs[("AeroDyn","OLAF","nNWPanels")] = {"vals":nNWPanels, "group":1} 
+case_inputs[("AeroDyn","OLAF","nNWPanelsFree")] = {"vals":nNWPanelsFree, "group":1} 
+case_inputs[("AeroDyn","OLAF","nFWPanels")] = {"vals":nFWPanels, "group":1} 
+case_inputs[("AeroDyn","OLAF","nFWPanelsFree")] = {"vals":nFWPanelsFree, "group":1} 
 
 # Find the controller
-case_inputs[("ServoDyn","DLL_FileName")] = {'vals':[path2dll], 'group':0}
+case_inputs[("ServoDyn","DLL_FileName")] = {"vals":[path2dll], "group":0}
 
 # Generate the matrix of cases
-case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase='iea15mw')
+case_list, case_name_list = CaseGen_General(case_inputs, dir_matrix=fastBatch.FAST_runDirectory, namebase="iea15mw")
 
 fastBatch.case_list = case_list
 fastBatch.case_name_list = case_name_list

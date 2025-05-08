@@ -29,15 +29,20 @@ import argparse
 
 import matlab.engine
 
+# get path to this directory
+this_dir = os.path.dirname(os.path.realpath(__file__))
+outputs_dir = this_dir + os.sep + 'outputs'
+
+
 def ModelData():
     
     model_data = {}
 
-    model_data['reqd_states'] = ['PtfmPitch','TTDspFA','GenSpeed','RotThrust'];ns = len(model_data['reqd_states'])
+    model_data['reqd_states'] = ['PtfmSurge','PtfmPitch','TTDspFA','GenSpeed'];ns = len(model_data['reqd_states'])
     model_data['reqd_controls'] =  ['RtVAvgxh','GenTq','BldPitch1','Wave1Elev'];nc = len(model_data['reqd_controls'])
-    model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','YawBrTAxp','NcIMURAys','GenPwr','RtFldCp','RtFldCt'] 
+    model_data['reqd_outputs'] = ['TwrBsFxt','TwrBsMyt','GenPwr','YawBrTAxp','NcIMURAys','RtFldCp','RtFldCt'] 
 
-    model_data['datapath'] = '/home/athulsun/DFSM/data' + os.sep + 'FOWT_1p6'
+    model_data['datapath'] = outputs_dir+os.sep +'fowt_train_1p3'
 
     scale_args = {'state_scaling_factor': np.array([1,1,1,1]),
                   'control_scaling_factor': np.array([1,1,1,1]),
@@ -46,34 +51,23 @@ def ModelData():
     
     model_data['scale_args'] = scale_args
 
-    model_data['mat_file_name'] = 'FOWT_LPV_fmincon.mat'
-
-    model_data['W'] =  np.array([3,5,7,9,11,13,15,17,19,21,23,25])
-
     n_var = ns*(nc+2*ns)
 
     model_data['n_var'] = n_var
-    model_data['lb'] = [-np.inf]*n_var
-    model_data['ub'] = [np.inf]*n_var
 
+    model_data['w_start'] = 14.00
+    model_data['buff'] = 0.0
+    model_data['train_inds'] = np.arange(0,4)
+    model_data['tmin'] = 100
 
-    model_data['gaopt'] = {'UseParallel':1,'Display':'iter','MaxGenerations':n_var*2}
-    model_data['fminconopt'] = {'Display':'iter','Algorithm':'interior-point','MaxIterations':500,'MaxFunctionEvaluations':20000,
-                                'UseParallel':1,"EnableFeasibilityMode":1,'StepTolerance':1e-8,'ConstraintTolerance':1e-4}
-
-    model_data['nseeds'] = 10
-
-    model_data['test_inds'] = np.array([16,26,36,46,56,66,76,86,96,106,116])
-
-    model_data['w_start'] = 13.00
+    model_data['test_inds'] = np.array([5,11,17,23,29])
+    model_data['dfsm_file_name'] = 'dfsm_fowt_1p3.pkl'
      
     return model_data
 
 
 if __name__ == '__main__':
     
-    # path to this directory
-    this_dir = os.path.dirname(os.path.abspath(__file__))
     
     # datapath
     region = 'LPV'
@@ -102,18 +96,14 @@ if __name__ == '__main__':
     filter_args = {'state_filter_flag': [True]*ns,
                    'state_filter_type': [['filtfilt']]*ns,
                    'state_filter_tf': [[0.1]]*ns,
-                   'control_filter_flag': [False]*nc,
-                   'control_filter_tf': [0]*nc,
-                   'output_filter_flag': []
                    }
     
-    # name of mat file that has the linearized models
-    mat_file_name = None#this_dir + os.sep + model_data['mat_file_name']
-    
     # instantiate class
-    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=00
-                                   ,add_dx2 = True,linear_model_file = mat_file_name,region = region)
-    
+    tmin = model_data['tmin']
+    t1 = timer.time()
+    sim_detail = SimulationDetails(outfiles, reqd_states,reqd_controls,reqd_outputs,scale_args,filter_args,tmin=tmin
+                                   ,add_dx2 = True,linear_model_file = None,region = region)
+    t2 = timer.time()
     # load and process data
     sim_detail.load_openfast_sim()
     
@@ -121,19 +111,49 @@ if __name__ == '__main__':
     # extract data
     FAST_sim = sim_detail.FAST_sim
 
+    FAST_sim_array = np.array(FAST_sim)
 
-    nseeds = model_data['nseeds']
-    W = model_data['W']
+    state_names = FAST_sim_array[0]['state_names']
+
+    # get index of nacelle rotational and translational accelerations
+    try:
+        ncimu_ind = reqd_outputs.index('NcIMURAys')
+    except:
+        ncimu_ind = None
+
+    try:
+        yawbr_ind = reqd_outputs.index('YawBrTAxp')
+    except:
+        yawbr_ind = None
+
+    try:
+        dptfmpitch_ind = state_names.index('dPtfmPitch')
+    except:
+        dptfmpitch_ind = None
+
     n_var = model_data['n_var']
-   
+    
+    w_array = []
+
+    for sim_det in FAST_sim_array:
+        w_array.append(sim_det['w_mean'])
+
+    w_array = np.round(np.array(w_array),1)
+    W = np.unique(w_array)
+    
     nW = len(W)
+    nseeds = int(len(w_array)/nW)
+    
+    
 
-
+    
     FAST_sim_array = np.array(FAST_sim)
     FAST_sim = np.reshape(FAST_sim_array,[nseeds,nW],order = 'F')
+    print(FAST_sim.shape)
+    # sort_ind = np.argsort(w_array)
+    # FAST_sim = FAST_sim[:,sort_ind]
 
-
-    train_inds = np.arange(0,5)
+    train_inds = model_data['train_inds']
     
 
     n_samples = 1
@@ -158,11 +178,7 @@ if __name__ == '__main__':
     # Start the MATLAB Engine
     eng = matlab.engine.start_matlab()
 
-    X_matlab = np.array((nW),dtype = object)
     X_cd_array = np.zeros((nW),dtype = object)
-
-    LTI = wrapper_LTI(nstates = int(2*ns),ncontrols = int(nc))
-
     print('started matlab engine')
     
     # perform forward pass
@@ -182,14 +198,15 @@ if __name__ == '__main__':
         D_ = CD[:,:nc]
 
         
-        inputs_ = matlab.double(inputs)
-        state_dx_ = matlab.double(state_dx)
-        outputs_ = matlab.double(outputs)
+        inputs_md = matlab.double(inputs)
+        state_dx_md = matlab.double(state_dx)
+        outputs_md = matlab.double(outputs)
 
         n_var = matlab.double(n_var)
         ns2 = matlab.double(2*ns)
         nc_ = matlab.double(nc)
         ny_ = matlab.double(ny)
+        buff = matlab.double(model_data['buff'])
 
         
         if W[iw] == w_start:
@@ -197,17 +214,17 @@ if __name__ == '__main__':
             x0 = matlab.double([])
             
             t1 = timer.time()
-            A,B,C,D,x,x_cd = eng.construct_LPV(x0,x0,n_var,ns2,nc_,ny_,inputs_,state_dx_,outputs_,model_data['gaopt'],model_data['fminconopt'],nargout = 6)
+            A,B,C,D,x = eng.construct_LPV(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,buff,nargout = 5)
             t2 = timer.time()
                 
         else:
 
             x0 = matlab.double(X_array[iw-1])
-            x0_cd = matlab.double(X_cd_array[iw-1])
 
             t1 = timer.time()
-            A,B,C,D,x,x_cd = eng.construct_LPV(x0,x0_cd,n_var,ns2,nc_,ny_,inputs_,state_dx_,outputs_,model_data['gaopt'],model_data['fminconopt'],nargout = 6)
+            A,B,C,D,x = eng.construct_LPV(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,buff,nargout = 5)
             t2 = timer.time()
+
 
             
         # stop timer
@@ -215,15 +232,15 @@ if __name__ == '__main__':
 
         # store soultion
         X_array[iw,:] = np.squeeze(np.array(x))
-        X_cd_array[iw] = x_cd
 
         # convert the A,B,C,D matrices to np arrays
         A = np.array(A);B = np.array(B)
         C = np.array(C); D = np.array(D)
 
 
-        C[3,:] = A[3,:]
-        D[3,:] = B[3,:]
+        if not(dptfmpitch_ind == None):
+            C[ncimu_ind,:] = A[dptfmpitch_ind,:]
+            D[ncimu_ind,:] = B[dptfmpitch_ind,:]
 
         # store linear models
         A_array[iw,:,:] = A
@@ -238,9 +255,10 @@ if __name__ == '__main__':
 
         _,_,_,inputs,state_dx,outputs = sample_data(FAST_sim[train_inds,iw],'KM',n_samples = 1)
 
-        inputs_ = matlab.double(inputs)
-        state_dx_ = matlab.double(state_dx)
-        outputs_ = matlab.double(outputs)
+        inputs_md = matlab.double(inputs)
+        state_dx_md = matlab.double(state_dx)
+        outputs_md = matlab.double(outputs)
+        buff = matlab.double(model_data['buff'])
 
 
         # calculate the C and D matrices
@@ -252,28 +270,25 @@ if __name__ == '__main__':
         C_ = CD[:,nc:]
         D_ = CD[:,:nc]
 
-        C_array[iw,:,:] = C
-        D_array[iw,:,:] = D
-
         x0 = matlab.double(X_array[iw+1])
-        x0_cd = X_cd_array[iw+1]
         
 
         t1 = timer.time()
-        A,B,C,D,x,x_cd = eng.construct_LPV(x0,x0_cd,n_var,ns2,nc_,ny_,inputs_,state_dx_,outputs_,model_data['gaopt'],model_data['fminconopt'],nargout = 6)
+        A,B,C,D,x = eng.construct_LPV(x0,n_var,ns2,nc_,ny_,inputs_md,state_dx_md,outputs_md,buff,nargout = 5)
         t2 = timer.time()
 
         model_construct_time[iw] = t2-t1
 
         # store soultion
         X_array[iw,:] = np.squeeze(np.array(x))
-        X_cd_array[iw] = x_cd
+        
 
         A = np.array(A);B = np.array(B)
         C = np.array(C); D = np.array(D);
 
-        C[3,:] = A[3,:]
-        D[3,:] = B[3,:]
+        if not(dptfmpitch_ind == None):
+            C[ncimu_ind,:] = A[dptfmpitch_ind,:]
+            D[ncimu_ind,:] = B[dptfmpitch_ind,:]
 
         # store linear models
         A_array[iw,:,:] = A
@@ -300,6 +315,8 @@ if __name__ == '__main__':
     dfsm_python.D_array = D_array
     dfsm_python.W = W
 
+    dfsm_python.model_construct_time = model_construct_time
+
     dfsm_python.setup_LPV(interp_type)
 
     dfsm_python.AB = []
@@ -322,11 +339,21 @@ if __name__ == '__main__':
     dfsm_python.nonlin_deriv = np.array([None])
     dfsm_python.nonlin_outputs = np.array([None])
 
+    dfsm_python.reqd_states = reqd_states
+    dfsm_python.reqd_controls = reqd_controls
+    dfsm_python.reqd_outputs = reqd_outputs
+    dfsm_python.scale_args = scale_args
+    dfsm_python.filter_args = filter_args
+    dfsm_python.w_start = w_start
+    dfsm_python.buff = buff
+    dfsm_python.tmin = tmin
+    dfsm_python.train_inds = train_inds
+
 
 
     # load results from matlab
     save_flag = True;save_dict_flag = True;plot_flag = False
-    plot_path = 'LPV_results_comp'
+    plot_path = outputs_dir + os.sep + 'open_loop_validation'
 
     
     # test dfsm
@@ -334,7 +361,7 @@ if __name__ == '__main__':
     simulation_flag = True 
     outputs_flag = (len(reqd_outputs) > 0)
     plot_flag = True
-    #dfsm,U_list,X_list_matlab,dx_list,Y_list_matlab = test_dfsm(dfsm_matlab,FAST_sim_array,test_inds,simulation_flag,plot_flag)
+    
     dfsm,U_list,X_list_python,dx_list,Y_list_python = test_dfsm(dfsm_python,FAST_sim_array,test_inds,simulation_flag,plot_flag)
     dfsm.train_data = [];dfsm.test_data = []
     print(dfsm.simulation_time)
@@ -349,16 +376,13 @@ if __name__ == '__main__':
     
     for idx,ind in enumerate(test_inds):
 
-        #time = results_mat['time']
         time = X_list_python[idx]['time']
 
         U = U_list[idx]['OpenFAST']
-
-        #x_matlab = X_list_matlab[idx]['DFSM']
+        
         x_python = X_list_python[idx]['DFSM']
         x_OF = X_list_python[idx]['OpenFAST']
 
-        #y_matlab = Y_list_matlab[idx]['DFSM']
         y_python = Y_list_python[idx]['DFSM']
         y_OF = Y_list_python[idx]['OpenFAST']
 
@@ -424,18 +448,13 @@ if __name__ == '__main__':
                     fig.savefig(plot_path +os.sep+ reqd_outputs[i] +'_' +str(idx)+ '_comp.pdf')
                 plt.close(fig)
 
-
-
-
-
     plt.show()
 
-    dfsm_python_pkl = 'dfsm_1p6.pkl'
+    dfsm_pkl =  model_data['dfsm_file_name']
 
-    with open(dfsm_python_pkl,'wb') as handle:
+    with open(dfsm_pkl,'wb') as handle:
         pickle.dump(dfsm_python,handle)
 
-    results_dict = {'U_list':U_list,'X_list':X_list_python,'dx_list':dx_list,'Y_list':Y_list_python,'DFSM':dfsm,'current_speed':current_speed}
 
 
 

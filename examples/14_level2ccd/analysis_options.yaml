@@ -1,24 +1,26 @@
 general:
-    folder_output: outputs/cost_debug/analysis
+    folder_output: outputs/14_L2_studies
     fname_output: iea15mw
     
 design_variables:
   floating:
         joints:
-            flag: False
+            flag: True
             r_coordinate:
                 - names: [col1_keel, col1_freeboard, col2_keel, col2_freeboard, col3_keel, col3_freeboard]
                   lower_bound: 36.
-                  upper_bound: 78.
+                  upper_bound: 66.
         members:
-            flag: False
+            flag: True
             groups:
+                - names: [main_column]
+                  ballast:
+                      lower_bound: 350
+                      upper_bound: 650
                 - names: [column1,column2,column3]
-                  diameter:
-                      lower_bound: 6 # 9.375
-                      upper_bound: 24 #15.625
-                      constant: True
-
+                  ballast:
+                      lower_bound: 350
+                      upper_bound: 650
 
 constraints:
   tower:
@@ -49,20 +51,20 @@ constraints:
       flag: False
       max: 6
 
-merit_figure: LCOE
+merit_figure: weis_lcoe
 
 driver:
   optimization:
-    flag: False    # Flag to enable optimization
+    flag: True     # Flag to enable optimization
     solver: LN_COBYLA
     max_iter: 100
   design_of_experiments:
     flag: False          # Flag to enable design of experiments
     run_parallel: True    # Flag to run using parallel processing
     generator: FullFact   # Type of input generator. (Uniform)
-    num_samples: 1     # number of samples for (Uniform only)
+    num_samples: 5      # number of samples for (Uniform only)
 
 recorder:
     flag: True             # Flag to activate OpenMDAO recorder
     file_name: log_opt.sql  # Name of OpenMDAO recorder
-    just_dvs: True          
+    just_dvs: True                 

@@ -5,19 +5,28 @@ import os
 from weis.dfsm.dfsm_utilities import valid_extension,calculate_MSE
 from sklearn.metrics import r2_score
 from scipy.interpolate import CubicSpline
-from pCrunch import PowerProduction
+#from pCrunch import PowerProduction
+
+# plot properties
+markersize = 10
+linewidth = 1.5
+fontsize_legend = 16
+fontsize_axlabel = 18
+fontsize_tick = 15
 
 if __name__ == '__main__':
 
     # path to this directory
     this_dir = os.path.dirname(os.path.abspath(__file__))
 
-    results_folder = 'validation_results_1p6'
+    results_folder = 'outputs/CL_val_new_train'
     results_file = this_dir + os.sep +results_folder + os.sep + 'DFSM_validation_results.pkl'
 
     comp_fol = this_dir + os.sep +results_folder + os.sep + 'compiled_results'
     format = '.pdf'
     save_flag = True
+    color_of = 'k'
+    color_dfsm = 'r'
 
     if not(os.path.isdir(comp_fol)):
         os.makedirs(comp_fol)
@@ -37,16 +46,16 @@ if __name__ == '__main__':
     PtfmPitch_array = results_dict['PtfmPitch_array']
     DEL_array = results_dict['DEL_array']
 
-    n_ws = 10;n_seeds = 5;
+    n_ws = 7;n_seeds = 5;
     test_inds = np.arange(0,n_ws*n_seeds)
     n_test = len(test_inds)
 
-    # plot properties
-    markersize = 10
-    linewidth = 1.5
-    fontsize_legend = 12
-    fontsize_axlabel = 16
-    fontsize_tick = 10
+    # # plot properties
+    # markersize = 10
+    # linewidth = 1.5
+    # fontsize_legend = 12
+    # fontsize_axlabel = 16
+    # fontsize_tick = 10
 
     key_qty = ['RtVAvgxh','GenTq','BldPitch1','GenSpeed','GenPwr','TwrBsMyt','PtfmPitch']
 
@@ -82,8 +91,8 @@ if __name__ == '__main__':
             mse_dict_name = qty + '_'+str(i)
             dict_name_of = qty + '_of_' + str(i)
             dict_name_dfsm = qty + '_dfsm_' + str(i)
-
-            MSE_array[i,iqty] = MSE_dict[mse_dict_name]
+            
+            #MSE_array[i,iqty] = MSE_dict[mse_dict_name]
 
             mean_of_array[i,iqty] = mean_dict[dict_name_of]
             mean_dfsm_array[i,iqty] = mean_dict[dict_name_dfsm]
@@ -183,109 +192,109 @@ if __name__ == '__main__':
     pavg_dfsm = mean_dfsm_array[:,4]
 
     
-    pp = PowerProduction('I')
-    ws_prob = pp.prob_WindDist(CS, disttype='pdf')
-    ws_prob /= ws_prob.sum()
+    # pp = PowerProduction('I')
+    # ws_prob = pp.prob_WindDist(CS, disttype='pdf')
+    # ws_prob /= ws_prob.sum()
 
 
-    DEL_of_wt = DEL_of*ws_prob
-    DEL_dfsm_wt = DEL_dfsm*ws_prob
-    #-----------------------------------------------------------------
-    # WS vs weighted DEL
-    #-----------------------------------------------------------------
+    # DEL_of_wt = DEL_of*ws_prob
+    # DEL_dfsm_wt = DEL_dfsm*ws_prob
+    # #-----------------------------------------------------------------
+    # # WS vs weighted DEL
+    # #-----------------------------------------------------------------
 
-    fig,ax = plt.subplots(1)
-    ax.plot(WS,DEL_of*ws_prob,'.-',markersize = 14,label = 'OpenFAST')
-    ax.plot(WS,DEL_dfsm*ws_prob,'.-',markersize = 14,label = 'DFSM')
-    ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
-    ax.tick_params(labelsize=fontsize_tick)
-    ax.legend(ncol = 2,fontsize = fontsize_legend)
-    ax.set_title('Weighted DEL',fontsize = fontsize_axlabel)
-    fig_name = 'WSvsDEL'
+    # fig,ax = plt.subplots(1)
+    # ax.plot(WS,DEL_of*ws_prob,'.-',markersize = 14,label = 'OpenFAST')
+    # ax.plot(WS,DEL_dfsm*ws_prob,'.-',markersize = 14,label = 'DFSM')
+    # ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
+    # ax.tick_params(labelsize=fontsize_tick)
+    # ax.legend(ncol = 2,fontsize = fontsize_legend)
+    # ax.set_title('Weighted DEL',fontsize = fontsize_axlabel)
+    # fig_name = 'WSvsDEL'
 
-    if save_flag:     
-        fig.savefig(comp_fol +os.sep+ fig_name + format)
+    # if save_flag:     
+    #     fig.savefig(comp_fol +os.sep+ fig_name + format)
 
-    #-----------------------------------------------------------------
-    # weighted DEL_of vs DEL_dfsm
-    #-----------------------------------------------------------------
+    # #-----------------------------------------------------------------
+    # # weighted DEL_of vs DEL_dfsm
+    # #-----------------------------------------------------------------
 
-    fig,ax = plt.subplots(1)
+    # fig,ax = plt.subplots(1)
 
-    # sort DEL
-    sort_ind = np.argsort(DEL_of_wt)
-    DEL_of_wt = DEL_of_wt[sort_ind]
-    DEL_dfsm_wt = DEL_dfsm_wt[sort_ind]
+    # # sort DEL
+    # sort_ind = np.argsort(DEL_of_wt)
+    # DEL_of_wt = DEL_of_wt[sort_ind]
+    # DEL_dfsm_wt = DEL_dfsm_wt[sort_ind]
 
-    # calculate R2 value
-    r2_del = round(r2_score(DEL_of_wt,DEL_dfsm_wt),4)
-    text = 'R^2 value: ' + str(r2_del)
+    # # calculate R2 value
+    # r2_del = round(r2_score(DEL_of_wt,DEL_dfsm_wt),4)
+    # text = 'R^2 value: ' + str(r2_del)
 
-    # plot
-    ax.plot(DEL_of_wt,DEL_dfsm_wt,'r.-',markersize = 14)
-    ax.plot(DEL_of_wt,DEL_of_wt,'k--',markersize = 14,alpha = 0.7)
-    ax.text(10000,25000,text,size = fontsize_legend)
-    ax.set_xlabel('DEL OpenFAST',fontsize = fontsize_axlabel)
-    ax.tick_params(labelsize=fontsize_tick)
-    ax.set_ylabel('DEL DFSM',fontsize = fontsize_axlabel)
-    fig_name = 'DELvsDEL'
+    # # plot
+    # ax.plot(DEL_of_wt,DEL_dfsm_wt,'r.-',markersize = 14)
+    # ax.plot(DEL_of_wt,DEL_of_wt,'k--',markersize = 14,alpha = 0.7)
+    # ax.text(10000,25000,text,size = fontsize_legend)
+    # ax.set_xlabel('DEL OpenFAST',fontsize = fontsize_axlabel)
+    # ax.tick_params(labelsize=fontsize_tick)
+    # ax.set_ylabel('DEL DFSM',fontsize = fontsize_axlabel)
+    # fig_name = 'DELvsDEL'
 
-    if save_flag:     
-        fig.savefig(comp_fol +os.sep+ fig_name + format)
+    # if save_flag:     
+    #     fig.savefig(comp_fol +os.sep+ fig_name + format)
 
-    #-----------------------------------------------------------------
-    # WS vs. weighted Pavg
-    #-----------------------------------------------------------------
+    # #-----------------------------------------------------------------
+    # # WS vs. weighted Pavg
+    # #-----------------------------------------------------------------
 
-    pavg_of_wt = pavg_of*ws_prob
-    pavg_dfsm_wt = pavg_dfsm*ws_prob
+    # pavg_of_wt = pavg_of*ws_prob
+    # pavg_dfsm_wt = pavg_dfsm*ws_prob
 
-    AEP_of = round(np.trapz(pavg_of_wt,WS)*8760/1e6,1)
-    AEP_dfsm = round(np.trapz(pavg_dfsm_wt,WS)*8760/1e6,1)
+    # AEP_of = round(np.trapz(pavg_of_wt,WS)*8760/1e6,1)
+    # AEP_dfsm = round(np.trapz(pavg_dfsm_wt,WS)*8760/1e6,1)
 
 
-    fig,ax = plt.subplots(1)
-    ax.plot(WS,pavg_of_wt,'.-',markersize = 14,label = 'OpenFAST')
-    ax.plot(WS,pavg_dfsm_wt,'.-',markersize = 14,label = 'DFSM')
-    ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
-    ax.tick_params(labelsize=fontsize_tick)
-    ax.legend(ncol = 2,fontsize = fontsize_legend)
-    ax.set_ylabel('Weighted P_avg [kW]',fontsize = fontsize_axlabel)
-    fig_name = 'WSvsPavg'
+    # fig,ax = plt.subplots(1)
+    # ax.plot(WS,pavg_of_wt,'.-',markersize = 14,label = 'OpenFAST')
+    # ax.plot(WS,pavg_dfsm_wt,'.-',markersize = 14,label = 'DFSM')
+    # ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
+    # ax.tick_params(labelsize=fontsize_tick)
+    # ax.legend(ncol = 2,fontsize = fontsize_legend)
+    # ax.set_ylabel('Weighted P_avg [kW]',fontsize = fontsize_axlabel)
+    # fig_name = 'WSvsPavg'
 
-    if save_flag:     
-        fig.savefig(comp_fol +os.sep+ fig_name + format)
+    # if save_flag:     
+    #     fig.savefig(comp_fol +os.sep+ fig_name + format)
 
-    #-----------------------------------------------------------------
-    # weighted Pavg_of vs Pavg_dfsm
-    #-----------------------------------------------------------------
+    # #-----------------------------------------------------------------
+    # # weighted Pavg_of vs Pavg_dfsm
+    # #-----------------------------------------------------------------
 
-    # sort Pavg
-    sort_ind = np.argsort(pavg_of_wt)
-    pavg_of_wt = pavg_of_wt[sort_ind]
-    pavg_dfsm_wt = pavg_dfsm_wt[sort_ind]
+    # # sort Pavg
+    # sort_ind = np.argsort(pavg_of_wt)
+    # pavg_of_wt = pavg_of_wt[sort_ind]
+    # pavg_dfsm_wt = pavg_dfsm_wt[sort_ind]
 
-    # calculate R2 value
-    r2_p = round(r2_score(pavg_of_wt,pavg_dfsm_wt),4)
-    text_r2 = 'R^2 value: ' + str(r2_p)
-    text_aep_of = 'AEP OpenFAST: '+str(AEP_of)
-    text_aep_dfsm = 'AEP DFSM: ' + str(AEP_dfsm)
+    # # calculate R2 value
+    # r2_p = round(r2_score(pavg_of_wt,pavg_dfsm_wt),4)
+    # text_r2 = 'R^2 value: ' + str(r2_p)
+    # text_aep_of = 'AEP OpenFAST: '+str(AEP_of)
+    # text_aep_dfsm = 'AEP DFSM: ' + str(AEP_dfsm)
 
-    # plot
-    fig,ax = plt.subplots(1)
-    ax.plot(pavg_of_wt,pavg_dfsm_wt,'r.-',markersize = 14)
-    ax.plot(pavg_of_wt,pavg_of_wt,'k--',markersize = 14,alpha = 0.7)
-    ax.text(500,2000,text_r2,size = fontsize_legend)
-    ax.text(500,1750,text_aep_of,size = fontsize_legend)
-    ax.text(500,1500,text_aep_dfsm,size = fontsize_legend)
-    ax.set_xlabel('Weighted P_avg OpenFAST',fontsize = fontsize_axlabel)
-    ax.tick_params(labelsize=fontsize_tick)
-    #ax.legend(ncol = 2,fontsize = fontsize_legend)
-    ax.set_ylabel('Weighted P_avg DFSM',fontsize = fontsize_axlabel)
-    fig_name = 'PavgvsPavg'
+    # # plot
+    # fig,ax = plt.subplots(1)
+    # ax.plot(pavg_of_wt,pavg_dfsm_wt,'r.-',markersize = 14)
+    # ax.plot(pavg_of_wt,pavg_of_wt,'k--',markersize = 14,alpha = 0.7)
+    # ax.text(500,2000,text_r2,size = fontsize_legend)
+    # ax.text(500,1750,text_aep_of,size = fontsize_legend)
+    # ax.text(500,1500,text_aep_dfsm,size = fontsize_legend)
+    # ax.set_xlabel('Weighted P_avg OpenFAST',fontsize = fontsize_axlabel)
+    # ax.tick_params(labelsize=fontsize_tick)
+    # #ax.legend(ncol = 2,fontsize = fontsize_legend)
+    # ax.set_ylabel('Weighted P_avg DFSM',fontsize = fontsize_axlabel)
+    # fig_name = 'PavgvsPavg'
 
-    if save_flag:     
-        fig.savefig(comp_fol +os.sep+ fig_name + format)
+    # if save_flag:     
+    #     fig.savefig(comp_fol +os.sep+ fig_name + format)
 
 
 
@@ -312,17 +321,17 @@ if __name__ == '__main__':
             fig,ax = plt.subplots(1)
             ax.errorbar(CS,qty_of_mean,
                                         yerr = [qty_of_lower,qty_of_upper],
-                                        fmt =fmt, capsize=capsize, alpha = alpha)
+                                        fmt =fmt, capsize=capsize, alpha = alpha,color = color_of)
                 
             ax.errorbar(CS,qty_dfsm_mean,
                                         yerr = [qty_dfsm_lower,qty_dfsm_upper],
-                                        fmt =fmt, capsize=capsize, alpha = alpha)
+                                        fmt =fmt, capsize=capsize, alpha = alpha,color = color_dfsm)
                 
             ax.scatter(CS,qty_of_mean,marker = 'o',
-                                s = 20, color = 'tab:blue')
+                                s = 20, color = color_of)
                 
             ax.scatter(CS,qty_dfsm_mean,marker = 'o',
-                                s = 20, color = 'tab:orange')
+                                s = 20, color = color_dfsm)
             
             ax.set_xlabel('Wind Speed [m/s]',fontsize = fontsize_axlabel)
             ax.tick_params(labelsize=fontsize_tick)
