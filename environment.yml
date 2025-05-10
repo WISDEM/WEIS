@@ -11,7 +11,7 @@ dependencies:
   - numpydoc
   - openfast==4.0.4
   - openfast-io==4.0.4
-  - openraft>=1.4.0
+  - openraft>=1.3.0
   - osqp  
   - pcrunch>=2.1.0
   - pip
