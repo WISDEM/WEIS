@@ -1,0 +1,3 @@
+general:
+    folder_output: outputs/01_openfast_dlcs
+    fname_output: iea15mw
