@@ -1890,8 +1890,7 @@ class FASTLoadCases(ExplicitComponent):
                 rot_speed_interp = [case["configuration"]["rotor_speed"] for case in cases]
                 Ct_aero_interp = [case["outputs"]["integrated"]["ct"] for case in cases]
             else:
-                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.",
-                        " This file does not exist. Check WEIS example 02 for a template file")
+                logger.warning("A yaml file with rotor speed, pitch, and Ct is required in modeling options->OpenFAST->regulation_trajectory.\n This file does not exist. Check WEIS example 02 for a template file")
                 U_interp = np.arange(cut_in, cut_out)
                 pitch_interp = np.ones_like(U_interp) * 5. # fixed initial pitch at 5 deg
                 rot_speed_interp = np.ones_like(U_interp) * 5. # fixed initial omega at 5 rpm

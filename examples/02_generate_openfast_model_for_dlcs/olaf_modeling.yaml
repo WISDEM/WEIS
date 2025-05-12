@@ -1,0 +1,77 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        OF_run_fst: BAR0
+        
+WISDEM:
+    RotorSE:
+        flag: True
+        spar_cap_ss: Spar_cap_ss
+        spar_cap_ps: Spar_cap_ps
+        te_ss: TE_reinf_ss
+        te_ps: TE_reinf_ps
+        regulation_reg_III: True
+        n_span: 150
+    TowerSE:
+        flag: True
+    DriveSE:
+        flag: True
+    FloatingSE:
+        flag: True
+    BOS:
+        flag: True
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    simulation:
+        DT: 0.2
+        SttsTime: 1.
+    ElastoDyn:
+        flag: True
+        FlapDOF1: False
+        FlapDOF2: False
+        EdgeDOF: False
+        TeetDOF: False
+        DrTrDOF: False 
+        GenDOF: False
+        YawDOF: False  
+        TwFADOF1 : False
+        TwFADOF2 : False
+        TwSSDOF1 : False
+        TwSSDOF2 : False
+        PtfmSgDOF: False
+        PtfmSwDOF: False
+        PtfmHvDOF: False
+        PtfmRDOF : False
+        PtfmPDOF : False
+        PtfmYDOF : False
+    AeroDyn:
+        Wake_Mod: 3
+        UA_Mod: 0
+        TwrShadow: 0
+        TwrAero: False
+        OLAF:
+            FullCircStart: 5.0     
+            nNWPanel: 120     
+            WakeLength: 600     
+            FreeWakeLength: 120     
+            RegDeterMethod: 1     
+            WakeRegMethod: 3       
+            WakeRegFactor: 0.25      
+            WingRegFactor: 0.25      
+            CoreSpreadEddyVisc: 1000    
+            ShearModel: 0       
+            VelocityMethod: 2       
+            TreeBranchFactor: 1.5     
+
+ROSCO:
+    flag: True
+    SDMode: 0
+    
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          wind_speed: [ 8. ]
+          n_seeds: 1
+          analysis_time: .25
+          transient_time: 0.

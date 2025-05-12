@@ -71,7 +71,7 @@ properties:
                     allow_fails:
                         type: boolean
                         default: False
-                        description: Allow WEIS to continue if OpenFAST fails?  All outputs will be filled with fail_value. Use with caution!
+                        description: Allow WEIS to continue if OpenFAST fails  All outputs will be filled with fail_value. Use with caution!
                     fail_value:
                         type: number
                         default: -9999
@@ -254,7 +254,7 @@ properties:
                     # CalcSteady:
                     #     type: boolean
                     #     default: False
-                    #     description: Calculate a steady-state periodic operating point before linearization? [unused if Linearize=False] (flag)
+                    #     description: Calculate a steady-state periodic operating point before linearization [unused if Linearize=False] (flag)
                     # DZ: For now, we determine TrimCase this automatically based on whether wind_speeds > v_rated
                     # TrimCase:
                     #     type: string
@@ -322,7 +322,7 @@ properties:
                     # LinOutMod:
                     #     type: boolean
                     #     default: False
-                    #     description: Write module-level linearization output files in addition to output for full system? (flag) [unused if Linearize=False]
+                    #     description: Write module-level linearization output files in addition to output for full system (flag) [unused if Linearize=False]
             DTQP: # this may be shared with OpenFAST IEC load cases in the future
                 type: object
                 default: {}
@@ -574,44 +574,44 @@ properties:
                                 WrBHHTP:
                                     type: boolean
                                     default: False
-                                    description: Output hub-height turbulence parameters in binary form?  (Generates RootName.bin)
+                                    description: Output hub-height turbulence parameters in binary form  (Generates RootName.bin)
                                 WrFHHTP:
                                     type: boolean
                                     default: False
-                                    description: Output hub-height turbulence parameters in formatted form?  (Generates RootName.dat)
+                                    description: Output hub-height turbulence parameters in formatted form  (Generates RootName.dat)
                                 WrADHH:
                                     type: boolean
                                     default: False
-                                    description: Output hub-height time-series data in AeroDyn form?  (Generates RootName.hh)
+                                    description: Output hub-height time-series data in AeroDyn form  (Generates RootName.hh)
                                 WrADFF:
                                     type: boolean
                                     default: True
-                                    description: Output full-field time-series data in TurbSim/AeroDyn form? (Generates RootName.bts)
+                                    description: Output full-field time-series data in TurbSim/AeroDyn form (Generates RootName.bts)
                                 WrBLFF:
                                     type: boolean
                                     default: False
-                                    description: Output full-field time-series data in BLADED/AeroDyn form?  (Generates RootName.wnd)
+                                    description: Output full-field time-series data in BLADED/AeroDyn form  (Generates RootName.wnd)
                                 WrADTWR:
                                     type: boolean
                                     default: False
-                                    description: Output tower time-series data? (Generates RootName.twr)
+                                    description: Output tower time-series data (Generates RootName.twr)
                                 WrFMTFF:
                                     type: boolean
                                     default: False
-                                    description: Output full-field time-series data in formatted (readable) form?  (Generates RootName.u, RootName.v, RootName.w)
+                                    description: Output full-field time-series data in formatted (readable) form  (Generates RootName.u, RootName.v, RootName.w)
                                 WrACT:
                                     type: boolean
                                     default: False
-                                    description: Output coherent turbulence time steps in AeroDyn form? (Generates RootName.cts)
+                                    description: Output coherent turbulence time steps in AeroDyn form (Generates RootName.cts)
                                 Clockwise:
                                     type: boolean
                                     default: False
-                                    description: Clockwise rotation looking downwind? (used only for full-field binary files - not necessary for AeroDyn)
+                                    description: Clockwise rotation looking downwind (used only for full-field binary files - not necessary for AeroDyn)
                                 ScaleIEC:
                                     type: integer
                                     enum: [0, 1, 2]
                                     default: 0
-                                    description: Scale IEC turbulence models to exact target standard deviation? [0=no additional scaling; 1=use hub scale uniformly; 2=use individual scales]
+                                    description: Scale IEC turbulence models to exact target standard deviation [0=no additional scaling; 1=use hub scale uniformly; 2=use individual scales]
                                 NumGrid_Z:
                                     type: integer
                                     default: 25
@@ -794,7 +794,7 @@ properties:
                                 Randomize:
                                     type: boolean
                                     default: True
-                                    description: Randomize the disturbance scale and locations? (true/false)
+                                    description: Randomize the disturbance scale and locations (true/false)
                                 DistScl:
                                     type: number
                                     default: 1.
@@ -969,4 +969,4 @@ properties:
             save_error:
                 type: boolean
                 default: True
-                description: Save error timeseries?
+                description: Save error timeseries
