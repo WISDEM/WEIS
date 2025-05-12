@@ -16,12 +16,12 @@ import yaml
 import re
 import socket
 from dash import html
-from matplotlib.gridspec import GridSpec
+#from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 import matplotlib
 import pickle
 import raft
-from raft.helpers import *
+#from raft.helpers import *
 
 import vtk
 import dash_vtk
