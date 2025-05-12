@@ -973,18 +973,18 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['GenEff'] = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
         fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
         fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
         fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
-        
-
-        # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
-        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
-        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
-        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
-        
+        # Tune simple variable speed controller in ServoDyn, mostly to support free-free rotor configurations during linearization
+        fst_vt['ServoDyn']['VS_RtGnSp'] = fst_vt['DISCON_in']['VS_RefSpd_discon'] * 30. / np.pi # rpm
+        fst_vt['ServoDyn']['VS_RtTq'] = fst_vt['DISCON_in']['VS_RtTq_discon'] # Nm
+        fst_vt['ServoDyn']['VS_Rgn2K'] = fst_vt['DISCON_in']['VS_Rgn2K_discon'] / (30./np.pi)**2. # N-m/rpm^2
+        # Prevent error in OpenFAST
+        if fst_vt['ServoDyn']['VS_Rgn2K']*fst_vt['ServoDyn']['VS_RtGnSp']**2. > fst_vt['ServoDyn']['VS_RtTq']:
+            fst_vt['ServoDyn']['VS_Rgn2K'] = fst_vt['ServoDyn']['VS_RtTq']/fst_vt['ServoDyn']['VS_RtGnSp']**2.
+            logger.debug('VS_Rgn2K adjusted to VS_RtTq/VS_RtGnSp**2. New value: %f'%fst_vt['ServoDyn']['VS_Rgn2K'])
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
