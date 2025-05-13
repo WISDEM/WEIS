@@ -26,6 +26,7 @@ vizFilepath = os.path.join(weis_dir, 'weis','visualization','appServer','app','t
 vizExec = os.path.join(weis_dir, 'weis','visualization','appServer', 'share','vizFileGen.py')
 
 global opt_options
+opt_options = read_variables( parse_yaml(vizFilepath) )
 
 def test_vizFile_generation(request):
     root_dir = request.config.rootdir
@@ -44,7 +45,6 @@ def test_vizFile_generation(request):
 
 # Optimization Visualization Test
 def test_read_variables():
-    opt_options = read_variables( parse_yaml(vizFilepath) )
     assert opt_options['opt_type'] == 'RAFT'
 
 
