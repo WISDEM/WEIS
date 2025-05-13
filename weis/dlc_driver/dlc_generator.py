@@ -1147,8 +1147,6 @@ class DLCGenerator(object):
         # Specify shutdown options
         dlc_options['shutdown_mode'] = 1
         dlc_options['SD_EnableTime'] = 1
-        dlc_options['SD_MaxTorqueRate'] = dlc_options.get('SD_MaxTorqueRate',4500000.0)
-        dlc_options['SD_MaxPitchRate'] = dlc_options.get('SD_MaxPitchRate',0.034900)
 
         # Specify shutdown time for this case
         if 'normal_shutdown_time' not in dlc_options:
@@ -1158,25 +1156,27 @@ class DLCGenerator(object):
         else:
             dlc_options['normal_shutdown_time'] = dlc_options['normal_shutdown_time']
 
+        group0 = [
+            "total_time",
+            "transient_time",
+            "wake_mod",
+            "wave_model",
+            "shutdown_mode",
+            "SD_EnableTime",
+            "normal_shutdown_time",
+        ]
+
+        if 'SD_MaxTorqueRate' in dlc_options:
+            group0.append('SD_MaxTorqueRate')
+        if 'SD_MaxPitchRate' in dlc_options:
+            group0.append('SD_MaxPitchRate')
+
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
         generic_case_inputs = []
-        generic_case_inputs.append(
-            [
-                "total_time",
-                "transient_time",
-                "wake_mod",
-                "wave_model",
-                "shutdown_mode",
-                "SD_EnableTime",
-                "normal_shutdown_time",
-                "SD_MaxTorqueRate",
-                "SD_MaxPitchRate"
-            ]
-        )  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
-        # generic_case_inputs.append(['direction']) # group 2
       
         self.generate_cases(generic_case_inputs,dlc_options)
 
@@ -1194,8 +1194,6 @@ class DLCGenerator(object):
         # Specify shutdown options
         dlc_options['shutdown_mode'] = 1
         dlc_options['SD_EnableTime'] = 1
-        dlc_options['SD_MaxTorqueRate'] = dlc_options.get('SD_MaxTorqueRate',4500000.0)
-        dlc_options['SD_MaxPitchRate'] = dlc_options.get('SD_MaxPitchRate',0.034900)
 
         # Specify shutdown time for this case
         if 'normal_shutdown_time' not in dlc_options:
@@ -1213,20 +1211,23 @@ class DLCGenerator(object):
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
+        group0 = [
+            "total_time",
+            "transient_time",
+            "wake_mod",
+            "wave_model",
+            "shutdown_mode",
+            "SD_EnableTime",
+            "normal_shutdown_time",
+        ]
+
+        if 'SD_MaxTorqueRate' in dlc_options:
+            group0.append('SD_MaxTorqueRate')
+        if 'SD_MaxPitchRate' in dlc_options:
+            group0.append('SD_MaxPitchRate')
+
         generic_case_inputs = []
-        generic_case_inputs.append(
-            [
-                "total_time",
-                "transient_time",
-                "wake_mod",
-                "wave_model",
-                "shutdown_mode",
-                "SD_EnableTime",
-                "normal_shutdown_time",
-                "SD_MaxTorqueRate",
-                "SD_MaxPitchRate"
-            ]
-        )  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(group0)  # group 0, (usually constants) turbine variables, DT, aero_modeling
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['gust_wait_time']) # group 2
       
@@ -1259,8 +1260,6 @@ class DLCGenerator(object):
         # Specify shutdown time for this case
         if dlc_options['shutdown_time'] > dlc_options['analysis_time']:
             raise Exception(f"DLC 5.1 was selected, but the shutdown_time ({dlc_options['shutdown_time']}) option is greater than the analysis_time ({dlc_options['analysis_time']})")
-        else:
-            dlc_options['shutdown_time'] = dlc_options['shutdown_time']
 
         # DLC-specific: define groups
         # These options should be the same length and we will generate a matrix of all cases
@@ -1287,7 +1286,7 @@ class DLCGenerator(object):
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
-            dlc_options['yaw_misalign'] = [-8,8]
+            dlc_options['yaw_misalign'] = [-8,0,8]
 
         if not dlc_options['wind_speed']:
             dlc_options['wind_speed'] = [self.V_e50]
@@ -1329,7 +1328,12 @@ class DLCGenerator(object):
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
-            dlc_options['yaw_misalign'] = np.arange(-180+15,180+15,15).tolist()     # -180 is not valid in OF
+            dlc_options['yaw_misalign'] = np.concatenate(
+                    np.arange(-180+15,-30+15,15),
+                    np.arange(-30,30+10,10),
+                    np.arange(30,180+15,15),
+            )
+
 
         if not dlc_options['wind_speed']:
             dlc_options['wind_speed'] = [self.V_e50]
@@ -1367,10 +1371,7 @@ class DLCGenerator(object):
         dlc_options['IEC_WindType'] = self.wind_speed_class_num + 'EWM1'
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
-        if 'yaw_misalign' in dlc_options:
-            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
-        else: # default
-            dlc_options['yaw_misalign'] = [-20.,20.]
+        dlc_options['yaw_misalign'] = dlc_options.get('yaw_misalign',np.arange(-20,20+10,10))
 
         if not dlc_options['wind_speed']:
             dlc_options['wind_speed'] = [self.V_e1]
@@ -1418,10 +1419,7 @@ class DLCGenerator(object):
             dlc_options['wind_speed'] = dlc_options['wind_speed'].tolist()
 
         # Set dlc-specific options, like yaw_misalign, initial azimuth
-        if 'yaw_misalign' in dlc_options:
-            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
-        else: # default
-            dlc_options['yaw_misalign'] = [0.]
+        dlc_options['yaw_misalign'] = dlc_options.get('yaw_misalign',0.)
 
         # parked options
         dlc_options['turbine_status'] = 'parked-idling'
@@ -1486,12 +1484,11 @@ class DLCGenerator(object):
             group0.extend(['yawfault_time','yawfault_yawpos'])
         
         # Set dlc-specific options, like yaw_misalign, initial azimuth
-        if 'yaw_misalign' in dlc_options:
-            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
-        elif 'yawfault_time' in dlc_options:
-            dlc_options['yaw_misalign'] = [-180,-90,-30,-20,-10,0,10,20,30,90,180]
-        else:
-            dlc_options['yaw_misalign'] = [-8,8] # Default same as DLC 6.1
+        if 'yaw_misalign' not in dlc_options:
+            if 'yawfault_time' in dlc_options:
+                dlc_options['yaw_misalign'] = np.arange(-180+10,180+10,10).tolist()   # -180 is not valid in OF
+            else:
+                dlc_options['yaw_misalign'] = [-8,0,8] # Default same as DLC 6.1
 
 
         generic_case_inputs.append(group0)  
@@ -1532,13 +1529,33 @@ class DLCGenerator(object):
         dlc_options['rot_speed_initial'] = 0.
         dlc_options['shutdown_time'] = 0.
         dlc_options['final_blade_pitch'] = 90.
-
+        
         # DLC-specific: define groups
         # Groups are dependent variables, the cases are a cross product of the independent groups
         # The options in each group should have the same length
         generic_case_inputs = []
-        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model','pitch_initial',
-                                    'rot_speed_initial','shutdown_time','final_blade_pitch'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+
+        group0 = ['total_time','transient_time','wake_mod','wave_model','pitch_initial',
+                'rot_speed_initial','shutdown_time','final_blade_pitch'] # group 0, (usually constants) turbine variables, DT, aero_modeling
+        
+        if 'pitchfault_time1' in dlc_options:
+            group0.extend(['pitchfault_time1','pitchfault_blade1pos'])
+        if 'pitchfault_time2' in dlc_options:
+            group0.extend(['pitchfault_time2','pitchfault_blade2pos'])
+        if 'pitchfault_time3' in dlc_options:
+            group0.extend(['pitchfault_time3','pitchfault_blade3pos'])
+        if 'yawfault_time' in dlc_options:
+            group0.extend(['yawfault_time','yawfault_yawpos'])
+        
+        # Set dlc-specific options, like yaw_misalign, initial azimuth
+        if 'yaw_misalign' not in dlc_options:
+            if 'yawfault_time' in dlc_options:
+                dlc_options['yaw_misalign'] = np.arange(-180+15,180+15,15).tolist()     # -180 is not valid in OF
+            else:
+                dlc_options['yaw_misalign'] = [-8,8] # Default range same as DLC 6.1
+
+        generic_case_inputs = []
+        generic_case_inputs.append(group0)  
         generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
         generic_case_inputs.append(['yaw_misalign']) # group 2
 
@@ -1730,5 +1747,3 @@ if __name__ == "__main__":
     for case_inputs in dlc_generator.openfast_case_inputs:
         case_list, case_name = CaseGen_General(case_inputs, FAST_runDirectory, FAST_InputFile)
         print('here')
-
-
