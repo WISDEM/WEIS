@@ -10,6 +10,7 @@ from dash._utils import AttributeDict
 import dash_bootstrap_components as dbc
 
 # Import all of the names of callback functions to tests
+from weis import weis_main
 from weis.visualization.appServer.app.mainApp import app        # Needed to prevent dash.exceptions.PageError: `dash.register_page()` must be called after app instantiation
 from weis.visualization.appServer.app.pages.visualize_openfast import read_default_variables, define_graph_cfg_layout, save_openfast, update_graph_layout
 from weis.visualization.appServer.app.pages.visualize_opt import read_variables, preprocess_data, define_preprocess_layout, complete_raft_sublayout, toggle_conv_layout, update_graphs, toggle_iteration_with_dlc_layout
@@ -25,11 +26,17 @@ vizFilepath = os.path.join(weis_dir, 'weis','visualization','appServer','app','t
 vizExec = os.path.join(weis_dir, 'weis','visualization','appServer', 'share','vizFileGen.py')
 
 global opt_options
-mytemp = parse_yaml(vizFilepath)
-opt_options = read_variables( parse_yaml(vizFilepath) )
 
 def test_vizFile_generation(request):
     root_dir = request.config.rootdir
+
+    # Run WEIS
+    wt_opt, _, _ = weis_main(wt_input, 
+                            modeling_options, 
+                            analysis_options,
+                            test_run=True
+                            )
+    
     print(f'Moving back to root directory..{root_dir}\n')
     os.chdir(root_dir)
     subprocess.run(['python', vizExec, '--modeling_options', modeling_options, '--analysis_options', analysis_options, '--wt_input', wt_input, '--output', vizFilepath], cwd=root_dir)
@@ -37,6 +44,7 @@ def test_vizFile_generation(request):
 
 # Optimization Visualization Test
 def test_read_variables():
+    opt_options = read_variables( parse_yaml(vizFilepath) )
     assert opt_options['opt_type'] == 'RAFT'
 
 
