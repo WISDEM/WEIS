@@ -2271,7 +2271,7 @@ class FASTLoadCases(ExplicitComponent):
         
         outputs = self.get_control_measures(inputs, outputs)
 
-        self.get_charateristic_loads()
+        self.get_characteristic_loads()
 
         if modopt['flags']['floating'] or (modopt['Level3']['from_openfast'] and self.fst_vt['Fst']['CompMooring']>0):
             self.get_floating_measures(inputs, outputs)
@@ -2751,7 +2751,7 @@ class FASTLoadCases(ExplicitComponent):
             # Max platform offset        
             outputs['Max_Offset'] = sum_stats['PtfmOffset']['max'].max()
 
-    def get_charateristic_loads(self):
+    def get_characteristic_loads(self):
         # Characteristic loads are described in IEC 61400-1:2019, Section 7.6.2.2
 
         logging.info("Computing characteristic loads")
@@ -2810,7 +2810,7 @@ class FASTLoadCases(ExplicitComponent):
 
         save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
         os.makedirs(save_dir, exist_ok=True)
-        write_yaml(char_loads,os.path.join(save_dir,'charateristic_loads.yaml'))
+        write_yaml(char_loads,os.path.join(save_dir,'characteristic_loads.yaml'))
 
     def save_time_binning(self):
 
@@ -2931,6 +2931,8 @@ class FASTLoadCases(ExplicitComponent):
 
         # Summary df
         df_freq.to_pickle(os.path.join(save_dir_summ,'psd_summary.p'))
+
+        logging.info("Finished computing frequency measures")
 
     def get_OL2CL_error(self, outputs):
         ol_case_names = [os.path.join(
