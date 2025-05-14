@@ -1,7 +1,28 @@
 outputDirStructure:
-  dirs: {}
-  files:
-  - 04_iea22_raft_opt
+  dirs:
+    04_iea22_raft_opt:
+      dirs:
+        raft_designs:
+          dirs: {}
+          files:
+          - raft_design_0.yaml
+          - raft_design_1.yaml
+          - raft_design_0.pkl
+          - raft_design_1.pkl
+        raft_plots:
+          dirs: {}
+          files: []
+      files:
+      - IEA-22-280-RWT-modeling.yaml
+      - problem_vars.yaml
+      - IEA-22-280-RWT.yaml
+      - IEA-22-280-RWT.npz
+      - IEA-22-280-RWT.pkl
+      - log_opt.sql
+      - IEA-22-280-RWT.xlsx
+      - IEA-22-280-RWT-analysis.yaml
+      - IEA-22-280-RWT.csv
+  files: []
 userOptions:
   deisgn_of_experiments: false
   inverse_design: false
@@ -9,7 +30,7 @@ userOptions:
     status: true
     type: 1
   output_fileName: IEA-22-280-RWT
-  output_folder: /Users/gbarter/devel/temp/WEIS/examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
+  output_folder: examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
   sql_recorder: true
   sql_recorder_file: log_opt.sql
 userPreferences:
@@ -46,4 +67,4 @@ userPreferences:
       - rotorse.EIyy_N*m**2
       - rotorse.GJ_N*m**2
       xaxis: rotorse.rc.s
-    output_path: /Users/gbarter/devel/temp/WEIS/examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt
+    output_path: examples/04_frequency_domain_analysis_design/outputs/04_iea22_raft_opt

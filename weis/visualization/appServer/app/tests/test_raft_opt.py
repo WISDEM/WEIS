@@ -29,15 +29,7 @@ global opt_options
 opt_options = read_variables( parse_yaml(vizFilepath) )
 
 def test_vizFile_generation(request):
-    root_dir = request.config.rootdir
-
-    # Run WEIS
-    wt_opt, _, _ = weis_main(wt_input, 
-                            modeling_options, 
-                            analysis_options,
-                            test_run=True
-                            )
-    
+    root_dir = request.config.rootdir    
     print(f'Moving back to root directory..{root_dir}\n')
     os.chdir(root_dir)
     subprocess.run(['python', vizExec, '--modeling_options', modeling_options, '--analysis_options', analysis_options, '--wt_input', wt_input, '--output', vizFilepath], cwd=root_dir)
