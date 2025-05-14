@@ -2422,7 +2422,7 @@ properties:
                         description: Generator torque constant in Region 2 for simple variable-speed generator control (HSS side) (N-m/rpm^2) [used only when VSContrl=1]
                     VS_SlPc:
                         type: number
-                        default: 99999.
+                        default: 2.
                         minimum: 0.
                         unit: none
                         description: Rated generator slip percentage in Region 2 1/2 for simple variable-speed generator control (%) [used only when VSContrl=1]
