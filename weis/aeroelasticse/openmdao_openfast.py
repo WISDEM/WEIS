@@ -2876,6 +2876,9 @@ class FASTLoadCases(ExplicitComponent):
                     # Average over fb range
                     df = psd_df_i.copy()
 
+                    # Remove duplicate columns
+                    df = df.loc[:, ~df.columns.duplicated()]
+
                     # Add rows to dataframe at frequency of interest
                     f_range = np.linspace(fb[0],fb[1])  # use default of 50 bins
 
@@ -2905,13 +2908,19 @@ class FASTLoadCases(ExplicitComponent):
                     # Value at frequency of interest (fb)
                     df = psd_df_i.copy()
 
-                    # Add nan row to dataframe at fb
-                    new_dict = {chan: np.nan for chan in df.columns}
-                    new_row = pd.DataFrame(new_dict,index=[fb])
+                    # Remove duplicate columns
+                    df = df.loc[:, ~df.columns.duplicated()]
 
+                    # Add nan row to dataframe at fb
+
+                    new_dict = {chan: np.nan for chan in df.columns}
+                    new_row = pd.DataFrame(new_dict, index=[fb])
+                    new_row.index.name = 'Freq'
+
+                    # Pandas interpolation works by filling in nan values, so we're going to add them at the f_range of interest
                     df = pd.concat([df, new_row])
+                    
                     df.sort_index(inplace=True)
-                    # TODO: remove duplicates?
                     df.interpolate(axis=0,inplace=True,method='index',order=1) # Pandas interpolate()s at nan values
 
                     for chan, val in df.loc[fb].items():    # df.loc[fb] is value of each channel at fb
