@@ -2589,6 +2589,16 @@ class FASTLoadCases(ExplicitComponent):
         if self.fst_vt['Fst']['CompServo'] == 1:
             outputs['P_out'] = np.sum(prob * sum_stats['GenPwr']['mean']) * 1e3
 
+        # Save summary info
+        aep_info = {}
+        aep_info['probability'] = prob
+        aep_info['mean_wind_speeds'] = U
+        aep_info['AEP'] = AEP
+
+        save_dir = os.path.join(self.FAST_runDirectory,'iteration_'+str(self.of_inumber))
+        os.makedirs(save_dir, exist_ok=True)
+        write_yaml(aep_info,os.path.join(save_dir,'aep_info.yaml'))
+
         return outputs
 
     def get_weighted_DELs(self, dlc_generator, inputs, discrete_inputs, outputs):
