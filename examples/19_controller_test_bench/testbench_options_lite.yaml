@@ -1,15 +1,20 @@
 Testbench_Options:
-    output_directory: outputs/12_new_pcrunch   # relative to this file
-    output_filebase: testbench
-    n_cores: 8  # not yet set up
-    use_mpi: False
+    output_directory: outputs/19_clean_input
+    n_cores: 1
+    # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
+    # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
 
-# TODO: simplify this, maybe move to Testbench_Options
-# General:
-#     openfast_configuration:
-#         FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
-#         path2dll: /home/dzalkind/Tools/ROSCO-1/rosco/lib/libdiscon.so
-#         turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
+
+Controller:
+    path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
+    DISCON_in: temp
+
+OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
+    flag: True
+    from_openfast: True
+    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 PostProcessing:
     binning_time: 20
@@ -35,14 +40,6 @@ Turbine_Info:  # Can we pull this information from OpenFAST input?
         TMDs: False 
         blade: False  # use to do local blade loading analysis
         tower: False   # same
-
-
-OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
-    flag: True
-    from_openfast: True
-    regulation_trajectory: ../02_run_openfast_cases/IEA-15-240-RWT-outputs.yaml
-    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
-    openfast_dir: ../01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
 
 DLC_driver:
     metocean_conditions:

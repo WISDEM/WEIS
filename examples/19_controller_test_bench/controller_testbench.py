@@ -6,6 +6,7 @@ from openmdao.utils.mpi  import MPI
 from weis.dlc_driver.dlc_generator    import DLCGenerator
 import numpy as np
 import logging
+import shutil
 
 if MPI:
     from weis.glue_code.mpi_tools import map_comm_heirarchical, subprocessor_loop, subprocessor_stop
@@ -73,10 +74,20 @@ def main():
 
     OFmgmt = testbench_options['General']['openfast_configuration']
     OFmgmt['cores'] = testbench_options['Testbench_Options']['n_cores']
-    OFmgmt['path2dll'] = discon_lib_path
+    OFmgmt['use_exe'] = True
+    OFmgmt['allow_fails'] = True    
+
+    OFmgmt['FAST_exe'] = testbench_options['Testbench_Options'].get('FAST_exe',shutil.which('openfast'))
+    OFmgmt['turbsim_exe'] = testbench_options['Testbench_Options'].get('turbsim_exe',shutil.which('turbsim'))
+    
+    # Controller inputs
+    if 'path2dll' in testbench_options['Controller']:
+        OFmgmt['path2dll'] = testbench_options['Controller']['path2dll']
+    else:
+        logger.warning('No path2dll specified in testbench_options.yaml. Using default rosco path to dll.')
 
     # Set default directories relative to testbench options
-    OFmgmt['OF_run_fst'] = testbench_options['Testbench_Options']['output_filebase']
+    OFmgmt['OF_run_fst'] = 'testbench'
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
     testbench_options['OpenFAST']['openfast_dir'] = os.path.join(os.path.dirname(modopt_file),testbench_options['OpenFAST']['openfast_dir'])
 
