@@ -86,6 +86,14 @@ def main():
     else:
         logger.warning('No path2dll specified in testbench_options.yaml. Using default rosco path to dll.')
 
+    if 'DISCON_in' in testbench_options['Controller']:
+        OFmgmt['DISCON_in'] = testbench_options['Controller']['DISCON_in']
+        OFmgmt['DISCON_in'] = os.path.join(os.path.dirname(modopt_file), OFmgmt['DISCON_in'])
+        if not os.path.isfile(OFmgmt['DISCON_in']):
+            raise FileNotFoundError(f"DISCON_in file not found: {OFmgmt['DISCON_in']}")
+    else:
+        logger.warning('No DISCON_in specified in testbench_options.yaml. Using DISCON input defined in OpenFAST input set.')
+
     # Set default directories relative to testbench options
     OFmgmt['OF_run_fst'] = 'testbench'
     OFmgmt['OF_run_dir'] = os.path.join(os.path.dirname(modopt_file), testbench_options['Testbench_Options']['output_directory'])
@@ -151,7 +159,6 @@ def main():
         discrete_outputs = {}
         flc.post_process(case_list, case_name, dlc_generator, inputs, discrete_inputs, outputs, discrete_outputs)
 
-        print('here')
 
     # Close signal to subprocessors
     if rank == 0 and MPI:

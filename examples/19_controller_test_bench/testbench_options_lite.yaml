@@ -1,5 +1,5 @@
 Testbench_Options:
-    output_directory: outputs/19_clean_input
+    output_directory: outputs/21_user_discon
     n_cores: 1
     # FAST_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/glue-codes/openfast/openfast
     # turbsim_exe: /projects/weis/dzalkind/openfast-versions/openfast-main/build/modules/turbsim/turbsim
@@ -7,7 +7,7 @@ Testbench_Options:
 
 Controller:
     path2dll: /Users/dzalkind/miniforge3/envs/weis-dlcs/lib/libdiscon.dylib
-    DISCON_in: temp
+    # DISCON_in: /Users/dzalkind/Tools/WEIS-DLC/examples/01_aeroelasticse/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_DISCON.IN
 
 OpenFAST: # Will become OpenFAST once WEIS supports OpenFAST 4.0
     flag: True
@@ -56,9 +56,9 @@ DLC_driver:
         wave_period50: 13.6
     DLCs:
         - DLC: "1.1"
-          n_seeds: 3
+          n_seeds: 1
           wind_speed: [8,15]
-          analysis_time: 10.
+          analysis_time: 1.
           transient_time: 0.0
         # - DLC: "1.3"
         #   n_seeds: 2
@@ -81,22 +81,22 @@ DLC_driver:
         #   analysis_time: 1.
         #   transient_time: 0.0
         #   TI_factor: 0.5
-        - DLC: "Ramp"  # Up
-          wind_speed: [10]
-          n_seeds: 1
-          analysis_time: 10.
-          transient_time: 15.0
-          ramp_speeddelta: 2
-          ramp_duration: 8
-          turbulent_wind:
-            flag: True
-        - DLC: "Ramp"  # Down
-          wind_speed: [10]
-          n_seeds: 1
-          analysis_time: 10.
-          transient_time: 15.0
-          ramp_speeddelta: -2
-          ramp_duration: 8
-          turbulent_wind:
-            flag: True
+        # - DLC: "Ramp"  # Up
+        #   wind_speed: [10]
+        #   n_seeds: 1
+        #   analysis_time: 10.
+        #   transient_time: 15.0
+        #   ramp_speeddelta: 2
+        #   ramp_duration: 8
+        #   turbulent_wind:
+        #     flag: True
+        # - DLC: "Ramp"  # Down
+        #   wind_speed: [10]
+        #   n_seeds: 1
+        #   analysis_time: 10.
+        #   transient_time: 15.0
+        #   ramp_speeddelta: -2
+        #   ramp_duration: 8
+        #   turbulent_wind:
+        #     flag: True
 
