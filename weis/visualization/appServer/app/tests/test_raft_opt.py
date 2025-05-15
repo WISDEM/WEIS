@@ -18,11 +18,14 @@ from weis.visualization.appServer.app.pages.visualize_opt import read_variables,
 from weis.visualization.utils import parse_yaml, convert_dict_values_to_list
 
 # Input vizFile Generation
-modeling_options = 'examples/17_IEA22_Optimization/modeling_options_raft.yaml'
-analysis_options = 'examples/17_IEA22_Optimization/analysis_options_raft_ptfm_opt.yaml'
+modeling_options = 'examples/04_frequency_domain_analysis_design/iea22_raft_opt_modeling.yaml'
+analysis_options = 'examples/04_frequency_domain_analysis_design/iea22_raft_opt_analysis.yaml'
 wt_input = 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml'
 vizFilepath = 'weis/visualization/appServer/app/tests/input/testIEA22RAFT.yaml'
 
+global opt_options
+input_dict = parse_yaml(vizFilepath)
+opt_options = read_variables(input_dict)
 
 def test_vizFile_generation(request):
     root_dir = request.config.rootdir
@@ -33,10 +36,6 @@ def test_vizFile_generation(request):
 
 # Optimization Visualization Test
 def test_read_variables():
-    global opt_options
-    input_dict = parse_yaml(vizFilepath)
-    opt_options = read_variables(input_dict)
-
     assert opt_options['opt_type'] == 'RAFT'
 
 

@@ -1,0 +1,47 @@
+General:
+    verbosity: False  # When set to True, the code prints to screen many infos
+    openfast_configuration:
+        use_exe: True
+
+WISDEM:
+    RotorSE:
+        flag: False
+        spar_cap_ss: Spar_Cap_SS
+        spar_cap_ps: Spar_Cap_PS
+        te_ss: TE_reinforcement_SS
+        te_ps: TE_reinforcement_PS
+    TowerSE:
+        flag: False
+    DriveSE:
+        flag: False
+    FloatingSE:
+        flag: False
+    BOS:
+        flag: False
+
+OpenFAST: # Options for WEIS fidelity level 3 = nonlinear time domain
+    flag: True
+    from_openfast: True
+    regulation_trajectory: IEA-15-240-RWT-outputs.yaml
+    openfast_file: IEA-15-240-RWT-UMaineSemi.fst
+    openfast_dir: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi
+    AeroDyn:
+        Wake_Mod: 1 # OpenFAST v4.0 updates Wake_Mod to be a flag, to be: 0 = no BEM, 1 = BEM/DBEM, 3 = OLAF. When Wake_Mod = 1, BEM type set via DBEMT_Mod
+
+    
+ROSCO:
+    flag: True
+    tuning_yaml: ../00_setup/OpenFAST_models/IEA-15-240-RWT/IEA-15-240-RWT-UMaineSemi/IEA-15-240-RWT-UMaineSemi_ROSCO.yaml
+    Kp_float: -10
+    U_pc: [12, 18, 24]
+    omega_pc: [.1, .1, .1]
+    zeta_pc: [1.,1.,1.]
+
+
+DLC_driver:
+    DLCs:
+        - DLC: "1.1"
+          n_seeds: 3
+              
+
+              
