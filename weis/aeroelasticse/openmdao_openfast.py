@@ -972,18 +972,18 @@ class FASTLoadCases(ExplicitComponent):
         fst_vt['ElastoDyn']['GBRatio']    = inputs['gearbox_ratio'][0]
 
         # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency'][0]/inputs['gearbox_efficiency'][0]) * 100.
-        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'][0])
-        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'][0])
-        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'][0])
-        
-
-        # Update ServoDyn
-        fst_vt['ServoDyn']['GenEff']       = float(inputs['generator_efficiency'][0]/inputs['gearbox_efficiency'][0]) * 100.0
-        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'][0])
-        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'][0])
-        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'][0])
-        
+        fst_vt['ServoDyn']['GenEff'] = float(inputs['generator_efficiency']/inputs['gearbox_efficiency']) * 100.
+        fst_vt['ServoDyn']['PitManRat(1)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(2)'] = float(inputs['max_pitch_rate'])
+        fst_vt['ServoDyn']['PitManRat(3)'] = float(inputs['max_pitch_rate'])
+        # Tune simple variable speed controller in ServoDyn, mostly to support free-free rotor configurations during linearization
+        fst_vt['ServoDyn']['VS_RtGnSp'] = fst_vt['DISCON_in']['VS_RefSpd'] * 30. / np.pi # rpm
+        fst_vt['ServoDyn']['VS_RtTq'] = fst_vt['DISCON_in']['VS_RtTq'] # Nm
+        fst_vt['ServoDyn']['VS_Rgn2K'] = fst_vt['DISCON_in']['VS_Rgn2K'] / (30./np.pi)**2. # N-m/rpm^2
+        # Prevent error in OpenFAST
+        if fst_vt['ServoDyn']['VS_Rgn2K']*fst_vt['ServoDyn']['VS_RtGnSp']**2. > fst_vt['ServoDyn']['VS_RtTq']:
+            fst_vt['ServoDyn']['VS_Rgn2K'] = fst_vt['ServoDyn']['VS_RtTq']/fst_vt['ServoDyn']['VS_RtGnSp']**2.
+            logger.debug('VS_Rgn2K adjusted to VS_RtTq/VS_RtGnSp**2. New value: %f'%fst_vt['ServoDyn']['VS_Rgn2K'])
 
         # Masses and inertias from DriveSE
         fst_vt['ElastoDyn']['HubMass']   = inputs['hub_system_mass'][0]
@@ -1613,13 +1613,14 @@ class FASTLoadCases(ExplicitComponent):
             fst_vt['MoorDyn']['Name'] = fst_vt['MAP']['LineType'] = line_names
             fst_vt['MoorDyn']['Diam'] = fst_vt['MAP']['Diam'] = inputs["line_diameter"]
             fst_vt['MoorDyn']['MassDen'] = fst_vt['MAP']['MassDenInAir'] = inputs["line_mass_density"]
-            fst_vt['MoorDyn']['EA'] = inputs["line_stiffness"]
+            fst_vt['MoorDyn']['EA'] = [[k] for k in inputs["line_stiffness"]]
             fst_vt['MoorDyn']['EI'] = np.zeros(n_lines)     # MoorPy does not have EI, yet
-            fst_vt['MoorDyn']['BA_zeta'] = -1*np.ones(n_lines, dtype=np.int64)
+            fst_vt['MoorDyn']['BA_zeta'] = n_lines * [[-1]]
             fst_vt['MoorDyn']['Ca'] = inputs["line_transverse_added_mass"]
             fst_vt['MoorDyn']['CaAx'] = inputs["line_tangential_added_mass"]
             fst_vt['MoorDyn']['Cd'] = inputs["line_transverse_drag"]
             fst_vt['MoorDyn']['CdAx'] = inputs["line_tangential_drag"]
+            fst_vt['MoorDyn']['NonLinearEA'] = n_lines * [None]
 
             # Connection properties - Points
             n_nodes = mooropt["n_nodes"]
@@ -1664,6 +1665,25 @@ class FASTLoadCases(ExplicitComponent):
 
             # MoorDyn Control - Optional
             fst_vt['MoorDyn']['ChannelID'] = []
+
+            # MoorDyn options
+            fst_vt['MoorDyn']['option_names'] = ['dtM','kbot','cbot','dtIC','TmaxIC','CdScaleIC','threshIC']
+            fst_vt['MoorDyn']['option_values'] = []
+
+            for option in fst_vt['MoorDyn']['option_names']:
+                fst_vt['MoorDyn']['option_values'].append(fst_vt['MoorDyn'][option])
+
+            # MoorDyn output channels: could pull these from schema, but co-pilot will do for now
+            fst_vt['MoorDyn']['option_descriptions'] = [
+                'Time step for MoorDyn',
+                'Bottom spring stiffness',
+                'Bottom damping coefficient',
+                'Time step for initial conditions',
+                'Max time for initial conditions',
+                'Drag scale factor for initial conditions',
+                'Threshold for initial conditions'
+                ]
+
             
             # MAP - linearization only
             for key in fst_vt['MoorDyn']:
