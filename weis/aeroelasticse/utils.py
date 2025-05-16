@@ -24,13 +24,12 @@ class RotorLoadsDeflStrainsWEIS(Group):
         self.add_subsystem("m2pa", MtoPrincipalAxes(modeling_options=modeling_options), promotes=['alpha', 'M1', 'M2'])
         self.add_subsystem("strains", ComputeStrains(modeling_options=modeling_options), promotes=['alpha', 'M1', 'M2'])
         
-        if not modeling_options["WISDEM"]["RotorSE"]["user_elastic"]:
-            self.add_subsystem("constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options))
-            self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
+        self.add_subsystem("constr", DesignConstraints(modeling_options=modeling_options, opt_options=opt_options))
+        self.add_subsystem("brs", BladeRootSizing(rotorse_options=modeling_options["WISDEM"]["RotorSE"]))
 
-            # Strains from frame3dd to constraint
-            self.connect('strains.strainU_spar', 'constr.strainU_spar')
-            self.connect('strains.strainL_spar', 'constr.strainL_spar')
+        # Strains from frame3dd to constraint
+        self.connect('strains.strainU_spar', 'constr.strainU_spar')
+        self.connect('strains.strainL_spar', 'constr.strainL_spar')
          
 class MtoPrincipalAxes(ExplicitComponent):
     def initialize(self):

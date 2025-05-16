@@ -1273,7 +1273,7 @@ class DLCGenerator(object):
         dlc_options['turbine_status'] = 'parked-still'
 
         # Disable generator, inflow, and aerodynamics by default
-        dlc_options['generator_dof'] = False
+        dlc_options['generator_dof'] = 'False'
         dlc_options['rot_speed_initial'] = 0.
         dlc_options['compute_aerodynamics'] = dlc_options.get('compute_aerodynamics',0)     # Use user input, otherwise disabled
         dlc_options['compute_inflow'] = dlc_options.get('compute_inflow',0) # Use user input, otherwise disabled
