@@ -32,9 +32,9 @@ False                  Echo        - Echo input data to <RootName>.ech (flag)
 0                      MSL2SWL     - Offset between still-water level and mean sea level (m) [positive upward]
 ---------------------- INPUT FILES --------------------------------------------- 
 "IEA-15-240-RWT-UMaineSemi_ElastoDyn.dat"    EDFile          - Name of file containing ElastoDyn input parameters (quoted string) 
-""                     BDBldFile(1) - Name of file containing BeamDyn input parameters for blade 1 (quoted string) 
-""                     BDBldFile(2) - Name of file containing BeamDyn input parameters for blade 2 (quoted string) 
-""                     BDBldFile(3) - Name of file containing BeamDyn input parameters for blade 3 (quoted string) 
+"../IEA-15-240-RWT/IEA-15-240-RWT_BeamDyn.dat"   BDBldFile(1) - Name of file containing BeamDyn input parameters for blade 1 (quoted string) 
+"../IEA-15-240-RWT/IEA-15-240-RWT_BeamDyn.dat"   BDBldFile(2) - Name of file containing BeamDyn input parameters for blade 2 (quoted string) 
+"../IEA-15-240-RWT/IEA-15-240-RWT_BeamDyn.dat"   BDBldFile(3) - Name of file containing BeamDyn input parameters for blade 3 (quoted string) 
 "../IEA-15-240-RWT/IEA-15-240-RWT_InflowFile.dat"    InflowFile      - Name of file containing inflow wind input parameters (quoted string) 
 "IEA-15-240-RWT-UMaineSemi_AeroDyn15.dat"  AeroFile     - Name of file containing aerodynamic input parameters (quoted string) 
 "IEA-15-240-RWT-UMaineSemi_ServoDyn.dat"    ServoFile       - Name of file containing control and electrical-drive input parameters (quoted string) 

@@ -2,13 +2,20 @@ import dash_bootstrap_components as dbc
 from dash import dcc
 import pandas as pd
 from bs4 import BeautifulSoup
+import os
 
 # Import all of the names of callback functions to tests
 from weis.visualization.appServer.app.mainApp import app        # Needed to prevent dash.exceptions.PageError: `dash.register_page()` must be called after app instantiation
 from weis.visualization.appServer.app.pages.visualize_windio_3d import list_labels, initial_loading, toggle_local_scene, update_local_header, update_local_table_content, update_local_scene_content, click_local_view
 from weis.visualization.utils import load_geometry_data
 
-file_table = {'File Path': ['examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml', 'examples/00_setup/ref_turbines/IEA-3p4-130-RWT.yaml', 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml'], 'Label': ['15MW', '3.4MW', '22MW'], 'Type': ['geometry', 'geometry', 'geometry']}
+this_dir = os.path.dirname( os.path.realpath(__file__) )
+weis_dir = os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( os.path.dirname( this_dir ) ) ) ) )
+
+file_table = {'File Path': [os.path.join(weis_dir, 'examples/00_setup/ref_turbines/IEA-15-240-RWT.yaml'),
+                            os.path.join(weis_dir, 'examples/00_setup/ref_turbines/IEA-3p4-130-RWT.yaml'),
+                            os.path.join(weis_dir, 'examples/00_setup/ref_turbines/IEA-22-280-RWT_Floater.yaml')],
+              'Label': ['15MW', '3.4MW', '22MW'], 'Type': ['geometry', 'geometry', 'geometry']}
 _, geom_comps, wt_options_by_names = load_geometry_data(file_table)
 geom_comps_by_names = {label+': '+comp_type: comp_info for label, geom_comps_per_file in geom_comps.items() for comp_type, comp_info in geom_comps_per_file.items()}
 
