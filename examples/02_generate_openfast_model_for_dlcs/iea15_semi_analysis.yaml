@@ -1,0 +1,3 @@
+general:
+    folder_output: outputs/02_iea15_semi
+    fname_output: refturb_output

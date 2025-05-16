@@ -9,24 +9,24 @@ dependencies:
   - mat4py
   - nlopt
   - numpydoc
-  - openfast>=4.0.1
-  - openraft>=1.2.4
+  - openfast==4.0.4
+  - openfast-io==4.0.4
+  - openraft>=1.4.0
   - osqp  
-  - pcrunch>=2.0.0
+  - pcrunch>=2.1.0
   - pip
   - pyhams>=1.3
   #- pyoptsparse
   - rosco>=2.9.7
   - smt
-  - wisdem==3.20.1
+  - wisdem>=3.21.0
   - pip:
     - dash-bootstrap-components
     - dash-mantine-components
     - dash-vtk
     - pyvista
     - dearpygui
-    - openfast_io
-    - marmot-agents
+    - orbit-nrel
 # Needs to be done outside of environment file:
 #  - m2w64-toolchain # [win]
 #  - libpython # [win]

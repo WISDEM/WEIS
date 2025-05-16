@@ -462,9 +462,9 @@ class GUI_Master(object):
             "ref_turbines",
         )
         temp_geom = os.path.join(temp_dir, "IEA-15-240-RWT.yaml")
-        temp_dir = os.path.join(temp_dir, "..", "..", "06_IEA-15-240-RWT")
-        temp_model = os.path.join(temp_dir, "modeling_options.yaml")
-        temp_anal = os.path.join(temp_dir, "analysis_options.yaml")
+        temp_dir = os.path.join(temp_dir, "..", "..", "03_design_with_openfast")
+        temp_model = os.path.join(temp_dir, "tower_design_modeling.yaml")
+        temp_anal = os.path.join(temp_dir, "tower_design_analysis.yaml")
 
         self._set_workdir(None, None)
         self._set_file_field(None, {"file_path_name": temp_geom}, "geometry_field")

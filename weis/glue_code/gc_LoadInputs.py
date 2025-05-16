@@ -64,7 +64,8 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
     def set_weis_data(self):
 
         # Directory of modeling option input, if we want to use it for relative paths
-        mod_opt_dir = osp.split(self.modeling_options['fname_input_modeling'])[0]
+        mod_opt_dir = osp.dirname(self.modeling_options['fname_input_modeling'])
+        ana_opt_dir = osp.dirname(self.analysis_options['fname_input_analysis'])
 
         # OpenFAST prefixes
         if self.modeling_options['General']['openfast_configuration']['OF_run_fst'] in ['','None','NONE','none']:
@@ -72,7 +73,7 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
             
         if self.modeling_options['General']['openfast_configuration']['OF_run_dir'] in ['','None','NONE','none']:
             self.modeling_options['General']['openfast_configuration']['OF_run_dir'] = osp.join(
-                mod_opt_dir,        # If it's a relative path, will be relative to mod_opt directory
+                ana_opt_dir,        # If it's a relative path, will be relative to analysis folder_output directory
                 self.analysis_options['general']['folder_output'], 
                 'openfast_runs'
                 )
@@ -125,10 +126,10 @@ class WindTurbineOntologyPythonWEIS(WindTurbineOntologyPython):
 
                 if self.modeling_options["OpenFAST"]["HydroDyn"]["PotMod"] == 1:
 
-                    # If user requested PotMod but didn't specify any override or members, just run everything
+                    # If user requested PotMod but didn't specify any override or members, just run everything (potential_model_override = 2)
                     if ( (self.modeling_options["RAFT"]["potential_model_override"] == 0) and
                        (len(self.modeling_options["RAFT"]["potential_bem_members"]) == 0) ):
-                        self.modeling_options["RAFT"]["potential_model_override"] == 2
+                        self.modeling_options["RAFT"]["potential_model_override"] = 2
                         
                     cwd = os.getcwd()
                     weis_dir = osp.dirname(osp.dirname(osp.dirname(osp.abspath(__file__))))
