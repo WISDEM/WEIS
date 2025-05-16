@@ -423,6 +423,8 @@ class DLCGenerator(object):
                 idlc.direction_pn = case['direction']
                 idlc.shear_hv = case['shear']
                 idlc.sigma1 = self.IECturb.NTM(case['wind_speed'])
+            elif dlc_options['IEC_WindType'] == 'Steady':
+                pass
             else:
                 idlc.turbulent_wind = True
                 idlc.RandSeed1 = case['wind_seed']
@@ -796,6 +798,32 @@ class DLCGenerator(object):
         dlc_options['label'] = '1.6'
         dlc_options['sea_state'] = 'severe'
         dlc_options['IEC_WindType'] = 'NTM'
+
+        # Set yaw_misalign, else default
+        if 'yaw_misalign' in dlc_options:
+            dlc_options['yaw_misalign'] = dlc_options['yaw_misalign']
+        else: # default
+            dlc_options['yaw_misalign'] = [0]
+
+        # DLC-specific: define groups
+        # These options should be the same length and we will generate a matrix of all cases
+        generic_case_inputs = []
+        generic_case_inputs.append(['total_time','transient_time','wake_mod','wave_model'])  # group 0, (usually constants) turbine variables, DT, aero_modeling
+        generic_case_inputs.append(['wind_speed','wave_height','wave_period', 'wind_seed', 'wave_seed']) # group 1, initial conditions will be added here, define some method that maps wind speed to ICs and add those variables to this group
+        generic_case_inputs.append(['yaw_misalign']) # group 2
+
+        self.generate_cases(generic_case_inputs,dlc_options)
+
+    def generate_Steady(self, dlc_options):
+        # Power production steady wind
+
+        # Get default options
+        dlc_options.update(self.default_options)   
+        
+        # DLC Specific options:
+        dlc_options['label'] = 'Steady'
+        dlc_options['sea_state'] = 'normal'
+        dlc_options['IEC_WindType'] = 'Steady'
 
         # Set yaw_misalign, else default
         if 'yaw_misalign' in dlc_options:
