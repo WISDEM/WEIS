@@ -604,7 +604,7 @@ components:
               cylindrical: True
 
             - name: col2_freeboard
-              location: [51.75, 1.0471975, 15.0]
+              location: [51.75, 1.0471976, 15.0]
               cylindrical: True
 
             - name: col3_keel
@@ -771,10 +771,6 @@ components:
               Ca: [1.0, 1.0]
               Cd: [0.8, 0.8]
               outer_shape: &pontlow_out
-                # shape: circular
-                # outer_diameter:
-                #     grid: [0.0, 1.0]
-                #     values: [9.6148, 9.6148] #equates displacement not circle: [12.5, 12.5]
                 shape: rectangular
                 side_length_a:
                     grid: [0.0, 1.0]
@@ -782,10 +778,6 @@ components:
                 side_length_b:
                     grid: [0.0, 1.0]
                     values: [7.0, 7.0]
-                #shape: polygonal
-                #side_lengths: [12.5, 7.0, 12.5, 7.0] # rectangle dimensions
-                #angles: [1.5707963267948966, 1.5707963267948966, 1.5707963267948966, 1.5707963267948966] # rectangle angles
-                #rotation: 0.0
               internal_structure: &pontlow_int
                   # Probably needs longitudinal stiffeners
                 layers:
