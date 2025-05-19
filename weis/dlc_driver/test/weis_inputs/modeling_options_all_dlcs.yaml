@@ -62,7 +62,7 @@ DLC_driver:
         current_model: [HydroDyn,CurrMod]
         current_speed: [HydroDyn,CurrDIV]
 
-    DLCs: # Currently supported IEC 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3, or define a Custom one
+    DLCs: # Currently supported IEC 1.1, 1.3, 1.4, 1.5, 5.1, 6.1, 6.3, or Steady
         - DLC: "1.1"
         - DLC: "1.2"
         - DLC: "1.3"
@@ -96,5 +96,7 @@ DLC_driver:
         - DLC: "freedecay"
           transient_time: 0.0
           initial_platform_roll: 5.0
-              
+        - DLC: "Steady"
+          transient_time: 0
+          wind_speed: [8]
               
