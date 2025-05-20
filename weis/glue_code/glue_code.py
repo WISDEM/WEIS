@@ -91,10 +91,11 @@ class WindPark(om.Group):
         # Analysis components
         self.add_subsystem('wisdem',   wisdemPark(modeling_options = modeling_options, opt_options = opt_options), promotes=['*'])
 
-        # XFOIL
-        self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
         # Connections to run xfoil for te flaps
         if not modeling_options['OpenFAST']['from_openfast']:
+            # XFOIL
+            self.add_subsystem('xf',        RunXFOIL(modeling_options = modeling_options, opt_options = opt_options)) # Recompute polars with xfoil (for flaps)
+            
             self.connect('blade.pa.chord_param',                  'xf.chord')
             self.connect('blade.outer_shape_bem.s',               'xf.s')
             self.connect('blade.interp_airfoils.coord_xy_interp', 'xf.coord_xy_interp')

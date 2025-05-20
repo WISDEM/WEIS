@@ -1866,14 +1866,14 @@ class FASTLoadCases(ExplicitComponent):
         modopt = self.options['modeling_options']
         DLCs = modopt['DLC_driver']['DLCs']
         # Initialize the DLC generator
-        cut_in = float(inputs['V_cutin'])
-        cut_out = float(inputs['V_cutout'])
-        rated = float(inputs['Vrated'])
+        cut_in = float(inputs['V_cutin'][0])
+        cut_out = float(inputs['V_cutout'][0])
+        rated = float(inputs['Vrated'][0])
         ws_class = discrete_inputs['turbine_class']
         wt_class = discrete_inputs['turbulence_class']
-        hub_height = float(inputs['hub_height'])
-        rotorD = float(inputs['Rtip'])*2.
-        PLExp = float(inputs['shearExp'])
+        hub_height = float(inputs['hub_height'][0])
+        rotorD = float(inputs['Rtip'][0])*2.
+        PLExp = float(inputs['shearExp'][0])
         fix_wind_seeds = modopt['DLC_driver']['fix_wind_seeds']
         fix_wave_seeds = modopt['DLC_driver']['fix_wave_seeds']
         metocean = modopt['DLC_driver']['metocean_conditions']
