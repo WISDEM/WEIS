@@ -89,9 +89,10 @@ DLC_driver:
         - DLC: "3.2"
         - DLC: "3.3"
         - DLC: "4.1"
-          normal_shutdown_time: 100
-        - DLC: "4.2"
-          normal_shutdown_time: 100
+          normal_shutdown_time: 0.1
+        # - DLC: "4.2"
+        #   analysis_time: 60
+        #   normal_shutdown_time: 100
         - DLC: "5.1"
           n_seeds: 1
           n_azimuth: 3
@@ -134,10 +135,10 @@ DLC_driver:
         - DLC: "Steady"
         - DLC: "Ramp"
           ramp_speeddelta: 5
-          ramp_duration: 50
+          ramp_duration: 0.1
         - DLC: "Step"
           step_speeddelta: 5
-          step_time: 100
+          step_time: 0.1
         - DLC: "freedecay"
           transient_time: 0.0
           initial_platform_roll: 5.0

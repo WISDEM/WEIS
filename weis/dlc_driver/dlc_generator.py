@@ -1347,12 +1347,7 @@ class DLCGenerator(object):
 
         # yaw_misalign
         if 'yaw_misalign' not in dlc_options:
-            dlc_options['yaw_misalign'] = np.concatenate(
-                    np.arange(-180+15,-30+15,15),
-                    np.arange(-30,30+10,10),
-                    np.arange(30,180+15,15),
-            )
-
+            dlc_options['yaw_misalign'] = [-165, -150, -135, -120, -105, -90, -75, -60, -45, -30, -20, -10, 0, 10, 20, 30, 45, 60, 75, 90, 105, 120, 135, 150, 165, 180]
 
         if not dlc_options['wind_speed']:
             dlc_options['wind_speed'] = [self.V_e50]
